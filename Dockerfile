@@ -5,9 +5,8 @@ WORKDIR /app
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
-# Copy all files (package.json and pnpm-lock.yaml)
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies (use --no-frozen-lockfile for CI compatibility)
 RUN pnpm install --no-frozen-lockfile
