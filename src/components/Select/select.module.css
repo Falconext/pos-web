@@ -1,0 +1,239 @@
+.wrapper__select {
+    position: relative;
+    width: 100%;
+}
+
+.disabled__select {
+    pointer-events: none;
+}
+
+.content__noResults__Select p {
+    padding: 10px;
+}
+
+.content__listOptions {
+    background: #fff;
+    position: absolute;
+    padding: 0px;
+    border-radius: 10px;
+    top: 70px;
+    width: 100%;
+    overflow-y: auto;
+    box-shadow: 0px 0px 20px 0px rgb(76 87 125 / 10%);
+    z-index: 999999;
+    overflow-x: hidden;
+}
+
+.content__listOptions li:last-child {
+    border-bottom: none;
+}
+
+.content__listOptions li p {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.input__select.disabled__select input {
+    background: #fafafa !important;
+}
+
+.content__listOptions::after {
+    border-top: 11px solid transparent;
+    border-bottom: 11px solid #fff;
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    content: "";
+    display: inline-block;
+    position: absolute;
+    left: 20px;
+    margin-right: auto;
+    margin-left: auto;
+    width: 1px;
+    top: -22px;
+    z-index: 999999;
+}
+
+.content__listOptions li {
+    cursor: pointer;
+    position: relative;
+    font-family: 'Mona Sans' !important;
+    list-style: none;
+    border-radius: 10px;
+}
+
+.content__listOptions li:hover {
+    background-color: #F0EEFD;
+    font-family: 'Mona Sans' !important;
+    color: rgb(12, 12, 12);
+    transition: 0.2s;
+}
+
+.content__listOptions li:hover p {
+    color: #6A6CFF;
+}
+
+.content__listOptions p {
+    display: block;
+    margin: 0;
+    font-family: 'Mona Sans' !important;
+    text-transform: uppercase;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    transition: 0.2s;
+    padding: 10px;
+    color: #5e6278;
+}
+
+.content__listOptions input {
+    width: 100%;
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    padding: 10px;
+    outline: none;
+}
+
+.selectedOption {
+    background-color: #F0EEFD;
+    color: #6A6CFF !important;
+    transition: 0.2s;
+  }
+
+  .selectedOption p {
+    color: #6A6CFF !important;
+  }
+
+.content__listOptions input:focus-within,
+.content__listOptions input:focus-visible,
+.content__listOptions input:focus {
+    line-clamp: unset;
+}
+
+.content__listOptions::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+.content__listOptions::-webkit-scrollbar:vertical {
+    width: 6px;
+}
+
+.content__listOptions::-webkit-scrollbar-button:increment,
+.content__listOptions::-webkit-scrollbar-button {
+    display: none;
+}
+
+.content__listOptions::-webkit-scrollbar:horizontal {
+    height: 10px;
+}
+
+.content__listOptions::-webkit-scrollbar-thumb {
+    background-color: #a4a6a7;
+    border-radius: 3px;
+    border: 1px solid #d0d0d0;
+}
+
+.content__listOptions::-webkit-scrollbar-track {
+    border-radius: 10px;
+}
+
+.selected__value {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+}
+
+.selected__valueUbigeo {
+    position: absolute;
+    bottom: 16px;
+    left: 10px;
+}
+
+.selected__valueUbigeo span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    text-overflow: ellipsis !important
+}
+
+.selected__value span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    text-overflow: ellipsis !important
+}
+
+.select__arrow {
+    position: absolute;
+    bottom: 34px;
+    right: 0;
+}
+
+.input__select span {
+    font-size: 13px;
+    transition: 0.5s;
+    color: #5e6278;
+    position: relative;
+    font-family: 'Mona Sans';
+    font-weight: 500;
+    z-index: 1;
+    left: 2px;
+    top: 3px
+}
+
+.options__selectTotal {
+    padding: 3px 10px !important;
+}
+
+
+.disabledDiv {
+    background-color: #FAFAFA !important;
+    color: #666666;
+}
+
+.disabledDiv div input {
+    display: none;
+}
+
+
+.disabledDiv .content__listOptions {
+    display: none;
+}
+
+.options__selectTotal {
+    padding: 0px !important;
+}
+
+.options__selectTotal:hover {
+    background: #F0F9FF !important;
+}
+
+.select__loader__container{
+    position: absolute;
+    top: 35px;
+    right: 13px;
+}
+.select__loader__icon{
+        width: 16px;
+        height: 16px;
+        border: 2px solid #7e7e7e;
+        border-bottom-color: transparent;
+        border-radius: 50%;
+        display: inline-block;
+        box-sizing: border-box;
+        animation: rotation .6s linear infinite;
+}
+
+@keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+}

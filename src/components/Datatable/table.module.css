@@ -1,0 +1,181 @@
+.table {
+    width: 100%;
+}
+
+.table thead tr {
+    border: none;
+    text-align: left;
+}
+
+.table thead {
+    border-bottom: 1px solid #E1E3EA;
+}
+
+.table thead tr th {
+    margin-bottom: 4px;
+    margin-left: 1px;
+    letter-spacing: 0.03rem;
+    white-space: nowrap;
+    border-radius: 0;
+    padding: 10px 20px 10px 12px;
+    box-sizing: border-box;
+    border: none;
+    color: #515C6C;
+    font-family: 'Mona Sans';
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid #E1E3EA;
+}
+
+.table tbody tr td {
+    background: #fff;
+    font-size: 12px;
+    padding: 8px 13px !important;
+    vertical-align: middle;
+    z-index: 9999999;
+    color: #686868;
+    font-family: 'Mona Sans';
+    white-space: nowrap;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.table tbody tr td div {
+    display: flex;
+    justify-content: center;
+}
+
+.table tbody tr td img {
+    max-width: 100%;
+    height: 100%;
+}
+
+.table button {
+    background: #fff;
+    margin-right: 10px;
+    border: none;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.table button svg {
+    font-size: 20px;
+}
+
+.edit {
+    color: #2ac891;
+}
+
+.not__data {
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.not__data img {
+    width: 200px;
+}
+
+.not__data p {
+    width: 600px;
+    margin: 0 auto;
+    color: #908e8e;
+    font-size: 15px;
+}
+
+.activeOrder {
+    padding: 5px 10px;
+    background: #e5edf5;
+    border: 1px solid #3585F9;
+    font-family: 'Mona Sans';
+    border-radius: 10px;
+    color: #3585F9;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+.successOrder {
+    padding: 4px 10px;
+    background: #eefff1;
+    font-family: 'Mona Sans';
+    border: 1px solid #3eab50;
+    border-radius: 10px;
+    color: #3eab50;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+.inactiveOrder {
+    padding: 4px 10px;
+    background: #FFF0EA;
+    border: 1px solid #FF0054;
+    border-radius: 10px;
+    font-family: 'Mona Sans';
+    font-size: 11px !important;
+    color: #ff0054;
+    font-weight: 600 !important;
+}
+
+.tableActions {
+    display: flex;
+    align-items: center;
+}
+
+.tooltipContainer {
+    position: relative;
+    display: inline-block;
+}
+
+/* Estilo del texto del tooltip */
+.tooltip {
+    visibility: hidden;
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    text-align: center;
+    padding: 5px 10px;
+    border-radius: 4px;
+    position: absolute;
+    bottom: 120%;
+    /* Ajusta según la posición deseada */
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+/* Flecha del tooltip */
+.tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.75) transparent transparent transparent;
+}
+
+/* Muestra el tooltip al pasar el mouse */
+.tooltipContainer:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Truncate long cell content with ellipsis */
+.truncate {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: bottom;
+}

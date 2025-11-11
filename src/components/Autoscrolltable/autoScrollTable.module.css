@@ -1,0 +1,41 @@
+.autoScrollTable {
+    position: relative;
+    /* width: 100%; */
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.scrollButton {
+    padding: 8px 12px;
+    font-size: 16px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.scrollButton:hover {
+    background-color: #e0e0e0;
+}
+
+.scrollButton:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.tableContainer {
+    max-width: 100%; /* Asegurarse de que el contenedor no exceda el ancho disponible */
+    overflow-x: auto; /* Permitir desplazamiento horizontal */
+    overflow-y: hidden; /* Deshabilitar desplazamiento vertical */
+    border-radius: 4px;
+    white-space: nowrap; /* Evitar que el contenido se envuelva */
+}
+
+/* Estilo para la barra de desplazamiento horizontal (opcional) */

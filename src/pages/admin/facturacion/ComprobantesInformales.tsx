@@ -1,0 +1,457 @@
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import Input from "@/components/Input";
+import DataTable from "@/components/Datatable";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import Pagination from "@/components/Pagination";
+import useAlertStore from "@/zustand/alert";
+import TableSkeleton from "@/components/Skeletons/table";
+import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
+import { IInvoices } from "@/interfaces/invoices";
+import moment from "moment";
+import PrintPDF from "./print";
+import { pdf } from "@react-pdf/renderer";
+import { numberToWords } from "@/utils/numberToLetters";
+import { useAuthStore } from "@/zustand/auth";
+import QRCode from 'qrcode'
+import { Calendar } from "@/components/Date";
+import Select from "@/components/Select";
+import ModalConfirm from "@/components/ModalConfirm";
+import { useDebounce } from "@/hooks/useDebounce";
+import InputPro from "@/components/InputPro";
+import ModalPagoParcial from "@/components/ModalPagoParcial";
+import ComprobantePrintPage from "./comprobanteImprimir";
+import { useReactToPrint } from "react-to-print";
+import { usePaymentFlow, PaymentType } from "@/hooks/usePaymentFlow";
+import ModalPaymentUnified from "@/components/ModalPaymentUnified";
+import PaymentReceipt from "@/components/PaymentReceipt";
+
+const ComprobantesInformales = () => {
+    const { auth } = useAuthStore();
+    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
+    const { success } = useAlertStore();
+    const paymentFlow = usePaymentFlow();
+
+    const [currentPage, setcurrentPage] = useState(1);
+    const [itemsPerPage, setitemsPerPage] = useState(50);
+    const [searchClient, setSearchClient] = useState<string>("");
+    const [formValues, setFormValues] = useState<any>({});
+    const [isOpenModal, setIsOpenModal] = useState(false);
+    const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
+    const [isOpenModalPagoParcial, setIsOpenModalPagoParcial] = useState(false);
+    const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
+    const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
+    const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
+    const [comprobante, setComprobante] = useState<string>("");
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const pages = [];
+    for (let i = 1; i <= Math.ceil(totalInvoices / itemsPerPage); i++) {
+        pages.push(i);
+    }
+
+    const debounce = useDebounce(searchClient, 1000);
+
+
+    useEffect(() => {
+        if (success === true) {
+            setIsOpenModal(false);
+            // setIsEdit(false);
+        }
+    }, [success]);
+
+    console.log(invoices)
+
+
+    const productsTable = invoices?.map((item: IInvoices) => ({
+        id: item?.id,
+        fechaEmisión: moment(item?.fechaEmision).format('DD/MM/YYYY HH:mm:ss'),
+        serie: item.serie,
+        correlativo: item.correlativo,
+        comprobante: item.comprobante,
+        documentoAfiliado: item?.numDocAfectado || item.numeroOrdenTrabajo,
+        document: item?.cliente?.nroDoc,
+        client: item?.cliente?.nombre,
+        total: `S/ ${item.mtoImpVenta.toFixed(2)}`,
+        saldo: `S/ ${item?.saldo?.toFixed(2) || (0).toFixed(2)}`,
+        estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
+            ? item.estadoEnvioSunat
+            : item.estadoPago
+    }));
+
+    useEffect(() => {
+        resetInvoice();
+    }, [])
+
+    const handleGetReceipt = async (data: any) => {
+        console.log(data);
+        setComprobante(data.comprobante);
+        await getInvoice(data.id);
+    };
+
+    useEffect(() => {
+        if (invoice !== null) {
+            setTimeout(() => {
+                if (componentRef?.current) {
+                    console.log("Componente imprimible encontrado, iniciando impresión");
+                    printFn();
+                } else {
+                    console.error("No se encontró contenido imprimible, revisa el renderizado de InvoicePrint");
+                }
+            }, 500); // Aumenté el retraso a 200ms para dar más tiempo al renderizado
+        }
+    }, [invoice])
+
+    const handleAnular = (data: any) => {
+        console.log(data);
+        setFormValues(data);
+        setIsOpenModalConfirm(true);
+    }
+
+    const handleCompletePay = async (data: any) => {
+        setFormValues(data);
+        const saldoPendiente = parseFloat(data?.saldo?.replace('S/ ', '') || '0');
+        const totalComprobante = parseFloat(data?.total?.replace('S/ ', '') || '0');
+        
+        // Usar el hook para iniciar el pago
+        await paymentFlow.initiatePayment('PAGO_PARCIAL', {
+            id: data.id,
+            serie: data.serie,
+            correlativo: data.correlativo,
+            cliente: { nombre: data.client },
+            mtoImpVenta: totalComprobante,
+            saldo: saldoPendiente
+        }, saldoPendiente);
+        
+        setIsOpenModalPagoParcial(true);
+    }
+
+    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string) => {
+        const payment = {
+            tipo: 'PAGO_PARCIAL' as PaymentType,
+            monto,
+            medioPago: medioPago as any,
+            observacion,
+            referencia
+        };
+        
+        const comprobante = {
+            id: formValues.id,
+            serie: formValues.serie,
+            correlativo: formValues.correlativo,
+            cliente: { nombre: formValues.client },
+            mtoImpVenta: parseFloat(formValues?.total?.replace('S/ ', '') || '0'),
+            saldo: parseFloat(formValues?.saldo?.replace('S/ ', '') || '0')
+        };
+
+        // Usar el hook para procesar el pago
+        const result = await paymentFlow.processPayment(
+            payment,
+            comprobante,
+            async (comprobante: any, medioPago: string, monto: number, observacion?: string, referencia?: string) => {
+                const pagoData = {
+                    ...formValues,
+                    observacion: observacion || '',
+                    referencia: referencia || ''
+                };
+                return await completePay(pagoData, medioPago, monto);
+            }
+        );
+        
+        if (result.success) {
+            setIsOpenModalPagoParcial(false);
+            // El hook ya maneja el showReceipt automáticamente
+        }
+    }
+
+    const handleCloseReceipt = () => {
+        paymentFlow.closeReceipt();
+        
+        // Recargar tabla
+        setTimeout(() => {
+            getAllInvoices({
+                tipoComprobante: "INFORMAL",
+                page: currentPage,
+                limit: itemsPerPage,
+                search: debounce,
+                fechaInicio: fechaInicio,
+                fechaFin: fechaFin,
+                estadoPago: stateInvoice !== "TODOS" ? stateInvoice : ""
+            });
+        }, 300);
+    }
+
+    const actions: any = [
+        {
+            onClick: handleGetReceipt,
+            className: "edit",
+            icon: <Icon color="#3BAED9" icon="mingcute:print-line" />,
+            tooltip: "Imprimir"
+        },
+        {
+            onClick: handleCompletePay,
+            className: "complete",
+            icon: <Icon icon="tdesign:money" width="21" height="21" color="#42A5F5" />,
+            tooltip: "Completar Pago",
+            condition: (row: any) => {
+                const saldo = parseFloat(row.saldo.replace('S/ ', '')) || 0;
+                return saldo > 0 && row.estado !== 'ANULADO' && row.estado !== 'COMPLETADO';
+            }
+        },
+        {
+            onClick: handleAnular,
+            className: "anular",
+            icon: <Icon icon="line-md:file-cancel-filled" width="21" height="21" color="#FF8F6B" />,
+            tooltip: "Anular",
+            condition: (row: any) => {
+                return row.estado !== 'ANULADO' && row.estado !== 'COMPLETADO' && !['BOLETA', 'FACTURA', 'NOTA DE CREDITO', 'NOTA DE DEBITO'].includes(row.comprobante);
+            }
+        }
+    ];
+
+    useEffect(() => {
+        const params: any = {
+            tipoComprobante: "INFORMAL",
+            page: currentPage,
+            limit: itemsPerPage,
+            search: debounce,
+            fechaInicio: fechaInicio,
+            fechaFin: fechaFin,
+        };
+        if (stateInvoice !== "TODOS") {
+            params.estadoPago = stateInvoice;
+        }
+        getAllInvoices(params);
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice]);
+
+    const ruc = "204812192919";
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+
+    useEffect(() => {
+        const generateQR = async () => {
+            try {
+                const dataUrl = await QRCode.toDataURL(ruc, {
+                    width: 90,
+                    margin: 1,
+                    color: {
+                        dark: '#000000', // Color oscuro del QR
+                        light: '#ffffff', // Color claro (fondo)
+                    },
+                    errorCorrectionLevel: 'H', // Alta corrección de errores
+                });
+                setQrCodeDataUrl(dataUrl);
+            } catch (err) {
+                console.error("Error al generar el QR:", err);
+            }
+        };
+        generateQR();
+    }, []);
+
+    const [printSize, setPrintSize] = useState('TICKET');
+
+    const print = [
+        { id: "TICKET", value: "TICKET" },
+        { id: "A5", value: "A5" },
+        { id: "A4", value: "A4" }
+    ]
+
+    const handleSelectPrint = (value: any) => {
+        setPrintSize(value)
+    }
+
+    const [dimensions, setDimensions] = useState(() => {
+        switch (printSize) {
+            case 'TICKET': return { width: 80, height: 297 }; // 80mm width for ticket
+            case 'A5': return { width: 148, height: 210 }; // A5 standard size
+            case 'A4': return { width: 210, height: 297 }; // A4 standard size
+            default: return { width: 210, height: 297 };
+        }
+    });
+
+    useEffect(() => {
+        console.log("hello")
+        setDimensions(() => {
+            switch (printSize) {
+                case 'TICKET': return { width: 80, height: 297 };
+                case 'A5': return { width: 148, height: 210 };
+                case 'A4': return { width: 210, height: 297 };
+                default: return { width: 210, height: 297 };
+            }
+        });
+
+        console.log('Dimensions updated:', dimensions, 'for printSize:', printSize);
+    }, [printSize]);
+
+    const componentRef = useRef(null);
+    const printFn = useReactToPrint({
+        // @ts-ignore
+        contentRef: componentRef,
+        pageStyle: `@media print {
+            @page {
+              size: ${dimensions.width}mm ${dimensions.height}mm;
+              margin: 0;
+            }
+            body {
+              width: ${dimensions.width}mm;
+              height: ${dimensions.height}mm;
+              overflow: hidden;
+            }
+            .p-5 {
+              width: 100%;
+              height: 100%;
+              box-sizing: border-box;
+            }
+          }`,
+    });
+
+    const handleDate = (date: string, name: string) => {
+        if (!moment(date, 'DD/MM/YYYY', true).isValid()) {
+            console.error(`Fecha inválida: ${date} para ${name}`);
+            return;
+        }
+        if (name === "fechaInicio") {
+            setFechaInicio(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
+        } else if (name === "fechaFin") {
+            setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
+        }
+    };
+
+    const handleSelectState = (_id: string, value: string) => {
+        setStateInvoice(value)
+    }
+
+    const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "COMPLETADO" }, { id: 3, value: "PENDIENTE_PAGO" }, { id: 4, value: "ANULADO" }]
+
+    const confirmCancelInvoice = () => {
+        cancelInvoice(formValues?.id)
+        setIsOpenModalConfirm(false)
+    }
+
+    const handleChangeSearch = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | any>) => {
+        setSearchClient(e.target.value)
+    }
+
+    console.log(invoice)
+
+    return (
+        <div className="px-0 py-0 md:px-8 md:py-4">
+            <ComprobantePrintPage
+                company={auth}
+                componentRef={componentRef}
+                formValues={invoice}
+                size={printSize}
+                serie={invoice?.serie}
+                correlative={invoice?.correlativo}
+                productsInvoice={invoice?.detalles}
+                total={Number(invoice?.mtoImpVenta).toFixed(2)}
+                mode="off"
+        
+                qrCodeDataUrl={qrCodeDataUrl}
+                discount={invoice?.discount}
+                receipt={comprobante || invoice?.comprobante}
+                selectedClient={invoice?.cliente}
+                totalInWords={numberToWords(parseFloat(invoice?.mtoImpVenta)) + " SOLES"}
+                observation={invoice?.observaciones}
+            />
+            <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
+                <div className="mb-5 pt-5 md:pt-0">
+                    <div className="grid grid-cols-12 gap-3 justify-between items-center">
+                        <div className="md:col-start-1 md:col-end-5 col-span-12">
+                            <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
+                        </div>
+                        <div className="md:col-start-5 md:col-end-13 col-span-12 grid gap-3 relative">
+                            <div className="md:col-start-1 md:col-end-3 col-span-12">
+                                <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
+                            </div>
+                            <div className="md:col-start-3 md:col-end-5 col-span-12">
+                                <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
+                            </div>
+                            <div className="md:col-start-5 md:col-end-7 col-span-12">
+                                <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
+                            </div>
+                            <div className="md:col-start-7 md:col-end-10 col-span-12">
+                                <Select onChange={handleSelectPrint} label="Ticket" name="" defaultValue={printSize} options={print} error="" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className='w-full'>
+
+                    {
+                        productsTable?.length > 0 ? (
+                            <>
+                                <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
+                                    <DataTable actions={actions} bodyData={productsTable}
+                                        headerColumns={[
+                                            'Fecha',
+                                            'Serie',
+                                            'Nro.',
+                                            'Comprobante',
+                                            'Doc. Afiliado',
+                                            'Num doc',
+                                            'Cliente',
+                                            'Importe',
+                                            'Saldo',
+                                            'Estado'
+                                        ]} />
+                                </div>
+
+                                <Pagination
+                                    data={productsTable}
+                                    optionSelect
+                                    currentPage={currentPage}
+                                    indexOfFirstItem={indexOfFirstItem}
+                                    indexOfLastItem={indexOfLastItem}
+                                    setcurrentPage={setcurrentPage}
+                                    setitemsPerPage={setitemsPerPage}
+                                    pages={pages}
+                                    total={totalInvoices}
+                                />
+                            </>
+                        ) :
+                            <TableSkeleton arrayData={productsTable} />
+                    }
+                </div>
+                {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
+                {(isOpenModalPagoParcial && paymentFlow.payment) && (
+                    <ModalPaymentUnified
+                        isOpen={isOpenModalPagoParcial}
+                        isLoading={paymentFlow.isLoading}
+                        paymentType={paymentFlow.payment.tipo}
+                        saldoPendiente={parseFloat(formValues?.saldo?.replace('S/ ', '') || '0')}
+                        totalComprobante={parseFloat(formValues?.total?.replace('S/ ', '') || '0')}
+                        comprobanteInfo={{
+                            id: formValues.id,
+                            serie: formValues.serie,
+                            correlativo: formValues.correlativo,
+                            cliente: formValues.client,
+                            total: parseFloat(formValues?.total?.replace('S/ ', '') || '0')
+                        }}
+                        onConfirm={handleConfirmPago}
+                        onCancel={() => {
+                            setIsOpenModalPagoParcial(false);
+                            paymentFlow.reset();
+                        }}
+                        error={paymentFlow.error || ''}
+                    />
+                )}
+                {paymentFlow.showReceipt && paymentFlow.receiptData && (
+                    <PaymentReceipt
+                        comprobante={paymentFlow.receiptData.comprobante}
+                        saldo={formValues?.saldo}
+                        payment={paymentFlow.receiptData.payment}
+                        numeroRecibo={paymentFlow.receiptData.numeroRecibo}
+                        nuevoSaldo={paymentFlow.receiptData.nuevoSaldo}
+                        detalles={paymentFlow.receiptData.detalles}
+                        cliente={paymentFlow.receiptData.cliente}
+                        pagosHistorial={paymentFlow.receiptData.pagosHistorial}
+                        totalPagado={paymentFlow.receiptData.totalPagado}
+                        company={auth}
+                        onClose={handleCloseReceipt}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default ComprobantesInformales;
