@@ -94,7 +94,7 @@ const ComprobantePrintPage = ({
                             </div>
                             {productsInvoice?.map((item: any, i: any) => (
                                 <div key={i} className="flex">
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-center`}>{item?.cantidad || 0}</span>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>{item?.cantidad || 0}</span>
                                     <span className={`w-3/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>{item?.descripcion?.toUpperCase() || ''}</span>
                                     <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>{Number(item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
                                     <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-right`}>{Number((item?.producto?.precioUnitario || item?.precioUnitario) * item?.cantidad || 0).toFixed(2)}</span>
@@ -114,14 +114,14 @@ const ComprobantePrintPage = ({
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
-                        <div className="">
-                            <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center mt-10`}>
+                        <div className="uppercase">
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center mt-10`}>
                                 Sistema para ferreterias - FalcoNext.</p>
-                            <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>Desarrollado por FalcoNext.</p>
-                            <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>www.falconext.pe.</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>Desarrollado por FalcoNext.</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>www.falconext.pe.</p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>
                         <hr className="my-1 border-dashed border-[#222]" />
                     </div>
                 ) : (
