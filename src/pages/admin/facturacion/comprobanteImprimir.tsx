@@ -53,7 +53,7 @@ const ComprobantePrintPage = ({
     console.log(productsInvoice)
 
     return (
-        <div className='hidden h-full bg-[#fff]'>
+        <div id="print-root" className='hidden h-full bg-[#fff]'>
             <div
                 ref={componentRef || localComponentRef}
                 className={`px-5 bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'pt-10 pb-10' : 'pt-40 pb-40'}`}

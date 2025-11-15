@@ -649,13 +649,14 @@ const Invoice = () => {
       margin: 0;
     }
     body {
+      margin: 0;
       width: ${dimensions.width}mm;
-      height: ${dimensions.height}mm;
-      overflow: hidden;
     }
-    .p-5 {
-      width: 100%;
-      height: 100%;
+    #print-root {
+      width: ${dimensions.width}mm;
+      min-height: ${dimensions.height}mm;
+      margin: 0 auto;
+      padding-bottom: 10mm;
       box-sizing: border-box;
     }
   }`,
