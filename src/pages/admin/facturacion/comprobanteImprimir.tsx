@@ -54,57 +54,68 @@ const ComprobantePrintPage = ({
 
     return (
         <div className='hidden h-full bg-[#fff]'>
-            <div ref={componentRef || localComponentRef} className="px-5 bg-[#fff] py-0 text-sm pt-10 pb-10" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif' }}>
+            <div
+                ref={componentRef || localComponentRef}
+                className={`px-5 bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'pt-10 pb-10' : 'pt-40 pb-40'}`}
+                style={{
+                    fontFamily:
+                        size === 'TICKET'
+                            ? '"VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+                            : 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
+                    lineHeight: size === 'TICKET' ? 1.2 : undefined,
+                    letterSpacing: size === 'TICKET' ? '0.2px' : undefined
+                }}
+            >
                 {size === 'TICKET' ? (
                     <div className="">
                         {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-[80px] h-[80px] mb-3" />}
-                        <h2 className="text-center text-xs font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h2>
-                        <p className="text-center text-xs">
+                        <h2 className={`text-center ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} font-bold`}>{company?.empresa?.nombreComercial.toUpperCase()}</h2>
+                        <p className={`text-center ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}>
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
                             DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br />
                             RUC: {company?.empresa?.ruc?.toUpperCase()}
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <h2 className="text-center font-bold text-xs">{receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
+                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}>{receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div>
-                            <p className="text-xs"><span className="">FECHA Y HORA:</span> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
-                            <p className="text-xs"><span className="">RAZON SOCIAL:</span> {selectedClient?.nombre?.toUpperCase() || ''}</p>
-                            <p className="text-xs"><span className="">NÚMERO DE DOCUMENTO:</span> {selectedClient?.nroDoc || ''}</p>
-                            <p className="text-xs"><span className="">DIRECCION:</span> {selectedClient?.direccion?.toUpperCase() || ''}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">FECHA Y HORA:</span> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">RAZON SOCIAL:</span> {selectedClient?.nombre?.toUpperCase() || ''}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">NÚMERO DE DOCUMENTO:</span> {selectedClient?.nroDoc || ''}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">DIRECCION:</span> {selectedClient?.direccion?.toUpperCase() || ''}</p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div className="">
                             <div className="flex text-center">
-                                <span className="w-1/5 text-xs">CANT.</span>
-                                <span className="w-3/5 text-xs">DESCRIPCION</span>
-                                <span className="w-1/5 text-xs">P.U.</span>
-                                <span className="w-1/5 text-xs">IMP.</span>
+                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}>CANT.</span>
+                                <span className={`w-3/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}>DESCRIPCION</span>
+                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}>P.U.</span>
+                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}>IMP.</span>
                             </div>
                             {productsInvoice?.map((item: any, i: any) => (
                                 <div key={i} className="flex">
-                                    <span className="w-1/5 text-xs text-center">{item?.cantidad || 0}</span>
-                                    <span className="w-3/5 text-xs text-left">{item?.descripcion?.toUpperCase() || ''}</span>
-                                    <span className="w-1/5 text-xs text-left">{Number(item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
-                                    <span className="w-1/5 text-xs text-right">{Number((item?.producto?.precioUnitario || item?.precioUnitario) * item?.cantidad || 0).toFixed(2)}</span>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} text-center`}>{item?.cantidad || 0}</span>
+                                    <span className={`w-3/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} text-left`}>{item?.descripcion?.toUpperCase() || ''}</span>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} text-left`}>{Number(item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} text-right`}>{Number((item?.producto?.precioUnitario || item?.precioUnitario) * item?.cantidad || 0).toFixed(2)}</span>
                                 </div>
                             ))}
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className="text-xs ">SON: {totalInWords || ''}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <label className="text-xs flex justify-between"><div className="">TOTAL GRAVADAS:</div> <div>{Number(totalReceipt * 0.82).toFixed(2)}</div></label>
-                        <label className="text-xs flex justify-between"><div className="">I.G.V 18.00 %:</div> <div>{Number(totalReceipt * 0.18).toFixed(2)}</div></label>
-                        <label className="text-xs flex justify-between"><div className="">IMPORTE TOTAL:</div> <div>{Number(totalReceipt).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{Number(totalReceipt * 0.82).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{Number(totalReceipt * 0.18).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{Number(totalReceipt).toFixed(2)}</div></label>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className="text-xs"><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
-                        <p className="text-xs"><span className="">VUELTO: </span> S/ {formValues?.vuelto?.toFixed(2) || (0).toFixed(2)}</p>
-                        <p className="text-xs"><span className="">PAGADO: </span>S/ {Number(totalPrices).toFixed(2)}</p>
-                        <p className="text-xs"><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">VUELTO: </span> S/ {formValues?.vuelto?.toFixed(2) || (0).toFixed(2)}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">PAGADO: </span>S/ {Number(totalPrices).toFixed(2)}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className="text-xs"><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
                         <div className="">
-                            <p className="text-xs mt-10 text-center">Representación impresa del Comprobante de
+                            <p className={`${size === 'TICKET' ? 'text-[13px]' : 'text-xs'} mt-10 text-center`}>Representación impresa del Comprobante de
                                 Pago Electrónico.
                                 Autorizado mediante Resolución de Intendencia
                                 N° 080-005-000153/SUNAT.

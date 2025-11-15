@@ -51,7 +51,8 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             // codigo: formValues?.codigo && formValues?.codigo.trim() !== "" ? "" : "El código del producto es obligatorio",
             descripcion: formValues?.descripcion && formValues?.descripcion.trim() !== "" ? "" : "El código del producto es obligatorio",
             precioUnitario: formValues?.precioUnitario && Number(formValues?.precioUnitario) > 0 ? "" : "El producto debe tener un precio",
-            stock: formValues?.stock && Number(formValues?.stock) > 0 ? "" : "El producto debe tener un stock"
+            // En edición, el stock se gestiona con los controles de ajuste; no exigir este campo.
+            stock: !isEdit ? (formValues?.stock && Number(formValues?.stock) > 0 ? "" : "El producto debe tener un stock") : ""
         };
         setErrors(newErrors);
         return Object.values(newErrors).every((error) => !error); // Retorna `true` si no hay errores
@@ -98,7 +99,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         }
 
         // Calcular el stock final basado en el tipo de ajuste
-        let stockFinal = Number(formValues.stock);
+        let stockFinal = Number(formValues?.stock);
         if (isEdit && tipoAjusteStock !== 'ninguno') {
             switch (tipoAjusteStock) {
                 case 'reemplazar':
