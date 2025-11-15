@@ -733,14 +733,7 @@ const Invoice = () => {
         }, 1000);   // Limpiar el correlativo
     };
 
-    console.log(formValues)
-
-    const handleChangeDate = (date: string, name: string) => {
-        console.log(name, date)
-        setFechaRecojo(date);
-    }
-
-    console.log(auth)
+    console.log(productsInvoice)
 
     return (
         <div className="px-0 py-0 md:px-8 md:py-4">

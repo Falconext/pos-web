@@ -50,6 +50,8 @@ const ComprobantePrintPage = ({
             : `data:${mime};base64,${rawBase64}`)
         : undefined;
 
+    console.log(productsInvoice)
+
     return (
         <div className='hidden h-full bg-[#fff]'>
             <div ref={componentRef || localComponentRef} className="px-5 bg-[#fff] py-0 text-sm pt-10 pb-10" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif' }}>
@@ -69,6 +71,7 @@ const ComprobantePrintPage = ({
                             <p className="text-xs"><span className="">FECHA Y HORA:</span> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
                             <p className="text-xs"><span className="">RAZON SOCIAL:</span> {selectedClient?.nombre?.toUpperCase() || ''}</p>
                             <p className="text-xs"><span className="">NÚMERO DE DOCUMENTO:</span> {selectedClient?.nroDoc || ''}</p>
+                            <p className="text-xs"><span className="">DIRECCION:</span> {selectedClient?.direccion?.toUpperCase() || ''}</p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div className="">
@@ -82,8 +85,8 @@ const ComprobantePrintPage = ({
                                 <div key={i} className="flex">
                                     <span className="w-1/5 text-xs text-center">{item?.cantidad || 0}</span>
                                     <span className="w-3/5 text-xs text-left">{item?.descripcion?.toUpperCase() || ''}</span>
-                                    <span className="w-1/5 text-xs text-left">{Number(item?.producto?.precioUnitario || 0).toFixed(2)}</span>
-                                    <span className="w-1/5 text-xs text-right">{Number(item?.producto?.precioUnitario * item?.cantidad || 0).toFixed(2)}</span>
+                                    <span className="w-1/5 text-xs text-left">{Number(item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
+                                    <span className="w-1/5 text-xs text-right">{Number((item?.producto?.precioUnitario || item?.precioUnitario) * item?.cantidad || 0).toFixed(2)}</span>
                                 </div>
                             ))}
                         </div>
