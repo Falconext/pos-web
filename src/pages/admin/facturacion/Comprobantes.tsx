@@ -54,6 +54,7 @@ const Comprobantes = () => {
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
+    const [shouldPrint, setShouldPrint] = useState(false);
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -71,6 +72,14 @@ const Comprobantes = () => {
             // setIsEdit(false);
         }
     }, [success]);
+
+    // Limpiar el comprobante cargado al entrar/salir de esta página
+    useEffect(() => {
+        resetInvoice();
+        return () => {
+            resetInvoice();
+        };
+    }, []);
 
     // Cerrar menú de acciones al hacer click fuera
     useEffect(() => {
@@ -212,6 +221,7 @@ const Comprobantes = () => {
     const handleGetReceipt = async (data: any) => {
         console.log(data);
         setComprobante(data.comprobante);
+        setShouldPrint(true);
         await getInvoice(data.id);
     };
 
@@ -426,17 +436,21 @@ const Comprobantes = () => {
     });
 
     useEffect(() => {
-        if (invoice !== null) {
-            setTimeout(() => {
-                if (componentRef?.current) {
-                    console.log("Componente imprimible encontrado, iniciando impresión");
-                    printFn();
-                } else {
-                    console.error("No se encontró contenido imprimible, revisa el renderizado de InvoicePrint");
-                }
-            }, 500); // Aumenté el retraso a 200ms para dar más tiempo al renderizado
-        }
-    }, [invoice])
+        if (!shouldPrint || !invoice) return;
+
+        const timer = setTimeout(() => {
+            if (componentRef?.current) {
+                console.log("Componente imprimible encontrado, iniciando impresión");
+                printFn();
+            } else {
+                console.error("No se encontró contenido imprimible, revisa el renderizado de InvoicePrint");
+            }
+            setShouldPrint(false);
+            resetInvoice();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [invoice, shouldPrint, printFn, resetInvoice])
 
     const handleSelectPrint = (value: any) => {
         setPrintSize(value)

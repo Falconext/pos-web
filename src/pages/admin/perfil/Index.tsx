@@ -141,7 +141,7 @@ export default function PerfilIndex() {
   console.log(perfil)
 
   return (
-    <div className="p-6 px-8 space-y-6">
+    <div className="md:p-6 md:px-8 p-1 space-y-6">
       {/* Header con información básica */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center space-x-4">

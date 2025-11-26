@@ -18,6 +18,7 @@ interface Empresa {
   plan: {
     id: number;
     nombre: string;
+    tieneTienda: boolean
     descripcion?: string;
     limiteUsuarios?: number;
     costo?: number;

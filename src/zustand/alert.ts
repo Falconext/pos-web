@@ -4,7 +4,7 @@ import { devtools } from 'zustand/middleware';
 interface Alert {
     id: number; // ID único para identificar la alerta
     message: string | string[]; // Mensaje de la alerta
-    type: string; // Tipo de alerta (success, error, notification)
+    type: string; // Tipo de alerta (success, error, notification, warning)
     title?: string; // Título opcional
 }
 

@@ -393,8 +393,8 @@ console.log(rubros)
             <Icon icon="material-symbols:arrow-back" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Nueva Empresa</h1>
-            <p className="text-gray-600">Registra una nueva empresa en el sistema</p>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2 ml-4">Nueva Empresa</h1>
+            <p className="text-gray-600 ml-4">Registra una nueva empresa en el sistema</p>
           </div>
         </div>
 
@@ -405,7 +405,10 @@ console.log(rubros)
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Ingresa los datos de la empresa</h2>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
           {/* Datos de la Empresa */}
           <div className="bg-gray-50 p-6 rounded-lg">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos de la Empresa</h2>
@@ -701,6 +704,7 @@ console.log(rubros)
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

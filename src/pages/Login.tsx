@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import Alert from "../components/Alert";
 import Button from "../components/Button";
 import useAlertStore from "@/zustand/alert";
+import banner from '@/assets/fnlogin.png'
+import { Icon } from "@iconify/react";
 
 interface IUserForm {
   email: string;
@@ -81,39 +83,99 @@ export default function Login() {
   }
 
   return (
-    <div className="w-full z-0 grid grid-cols-12 md:gap-20 bg-gradient-to-r from-[#413E83] via-[#050114] to-[#413E83]">
+    <div className="min-h-screen w-full grid md:grid-cols-2 bg-white">
       <Alert />
 
-      <div className="flex md:col-span-4 w-full justify-center md:justify-start col-span-12 items-center md:h-screen pl-0 md:pl-20">
-        <div className="w-full md:border rounded md:border-solid md:border-[#fff] relative md:shadow-xl bg-[#f4fffb]">
-          <div className="bg-[#fff] grid md:grid-cols-1 grid-cols-1 border border-solid border-[#fff] relative">
-            <div className="md:p-8 md:px-10 p-8 md:pt-0">
-              <div className="text-center flex justify-center mt-5">
-                <img onClick={() => navigate('/')} src="/logonephi.png" className="object-cover cursor-pointer rounded-l-xl" width={150} height={120} alt="imagen" />
-              </div>
-              <h3 className="font-medium text-xl mt-6 md:mt-0 md:text-center text-center">! Bienvenido de nuevo al sistema Nephi !</h3>
-              <p className="text-[#767676] mt-2 mb-12 rounded-xl font-light md:text-center text-center text-[14px]">
-                Ingrese sus credenciales correctos para acceder al sistema
+      {/* Left: Form */}
+      <div className="flex items-center justify-center px-6 py-10">
+        <div className="w-full max-w-md">
+          <div className="text-left mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">Iniciar Sesión</h1>
+            <p className="text-gray-500 mt-2">Bienvenido a tu sistema, factura y gestiona tu negocio</p>
+          </div>
+
+          <form onKeyDown={handleKeyDown} className="space-y-5">
+            <Input
+              form="no-form"
+              autoComplete="off"
+              readOnly={false}
+              isIcon
+              icon="lets-icons:e-mail"
+              type="email"
+              name="email"
+              onChange={handleChange}
+              label="Email"
+            />
+
+            <Input
+              form="no-form"
+              autoComplete="off"
+              readOnly={false}
+              isIcon
+              icon="iconamoon:lock"
+              type="password"
+              name="password"
+              onChange={handleChange}
+              label="Password"
+            />
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input type="checkbox" className="accent-[#050509]" />
+                Remember me
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={accessPanel}
+              className="w-full py-3 rounded-md text-white font-semibold shadow-sm bg-[#050509] hover:opacity-95 transition"
+            >
+              INICIAR SESIÓN
+            </button>
+
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => navigate('/tienda/login')}
+                className="text-sm text-[#6a00ff] hover:underline"
+              >
+                Ir a mi tienda virtual
+              </button>
+            </div>
+
+            {/* <p className="text-center text-sm text-gray-600">
+              Don't have an account? <a className="font-semibold text-[#6a00ff]" href="#">Sign up</a>
+            </p> */}
+          </form>
+        </div>
+      </div>
+
+      {/* Right: Banner panel (hidden on mobile) */}
+      <div className="hidden md:flex items-center justify-center p-8">
+        <div className="w-full h-[85vh] rounded-2xl overflow-hidden relative bg-gradient-to-br from-[#050509] via-[#111322] to-[#050509] flex items-center justify-center">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,#6a00ff_0%,transparent_60%)]" />
+          <div className="relative max-w-4xl mx-auto gap-6 items-center px-10">
+            <h2 className="text-xl font-semibold text-white text-center mb-5">Facturación electrónica sin complicaciones</h2>
+            <div className="relative">
+              <img
+                src={banner}
+                alt="Panel de facturación Nephi"
+                className="w-full rounded-2xl shadow-2xl object-cover"
+              />
+            </div>
+            <div className="text-white">
+             
+              <p className="text-sm text-white/80 mb-4 text-center mt-5">
+                Centraliza tus ventas, controla tu caja y mantén tus comprobantes siempre al día con Nephi.
               </p>
-              <form action="" onKeyDown={handleKeyDown} className="">
-                <div className="mt-5">
-                  <Input form="no-form" autoComplete="off" readOnly={false} isIcon icon="lets-icons:e-mail" type="email" name="email" onChange={handleChange} label="Correo electrónico" />
-                </div>
-                <div className="mt-5">
-                  <Input form="no-form" autoComplete="off" readOnly={false} isIcon icon="iconamoon:lock" type="password" name="password" onChange={handleChange} label="Contraseña" />
-                </div>
-                <div className="mt-[20px]">
-                  <button className="bg-[#262626] cursor-pointer w-full rounded-md text-white px-5 py-2.5" type="button" onClick={accessPanel}>
-                    Ingresar
-                  </button>
-                </div>
-              </form>
+              <div className="flex justify-center items-center gap-2 text-sm text-white/80">
+                <Icon icon="mdi:check-decagram" className="w-5 h-5 text-emerald-400" />
+                <span>Plataforma pensada para emprendedores y negocios en crecimiento.</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div className="md:col-span-8 w-full h-full hidden md:block">
-        <img alt="" src="/bannermype.png" className="rounded-xl w-full" width={300} height={300} />
       </div>
     </div>
   );

@@ -40,6 +40,7 @@ const OrdenesDeTrabajoPage = () => {
   const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format('YYYY-MM-DD'));
   const [stateOT, setStateOT] = useState<string>('TODOS');
   const [printSize, setPrintSize] = useState('TICKET');
+  const [shouldPrint, setShouldPrint] = useState(false);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -70,21 +71,15 @@ const OrdenesDeTrabajoPage = () => {
 
   useEffect(() => {
     resetInvoice();
+    return () => {
+      resetInvoice();
+    };
   }, []);
 
   const handleGetReceipt = async (data: any) => {
+    setShouldPrint(true);
     await getInvoice(data.id);
   };
-
-  useEffect(() => {
-    if (invoice !== null) {
-      setTimeout(() => {
-        if (componentRef?.current) {
-          printFn();
-        }
-      }, 500);
-    }
-  }, [invoice]);
 
   const handleAnular = (data: any) => {
     setFormValues(data);
@@ -123,6 +118,20 @@ const OrdenesDeTrabajoPage = () => {
             fechaFin: fechaFin,
             estadoPago: stateOT !== 'TODOS' ? stateOT : '',
           });
+
+  useEffect(() => {
+    if (!shouldPrint || !invoice) return;
+
+    const timer = setTimeout(() => {
+      if (componentRef?.current) {
+        printFn();
+      }
+      setShouldPrint(false);
+      resetInvoice();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [invoice, shouldPrint, resetInvoice]);
           paymentFlow.closeReceipt();
         }, 500);
       }

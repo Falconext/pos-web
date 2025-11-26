@@ -20,6 +20,7 @@ export interface IProductsState {
     getCodeProduct: (empresa: number) => void
     exportProducts: (empresaId: number, search?: string) => void;
     importProducts: (file: File) => Promise<void>;
+    deleteProduct: (productoId: number) => Promise<void>;
 }
 
 export const useProductsStore = create<IProductsState>()(devtools((set, _get) => ({
@@ -57,6 +58,22 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             }
         }
     },
+    deleteProduct: async (productoId: number) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            await del(`producto/${productoId}`);
+            set((state) => ({
+                products: state.products.filter((p: IProduct) => p.id !== productoId),
+                totalProducts: Math.max(0, (state.totalProducts || 0) - 1),
+            }), false, 'DELETE_PRODUCT');
+            useAlertStore.setState({ success: true });
+            useAlertStore.getState().alert('Producto eliminado correctamente', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.message || 'Error al eliminar el producto', 'error');
+        } finally {
+            useAlertStore.setState({ loading: false });
+        }
+    },
     addProduct: async (data: any) => {
         useAlertStore.setState({ loading: true });
         try {
@@ -74,7 +91,11 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                         },
                         unidadMedida: {
                             nombre: data.unidadMedidaNombre
-                        }
+                        },
+                        marca: data.marcaId ? {
+                            id: data.marcaId,
+                            nombre: data.marcaNombre,
+                        } : undefined,
                     }, ...state.products]
                 }), false, "ADD_PRODUCTS");
 
@@ -126,7 +147,13 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                 useAlertStore.setState({ success: true });
                 set((state) => ({
                     products: state.products.map((product: IProduct) =>
-                        product.id === data?.productoId ? { ...product, unidadMedida: { nombre: data.unidadMedidaNombre }, categoria: { nombre: data.categoriaNombre }, ...data } : product
+                        product.id === data?.productoId ? {
+                            ...product,
+                            unidadMedida: { nombre: data.unidadMedidaNombre },
+                            categoria: { nombre: data.categoriaNombre },
+                            marca: data.marcaId ? { id: data.marcaId, nombre: data.marcaNombre } : undefined,
+                            ...data,
+                        } : product
                     ),
                 }), false, "UPDATE_PRODUCT");
                 useAlertStore.setState({ loading: false })

@@ -17,9 +17,11 @@ const Alert = () => {
                         title={
                             alert.title ||
                             (alert.type === "success"
-                                ? "Buen trabajo"
+                                ? "Éxito"
                                 : alert.type === "notification"
-                                ? "Notificación"
+                                ? "Información"
+                                : alert.type === "warning"
+                                ? "Advertencia"
                                 : "Error")
                         }
                         message={alert.message}

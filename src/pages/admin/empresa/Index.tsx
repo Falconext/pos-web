@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import DataTable from '@/components/Datatable';
 import Pagination from '@/components/Pagination';
 import Button from '@/components/Button';
+import EmpresaFormModal from '@/components/Empresa/EmpresaFormModal';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import ModalConfirm from '@/components/ModalConfirm';
@@ -33,6 +34,9 @@ const EmpresasIndex = () => {
   const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
   const [currentPageState, setCurrentPageState] = useState(1);
+  const [openEmpresaModal, setOpenEmpresaModal] = useState(false);
+  const [empresaModalMode, setEmpresaModalMode] = useState<'create' | 'edit'>('create');
+  const [empresaEditingId, setEmpresaEditingId] = useState<number | undefined>(undefined);
 
   const debounceSearch = useDebounce(searchTerm, 1000);
 
@@ -71,8 +75,9 @@ const EmpresasIndex = () => {
 
   // Manejar edición de empresa
   const handleEdit = (empresa: any) => {
-    navigate(`/administrador/empresas/editar/${empresa.id}`);
-    return
+    setEmpresaEditingId(empresa.id);
+    setEmpresaModalMode('edit');
+    setOpenEmpresaModal(true);
   };
 
   console.log(empresas)
@@ -110,14 +115,26 @@ const EmpresasIndex = () => {
 
   const empresasTable = empresas?.map((empresa: any) => {
     console.log('Empresa individual:', empresa); // Debug
+
+    const incluyeTienda = empresa?.plan?.tieneTienda;
+    const tiendaEstado = !incluyeTienda
+      ? 'No incluida'
+      : empresa.slugTienda
+        ? 'Activa'
+        : 'Incluida (sin configurar)';
+
     return {
       id: empresa.id,
       ruc: empresa.ruc,
       razonSocial: empresa.razonSocial,
       nombreComercial: empresa.nombreComercial || '-',
-      plan: typeof empresa.plan === 'object' && empresa.plan ?
-        `${empresa.plan.nombre} (S/ ${empresa.plan.costo})` :
-        (typeof empresa.plan === 'string' ? empresa.plan : '-'),
+      plan:
+        typeof empresa.plan === 'object' && empresa.plan
+          ? `${empresa.plan.nombre} (S/ ${empresa.plan.costo})`
+          : typeof empresa.plan === 'string'
+            ? empresa.plan
+            : '-',
+      tienda: tiendaEstado,
       fechaActivacion: new Date(empresa.fechaActivacion).toLocaleDateString(),
       fechaExpiracion: new Date(empresa.fechaExpiracion).toLocaleDateString(),
       estado: empresa.estado,
@@ -183,7 +200,11 @@ const EmpresasIndex = () => {
           <div className="flex md:block items-center mt-5 md:mt-0">
             <Button
               color="secondary"
-              onClick={() => navigate('/administrador/empresas/crear')}
+              onClick={() => {
+                setEmpresaEditingId(undefined);
+                setEmpresaModalMode('create');
+                setOpenEmpresaModal(true);
+              }}
             >
               Nueva Empresa
             </Button>
@@ -210,9 +231,10 @@ const EmpresasIndex = () => {
                     'Razon Social',
                     'Nombre Comercial',
                     'Plan',
+                    'Tienda Virtual',
                     'Activación',
                     'Expiración',
-                    'Estado'
+                    'Estado',
                   ]}
                 />
               </div>
@@ -241,7 +263,11 @@ const EmpresasIndex = () => {
                 </p>
                 <Button
                   color="secondary"
-                  onClick={() => navigate('/administrador/empresas/crear')}
+                  onClick={() => {
+                    setEmpresaEditingId(undefined);
+                    setEmpresaModalMode('create');
+                    setOpenEmpresaModal(true);
+                  }}
                 >
                   Crear Primera Empresa
                 </Button>
@@ -261,6 +287,21 @@ const EmpresasIndex = () => {
               : `¿Estás seguro que deseas ${selectedEmpresa?.estado === 'ACTIVO' ? 'desactivar' : 'activar'} la empresa "${selectedEmpresa?.razonSocial}"?`
           }
           confirmSubmit={confirmAction}
+        />
+
+        {/* Modal Crear/Editar Empresa */}
+        <EmpresaFormModal
+          open={openEmpresaModal}
+          mode={empresaModalMode}
+          empresaId={empresaEditingId}
+          onClose={() => setOpenEmpresaModal(false)}
+          onSaved={() => listarEmpresas({
+            search: debounceSearch,
+            page: currentPageState,
+            limit: itemsPerPage,
+            sort: 'id',
+            order: 'desc'
+          })}
         />
       </div>
     </div>

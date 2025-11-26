@@ -17,8 +17,6 @@ import ComprobantesInformales from './pages/admin/facturacion/ComprobantesInform
 import Invoice from './pages/admin/facturacion/Nuevo'
 import Pagos from './pages/admin/facturacion/Pagos'
 import EmpresasIndex from './pages/admin/empresa/Index'
-import CreateEmpresa from './pages/admin/empresa/Create'
-import EditEmpresa from './pages/admin/empresa/Edit'
 import PerfilIndex from './pages/admin/perfil/Index'
 import KardexIndex from './pages/admin/kardex/Index'
 import InventarioDashboard from './pages/admin/kardex/Dashboard'
@@ -27,6 +25,15 @@ import UsuariosIndex from './pages/admin/usuarios/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ReporteTurno from './pages/admin/caja/ReporteTurno'
 import ReporteUsuarios from './pages/admin/caja/ReporteUsuarios'
+import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
+import PedidosTienda from './pages/admin/tienda/Pedidos'
+import TiendaPublica from './pages/tienda/[slug]'
+import ProductoDetalle from './pages/tienda/ProductoDetalle'
+import Checkout from './pages/tienda/Checkout'
+import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
+import TiendaLogin from './pages/TiendaLogin'
+import TiendaHome from './pages/TiendaHome'
+import DisenoRubros from './pages/admin/sistema/DisenoRubros'
 
 function App() {
   console.log('App initialized')
@@ -35,6 +42,8 @@ function App() {
       <Alert />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* Login específico para tienda (mismo backend, layout invertido) */}
+        <Route path="/tienda/login" element={<TiendaLogin />} />
         {/* <Route
           path="/dashboard"
           element={
@@ -54,8 +63,9 @@ function App() {
           <Route index element={<AdminIndex />} />
           <Route path="perfil" element={<PerfilIndex />} />
           <Route path="empresas" element={<EmpresasIndex />} />
-          <Route path="empresas/crear" element={<CreateEmpresa />} />
-          <Route path="empresas/editar/:id" element={<EditEmpresa />} />
+          {/* Rutas de crear/editar migradas a modal: redirigir al listado */}
+          <Route path="empresas/crear" element={<Navigate to="/administrador/empresas" replace />} />
+          <Route path="empresas/editar/:id" element={<Navigate to="/administrador/empresas" replace />} />
           <Route path="clientes" element={<ClientesPage />} />
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
           <Route path="contabilidad/reporte-informales" element={<ReporteInformales />} />
@@ -74,7 +84,19 @@ function App() {
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
           <Route path="usuarios" element={<UsuariosIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
+          <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
+          <Route path="tienda/pedidos" element={<PedidosTienda />} />
+          {/* Rutas de ADMIN_SISTEMA */}
+          <Route path="sistema/diseno-rubros" element={<DisenoRubros />} />
         </Route>
+        {/* Rutas de tienda */}
+        {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}
+        <Route path="/tienda/home" element={<TiendaHome />} />
+        {/* Rutas públicas de tienda para clientes finales */}
+        <Route path="/tienda/:slug" element={<TiendaPublica />} />
+        <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalle />} />
+        <Route path="/tienda/:slug/checkout" element={<Checkout />} />
+        <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

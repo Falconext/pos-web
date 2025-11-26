@@ -16,6 +16,8 @@ export type IProduct = {
   empresaId: number
   costoPromedio?: number
   costoUnitario: number
+  imagenUrl?: string
+  imagenesExtra?: string[]
   unidadMedida: {
     id: number
     codigo: string
@@ -35,6 +37,8 @@ export type IFormProduct = {
   descripcion: string,
   categoriaNombre: string
   categoriaId: string | number | null,
+  marcaNombre?: string
+  marcaId?: number | null,
   afectacionNombre: string
   unidadMedidaNombre: string
   estado: string
@@ -47,4 +51,5 @@ export type IFormProduct = {
   unidadMedidaId: number
   costoPromedio?: number
   costoUnitario?: number
+  imagenUrl?: string
 }

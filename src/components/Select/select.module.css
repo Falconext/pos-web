@@ -56,14 +56,14 @@
 .content__listOptions li {
     cursor: pointer;
     position: relative;
-    font-family: 'Mona Sans' !important;
+    font-family: 'Helvetica Neue' !important;
     list-style: none;
     border-radius: 10px;
 }
 
 .content__listOptions li:hover {
     background-color: #F0EEFD;
-    font-family: 'Mona Sans' !important;
+    font-family: 'Helvetica Neue' !important;
     color: rgb(12, 12, 12);
     transition: 0.2s;
 }
@@ -75,7 +75,7 @@
 .content__listOptions p {
     display: block;
     margin: 0;
-    font-family: 'Mona Sans' !important;
+    font-family: 'Helvetica Neue' !important;
     text-transform: uppercase;
     font-size: 12px !important;
     cursor: pointer !important;
@@ -179,7 +179,7 @@
     transition: 0.5s;
     color: #5e6278;
     position: relative;
-    font-family: 'Mona Sans';
+    font-family: 'Helvetica Neue';
     font-weight: 500;
     z-index: 1;
     left: 2px;

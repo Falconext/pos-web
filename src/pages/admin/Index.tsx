@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import Alert from '@/components/Alert'
 import { useDashboardStore, type IDashboardState } from '@/zustand/dashboard'
 import { Icon } from '@iconify/react'
 import DataTable from '@/components/Datatable'
 import moment from 'moment'
-import { ResponsiveContainer, AreaChart as RCAreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart as RCBarChart, Bar } from 'recharts'
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { Calendar } from '@/components/Date'
+import { AreaChart, BarChart, Card, Flex, Grid, Metric, Text, Title } from '@tremor/react'
 
 export default function AdminIndex() {
   const {
@@ -103,104 +101,132 @@ export default function AdminIndex() {
   }, [topSells])
 
   return (
-    <div className="min-h-screen md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
-      <Alert />
+    <div className="min-h-screen px-3 md:px-8 pt-0 md:pt-5 md:mt-0 pb-10 bg-tremor-background-muted">
 
-      <div className="flex justify-start gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row justify-start gap-3 mb-5">
         <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
         <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-4 gap-6 mb-6">
-        <div className="rounded-xl p-4  bg-white">
-          <Icon className="mb-2" icon="iconamoon:invoice-fill" width="20" height="20" color="#3477FF" />
-          <h3 className="font-normal">Comprobantes</h3>
-          <p className="text-2xl font-bold text-[#3477FF]">{totalInvoices}</p>
-        </div>
-        <div className="rounded-xl p-4  bg-white">
-          <Icon className="mb-2" icon="fa:users" width="20" height="20" color="#25CE83" />
-          <h3 className="font-normal">Clientes</h3>
-          <p className="text-2xl font-bold text-[#25CE83]">{totalCLients}</p>
-        </div>
-        <div className="rounded-xl p-4  bg-white">
-          <Icon className="mb-2" icon="fluent:box-32-filled" width="20" height="20" color="#FEAA61" />
-          <h3 className="font-normal">Productos</h3>
-          <p className="text-2xl font-bold text-[#FEAA61]">{totalProducts}</p>
-        </div>
-        <div className="rounded-xl p-4 bg-[linear-gradient(90deg,_#11998E_-6.25%,_#38EF7D_107.5%)] text-white">
-          <Icon className="mb-2" icon="game-icons:receive-money" width="20" height="20" color="#fff" />
-          <h3 className="font-normal">Ingresos</h3>
-          <p className="text-2xl font-bold">S/ {Number(totalAmount || 0).toFixed(2)}</p>
-        </div>
-      </div>
+      <Grid numItemsSm={2} numItemsLg={4} className="gap-4 md:gap-6 mb-6">
+        <Card
+          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
+          decoration="top"
+          decorationColor="indigo"
+        >
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Comprobantes</Text>
+              <Metric>{totalInvoices}</Metric>
+            </div>
+            <Icon className="text-indigo-500" icon="iconamoon:invoice-fill" width="28" height="28" />
+          </Flex>
+        </Card>
+        <Card
+          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
+          decoration="top"
+          decorationColor="emerald"
+        >
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Clientes</Text>
+              <Metric>{totalCLients}</Metric>
+            </div>
+            <Icon className="text-emerald-500" icon="fa:users" width="28" height="28" />
+          </Flex>
+        </Card>
+        <Card
+          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
+          decoration="top"
+          decorationColor="amber"
+        >
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Productos</Text>
+              <Metric>{totalProducts}</Metric>
+            </div>
+            <Icon className="text-amber-500" icon="fluent:box-32-filled" width="28" height="28" />
+          </Flex>
+        </Card>
+        <Card
+          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
+          decoration="top"
+          decorationColor="emerald"
+        >
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Ingresos</Text>
+              <Metric>S/ {Number(totalAmount || 0).toFixed(2)}</Metric>
+            </div>
+            <Icon className="text-emerald-500" icon="game-icons:receive-money" width="28" height="28" />
+          </Flex>
+        </Card>
+      </Grid>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="rounded-xl p-4  bg-white">
-          <h3 className="font-medium mb-4">Ingresos por comprobantes</h3>
-          <div className="h-72">
-            <ChartContainer className="h-full">
-              <ResponsiveContainer>
-                <RCAreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Area type="monotone" dataKey="Boletas" stroke="#60a5fa" fill="#60a5fa" fillOpacity={0.15} />
-                  <Area type="monotone" dataKey="Facturas" stroke="#2563eb" fill="#2563eb" fillOpacity={0.15} />
-                  <Area type="monotone" dataKey="NotasCredito" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} />
-                  <Area type="monotone" dataKey="NotasDebito" stroke="#ef4444" fill="#ef4444" fillOpacity={0.15} />
-                </RCAreaChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </div>
-        <div className="rounded-xl p-4  bg-white">
-          <h3 className="font-medium mb-4">Ingresos por método de pago</h3>
-          <div className="h-72">
-            <ChartContainer className="h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RCBarChart data={chartDataPayments} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="Yape" fill="#8b5cf6" />
-                  <Bar dataKey="Plin" fill="#06b6d4" />
-                  <Bar dataKey="Efectivo" fill="#10b981" />
-                </RCBarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </div>
-      </div>
+      <Grid numItemsSm={1} numItemsLg={2} className="gap-4 md:gap-6">
+        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
+          <Title>Ingresos por comprobantes</Title>
+          <AreaChart
+            className="mt-4 h-64 md:h-72"
+            data={chartData}
+            index="date"
+            categories={["Boletas", "Facturas", "NotasCredito", "NotasDebito"]}
+            curveType="monotone"
+            showLegend
+            showGridLines
+            showAnimation
+            yAxisWidth={64}
+            valueFormatter={(value: number) =>
+              `S/ ${Number(value || 0).toLocaleString("es-PE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`
+            }
+          />
+        </Card>
+        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
+          <Title>Ingresos por método de pago</Title>
+          <BarChart
+            className="mt-4 h-64 md:h-72"
+            data={chartDataPayments}
+            index="date"
+            categories={["Yape", "Plin", "Efectivo"]}
+            showLegend
+            showGridLines
+            showAnimation
+            yAxisWidth={64}
+            valueFormatter={(value: number) =>
+              `S/ ${Number(value || 0).toLocaleString("es-PE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`
+            }
+          />
+        </Card>
+      </Grid>
 
-      <div className="grid xl:grid-cols-2 gap-6 mt-8">
-        <div className="rounded-xl p-4  bg-white">
-          <h3 className="font-medium">Top de productos más vendidos en tu empresa</h3>
-          <div className="mt-4">
+      <Grid numItemsSm={1} numItemsLg={2} className="gap-4 md:gap-6 mt-6 md:mt-8">
+        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
+          <Title>Top de productos más vendidos</Title>
+          <div className="mt-4 overflow-x-auto">
             <DataTable
               bodyData={topTableData}
               headerColumns={["Codigo", "Descripcion", "Stock", "Cant. Vendido"]}
             />
           </div>
-        </div>
-        <div className="rounded-xl p-4  bg-white">
-          <h3 className="font-medium">Nuevos clientes por fecha</h3>
-          <div className="h-72 mt-6">
-            <ChartContainer className="h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RCBarChart data={chartDataClients} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="nuevos" fill="#64748b" />
-                </RCBarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </div>
-      </div>
+        </Card>
+        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
+          <Title>Nuevos clientes por fecha</Title>
+          <BarChart
+            className="mt-6 h-64 md:h-72"
+            data={chartDataClients}
+            index="date"
+            categories={["nuevos"]}
+            colors={["slate"]}
+            valueFormatter={(value: number) => `${Number(value || 0).toFixed(0)}`}
+          />
+        </Card>
+      </Grid>
     </div>
   )
 }

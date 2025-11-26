@@ -1,13 +1,11 @@
 'use client';
-import {  motion } from 'framer-motion';
-import Svg from "../Svg";
-import { Icons } from "../Svg/iconsPack";
-import styles from './toast.module.css';
+import { motion } from 'framer-motion';
+import { Icon } from '@iconify/react';
 import { useEffect } from 'react';
 import useAlertStore from '@/zustand/alert';
 
 interface IAlertProps {
-   id: number; // ID único de la alerta
+   id: number;
    title?: string;
    message: string | string[];
    type: string;
@@ -17,56 +15,100 @@ const Toast = ({ id, title, message, type }: IAlertProps) => {
    const { removeAlert } = useAlertStore();
 
    const handleClose = () => {
-      removeAlert(id); // Eliminar la alerta del store
+      removeAlert(id);
    };
 
    useEffect(() => {
-      // Solo establecer el temporizador para alertas de tipo 'success' o 'error'
-      if (type === 'success' || type === 'error') {
+      if (type === 'success' || type === 'error' || type === 'warning') {
           const timer = setTimeout(() => {
               removeAlert(id);
-          }, 4000); // 4 segundos
-
-          // Limpiar el temporizador si el componente se desmonta
+          }, 4000);
           return () => clearTimeout(timer);
       }
-      // Si el tipo es 'notification', no se establece el temporizador
-  }, [id, removeAlert, type]);
+   }, [id, removeAlert, type]);
+
+   // Configuración de estilos según el tipo (mismos colores SOLO para iconos)
+  const getTypeStyles = () => {
+     switch (type) {
+        case 'success':
+           return {
+              icon: 'mdi:check-circle',
+              iconColor: 'text-green-500',
+              ringColor: 'ring-green-500/30',
+              titleColor: 'text-white',
+              messageColor: 'text-gray-300'
+           };
+        case 'error':
+           return {
+              icon: 'mdi:alert-circle',
+              iconColor: 'text-red-500',
+              ringColor: 'ring-red-500/30',
+              titleColor: 'text-white',
+              messageColor: 'text-gray-300'
+           };
+        case 'warning':
+           return {
+              icon: 'mdi:alert',
+              iconColor: 'text-yellow-500',
+              ringColor: 'ring-yellow-500/30',
+              titleColor: 'text-white',
+              messageColor: 'text-gray-300'
+           };
+        case 'notification':
+        default:
+           return {
+              icon: 'mdi:information',
+              iconColor: 'text-blue-500',
+              ringColor: 'ring-blue-500/30',
+              titleColor: 'text-white',
+              messageColor: 'text-gray-300'
+           };
+     }
+  };
+
+   const styles = getTypeStyles();
 
    return (
-      <motion.div
-         initial={{ opacity: 0, y: -30 }}
-         animate={{ opacity: 1, y: 0 }}
-         exit={{ opacity: 0, y: -30 }} // Animación al salir
-         className={`${styles.wrapper__toast} ${styles[type]}`}
-      >
-         <div className={styles.content__toast}>
-            {type === "success" && <Svg icon={Icons.msgSuccess} />}
-            {type === "error" && <Svg icon={Icons.msgError} />}
-            {type === "notification" && <Svg icon={Icons.notification} />}
+     <motion.div
+        initial={{ opacity: 0, x: 300 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 300 }}
+        className={`rounded-2xl shadow-xl p-4 pr-5 min-w-[320px] max-w-md mb-3 bg-[#121212]/95 backdrop-blur border border-white/5`}
+     >
+        <div className="flex items-start gap-3">
+           {/* Icono */}
+           <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-white/5 ${styles.ringColor} ring-4`}>
+              <Icon icon={styles.icon} className={`w-6 h-6 ${styles.iconColor}`} />
+           </div>
 
-            <div>
-               <div className={styles.header__toast}>
-                  <h6>{title}</h6>
-                  <Svg onClick={handleClose} icon={Icons.close} />
-               </div>
-               <div className={styles.message}>
-                  {typeof message === 'string' ? (
-                     message
-                  ) : (
-                     <ul>
-                        {message.map((text, index) => (
-                           <li key={index}>
-                              <p>{text}</p>
-                           </li>
-                        ))}
-                     </ul>
-                  )}
-               </div>
-            </div>
-         </div>
-      </motion.div>
-   );
+           {/* Contenido */}
+           <div className="flex-1 min-w-0">
+              <h3 className={`font-bold text-base ${styles.titleColor} mb-1`}>
+                 {title}
+              </h3>
+              <div className={`text-sm ${styles.messageColor}`}>
+                 {typeof message === 'string' ? (
+                    <p>{message}</p>
+                 ) : (
+                    <ul className="list-disc list-inside space-y-1">
+                       {message.map((text, index) => (
+                          <li key={index}>{text}</li>
+                       ))}
+                    </ul>
+                 )}
+              </div>
+           </div>
+
+           {/* Botón cerrar */}
+           <button
+              onClick={handleClose}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors"
+           >
+              <Icon icon="mdi:close" className="w-5 h-5" />
+           </button>
+        </div>
+     </motion.div>
+  );
 };
 
 export default Toast;

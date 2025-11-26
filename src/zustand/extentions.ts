@@ -129,17 +129,16 @@ export const useExtentionsStore = create<IExtentionsState>()(devtools((set, _get
     },
     getPlanes: async () => {
         try {
-            const resp : any = await get(`extensiones/planes`);
-            if (resp.code === 1) {
-                set({
-                    planes: resp.data
-                }, false, "GET_PLANES");
-            } else {
-                set({
-                    planes: []
-                });
-            }
+            const resp: any = await get(`extensiones/planes`);
+            // Soportar ambos formatos: { code:1, data: [...] } o directamente [...]
+            const planesResp = Array.isArray(resp)
+              ? resp
+              : (resp && resp.code === 1 && Array.isArray(resp.data))
+                ? resp.data
+                : [];
+            set({ planes: planesResp }, false, "GET_PLANES");
         } catch (error) {
+            set({ planes: [] }, false, "GET_PLANES_ERROR");
         }
     },
 })));

@@ -230,7 +230,7 @@ const TableSkeleton = ({ arrayData }: any) => {
                         <div>
                             <img src="/svg/nodata.svg" alt="" />
                             <div>
-                                <p>Al parecer no hemos encontrado un registro de dicha busqueda, intentelo nuevamente al hacer una nueva busqueda.</p>
+                                <p className='font-bold'>Al parecer no hemos encontrado un registro de dicha busqueda, intentelo nuevamente al hacer una nueva busqueda.</p>
                             </div>
                         </div>
 

@@ -30,11 +30,11 @@ export const useAuthStore = create<IAuthState>()(
         if (resp.code === 1) {
           set({ auth: resp.data, success: true, isLoading: false });
         } else {
-
+          set({ auth: null, success: false, isLoading: false });
         }
       } catch (error) {
         console.error("Error en initAuth:", error);
-
+        set({ auth: null, success: false, isLoading: false });
       }
     };
 
@@ -90,9 +90,12 @@ export const useAuthStore = create<IAuthState>()(
           console.log("Me response:", resp);
           if (resp.code === 1) {
             set({ auth: resp.data, success: true, isLoading: false });
-          } 
+          } else {
+            set({ auth: null, success: false, isLoading: false });
+          }
         } catch (error) {
           console.error("Error en me:", error);
+          set({ isLoading: false });
         }
       },
       logout: () => {

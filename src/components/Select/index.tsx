@@ -31,6 +31,7 @@ interface IProps {
     left?: boolean,
     top?: boolean,
     right?: boolean,
+    inputClassName?: string,
 }
 
 interface IOption {
@@ -54,6 +55,7 @@ const Select = ({
     left,
     top,
     right,
+    inputClassName,
 }: IProps) => {
 
     const [valueOptions, setValueOptions] = useState<string>(defaultValue || value || "");
@@ -171,6 +173,7 @@ const Select = ({
                             isLabel
                             searching={isSearch}
                             disabled={disabled}
+                            className={inputClassName}
                         />
                     </div>
                     {

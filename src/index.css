@@ -1,6 +1,14 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Inter+Tight:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&family=Mona+Sans:ital,wght@0,200..900;1,200..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+@import url('./assets/fontsIntall/stylesheet.css');
+
+:root {
+  /* Default font family variable to allow easy override */
+  --font-sans: 'Helvetica Now Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 html {
   scroll-behavior: smooth;
@@ -12,7 +20,7 @@ html {
 }
 
 body {
-  font-family: "Mona Sans",system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   background-color: #f3f4f6;
 }
 

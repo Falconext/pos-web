@@ -38,7 +38,7 @@ const EditEmpresa = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { success } = useAlertStore();
-  
+
   const {
     empresa,
     loading,
@@ -106,7 +106,7 @@ const EditEmpresa = () => {
       console.log('Datos de empresa cargados:', empresa);
       console.log('Rubro:', empresa.rubro);
       console.log('Plan:', empresa.plan);
-      
+
       setFormData({
         id: empresa.id,
         ruc: empresa.ruc,
@@ -165,7 +165,7 @@ const EditEmpresa = () => {
   // Manejar cambios en inputs
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -208,7 +208,7 @@ const EditEmpresa = () => {
       }));
     }
   };
-  
+
   // Manejar cambio de tipo de empresa
   const handleTipoEmpresaChange = (id: any, value: string) => {
     setFormData(prev => ({
@@ -229,18 +229,18 @@ const EditEmpresa = () => {
         }));
         return;
       }
-      
+
       // Crear canvas para redimensionar la imagen
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
+
       img.onload = () => {
         // Establecer dimensiones máximas
         const maxWidth = 300;
         const maxHeight = 300;
         let { width, height } = img;
-        
+
         // Redimensionar manteniendo aspect ratio
         if (width > height) {
           if (width > maxWidth) {
@@ -253,14 +253,14 @@ const EditEmpresa = () => {
             height = maxHeight;
           }
         }
-        
+
         canvas.width = width;
         canvas.height = height;
-        
+
         // Limpiar y dibujar imagen redimensionada preservando transparencia
         ctx?.clearRect(0, 0, width, height);
         ctx?.drawImage(img, 0, 0, width, height);
-        
+
         // Convertir a base64 en PNG para mantener el canal alfa (transparencia)
         const base64String = canvas.toDataURL('image/png');
         setLogoPreview(base64String);
@@ -268,7 +268,7 @@ const EditEmpresa = () => {
           ...prev,
           logo: base64String
         }));
-        
+
         // Limpiar error si existía
         if (errors.logo) {
           setErrors(prev => ({
@@ -277,7 +277,7 @@ const EditEmpresa = () => {
           }));
         }
       };
-      
+
       img.src = URL.createObjectURL(file);
     }
   };
@@ -285,7 +285,7 @@ const EditEmpresa = () => {
   // Enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -345,8 +345,8 @@ const EditEmpresa = () => {
             <Icon icon="material-symbols:arrow-back" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Editar Empresa</h1>
-            <p className="text-gray-600">Modifica los datos de la empresa: {empresa.razonSocial}</p>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2 ml-4">Editar Empresa</h1>
+            <p className="text-gray-600 ml-4">Modifica los datos de la empresa: {empresa.razonSocial}</p>
           </div>
         </div>
 
@@ -361,8 +361,8 @@ const EditEmpresa = () => {
           {/* Datos de la Empresa */}
           <div className="bg-gray-50 p-6 rounded-lg">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos de la Empresa</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <InputPro
                   name="ruc"
@@ -409,7 +409,7 @@ const EditEmpresa = () => {
                   withLabel
                 />
               </div>
-              
+
               <div>
                 <Select
                   name="tipoEmpresa"
@@ -445,18 +445,6 @@ const EditEmpresa = () => {
                   onChange={handleUbigeoChange}
                   error={errors.ubigeo}
                   isSearch
-                  withLabel
-                />
-              </div>
-
-              <div>
-                <Select
-                  name="planId"
-                  label="Plan de Suscripción"
-                  options={planesOptions}
-                  value={planesOptions.find((p: any) => p.id === formData.planId)?.value || ''}
-                  onChange={handleSelectChange}
-                  error={errors.planId}
                   withLabel
                 />
               </div>
@@ -515,7 +503,7 @@ const EditEmpresa = () => {
               <p className="text-sm text-gray-600 mb-4">
                 Datos proporcionados por el proveedor SUNAT para facturación electrónica.
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <InputPro
@@ -528,7 +516,7 @@ const EditEmpresa = () => {
                     placeholder="Token para integración SUNAT"
                   />
                 </div>
-                
+
                 <div>
                   <InputPro
                     name="providerId"
@@ -555,17 +543,63 @@ const EditEmpresa = () => {
               {empresa?.plan?.limiteUsuarios && (
                 <p><strong>Límite de usuarios:</strong> {empresa?.plan?.limiteUsuarios}</p>
               )}
-              <p><strong>Estado:</strong> 
-                <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                  empresa?.estado === 'ACTIVO' 
-                    ? 'bg-green-100 text-green-800' 
+              <p><strong>Estado:</strong>
+                <span className={`ml-2 px-2 py-1 rounded text-xs ${empresa?.estado === 'ACTIVO'
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
-                }`}>
+                  }`}>
                   {empresa.estado}
                 </span>
               </p>
             </div>
           </div>
+
+          {/* Tarjetas de planes (solo precios) */}
+          {planes && planes.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-md font-semibold text-[#0F172A] mb-3">Planes disponibles</h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                {planes.map((plan: any) => {
+                  const isCurrent = plan.id === formData.planId;
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 ${isCurrent
+                          ? 'border-[#4F46E5] shadow-[0_0_0_1px_rgba(79,70,229,0.4)]'
+                          : 'border-gray-200 hover:shadow-md'
+                        }`}
+                    >
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.14em] text-[#9CA3AF] mb-1">
+                          {plan.nombre}
+                        </p>
+                        <p className="text-2xl font-semibold text-[#111827] mb-1">
+                          S/ {plan.costo}
+                          <span className="text-sm font-normal text-[#6B7280]"> / mensual</span>
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={`mt-4 w-full h-10 rounded-full text-sm font-semibold transition-colors ${isCurrent
+                            ? 'bg-[#1D4ED8] text-white'
+                            : 'bg-white text-[#1D4ED8] border border-[#1D4ED8] hover:bg-[#1D4ED8] hover:text-white'
+                          }`}
+                        onClick={() =>
+                          handleSelectChange(
+                            plan.id,
+                            `${plan.nombre} - S/ ${plan.costo}`,
+                            'planId'
+                          )
+                        }
+                      >
+                        {isCurrent ? 'Plan actual' : 'Seleccionar plan'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Botones */}
           <div className="flex justify-end space-x-4">

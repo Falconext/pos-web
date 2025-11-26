@@ -177,26 +177,19 @@ const ComprobantesInformales = () => {
 
     useEffect(() => {
         resetInvoice();
+        return () => {
+            resetInvoice();
+        };
     }, [])
+
+    const [shouldPrint, setShouldPrint] = useState(false);
 
     const handleGetReceipt = async (data: any) => {
         console.log(data);
         setComprobante(data.comprobante);
+        setShouldPrint(true);
         await getInvoice(data.id);
     };
-
-    useEffect(() => {
-        if (invoice !== null) {
-            setTimeout(() => {
-                if (componentRef?.current) {
-                    console.log("Componente imprimible encontrado, iniciando impresión");
-                    printFn();
-                } else {
-                    console.error("No se encontró contenido imprimible, revisa el renderizado de InvoicePrint");
-                }
-            }, 500); // Aumenté el retraso a 200ms para dar más tiempo al renderizado
-        }
-    }, [invoice])
 
     const handleAnular = (data: any) => {
         console.log(data);
@@ -373,6 +366,23 @@ const ComprobantesInformales = () => {
             }
           }`,
     });
+
+    useEffect(() => {
+        if (!shouldPrint || !invoice) return;
+
+        const timer = setTimeout(() => {
+            if (componentRef?.current) {
+                console.log("Componente imprimible encontrado, iniciando impresión");
+                printFn();
+            } else {
+                console.error("No se encontró contenido imprimible, revisa el renderizado de InvoicePrint");
+            }
+            setShouldPrint(false);
+            resetInvoice();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [invoice, shouldPrint, resetInvoice]);
 
     const handleDate = (date: string, name: string) => {
         if (!moment(date, 'DD/MM/YYYY', true).isValid()) {

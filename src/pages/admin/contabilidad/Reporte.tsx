@@ -60,17 +60,15 @@ const ReportesComprobantes = () => {
 
     return (
         <div>
-            <div className="md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
+            <div className="px-3 md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
                 {/* Estadísticas */}
-                <div className="mb-6 flex justify-between items-center">
-                    {/* Gráficos */}
-                    <div className="">
-                        <div className="flex justify-start gap-3 mb-0">
-                            <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
-                            <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
-                        </div>
+                <div className="mb-6 space-y-4 md:space-y-0 md:flex md:justify-between md:items-center">
+                    {/* Filtros de fecha */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
+                        <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
                     </div>
-                    <div className="top-3 relative">
+                    <div className="w-full sm:w-auto">
                         <Button
                             color="success"
                             onMouseEnter={() => setIsHoveredExp(true)}
@@ -80,12 +78,13 @@ const ReportesComprobantes = () => {
                                     empresaId: auth?.empresaId,
                                     fechaInicio: fechaInicio,
                                     fechaFin: fechaFin
-                                }); // Llama a la acción de exportación
+                                });
                             }}
+                            className="w-full sm:w-auto"
                         >
                             <Icon
-                                className="mr-4"
-                                color={isHoveredExp ? '#fff' : '#22C55D'} // Cambia el color dinámicamente
+                                className="mr-2"
+                                color={isHoveredExp ? '#fff' : '#22C55D'}
                                 icon="icon-park-outline:excel"
                                 width="20"
                                 height="20"
@@ -115,31 +114,31 @@ const ReportesComprobantes = () => {
                                 </div>
                                 {
                                     resumenReporte !== null && (
-                                        <div className="flex justify-end mt-5 mb-5 pr-[24px]">
-                                            <div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Boletas:</label><strong className="text-[13px]">S/ {resumenReporte.totalBoletas.toFixed(2)}</strong>
+                                        <div className="mt-5 mb-5 px-4 md:flex md:justify-end md:pr-[24px]">
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Boletas:</label><strong className="text-[13px]">S/ {resumenReporte.totalBoletas.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Facturas:</label><strong className="text-[13px]">S/ {resumenReporte.totalFacturas.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Facturas:</label><strong className="text-[13px]">S/ {resumenReporte.totalFacturas.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Nota de credito:</label><strong className="text-[13px]">S/ {resumenReporte.totalNotasCredito.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Nota de crédito:</label><strong className="text-[13px]">S/ {resumenReporte.totalNotasCredito.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Nota de debito:</label><strong className="text-[13px]">S/ {resumenReporte.totalNotasDebito.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Nota de débito:</label><strong className="text-[13px]">S/ {resumenReporte.totalNotasDebito.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Total Descuento:</label><strong className="text-[13px]">S/ {resumenReporte.totalDescuentos.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Total Descuento:</label><strong className="text-[13px]">S/ {resumenReporte.totalDescuentos.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Total Operacion gravadas:</label><strong className="text-[13px]">S/ {resumenReporte.totalGravadas.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Total Oper. gravadas:</label><strong className="text-[13px]">S/ {resumenReporte.totalGravadas.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Total IGV:</label><strong className="text-[13px]">S/ {resumenReporte.totalIGV.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start">
+                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Total IGV:</label><strong className="text-[13px]">S/ {resumenReporte.totalIGV.toFixed(2)}</strong>
                                                 </div>
-                                                <div className="flex">
-                                                    <label className="block w-[200px] text-[14px]" htmlFor="">Total:</label><strong className="text-[13px]">S/ {resumenReporte.totalVenta.toFixed(2)}</strong>
+                                                <div className="flex justify-between md:justify-start border-t pt-2 mt-2">
+                                                    <label className="block w-[180px] md:w-[200px] text-[14px] md:text-[15px] font-semibold" htmlFor="">Total:</label><strong className="text-[14px] md:text-[15px]">S/ {resumenReporte.totalVenta.toFixed(2)}</strong>
                                                 </div>
                                             </div>
                                         </div>

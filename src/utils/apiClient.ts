@@ -37,9 +37,23 @@ apiClient.interceptors.response.use(
     const originalReq = err.config
     const status = err.response?.status
     const errorCode = err.response?.data?.code
+    const url = (originalReq?.url || '') as string
+    const isAuthLogin = url.includes('/auth/login')
+    const isAuthRefresh = url.includes('/auth/refresh')
+
+    // Never try to refresh for authentication endpoints
+    if (isAuthLogin || isAuthRefresh) {
+      return Promise.reject(err)
+    }
 
     if (!originalReq._retry && (status === 401 || errorCode === 21)) {
       originalReq._retry = true
+
+      const storedRefresh = localStorage.getItem('REFRESH_TOKEN')
+      if (!storedRefresh) {
+        // No refresh token available: reject without redirect to avoid page reloads on login screen
+        return Promise.reject(err)
+      }
 
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -52,19 +66,20 @@ apiClient.interceptors.response.use(
 
       isRefreshing = true
       try {
-        const refreshToken = localStorage.getItem('REFRESH_TOKEN')
-        if (!refreshToken) throw new Error('No refresh token stored')
+        const refreshToken = storedRefresh
 
         const { data: refreshResp }: any = await axios.post(
           `${BASE_URL}/auth/refresh`,
           { refreshToken }
         )
 
-        if (refreshResp.code !== 1) {
+        // Support both wrapped and plain responses
+        const payload = refreshResp?.data && refreshResp?.code !== undefined ? refreshResp.data : refreshResp
+        if (!payload?.accessToken || !payload?.refreshToken) {
           throw new Error('Refresh failed')
         }
 
-        const { accessToken, refreshToken: newRt } = refreshResp.data
+        const { accessToken, refreshToken: newRt } = payload
         localStorage.setItem('ACCESS_TOKEN', accessToken)
         localStorage.setItem('REFRESH_TOKEN', newRt)
 
@@ -75,8 +90,13 @@ apiClient.interceptors.response.use(
 
       } catch (refreshError) {
         processQueue(refreshError, null)
-        useAuthStore.getState().logout()
-        window.location.href = '/login'
+        // Only force logout+redirect if user had tokens stored
+        const hadAccess = !!localStorage.getItem('ACCESS_TOKEN')
+        const hadRefresh = !!localStorage.getItem('REFRESH_TOKEN')
+        if (hadAccess || hadRefresh) {
+          useAuthStore.getState().logout()
+          window.location.href = '/login'
+        }
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

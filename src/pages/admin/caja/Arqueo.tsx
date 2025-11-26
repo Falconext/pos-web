@@ -5,6 +5,9 @@ import Alert from '../../../components/Alert';
 import DataTable from '../../../components/Datatable';
 import { useAccountingStore } from '../../../zustand/accounting';
 import { useAuthStore } from '../../../zustand/auth';
+import { Calendar } from '@/components/Date';
+import Button from '@/components/Button';
+import moment from 'moment';
 
 const ArqueoCaja: React.FC = () => {
   const {
@@ -23,6 +26,7 @@ const ArqueoCaja: React.FC = () => {
   const { arqueoData, getAllArqueo } = useAccountingStore();
   const { auth } = useAuthStore();
   const [expandedTurnos, setExpandedTurnos] = useState<Set<string>>(new Set());
+  const [isHoveredExp, setIsHoveredExp] = useState(false);
 
   useEffect(() => {
     obtenerArqueoCaja();
@@ -44,8 +48,16 @@ const ArqueoCaja: React.FC = () => {
     }
   }, [error, clearError]);
 
-  const handleFilterChange = (key: string, value: string) => {
-    setLocalFilters(prev => ({ ...prev, [key]: value }));
+  const handleDate = (date: string, name: string) => {
+    if (!moment(date, 'DD/MM/YYYY', true).isValid()) {
+      console.error(`Fecha inválida: ${date} para ${name}`);
+      return;
+    }
+    if (name === 'fechaInicio') {
+      setLocalFilters(prev => ({ ...prev, fechaInicio: moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD') }));
+    } else if (name === 'fechaFin') {
+      setLocalFilters(prev => ({ ...prev, fechaFin: moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD') }));
+    }
   };
 
   const applyFilters = () => {
@@ -125,27 +137,8 @@ const ArqueoCaja: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen md:px-8 pt-0 md:pt-5 pb-10">
+    <div className="min-h-screen px-3 md:px-8 pt-0 md:pt-5 pb-10">
       <Alert />
-      
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Arqueo de Caja</h1>
-          <p className="text-gray-600">
-            Analiza los ingresos, movimientos de caja y arqueos del período
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Icon icon="material-symbols:calculate" className="h-5 w-5" />
-          <span className="text-sm font-medium">
-            {arqueoCaja && arqueoCaja.fechaInicio && arqueoCaja.fechaFin 
-              ? `${formatDate(arqueoCaja.fechaInicio)} - ${formatDate(arqueoCaja.fechaFin)}` 
-              : 'Sin período'}
-          </span>
-        </div>
-      </div>
-
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg mb-6">
           <div className="flex items-center">
@@ -156,53 +149,50 @@ const ArqueoCaja: React.FC = () => {
       )}
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl p-6 mb-6">
-        <h3 className="flex items-center gap-2 font-bold text-lg mb-4">
-          <Icon icon="material-symbols:search" className="h-5 w-5" />
+      <div className="bg-white rounded-2xl shadow-md p-5 md:p-6 mb-6">
+        <h3 className="flex items-center gap-2 font-bold text-lg mb-5">
+          <Icon icon="material-symbols:filter-alt" className="h-5 w-5 text-blue-600" />
           Filtros de Período
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Fecha Inicio</label>
-            <input
-              type="date"
-              value={localFilters.fechaInicio}
-              onChange={(e) => handleFilterChange('fechaInicio', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg"
-            />
+            <Calendar name="fechaInicio" onChange={handleDate} text="Fecha Inicio" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Fecha Fin</label>
-            <input
-              type="date"
-              value={localFilters.fechaFin}
-              onChange={(e) => handleFilterChange('fechaFin', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg"
-            />
+            <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
           </div>
           <div className="flex items-end gap-2">
-            <button 
-              onClick={applyFilters} 
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+            <Button 
+              onClick={applyFilters}
+              color="secondary"
+              className="flex-1"
             >
+              <Icon icon="material-symbols:search" className="mr-2" width="18" />
               Consultar
-            </button>
-            <button 
+            </Button>
+            <Button 
               onClick={resetFilters}
-              className="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+              color="lila"
+              outline
             >
-              Limpiar
-            </button>
-          </div>
-          <div className="flex items-end">
-            <button 
+              <Icon icon="material-symbols:refresh" width="18" />
+            </Button>
+                        <Button
               onClick={handleExport}
               disabled={loading || !arqueoCaja}
-              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              color="success"
+              className="w-full"
+              onMouseEnter={() => setIsHoveredExp(true)}
+              onMouseLeave={() => setIsHoveredExp(false)}
             >
-              <Icon icon="material-symbols:file-download" className="h-4 w-4 mr-2 inline" />
-              Exportar Excel
-            </button>
+              <Icon
+                className="mr-2"
+                color={isHoveredExp ? '#fff' : '#00C851'}
+                icon="icon-park-outline:excel"
+                width="18"
+              />
+              Exportar
+            </Button>
           </div>
         </div>
       </div>
@@ -238,10 +228,10 @@ const ArqueoCaja: React.FC = () => {
                         />
                         <div className="text-left">
                           <h4 className="font-bold text-lg">
-                            {turno === 'MAÑANA' && '🌅 Turno Mañana (6:00 - 14:00)'}
-                            {turno === 'TARDE' && '☀️ Turno Tarde (14:00 - 22:00)'}
-                            {turno === 'NOCHE' && '🌙 Turno Noche (22:00 - 6:00)'}
-                            {turno === 'SIN_TURNO' && '📋 Sin Turno Asignado'}
+                            {turno === 'MAÑANA' && 'Turno Mañana (6:00 - 14:00)'}
+                            {turno === 'TARDE' && 'Turno Tarde (14:00 - 22:00)'}
+                            {turno === 'NOCHE' && 'Turno Noche (22:00 - 6:00)'}
+                            {turno === 'SIN_TURNO' && 'Sin Turno Asignado'}
                           </h4>
                           <p className="text-sm text-gray-600">
                             {movimientos.length} comprobantes

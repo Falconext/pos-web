@@ -21,7 +21,7 @@
     box-sizing: border-box;
     border: none;
     color: #515C6C;
-    font-family: 'Mona Sans';
+    font-family: 'Helvetica Neue', Arial, sans-serif;
     text-transform: uppercase;
     font-size: 12px;
     font-weight: 600;
@@ -38,7 +38,7 @@
     vertical-align: middle;
     z-index: 9999999;
     color: #686868;
-    font-family: 'Mona Sans';
+    font-family: 'Helvetica Neue';
     white-space: nowrap;
     font-weight: 500;
     text-transform: uppercase;
@@ -93,7 +93,7 @@
     padding: 5px 10px;
     background: #e5edf5;
     border: 1px solid #3585F9;
-    font-family: 'Mona Sans';
+    font-family: 'Helvetica Neue';
     border-radius: 10px;
     color: #3585F9;
     font-size: 11px !important;
@@ -103,7 +103,7 @@
 .successOrder {
     padding: 4px 10px;
     background: #eefff1;
-    font-family: 'Mona Sans';
+    font-family: 'Helvetica Neue';
     border: 1px solid #3eab50;
     border-radius: 10px;
     color: #3eab50;
@@ -116,7 +116,7 @@
     background: #FFF0EA;
     border: 1px solid #FF0054;
     border-radius: 10px;
-    font-family: 'Mona Sans';
+    font-family: 'Helvetica Neue';
     font-size: 11px !important;
     color: #ff0054;
     font-weight: 600 !important;

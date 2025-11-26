@@ -21,25 +21,25 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
 
     return (
         <AutoScrollTable>
-        <div className="shadow-md rounded-lg">
-            {
-                data?.length > 0 ?
-                    <table className={styles.table} id={idTable} style={{ backgroundColor: color }}>
-                        <TableHeader columns={headerColumns} colorFont={colorFont} onSort={handleSort} actions={actions} />
-                        <TableBody
-                            formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} />
-                    </table>
-                    : <div className={styles.not__data}>
-                        <div className='text-center mx-auto mt-48'>
-                            {/* <img className='text-center mx-auto' src={""} alt="" /> */}
-                            <div>
-                                <p>Al parecer no hemos encontrado un registro de dicha busqueda, intentelo nuevamente al hacer una nueva busqueda.</p>
+            <div className="shadow-md rounded-lg">
+                {
+                    data?.length > 0 ?
+                        <table className={styles.table} id={idTable} style={{ backgroundColor: color }}>
+                            <TableHeader columns={headerColumns} colorFont={colorFont} onSort={handleSort} actions={actions} />
+                            <TableBody
+                                formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} />
+                        </table>
+                        : <div className={styles.not__data}>
+                            <div className='text-center mx-auto mt-48'>
+                                {/* <img className='text-center mx-auto' src={""} alt="" /> */}
+                                <div>
+                                    <p className='font-bold'>Al parecer no hemos encontrado un registro de dicha búsqueda, inténtelo nuevamente al hacer una nueva búsqueda.</p>
+                                </div>
                             </div>
-                        </div>
 
-                    </div>
-            }
-        </div>
+                        </div>
+                }
+            </div>
         </AutoScrollTable>
     );
 };

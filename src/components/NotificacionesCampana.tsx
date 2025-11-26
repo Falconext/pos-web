@@ -67,12 +67,24 @@ const NotificacionesCampana: React.FC = () => {
   const getTipoIcon = (tipo: string) => {
     switch (tipo) {
       case 'CRITICAL':
-        return { icon: 'material-symbols:error', color: 'text-red-500' };
+        return { 
+          icon: 'mdi:alert-circle', 
+          iconColor: 'text-red-600',
+          gradient: 'from-red-50 to-red-100'
+        };
       case 'WARNING':
-        return { icon: 'material-symbols:warning', color: 'text-yellow-500' };
+        return { 
+          icon: 'mdi:alert', 
+          iconColor: 'text-yellow-600',
+          gradient: 'from-yellow-50 to-yellow-100'
+        };
       case 'INFO':
       default:
-        return { icon: 'material-symbols:info', color: 'text-blue-500' };
+        return { 
+          icon: 'mdi:information', 
+          iconColor: 'text-blue-600',
+          gradient: 'from-blue-50 to-blue-100'
+        };
     }
   };
 
@@ -106,9 +118,9 @@ const NotificacionesCampana: React.FC = () => {
 
       {/* Panel de Notificaciones */}
       {mostrarPanel && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-[420px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-[650px] flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-t-2xl">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Notificaciones</h3>
@@ -189,7 +201,7 @@ const NotificacionesCampana: React.FC = () => {
           </div>
 
           {/* Lista de Notificaciones */}
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 p-3">
             {loading && notificaciones?.length === 0 ? (
               <div className="flex items-center justify-center py-12">
                 <Icon icon="line-md:loading-loop" className="h-8 w-8 text-blue-500" />
@@ -202,40 +214,43 @@ const NotificacionesCampana: React.FC = () => {
                 <p className="text-gray-500 text-center">No tienes notificaciones</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
-                {notificaciones?.map((notificacion) => {
-                  const { icon, color } = getTipoIcon(notificacion.tipo);
+              <div className="space-y-3">
+                {notificaciones?.slice(0, 5).map((notificacion) => {
+                  const { icon, iconColor, gradient } = getTipoIcon(notificacion.tipo);
                   
                   return (
                     <div
                       key={notificacion.id}
                       onClick={() => handleNotificacionClick(notificacion)}
-                      className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                        !notificacion.leida ? 'bg-blue-50' : ''
-                      }`}
+                      className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 ${!notificacion.leida ? 'ring-2 ring-blue-300' : ''}`}
                     >
-                      <div className="flex gap-3">
-                        {/* Icono */}
-                        <div className={`flex-shrink-0 ${color}`}>
-                          <Icon icon={icon} className="h-6 w-6" />
-                        </div>
-
-                        {/* Contenido */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="text-sm font-semibold text-gray-900 truncate">
+                      {/* Header con degradado */}
+                      <div className={`bg-gradient-to-r ${gradient} p-3`}>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <Icon icon={icon} className={`h-4 w-4 ${iconColor}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-gray-900 line-clamp-1">
                               {notificacion.titulo}
                             </h4>
                             {!notificacion.leida && (
-                              <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-1"></span>
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500 text-white mt-0.5">
+                                Nueva
+                              </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                            {notificacion.mensaje}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            {formatFecha(notificacion.creadoEn)}
-                          </p>
+                        </div>
+                      </div>
+
+                      {/* Body blanco */}
+                      <div className="p-3 bg-white">
+                        <p className="text-xs text-gray-700 line-clamp-2 mb-2">
+                          {notificacion.mensaje}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Icon icon="material-symbols:schedule" className="h-3 w-3" />
+                          <span>{formatFecha(notificacion.creadoEn)}</span>
                         </div>
                       </div>
                     </div>
@@ -247,15 +262,15 @@ const NotificacionesCampana: React.FC = () => {
 
           {/* Footer */}
           {notificaciones?.length > 0 && (
-            <div className="p-3 border-t border-gray-200 bg-gray-50">
+            <div className="p-3 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl">
               <button
                 onClick={() => {
                   cerrarPanel();
-                  // Aquí podrías navegar a una página de todas las notificaciones
+                  window.location.href = '/administrador/notificaciones';
                 }}
-                className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="w-full text-center text-sm text-gray-600 hover:text-gray-800 font-semibold py-2 hover:bg-white/50 rounded-lg transition-colors"
               >
-                Ver todas las notificaciones
+                Ver todas las notificaciones →
               </button>
             </div>
           )}

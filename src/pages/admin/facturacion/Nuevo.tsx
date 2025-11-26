@@ -190,10 +190,17 @@ const Invoice = () => {
     }
 
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
-        const clientSelect = clients?.find((item: any) => value.split("-")[1] === item.nombre);
+        console.log("All clients:", clients);
+        console.log("Searching for value:", value);
+        console.log("Value split:", value.split("-"));
+        console.log("Value split[1]:", value.split("-")[1]);
+        const clientSelect = clients?.find((item: any) => value.split("-")[0] === item.nroDoc);
+        console.log("Selected client:", clientSelect);
+        console.log("Client select name:", clientSelect?.nombre);
         if (clientSelect !== undefined) {
             setSelectedClient(clientSelect);
         }
+        console.log("Selected client ID:", clientSelect?.id);
         const motivo: any = typesOperation.find((item: any) => Number(item.id) === Number(idValue));
         const updatedFormValues = {
             ...formValues,
@@ -358,7 +365,7 @@ const Invoice = () => {
             }
         }
 
-        console.log(productsInvoice)
+        console.log(selectedClient)
         
         const baseData = {
             tipoOperacionId: 1,
@@ -811,15 +818,15 @@ const Invoice = () => {
                 }
 
                 <div className="md:col-start-1 md:col-end-7 col-span-12">
-                    <div className="grid gap-[61px] grid-cols-12 items-center">
-                        <div className="md:col-start-1 md:col-end-10 col-span-12">
+                    <div className="grid grid-cols-12 gap-3 md:gap-6 items-end">
+                        <div className="col-span-12 md:col-span-9">
                             <Select disabled={formValues?.motivoId !== undefined && formValues.motivoId !== 0} handleGetData={handleGetDataClient} value={formValues?.clienteNombre} error={""} isSearch options={clients?.map((item: any) => ({
                                 id: item?.id,
                                 value: `${item?.nroDoc}-${item.nombre}`
                             }))} id="clienteId" name="clienteNombre" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Busca y elije al cliente" />
                         </div>
-                        <div className="md:col-start-10 md:col-end-13 col-span-12">
-                            <div className="relative top-3">
+                        <div className="col-span-12 md:col-span-3 flex md:justify-end">
+                            <div className="w-full md:w-auto">
                                 <Button color="primary" disabled={formValues.comprobante === "NOTA DE CREDITO"} onClick={() => setIsOpenModalClient(true)}>Nuevo Cliente</Button>
                             </div>
                         </div>
@@ -827,15 +834,15 @@ const Invoice = () => {
                 </div>
 
                 <div className="md:col-start-7 md:col-end-13 col-span-12">
-                    <div className="grid grid-cols-12 gap-10 items-center">
-                        <div className="md:col-start-1 md:col-end-10 col-span-12">
+                    <div className="grid grid-cols-12 gap-3 md:gap-6 items-end">
+                        <div className="col-span-12 md:col-span-9">
                             <Select disabled={formValues?.motivoId !== undefined && formValues.motivoId !== 0} handleGetData={handleGetDataProduct} value={selectedProduct ? `${selectedProduct.descripcion}- S/ ${selectedProduct.precioUnitario}` : ""} error={""} isSearch options={products?.map((item: any) => ({
                                 id: item?.id,
                                 value: `${item.descripcion}- S/ ${item.precioUnitario}`
                             }))} id="productId" name="product" onChange={handleChangeSelectProduct} icon="clarity:box-plot-line" isIcon label="Busca y elije los productos que deseas agregar" />
                         </div>
-                        <div className="md:col-start-10 md:col-end-13 col-span-12">
-                            <div className="relative top-3">
+                        <div className="col-span-12 md:col-span-3 flex md:justify-end">
+                            <div className="w-full md:w-auto">
                                 <Button color="primary" disabled={formValues.comprobante === "NOTA DE CREDITO"} onClick={() => setIsOpenModalProduct(true)}>Nuevo producto</Button>
                             </div>
                         </div>

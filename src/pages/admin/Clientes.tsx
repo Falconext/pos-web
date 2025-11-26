@@ -14,6 +14,7 @@ import ModalClient from "./clientes/ModalCliente";
 import Button from "@/components/Button";
 import InputPro from "@/components/InputPro";
 import { useAuthStore } from "@/zustand/auth";
+import apiClient from "@/utils/apiClient";
 
 // import ModalClient from "./modal-clientes";
 
@@ -79,7 +80,118 @@ const Clients = () => {
         tipoDocumentoId: 0,
         empresaId: 0,
     });
-    const debounce = useDebounce(searchClient, 1000);
+    const debounce = useDebounce(searchClient, 600);
+    const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
+    const [visibleColumns, setVisibleColumns] = useState<string[]>([
+        'Nombre o Razon social',
+        'Documento',
+        'Num. doc',
+        'Direccion',
+        'Correo principal',
+        'Persona',
+        'Celular',
+        'Estado',
+        'Acciones'
+    ]);
+    const [showColumnFilter, setShowColumnFilter] = useState(false);
+
+    const allColumns = [
+        'Nombre o Razon social',
+        'Documento',
+        'Num. doc',
+        'Direccion',
+        'Correo principal',
+        'Persona',
+        'Celular',
+        'Estado',
+        'Acciones'
+    ];
+
+    const columnsStorageKey = `datatable:${auth?.empresaId || 'default'}:clientes:visibleColumns`;
+
+    // Cargar columnas: priorizar servidor, fallback a localStorage
+    useEffect(() => {
+        const loadColumns = async () => {
+            if (!auth?.empresaId) return;
+            
+            try {
+                // Intentar cargar desde servidor primero
+                const res = await apiClient.get(`/preferencias/tabla`, {
+                    params: { tabla: 'clientes', empresaId: auth.empresaId },
+                });
+                const serverCols = res?.data?.visibleColumns;
+                if (Array.isArray(serverCols) && serverCols.length) {
+                    let restored: string[] = allColumns.filter((c) => serverCols.includes(c));
+                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                    setVisibleColumns(restored);
+                    return; // Éxito, no necesitamos localStorage
+                }
+            } catch (_e) {
+                // Si falla servidor, intentar localStorage
+            }
+            
+            // Fallback a localStorage
+            try {
+                const defaultKey = columnsStorageKey.replace(`${auth.empresaId}`, 'default');
+                const candidates = [columnsStorageKey, defaultKey];
+                let parsed: any = null;
+                for (const k of candidates) {
+                    const raw = localStorage.getItem(k);
+                    if (raw) {
+                        try { parsed = JSON.parse(raw); } catch { parsed = null; }
+                    }
+                    if (Array.isArray(parsed)) break;
+                }
+                if (Array.isArray(parsed)) {
+                    let restored: string[] = allColumns.filter((c) => parsed.includes(c));
+                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                    setVisibleColumns(restored);
+                }
+            } catch (_e) {
+                // noop
+            }
+        };
+        
+        loadColumns();
+    }, [auth?.empresaId, columnsStorageKey]);
+
+    // Guardar cambios de columnas en localStorage y backend
+    useEffect(() => {
+        try {
+            const toSave = visibleColumns.includes('Acciones')
+                ? visibleColumns
+                : [...visibleColumns, 'Acciones'];
+            localStorage.setItem(columnsStorageKey, JSON.stringify(toSave));
+        } catch (e) {
+            // noop
+        }
+        // Persistir también en backend
+        const persist = async () => {
+            try {
+                const toSave = visibleColumns.includes('Acciones') ? visibleColumns : [...visibleColumns, 'Acciones'];
+                await apiClient.put(`/preferencias/tabla`, { visibleColumns: toSave }, {
+                    params: { tabla: 'clientes', empresaId: auth?.empresaId },
+                });
+            } catch (_e) { /* noop */ }
+        };
+        if (auth?.empresaId) persist();
+    }, [visibleColumns, columnsStorageKey, auth?.empresaId]);
+
+    const toggleColumn = (column: string) => {
+        if (column === 'Acciones') return; // Siempre visible
+        setVisibleColumns(prev => {
+            if (prev.includes(column)) {
+                // Ocultar columna
+                return prev.filter(c => c !== column);
+            } else {
+                // Mostrar columna en su posición original
+                const newVisible = allColumns.filter(col => 
+                    prev.includes(col) || col === column
+                );
+                return newVisible;
+            }
+        });
+    };
 
 
 
@@ -127,20 +239,72 @@ const Clients = () => {
 
     console.log(clients)
 
-    const clientsTable = clients?.map((item: IClient) => ({
-        id: item?.id,
-        nombre: item?.nombre,
-        documento: item?.nroDoc.length === 8 ? "DNI" : item?.nroDoc.length === 11 ? "RUC" : "",
-        nroDoc: item?.nroDoc,
-        direccion: item?.direccion,
-        departamento: item?.departamento,
-        provincia: item?.provincia,
-        distrito: item?.distrito,
-        email: item.email,
-        persona: item.persona === "CLIENTE" ? "CLIENTE" : item?.persona === "PROVEEDOR" ? "PROVEEDOR" : "CLIENTE-PROVEEDOR",
-        telefono: item?.telefono,
-        estado: item.estado
-    }))
+    useEffect(() => {
+        const handleDocClick = () => {
+            if (openAccionesId !== null) setOpenAccionesId(null);
+            if (showColumnFilter) setShowColumnFilter(false);
+        };
+        document.addEventListener('click', handleDocClick);
+        return () => document.removeEventListener('click', handleDocClick);
+    }, [openAccionesId, showColumnFilter]);
+
+    const clientsTable = clients?.map((item: IClient) => {
+        const allData: any = {
+            id: item?.id,
+            'Nombre o Razon social': item?.nombre,
+            'Documento': item?.nroDoc.length === 8 ? "DNI" : item?.nroDoc.length === 11 ? "RUC" : "",
+            'Num. doc': item?.nroDoc,
+            'Direccion': item?.direccion,
+            'Correo principal': item.email,
+            'Persona': item.persona === "CLIENTE" ? "CLIENTE" : item?.persona === "PROVEEDOR" ? "PROVEEDOR" : "CLIENTE-PROVEEDOR",
+            'Celular': item?.telefono,
+            'Estado': item.estado
+        };
+        
+        // Crear rowBase solo con columnas visibles en el orden de allColumns
+        const rowBase: any = {};
+        allColumns.forEach(col => {
+            if (visibleColumns.includes(col) && allData.hasOwnProperty(col)) {
+                rowBase[col] = allData[col];
+            }
+        });
+        rowBase.id = item?.id; // Mantener id para acciones
+
+        const isOpen = openAccionesId === item.id;
+        const acciones = (
+            <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+                <button
+                    type="button"
+                    onClick={() => setOpenAccionesId(isOpen ? null : item.id)}
+                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
+                >
+                    <Icon icon="mdi:dots-vertical" width={18} height={18} />
+                </button>
+                {isOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                        <button
+                            type="button"
+                            onClick={() => { handleGetProduct(rowBase); setOpenAccionesId(null); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                        >
+                            <Icon icon="material-symbols:edit" width={16} height={16} />
+                            <span>Editar</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { handleToggleClientState(rowBase); setOpenAccionesId(null); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                        >
+                            <Icon icon="mdi:power" width={16} height={16} />
+                            <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+
+        return { ...rowBase, acciones };
+    })
 
 
 
@@ -150,22 +314,7 @@ const Clients = () => {
         setIsOpenModalConfirm(true);
     };
 
-    const actions: any =
-        [
-            {
-                onClick: handleGetProduct,
-                className: "edit",
-                icon: <Icon color="#66AD78" icon="material-symbols:edit" />,
-                tooltip: "Editar"
-            },
-            {
-                onClick: handleToggleClientState,
-                className: "delete", // Usaremos esta clase genérica y la lógica estará en TableBody
-                icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />,
-                tooltip: "Eliminar", // Tooltip genérico (se cambiará en TableBody)
-            }
-        ]
-        ;
+    // Acciones ahora se gestionan por dropdown en la columna 'Acciones'
 
     useEffect(() => {
         getAllClients({
@@ -199,9 +348,35 @@ const Clients = () => {
             <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
                 <div className="md:flex md:justify-between items-center mb-5 pt-5 md:pt-0">
                     <div className="md:w-2/5 w-full">
-                        <InputPro name="cliente" onChange={handleChange} label="Buscar por cliente y RUC" isLabel />
+                        <InputPro name="cliente" value={searchClient} onChange={handleChange} label="Buscar por cliente y RUC" isLabel />
                     </div>
                     <div className="flex md:items-center items-start gap-5 mt-5 md:mt-0">
+                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                                color="lila"
+                                outline
+                                onClick={(e : any) => { e.stopPropagation(); setShowColumnFilter(!showColumnFilter); }}
+                            >
+                                <Icon className="mr-2" icon="mdi:filter-variant" width={18} height={18} />
+                                Columnas
+                            </Button>
+                            {showColumnFilter && (
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-30 p-3" onClick={(e) => e.stopPropagation()}>
+                                    <div className="text-xs font-semibold mb-2 text-gray-700">Mostrar/Ocultar columnas</div>
+                                    {allColumns.filter(c => c !== 'Acciones').map(col => (
+                                        <label key={col} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-gray-50 px-2 rounded">
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleColumns.includes(col)}
+                                                onChange={() => toggleColumn(col)}
+                                                className="w-4 h-4"
+                                            />
+                                            <span className="text-xs text-gray-700">{col}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                         <Button
                             color="success"
                             onMouseEnter={() => setIsHoveredExp(true)}
@@ -269,18 +444,8 @@ const Clients = () => {
                         clientsTable?.length > 0 ? (
                             <>
                                 <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
-                                    <DataTable actions={actions} bodyData={clientsTable}
-                                        headerColumns={[
-
-                                            'Nombre o Razon social',
-                                            'Documento',
-                                            'Num. doc',
-                                            'Direccion',
-                                            'Correo principal',
-                                            'Persona',
-                                            'Celular',
-                                            'Estado'
-                                        ]} />
+                                    <DataTable bodyData={clientsTable}
+                                        headerColumns={visibleColumns} />
                                 </div>
                                 <Pagination
                                     data={clientsTable}

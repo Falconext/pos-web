@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Loading from '../../../components/Loading';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Card, BarChart as TremorBarChart, DonutChart, Title } from '@tremor/react';
 import { useAuthStore } from '@/zustand/auth';
 import { Icon } from '@iconify/react';
 import apiClient from '@/utils/apiClient';
@@ -198,19 +198,20 @@ const InventarioDashboard: React.FC = () => {
 
   const { barData, pieData } = prepareChartData();
 
-  return (
-    <div className="p-6 px-8 pt-4">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-        </div>
-        <div className="text-sm text-gray-500">
-          Última actualización: {formatDate(dashboardData.fechaActualizacion)}
-        </div>
-      </div>
+  const stockChartData = [
+    {
+      estado: 'Inventario',
+      'Stock normal': barData[0]?.cantidad ?? 0,
+      'Stock crítico': barData[1]?.cantidad ?? 0,
+      'Sin stock': barData[2]?.cantidad ?? 0,
+    },
+  ];
 
+  return (
+    <div className="md:p-6 p-3 px-0 md:px-8 pt-4">
       {/* Métricas principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Icon icon="mingcute:package-fill" width={24} height={24} className="text-blue-600" />
@@ -224,7 +225,7 @@ const InventarioDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
               <Icon icon="mingcute:dollar-fill" width={24} height={24} className="text-green-600" />
@@ -238,7 +239,7 @@ const InventarioDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Icon icon="mingcute:alert-triangle-fill" width={24} height={24} className="text-yellow-600" />
@@ -252,7 +253,7 @@ const InventarioDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-red-100 rounded-lg">
               <Icon icon="mingcute:x-circle-fill" width={24} height={24} className="text-red-600" />
@@ -267,49 +268,45 @@ const InventarioDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Gráficos */}
+      {/* Gráficos con Tremor */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Estado del Stock</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="cantidad" fill={COLORS.primary} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
+          <Title>Estado del stock</Title>
+          <TremorBarChart
+            className="mt-4 h-64"
+            data={stockChartData}
+            index="estado"
+            categories={["Stock normal", "Stock crítico", "Sin stock"]}
+            colors={["emerald", "amber", "rose"]}
+            showLegend
+            showGridLines
+            showAnimation
+            yAxisWidth={56}
+            valueFormatter={(value: number) =>
+              Number(value || 0).toLocaleString("es-PE")
+            }
+          />
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Distribución del Inventario</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
+          <Title>Distribución del inventario</Title>
+          <DonutChart
+            className="mt-4 h-64"
+            data={pieData}
+            index="name"
+            category="value"
+            colors={["emerald", "amber", "rose", "cyan"]}
+            valueFormatter={(value: number) =>
+              Number(value || 0).toLocaleString("es-PE")
+            }
+          />
+        </Card>
       </div>
 
       {/* Alertas y productos críticos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Productos con stock crítico */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Stock Crítico</h3>
           {dashboardData.topProductos.stockCritico.length > 0 ? (
             <div className="space-y-3">
@@ -338,12 +335,12 @@ const InventarioDashboard: React.FC = () => {
         </div>
 
         {/* Productos obsoletos */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Productos Obsoletos</h3>
           {dashboardData.topProductos.obsoletos.length > 0 ? (
             <div className="space-y-3">
               {dashboardData.topProductos.obsoletos.map((producto) => (
-                <div key={producto.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div key={producto.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{producto.codigo}</p>
                     <p className="text-xs text-gray-500 truncate">{producto.descripcion}</p>
