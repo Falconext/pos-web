@@ -12,14 +12,19 @@ export default function ProductoDetalle() {
   const [loading, setLoading] = useState(true);
   const [cantidad, setCantidad] = useState<number>(1);
   const [carrito, setCarrito] = useState<any[]>([]);
+  const [tienda, setTienda] = useState<any>(null);
 
   useEffect(() => {
     const cargar = async () => {
       try {
-        const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`);
-        setProducto(data.data || data);
+        const [prodRes, tiendaRes] = await Promise.all([
+          axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
+          axios.get(`${BASE_URL}/public/store/${slug}`)
+        ]);
+        setProducto(prodRes.data.data || prodRes.data);
+        setTienda(tiendaRes.data.data || tiendaRes.data);
       } catch (e) {
-        console.error('Error al cargar producto:', e);
+        console.error('Error al cargar datos:', e);
       } finally {
         setLoading(false);
       }
@@ -29,7 +34,7 @@ export default function ProductoDetalle() {
     try {
       const saved = localStorage.getItem(`tienda:${slug}:carrito`);
       if (saved) setCarrito(JSON.parse(saved));
-    } catch {}
+    } catch { }
   }, [slug, id]);
 
   const agregarAlCarrito = () => {
@@ -40,7 +45,7 @@ export default function ProductoDetalle() {
     try {
       const saved = localStorage.getItem(`tienda:${slug}:carrito`);
       if (saved) current = JSON.parse(saved) || [];
-    } catch {}
+    } catch { }
     const existe = current.find((i) => i.id === item.id);
     let updated: any[];
     if (existe) {
@@ -49,15 +54,53 @@ export default function ProductoDetalle() {
       updated = [...current, item];
     }
     setCarrito(updated);
-    try { localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(updated)); } catch { }
   };
 
   const irACheckout = () => {
     if (!producto) return;
     const items = carrito.length > 0 ? carrito : [{ ...producto, id: producto.id, cantidad: Math.max(1, cantidad) }];
-    try { localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(items)); } catch {}
-    navigate(`/tienda/${slug}/checkout`, { state: { carrito: items, tienda: null } });
+    try { localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(items)); } catch { }
+    navigate(`/tienda/${slug}/checkout`, { state: { carrito: items, tienda } });
   };
+
+  // Helpers de diseño
+  const diseno = tienda?.diseno || {};
+  const getBordeRadius = () => {
+    switch (diseno.bordeRadius) {
+      case 'none': return 'rounded-none';
+      case 'small': return 'rounded';
+      case 'large': return 'rounded-2xl';
+      case 'full': return 'rounded-3xl';
+      default: return 'rounded-xl';
+    }
+  };
+  const getBotonStyle = () => {
+    switch (diseno.estiloBoton) {
+      case 'square': return 'rounded-none';
+      case 'pill': return 'rounded-full';
+      default: return 'rounded-lg';
+    }
+  };
+  const getFontFamily = () => {
+    switch (diseno.tipografia) {
+      case 'Roboto': return 'font-roboto';
+      case 'Open Sans': return 'font-opensans';
+      case 'Lato': return 'font-lato';
+      case 'Montserrat': return 'font-montserrat';
+      case 'Poppins': return 'font-poppins';
+      case 'Raleway': return 'font-raleway';
+      case 'Ubuntu': return 'font-ubuntu';
+      case 'Manrope': return 'font-manrope';
+      case 'Rubik': return 'font-rubik';
+      case 'Inter': return 'font-inter';
+      default: return 'font-sans';
+    }
+  };
+
+  const borderRadius = getBordeRadius();
+  const btnRadius = getBotonStyle();
+  const fontFamily = getFontFamily();
 
   if (loading) {
     return (
@@ -73,7 +116,7 @@ export default function ProductoDetalle() {
         <div className="text-center">
           <Icon icon="mdi:alert-circle-outline" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-600">Producto no encontrado</p>
-          <button onClick={() => navigate(`/tienda/${slug}`)} className="mt-4 px-4 py-2 rounded-lg border bg-white hover:bg-gray-50">Volver a la tienda</button>
+          <button onClick={() => navigate(`/tienda/${slug}`)} className={`mt-4 px-4 py-2 ${btnRadius} border bg-white hover:bg-gray-50`}>Volver a la tienda</button>
         </div>
       </div>
     );
@@ -85,23 +128,23 @@ export default function ProductoDetalle() {
   const extras: string[] = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
       <div className="max-w-5xl mx-auto px-4 py-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-black mb-6">
           <Icon icon="mdi:arrow-left" /> Volver
         </button>
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow p-4">
-            <img src={img} alt={producto.descripcion} className="w-full h-72 object-cover rounded-lg" />
+          <div className={`bg-white ${borderRadius} shadow p-4`}>
+            <img src={img} alt={producto.descripcion} className={`w-full h-72 object-cover ${borderRadius}`} />
             {extras.length > 0 && (
               <div className="grid grid-cols-4 gap-2 mt-3">
                 {extras.map((u, i) => (
-                  <img key={i} src={u} className="w-full h-20 object-cover rounded border" />
+                  <img key={i} src={u} className={`w-full h-20 object-cover ${borderRadius} border`} />
                 ))}
               </div>
             )}
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className={`bg-white ${borderRadius} shadow p-6`}>
             <h1 className="text-xl font-bold mb-2">{producto.descripcion}</h1>
             {producto.descripcionLarga && (
               <p className="text-sm text-gray-600 mb-4">{producto.descripcionLarga}</p>
@@ -116,14 +159,26 @@ export default function ProductoDetalle() {
                 max={producto.stock || 1}
                 value={cantidad}
                 onChange={(e) => setCantidad(Math.max(1, Number(e.target.value) || 1))}
-                className="w-20 border rounded-lg p-2"
+                className={`w-20 border ${borderRadius} p-2`}
               />
             </div>
             <div className="flex gap-3">
-              <button onClick={agregarAlCarrito} className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800">Agregar al carrito</button>
-              <button onClick={irACheckout} className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50">Comprar ahora</button>
+              <button
+                onClick={agregarAlCarrito}
+                className={`px-4 py-2 ${btnRadius} text-white hover:opacity-90`}
+                style={{ backgroundColor: diseno.colorPrimario || '#000' }}
+              >
+                Agregar al carrito
+              </button>
+              <button
+                onClick={irACheckout}
+                className={`px-4 py-2 ${btnRadius} border bg-white hover:bg-gray-50`}
+                style={{ borderColor: diseno.colorPrimario, color: diseno.colorPrimario }}
+              >
+                Comprar ahora
+              </button>
             </div>
-            <button onClick={() => navigate(`/tienda/${slug}`)} className="mt-4 px-4 py-2 rounded-xl border bg-white hover:bg-gray-50">Volver a la tienda</button>
+            <button onClick={() => navigate(`/tienda/${slug}`)} className={`mt-4 px-4 py-2 ${btnRadius} border bg-white hover:bg-gray-50`}>Volver a la tienda</button>
           </div>
         </div>
       </div>

@@ -62,7 +62,7 @@ export default function Checkout() {
       if (slug && Array.isArray(carritoState) && carritoState.length > 0) {
         localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(carritoState));
       }
-    } catch {}
+    } catch { }
   }, [slug, carritoState]);
 
   const cargarConfigPago = async () => {
@@ -77,12 +77,20 @@ export default function Checkout() {
   const cargarConfigEnvio = async () => {
     try {
       const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/shipping-config`);
-      const config = data.data || data;
-      setConfigEnvio(config);
+      const raw = data.data || data;
+      const normalized = {
+        aceptaRecojo: !!raw.aceptaRecojo,
+        aceptaEnvio: !!raw.aceptaEnvio,
+        direccionRecojo: raw.direccionRecojo || raw.direccion || '',
+        costoEnvio: Number(
+          raw.costoEnvioFijo ?? raw.costoEnvio ?? raw.shippingCost ?? raw.costo_envio_fijo ?? 0
+        ),
+      };
+      setConfigEnvio(normalized);
       // Si solo acepta uno, establecerlo por defecto
-      if (config.aceptaRecojo && !config.aceptaEnvio) {
+      if (normalized.aceptaRecojo && !normalized.aceptaEnvio) {
         setFormData(prev => ({ ...prev, tipoEntrega: 'RECOJO' }));
-      } else if (!config.aceptaRecojo && config.aceptaEnvio) {
+      } else if (!normalized.aceptaRecojo && normalized.aceptaEnvio) {
         setFormData(prev => ({ ...prev, tipoEntrega: 'ENVIO' }));
       }
     } catch (error) {
@@ -105,7 +113,7 @@ export default function Checkout() {
 
   const calcularCostoEnvio = () => {
     if (formData.tipoEntrega === 'ENVIO' && configEnvio) {
-      return Number(configEnvio.costoEnvioFijo || 0);
+      return Number(configEnvio.costoEnvio || 0);
     }
     return 0;
   };
@@ -137,33 +145,73 @@ export default function Checkout() {
     }
   };
 
+  const diseno = tienda?.diseno || {};
+
+  const getBordeRadius = () => {
+    switch (diseno.bordeRadius) {
+      case 'none': return 'rounded-none';
+      case 'small': return 'rounded';
+      case 'large': return 'rounded-2xl';
+      case 'full': return 'rounded-3xl';
+      default: return 'rounded-xl';
+    }
+  };
+
+  const getBotonStyle = () => {
+    switch (diseno.estiloBoton) {
+      case 'square': return 'rounded-none';
+      case 'pill': return 'rounded-full';
+      default: return 'rounded-lg';
+    }
+  };
+
+  const getFontFamily = () => {
+    switch (diseno.tipografia) {
+      case 'Roboto': return 'font-roboto';
+      case 'Open Sans': return 'font-opensans';
+      case 'Lato': return 'font-lato';
+      case 'Poppins': return 'font-poppins';
+      case 'Montserrat': return 'font-montserrat';
+      case 'Raleway': return 'font-raleway';
+      case 'Ubuntu': return 'font-ubuntu';
+      case 'Manrope': return 'font-manrope';
+      case 'Rubik': return 'font-rubik';
+      case 'Inter': return 'font-inter';
+      default: return 'font-sans';
+    }
+  };
+
+  const borderRadius = getBordeRadius();
+  const btnRadius = getBotonStyle();
+  const fontFamily = getFontFamily();
+
   if (pedidoCreado) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-          <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Icon icon="mdi:check" className="w-10 h-10 text-orange-600" />
+      <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-4 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
+        <div className={`max-w-md w-full bg-white ${borderRadius} border border-gray-100 shadow-sm p-8 text-center`}>
+          <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${diseno.colorPrimario}10` }}>
+            <Icon icon="mdi:check" className="w-10 h-10 text-orange-600" style={{ color: diseno.colorPrimario }} />
           </div>
           <h2 className="text-2xl font-bold mb-1">¡Pedido recibido!</h2>
           <p className="text-gray-600 mb-4">Tu pedido #{pedidoCreado.id} ha sido registrado.</p>
 
-          <div className="bg-orange-50 p-4 rounded-xl mb-4 border border-orange-100">
+          <div className={`bg-orange-50 p-4 ${borderRadius} mb-4 border border-orange-100`} style={{ backgroundColor: `${diseno.colorPrimario}10`, borderColor: `${diseno.colorPrimario}30` }}>
             <p className="text-sm text-gray-600 mb-1">Código de seguimiento</p>
-            <p className="text-xl font-bold text-orange-600">{pedidoCreado.codigoSeguimiento}</p>
+            <p className="text-xl font-bold text-orange-600" style={{ color: diseno.colorPrimario }}>{pedidoCreado.codigoSeguimiento}</p>
             <p className="text-xs text-gray-500 mt-2">Guárdalo para rastrear tu pedido</p>
           </div>
 
           <div className="space-y-3">
             <button
               onClick={() => navigate(`/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`)}
-              className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-95"
-              style={{ backgroundColor: '#f97316' }}
+              className={`w-full py-3 ${btnRadius} text-white font-semibold hover:opacity-95`}
+              style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
             >
               Track my order
             </button>
             <button
               onClick={() => navigate(`/tienda/${slug}`)}
-              className="w-full py-3 rounded-xl font-semibold border border-gray-200 hover:bg-gray-50"
+              className={`w-full py-3 ${btnRadius} font-semibold border border-gray-200 hover:bg-gray-50`}
             >
               Back to store
             </button>
@@ -174,7 +222,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className={`min-h-screen bg-gray-50 py-8 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
       <div className="max-w-4xl mx-auto px-4">
         <button
           onClick={() => navigate(`/tienda/${slug}`)}
@@ -193,7 +241,7 @@ export default function Checkout() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Formulario */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-6`}>
             <h2 className="text-lg font-semibold mb-4">Tus Datos</h2>
             <form onSubmit={enviarPedido} className="space-y-4">
               <div>
@@ -204,7 +252,7 @@ export default function Checkout() {
                   value={formData.clienteNombre}
                   onChange={handleChange}
                   required
-                  className="w-full border rounded-lg p-2"
+                  className={`w-full border ${borderRadius} p-2`}
                 />
               </div>
               <div>
@@ -215,7 +263,7 @@ export default function Checkout() {
                   value={formData.clienteTelefono}
                   onChange={handleChange}
                   required
-                  className="w-full border rounded-lg p-2"
+                  className={`w-full border ${borderRadius} p-2`}
                 />
               </div>
               <div>
@@ -225,7 +273,7 @@ export default function Checkout() {
                   name="clienteEmail"
                   value={formData.clienteEmail}
                   onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
+                  className={`w-full border ${borderRadius} p-2`}
                 />
               </div>
 
@@ -236,7 +284,7 @@ export default function Checkout() {
                   onChange={(tipo) => setFormData(prev => ({ ...prev, tipoEntrega: tipo }))}
                   aceptaRecojo={configEnvio.aceptaRecojo}
                   aceptaEnvio={configEnvio.aceptaEnvio}
-                  costoEnvio={Number(configEnvio.costoEnvioFijo || 0)}
+                  costoEnvio={Number(configEnvio.costoEnvio || 0)}
                   direccionRecojo={configEnvio.direccionRecojo}
                 />
               )}
@@ -251,7 +299,7 @@ export default function Checkout() {
                   value={formData.clienteDireccion}
                   onChange={handleChange}
                   required={formData.tipoEntrega === 'ENVIO'}
-                  className="w-full border rounded-lg p-2"
+                  className={`w-full border ${borderRadius} p-2`}
                 />
               </div>
               <div>
@@ -262,7 +310,7 @@ export default function Checkout() {
                   value={formData.clienteReferencia}
                   onChange={handleChange}
                   placeholder="Ej: Casa blanca, puerta verde"
-                  className="w-full border rounded-lg p-2"
+                  className={`w-full border ${borderRadius} p-2`}
                 />
               </div>
 
@@ -270,7 +318,7 @@ export default function Checkout() {
                 <label className="block text-sm font-medium mb-2">Payment method *</label>
                 <div className="space-y-2">
                   {configPago?.yapeQrUrl && (
-                    <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
                       <input
                         type="radio"
                         name="medioPago"
@@ -282,7 +330,7 @@ export default function Checkout() {
                     </label>
                   )}
                   {configPago?.plinQrUrl && (
-                    <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
                       <input
                         type="radio"
                         name="medioPago"
@@ -294,7 +342,7 @@ export default function Checkout() {
                     </label>
                   )}
                   {configPago?.aceptaEfectivo && (
-                    <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
                       <input
                         type="radio"
                         name="medioPago"
@@ -341,7 +389,7 @@ export default function Checkout() {
                       value={formData.referenciaTransf}
                       onChange={handleChange}
                       placeholder="999 999 999"
-                      className="w-full border rounded-lg p-2"
+                      className={`w-full border ${borderRadius} p-2`}
                     />
                   </div>
                 </div>
@@ -355,15 +403,15 @@ export default function Checkout() {
                   onChange={handleChange}
                   rows={3}
                   placeholder="Ej: Sin cebolla, extra picante..."
-                  className="w-full border rounded-lg p-2"
+                  className={`w-full border ${borderRadius} p-2`}
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={enviando}
-                className="w-full text-white py-3 rounded-xl font-semibold hover:opacity-95 disabled:bg-gray-400"
-                style={{ backgroundColor: '#f97316' }}
+                className={`w-full text-white py-3 ${btnRadius} font-semibold hover:opacity-95 disabled:bg-gray-400`}
+                style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
               >
                 {enviando ? 'Enviando...' : 'Completar pedido'}
               </button>
@@ -371,7 +419,7 @@ export default function Checkout() {
           </div>
 
           {/* Resumen */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-fit">
+          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-6 h-fit`}>
             <h2 className="text-lg font-semibold mb-4">Order summary</h2>
             <div className="space-y-3 mb-4">
               {carritoState.map((item: any) => (
@@ -386,6 +434,12 @@ export default function Checkout() {
                     )}
                     <div className="min-w-0">
                       <p className="truncate font-medium text-sm">{item.descripcion}</p>
+                      {/* Mostrar modificadores seleccionados */}
+                      {item.modificadores && item.modificadores.length > 0 && (
+                        <p className="text-xs text-gray-400 truncate">
+                          {item.modificadores.map((m: any) => m.opcionNombre).join(', ')}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-500">{item.cantidad} item{item.cantidad > 1 ? 's' : ''}</p>
                     </div>
                   </div>

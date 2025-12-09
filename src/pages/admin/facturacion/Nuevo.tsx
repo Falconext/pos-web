@@ -36,7 +36,10 @@ const Invoice = () => {
     const { auth } = useAuthStore();
     const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT'];
     let tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
-    const initialDocumentType = receipt === "" ? "FACTURA" : receipt.toUpperCase();
+    // Para empresas informales, el comprobante por defecto es TICKET
+    const initialDocumentType = receipt === "" 
+        ? (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA") 
+        : receipt.toUpperCase();
     // Definir tipos de comprobantes
 
     const tiposFormales = ['01', '03', '07', '08']; // FACTURA, BOLETA, NOTA CRÉDITO, NOTA DÉBITO

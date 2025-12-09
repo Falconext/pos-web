@@ -41,11 +41,26 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
     const { getUnitOfMeasure }: IExtentionsState = useExtentionsStore();
     const { auth } = useAuthStore();
     const { getAllCategories } = useCategoriesStore();
-    const { editProduct, addProduct, getCodeProduct, productCode }: IProductsState = useProductsStore();
+    const { editProduct, addProduct, getCodeProduct, productCode, setProductImage, upsertProductLocal }: IProductsState = useProductsStore();
     const { unitOfMeasure }: IExtentionsState = useExtentionsStore();
     const { categories } = useCategoriesStore();
     // Marcas
     const { brands, getAllBrands } = useBrandsStore();
+
+    // Detectar si el rubro es restaurante para simplificar el formulario
+    const isRestaurante = (() => {
+        const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
+        return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento');
+    })();
+
+    // Labels dinámicos según el rubro
+    const labels = {
+        titulo: isRestaurante ? 'Plato' : 'Producto',
+        nombre: isRestaurante ? 'Nombre del plato' : 'Nombre del producto',
+        codigo: isRestaurante ? 'Código del plato' : 'Código de producto',
+        imagen: isRestaurante ? 'Imagen del plato' : 'Imagen del producto',
+        precio: isRestaurante ? 'Precio (S/)' : 'Precio de Venta (S/)',
+    };
 
     // Imagen principal
     const [filePrincipal, setFilePrincipal] = useState<File | null>(null);
@@ -105,17 +120,21 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         }
     }, [auth])
 
-    // Preload preview en edición
+    // Preload preview en edición. No borrar al escribir en el formulario.
     useEffect(() => {
-        if (isEdit) {
-            if ((formValues as any)?.imagenUrl && !previewPrincipal) {
-                setPreviewPrincipal((formValues as any).imagenUrl);
-            }
-        } else {
+        if (!isOpenModal) return;
+        if (isEdit && (formValues as any)?.imagenUrl && !previewPrincipal) {
+            setPreviewPrincipal((formValues as any).imagenUrl);
+        }
+    }, [isOpenModal, isEdit])
+
+    // Limpiar preview SOLO al cerrar el modal
+    useEffect(() => {
+        if (!isOpenModal) {
             setPreviewPrincipal(null);
             setFilePrincipal(null);
         }
-    }, [isEdit, formValues])
+    }, [isOpenModal])
 
     const handleSubmitProduct = async () => {
         console.log(formValues)
@@ -163,7 +182,10 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                 if (filePrincipal) {
                     const fd = new FormData();
                     fd.append('file', filePrincipal);
-                    await apiClient.post(`/producto/${formValues.productoId}/imagen`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const resp = await apiClient.post(`/producto/${formValues.productoId}/imagen`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
+                    const nuevaUrl = signed || resp?.data?.data?.url || resp?.data?.url || resp?.data?.data?.imagenUrl || resp?.data?.imagenUrl || null;
+                    if (nuevaUrl) setProductImage(Number(formValues.productoId), nuevaUrl);
                 }
             } catch (e) {
                 // noop, ya mostramos alertas globales desde interceptores si aplica
@@ -172,6 +194,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             setFormValues(initialForm)
             closeModal();
         } else {
+            // Crear producto sin insertarlo aún en el store (para esperar URL de imagen si hay)
             const product = await addProduct({
                 ...formValues,
                 unidadMedidaId: Number(formValues?.unidadMedidaId),
@@ -182,7 +205,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                 stockMinimo: formValues?.stockMinimo != null ? Number(formValues?.stockMinimo) : undefined,
                 stockMaximo: formValues?.stockMaximo != null ? Number(formValues?.stockMaximo) : undefined,
                 estado: "ACTIVO"
-            });
+            }, { skipStore: true });
             setFormValues(initialForm)
             console.log(product)
             if (isInvoice) {
@@ -190,11 +213,31 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             }
             try {
                 const newId = product?.data?.id;
+                let urlFinal: string | null = null;
                 if (newId && filePrincipal) {
                     const fd = new FormData();
                     fd.append('file', filePrincipal);
-                    await apiClient.post(`/producto/${newId}/imagen`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const resp2 = await apiClient.post(`/producto/${newId}/imagen`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const signed = resp2?.data?.signedUrl || resp2?.data?.data?.signedUrl;
+                    const nuevaUrl = signed || resp2?.data?.data?.url || resp2?.data?.url || resp2?.data?.data?.imagenUrl || resp2?.data?.imagenUrl || null;
+                    if (nuevaUrl) {
+                        urlFinal = nuevaUrl;
+                    }
                 }
+                // Insertar/actualizar en store con imagen final si existe
+                upsertProductLocal({
+                    id: Number(newId),
+                    descripcion: formValues.descripcion,
+                    codigo: product?.data?.codigo || formValues.codigo,
+                    // IProduct.precioUnitario es string en la interfaz
+                    precioUnitario: String(formValues.precioUnitario) as any,
+                    stock: Number(formValues.stock),
+                    unidadMedida: { nombre: formValues.unidadMedidaNombre as any } as any,
+                    categoria: { nombre: formValues.categoriaNombre as any } as any,
+                    marca: formValues.marcaId ? { id: Number(formValues.marcaId), nombre: formValues.marcaNombre as any } as any : undefined,
+                    imagenUrl: urlFinal || undefined,
+                    estado: 'ACTIVO' as any,
+                });
             } catch (e) {
                 // noop
             }
@@ -217,15 +260,15 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
     return (
         <>
-            {isOpenModal && <Modal width="1400px" isOpenModal={isOpenModal} closeModal={closeModal} title={`${isEdit ? `Editar Producto ${formValues?.descripcion}` : 'Nuevo Producto'} - Gestión Completa`}>
-                <div className="grid-cols-3 grid px-4 gap-5">
+            {isOpenModal && <Modal width={isRestaurante ? "900px" : "1400px"} isOpenModal={isOpenModal} closeModal={closeModal} title={`${isEdit ? `Editar ${labels.titulo} ${formValues?.descripcion}` : `Nuevo ${labels.titulo}`}${isRestaurante ? '' : ' - Gestión Completa'}`}>
+                <div className={`${isRestaurante ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-3'} grid px-4 gap-5`}>
                     <div>
                         {/* Imagen principal */}
                         <div className="mt-5">
                             <div className="p-4 rounded-lg border border-gray-200">
                                 <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                                     <Icon icon="mdi:image-outline" width={16} height={16} />
-                                    Imagen del producto
+                                    {labels.imagen}
                                 </h5>
                                 <div>
                                     <button
@@ -306,8 +349,8 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                 </div>
                             </div>
                         </div>
-                        {/* Análisis Financiero en Tiempo Real */}
-                        {(Number(formValues?.precioUnitario || 0) > 0 || Number(formValues?.costoUnitario || 0) > 0 || Number(formValues?.stock || 0) > 0) && (
+                        {/* Análisis Financiero en Tiempo Real - Solo para rubros no restaurante */}
+                        {!isRestaurante && (Number(formValues?.precioUnitario || 0) > 0 || Number(formValues?.costoUnitario || 0) > 0 || Number(formValues?.stock || 0) > 0) && (
                             <div className="col-span-2 mt-4 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
                                 <div className="flex items-center gap-2 mb-4">
                                     <div className="p-1 bg-blue-500 rounded-lg">
@@ -424,14 +467,14 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                             </div>
                         )}
                     </div>
-                    <div className="md:px-2 px-3 col-span-2 grid md:grid-cols-2 grid-cols-2 mt-5 md:gap-5 gap-y-2">
+                    <div className={`md:px-2 px-3 ${isRestaurante ? 'col-span-1' : 'col-span-2'} grid md:grid-cols-2 grid-cols-2 mt-5 md:gap-5 gap-y-2`}>
                         <div className="col-span-3 md:col-span-1">
-                            <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label="Codigo de producto" />
+                            <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label={labels.codigo} />
                         </div>
                         <div className="col-span-3 md:col-span-1">
-                            <InputPro autocomplete="off" value={formValues?.descripcion} error={errors.descripcion} name="descripcion" onChange={handleChange} isLabel label="Nombre del producto" />
+                            <InputPro autocomplete="off" value={formValues?.descripcion} error={errors.descripcion} name="descripcion" onChange={handleChange} isLabel label={labels.nombre} />
                         </div>
-                        <div className="col-span-3 md:col-span-1">
+                        <div className={`col-span-3  ${isRestaurante ? 'md:col-span-2' : 'md:col-span-2 flex gap-2'}`}>
                             <Select defaultValue={formValues.afectacionNombre || "Gravado - operación onerosa"} error={""} isSearch options={afectaciones} id="tipoAfectacionIGV" name="afectacionNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Tipo de afectvación" />
                         </div>
 
@@ -441,7 +484,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                 value: `${item?.nombre}`
                             }))} id="unidadMedidaId" name="unidadMedidaNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Unidad de medida" />
                         </div>
-                        <div className="col-span-3 md:col-span-1 flex gap-2 w-full">
+                        <div className={`col-span-3 md:col-span-1 ${isRestaurante ? '' : 'flex gap-2'} w-full`}>
                             <div className="w-full">
                                 <Select
                                     defaultValue={formValues.categoriaNombre}
@@ -457,24 +500,26 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                     label="Categoria"
                                 />
                             </div>
-                            <div className="w-full">
-                                <Select
-                                    defaultValue={formValues.marcaNombre}
-                                    error={""}
-                                    isSearch
-                                    options={brands?.map((item: IBrand) => ({ id: item?.id, value: `${item?.nombre}` }))}
-                                    id="marcaId"
-                                    name="marcaNombre"
-                                    value=""
-                                    onChange={handleChangeSelect}
-                                    icon="clarity:box-plot-line"
-                                    isIcon
-                                    label="Marca"
-                                />
-                            </div>
+                            {!isRestaurante && (
+                              <div className="w-full">
+                                  <Select
+                                      defaultValue={formValues.marcaNombre}
+                                      error={""}
+                                      isSearch
+                                      options={brands?.map((item: IBrand) => ({ id: item?.id, value: `${item?.nombre}` }))}
+                                      id="marcaId"
+                                      name="marcaNombre"
+                                      value=""
+                                      onChange={handleChangeSelect}
+                                      icon="clarity:box-plot-line"
+                                      isIcon
+                                      label="Marca"
+                                  />
+                              </div>
+                            )}
                         </div>
 
-                        <div className="col-span-3 md:col-span-1 grid grid-cols-2 gap-5">
+                        <div className={`col-span-3 md:col-span-1 grid ${isRestaurante ? 'grid-cols-1' : 'grid-cols-2'} gap-5`}>
                             <InputPro
                                 autocomplete="off"
                                 type="number"
@@ -484,31 +529,52 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                 name="precioUnitario"
                                 onChange={handleChange}
                                 isLabel
-                                label="Precio de Venta (S/)"
+                                label={labels.precio}
                             />
-                            <InputPro
-                                autocomplete="off"
-                                type="number"
-                                step="0.01"
-                                value={formValues?.costoUnitario || ''}
-                                name="costoUnitario"
-                                onChange={handleChange}
-                                isLabel
-                                label="Costo Unitario (S/)"
-                                placeholder="Costo de compra/producción"
-                            />
+                            {/* Costo unitario - Solo para rubros no restaurante */}
+                            {!isRestaurante && (
+                                <InputPro
+                                    autocomplete="off"
+                                    type="number"
+                                    step="0.01"
+                                    value={formValues?.costoUnitario || ''}
+                                    name="costoUnitario"
+                                    onChange={handleChange}
+                                    isLabel
+                                    label="Costo Unitario (S/)"
+                                    placeholder="Costo de compra/producción"
+                                />
+                            )}
                         </div>
 
 
-                        {/* Stock Management */}
-                        <div className="col-span-2">
+                        {/* Stock Management - Simplificado para restaurantes */}
+                        <div className={isRestaurante ? 'col-span-2' : 'col-span-2'}>
                             <div className="p-4 rounded-lg border border-gray-200">
                                 <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                                     <Icon icon="mdi:cube-outline" width={16} height={16} />
-                                    Gestión de Inventario
+                                    {isRestaurante ? 'Disponibilidad' : 'Gestión de Inventario'}
                                 </h5>
 
-                                {isEdit ? (
+                                {/* Para restaurantes: solo stock simple */}
+                                {isRestaurante ? (
+                                    <div>
+                                        <InputPro
+                                            autocomplete="off"
+                                            type="number"
+                                            value={formValues?.stock}
+                                            error={errors.stock}
+                                            name="stock"
+                                            onChange={handleChange}
+                                            isLabel
+                                            label="Cantidad disponible"
+                                            placeholder="Ej. 50"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Indica cuántas porciones/unidades tienes disponibles para vender.
+                                        </p>
+                                    </div>
+                                ) : isEdit ? (
                                     <>
                                         <div className="grid grid-cols-2 gap-4 mb-4">
                                             <div className="bg-white p-3 rounded-lg border border-blue-100">

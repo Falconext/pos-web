@@ -146,6 +146,13 @@ export default function ConfiguracionTienda() {
       });
       // Slug: asegurar formato válido aunque el usuario escriba libre
       if (payload.slugTienda) payload.slugTienda = slugify(payload.slugTienda);
+      // Coaccionar valores numéricos para evitar guardar strings en backend
+      if (payload.costoEnvioFijo !== undefined && payload.costoEnvioFijo !== null && payload.costoEnvioFijo !== '') {
+        payload.costoEnvioFijo = Number(payload.costoEnvioFijo);
+      }
+      if (payload.tiempoPreparacionMin !== undefined && payload.tiempoPreparacionMin !== null && payload.tiempoPreparacionMin !== '') {
+        payload.tiempoPreparacionMin = Number(payload.tiempoPreparacionMin);
+      }
 
       await apiClient.patch('/tienda/config', payload);
       alert('Configuración guardada exitosamente', 'success');

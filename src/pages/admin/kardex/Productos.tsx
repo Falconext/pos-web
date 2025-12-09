@@ -23,9 +23,26 @@ import { useBrandsStore } from "@/zustand/brands";
 
 const KardexProductos = () => {
 
-    const { getAllProducts, totalProducts, products, toggleStateProduct, exportProducts, importProducts, deleteProduct }: IProductsState = useProductsStore();
+    const { getAllProducts, totalProducts, products, toggleStateProduct, exportProducts, importProducts, deleteProduct, setProductImage }: IProductsState = useProductsStore();
     const { success } = useAlertStore();
     const { auth } = useAuthStore();
+
+    // Detectar si el rubro es restaurante para cambiar textos y vista por defecto
+    const isRestaurante = (() => {
+        const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
+        return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento');
+    })();
+
+    // Labels dinámicos según el rubro
+    const labels = {
+        titulo: isRestaurante ? 'Platos' : 'Productos',
+        nuevoBtn: isRestaurante ? 'Nuevo plato' : 'Nuevo producto',
+        nuevoBtnMobile: isRestaurante ? '+ Plato' : '+ Nuevo',
+        buscar: isRestaurante ? 'Buscar plato' : 'Buscar nombre y código',
+        confirmarEstado: isRestaurante ? '¿Estás seguro que deseas cambiar el estado de este plato?' : '¿Estás seguro que deseas cambiar el estado de este producto?',
+        eliminar: isRestaurante ? 'Eliminar plato' : 'Eliminar producto',
+        eliminarInfo: isRestaurante ? 'Esta acción eliminará el plato de tu catálogo. ¿Deseas continuar?' : 'Esta acción eliminará el producto de tu empresa (eliminación lógica). ¿Deseas continuar?',
+    };
     const [isHoveredExp, setIsHoveredExp] = useState(false);
     const [isHoveredImp, setIsHoveredImp] = useState(false);
     const [currentPage, setcurrentPage] = useState(1);
@@ -53,7 +70,8 @@ const KardexProductos = () => {
         'Acciones'
     ]);
     const [showColumnFilter, setShowColumnFilter] = useState(false);
-    const [vistaActual, setVistaActual] = useState<'cards' | 'tabla' | 'lista'>('tabla');
+    // Vista por defecto: cards para restaurantes, tabla para otros rubros
+    const [vistaActual, setVistaActual] = useState<'cards' | 'tabla' | 'lista'>(isRestaurante ? 'cards' : 'tabla');
     const [disenoConfig, setDisenoConfig] = useState<any>(null);
 
     const allColumns = [
@@ -288,9 +306,16 @@ const KardexProductos = () => {
             const fd = new FormData();
             fd.append('file', file);
             const url = `/producto/${uploadTarget.id}/imagen`;
-            await apiClient.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            const resp = await apiClient.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             useAlertStore.getState().alert('Imagen subida correctamente', 'success');
-            await getAllProducts({ page: currentPage, limit: itemsPerPage, search: debounce });
+            // Esperar URL de AWS devuelta por el backend (no usar ObjectURL local)
+            const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
+            const nuevaUrl = signed || resp?.data?.data?.url || resp?.data?.url || resp?.data?.data?.imagenUrl || resp?.data?.imagenUrl || undefined;
+            if (nuevaUrl) {
+                setProductImage(uploadTarget.id, nuevaUrl as any);
+            } else {
+                useAlertStore.getState().alert('No se recibió la URL de imagen. Intenta nuevamente.', 'warning');
+            }
         } catch (error: any) {
             useAlertStore.getState().alert(error.response?.data?.message || 'Error al subir imagen', 'error');
         } finally {
@@ -565,7 +590,7 @@ const KardexProductos = () => {
                 {/* Header */}
                 <div className="space-y-4 mb-5 pt-5 md:pt-0">
                     <div className="w-full">
-                        <InputPro name="search" value={searchClient} onChange={handleChange} label="Buscar nombre y código" isLabel />
+                        <InputPro name="search" value={searchClient} onChange={handleChange} label={labels.buscar} isLabel />
                     </div>
                     <div className="grid grid-cols-2 md:flex md:justify-end gap-2 md:gap-3">
                         {/* Selector de Vista */}
@@ -593,7 +618,7 @@ const KardexProductos = () => {
                             </button>
                         </div>
 
-                        <div>
+                        {/* <div>
                             <select
                                 value={marcaIdFilter ?? ''}
                                 onChange={(e) => setMarcaIdFilter(e.target.value ? Number(e.target.value) : undefined)}
@@ -604,7 +629,7 @@ const KardexProductos = () => {
                                     <option key={m.id} value={m.id}>{m.nombre}</option>
                                 ))}
                             </select>
-                        </div>
+                        </div> */}
                         <div className="relative" onClick={(e) => e.stopPropagation()}>
                             <Button
                                 color="lila"
@@ -711,8 +736,8 @@ const KardexProductos = () => {
                             }}
                             className="text-sm md:text-base col-span-2 md:col-span-1"
                         >
-                            <span className="hidden md:inline">Nuevo producto</span>
-                            <span className="md:hidden">+ Nuevo</span>
+                            <span className="hidden md:inline">{labels.nuevoBtn}</span>
+                            <span className="md:hidden">{labels.nuevoBtnMobile}</span>
                         </Button>
                     </div>
                 </div>
@@ -746,8 +771,8 @@ const KardexProductos = () => {
                     setIsOpenModal={setIsOpenModal}
                 />}
                 {isOpenModalCategory && <ModalCategories isOpenModal={isOpenModalCategory} setIsOpenModal={setIsOpenModalCategory} closeModal={closeModal} />}
-                {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmToggleroduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information="¿Estás seguro que deseas cambiar el estado de este producto?." />}
-                {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalDelete} setIsOpenModal={setIsOpenModalDelete} title="Eliminar producto" information="Esta acción eliminará el producto de tu empresa (eliminación lógica). ¿Deseas continuar?" />}
+                {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmToggleroduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information={labels.confirmarEstado} />}
+                {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalDelete} setIsOpenModal={setIsOpenModalDelete} title={labels.eliminar} information={labels.eliminarInfo} />}
             </div>
         </div>
     );

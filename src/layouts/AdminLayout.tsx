@@ -10,6 +10,19 @@ export default function AdminLayout() {
   const location = useLocation()
   const { auth }: IAuthState = useAuthStore()
 
+  // Detectar si el rubro es restaurante para cambiar nombres del menú
+  const isRestaurante = useMemo(() => {
+    const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || ''
+    return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento')
+  }, [auth?.empresa?.rubro?.nombre])
+
+  // Nombres dinámicos según el rubro
+  const menuLabels = useMemo(() => ({
+    kardexTitle: isRestaurante ? 'Catálogo' : 'Kardex',
+    productosLabel: isRestaurante ? 'Platos' : 'Productos',
+    kardexIcon: isRestaurante ? 'mdi:silverware-fork-knife' : 'basil:book-open-outline'
+  }), [isRestaurante])
+
   const [nameNavbar, setNameNavbar] = useState<string>('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isFactSubmenuOpen, setIsFactSubmenuOpen] = useState(false)
@@ -159,11 +172,11 @@ export default function AdminLayout() {
                   <Icon icon="basil:chart-pie-alt-outline" className="mr-2" width="24" height="24" /> Dashboard
                 </NavLink>
               )}
-              {/* Kardex */}
+              {/* Kardex / Catálogo (según rubro) */}
               {hasPermission(auth, 'kardex') && (
                 <div>
-                  <button onClick={() => { toggleAccordion('kardex'); setNameNavbar('Kardex') }} className={location.pathname.includes('/administrador/kardex') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                    <Icon icon="basil:book-open-outline" className="mr-2" width="24" height="24" /> Kardex
+                  <button onClick={() => { toggleAccordion('kardex'); setNameNavbar(menuLabels.kardexTitle) }} className={location.pathname.includes('/administrador/kardex') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
+                    <Icon icon={menuLabels.kardexIcon} className="mr-2" width="24" height="24" /> {menuLabels.kardexTitle}
                     <Icon icon={isKardexSubmenuOpen ? 'basil:caret-up-outline' : 'mdi:chevron-down'} className="ml-auto" width="20" />
                   </button>
                   {isKardexSubmenuOpen && (
@@ -172,7 +185,10 @@ export default function AdminLayout() {
                         Dashboard
                       </NavLink>
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                        Productos
+                        {menuLabels.productosLabel}
+                      </NavLink>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                        Combos
                       </NavLink>
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex" end className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
                         Movimientos
@@ -308,6 +324,9 @@ export default function AdminLayout() {
                     <div className="ml-8 space-y-2 mt-2">
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
                         Pedidos
+                      </NavLink>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                        Modificadores
                       </NavLink>
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
                         Configuración

@@ -27,6 +27,8 @@ import ReporteTurno from './pages/admin/caja/ReporteTurno'
 import ReporteUsuarios from './pages/admin/caja/ReporteUsuarios'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
+import CombosTienda from './pages/admin/tienda/Combos'
+import ModificadoresTienda from './pages/admin/tienda/Modificadores'
 import TiendaPublica from './pages/tienda/[slug]'
 import ProductoDetalle from './pages/tienda/ProductoDetalle'
 import Checkout from './pages/tienda/Checkout'
@@ -81,11 +83,14 @@ function App() {
           <Route path="facturacion/nuevo" element={<Invoice />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
+          <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
           <Route path="usuarios" element={<UsuariosIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
+          <Route path="tienda/combos" element={<CombosTienda />} />
+          <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
           {/* Rutas de ADMIN_SISTEMA */}
           <Route path="sistema/diseno-rubros" element={<DisenoRubros />} />
         </Route>

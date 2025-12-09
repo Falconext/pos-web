@@ -12,7 +12,7 @@ export interface IProductsState {
     productCode: string
     totalProducts: number;
     resetProducts: () => void;
-    addProduct: (data: IFormProduct) => Promise<any>
+    addProduct: (data: IFormProduct, options?: { skipStore?: boolean }) => Promise<any>
     editProduct: (data: IFormProduct) => void
     getAllProducts: (params: any, callback?: Function,
         allProperties?: boolean) => void
@@ -21,6 +21,8 @@ export interface IProductsState {
     exportProducts: (empresaId: number, search?: string) => void;
     importProducts: (file: File) => Promise<void>;
     deleteProduct: (productoId: number) => Promise<void>;
+    setProductImage: (productoId: number, imagenUrl: string) => void;
+    upsertProductLocal: (product: any) => void;
 }
 
 export const useProductsStore = create<IProductsState>()(devtools((set, _get) => ({
@@ -74,30 +76,53 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             useAlertStore.setState({ loading: false });
         }
     },
-    addProduct: async (data: any) => {
+    setProductImage: (productoId: number, imagenUrl: string) => {
+        set((state) => ({
+            products: state.products.map((p: IProduct) =>
+                p.id === productoId ? { ...p, imagenUrl } as any : p
+            ),
+        }), false, 'SET_PRODUCT_IMAGE');
+    },
+    upsertProductLocal: (product: any) => {
+        set((state) => {
+            const exists = state.products?.some((p: IProduct) => p.id === product.id);
+            const merged = exists
+                ? state.products.map((p: IProduct) => p.id === product.id ? { ...p, ...product } as any : p)
+                : [{ ...(product as any) }, ...(state.products || [])];
+            return {
+                products: merged as any,
+                totalProducts: exists ? state.totalProducts : (state.totalProducts || 0) + 1,
+            };
+        }, false, 'UPSERT_PRODUCT_LOCAL');
+    },
+    addProduct: async (data: any, options?: { skipStore?: boolean }) => {
         useAlertStore.setState({ loading: true });
         try {
             const resp: any = await post(`producto/crear`, data);
             console.log(resp);
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
-                set((state) => ({
-                    products: [{
-                        ...data,
-                        id: resp.data?.id,
-                        codigo: data?.codigo || resp.data?.codigo,
-                        categoria: {
-                            nombre: data.categoriaNombre
-                        },
-                        unidadMedida: {
-                            nombre: data.unidadMedidaNombre
-                        },
-                        marca: data.marcaId ? {
-                            id: data.marcaId,
-                            nombre: data.marcaNombre,
-                        } : undefined,
-                    }, ...state.products]
-                }), false, "ADD_PRODUCTS");
+                if (!options?.skipStore) {
+                    set((state) => ({
+                        products: [{
+                            ...data,
+                            id: resp.data?.id,
+                            codigo: data?.codigo || resp.data?.codigo,
+                            imagenUrl: (data as any).imagenUrl,
+                            categoria: {
+                                nombre: data.categoriaNombre
+                            },
+                            unidadMedida: {
+                                nombre: data.unidadMedidaNombre
+                            },
+                            marca: data.marcaId ? {
+                                id: data.marcaId,
+                                nombre: data.marcaNombre,
+                            } : undefined,
+                        }, ...state.products],
+                        totalProducts: (state.totalProducts || 0) + 1,
+                    }), false, "ADD_PRODUCTS");
+                }
 
                 useAlertStore.setState({ loading: false });
                 useAlertStore.getState().alert("Se agrego el producto correctamente", "success")

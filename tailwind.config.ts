@@ -10,6 +10,19 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+                inter: ['Inter', 'system-ui', 'sans-serif'],
+                roboto: ['Roboto', 'system-ui', 'sans-serif'],
+                poppins: ['Poppins', 'system-ui', 'sans-serif'],
+                opensans: ['"Open Sans"', 'system-ui', 'sans-serif'],
+                lato: ['Lato', 'system-ui', 'sans-serif'],
+                montserrat: ['Montserrat', 'system-ui', 'sans-serif'],
+                raleway: ['Raleway', 'system-ui', 'sans-serif'],
+                ubuntu: ['Ubuntu', 'system-ui', 'sans-serif'],
+                manrope: ['Manrope', 'system-ui', 'sans-serif'],
+                rubik: ['Rubik', 'system-ui', 'sans-serif'],
+            },
             colors: {
                 tremor: {
                     brand: {

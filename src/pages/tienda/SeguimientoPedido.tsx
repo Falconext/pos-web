@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import LineaTiempoEstados from '@/components/LineaTiempoEstados';
@@ -7,6 +7,7 @@ import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 export default function SeguimientoPedido() {
+    const { slug } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const codigoParam = searchParams.get('codigo');
@@ -15,12 +16,59 @@ export default function SeguimientoPedido() {
     const [pedido, setPedido] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [tienda, setTienda] = useState<any>(null);
+
+    useEffect(() => {
+        if (slug) {
+            axios.get(`${BASE_URL}/public/store/${slug}`)
+                .then(({ data }) => setTienda(data.data || data))
+                .catch(console.error);
+        }
+    }, [slug]);
 
     useEffect(() => {
         if (codigoParam) {
             buscarPedido(codigoParam);
         }
     }, [codigoParam]);
+
+    // Helpers de diseño
+    const diseno = tienda?.diseno || {};
+    const getBordeRadius = () => {
+        switch (diseno.bordeRadius) {
+            case 'none': return 'rounded-none';
+            case 'small': return 'rounded';
+            case 'large': return 'rounded-2xl';
+            case 'full': return 'rounded-3xl';
+            default: return 'rounded-xl';
+        }
+    };
+    const getBotonStyle = () => {
+        switch (diseno.estiloBoton) {
+            case 'square': return 'rounded-none';
+            case 'pill': return 'rounded-full';
+            default: return 'rounded-lg';
+        }
+    };
+    const getFontFamily = () => {
+        switch (diseno.tipografia) {
+            case 'Roboto': return 'font-roboto';
+            case 'Open Sans': return 'font-opensans';
+            case 'Lato': return 'font-lato';
+            case 'Montserrat': return 'font-montserrat';
+            case 'Poppins': return 'font-poppins';
+            case 'Raleway': return 'font-raleway';
+            case 'Ubuntu': return 'font-ubuntu';
+            case 'Manrope': return 'font-manrope';
+            case 'Rubik': return 'font-rubik';
+            case 'Inter': return 'font-inter';
+            default: return 'font-sans';
+        }
+    };
+
+    const borderRadius = getBordeRadius();
+    const btnRadius = getBotonStyle();
+    const fontFamily = getFontFamily();
 
     const buscarPedido = async (codigoBusqueda: string) => {
         if (!codigoBusqueda.trim()) {
@@ -85,7 +133,7 @@ export default function SeguimientoPedido() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className={`min-h-screen bg-gray-50 py-8 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
             <div className="max-w-3xl mx-auto px-4">
                 {/* Encabezado */}
                 <div className="flex items-center gap-3 mb-6">
@@ -100,25 +148,26 @@ export default function SeguimientoPedido() {
                 </div>
 
                 {/* Formulario de búsqueda */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className={`bg-white ${borderRadius} shadow p-6 mb-6`}>
                     <form onSubmit={handleSubmit} className="flex gap-3">
                         <input
                             type="text"
                             value={codigo}
                             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
                             placeholder="Ej: PED-ABC123-XYZ"
-                            className="flex-1 border rounded-lg px-4 py-3 text-lg"
+                            className={`flex-1 border ${borderRadius} px-4 py-3 text-lg`}
                         />
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+                            className={`bg-blue-600 text-white px-8 py-3 ${btnRadius} font-semibold hover:bg-blue-700 disabled:bg-gray-400`}
+                            style={{ backgroundColor: diseno.colorPrimario || '#2563eb' }}
                         >
                             {loading ? 'Buscando...' : 'Buscar'}
                         </button>
                     </form>
                     {error && (
-                        <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg flex items-center gap-2">
+                        <div className={`mt-4 p-3 bg-red-50 text-red-600 ${borderRadius} flex items-center gap-2`}>
                             <Icon icon="mdi:alert-circle" className="w-5 h-5" />
                             <span>{error}</span>
                         </div>
@@ -134,13 +183,13 @@ export default function SeguimientoPedido() {
                     return (
                         <div className="space-y-6">
                             {/* Tarjeta: Estimated delivery */}
-                            <div className="bg-white rounded-2xl shadow-sm p-4 flex items-center justify-between border border-gray-100">
+                            <div className={`bg-white ${borderRadius} shadow-sm p-4 flex items-center justify-between border border-gray-100`}>
                                 <div className="flex items-center gap-3">
-                                    <span className="p-2 rounded-lg bg-orange-50 text-orange-600">
+                                    <span className={`p-2 ${borderRadius} bg-orange-50 text-orange-600`} style={{ backgroundColor: `${diseno.colorPrimario}10`, color: diseno.colorPrimario }}>
                                         <Icon icon="mdi:alarm" className="w-5 h-5" />
                                     </span>
                                     <div>
-                                        <p className="text-[13px] text-orange-600 font-semibold">Estimated delivery</p>
+                                        <p className="text-[13px] text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>Estimated delivery</p>
                                         <p className="text-xs text-gray-500">{fechaEstimada}</p>
                                     </div>
                                 </div>
@@ -151,14 +200,14 @@ export default function SeguimientoPedido() {
                             </div>
 
                             {/* Tarjeta: Order tracking */}
-                            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                            <div className={`bg-white ${borderRadius} shadow-sm p-6 border border-gray-100`}>
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-semibold">Order tracking</h2>
-                                    <span className="text-orange-600 font-semibold">№{pedido.codigoSeguimiento}</span>
+                                    <span className="text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>№{pedido.codigoSeguimiento}</span>
                                 </div>
                                 {/* Estado actual */}
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(pedido.estado)}`}>{getEstadoLabel(pedido.estado)}</span>
+                                    <span className={`px-3 py-1 ${borderRadius} text-xs font-medium ${getEstadoColor(pedido.estado)}`}>{getEstadoLabel(pedido.estado)}</span>
                                     <div className="text-sm text-gray-600">
                                         {new Date(pedido.creadoEn).toLocaleString('es-PE')}
                                     </div>
@@ -172,7 +221,7 @@ export default function SeguimientoPedido() {
                             </div>
 
                             {/* Detalle de orden */}
-                            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                            <div className={`bg-white ${borderRadius} shadow-sm p-6 border border-gray-100`}>
                                 <h3 className="text-lg font-semibold mb-4">Order №{pedido.codigoSeguimiento}</h3>
                                 <div className="space-y-3 mb-4">
                                     {pedido.items.map((item: any) => (
@@ -220,7 +269,7 @@ export default function SeguimientoPedido() {
                                         href={`https://wa.me/${pedido.empresa.whatsappTienda.replace(/\D/g, '')}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="mt-6 flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700"
+                                        className={`mt-6 flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 ${btnRadius} font-semibold hover:bg-green-700`}
                                     >
                                         <Icon icon="mdi:whatsapp" className="w-5 h-5" />
                                         Contactar al negocio
@@ -231,8 +280,8 @@ export default function SeguimientoPedido() {
                             {/* Botón Back to Home */}
                             <button
                                 onClick={() => navigate('/')}
-                                className="w-full py-3 rounded-xl text-white font-semibold"
-                                style={{ backgroundColor: '#f97316' }}
+                                className={`w-full py-3 ${btnRadius} text-white font-semibold`}
+                                style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
                             >
                                 Back to Home
                             </button>
