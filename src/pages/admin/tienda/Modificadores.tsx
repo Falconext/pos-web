@@ -225,7 +225,7 @@ export default function Modificadores() {
         </div>
       ) : (
         <div className="space-y-4">
-          {grupos.map((grupo) => (
+          {grupos?.map((grupo: any) => (
             <div key={grupo.id} className="bg-white rounded-lg shadow border border-gray-200">
               <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -278,7 +278,7 @@ export default function Modificadores() {
               {grupo.opciones.length > 0 ? (
                 <div className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {grupo.opciones.map((opcion) => (
+                    {grupo.opciones.map((opcion: any) => (
                       <div
                         key={opcion.id}
                         className={`flex items-center justify-between p-3 rounded-lg border ${

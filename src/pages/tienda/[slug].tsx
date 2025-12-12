@@ -205,7 +205,8 @@ export default function TiendaPublica() {
     try {
       setLoadingModificadores(true);
       const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${productoId}/modifiers`);
-      return data.data || [];
+      // El backend ahora retorna directamente el array de grupos en data.data
+      return data.data || data || [];
     } catch (error) {
       console.error('Error al cargar modificadores:', error);
       return [];

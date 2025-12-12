@@ -194,26 +194,6 @@ const KardexProductos = () => {
         };
         if (auth?.empresaId) persist();
     }, [visibleColumns, columnsStorageKey, auth?.empresaId]);
-
-    // Cargar columnas desde backend (preferencias por usuario)
-    useEffect(() => {
-        const loadFromServer = async () => {
-            try {
-                const res = await apiClient.get(`/preferencias/tabla`, {
-                    params: { tabla: 'productos', empresaId: auth?.empresaId },
-                });
-                const serverCols = res?.data?.visibleColumns;
-                if (Array.isArray(serverCols) && serverCols.length) {
-                    let restored: string[] = allColumns.filter((c) => serverCols.includes(c));
-                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
-                    setVisibleColumns(restored);
-                }
-            } catch (_e) {
-                // fallback local ya aplicado
-            }
-        };
-        if (auth?.empresaId) loadFromServer();
-    }, [auth?.empresaId]);
     const toggleColumn = (column: string) => {
         if (column === 'Acciones') return; // Siempre visible
         setVisibleColumns(prev => {
@@ -370,7 +350,14 @@ const KardexProductos = () => {
             'Costo': costo > 0 ? `S/ ${costo.toFixed(2)}` : '-',
             'Margen': margen > 0 ? `${margen.toFixed(1)}%` : '-',
             'Ganancia/Unidad': gananciaUnidad > 0 ? `S/ ${gananciaUnidad.toFixed(2)}` : '-',
-            'Stock': item?.stock,
+            'Stock': (
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${item?.stock <= 5
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : 'bg-green-100 text-green-700 border border-green-200'
+                    }`}>
+                    {item?.stock}
+                </span>
+            ),
             'Stock minimo': item?.stockMinimo ?? 0,
             'U.M': item?.unidadMedida.nombre,
             'Estado': item.estado,
@@ -464,7 +451,7 @@ const KardexProductos = () => {
         });
     }, [debounce, currentPage, itemsPerPage, marcaIdFilter]);
 
-    
+
 
     const closeModal = () => {
         setIsOpenModal(false);

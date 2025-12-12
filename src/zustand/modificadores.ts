@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import axios from 'axios';
+import { del, get as fetchGet, post, patch } from '../utils/fetch';
 import useAlertStore from './alert';
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 export interface OpcionModificador {
   id: number;
@@ -66,8 +64,8 @@ export const useModificadoresStore = create<ModificadoresState>()(
     getAllGrupos: async () => {
       try {
         set({ loading: true }, false, 'MODS_GET_ALL_START');
-        const res = await axios.get(`${BASE_URL}/modificadores/grupos?incluirInactivos=true`);
-        const data: GrupoModificador[] = res.data?.data || res.data || [];
+        const res: any = await fetchGet('modificadores/grupos?incluirInactivos=true');
+        const data: GrupoModificador[] = res.data || [];
         set({ grupos: data, loading: false }, false, 'MODS_GET_ALL_SUCCESS');
       } catch (error) {
         set({ grupos: [], loading: false }, false, 'MODS_GET_ALL_ERROR');
@@ -78,13 +76,15 @@ export const useModificadoresStore = create<ModificadoresState>()(
     crearGrupo: async (data) => {
       try {
         useAlertStore.setState({ loading: true });
-        const res = await axios.post(`${BASE_URL}/modificadores/grupos`, data);
-        const nuevo: GrupoModificador = res.data?.data;
-        set((state) => ({ grupos: [nuevo, ...state.grupos] }), false, 'MODS_CREATE_GROUP');
-        useAlertStore.setState({ success: true });
-        useAlertStore.getState().alert('Grupo creado', 'success');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al crear grupo', 'error');
+        const res: any = await post('modificadores/grupos', data);
+        if (res.code === 1 || res.success !== false) {
+          useAlertStore.setState({ success: true });
+          await get().getAllGrupos();
+        } else {
+          useAlertStore.getState().alert(res.error || 'Error al crear grupo', 'error');
+        }
+      } catch (error) {
+        useAlertStore.getState().alert('Error al crear grupo', 'error');
       } finally {
         useAlertStore.setState({ loading: false });
       }
@@ -93,15 +93,15 @@ export const useModificadoresStore = create<ModificadoresState>()(
     actualizarGrupo: async (id, data) => {
       try {
         useAlertStore.setState({ loading: true });
-        const res = await axios.patch(`${BASE_URL}/modificadores/grupos/${id}`, data);
-        const actualizado: GrupoModificador = res.data?.data ?? null;
-        set((state) => ({
-          grupos: state.grupos.map((g) => (g.id === id && actualizado ? { ...g, ...actualizado } : g)),
-        }), false, 'MODS_UPDATE_GROUP');
-        useAlertStore.setState({ success: true });
-        useAlertStore.getState().alert('Grupo actualizado', 'success');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al actualizar grupo', 'error');
+        const res: any = await patch(`modificadores/grupos/${id}`, data);
+        if (res.code === 1 || res.success !== false) {
+          useAlertStore.setState({ success: true });
+          await get().getAllGrupos();
+        } else {
+          useAlertStore.getState().alert(res.error || 'Error al actualizar grupo', 'error');
+        }
+      } catch (error) {
+        useAlertStore.getState().alert('Error al actualizar grupo', 'error');
       } finally {
         useAlertStore.setState({ loading: false });
       }
@@ -109,37 +109,32 @@ export const useModificadoresStore = create<ModificadoresState>()(
 
     eliminarGrupo: async (id) => {
       try {
-        useAlertStore.setState({ loading: true });
-        await axios.delete(`${BASE_URL}/modificadores/grupos/${id}`);
-        set((state) => ({ grupos: state.grupos.filter((g) => g.id !== id) }), false, 'MODS_DELETE_GROUP');
-        useAlertStore.setState({ success: true });
-        useAlertStore.getState().alert('Grupo eliminado', 'success');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al eliminar grupo', 'error');
-      } finally {
-        useAlertStore.setState({ loading: false });
+        const res: any = await del(`modificadores/grupos/${id}`);
+        if (res.code === 1 || res.success !== false) {
+          set((state) => ({
+            grupos: state.grupos.filter(g => g.id !== id)
+          }), false, 'MODS_DELETE_GROUP');
+          useAlertStore.getState().alert('Grupo eliminado correctamente', 'success');
+        } else {
+          useAlertStore.getState().alert(res.error || 'Error al eliminar grupo', 'error');
+        }
+      } catch (error) {
+        useAlertStore.getState().alert('Error al eliminar grupo', 'error');
       }
     },
 
     agregarOpcion: async (grupoId, data) => {
       try {
         useAlertStore.setState({ loading: true });
-        const res = await axios.post(`${BASE_URL}/modificadores/grupos/${grupoId}/opciones`, data);
-        const opcion: OpcionModificador = res.data?.data ?? null;
-        if (!opcion) {
-          // Si el backend no devuelve la opción, recargar grupos completos
+        const res: any = await post(`modificadores/grupos/${grupoId}/opciones`, data);
+        if (res.code === 1 || res.success !== false) {
+          useAlertStore.setState({ success: true });
           await get().getAllGrupos();
         } else {
-          set((state) => ({
-            grupos: state.grupos.map((g) =>
-              g.id === grupoId ? { ...g, opciones: [...g.opciones, opcion] } : g,
-            ),
-          }), false, 'MODS_ADD_OPTION');
+          useAlertStore.getState().alert(res.error || 'Error al agregar opción', 'error');
         }
-        useAlertStore.setState({ success: true });
-        useAlertStore.getState().alert('Opción agregada', 'success');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al agregar opción', 'error');
+      } catch (error) {
+        useAlertStore.getState().alert('Error al agregar opción', 'error');
       } finally {
         useAlertStore.setState({ loading: false });
       }
@@ -148,22 +143,15 @@ export const useModificadoresStore = create<ModificadoresState>()(
     actualizarOpcion: async (id, data) => {
       try {
         useAlertStore.setState({ loading: true });
-        const res = await axios.patch(`${BASE_URL}/modificadores/opciones/${id}`, data);
-        const updated: OpcionModificador = res.data?.data ?? null;
-        if (!updated) {
+        const res: any = await patch(`modificadores/opciones/${id}`, data);
+        if (res.code === 1 || res.success !== false) {
+          useAlertStore.setState({ success: true });
           await get().getAllGrupos();
         } else {
-          set((state) => ({
-            grupos: state.grupos.map((g) => ({
-              ...g,
-              opciones: g.opciones.map((o) => (o.id === id ? { ...o, ...updated } : o)),
-            })),
-          }), false, 'MODS_UPDATE_OPTION');
+          useAlertStore.getState().alert(res.error || 'Error al actualizar opción', 'error');
         }
-        useAlertStore.setState({ success: true });
-        useAlertStore.getState().alert('Opción actualizada', 'success');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al actualizar opción', 'error');
+      } catch (error) {
+        useAlertStore.getState().alert('Error al actualizar opción', 'error');
       } finally {
         useAlertStore.setState({ loading: false });
       }
@@ -171,37 +159,46 @@ export const useModificadoresStore = create<ModificadoresState>()(
 
     eliminarOpcion: async (id) => {
       try {
-        useAlertStore.setState({ loading: true });
-        await axios.delete(`${BASE_URL}/modificadores/opciones/${id}`);
-        set((state) => ({
-          grupos: state.grupos.map((g) => ({
-            ...g,
-            opciones: g.opciones.filter((o) => o.id !== id),
-          })),
-        }), false, 'MODS_DELETE_OPTION');
-        useAlertStore.setState({ success: true });
-        useAlertStore.getState().alert('Opción eliminada', 'success');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al eliminar opción', 'error');
-      } finally {
-        useAlertStore.setState({ loading: false });
+        const res: any = await del(`modificadores/opciones/${id}`);
+        if (res.code === 1 || res.success !== false) {
+          set((state) => ({
+            grupos: state.grupos.map(g => ({
+              ...g,
+              opciones: g.opciones?.filter(o => o.id !== id) || []
+            }))
+          }), false, 'MODS_DELETE_OPTION');
+          useAlertStore.getState().alert('Opción eliminada correctamente', 'success');
+        } else {
+          useAlertStore.getState().alert(res.error || 'Error al eliminar opción', 'error');
+        }
+      } catch (error) {
+        useAlertStore.getState().alert('Error al eliminar opción', 'error');
       }
     },
 
     toggleOpcionActivo: async (opcion) => {
       try {
-        const nuevoActivo = !opcion.activo;
-        await axios.patch(`${BASE_URL}/modificadores/opciones/${opcion.id}`, { activo: nuevoActivo });
-        set((state) => ({
-          grupos: state.grupos.map((g) => ({
-            ...g,
-            opciones: g.opciones.map((o) =>
-              o.id === opcion.id ? { ...o, activo: nuevoActivo } : o,
-            ),
-          })),
-        }), false, 'MODS_TOGGLE_OPTION_ACTIVE');
-      } catch (error: any) {
-        useAlertStore.getState().alert(error?.message || 'Error al actualizar opción', 'error');
+        const res: any = await patch(`modificadores/opciones/${opcion.id}`, {
+          activo: !opcion.activo
+        });
+        if (res.code === 1 || res.success !== false) {
+          set((state) => ({
+            grupos: state.grupos.map(g => ({
+              ...g,
+              opciones: g.opciones?.map(o => 
+                o.id === opcion.id ? { ...o, activo: !o.activo } : o
+              ) || []
+            }))
+          }), false, 'MODS_TOGGLE_OPTION');
+          useAlertStore.getState().alert(
+            `Opción ${!opcion.activo ? 'activada' : 'desactivada'} correctamente`,
+            'success'
+          );
+        } else {
+          useAlertStore.getState().alert(res.error || 'Error al cambiar estado de opción', 'error');
+        }
+      } catch (error) {
+        useAlertStore.getState().alert('Error al cambiar estado de opción', 'error');
       }
     },
   })),

@@ -12,8 +12,10 @@ import Button from "@/components/Button"
 import { Icon } from "@iconify/react"
 import apiClient from "@/utils/apiClient"
 import useAlertStore from "@/zustand/alert"
-import { useBrandsStore } from "@/zustand/brands"
-import type { IBrand } from "@/zustand/brands"
+import { useBrandsStore } from '@/zustand/brands';
+import type { IBrand } from '@/zustand/brands';
+import { useModificadoresStore } from '@/zustand/modificadores';
+import type { GrupoModificador } from '@/zustand/modificadores';
 
 interface IPropsProducts {
     formValues: IFormProduct
@@ -46,6 +48,10 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
     const { categories } = useCategoriesStore();
     // Marcas
     const { brands, getAllBrands } = useBrandsStore();
+    
+    // Modificadores
+    const { grupos: gruposModificadores, getAllGrupos } = useModificadoresStore();
+    const [gruposSeleccionados, setGruposSeleccionados] = useState<number[]>([]);
 
     // Detectar si el rubro es restaurante para simplificar el formulario
     const isRestaurante = (() => {
@@ -101,30 +107,42 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         });
     }
 
-    console.log(auth)
-
-    console.log(formValues)
+    
 
     useEffect(() => {
-        getUnitOfMeasure();
-        getAllCategories({});
+        // Evitar llamadas repetidas: solo cargar si están vacíos en el store
+        if (!unitOfMeasure || (Array.isArray(unitOfMeasure) && unitOfMeasure.length === 0)) {
+            getUnitOfMeasure();
+        }
+        if (!categories || (Array.isArray(categories) && categories.length === 0)) {
+            getAllCategories({});
+        }
         if (!brands || brands.length === 0) {
             getAllBrands();
+        }
+        // Cargar grupos de modificadores si es restaurante y aún no existen en store
+        if (isRestaurante && (!gruposModificadores || gruposModificadores.length === 0)) {
+            getAllGrupos();
         }
     }, [])
 
     useEffect(() => {
-        if (auth !== null) {
-            console.log(auth)
-            getCodeProduct(auth?.empresaId)
+        // Obtener código de producto solo al abrir el modal en modo creación y si no existe código aún
+        if (!isOpenModal) return;
+        if (!isEdit && auth && auth.empresaId && !formValues?.codigo) {
+            getCodeProduct(auth.empresaId);
         }
-    }, [auth])
+    }, [isOpenModal, isEdit, auth])
 
     // Preload preview en edición. No borrar al escribir en el formulario.
     useEffect(() => {
         if (!isOpenModal) return;
         if (isEdit && (formValues as any)?.imagenUrl && !previewPrincipal) {
             setPreviewPrincipal((formValues as any).imagenUrl);
+        }
+        // Cargar grupos asignados al producto en edición
+        if (isEdit && isRestaurante && formValues?.productoId) {
+            cargarGruposAsignados(formValues.productoId);
         }
     }, [isOpenModal, isEdit])
 
@@ -133,8 +151,30 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         if (!isOpenModal) {
             setPreviewPrincipal(null);
             setFilePrincipal(null);
+            setGruposSeleccionados([]);
         }
     }, [isOpenModal])
+
+    // Cargar grupos asignados a un producto
+    const cargarGruposAsignados = async (productoId: number) => {
+        try {
+            const res = await apiClient.get(`/modificadores/productos/${productoId}`);
+            // El backend ahora retorna directamente el array en res.data.data
+            const grupos = res?.data?.data || res?.data || [];
+            setGruposSeleccionados(grupos.map((g: any) => g.grupoId));
+        } catch (error) {
+            console.error('Error al cargar grupos asignados:', error);
+        }
+    };
+
+    // Toggle grupo seleccionado
+    const toggleGrupoSeleccionado = (grupoId: number) => {
+        setGruposSeleccionados(prev => 
+            prev.includes(grupoId) 
+                ? prev.filter(id => id !== grupoId)
+                : [...prev, grupoId]
+        );
+    };
 
     const handleSubmitProduct = async () => {
         console.log(formValues)
@@ -178,6 +218,16 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                 stockMinimo: formValues?.stockMinimo != null ? Number(formValues?.stockMinimo) : undefined,
                 stockMaximo: formValues?.stockMaximo != null ? Number(formValues?.stockMaximo) : undefined,
             });
+            // Guardar asignación de modificadores si es restaurante (siempre, incluso si está vacío para eliminar asignaciones previas)
+            if (isRestaurante) {
+                try {
+                    await apiClient.post(`/modificadores/productos/${formValues.productoId}`, {
+                        grupos: gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }))
+                    });
+                } catch (e) {
+                    console.error('Error al asignar modificadores:', e);
+                }
+            }
             try {
                 if (filePrincipal) {
                     const fd = new FormData();
@@ -240,6 +290,16 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                 });
             } catch (e) {
                 // noop
+            }
+            // Guardar asignación de modificadores para producto nuevo si es restaurante
+            if (isRestaurante && product?.data?.id) {
+                try {
+                    await apiClient.post(`/modificadores/productos/${product.data.id}`, {
+                        grupos: gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }))
+                    });
+                } catch (e) {
+                    console.error('Error al asignar modificadores:', e);
+                }
             }
             setFilePrincipal(null); setPreviewPrincipal(null);
             closeModal();
@@ -708,6 +768,75 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                         </div>
 
                     </div>
+
+                    {/* Sección de Modificadores - Solo para restaurantes */}
+                    {isRestaurante && gruposModificadores && gruposModificadores.length > 0 && (
+                        <div className="col-span-2 mt-4">
+                            <div className="p-4 rounded-lg border border-gray-200">
+                                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <Icon icon="mdi:food-variant" width={16} height={16} />
+                                    Personalización del Plato
+                                </h5>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Selecciona los grupos de modificadores que los clientes podrán elegir al pedir este plato (ej: cremas, acompañamientos, extras)
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {gruposModificadores.map((grupo: GrupoModificador) => (
+                                        <button
+                                            key={grupo.id}
+                                            type="button"
+                                            onClick={() => toggleGrupoSeleccionado(grupo.id)}
+                                            className={`p-3 rounded-lg border-2 transition-all text-left ${
+                                                gruposSeleccionados.includes(grupo.id)
+                                                    ? 'border-[#6A6CFF] bg-[#6A6CFF]/5'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
+                                                    gruposSeleccionados.includes(grupo.id)
+                                                        ? 'border-[#6A6CFF] bg-[#6A6CFF]'
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {gruposSeleccionados.includes(grupo.id) && (
+                                                        <Icon icon="mdi:check" className="text-white" width={12} height={12} />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-sm text-gray-800">{grupo.nombre}</div>
+                                                    {grupo.descripcion && (
+                                                        <div className="text-xs text-gray-500 mt-0.5">{grupo.descripcion}</div>
+                                                    )}
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        {grupo.esObligatorio && (
+                                                            <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded">
+                                                                Obligatorio
+                                                            </span>
+                                                        )}
+                                                        <span className="text-[10px] text-gray-400">
+                                                            {grupo.opciones?.length || 0} opciones
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                                {gruposSeleccionados.length === 0 && (
+                                    <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                        <Icon icon="mdi:information" className="inline mr-1" width={14} height={14} />
+                                        Sin modificadores asignados. Los clientes no podrán personalizar este plato.
+                                    </div>
+                                )}
+                                {gruposSeleccionados.length > 0 && (
+                                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-800">
+                                        <Icon icon="mdi:check-circle" className="inline mr-1" width={14} height={14} />
+                                        {gruposSeleccionados.length} grupo(s) seleccionado(s). Los clientes podrán personalizar este plato al agregarlo al carrito.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                 </div>
                 <div className="flex gap-5 justify-end mt-5 mb-5 md:pr-5">

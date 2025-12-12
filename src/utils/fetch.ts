@@ -1,5 +1,5 @@
 import type { AxiosResponse } from 'axios'
-import apiClient from './apiClient.ts'
+import apiClient from './apiClient'
 
 interface ApiResponse<T> {
   success: boolean
