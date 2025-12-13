@@ -10,6 +10,7 @@ interface ITableBodyProps {
     colorFont?: string;
     actions?: any[];
     formValues: any;
+    columns: any[];
 }
 
 const TableBody: FC<ITableBodyProps> = ({
@@ -17,29 +18,19 @@ const TableBody: FC<ITableBodyProps> = ({
     formValues,
     colorFont,
     actions,
+    columns
 }) => {
     const { updateProductInvoice, productsInvoice } = useInvoiceStore();
 
-    // Log para depurar productsInvoice
-    console.log('productsInvoice:', productsInvoice);
-
-    // Log para depurar data
-    console.log('data:', data);
-
     // Función para obtener la cantidad original desde productsInvoice
     const getOriginalQuantity = (row: any) => {
-        console.log('Row passed to getOriginalQuantity:', row); // Depuración
         const originalProduct = productsInvoice.find((item: any) => item.descripcion === row.descripcion);
-        console.log(originalProduct)
         if (!originalProduct) {
-            console.warn('Product not found in productsInvoice for id:', row.id);
             return Number(row.cantidad);
         }
-        console.log(originalProduct)
         const originalQty = originalProduct.cantidadOriginal !== undefined
             ? Number(originalProduct.cantidadOriginal)
             : Number(originalProduct.cantidad);
-        console.log('Cantidad original en la fila', row.id, originalQty);
         return originalQty;
     };
 
@@ -50,21 +41,17 @@ const TableBody: FC<ITableBodyProps> = ({
         value: string | number
     ) => {
         const updatedProduct = { ...data[index] };
-        console.log('updatedProduct:', updatedProduct); // Depuración
         const originalQuantity = getOriginalQuantity(updatedProduct);
-        console.log(originalQuantity)
         // Validar la cantidad si el campo es 'quantity'
         if (field === 'cantidad' && formValues?.motivoId === 7) {
             const newQuantity = value === '' ? 0 : Number(value); // Permitir input vacío temporalmente
             // No permitir que la cantidad sea mayor a la original
             if (newQuantity > originalQuantity) {
                 useAlertStore.getState().alert("No puedes colocar un número mayor que la cantidad original", "error")
-                console.log(`New quantity ${newQuantity} is greater than original ${originalQuantity}`);
                 return; // No actualizar si la cantidad es mayor a la original
             }
             // No permitir valores negativos o cero
             if (newQuantity <= 0 && value !== '') {
-                console.log(`New quantity ${newQuantity} is less than or equal to 0`);
                 return; // No actualizar si la cantidad es menor o igual a cero
             }
             updatedProduct[field] = value === '' ? '' : newQuantity; // Mantener el valor como string si está vacío
@@ -99,17 +86,15 @@ const TableBody: FC<ITableBodyProps> = ({
         }
     };
 
-    console.log(actions)
-
     return (
         <tbody>
             {data.map((row, index) => {
                 const isCanceled = formValues === undefined || row.estado === 'cancelado' || row.estado === "completado" || (formValues?.motivoId === 1 || formValues?.motivoId === 2 || formValues?.motivoId === 4 || formValues?.motivoId === 6);
                 const hasAddressAndName = row.hasOwnProperty('address') && row.hasOwnProperty('name');
-                const isNoteType07 = formValues?.motivoId === 7;
                 const isNoteType03 = formValues?.motivoId === 3;
                 const isNoteType04 = formValues?.motivoId === 4;
                 const isNoteType05 = formValues?.motivoId === 5;
+                const isNoteType07 = formValues?.motivoId === 7;
                 const isNoteType08 = formValues?.motivoId === 8;
                 const isNoteType09 = formValues?.motivoId === 9;
                 const isNoteType10 = formValues?.motivoId === 10;
@@ -121,27 +106,13 @@ const TableBody: FC<ITableBodyProps> = ({
                             opacity: isCanceled ? 1 : 1,
                         }}
                     >
-                        {Object.entries(row).map(([key, cell], cellIndex) => {
-                            if (
-                                key === 'cantidadOriginal' ||
-                                key === 'id' ||
-                                key === 'productoId' ||
-                                key === 'unidadMedidaId' ||
-                                key === 'categoriaId' ||
-                                key === 'id_invoice' ||
-                                key === 'provincia' ||
-                                key === 'distrito' ||
-                                key === 's3PdfUrl'||
-                                key === 'departamento' ||
-                                key === 'xmlSunat' ||
-                                key === 'cdrSunat' ||
-                                key === 'comprobanteId' ||
-                                key === 'tipoDoc' ||
-                                // No renderizar campos meta o auxiliares
-                                key.startsWith('_')
-                            ) {
-                                return null;
-                            }
+                        {columns.map((col, cellIndex) => {
+                            // Handle logic for column key extraction (similar to TableHeader)
+                            const isObject = typeof col === 'object';
+                            const key = isObject ? col.key : (col as string);
+
+                            // Access row[key] to get the cell value.
+                            const cell = row[key];
 
                             // Determinar si la celda es editable
                             let isEditable: boolean
@@ -202,20 +173,20 @@ const TableBody: FC<ITableBodyProps> = ({
                                         />
                                     )
 
-                                        : key === 'stock' ? (
+                                        : key === 'stock' || key === 'Stock' ? (
                                             cell !== null && cell !== '' ? (
                                                 <p
                                                     className={
                                                         Number(cell) <= 5
-                                                            ? 'text-red-500 border-[#e9fae4] bg-[#ffe3e1] rounded-lg px-3 w-12 py-1 text-center font-bold'
-                                                            : 'text-green-500 border-[#e9fae4] bg-[#e9fae4] rounded-lg px-3 w-12 py-1 text-center font-bold'
+                                                            ? ''
+                                                            : ''
                                                     }
                                                 >
                                                     {cell as React.ReactNode}
                                                 </p>
                                             ) : (
                                                 // cuando está vacío no le ponemos clase
-                                                <p>{cell}</p>
+                                                <p className=''>{cell}</p>
                                             )
                                         ) : key === 'estado' || key === 'tipo' ? (
                                             <div
@@ -277,7 +248,9 @@ const TableBody: FC<ITableBodyProps> = ({
                                                     {cellValue}
                                                 </span>
                                             ) : (
-                                                cell as React.ReactNode
+                                                <div className="flex">
+                                                    {cell as React.ReactNode}
+                                                </div>
                                             )
                                         )}
                                 </td>

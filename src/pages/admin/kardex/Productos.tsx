@@ -24,7 +24,7 @@ import { useBrandsStore } from "@/zustand/brands";
 const KardexProductos = () => {
 
     const { getAllProducts, totalProducts, products, toggleStateProduct, exportProducts, importProducts, deleteProduct, setProductImage }: IProductsState = useProductsStore();
-    const { success } = useAlertStore();
+    const { success, loading } = useAlertStore();
     const { auth } = useAuthStore();
 
     // Detectar si el rubro es restaurante para cambiar textos y vista por defecto
@@ -267,15 +267,27 @@ const KardexProductos = () => {
         // Buscar el producto original para obtener datos completos
         const originalProduct = products.find(p => p.id === data.productoId);
 
-        setFormValues({
-            ...data,
-            precioUnitario: data.precioUnitario.replace("S/ ", ""),
-            costoUnitario: originalProduct?.costoUnitario || originalProduct?.costoPromedio || 0,
-            costoPromedio: originalProduct?.costoPromedio || 0,
-            stockMinimo: (data?.stockMinimo ?? originalProduct?.stockMinimo) || 0,
-            stockMaximo: (data?.stockMaximo ?? originalProduct?.stockMaximo) || 0,
-            imagenUrl: (originalProduct as any)?.imagenUrl || '',
-        });
+        if (originalProduct) {
+            setFormValues({
+                ...initialForm,
+                ...originalProduct,
+                productoId: originalProduct.id,
+                unidadMedidaId: originalProduct.unidadMedida?.id || originalProduct.unidadMedidaId,
+                unidadMedidaNombre: originalProduct.unidadMedida?.nombre,
+                categoriaId: originalProduct.categoria?.id || originalProduct.categoriaId,
+                categoriaNombre: originalProduct.categoria?.nombre,
+                marcaId: (originalProduct as any).marca?.id || (originalProduct as any).marcaId,
+                marcaNombre: (originalProduct as any).marca?.nombre,
+                // Aseguramos que valores numéricos sean correctos
+                precioUnitario: Number(originalProduct.precioUnitario),
+                costoUnitario: Number(originalProduct.costoUnitario || originalProduct.costoPromedio || 0),
+                costoPromedio: Number(originalProduct.costoPromedio || 0),
+                stock: originalProduct.stock,
+                stockMinimo: originalProduct.stockMinimo || 0,
+                stockMaximo: originalProduct.stockMaximo || 0,
+                imagenUrl: (originalProduct as any)?.imagenUrl || '',
+            });
+        }
     };
 
     const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -351,9 +363,11 @@ const KardexProductos = () => {
             'Margen': margen > 0 ? `${margen.toFixed(1)}%` : '-',
             'Ganancia/Unidad': gananciaUnidad > 0 ? `S/ ${gananciaUnidad.toFixed(2)}` : '-',
             'Stock': (
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${item?.stock <= 5
-                    ? 'bg-red-100 text-red-700 border border-red-200'
-                    : 'bg-green-100 text-green-700 border border-green-200'
+                <span className={`inline-flex items-center text-xs font-semibold ${item?.stock <= 5
+                    ? 'bg-red-400 text-white px-2 py-1 rounded'
+                    : item?.stock <= 10
+                        ? 'bg-yellow-400 text-white px-2 py-1 rounded'
+                        : 'bg-green-400 text-white px-2 py-1 rounded'
                     }`}>
                     {item?.stock}
                 </span>
@@ -389,13 +403,13 @@ const KardexProductos = () => {
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
                 {isOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                    <div className="absolute flex flex-col right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                         <button
                             type="button"
                             onClick={() => { handleGetProduct(rowBase); setOpenAccionesId(null); }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
                         >
-                            <Icon icon="material-symbols:edit" width={16} height={16} />
+
                             <span>Editar</span>
                         </button>
                         <button
@@ -403,7 +417,7 @@ const KardexProductos = () => {
                             onClick={() => { setUploadTarget({ id: Number(rowBase.productoId), tipo: 'principal' }); uploadImageRef.current?.click(); setOpenAccionesId(null); }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
                         >
-                            <Icon icon="mdi:image-edit" width={16} height={16} />
+
                             <span>Subir imagen</span>
                         </button>
                         <button
@@ -411,7 +425,7 @@ const KardexProductos = () => {
                             onClick={() => { handleToggleClientState(rowBase); setOpenAccionesId(null); }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
                         >
-                            <Icon icon="mdi:power" width={16} height={16} />
+
                             <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
                         </button>
                         <button
@@ -419,7 +433,7 @@ const KardexProductos = () => {
                             onClick={() => { handleOpenDelete(rowBase); setOpenAccionesId(null); }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
                         >
-                            <Icon icon="mdi:trash-outline" width={16} height={16} />
+
                             <span>Eliminar</span>
                         </button>
                     </div>
@@ -427,7 +441,7 @@ const KardexProductos = () => {
             </div>
         );
 
-        return { ...rowBase, acciones };
+        return { ...rowBase, 'Acciones': acciones };
     })
 
     const handleToggleClientState = async (data: any) => {
@@ -504,6 +518,21 @@ const KardexProductos = () => {
 
     // Renderizado condicional según vista
     const renderContent = () => {
+        // Skeleton específico para vista cards (restaurante)
+        if (vistaActual === 'cards' && loading) {
+            return (
+                <CardRestaurante
+                    loading
+                    skeletonCount={itemsPerPage > 0 ? Math.min(itemsPerPage, 12) : 8}
+                    products={[] as any}
+                    onEdit={(p) => handleGetProduct({ ...p, productoId: p.id, precioUnitario: `S/ ${p.precioUnitario}` })}
+                    onDelete={(p) => handleOpenDelete({ ...p, productoId: p.id })}
+                    onToggleState={(p) => handleToggleClientState({ ...p, productoId: p.id })}
+                    onUploadImage={(p) => { setUploadTarget({ id: p.id, tipo: 'principal' }); uploadImageRef.current?.click(); }}
+                />
+            );
+        }
+
         if (!products || products.length === 0) return <TableSkeleton />;
 
         switch (vistaActual) {
@@ -511,6 +540,8 @@ const KardexProductos = () => {
                 return (
                     <>
                         <CardRestaurante
+                            loading={loading}
+                            skeletonCount={itemsPerPage > 0 ? Math.min(itemsPerPage, 12) : 8}
                             products={products}
                             onEdit={(p) => handleGetProduct({ ...p, productoId: p.id, precioUnitario: `S/ ${p.precioUnitario}` })}
                             onDelete={(p) => handleOpenDelete({ ...p, productoId: p.id })}

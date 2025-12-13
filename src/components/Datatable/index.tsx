@@ -27,7 +27,7 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
                         <table className={styles.table} id={idTable} style={{ backgroundColor: color }}>
                             <TableHeader columns={headerColumns} colorFont={colorFont} onSort={handleSort} actions={actions} />
                             <TableBody
-                                formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} />
+                                formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} columns={headerColumns} />
                         </table>
                         : <div className={styles.not__data}>
                             <div className='text-center mx-auto mt-48'>

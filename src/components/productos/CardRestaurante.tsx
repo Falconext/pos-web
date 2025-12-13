@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
 import { IProduct } from "@/interfaces/products";
+import { useState } from "react";
 
 interface CardRestauranteProps {
     products: IProduct[];
@@ -7,9 +8,34 @@ interface CardRestauranteProps {
     onDelete: (product: any) => void;
     onToggleState: (product: any) => void;
     onUploadImage: (product: any) => void;
+    loading?: boolean;
+    skeletonCount?: number;
 }
 
-const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadImage }: CardRestauranteProps) => {
+const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadImage, loading, skeletonCount = 8 }: CardRestauranteProps) => {
+    const [loaded, setLoaded] = useState<Record<number, boolean>>({});
+
+    if (loading) {
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+                {Array.from({ length: skeletonCount }).map((_, i) => (
+                    <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                        <div className="h-48 bg-gray-200 animate-pulse" />
+                        <div className="p-4 space-y-3">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                            <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                <div className="h-3 bg-gray-200 rounded animate-pulse" />
+                                <div className="h-3 bg-gray-200 rounded animate-pulse" />
+                            </div>
+                            <div className="mt-4 h-9 bg-gray-200 rounded-lg animate-pulse" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
             {products.map((product) => {
@@ -23,11 +49,17 @@ const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadIm
                         {/* Imagen */}
                         <div className="relative h-48 bg-gray-100 group">
                             {(product as any).imagenUrl ? (
-                                <img
-                                    src={(product as any).imagenUrl}
-                                    alt={product.descripcion}
-                                    className="w-full h-full object-cover"
-                                />
+                                <>
+                                    {!loaded[product.id] && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+                                    <img
+                                        src={(product as any).imagenUrl}
+                                        alt={product.descripcion}
+                                        loading="lazy"
+                                        decoding="async"
+                                        onLoad={() => setLoaded((prev) => ({ ...prev, [product.id]: true }))}
+                                        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded[product.id] ? 'opacity-100' : 'opacity-0'}`}
+                                    />
+                                </>
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                                     <Icon icon="mdi:image-off-outline" width={48} height={48} />

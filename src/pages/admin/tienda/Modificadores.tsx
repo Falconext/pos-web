@@ -282,7 +282,7 @@ export default function Modificadores() {
                       <div
                         key={opcion.id}
                         className={`flex items-center justify-between p-3 rounded-lg border ${
-                          opcion.activo ? 'bg-gray-50 border-gray-200' : 'bg-gray-100 border-gray-300 opacity-60'
+                          opcion.activo ? 'bg-gray-50 border-gray-300' : 'bg-gray-100 border-gray-200 opacity-60'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -290,11 +290,11 @@ export default function Modificadores() {
                             onClick={() => handleToggleOpcionActivo(opcion)}
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                               opcion.activo
-                                ? 'bg-primary border-primary text-white'
+                                ? 'bg-primary border-[#6B6CFF] text-white'
                                 : 'border-gray-300'
                             }`}
                           >
-                            {opcion.activo && <Icon icon="mdi:check" className="w-3 h-3" />}
+                            {opcion.activo && <Icon color='#6B6CFF' icon="mdi:check" className="w-4 h-4" />}
                           </button>
                           <div>
                             <span className="font-medium text-gray-700">{opcion.nombre}</span>
