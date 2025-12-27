@@ -156,7 +156,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 'RESET_PRODUCT_INVOICE'
             );
             await useClientsStore.getState().resetClients();
-            await useProductsStore.getState().resetProducts();
+            // NOTA: No llamar resetProducts() - borra el catálogo de productos disponibles
         } catch (error) {
             console.log(error);
             useAlertStore.getState().alert("Error al reiniciar el invoice", "error");
@@ -172,7 +172,8 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 'RESET_PRODUCT_INVOICE'
             );
             await useClientsStore.getState().resetClients();
-            await useProductsStore.getState().resetProducts();
+            // NOTA: No llamar resetProducts() porque borra el catálogo de productos disponibles
+            // Solo queremos limpiar los productos de la factura actual (productsInvoice)
         } catch (error) {
             console.log(error);
             useAlertStore.getState().alert("Error al reiniciar el invoice", "error");
@@ -187,7 +188,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 useAlertStore.setState({ success: true });
                 useAlertStore.setState({ loading: false });
                 await useClientsStore.getState().resetClients();
-                await useProductsStore.getState().resetProducts();
+                // NOTA: No llamar resetProducts() - borra el catálogo de productos
                 return { success: true };
             } else {
                 useAlertStore.getState().alert(resp.error || "Error al crear el recibo", "error");
@@ -207,7 +208,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 useAlertStore.setState({ success: true });
                 useAlertStore.setState({ loading: false });
                 await useClientsStore.getState().resetClients();
-                await useProductsStore.getState().resetProducts();
+                // NOTA: No llamar resetProducts() - borra el catálogo de productos
                 return { success: true };
             }
             useAlertStore.getState().alert(resp.error || 'Error al crear comprobante informal', 'error');
@@ -353,7 +354,10 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 );
                 return { success: true };
             } else {
-                console.log(resp)
+                console.log(resp);
+                // Limpiar data si no se encuentra
+                set({ invoiceData: null, productsInvoice: [] }, false, 'GET_INVOICE_ERROR');
+                useAlertStore.getState().alert(resp.error || "Documento no encontrado", "error");
                 return { success: false, error: resp.error };
             }
         } catch (error: any) {
@@ -371,7 +375,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
         console.log('medioPago:', medioPago);
         console.log('montoPagado:', montoPagado);
         try {
-            const payload: any = { 
+            const payload: any = {
                 medioPago,
                 observacion: data.observacion || '',
                 referencia: data.referencia || ''

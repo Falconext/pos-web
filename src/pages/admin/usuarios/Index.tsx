@@ -63,7 +63,7 @@ const UsuariosIndex: React.FC = () => {
   };
 
   const getEstadoBadge = (estado: string) => {
-    return estado === 'ACTIVO' 
+    return estado === 'ACTIVO'
       ? <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Activo</span>
       : <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Inactivo</span>;
   };
@@ -78,7 +78,7 @@ const UsuariosIndex: React.FC = () => {
     if (!permisos || permisos.length === 0) {
       return <span className="text-gray-400 text-xs">Sin permisos</span>;
     }
-    
+
     if (permisos.includes('*')) {
       return <span className="text-green-600 text-xs font-medium">Acceso completo</span>;
     }
@@ -117,7 +117,7 @@ const UsuariosIndex: React.FC = () => {
     },
     {
       onClick: (data: any) => handleToggleState(data._original),
-      className: "delete", 
+      className: "delete",
       icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />,
       tooltip: "Cambiar estado"
     }
@@ -128,102 +128,112 @@ const UsuariosIndex: React.FC = () => {
   }
 
   return (
-    <div className="px-0 py-0 md:px-8 md:py-4">
-      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 pt-5 md:pt-0">
-          <div className="mb-4 md:mb-0">
-          </div>
-          
-          <div className="flex flex-col md:flex-row gap-4 md:items-center">
-            <div className="relative max-w-md">
-              <Icon
-                icon="material-symbols:search"
-                width={20}
-                height={20}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
-              <InputPro
-                type="text"
-                value={searchTerm}
-                name="search"
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por nombre, email o DNI..."
-                className="pl-10"
-              />
+    <div className="min-h-screen pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Usuarios</h1>
+          <p className="text-sm text-gray-500 mt-1">Administra los usuarios y sus permisos del sistema</p>
+        </div>
+        <Button
+          color="secondary"
+          onClick={handleCreateUser}
+          className="flex items-center gap-2"
+        >
+          <Icon icon="solar:user-plus-bold" width={18} />
+          Nuevo Usuario
+        </Button>
+      </div>
+
+      {/* Estadísticas rápidas */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 overflow-hidden relative">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Usuarios</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{totalUsuarios}</p>
             </div>
-            
-            <Button
-              color="secondary"
-              onClick={handleCreateUser}
-              className="flex items-center gap-2"
-            >
-              <Icon icon="material-symbols:add" width={20} height={20} />
-              Nuevo Usuario
-            </Button>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Icon icon="solar:users-group-rounded-bold" width={24} className="text-white" />
+            </div>
           </div>
         </div>
 
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100">Total Usuarios</p>
-                <p className="text-2xl font-bold">{totalUsuarios}</p>
-              </div>
-              <Icon icon="mdi:account-group" width={32} height={32} className="text-blue-200" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 overflow-hidden relative">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Activos</p>
+              <p className="text-3xl font-bold text-emerald-600 mt-1">
+                {usuarios.filter(u => u.estado === 'ACTIVO').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Icon icon="solar:user-check-bold" width={24} className="text-white" />
             </div>
           </div>
-          
-          <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100">Usuarios Activos</p>
-                <p className="text-2xl font-bold">
-                  {usuarios.filter(u => u.estado === 'ACTIVO').length}
-                </p>
-              </div>
-              <Icon icon="mdi:account-check" width={32} height={32} className="text-green-200" />
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 overflow-hidden relative">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Administradores</p>
+              <p className="text-3xl font-bold text-purple-600 mt-1">
+                {usuarios.filter(u => u.rol === 'ADMIN_EMPRESA').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <Icon icon="solar:user-id-bold" width={24} className="text-white" />
             </div>
           </div>
-          
-          <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-lg text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100">Administradores</p>
-                <p className="text-2xl font-bold">
-                  {usuarios.filter(u => u.rol === 'ADMIN_EMPRESA').length}
-                </p>
-              </div>
-              <Icon icon="mdi:account-star" width={32} height={32} className="text-purple-200" />
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 overflow-hidden relative">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Acceso Completo</p>
+              <p className="text-3xl font-bold text-amber-600 mt-1">
+                {usuarios.filter(u => u.permisos?.includes('*')).length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <Icon icon="solar:key-bold" width={24} className="text-white" />
             </div>
           </div>
-          
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-lg text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100">Con Acceso Completo</p>
-                <p className="text-2xl font-bold">
-                  {usuarios.filter(u => u.permisos?.includes('*')).length}
-                </p>
-              </div>
-              <Icon icon="mdi:key" width={32} height={32} className="text-orange-200" />
-            </div>
+        </div>
+      </div>
+
+      {/* Main Content Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Search Section */}
+        <div className="p-5 border-b border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon icon="solar:magnifer-bold-duotone" className="h-5 w-5 text-blue-600" />
+            <h3 className="font-semibold text-gray-800">Buscar Usuarios</h3>
+          </div>
+          <div className="max-w-md">
+            <InputPro
+              type="text"
+              value={searchTerm}
+              name="search"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              label="Buscar por nombre, email o DNI..."
+              isLabel
+            />
           </div>
         </div>
 
         {/* Tabla */}
-        <div className="w-full">
+        <div className="p-4">
+
           {usuariosTableData.length > 0 ? (
             <>
               <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
-                <DataTable 
+                <DataTable
                   actions={actions}
                   bodyData={usuariosTableData}
                   headerColumns={[
                     'Nombre',
-                    'Email', 
+                    'Email',
                     'DNI',
                     'Celular',
                     'Rol',
@@ -232,7 +242,7 @@ const UsuariosIndex: React.FC = () => {
                   ]}
                 />
               </div>
-              
+
               <Pagination
                 data={usuariosTableData}
                 optionSelect
@@ -252,7 +262,7 @@ const UsuariosIndex: React.FC = () => {
                 No hay usuarios registrados
               </h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm 
+                {searchTerm
                   ? 'No se encontraron usuarios con ese criterio de búsqueda.'
                   : 'Comienza creando tu primer usuario.'
                 }
@@ -277,15 +287,14 @@ const UsuariosIndex: React.FC = () => {
           isEdit={isEdit}
         />
       )}
-      
+
       {showConfirmModal && selectedUser && (
         <ModalConfirm
           isOpenModal={showConfirmModal}
           setIsOpenModal={setShowConfirmModal}
           title="Cambiar Estado de Usuario"
-          information={`¿Estás seguro que deseas ${
-            selectedUser.estado === 'ACTIVO' ? 'desactivar' : 'activar'
-          } al usuario ${selectedUser.nombre}?`}
+          information={`¿Estás seguro que deseas ${selectedUser.estado === 'ACTIVO' ? 'desactivar' : 'activar'
+            } al usuario ${selectedUser.nombre}?`}
           confirmSubmit={confirmToggleState}
         />
       )}

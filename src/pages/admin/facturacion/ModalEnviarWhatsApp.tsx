@@ -17,22 +17,14 @@ interface ModalEnviarWhatsAppProps {
         total: number;
         clienteNombre: string;
         clienteCelular?: string;
+        pdfUrl?: string;
     };
 }
 
 const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsAppProps) => {
     const { alert } = useAlertStore();
     const [numeroDestino, setNumeroDestino] = useState('');
-    const [incluyeXML, setIncluyeXML] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [whatsappHabilitado, setWhatsappHabilitado] = useState(true);
-
-    useEffect(() => {
-        // Verificar si WhatsApp está habilitado
-        verificarEstadoWhatsApp().then((habilitado: boolean) => {
-            setWhatsappHabilitado(habilitado);
-        });
-    }, []);
 
     useEffect(() => {
         if (isOpen && comprobante.clienteCelular) {
@@ -40,7 +32,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
         }
     }, [isOpen, comprobante]);
 
-    const handleEnviar = async () => {
+    const handleEnviar = () => {
         if (!numeroDestino || numeroDestino.trim() === '') {
             alert('Por favor ingrese un número de WhatsApp válido', 'error');
             return;
@@ -48,22 +40,17 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
 
         setLoading(true);
         try {
-            const resultado = await enviarComprobantePorWhatsApp(
-                comprobante.id,
-                numeroDestino,
-                incluyeXML
-            );
-            console.log(resultado)
-            if (resultado.success) {
-                useAlertStore.getState().alert('Comprobante enviado por WhatsApp exitosamente', 'success');
-                onClose();
-                setNumeroDestino('');
-                setIncluyeXML(false);
-            } else {
-                useAlertStore.getState().alert(resultado.error || 'Error al enviar comprobante por WhatsApp', 'error');
-            }
+            // Construir mensaje
+            const mensaje = `Hola ${comprobante.clienteNombre}, le enviamos su comprobante electrónico ${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')} por un total de S/ ${comprobante.total.toFixed(2)}.\n\nPuede descargarlo aquí: ${comprobante.pdfUrl || 'Solicítelo a administración'}\n\nGracias por su preferencia.`;
+
+            const link = `https://wa.me/51${numeroDestino.replace(/\+/g, '').replace('51', '').trim()}?text=${encodeURIComponent(mensaje)}`;
+            window.open(link, '_blank');
+
+            onClose();
+            setNumeroDestino('');
+            useAlertStore.getState().alert('WhatsApp abierto correctamente', 'success');
         } catch (err: any) {
-            useAlertStore.getState().alert(err.message || 'Error al enviar comprobante por WhatsApp', 'error');
+            useAlertStore.getState().alert('Error al abrir WhatsApp', 'error');
         } finally {
             setLoading(false);
         }
@@ -71,37 +58,13 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
 
     const handleClose = () => {
         setNumeroDestino('');
-        setIncluyeXML(false);
         onClose();
     };
 
     if (!isOpen) return null;
 
-    if (!whatsappHabilitado) {
-        return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                <div className="bg-white rounded-lg p-6 max-w-md">
-                    <div className="flex items-center justify-center mb-4">
-                        <Icon icon="mdi:whatsapp" className="text-6xl text-gray-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-center mb-4">
-                        WhatsApp no disponible
-                    </h3>
-                    <p className="text-center text-gray-600 mb-6">
-                        El servicio de WhatsApp no está configurado. Contacte al administrador del sistema.
-                    </p>
-                    <div className="flex justify-center">
-                        <Button onClick={handleClose} className="bg-gray-500 hover:bg-gray-600">
-                            Cerrar
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-[999999999] flex items-center justify-center bg-black/50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -140,6 +103,11 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
                             <span className="text-gray-600">Monto:</span>{' '}
                             <span className="font-medium">S/ {comprobante.total.toFixed(2)}</span>
                         </p>
+                        {!comprobante.pdfUrl && (
+                            <p className="text-amber-600 text-xs mt-2 italic">
+                                * Este comprobante aún no tiene PDF generado.
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -148,60 +116,24 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
                     <InputPro
                         name="numeroDestino"
                         label="Número de WhatsApp"
-                        placeholder="Ej: 987654321 o +51987654321"
+                        placeholder="Ej: 999 999 999"
                         value={numeroDestino}
                         onChange={(e) => setNumeroDestino(e.target.value)}
                         isLabel
                         type="text"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                        Ingrese el número con código de país (+51) o solo los 9 dígitos
+                        Ingrese el número (9 dígitos)
                     </p>
                 </div>
-
-                {/* Checkbox para incluir XML (solo para comprobantes formales) */}
-                {/* {['FACTURA', 'BOLETA', 'NOTA DE CREDITO', 'NOTA DE DEBITO'].includes(
-                    comprobante.comprobante
-                ) && (
-                    <div className="mb-6">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={incluyeXML}
-                                onChange={(e) => setIncluyeXML(e.target.checked)}
-                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            />
-                            <span className="text-sm text-gray-700">
-                                Incluir archivo XML y CDR de SUNAT
-                            </span>
-                        </label>
-                    </div>
-                )} */}
 
                 {/* Preview del mensaje */}
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                     <p className="text-xs text-gray-600 mb-2 font-semibold">
                         Vista previa del mensaje:
                     </p>
-                    <div className="text-xs text-gray-700 whitespace-pre-line">
-                        🧾 <strong>Comprobante Electrónico</strong>
-                        {'\n\n'}
-                        Tipo: {comprobante.comprobante}
-                        {'\n'}
-                        Serie-Número: <strong>{comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}</strong>
-                        {'\n'}
-                        Monto: <strong>S/ {comprobante.total.toFixed(2)}</strong>
-                        {'\n\n'}
-                        📄 <strong>Adjuntos:</strong>
-                        {'\n'}- Comprobante PDF
-                        {incluyeXML && (
-                            <>
-                                {'\n'}- Archivo XML
-                                {'\n'}- Constancia SUNAT (CDR)
-                            </>
-                        )}
-                        {'\n\n'}
-                        Gracias por su preferencia. 🙏
+                    <div className="text-xs text-gray-700 whitespace-pre-wrap">
+                        {`Hola ${comprobante.clienteNombre}, le enviamos su comprobante electrónico ${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')} por un total de S/ ${comprobante.total.toFixed(2)}.\n\nPuede descargarlo aquí: ${comprobante.pdfUrl || '[Enlace no disponible]'}\n\nGracias por su preferencia.`}
                     </div>
                 </div>
 
@@ -217,19 +149,10 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
                     <Button
                         onClick={handleEnviar}
                         className="flex-1 bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
-                        disabled={loading}
+                        disabled={loading || !comprobante.pdfUrl}
                     >
-                        {loading ? (
-                            <>
-                                <Icon icon="eos-icons:loading" className="text-xl" />
-                                Enviando...
-                            </>
-                        ) : (
-                            <>
-                                <Icon icon="mdi:whatsapp" className="text-xl" />
-                                Enviar
-                            </>
-                        )}
+                        <Icon icon="mdi:whatsapp" className="text-xl" />
+                        Abrir WhatsApp
                     </Button>
                 </div>
             </div>

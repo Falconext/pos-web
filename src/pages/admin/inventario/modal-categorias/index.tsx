@@ -108,6 +108,8 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
         setFormValues(initialForm)
     }
 
+    console.log(categories)
+
     const categoriesTable = categories?.map((item: any, index: number) => ({
         '#': index + 1,
         categoriaId: item.id,
@@ -144,8 +146,8 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
                                     <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible mt-4">
                                         <DataTable actions={actions} bodyData={categoriesTable} tableInitFinal={false}
                                             headerColumns={[
-                                                '#',
-                                                'Categoría'
+                                                { label: '#', key: '#' },
+                                                { label: 'Categoría', key: 'nombre' }
                                             ]} />
                                     </div>
                                     <Pagination

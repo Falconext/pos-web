@@ -38,19 +38,21 @@
     vertical-align: middle;
     z-index: 9999999;
     color: #686868;
-    font-family: 'Helvetica Now Display';
+    /* font-family: 'Helvetica Now Display'; */
     white-space: nowrap;
     font-weight: 500;
     text-transform: uppercase;
 }
 
-.table tbody tr td div {
+/* Only apply flex to action buttons container, not all divs */
+.table tbody tr td>.flex {
     display: flex;
 }
 
 .table tbody tr td img {
     max-width: 100%;
-    height: 100%;
+    height: auto;
+    display: block;
 }
 
 .table button {
@@ -92,7 +94,7 @@
     padding: 5px 10px;
     background: #e5edf5;
     border: 1px solid #3585F9;
-    font-family: 'Helvetica Now Display';
+    /* font-family: 'Helvetica Now Display'; */
     border-radius: 10px;
     color: #3585F9;
     font-size: 11px !important;
@@ -102,7 +104,7 @@
 .successOrder {
     padding: 4px 10px;
     background: #eefff1;
-    font-family: 'Helvetica Now Display';
+    /* font-family: 'Helvetica Now Display'; */
     border: 1px solid #3eab50;
     border-radius: 10px;
     color: #3eab50;
@@ -115,7 +117,8 @@
     background: #FFF0EA;
     border: 1px solid #FF0054;
     border-radius: 10px;
-    font-family: 'Helvetica Now Display';
+    /* font-family: 'Helvetica Now Display'; */
+
     font-size: 11px !important;
     color: #ff0054;
     font-weight: 600 !important;
@@ -129,6 +132,7 @@
 .tooltipContainer {
     position: relative;
     display: inline-block;
+    padding: 8px;
 }
 
 /* Estilo del texto del tooltip */

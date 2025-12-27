@@ -5,344 +5,366 @@ import Loading from '../../../components/Loading'
 import useAlertStore from '../../../zustand/alert'
 
 interface PerfilData {
-  id: number
-  nombre: string
-  email: string
-  rol: string
-  celular?: string
-  telefono?: string
-  empresaId: number
-  estado: string
-  fechaCreacion: string
-  fechaActualizacion: string
-  empresa: {
     id: number
-    razonSocial: string
-    nombreComercial: string
-    direccion: string
-    logo?: string
-    ruc: string
-    tipoEmpresa: string
+    nombre: string
+    email: string
+    rol: string
+    celular?: string
+    telefono?: string
+    empresaId: number
+    estado: string
     fechaCreacion: string
-    fechaActivacion?: string
-    fechaExpiracion?: string
-    rubro: {
-      id: number
-      nombre: string
-      descripcion: string
+    fechaActualizacion: string
+    empresa: {
+        id: number
+        razonSocial: string
+        nombreComercial: string
+        direccion: string
+        logo?: string
+        ruc: string
+        tipoEmpresa: string
+        fechaCreacion: string
+        fechaActivacion?: string
+        fechaExpiracion?: string
+        rubro: {
+            id: number
+            nombre: string
+            descripcion: string
+        }
+        plan: {
+            id: number
+            nombre: string
+            descripcion: string
+            costo: number
+            duracionDias: number
+            tipoFacturacion: string
+            esPrueba: boolean
+            activo: boolean
+        }
+        departamento?: string
+        provincia?: string
+        distrito?: string
+        ubicacion?: {
+            codigo: string
+            departamento: string
+            provincia: string
+            distrito: string
+        }
     }
-    plan: {
-      id: number
-      nombre: string
-      descripcion: string
-      costo: number
-      duracionDias: number
-      tipoFacturacion: string
-      esPrueba: boolean
-      activo: boolean
-    }
-    departamento?: string
-    provincia?: string
-    distrito?: string
-    ubicacion?: {
-      codigo: string
-      departamento: string
-      provincia: string
-      distrito: string
-    }
-  }
 }
 
 export default function PerfilIndex() {
-  const [perfil, setPerfil] = useState<PerfilData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const { alert } = useAlertStore()
+    const [perfil, setPerfil] = useState<PerfilData | null>(null)
+    const [loading, setLoading] = useState(true)
+    const { alert } = useAlertStore()
 
-  useEffect(() => {
-    cargarPerfil()
-  }, [])
+    useEffect(() => {
+        cargarPerfil()
+    }, [])
 
-  const cargarPerfil = async () => {
-    try {
-      setLoading(true)
-      const response : any = await get('auth/perfil')
-      
-      if (response.code === 1) {
-        setPerfil(response.data)
-      } else {
-        alert('Error al cargar el perfil', 'error')
-      }
-    } catch (error) {
-      console.error('Error:', error)
-      alert('Error al cargar el perfil', 'error')
-    } finally {
-      setLoading(false)
+    const cargarPerfil = async () => {
+        try {
+            setLoading(true)
+            const response: any = await get('auth/perfil')
+
+            if (response.code === 1) {
+                setPerfil(response.data)
+            } else {
+                alert('Error al cargar el perfil', 'error')
+            }
+        } catch (error) {
+            console.error('Error:', error)
+            alert('Error al cargar el perfil', 'error')
+        } finally {
+            setLoading(false)
+        }
     }
-  }
 
-  const formatearFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString('es-PE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const formatearFechaSolo = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString('es-PE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  const obtenerEstadoSuscripcion = () => {
-    if (!perfil?.empresa.fechaExpiracion) return 'Sin información'
-    
-    const fechaExp = new Date(perfil.empresa.fechaExpiracion)
-    const hoy = new Date()
-    
-    if (fechaExp < hoy) {
-      return 'Expirada'
-    } else {
-      const diasRestantes = Math.ceil((fechaExp.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-      if (diasRestantes <= 7) {
-        return `Expira en ${diasRestantes} días`
-      }
-      return 'Activa'
+    const formatearFecha = (fecha: string) => {
+        return new Date(fecha).toLocaleDateString('es-PE', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
     }
-  }
 
-  const obtenerColorEstado = () => {
-    const estado = obtenerEstadoSuscripcion()
-    if (estado === 'Expirada') return 'text-red-600 bg-red-100'
-    if (estado.includes('Expira en')) return 'text-orange-600 bg-orange-100'
-    return 'text-green-600 bg-green-100'
-  }
+    const formatearFechaSolo = (fecha: string) => {
+        return new Date(fecha).toLocaleDateString('es-PE', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
+    }
 
-  if (loading) {
+    const obtenerEstadoSuscripcion = () => {
+        if (!perfil?.empresa.fechaExpiracion) return 'Sin información'
+
+        const fechaExp = new Date(perfil.empresa.fechaExpiracion)
+        const hoy = new Date()
+
+        if (fechaExp < hoy) {
+            return 'Expirada'
+        } else {
+            const diasRestantes = Math.ceil((fechaExp.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+            if (diasRestantes <= 7) {
+                return `Expira en ${diasRestantes} días`
+            }
+            return 'Activa'
+        }
+    }
+
+    const obtenerColorEstado = () => {
+        const estado = obtenerEstadoSuscripcion()
+        if (estado === 'Expirada') return 'text-red-600 bg-red-100'
+        if (estado.includes('Expira en')) return 'text-orange-600 bg-orange-100'
+        return 'text-green-600 bg-green-100'
+    }
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-96">
+                <Loading />
+            </div>
+        )
+    }
+
+    if (!perfil) {
+        return (
+            <div className="text-center text-gray-500 py-8">
+                No se pudo cargar la información del perfil
+            </div>
+        )
+    }
+
+    const isSystemAdmin = perfil?.rol === 'ADMIN_SISTEMA'
+    const theme = {
+        bg: isSystemAdmin ? 'bg-indigo-50' : 'bg-blue-50',
+        text: isSystemAdmin ? 'text-indigo-600' : 'text-blue-600',
+        textDark: isSystemAdmin ? 'text-indigo-700' : 'text-blue-700',
+        border: isSystemAdmin ? 'border-indigo-100' : 'border-blue-100',
+        icon: isSystemAdmin ? 'text-indigo-300' : 'text-blue-300',
+    }
+
     return (
-      <div className="flex justify-center items-center h-96">
-        <Loading />
-      </div>
+        <div className="min-h-screen pb-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mi Perfil</h1>
+                    <p className="text-sm text-gray-500 mt-1">Información de tu cuenta y empresa</p>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {/* Header con información básica */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+
+                    <div className="flex items-center space-x-5">
+                        <div className={`w-24 h-24 rounded-full p-1 border-2 ${theme.border} bg-white`}>
+                            <div className="w-full h-full bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
+                                {perfil.empresa.logo ? (
+                                    <img
+                                        src={perfil.empresa.logo}
+                                        alt="Logo empresa"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <Icon icon="solar:user-circle-bold-duotone" className={`w-14 h-14 ${theme.icon}`} />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{perfil.nombre}</h1>
+                            <p className="text-gray-500 font-medium">{perfil.email}</p>
+                            <div className="flex items-center gap-3 mt-3">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold ${theme.bg} ${theme.textDark} uppercase tracking-wide`}>
+                                    {perfil.rol.replace('ADMIN_', '').replace('USUARIO_', '').replace('_', ' ')}
+                                </span>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide ${obtenerColorEstado()}`}>
+                                    {obtenerEstadoSuscripcion()}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Información Personal */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-4">
+                        <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                            <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}>
+                                <Icon icon="solar:user-id-bold-duotone" width="20" />
+                            </div>
+                            Información Personal
+                        </h2>
+
+                        <div className="space-y-4">
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Nombre completo</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.nombre}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Email</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.email}</p>
+                            </div>
+
+                            {perfil.celular && (
+                                <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Celular</label>
+                                    <p className="text-gray-700 font-medium text-sm">{perfil.celular}</p>
+                                </div>
+                            )}
+
+                            {perfil.telefono && (
+                                <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Teléfono</label>
+                                    <p className="text-gray-700 font-medium text-sm">{perfil.telefono}</p>
+                                </div>
+                            )}
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Estado</label>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.estado === 'ACTIVO' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                    {perfil.estado}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Información de la Empresa */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-4">
+                        <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                            <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}>
+                                <Icon icon="solar:buildings-bold-duotone" width="20" />
+                            </div>
+                            Información de la Empresa
+                        </h2>
+
+                        <div className="space-y-4">
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Razón Social</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.razonSocial}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Nombre Comercial</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.nombreComercial}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">RUC</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.ruc}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Dirección</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.direccion}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Tipo de Empresa</label>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.empresa.tipoEmpresa === 'FORMAL' ? 'bg-sky-50 text-sky-700' : 'bg-gray-100 text-gray-700'}`}>
+                                    {perfil.empresa.tipoEmpresa === 'FORMAL' ? 'Formal' : 'Informal'}
+                                </span>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Rubro</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.rubro.nombre}</p>
+                            </div>
+
+                            {perfil.empresa.ubicacion && (
+                                <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Ubicación</label>
+                                    <p className="text-gray-700 font-medium text-sm">
+                                        {perfil.empresa.ubicacion.distrito}, {perfil.empresa.ubicacion.provincia}, {perfil.empresa.ubicacion.departamento}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Plan Actual */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-4">
+                        <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                            <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}>
+                                <Icon icon="solar:card-bold-duotone" width="20" />
+                            </div>
+                            Plan Actual
+                        </h2>
+
+                        <div className="space-y-4">
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Nombre del Plan</label>
+                                <p className={`${theme.text} font-bold text-sm`}>{perfil.empresa.plan.nombre}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Descripción</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.plan.descripcion}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Precio</label>
+                                <p className="text-gray-900 font-bold text-lg">S/ {Number(perfil.empresa?.plan?.costo).toFixed(2)}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Duración</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.plan.duracionDias} días</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Tipo de Facturación</label>
+                                <p className="text-gray-700 font-medium text-sm">{perfil.empresa.plan.tipoFacturacion}</p>
+                            </div>
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Tipo de Plan</label>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.empresa.plan.esPrueba ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                                    {perfil.empresa.plan.esPrueba ? 'Versión de Prueba' : 'Plan Premium'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Suscripción Actual */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-4">
+                        <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                            <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}>
+                                <Icon icon="solar:calendar-mark-bold-duotone" width="20" />
+                            </div>
+                            Suscripción Actual
+                        </h2>
+
+                        <div className="space-y-4">
+                            {perfil.empresa.fechaActivacion && (
+                                <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Fecha de Activación</label>
+                                    <p className="text-gray-700 font-medium text-sm">{formatearFechaSolo(perfil.empresa.fechaActivacion)}</p>
+                                </div>
+                            )}
+
+                            {perfil.empresa.fechaExpiracion && (
+                                <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Fecha de Expiración</label>
+                                    <p className="text-gray-700 font-medium text-sm">{formatearFechaSolo(perfil.empresa.fechaExpiracion)}</p>
+                                </div>
+                            )}
+
+                            <div className="pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Estado actual</label>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${obtenerColorEstado()}`}>
+                                    {obtenerEstadoSuscripcion()}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     )
-  }
-
-  if (!perfil) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        No se pudo cargar la información del perfil
-      </div>
-    )
-  }
-
-  console.log(perfil)
-
-  return (
-    <div className="md:p-6 md:px-8 p-1 space-y-6">
-      {/* Header con información básica */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-            {perfil.empresa.logo ? (
-              <img 
-                src={perfil.empresa.logo} 
-                alt="Logo empresa" 
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <Icon icon="mdi:account-circle" className="w-12 h-12 text-gray-400" />
-            )}
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-800">{perfil.nombre}</h1>
-            <p className="text-gray-600">{perfil.email}</p>
-            <div className="flex items-center space-x-4 mt-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {perfil.rol.replace('ADMIN_', '').replace('_', ' ')}
-              </span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${obtenerColorEstado()}`}>
-                {obtenerEstadoSuscripcion()}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Información Personal */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Icon icon="mdi:account" className="mr-2" />
-            Información Personal
-          </h2>
-          
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Nombre completo</label>
-              <p className="text-gray-800">{perfil.nombre}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Email</label>
-              <p className="text-gray-800">{perfil.email}</p>
-            </div>
-            
-            {perfil.celular && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Celular</label>
-                <p className="text-gray-800">{perfil.celular}</p>
-              </div>
-            )}
-            
-            {perfil.telefono && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Teléfono</label>
-                <p className="text-gray-800">{perfil.telefono}</p>
-              </div>
-            )}
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Estado</label>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${perfil.estado === 'ACTIVO' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                {perfil.estado}
-              </span>
-            </div>
-            
-            {/* <div>
-              <label className="text-sm font-medium text-gray-500">Usuario desde</label>
-              <p className="text-gray-800">{formatearFechaSolo(perfil.fechaCreacion)}</p>
-            </div> */}
-          </div>
-        </div>
-
-        {/* Información de la Empresa */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Icon icon="mdi:office-building" className="mr-2" />
-            Información de la Empresa
-          </h2>
-          
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Razón Social</label>
-              <p className="text-gray-800">{perfil.empresa.razonSocial}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Nombre Comercial</label>
-              <p className="text-gray-800">{perfil.empresa.nombreComercial}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">RUC</label>
-              <p className="text-gray-800">{perfil.empresa.ruc}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Dirección</label>
-              <p className="text-gray-800">{perfil.empresa.direccion}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Tipo de Empresa</label>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${perfil.empresa.tipoEmpresa === 'FORMAL' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                {perfil.empresa.tipoEmpresa === 'FORMAL' ? 'Formal' : 'Informal'}
-              </span>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Rubro</label>
-              <p className="text-gray-800">{perfil.empresa.rubro.nombre}</p>
-            </div>
-
-            {perfil.empresa.ubicacion && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Ubicación</label>
-                <p className="text-gray-800">
-                  {perfil.empresa.ubicacion.distrito}, {perfil.empresa.ubicacion.provincia}, {perfil.empresa.ubicacion.departamento}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Plan Actual */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Icon icon="mdi:card-account-details" className="mr-2" />
-            Plan Actual
-          </h2>
-          
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Nombre del Plan</label>
-              <p className="text-gray-800 font-medium">{perfil.empresa.plan.nombre}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Descripción</label>
-              <p className="text-gray-800">{perfil.empresa.plan.descripcion}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Precio</label>
-              <p className="text-gray-800 font-medium">S/ {Number(perfil.empresa?.plan?.costo).toFixed(2)}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Duración</label>
-              <p className="text-gray-800">{perfil.empresa.plan.duracionDias} días</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Tipo de Facturación</label>
-              <p className="text-gray-800">{perfil.empresa.plan.tipoFacturacion}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Tipo de Plan</label>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${perfil.empresa.plan.esPrueba ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                {perfil.empresa.plan.esPrueba ? 'Versión de Prueba' : 'Plan Premium'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Suscripción Actual */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Icon icon="mdi:calendar-clock" className="mr-2" />
-            Suscripción Actual
-          </h2>
-          
-          <div className="space-y-3">
-            {perfil.empresa.fechaActivacion && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Fecha de Activación</label>
-                <p className="text-gray-800">{formatearFechaSolo(perfil.empresa.fechaActivacion)}</p>
-              </div>
-            )}
-            
-            {perfil.empresa.fechaExpiracion && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Fecha de Expiración</label>
-                <p className="text-gray-800">{formatearFechaSolo(perfil.empresa.fechaExpiracion)}</p>
-              </div>
-            )}
-            
-            <div>
-              <label className="text-sm font-medium text-gray-500">Estado</label>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${obtenerColorEstado()}`}>
-                {obtenerEstadoSuscripcion()}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  )
 }

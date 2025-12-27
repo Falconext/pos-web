@@ -56,14 +56,14 @@
 .content__listOptions li {
     cursor: pointer;
     position: relative;
-    font-family: 'Helvetica Neue' !important;
+    /* font-family: 'Helvetica Neue' !important; */
     list-style: none;
     border-radius: 10px;
 }
 
 .content__listOptions li:hover {
     background-color: #F0EEFD;
-    font-family: 'Helvetica Neue' !important;
+    /* font-family: 'Helvetica Neue' !important; */
     color: rgb(12, 12, 12);
     transition: 0.2s;
 }
@@ -75,7 +75,7 @@
 .content__listOptions p {
     display: block;
     margin: 0;
-    font-family: 'Helvetica Neue' !important;
+    /* font-family: 'Helvetica Neue' !important; */
     text-transform: uppercase;
     font-size: 12px !important;
     cursor: pointer !important;
@@ -97,11 +97,11 @@
     background-color: #F0EEFD;
     color: #6A6CFF !important;
     transition: 0.2s;
-  }
+}
 
-  .selectedOption p {
+.selectedOption p {
     color: #6A6CFF !important;
-  }
+}
 
 .content__listOptions input:focus-within,
 .content__listOptions input:focus-visible,
@@ -179,7 +179,7 @@
     transition: 0.5s;
     color: #5e6278;
     position: relative;
-    font-family: 'Helvetica Neue';
+    /* font-family: 'Helvetica Neue'; */
     font-weight: 500;
     z-index: 1;
     left: 2px;
@@ -213,27 +213,29 @@
     background: #F0F9FF !important;
 }
 
-.select__loader__container{
+.select__loader__container {
     position: absolute;
     top: 35px;
     right: 13px;
 }
-.select__loader__icon{
-        width: 16px;
-        height: 16px;
-        border: 2px solid #7e7e7e;
-        border-bottom-color: transparent;
-        border-radius: 50%;
-        display: inline-block;
-        box-sizing: border-box;
-        animation: rotation .6s linear infinite;
+
+.select__loader__icon {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #7e7e7e;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation .6s linear infinite;
 }
 
 @keyframes rotation {
     0% {
-      transform: rotate(0deg);
+        transform: rotate(0deg);
     }
+
     100% {
-      transform: rotate(360deg);
+        transform: rotate(360deg);
     }
 }

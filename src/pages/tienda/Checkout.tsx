@@ -207,13 +207,13 @@ export default function Checkout() {
               className={`w-full py-3 ${btnRadius} text-white font-semibold hover:opacity-95`}
               style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
             >
-              Track my order
+              Rastrear mi pedido
             </button>
             <button
               onClick={() => navigate(`/tienda/${slug}`)}
               className={`w-full py-3 ${btnRadius} font-semibold border border-gray-200 hover:bg-gray-50`}
             >
-              Back to store
+              Volver a la tienda
             </button>
           </div>
         </div>
@@ -315,7 +315,7 @@ export default function Checkout() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Payment method *</label>
+                <label className="block text-sm font-medium mb-2">Método de pago *</label>
                 <div className="space-y-2">
                   {configPago?.yapeQrUrl && (
                     <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
@@ -420,7 +420,7 @@ export default function Checkout() {
 
           {/* Resumen */}
           <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-6 h-fit`}>
-            <h2 className="text-lg font-semibold mb-4">Order summary</h2>
+            <h2 className="text-lg font-semibold mb-4">Resumen del pedido</h2>
             <div className="space-y-3 mb-4">
               {carritoState.map((item: any) => (
                 <div key={item.id} className="flex items-center justify-between">
@@ -463,7 +463,7 @@ export default function Checkout() {
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span>Delivery time</span>
+                <span>Tiempo de entrega</span>
                 <span>{((tienda as any)?.diseno?.tiempoEntregaMin ?? (tienda as any)?.tiempoPreparacionMin ?? 15)}-
                   {(((tienda as any)?.diseno?.tiempoEntregaMax ?? (((tienda as any)?.diseno?.tiempoEntregaMin ?? (tienda as any)?.tiempoPreparacionMin ?? 15) + 10)))} min
                 </span>

@@ -78,7 +78,7 @@ const KardexIndex: React.FC = () => {
 
   // Inicializar con fechas por defecto (tiempo local): hoy para ambas fechas
   const todayStr = moment().format('YYYY-MM-DD'); // evita desfase por UTC
-  
+
   const [filters, setFilters] = useState({
     fechaInicio: todayStr,
     fechaFin: todayStr,
@@ -236,16 +236,22 @@ const KardexIndex: React.FC = () => {
   };
 
   return (
-    <div className="p-6 px-8 pt-0">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Movimientos de Kardex</h1>
+          <p className="text-sm text-gray-500 mt-1">Control de entradas, salidas y ajustes de inventario</p>
         </div>
-        <div className="flex gap-3" />
       </div>
 
       {/* Filtros */}
-      <div className="mb-4 p-4 bg-white rounded-lg border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="mb-6 p-5 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2 mb-4">
+          <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
+          <h3 className="font-semibold text-gray-800">Filtros</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <Calendar
               text="Fecha Inicio"
@@ -284,7 +290,7 @@ const KardexIndex: React.FC = () => {
           <div className="relative">
             <InputPro
               name="productoSearch"
-              label="Producto"
+              label="Buscar Producto"
               isLabel
               value={productQuery}
               onChange={(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -294,14 +300,14 @@ const KardexIndex: React.FC = () => {
                   handleFilterChange('productoId', '');
                 }
               }}
-              placeholder="Buscar producto por nombre o código"
+              placeholder="Nombre o código..."
               onClick={() => {
                 if (debouncedProductQuery && debouncedProductQuery.trim().length >= 2) setShowSuggestions(true);
               }}
               handleOnBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             />
             {showSuggestions && products && products.length > 0 && (
-              <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+              <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-auto">
                 {products.map((p: any) => (
                   <button
                     key={p.id}
@@ -311,62 +317,80 @@ const KardexIndex: React.FC = () => {
                       handleFilterChange('productoId', String(p.id));
                       setShowSuggestions(false);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-b border-gray-50 last:border-b-0 transition-colors"
                   >
                     <div className="font-medium text-gray-800">{p.descripcion}</div>
-                    <div className="text-xs text-gray-500">{p.codigo} • UM: {p?.unidadMedida?.nombre}</div>
+                    <div className="text-xs text-gray-500">{p.codigo} • {p?.unidadMedida?.nombre}</div>
                   </button>
                 ))}
               </div>
             )}
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-3">
-          <Button onClick={clearFilters} color="secondary">Limpiar</Button>
-          <Button onClick={applyFilters}>Aplicar</Button>
+        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+          <Button onClick={clearFilters} color="secondary">
+            <Icon icon="solar:refresh-linear" className="mr-1" /> Limpiar
+          </Button>
+          <Button onClick={applyFilters}>
+            <Icon icon="solar:magnifer-linear" className="mr-1" /> Buscar
+          </Button>
         </div>
       </div>
 
       {/* Tabla de movimientos */}
-      <div className="md:p-2 md:pt-4 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon icon="solar:document-text-bold-duotone" className="text-blue-600 text-xl" />
+            <h3 className="font-semibold text-gray-800">Historial de Movimientos</h3>
+          </div>
+          <span className="text-sm text-gray-500">
+            {kardex?.paginacion?.total || 0} registros encontrados
+          </span>
+        </div>
 
-
-        <div className="w-full">
-
-          {
-            movimientosTable?.length > 0 ? (
-              <>
-                <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
-                  <DataTable actions={actions} bodyData={movimientosTable}
-                    headerColumns={[
-                      'Fecha',
-                      'Producto',
-                      'Tipo',
-                      'Concepto',
-                      'Cantidad',
-                      'Stock Anterior',
-                      'Stock Actual',
-                      'Costo Unitario',
-                      'Precio Unitario',
-                      'Ganancia/Unidad'
-                    ]} />
-                  <Pagination
-                    data={movimientosTable}
-                    optionSelect
-                    currentPage={currentPage}
-                    indexOfFirstItem={indexOfFirstItem}
-                    indexOfLastItem={indexOfLastItem}
-                    setcurrentPage={setcurrentPage}
-                    setitemsPerPage={setitemsPerPage}
-                    pages={pages}
-                    total={kardex?.paginacion?.total}
-                  />
-                </div>
-              </>
-            ) : (
-              <TableSkeleton arrayData={movimientosTable} />
-            )
-          }
+        <div className="p-4">
+          {movimientosTable?.length > 0 ? (
+            <>
+              <div className="overflow-hidden overflow-x-auto">
+                <DataTable
+                  actions={actions}
+                  bodyData={movimientosTable}
+                  headerColumns={[
+                    'Fecha',
+                    'Producto',
+                    'Tipo',
+                    'Concepto',
+                    'Cantidad',
+                    'Stock Anterior',
+                    'Stock Actual',
+                    'Costo Unitario',
+                    'Precio Unitario',
+                    'Ganancia/Unidad'
+                  ]}
+                />
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <Pagination
+                  data={movimientosTable}
+                  optionSelect
+                  currentPage={currentPage}
+                  indexOfFirstItem={indexOfFirstItem}
+                  indexOfLastItem={indexOfLastItem}
+                  setcurrentPage={setcurrentPage}
+                  setitemsPerPage={setitemsPerPage}
+                  pages={pages}
+                  total={kardex?.paginacion?.total}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="py-12 text-center">
+              <Icon icon="solar:box-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No se encontraron movimientos</p>
+              <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
+            </div>
+          )}
         </div>
       </div>
 

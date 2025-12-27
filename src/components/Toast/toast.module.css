@@ -2,7 +2,7 @@
    position: relative;
    z-index: 999999;
    right: 30px;
-   font-family: 'Helvetica Neue' !important;
+   /* font-family: 'Helvetica Neue' !important; */
    width: 400px;
    top: 20px;
    box-shadow: 0px 4px 15px 0px rgba(49, 49, 49, 0.25);
@@ -34,7 +34,7 @@
 .content__toast {
    display: flex;
    align-items: center;
-/*    justify-content: center; */
+   /*    justify-content: center; */
 }
 
 .content__toast>div:nth-child(1) {

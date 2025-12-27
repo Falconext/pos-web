@@ -113,7 +113,7 @@ const Clients = () => {
     useEffect(() => {
         const loadColumns = async () => {
             if (!auth?.empresaId) return;
-            
+
             try {
                 // Intentar cargar desde servidor primero
                 const res = await apiClient.get(`/preferencias/tabla`, {
@@ -129,7 +129,7 @@ const Clients = () => {
             } catch (_e) {
                 // Si falla servidor, intentar localStorage
             }
-            
+
             // Fallback a localStorage
             try {
                 const defaultKey = columnsStorageKey.replace(`${auth.empresaId}`, 'default');
@@ -151,7 +151,7 @@ const Clients = () => {
                 // noop
             }
         };
-        
+
         loadColumns();
     }, [auth?.empresaId, columnsStorageKey]);
 
@@ -185,7 +185,7 @@ const Clients = () => {
                 return prev.filter(c => c !== column);
             } else {
                 // Mostrar columna en su posición original
-                const newVisible = allColumns.filter(col => 
+                const newVisible = allColumns.filter(col =>
                     prev.includes(col) || col === column
                 );
                 return newVisible;
@@ -260,7 +260,7 @@ const Clients = () => {
             'Celular': item?.telefono,
             'Estado': item.estado
         };
-        
+
         // Crear rowBase solo con columnas visibles en el orden de allColumns
         const rowBase: any = {};
         allColumns.forEach(col => {
@@ -344,109 +344,117 @@ const Clients = () => {
     console.log(formValues)
 
     return (
-        <div className="px-0 py-0 md:px-8 md:py-4">
-            <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
-                <div className="md:flex md:justify-between items-center mb-5 pt-5 md:pt-0">
-                    <div className="md:w-2/5 w-full">
-                        <InputPro name="cliente" value={searchClient} onChange={handleChange} label="Buscar por cliente y RUC" isLabel />
-                    </div>
-                    <div className="flex md:items-center items-start gap-5 mt-5 md:mt-0">
-                        <div className="relative" onClick={(e) => e.stopPropagation()}>
-                            <Button
-                                color="lila"
-                                outline
-                                onClick={(e : any) => { e.stopPropagation(); setShowColumnFilter(!showColumnFilter); }}
-                            >
-                                <Icon className="mr-2" icon="mdi:filter-variant" width={18} height={18} />
-                                Columnas
-                            </Button>
-                            {showColumnFilter && (
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-30 p-3" onClick={(e) => e.stopPropagation()}>
-                                    <div className="text-xs font-semibold mb-2 text-gray-700">Mostrar/Ocultar columnas</div>
-                                    {allColumns.filter(c => c !== 'Acciones').map(col => (
-                                        <label key={col} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-gray-50 px-2 rounded">
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col)}
-                                                onChange={() => toggleColumn(col)}
-                                                className="w-4 h-4"
-                                            />
-                                            <span className="text-xs text-gray-700">{col}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
+        <div className="min-h-screen pb-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Clientes</h1>
+                    <p className="text-sm text-gray-500 mt-1">Administra tu cartera de clientes y proveedores</p>
+                </div>
+                <Button
+                    color="secondary"
+                    onClick={() => {
+                        setFormValues(initialForm);
+                        setErrors({
+                            nombre: "",
+                            nroDoc: "",
+                            direccion: "",
+                            departamento: "",
+                            distrito: "",
+                            provincia: "",
+                            ubigeo: "",
+                            email: "",
+                            telefono: "",
+                            estado: "",
+                            tipoDocumentoId: 0,
+                            empresaId: 0,
+                        });
+                        setIsOpenModal(true);
+                    }}
+                    className="flex items-center gap-2"
+                >
+                    <Icon icon="solar:add-circle-bold" className="text-lg" />
+                    Nuevo cliente
+                </Button>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Search and Actions */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        <div className="flex-1">
+                            <InputPro name="cliente" value={searchClient} onChange={handleChange} label="Buscar por cliente y RUC" isLabel />
                         </div>
-                        <Button
-                            color="success"
-                            onMouseEnter={() => setIsHoveredExp(true)}
-                            onMouseLeave={() => setIsHoveredExp(false)}
-                            onClick={() => {
-                                exportClients(auth?.empresaId, debounce);
-                            }}
-                        >
-                            <Icon
-                                className="mr-4"
-                                color={isHoveredExp ? '#fff' : '#00C851'}
-                                icon="icon-park-outline:excel"
-                                width="20"
-                                height="20"
-                            />
-                            Exportar Exc.
-                        </Button>
-                        <div className="relative">
-                            <input
-                                type="file"
-                                accept=".xlsx, .xls"
-                                ref={fileInputRef}
-                                onChange={handleImportExcel}
-                                className="hidden"
-                            />
+                        <div className="flex flex-wrap gap-2 items-end">
+                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                    color="lila"
+                                    outline
+                                    onClick={(e: any) => { e.stopPropagation(); setShowColumnFilter(!showColumnFilter); }}
+                                >
+                                    <Icon icon="solar:filter-bold-duotone" className="mr-1.5" />
+                                    Columnas
+                                </Button>
+                                {showColumnFilter && (
+                                    <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-30 p-3" onClick={(e) => e.stopPropagation()}>
+                                        <div className="text-xs font-semibold mb-2 text-gray-700">Mostrar/Ocultar columnas</div>
+                                        {allColumns.filter(c => c !== 'Acciones').map(col => (
+                                            <label key={col} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-gray-50 px-2 rounded">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visibleColumns.includes(col)}
+                                                    onChange={() => toggleColumn(col)}
+                                                    className="w-4 h-4"
+                                                />
+                                                <span className="text-xs text-gray-700">{col}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             <Button
                                 color="success"
-                                onMouseEnter={() => setIsHoveredImp(true)}
-                                onMouseLeave={() => setIsHoveredImp(false)}
-                                onClick={() => fileInputRef.current?.click()}
+                                outline
+                                onMouseEnter={() => setIsHoveredExp(true)}
+                                onMouseLeave={() => setIsHoveredExp(false)}
+                                onClick={() => exportClients(auth?.empresaId, debounce)}
                             >
-                                <Icon
-                                    className="mr-4"
-                                    color={isHoveredImp ? '#fff' : '#00C851'}
-                                    icon="icon-park-outline:excel"
-                                    width="20"
-                                    height="20"
-                                />
-                                Importar Exc.
+                                <Icon icon="solar:export-bold" className="mr-1.5" />
+                                Exportar
                             </Button>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    ref={fileInputRef}
+                                    onChange={handleImportExcel}
+                                    className="hidden"
+                                />
+                                <Button
+                                    color="success"
+                                    outline
+                                    onMouseEnter={() => setIsHoveredImp(true)}
+                                    onMouseLeave={() => setIsHoveredImp(false)}
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <Icon icon="solar:import-bold" className="mr-1.5" />
+                                    Importar
+                                </Button>
+                            </div>
                         </div>
-                        <Button color="secondary" onClick={() => {
-                            setFormValues(initialForm);
-                            setErrors({
-                                nombre: "",
-                                nroDoc: "",
-                                direccion: "",
-                                departamento: "",
-                                distrito: "",
-                                provincia: "",
-                                ubigeo: "",
-                                email: "",
-                                telefono: "",
-                                estado: "",
-                                tipoDocumentoId: 0,
-                                empresaId: 0,
-                            });
-                            setIsOpenModal(true);
-                        }}>Nuevo cliente</Button>
                     </div>
                 </div>
-                <div className=''>
 
-                    {
-                        clientsTable?.length > 0 ? (
-                            <>
-                                <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
-                                    <DataTable bodyData={clientsTable}
-                                        headerColumns={visibleColumns} />
-                                </div>
+                {/* Table Content */}
+                <div className="p-4">
+                    {clientsTable?.length > 0 ? (
+                        <>
+                            <div className="overflow-hidden overflow-x-auto">
+                                <DataTable bodyData={clientsTable}
+                                    headerColumns={visibleColumns} />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
                                 <Pagination
                                     data={clientsTable}
                                     optionSelect
@@ -458,17 +466,23 @@ const Clients = () => {
                                     pages={pages}
                                     total={totalClients}
                                 />
-                            </>
-                        ) :
-                            <TableSkeleton />
-                    }
+                            </div>
+                        </>
+                    ) : (
+                        <div className="py-12 text-center">
+                            <Icon icon="solar:users-group-rounded-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500">No se encontraron clientes</p>
+                            <p className="text-sm text-gray-400 mt-1">Intenta con otros términos de búsqueda</p>
+                        </div>
+                    )}
                 </div>
-                {isOpenModal && <ModalClient setErrors={setErrors} errors={errors} formValues={formValues} setFormValues={setFormValues} isEdit={isEdit} isOpenModal={isOpenModal} setIsOpenModal={setIsOpenModal} closeModal={closeModal} />}
-
-                {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information="¿Estás seguro que deseas cambiar el estado del cliente?" />}
             </div>
+
+            {isOpenModal && <ModalClient setErrors={setErrors} errors={errors} formValues={formValues} setFormValues={setFormValues} isEdit={isEdit} isOpenModal={isOpenModal} setIsOpenModal={setIsOpenModal} closeModal={closeModal} />}
+            {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information="¿Estás seguro que deseas cambiar el estado del cliente?" />}
         </div>
     );
+
 };
 
 export default Clients;

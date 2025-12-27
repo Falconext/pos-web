@@ -11,6 +11,7 @@ import TableSkeleton from "@/components/Skeletons/table";
 import { useAuthStore } from "@/zustand/auth";
 import { useDebounce } from "@/hooks/useDebounce";
 import ModalProduct from "./modal-productos";
+import ModalCatalogo from "./modal-catalogo";
 import ModalCategories from "./modal-categorias";
 import ModalMarcas from "./modal-marcas";
 import Button from "@/components/Button";
@@ -239,6 +240,7 @@ const KardexProductos = () => {
     }
 
     const [isOpenModal, setIsOpenModal] = useState(false);
+    const [isOpenModalCatalog, setIsOpenModalCatalog] = useState(false);
     const [isOpenModalCategory, setIsOpenModalCategory] = useState(false);
     const [isOpenModalBrands, setIsOpenModalBrands] = useState(false);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
@@ -603,163 +605,107 @@ const KardexProductos = () => {
     };
 
     return (
-        <div className="px-0 py-0 md:px-8 md:py-4">
-            <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
-                {/* Header */}
-                <div className="space-y-4 mb-5 pt-5 md:pt-0">
-                    <div className="w-full">
-                        <InputPro name="search" value={searchClient} onChange={handleChange} label={labels.buscar} isLabel />
-                    </div>
-                    <div className="grid grid-cols-2 md:flex md:justify-end gap-2 md:gap-3">
-                        {/* Selector de Vista */}
-                        <div className="flex bg-gray-100 rounded-lg p-1">
-                            <button
-                                onClick={() => setVistaActual('tabla')}
-                                className={`p-2 rounded ${vistaActual === 'tabla' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
-                                title="Vista Tabla"
-                            >
-                                <Icon icon="mdi:table" width={20} height={20} />
-                            </button>
-                            <button
-                                onClick={() => setVistaActual('cards')}
-                                className={`p-2 rounded ${vistaActual === 'cards' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
-                                title="Vista Cards"
-                            >
-                                <Icon icon="mdi:view-grid" width={20} height={20} />
-                            </button>
-                            <button
-                                onClick={() => setVistaActual('lista')}
-                                className={`p-2 rounded ${vistaActual === 'lista' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
-                                title="Vista Lista"
-                            >
-                                <Icon icon="mdi:view-list" width={20} height={20} />
-                            </button>
-                        </div>
+        <div className="min-h-screen pb-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{labels.titulo}</h1>
+                    <p className="text-sm text-gray-500 mt-1">Gestiona tu inventario de {labels.titulo.toLowerCase()}</p>
+                </div>
+                <Button
+                    color="secondary"
+                    onClick={() => {
+                        setFormValues(initialForm);
+                        setErrors({
+                            descripcion: "",
+                            categoriaId: 0,
+                            description: "",
+                            precioUnitario: "",
+                            stock: "",
+                            codigo: "",
+                            unidadMedida: ""
+                        });
+                        setIsOpenModal(true);
+                    }}
+                    className="flex items-center gap-2"
+                >
+                    <Icon icon="solar:add-circle-bold" className="text-lg" />
+                    {labels.nuevoBtn}
+                </Button>
+            </div>
 
-                        {/* <div>
-                            <select
-                                value={marcaIdFilter ?? ''}
-                                onChange={(e) => setMarcaIdFilter(e.target.value ? Number(e.target.value) : undefined)}
-                                className="border rounded-lg px-3 py-2 text-sm md:text-base"
-                            >
-                                <option value="">Todas las marcas</option>
-                                {brands.map((m: any) => (
-                                    <option key={m.id} value={m.id}>{m.nombre}</option>
-                                ))}
-                            </select>
-                        </div> */}
-                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+            {/* Main Content Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Search and Actions */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        <div className="flex-1">
+                            <InputPro name="search" value={searchClient} onChange={handleChange} label={labels.buscar} isLabel />
+                        </div>
+                        <div className="flex flex-wrap gap-2 top-8 relative">
                             <Button
                                 color="lila"
                                 outline
-                                onClick={(e: any) => { e.stopPropagation(); setShowColumnFilter(!showColumnFilter); }}
-                                className="text-sm md:text-base"
+                                onClick={() => setIsOpenModalCategory(true)}
+                                className="text-sm"
                             >
-                                <Icon className="mr-2" icon="mdi:filter-variant" width={18} height={18} />
-                                Columnas
+                                <Icon icon="solar:tag-bold-duotone" className="mr-1.5" />
+                                Categorías
                             </Button>
-                            {showColumnFilter && (
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-30 p-3" onClick={(e) => e.stopPropagation()}>
-                                    <div className="text-xs font-semibold mb-2 text-gray-700">Mostrar/Ocultar columnas</div>
-                                    {allColumns.filter(c => c !== 'Acciones').map(col => (
-                                        <label key={col} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-gray-50 px-2 rounded">
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col)}
-                                                onChange={() => toggleColumn(col)}
-                                                className="w-4 h-4"
-                                            />
-                                            <span className="text-xs text-gray-700">{col}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <Button
-                            color="lila"
-                            outline
-                            onClick={() => setIsOpenModalCategory(true)}
-                            className="text-sm md:text-base"
-                        >
-                            Categorias
-                        </Button>
-                        <Button
-                            color="lila"
-                            outline
-                            onClick={() => setIsOpenModalBrands(true)}
-                            className="text-sm md:text-base"
-                        >
-                            Marcas
-                        </Button>
-
-                        <Button
-                            color="success"
-                            onMouseEnter={() => setIsHoveredExp(true)}
-                            onMouseLeave={() => setIsHoveredExp(false)}
-                            onClick={() => {
-                                exportProducts(auth?.empresaId, debounce);
-                            }}
-                            className="text-sm md:text-base"
-                        >
-                            <Icon
-                                className="mr-1 md:mr-2"
-                                color={isHoveredExp ? '#fff' : '#00C851'}
-                                icon="icon-park-outline:excel"
-                                width="18"
-                                height="18"
-                            />
-                            <span className="hidden md:inline">Exportar Exc.</span>
-                            <span className="md:hidden">Exportar</span>
-                        </Button>
-                        <div className="relative">
-                            <input
-                                type="file"
-                                accept=".xlsx, .xls"
-                                ref={fileInputRef}
-                                onChange={handleImportExcel}
-                                className="hidden"
-                            />
+                            <Button
+                                color="lila"
+                                outline
+                                onClick={() => setIsOpenModalBrands(true)}
+                                className="text-sm"
+                            >
+                                <Icon icon="solar:star-bold-duotone" className="mr-1.5" />
+                                Marcas
+                            </Button>
                             <Button
                                 color="success"
-                                onMouseEnter={() => setIsHoveredImp(true)}
-                                onMouseLeave={() => setIsHoveredImp(false)}
-                                onClick={() => fileInputRef.current?.click()}
-                                className="text-sm md:text-base w-full"
+                                outline
+                                onMouseEnter={() => setIsHoveredExp(true)}
+                                onMouseLeave={() => setIsHoveredExp(false)}
+                                onClick={() => exportProducts(auth?.empresaId, debounce)}
+                                className="text-sm"
                             >
-                                <Icon
-                                    className="mr-1 md:mr-2"
-                                    color={isHoveredImp ? '#fff' : '#00C851'}
-                                    icon="icon-park-outline:excel"
-                                    width="18"
-                                    height="18"
+                                <Icon icon="solar:export-bold" className="mr-1.5" />
+                                Exportar
+                            </Button>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    ref={fileInputRef}
+                                    onChange={handleImportExcel}
+                                    className="hidden"
                                 />
-                                <span className="hidden md:inline">Importar Exc.</span>
-                                <span className="md:hidden">Importar</span>
+                                <Button
+                                    color="success"
+                                    outline
+                                    onMouseEnter={() => setIsHoveredImp(true)}
+                                    onMouseLeave={() => setIsHoveredImp(false)}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-sm"
+                                >
+                                    <Icon icon="solar:import-bold" className="mr-1.5" />
+                                    Importar
+                                </Button>
+                            </div>
+                            <Button
+                                color="primary"
+                                onClick={() => setIsOpenModalCatalog(true)}
+                                className="text-sm"
+                            >
+                                <Icon icon="solar:cloud-download-bold" className="mr-1.5" />
+                                Catálogo
                             </Button>
                         </div>
-                        <Button
-                            color="secondary"
-                            onClick={() => {
-                                setFormValues(initialForm);
-                                setErrors({
-                                    descripcion: "",
-                                    categoriaId: 0,
-                                    description: "",
-                                    precioUnitario: "",
-                                    stock: "",
-                                    codigo: "",
-                                    unidadMedida: ""
-                                });
-                                setIsOpenModal(true);
-                            }}
-                            className="text-sm md:text-base col-span-2 md:col-span-1"
-                        >
-                            <span className="hidden md:inline">{labels.nuevoBtn}</span>
-                            <span className="md:hidden">{labels.nuevoBtnMobile}</span>
-                        </Button>
                     </div>
                 </div>
-                <div className='w-full'>
+
+                {/* Products Content */}
+                <div className="p-4">
                     {/* Input oculto para subir imágenes */}
                     <input
                         type="file"
@@ -776,24 +722,30 @@ const KardexProductos = () => {
                     <ModalCategories isOpenModal={isOpenModalCategory} closeModal={() => setIsOpenModalCategory(false)} setIsOpenModal={setIsOpenModalCategory} />
                     <ModalMarcas isOpenModal={isOpenModalBrands} closeModal={() => setIsOpenModalBrands(false)} setIsOpenModal={setIsOpenModalBrands} />
                 </div>
-
-                {isOpenModal && <ModalProduct
-                    closeModal={closeModal}
-                    errors={errors}
-                    initialForm={initialForm}
-                    formValues={formValues}
-                    setErrors={setErrors}
-                    setFormValues={setFormValues}
-                    isEdit={isEdit}
-                    isOpenModal={isOpenModal}
-                    setIsOpenModal={setIsOpenModal}
-                />}
-                {isOpenModalCategory && <ModalCategories isOpenModal={isOpenModalCategory} setIsOpenModal={setIsOpenModalCategory} closeModal={closeModal} />}
-                {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmToggleroduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information={labels.confirmarEstado} />}
-                {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalDelete} setIsOpenModal={setIsOpenModalDelete} title={labels.eliminar} information={labels.eliminarInfo} />}
             </div>
+
+            {isOpenModal && <ModalProduct
+                closeModal={closeModal}
+                errors={errors}
+                initialForm={initialForm}
+                formValues={formValues}
+                setErrors={setErrors}
+                setFormValues={setFormValues}
+                isEdit={isEdit}
+                isOpenModal={isOpenModal}
+                setIsOpenModal={setIsOpenModal}
+            />}
+            {isOpenModalCatalog && <ModalCatalogo
+                isOpen={isOpenModalCatalog}
+                onClose={() => setIsOpenModalCatalog(false)}
+                onSuccess={() => getAllProducts({ page: currentPage, limit: itemsPerPage, search: debounce })}
+            />}
+            {isOpenModalCategory && <ModalCategories isOpenModal={isOpenModalCategory} setIsOpenModal={setIsOpenModalCategory} closeModal={closeModal} />}
+            {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmToggleroduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information={labels.confirmarEstado} />}
+            {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalDelete} setIsOpenModal={setIsOpenModalDelete} title={labels.eliminar} information={labels.eliminarInfo} />}
         </div>
     );
+
 };
 
 export default KardexProductos;

@@ -113,7 +113,7 @@ const ModalMarcas = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsMarcas) 
   const marcasTable = (marcas || []).map((item: any, index: number) => ({
     '#': index + 1,
     id: item.id,
-    nombre: item.nombre,
+    'Marca': item.nombre,
   }));
 
   return (

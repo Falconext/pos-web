@@ -27,8 +27,8 @@ export default function AdminIndex() {
   const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format('YYYY-MM-DD'))
 
   useEffect(() => {
-    getTotalAmountByDate()
-    getTotalAmountByDatePayment()
+    getTotalAmountByDate(fechaInicio, fechaFin)
+    getTotalAmountByDatePayment(fechaInicio, fechaFin)
     getNewClientsByDate(fechaInicio, fechaFin)
     getTopSells(fechaInicio, fechaFin)
   }, [fechaInicio, fechaFin])
@@ -40,9 +40,13 @@ export default function AdminIndex() {
   }, [fechaInicio, fechaFin])
 
   const handleDate = (date: string, name: string) => {
-    if (!moment(date, 'YYYY-MM-DD', true).isValid()) return
-    if (name === 'fechaInicio') setFechaInicio(moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD'))
-    if (name === 'fechaFin') setFechaFin(moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD'))
+    // Calendar component returns DD/MM/YYYY
+    if (!moment(date, 'DD/MM/YYYY', true).isValid()) return
+
+    const formattedDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD')
+
+    if (name === 'fechaInicio') setFechaInicio(formattedDate)
+    if (name === 'fechaFin') setFechaFin(formattedDate)
   }
 
   const chartData = useMemo(() => {
@@ -89,7 +93,6 @@ export default function AdminIndex() {
     })
   }, [newClientsByDate])
 
-  console.log(topSells)
 
   const topTableData = useMemo(() => {
     return (topSells ?? []).map((item: any) => ({
@@ -101,79 +104,79 @@ export default function AdminIndex() {
   }, [topSells])
 
   return (
-    <div className="min-h-screen px-3 md:px-8 pt-0 md:pt-5 md:mt-0 pb-10 bg-tremor-background-muted">
+    <div className="min-h-screen pb-4">
 
-      <div className="flex flex-col sm:flex-row justify-start gap-3 mb-5">
-        <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
-        <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard General</h1>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 py-2 rounded-xl">
+            <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
+          </div>
+          <div className="flex items-center gap-2 py-2 rounded-xl">
+            <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
+          </div>
+        </div>
       </div>
 
       <Grid numItemsSm={2} numItemsLg={4} className="gap-4 md:gap-6 mb-6">
-        <Card
-          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
-          decoration="top"
-          decorationColor="indigo"
-        >
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
           <Flex justifyContent="between" alignItems="center">
             <div>
-              <Text>Comprobantes</Text>
-              <Metric>{totalInvoices}</Metric>
+              <Text className="font-medium text-gray-500">Comprobantes</Text>
+              <Metric className="text-gray-900 mt-1">{totalInvoices}</Metric>
             </div>
-            <Icon className="text-indigo-500" icon="iconamoon:invoice-fill" width="28" height="28" />
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+              <Icon className="text-blue-600" icon="solar:bill-list-bold-duotone" width="24" height="24" />
+            </div>
           </Flex>
         </Card>
-        <Card
-          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
-          decoration="top"
-          decorationColor="emerald"
-        >
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
           <Flex justifyContent="between" alignItems="center">
             <div>
-              <Text>Clientes</Text>
-              <Metric>{totalCLients}</Metric>
+              <Text className="font-medium text-gray-500">Clientes</Text>
+              <Metric className="text-gray-900 mt-1">{totalCLients}</Metric>
             </div>
-            <Icon className="text-emerald-500" icon="fa:users" width="28" height="28" />
+            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
+              <Icon className="text-emerald-600" icon="solar:users-group-rounded-bold-duotone" width="24" height="24" />
+            </div>
           </Flex>
         </Card>
-        <Card
-          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
-          decoration="top"
-          decorationColor="amber"
-        >
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
           <Flex justifyContent="between" alignItems="center">
             <div>
-              <Text>Productos</Text>
-              <Metric>{totalProducts}</Metric>
+              <Text className="font-medium text-gray-500">Productos</Text>
+              <Metric className="text-gray-900 mt-1">{totalProducts}</Metric>
             </div>
-            <Icon className="text-amber-500" icon="fluent:box-32-filled" width="28" height="28" />
+            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+              <Icon className="text-amber-600" icon="solar:box-bold-duotone" width="24" height="24" />
+            </div>
           </Flex>
         </Card>
-        <Card
-          className="border border-tremor-border bg-tremor-background shadow-tremorCard"
-          decoration="top"
-          decorationColor="emerald"
-        >
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
           <Flex justifyContent="between" alignItems="center">
             <div>
-              <Text>Ingresos</Text>
-              <Metric>S/ {Number(totalAmount || 0).toFixed(2)}</Metric>
+              <Text className="font-medium text-gray-500">Ingresos Totales</Text>
+              <Metric className="text-gray-900 mt-1">S/ {Number(totalAmount || 0).toFixed(2)}</Metric>
             </div>
-            <Icon className="text-emerald-500" icon="game-icons:receive-money" width="28" height="28" />
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+              <Icon className="text-blue-600" icon="solar:wallet-money-bold-duotone" width="24" height="24" />
+            </div>
           </Flex>
         </Card>
       </Grid>
 
       <Grid numItemsSm={1} numItemsLg={2} className="gap-4 md:gap-6">
-        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
-          <Title>Ingresos por comprobantes</Title>
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl p-4">
+          <Title className="text-gray-900 font-bold mb-4">Ingresos por comprobantes</Title>
           <AreaChart
             className="mt-4 h-64 md:h-72"
             data={chartData}
             index="date"
             categories={["Boletas", "Facturas", "NotasCredito", "NotasDebito"]}
+            colors={["blue", "cyan", "rose", "slate"]}
             curveType="monotone"
             showLegend
-            showGridLines
+            showGridLines={false}
             showAnimation
             yAxisWidth={64}
             valueFormatter={(value: number) =>
@@ -184,15 +187,16 @@ export default function AdminIndex() {
             }
           />
         </Card>
-        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
-          <Title>Ingresos por método de pago</Title>
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl p-4">
+          <Title className="text-gray-900 font-bold mb-4">Ingresos por método de pago</Title>
           <BarChart
             className="mt-4 h-64 md:h-72"
             data={chartDataPayments}
             index="date"
             categories={["Yape", "Plin", "Efectivo"]}
+            colors={["violet", "pink", "emerald"]}
             showLegend
-            showGridLines
+            showGridLines={false}
             showAnimation
             yAxisWidth={64}
             valueFormatter={(value: number) =>
@@ -205,24 +209,25 @@ export default function AdminIndex() {
         </Card>
       </Grid>
 
-      <Grid numItemsSm={1} numItemsLg={2} className="gap-4 md:gap-6 mt-6 md:mt-8">
-        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
-          <Title>Top de productos más vendidos</Title>
-          <div className="mt-4 overflow-x-auto">
+      <Grid numItemsSm={1} numItemsLg={2} className="gap-4 md:gap-6 mt-4 md:mt-6">
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl p-4">
+          <Title className="text-gray-900 font-bold mb-4">Top de productos más vendidos</Title>
+          <div className="mt-4 overflow-x-auto ring-1 ring-gray-200 rounded-lg">
             <DataTable
               bodyData={topTableData}
               headerColumns={["Codigo", "Descripcion", "Stock", "Cant. Vendido"]}
             />
           </div>
         </Card>
-        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
-          <Title>Nuevos clientes por fecha</Title>
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl p-4">
+          <Title className="text-gray-900 font-bold mb-4">Nuevos clientes por fecha</Title>
           <BarChart
             className="mt-6 h-64 md:h-72"
             data={chartDataClients}
             index="date"
             categories={["nuevos"]}
-            colors={["slate"]}
+            colors={["blue"]}
+            showGridLines={false}
             valueFormatter={(value: number) => `${Number(value || 0).toFixed(0)}`}
           />
         </Card>

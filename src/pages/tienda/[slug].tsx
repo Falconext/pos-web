@@ -28,7 +28,7 @@ export default function TiendaPublica() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement | null>(null);
   const [combos, setCombos] = useState<any[]>([]);
-  
+
   // Estado para modal de personalización
   const [showPersonalizarModal, setShowPersonalizarModal] = useState(false);
   const [productoAPersonalizar, setProductoAPersonalizar] = useState<any>(null);
@@ -218,7 +218,7 @@ export default function TiendaPublica() {
   // Abrir modal de personalización o agregar directo si no tiene modificadores
   const handleAgregarProducto = async (producto: any) => {
     const mods = await cargarModificadoresProducto(producto.id);
-    
+
     if (mods.length > 0) {
       // Tiene modificadores, abrir modal
       setProductoAPersonalizar(producto);
@@ -240,12 +240,12 @@ export default function TiendaPublica() {
   };
 
   const agregarAlCarritoDirecto = (producto: any, modificadores?: any[]) => {
-    const itemId = modificadores?.length 
+    const itemId = modificadores?.length
       ? `${producto.id}-${Date.now()}` // ID único si tiene modificadores
       : producto.id;
-    
+
     const precioExtra = modificadores?.reduce((sum, mod) => sum + Number(mod.precioExtra || 0), 0) || 0;
-    
+
     const nuevoItem = {
       ...producto,
       id: itemId,
@@ -270,7 +270,7 @@ export default function TiendaPublica() {
         return;
       }
     }
-    
+
     setCarrito([...carrito, nuevoItem]);
   };
 
@@ -313,7 +313,7 @@ export default function TiendaPublica() {
   const toggleOpcionModificador = (grupoId: number, opcionId: number, seleccionMax: number) => {
     setSeleccionesModificadores((prev) => {
       const actuales = prev[grupoId] || [];
-      
+
       if (actuales.includes(opcionId)) {
         // Deseleccionar
         return { ...prev, [grupoId]: actuales.filter((id) => id !== opcionId) };
@@ -607,7 +607,7 @@ export default function TiendaPublica() {
                       onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                     >
                       {producto.imagenUrl ? (
-                        <img src={producto.imagenUrl} alt={producto.descripcion} className="w-full h-44 object-cover" />
+                        <img src={producto.imagenUrl} alt={producto.descripcion} className="w-full h-44 object-contain" />
                       ) : (
                         <div className="w-full h-44 bg-gray-200 flex items-center justify-center">
                           <Icon icon="mdi:image-off" className="w-12 h-12 text-gray-400" />
@@ -979,21 +979,18 @@ export default function TiendaPublica() {
                           <button
                             key={opcion.id}
                             onClick={() => toggleOpcionModificador(grupo.id, opcion.id, grupo.seleccionMax)}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
-                              isSelected
+                            className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${isSelected
                                 ? 'border-primary bg-primary/5'
                                 : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-5 h-5 flex items-center justify-center border-2 transition-colors ${
-                                  isRadio ? 'rounded-full' : 'rounded'
-                                } ${
-                                  isSelected
+                                className={`w-5 h-5 flex items-center justify-center border-2 transition-colors ${isRadio ? 'rounded-full' : 'rounded'
+                                  } ${isSelected
                                     ? 'border-primary bg-primary'
                                     : 'border-gray-300'
-                                }`}
+                                  }`}
                               >
                                 {isSelected && (
                                   <Icon

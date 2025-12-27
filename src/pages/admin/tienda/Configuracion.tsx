@@ -196,15 +196,16 @@ export default function ConfiguracionTienda() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Configuración de Tienda Virtual</h1>
-          <p className="text-gray-600">Personaliza tu tienda online</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Configuración de Tienda Virtual</h1>
+          <p className="text-sm text-gray-500 mt-1">Personaliza tu tienda online y medios de pago</p>
         </div>
         {formData.slugTienda && (
-          <Button onClick={abrirTienda} className="flex items-center gap-2">
-            <Icon icon="mdi:open-in-new" />
+          <Button onClick={abrirTienda} color="secondary" className="flex items-center gap-2">
+            <Icon icon="solar:shop-2-bold" />
             Ver mi tienda
           </Button>
         )}
@@ -212,8 +213,11 @@ export default function ConfiguracionTienda() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información básica */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Información Básica</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+            <Icon icon="solar:info-circle-bold-duotone" className="text-xl text-blue-500" />
+            Información Básica
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <InputPro
@@ -233,14 +237,15 @@ export default function ConfiguracionTienda() {
               placeholder="+51 999 999 999"
             />
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-2">Descripción</label>
-              <textarea
+              <InputPro
+                label="Descripción"
                 name="descripcionTienda"
                 value={formData.descripcionTienda}
                 onChange={handleChange}
-                rows={3}
-                className="w-full border rounded-lg p-2"
                 placeholder="Breve descripción de tu negocio"
+                type="textarea"
+                rows={3}
+                isLabel
               />
             </div>
             <InputPro
@@ -248,15 +253,17 @@ export default function ConfiguracionTienda() {
               name="horarioAtencion"
               value={formData.horarioAtencion}
               onChange={handleChange}
-              placeholder="Lun-Vie 9am-6pm"
             />
           </div>
         </div>
 
         {/* Redes sociales */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Redes Sociales</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+            <Icon icon="solar:share-circle-bold-duotone" className="text-xl text-purple-500" />
+            Redes Sociales
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <InputPro
               label="Facebook"
               name="facebookUrl"
@@ -282,85 +289,125 @@ export default function ConfiguracionTienda() {
         </div>
 
         {/* Medios de pago */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Medios de Pago</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <InputPro
-                label="QR Yape (URL de imagen)"
-                name="yapeQrUrl"
-                value={formData.yapeQrUrl}
-                onChange={handleChange}
-                placeholder="https://..."
-              />
-              <div className="mt-2 flex items-center gap-3">
-                <input type="file" accept="image/*" onChange={(e) => setYapeFile(e.target.files?.[0] || null)} />
-                <button
-                  type="button"
-                  onClick={() => subirQr('yape')}
-                  disabled={yapeUploading || !yapeFile}
-                  className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {yapeUploading ? 'Subiendo...' : 'Subir QR'}
-                </button>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+            <Icon icon="solar:wallet-money-bold-duotone" className="text-xl text-emerald-500" />
+            Medios de Pago
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Yape */}
+            <div className="border border-gray-100 rounded-xl p-5 bg-gray-50/50">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <span className="text-lg">💜</span>
+                </div>
+                <span className="font-semibold text-gray-800">Yape</span>
               </div>
-              {(previewYapeUrl || formData.yapeQrUrl) && (
-                <img src={previewYapeUrl || formData.yapeQrUrl} alt="QR Yape" className="mt-2 w-32 h-32 object-cover rounded border" />
-              )}
-            </div>
-            <InputPro
-              label="Número Yape"
-              name="yapeNumero"
-              value={formData.yapeNumero}
-              onChange={handleChange}
-              placeholder="999 999 999"
-            />
-            <div>
-              <InputPro
-                label="QR Plin (URL de imagen)"
-                name="plinQrUrl"
-                value={formData.plinQrUrl}
-                onChange={handleChange}
-                placeholder="https://..."
-              />
-              <div className="mt-2 flex items-center gap-3">
-                <input type="file" accept="image/*" onChange={(e) => setPlinFile(e.target.files?.[0] || null)} />
-                <button
-                  type="button"
-                  onClick={() => subirQr('plin')}
-                  disabled={plinUploading || !plinFile}
-                  className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {plinUploading ? 'Subiendo...' : 'Subir QR'}
-                </button>
+              <div className="space-y-4">
+                <InputPro
+                  label="Número Yape"
+                  name="yapeNumero"
+                  value={formData.yapeNumero}
+                  onChange={handleChange}
+                  placeholder="999 999 999"
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Código QR</label>
+                  <div className="flex items-stretch gap-4">
+                    <div className="flex-1 flex flex-col">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                        <input type="file" accept="image/*" onChange={(e) => setYapeFile(e.target.files?.[0] || null)} className="hidden" />
+                        <Icon icon="solar:upload-minimalistic-bold-duotone" className="text-3xl text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-500">{yapeFile ? yapeFile.name : 'Seleccionar imagen'}</span>
+                      </label>
+                      <Button
+                        type="button"
+                        onClick={() => subirQr('yape')}
+                        disabled={yapeUploading || !yapeFile}
+                        color="lila"
+                        className="w-full mt-3"
+                      >
+                        {yapeUploading ? 'Subiendo...' : 'Subir QR'}
+                      </Button>
+                    </div>
+                    {(previewYapeUrl || formData.yapeQrUrl) ? (
+                      <img src={previewYapeUrl || formData.yapeQrUrl} alt="QR Yape" className="w-32 h-32 object-cover rounded-xl border border-gray-200" />
+                    ) : (
+                      <div className="w-32 h-32 rounded-xl border border-gray-200 bg-gray-100 flex items-center justify-center">
+                        <Icon icon="solar:qr-code-linear" className="text-4xl text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              {(previewPlinUrl || formData.plinQrUrl) && (
-                <img src={previewPlinUrl || formData.plinQrUrl} alt="QR Plin" className="mt-2 w-32 h-32 object-cover rounded border" />
-              )}
             </div>
-            <InputPro
-              label="Número Plin"
-              name="plinNumero"
-              value={formData.plinNumero}
+
+            {/* Plin */}
+            <div className="border border-gray-100 rounded-xl p-5 bg-gray-50/50">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                  <span className="text-lg">💚</span>
+                </div>
+                <span className="font-semibold text-gray-800">Plin</span>
+              </div>
+              <div className="space-y-4">
+                <InputPro
+                  label="Número Plin"
+                  name="plinNumero"
+                  value={formData.plinNumero}
+                  onChange={handleChange}
+                  placeholder="999 999 999"
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Código QR</label>
+                  <div className="flex items-stretch gap-4">
+                    <div className="flex-1 flex flex-col">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                        <input type="file" accept="image/*" onChange={(e) => setPlinFile(e.target.files?.[0] || null)} className="hidden" />
+                        <Icon icon="solar:upload-minimalistic-bold-duotone" className="text-3xl text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-500">{plinFile ? plinFile.name : 'Seleccionar imagen'}</span>
+                      </label>
+                      <Button
+                        type="button"
+                        onClick={() => subirQr('plin')}
+                        disabled={plinUploading || !plinFile}
+                        color="lila"
+                        className="w-full mt-3"
+                      >
+                        {plinUploading ? 'Subiendo...' : 'Subir QR'}
+                      </Button>
+                    </div>
+                    {(previewPlinUrl || formData.plinQrUrl) ? (
+                      <img src={previewPlinUrl || formData.plinQrUrl} alt="QR Plin" className="w-32 h-32 object-cover rounded-xl border border-gray-200" />
+                    ) : (
+                      <div className="w-32 h-32 rounded-xl border border-gray-200 bg-gray-100 flex items-center justify-center">
+                        <Icon icon="solar:qr-code-linear" className="text-4xl text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-5 pt-5 border-t border-gray-100">
+            <input
+              type="checkbox"
+              name="aceptaEfectivo"
+              checked={formData.aceptaEfectivo}
               onChange={handleChange}
-              placeholder="999 999 999"
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="aceptaEfectivo"
-                checked={formData.aceptaEfectivo}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <label className="text-sm">Acepto pago en efectivo</label>
-            </div>
+            <label className="text-sm text-gray-700">Acepto pago en efectivo contra entrega</label>
           </div>
         </div>
 
         {/* Configuración de Envío */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Configuración de Envío y Recojo</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Icon icon="solar:delivery-bold" className="text-xl text-amber-500" />
+            Configuración de Envío y Recojo
+          </h3>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
@@ -386,19 +433,14 @@ export default function ConfiguracionTienda() {
             </div>
 
             {formData.aceptaEnvio && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Costo de envío fijo (S/)</label>
-                <input
-                  type="number"
-                  name="costoEnvioFijo"
-                  step="0.01"
-                  min="0"
-                  value={formData.costoEnvioFijo}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
+              <InputPro
+                label="Costo de envío fijo (S/)"
+                name="costoEnvioFijo"
+                type="number"
+                value={formData.costoEnvioFijo}
+                onChange={handleChange}
+                placeholder="0.00"
+              />
             )}
 
             {formData.aceptaRecojo && (
@@ -411,24 +453,23 @@ export default function ConfiguracionTienda() {
               />
             )}
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Tiempo estimado de preparación (minutos)</label>
-              <input
-                type="number"
-                name="tiempoPreparacionMin"
-                min="0"
-                value={formData.tiempoPreparacionMin}
-                onChange={handleChange}
-                placeholder="30"
-                className="w-full border rounded-lg p-2"
-              />
-            </div>
+            <InputPro
+              label="Tiempo estimado de preparación (minutos)"
+              name="tiempoPreparacionMin"
+              type="number"
+              value={formData.tiempoPreparacionMin}
+              onChange={handleChange}
+              placeholder="30"
+            />
           </div>
         </div>
 
         {/* Colores */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Personalización</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Icon icon="solar:pallete-2-bold" className="text-xl text-pink-500" />
+            Personalización
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Color Primario</label>

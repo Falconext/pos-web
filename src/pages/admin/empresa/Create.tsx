@@ -94,7 +94,7 @@ const CreateEmpresa = () => {
     getPlanes();
   }, [getRubros, getUbigeos, getPlanes]);
 
-console.log(rubros)
+  console.log(rubros)
   // Funciones de clientes
   const { getClientFromDoc } = useClientsStore();
 
@@ -180,7 +180,7 @@ console.log(rubros)
       fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, id, prev.planId)
     }));
   };
-  
+
   // Manejar cambio de versión de prueba
   const handleEsPruebaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const esPrueba = e.target.checked;
@@ -190,7 +190,7 @@ console.log(rubros)
       fechaExpiracion: recalcularFechaExpiracion(esPrueba, prev.tipoEmpresa, prev.planId)
     }));
   };
-  
+
   // Manejar selección de plan
   const handlePlanSelect = (planId: number) => {
     setFormData(prev => ({
@@ -198,7 +198,7 @@ console.log(rubros)
       planId,
       fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, prev.tipoEmpresa, planId)
     }));
-    
+
     if (errors.planId) {
       setErrors(prev => ({
         ...prev,
@@ -332,9 +332,9 @@ console.log(rubros)
   const recalcularFechaExpiracion = (esPrueba: boolean, tipoEmpresa: string, planId?: number) => {
     const ahora = new Date();
     let diasExpiracion = 30; // default
-    
+
     if (planId && planes && Array.isArray(planes)) {
-      const planSeleccionado : any = planes.find((p: any) => p.id === planId);
+      const planSeleccionado: any = planes.find((p: any) => p.id === planId);
       if (planSeleccionado?.duracionDias) {
         diasExpiracion = planSeleccionado.duracionDias;
       }
@@ -348,7 +348,7 @@ console.log(rubros)
         diasExpiracion = 30; // Ahora todos son mensuales por defecto
       }
     }
-    
+
     const fechaExpiracion = new Date(ahora.getTime() + diasExpiracion * 24 * 60 * 60 * 1000);
     return fechaExpiracion.toISOString().split('T')[0];
   };
@@ -381,7 +381,7 @@ console.log(rubros)
   console.log(ubigeoSelected)
 
   return (
-    <div className="px-0 py-0 md:px-8 md:py-4">
+    <div className="px-0 py-0 md:px-0 md:py-4">
       <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
         {/* Header */}
         <div className="flex items-center mb-6 pt-5 md:pt-0">
@@ -409,301 +409,328 @@ console.log(rubros)
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Ingresa los datos de la empresa</h2>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Datos de la Empresa */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos de la Empresa</h2>
+            {/* Datos de la Empresa */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos de la Empresa</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <InputPro
-                  name="ruc"
-                  label="RUC"
-                  value={formData.ruc}
-                  onChange={handleInputChange}
-                  handleOnBlur={handleRucBlur}
-                  error={errors.ruc}
-                  isLabel
-                  maxLength={11}
-                />
-                {searchingRuc && (
-                  <p className="text-sm text-blue-600 mt-1">Buscando información...</p>
-                )}
-              </div>
-
-              <div>
-                <InputPro
-                  name="razonSocial"
-                  label="Razón Social"
-                  value={formData.razonSocial}
-                  onChange={handleInputChange}
-                  error={errors.razonSocial}
-                  isLabel
-                />
-              </div>
-
-              <div>
-                <InputPro
-                  name="nombreComercial"
-                  label="Nombre Comercial"
-                  value={formData.nombreComercial}
-                  onChange={handleInputChange}
-                  error={errors.nombreComercial}
-                  isLabel
-                />
-              </div>
-
-              <div>
-                <Select
-                  name="rubroId"
-                  label="Rubro"
-                  options={rubrosOptions}
-                  onChange={handleSelectChange}
-                  error={errors.rubroId}
-                  withLabel
-                />
-              </div>
-
-              <div>
-                <Select
-                  name="tipoEmpresa"
-                  label="Tipo de Empresa"
-                  options={[
-                    { id: 'FORMAL', value: 'Empresa Formal' },
-                    { id: 'INFORMAL', value: 'Empresa Informal' }
-                  ]}
-                  value={formData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal'}
-                  onChange={handleTipoEmpresaChange}
-                  error={errors.tipoEmpresa}
-                  withLabel
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <InputPro
-                  name="direccion"
-                  label="Dirección"
-                  value={formData.direccion}
-                  onChange={handleInputChange}
-                  error={errors.direccion}
-                  isLabel
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Select
-                  name="ubigeo"
-                  label="Ubicación (Departamento - Provincia - Distrito)"
-                  options={ubigeosOptions}
-                  onChange={handleUbigeoChange}
-                  error={errors.ubigeo}
-                  isSearch
-                  withLabel
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-4">Plan</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {planes && Array.isArray(planes) && planes.map((plan: any) => (
-                    <div
-                      key={plan.id}
-                      onClick={() => handlePlanSelect(plan.id)}
-                      className={`p-4 border rounded-lg cursor-pointer transition ${formData.planId === plan.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-blue-400'
-                        }`}
-                    >
-                      <div className="font-semibold text-gray-800">{plan.nombre}</div>
-                      <div className="text-sm text-gray-600">{plan.descripcion || ''}</div>
-                      <div className="text-lg font-bold text-blue-600 mt-2">
-                        S/ {plan.costo?.toString()} 
-                        {plan.tipoFacturacion && (
-                          <span className="text-xs text-gray-500 ml-1">/ {plan.tipoFacturacion.toLowerCase()}</span>
-                        )}
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        {plan.limiteUsuarios && <span>Usuarios: {plan.limiteUsuarios}</span>}
-                        {plan.duracionDias && <span>{plan.duracionDias} días</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {errors.planId && <p className="text-red-600 text-sm mt-2">{errors.planId}</p>}
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.esPrueba}
-                    onChange={handleEsPruebaChange}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Esto es una versión de prueba (sin costo)</span>
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo (Opcional)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                {logoPreview && (
-                  <img src={logoPreview} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded" />
-                )}
-              </div>
-
-              <div>
-                <InputPro
-                  name="fechaActivacion"
-                  label="Fecha de Activación"
-                  type="date"
-                  value={formData.fechaActivacion}
-                  onChange={handleInputChange}
-                  error={errors.fechaActivacion}
-                  isLabel
-                  disabled
-                />
-              </div>
-
-              <div>
-                <InputPro
-                  name="fechaExpiracion"
-                  label="Fecha de Expiración (Auto-calculada)"
-                  type="date"
-                  value={formData.fechaExpiracion || ''}
-                  onChange={handleInputChange}
-                  error={errors.fechaExpiracion}
-                  isLabel
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Integración SUNAT - Solo para empresas FORMALES */}
-          {formData.tipoEmpresa === 'FORMAL' && !formData.esPrueba && (
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Integración SUNAT (Opcional)</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Estos datos se obtienen del proveedor SUNAT después del registro. Puedes agregarlos más tarde.
-              </p>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <InputPro
-                    name="providerToken"
-                    label="Token del Proveedor"
-                    value={formData.providerToken || ''}
+                    name="ruc"
+                    label="RUC"
+                    value={formData.ruc}
                     onChange={handleInputChange}
-                    error={errors.providerToken}
+                    handleOnBlur={handleRucBlur}
+                    error={errors.ruc}
                     isLabel
-                    placeholder="Token para integración SUNAT"
+                    maxLength={11}
                   />
+                  {searchingRuc && (
+                    <p className="text-sm text-blue-600 mt-1">Buscando información...</p>
+                  )}
                 </div>
-                
+
                 <div>
                   <InputPro
-                    name="providerId"
-                    label="ID del Proveedor"
-                    value={formData.providerId || ''}
+                    name="razonSocial"
+                    label="Razón Social"
+                    value={formData.razonSocial}
                     onChange={handleInputChange}
-                    error={errors.providerId}
+                    error={errors.razonSocial}
                     isLabel
-                    placeholder="ID asignado por el proveedor"
+                  />
+                </div>
+
+                <div>
+                  <InputPro
+                    name="nombreComercial"
+                    label="Nombre Comercial"
+                    value={formData.nombreComercial}
+                    onChange={handleInputChange}
+                    error={errors.nombreComercial}
+                    isLabel
+                  />
+                </div>
+
+                <div>
+                  <Select
+                    name="rubroId"
+                    label="Rubro"
+                    options={rubrosOptions}
+                    onChange={handleSelectChange}
+                    error={errors.rubroId}
+                    withLabel
+                  />
+                </div>
+
+                <div>
+                  <Select
+                    name="tipoEmpresa"
+                    label="Tipo de Empresa"
+                    options={[
+                      { id: 'FORMAL', value: 'Empresa Formal' },
+                      { id: 'INFORMAL', value: 'Empresa Informal' }
+                    ]}
+                    value={formData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal'}
+                    onChange={handleTipoEmpresaChange}
+                    error={errors.tipoEmpresa}
+                    withLabel
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <InputPro
+                    name="direccion"
+                    label="Dirección"
+                    value={formData.direccion}
+                    onChange={handleInputChange}
+                    error={errors.direccion}
+                    isLabel
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Select
+                    name="ubigeo"
+                    label="Ubicación (Departamento - Provincia - Distrito)"
+                    options={ubigeosOptions}
+                    onChange={handleUbigeoChange}
+                    error={errors.ubigeo}
+                    isSearch
+                    withLabel
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Plan</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {planes && Array.isArray(planes) && planes.map((plan: any) => (
+                      <div
+                        key={plan.id}
+                        onClick={() => handlePlanSelect(plan.id)}
+                        className={`p-4 border rounded-lg cursor-pointer transition ${formData.planId === plan.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 hover:border-blue-400'
+                          }`}
+                      >
+                        <div className="font-semibold text-gray-800">{plan.nombre}</div>
+                        <div className="text-sm text-gray-600">{plan.descripcion || ''}</div>
+                        <div className="text-lg font-bold text-blue-600 mt-2">
+                          S/ {plan.costo?.toString()}
+                          {plan.tipoFacturacion && (
+                            <span className="text-xs text-gray-500 ml-1">/ {plan.tipoFacturacion.toLowerCase()}</span>
+                          )}
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          {plan.limiteUsuarios && <span>Usuarios: {plan.limiteUsuarios}</span>}
+                          {plan.duracionDias && <span>{plan.duracionDias} días</span>}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                          {plan.tieneTienda && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Tienda Virtual
+                            </div>
+                          )}
+                          {plan.tieneCulqi && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Pagos con Culqi
+                            </div>
+                          )}
+                          {plan.tieneDeliveryGPS && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Delivery con GPS
+                            </div>
+                          )}
+                          {plan.tieneGaleria && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Galería de Imágenes
+                            </div>
+                          )}
+                          {plan.tieneBanners && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Banners Promocionales
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.planId && <p className="text-red-600 text-sm mt-2">{errors.planId}</p>}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.esPrueba}
+                      onChange={handleEsPruebaChange}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Esto es una versión de prueba (sin costo)</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Logo (Opcional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {logoPreview && (
+                    <img src={logoPreview} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded" />
+                  )}
+                </div>
+
+                <div>
+                  <InputPro
+                    name="fechaActivacion"
+                    label="Fecha de Activación"
+                    type="date"
+                    value={formData.fechaActivacion}
+                    onChange={handleInputChange}
+                    error={errors.fechaActivacion}
+                    isLabel
+                    disabled
+                  />
+                </div>
+
+                <div>
+                  <InputPro
+                    name="fechaExpiracion"
+                    label="Fecha de Expiración (Auto-calculada)"
+                    type="date"
+                    value={formData.fechaExpiracion || ''}
+                    onChange={handleInputChange}
+                    error={errors.fechaExpiracion}
+                    isLabel
                   />
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Datos del Administrador */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Administrador de la Empresa</h2>
+            {/* Integración SUNAT - Solo para empresas FORMALES */}
+            {formData.tipoEmpresa === 'FORMAL' && !formData.esPrueba && (
+              <div className="bg-blue-50 p-6 rounded-lg">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Integración SUNAT (Opcional)</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Estos datos se obtienen del proveedor SUNAT después del registro. Puedes agregarlos más tarde.
+                </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <InputPro
-                  name="usuario.nombre"
-                  label="Nombre Completo"
-                  value={formData.usuario.nombre}
-                  onChange={handleInputChange}
-                  error={errors['usuario.nombre']}
-                  isLabel
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <InputPro
+                      name="providerToken"
+                      label="Token del Proveedor"
+                      value={formData.providerToken || ''}
+                      onChange={handleInputChange}
+                      error={errors.providerToken}
+                      isLabel
+                      placeholder="Token para integración SUNAT"
+                    />
+                  </div>
+
+                  <div>
+                    <InputPro
+                      name="providerId"
+                      label="ID del Proveedor"
+                      value={formData.providerId || ''}
+                      onChange={handleInputChange}
+                      error={errors.providerId}
+                      isLabel
+                      placeholder="ID asignado por el proveedor"
+                    />
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div>
-                <InputPro
-                  name="usuario.dni"
-                  label="DNI"
-                  value={formData.usuario.dni}
-                  onChange={handleInputChange}
-                  error={errors['usuario.dni']}
-                  isLabel
-                  maxLength={8}
-                />
-              </div>
+            {/* Datos del Administrador */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Administrador de la Empresa</h2>
 
-              <div>
-                <InputPro
-                  name="usuario.email"
-                  label="Email"
-                  type="email"
-                  value={formData.usuario.email}
-                  onChange={handleInputChange}
-                  error={errors['usuario.email']}
-                  isLabel
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <InputPro
+                    name="usuario.nombre"
+                    label="Nombre Completo"
+                    value={formData.usuario.nombre}
+                    onChange={handleInputChange}
+                    error={errors['usuario.nombre']}
+                    isLabel
+                  />
+                </div>
 
-              <div>
-                <InputPro
-                  name="usuario.celular"
-                  label="Celular"
-                  value={formData.usuario.celular}
-                  onChange={handleInputChange}
-                  error={errors['usuario.celular']}
-                  isLabel
-                />
-              </div>
+                <div>
+                  <InputPro
+                    name="usuario.dni"
+                    label="DNI"
+                    value={formData.usuario.dni}
+                    onChange={handleInputChange}
+                    error={errors['usuario.dni']}
+                    isLabel
+                    maxLength={8}
+                  />
+                </div>
 
-              <div className="md:col-span-2">
-                <InputPro
-                  name="usuario.password"
-                  label="Contraseña"
-                  type="password"
-                  value={formData.usuario.password}
-                  onChange={handleInputChange}
-                  error={errors['usuario.password']}
-                  isLabel
-                />
+                <div>
+                  <InputPro
+                    name="usuario.email"
+                    label="Email"
+                    type="email"
+                    value={formData.usuario.email}
+                    onChange={handleInputChange}
+                    error={errors['usuario.email']}
+                    isLabel
+                  />
+                </div>
+
+                <div>
+                  <InputPro
+                    name="usuario.celular"
+                    label="Celular"
+                    value={formData.usuario.celular}
+                    onChange={handleInputChange}
+                    error={errors['usuario.celular']}
+                    isLabel
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <InputPro
+                    name="usuario.password"
+                    label="Contraseña"
+                    type="password"
+                    value={formData.usuario.password}
+                    onChange={handleInputChange}
+                    error={errors['usuario.password']}
+                    isLabel
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Botones */}
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              color="tertiary"
-              onClick={() => navigate('/administrador/empresas')}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              color="secondary"
-              disabled={loading || isSubmitting}
-            >
-              {isSubmitting ? 'Creando...' : 'Crear Empresa'}
-            </Button>
-          </div>
-        </form>
+            {/* Botones */}
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                color="tertiary"
+                onClick={() => navigate('/administrador/empresas')}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                color="secondary"
+                disabled={loading || isSubmitting}
+              >
+                {isSubmitting ? 'Creando...' : 'Crear Empresa'}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

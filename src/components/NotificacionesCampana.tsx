@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { useNavigate } from 'react-router-dom';
 import { useNotificacionesStore } from '../zustand/notificaciones';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,20 +28,14 @@ const NotificacionesCampana: React.FC = () => {
   const [mostrarConfig, setMostrarConfig] = useState(false);
 
   useEffect(() => {
-    // Obtener notificaciones iniciales
     obtenerNotificaciones();
-    
-    // Iniciar WebSocket para notificaciones en tiempo real
     iniciarWebSocket();
-
-    // Detener WebSocket al desmontar
     return () => {
       detenerWebSocket();
     };
   }, [obtenerNotificaciones, iniciarWebSocket, detenerWebSocket]);
 
   useEffect(() => {
-    // Cerrar panel al hacer clic fuera
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
         cerrarPanel();
@@ -64,216 +57,167 @@ const NotificacionesCampana: React.FC = () => {
     }
   };
 
-  const getTipoIcon = (tipo: string) => {
+  const getTipoEstilos = (tipo: string) => {
     switch (tipo) {
       case 'CRITICAL':
-        return { 
-          icon: 'mdi:alert-circle', 
-          iconColor: 'text-red-600',
-          gradient: 'from-red-50 to-red-100'
+      case 'ERROR':
+        return {
+          icon: 'mdi:alert-circle',
+          color: 'text-red-600',
+          bgColor: 'bg-red-50'
         };
       case 'WARNING':
-        return { 
-          icon: 'mdi:alert', 
-          iconColor: 'text-yellow-600',
-          gradient: 'from-yellow-50 to-yellow-100'
+        return {
+          icon: 'mdi:alert',
+          color: 'text-orange-500',
+          bgColor: 'bg-orange-50'
+        };
+      case 'SUCCESS':
+        return {
+          icon: 'mdi:check-circle',
+          color: 'text-green-600',
+          bgColor: 'bg-green-50'
         };
       case 'INFO':
       default:
-        return { 
-          icon: 'mdi:information', 
-          iconColor: 'text-blue-600',
-          gradient: 'from-blue-50 to-blue-100'
+        return {
+          icon: 'mdi:information',
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50'
         };
     }
   };
 
   const formatFecha = (fecha: string) => {
     try {
-      return formatDistanceToNow(new Date(fecha), { addSuffix: true, locale: es });
+      // Usar abreviaciones similares a la imagen (10 min ago, 1 day ago - pero en español)
+      const date = new Date(fecha);
+      return formatDistanceToNow(date, { locale: es, addSuffix: false })
+        .replace('alrededor de ', '')
+        .replace('minutos', 'min')
+        .replace('horas', 'h')
+        .replace('días', 'd')
+        .replace('semanas', 'sem');
     } catch {
-      return 'Hace un momento';
+      return 'ahora';
     }
   };
 
-  console.log(notificaciones);
-
   return (
     <div className="relative" ref={panelRef}>
-      {/* Botón de Campana */}
       <button
         onClick={togglePanel}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
         aria-label="Notificaciones"
       >
-        <Icon icon="material-symbols:notifications" className="h-6 w-6 text-gray-700" />
-        
-        {/* Badge de notificaciones no leídas */}
+        <Icon icon="solar:bell-linear" className="h-6 w-6 text-[#515C6C]" />
         {noLeidas > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full animate-pulse">
-            {noLeidas > 99 ? '99+' : noLeidas}
+          <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
           </span>
         )}
       </button>
 
-      {/* Panel de Notificaciones */}
       {mostrarPanel && (
-        <div className="absolute right-0 mt-2 w-[420px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-[650px] flex flex-col">
-          {/* Header */}
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-t-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Notificaciones</h3>
-                <p className="text-sm text-gray-600">
-                  {noLeidas > 0 ? `${noLeidas} sin leer` : 'Todo al día'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setMostrarConfig(!mostrarConfig)}
-                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                  title="Configuración"
-                >
-                  <Icon icon="material-symbols:settings" className="h-5 w-5 text-gray-600" />
-                </button>
-                {noLeidas > 0 && (
-                  <button
-                    onClick={marcarTodasComoLeidas}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Marcar todas
-                  </button>
-                )}
-              </div>
+        <div className="absolute right-0 mt-3 w-[400px] bg-[#F8F9FA] rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden font-sans">
+          {/* Header Limpio */}
+          <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 sticky top-0 z-10">
+            <div className="flex items-center gap-3">
+              {/* <button onClick={cerrarPanel} className="text-gray-400 hover:text-gray-600">
+                  <Icon icon="mdi:chevron-left" width={24} />
+              </button> */}
+              <h3 className="text-[17px] font-bold text-gray-900">Notificaciones</h3>
             </div>
-
-            {/* Panel de Configuración */}
-            {mostrarConfig && (
-              <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon icon="material-symbols:volume-up" className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">Sonido</span>
-                  </div>
-                  <button
-                    onClick={toggleSonido}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      sonidoHabilitado ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        sonidoHabilitado ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon icon="material-symbols:notifications-active" className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">Push Notifications</span>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (!pushHabilitado) {
-                        await solicitarPermisoPush();
-                      } else {
-                        togglePush();
-                      }
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      pushHabilitado ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        pushHabilitado ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                  <Icon icon="material-symbols:info" className="h-3 w-3" />
-                  <span>Notificaciones en tiempo real vía WebSocket</span>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => setMostrarConfig(!mostrarConfig)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <Icon icon="solar:settings-linear" width={22} />
+            </button>
           </div>
 
-          {/* Lista de Notificaciones */}
-          <div className="overflow-y-auto flex-1 p-3">
+          {/* Configuración Expandible */}
+          {mostrarConfig && (
+            <div className="bg-white px-5 py-3 border-b border-gray-100 space-y-3 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600">Sonido</span>
+                <button onClick={toggleSonido} className={`w-9 h-5 rounded-full relative transition-colors ${sonidoHabilitado ? 'bg-blue-500' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${sonidoHabilitado ? 'translate-x-4' : ''}`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600">Notificaciones Push</span>
+                <button onClick={() => !pushHabilitado ? solicitarPermisoPush() : togglePush()} className={`w-9 h-5 rounded-full relative transition-colors ${pushHabilitado ? 'bg-blue-500' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${pushHabilitado ? 'translate-x-4' : ''}`} />
+                </button>
+              </div>
+              {noLeidas > 0 && (
+                <button onClick={marcarTodasComoLeidas} className="w-full text-center text-xs text-blue-500 font-medium py-1 hover:bg-blue-50 rounded">
+                  Marcar todas como leídas
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Lista tipo Cards */}
+          <div className="max-h-[500px] overflow-y-auto p-4 space-y-3">
             {loading && notificaciones?.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Icon icon="line-md:loading-loop" className="h-8 w-8 text-blue-500" />
+              <div className="flex justify-center py-8">
+                <Icon icon="line-md:loading-loop" className="text-gray-400" width={24} />
               </div>
             ) : notificaciones?.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Icon icon="material-symbols:notifications-off" className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="text-gray-500 text-center">No tienes notificaciones</p>
+              <div className="text-center py-10">
+                <Icon icon="solar:bell-off-linear" className="mx-auto text-gray-300 mb-2" width={48} />
+                <p className="text-gray-400 text-sm">No tienes notificaciones recientes</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {notificaciones?.slice(0, 5).map((notificacion) => {
-                  const { icon, iconColor, gradient } = getTipoIcon(notificacion.tipo);
-                  
-                  return (
-                    <div
-                      key={notificacion.id}
-                      onClick={() => handleNotificacionClick(notificacion)}
-                      className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 ${!notificacion.leida ? 'ring-2 ring-blue-300' : ''}`}
-                    >
-                      {/* Header con degradado */}
-                      <div className={`bg-gradient-to-r ${gradient} p-3`}>
-                        <div className="flex items-start gap-2">
-                          <div className="flex-shrink-0 w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                            <Icon icon={icon} className={`h-4 w-4 ${iconColor}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-gray-900 line-clamp-1">
-                              {notificacion.titulo}
-                            </h4>
-                            {!notificacion.leida && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500 text-white mt-0.5">
-                                Nueva
-                              </span>
-                            )}
-                          </div>
-                        </div>
+              notificaciones?.slice(0, 5).map((notificacion) => {
+                const styles = getTipoEstilos(notificacion.tipo || 'INFO'); // Fallback a INFO
+
+                // Limpiar emojis del título (Caja, Alerta, Check, Info)
+                const cleanTitle = notificacion.titulo.replace(/📦|⚠️|❗|✅/g, '').trim();
+
+                return (
+                  <div
+                    key={notificacion.id}
+                    onClick={() => handleNotificacionClick(notificacion)}
+                    className={`bg-white p-3 rounded-xl shadow-sm border border-transparent hover:border-gray-200 transition-all cursor-pointer relative group`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Icono Circular Reducido con Fondo Sólido */}
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full ${styles.bgColor} flex items-center justify-center mt-0.5`}>
+                        <Icon icon={styles.icon} className={`${styles.color}`} width={18} />
                       </div>
 
-                      {/* Body blanco */}
-                      <div className="p-3 bg-white">
-                        <p className="text-xs text-gray-700 line-clamp-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-0.5">
+                          <h4 className={`text-[14px] font-bold text-gray-900 leading-tight ${!notificacion.leida ? 'font-extrabold' : ''}`}>
+                            {cleanTitle}
+                          </h4>
+                          <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                            {formatFecha(notificacion.creadoEn)}
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-gray-500 leading-snug line-clamp-2">
                           {notificacion.mensaje}
                         </p>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Icon icon="material-symbols:schedule" className="h-3 w-3" />
-                          <span>{formatFecha(notificacion.creadoEn)}</span>
-                        </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
-          {/* Footer */}
-          {notificaciones?.length > 0 && (
-            <div className="p-3 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl">
-              <button
-                onClick={() => {
-                  cerrarPanel();
-                  window.location.href = '/administrador/notificaciones';
-                }}
-                className="w-full text-center text-sm text-gray-600 hover:text-gray-800 font-semibold py-2 hover:bg-white/50 rounded-lg transition-colors"
-              >
-                Ver todas las notificaciones →
+          {notificaciones?.length > 5 && (
+            <div className="bg-white border-t border-gray-100 p-3 text-center">
+              <button className="text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors">
+                Ver historial completo
               </button>
             </div>
           )}
+
         </div>
       )}
     </div>

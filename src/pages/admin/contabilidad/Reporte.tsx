@@ -59,100 +59,118 @@ const ReportesComprobantes = () => {
     console.log(resumenReporte)
 
     return (
-        <div>
-            <div className="px-3 md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
-                {/* Estadísticas */}
-                <div className="mb-6 space-y-4 md:space-y-0 md:flex md:justify-between md:items-center">
-                    {/* Filtros de fecha */}
-                    <div className="flex flex-col sm:flex-row gap-3">
+        <div className="min-h-screen pb-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Reporte Contable</h1>
+                    <p className="text-sm text-gray-500 mt-1">Resumen de comprobantes electrónicos por período</p>
+                </div>
+                <Button
+                    color="success"
+                    onMouseEnter={() => setIsHoveredExp(true)}
+                    onMouseLeave={() => setIsHoveredExp(false)}
+                    onClick={() => {
+                        exportExcelReport({
+                            empresaId: auth?.empresaId,
+                            fechaInicio: fechaInicio,
+                            fechaFin: fechaFin
+                        });
+                    }}
+                >
+                    <Icon icon="solar:export-bold" className="mr-2" />
+                    Exportar Excel
+                </Button>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Filters Section */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
+                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
                         <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
                     </div>
-                    <div className="w-full sm:w-auto">
-                        <Button
-                            color="success"
-                            onMouseEnter={() => setIsHoveredExp(true)}
-                            onMouseLeave={() => setIsHoveredExp(false)}
-                            onClick={() => {
-                                exportExcelReport({
-                                    empresaId: auth?.empresaId,
-                                    fechaInicio: fechaInicio,
-                                    fechaFin: fechaFin
-                                });
-                            }}
-                            className="w-full sm:w-auto"
-                        >
-                            <Icon
-                                className="mr-2"
-                                color={isHoveredExp ? '#fff' : '#22C55D'}
-                                icon="icon-park-outline:excel"
-                                width="20"
-                                height="20"
-                            />
-                            Exportar Exc.
-                        </Button>
-                    </div>
                 </div>
-                <div className='w-full bg-[#fff] p-4 rounded-md'>
-                    {
-                        reports?.length > 0 ? (
-                            <>
-                                <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
-                                    <DataTable actions={[]} bodyData={reports}
-                                        headerColumns={[
-                                            'Comprobante',
-                                            'Serie',
-                                            'Correlativo',
-                                            'Nro. Documento',
-                                            'Cliente',
-                                            'Fecha',
-                                            'Estado',
-                                            'Oper. Gravada',
-                                            'IGV',
-                                            'Total'
-                                        ]} />
-                                </div>
-                                {
-                                    resumenReporte !== null && (
-                                        <div className="mt-5 mb-5 px-4 md:flex md:justify-end md:pr-[24px]">
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Boletas:</label><strong className="text-[13px]">S/ {resumenReporte.totalBoletas.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Facturas:</label><strong className="text-[13px]">S/ {resumenReporte.totalFacturas.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Nota de crédito:</label><strong className="text-[13px]">S/ {resumenReporte.totalNotasCredito.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Nota de débito:</label><strong className="text-[13px]">S/ {resumenReporte.totalNotasDebito.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Total Descuento:</label><strong className="text-[13px]">S/ {resumenReporte.totalDescuentos.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Total Oper. gravadas:</label><strong className="text-[13px]">S/ {resumenReporte.totalGravadas.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start">
-                                                    <label className="block w-[180px] md:w-[200px] text-[13px] md:text-[14px]" htmlFor="">Total IGV:</label><strong className="text-[13px]">S/ {resumenReporte.totalIGV.toFixed(2)}</strong>
-                                                </div>
-                                                <div className="flex justify-between md:justify-start border-t pt-2 mt-2">
-                                                    <label className="block w-[180px] md:w-[200px] text-[14px] md:text-[15px] font-semibold" htmlFor="">Total:</label><strong className="text-[14px] md:text-[15px]">S/ {resumenReporte.totalVenta.toFixed(2)}</strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                            </>
-                        ) :
-                            <TableSkeleton />
-                    }
 
+                {/* Table Content */}
+                <div className="p-4">
+                    {reports?.length > 0 ? (
+                        <>
+                            <div className="overflow-x-auto">
+                                <DataTable actions={[]} bodyData={reports}
+                                    headerColumns={[
+                                        'Comprobante',
+                                        'Serie',
+                                        'Correlativo',
+                                        'Nro. Documento',
+                                        'Cliente',
+                                        'Fecha',
+                                        'Estado',
+                                        'Oper. Gravada',
+                                        'IGV',
+                                        'Total'
+                                    ]} />
+                            </div>
+                            {resumenReporte !== null && (
+                                <div className="mt-6 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Icon icon="solar:chart-2-bold-duotone" className="text-blue-600" />
+                                        Resumen del Período
+                                    </h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Boletas</p>
+                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalBoletas.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Facturas</p>
+                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalFacturas.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Nota de Crédito</p>
+                                            <p className="text-lg font-bold text-red-500">S/ {resumenReporte.totalNotasCredito.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Nota de Débito</p>
+                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalNotasDebito.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Total Descuentos</p>
+                                            <p className="text-lg font-bold text-orange-500">S/ {resumenReporte.totalDescuentos.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Total Oper. Gravadas</p>
+                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalGravadas.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                            <p className="text-xs text-gray-500">Total IGV</p>
+                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalIGV.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white">
+                                            <p className="text-xs text-blue-100">Total Ventas</p>
+                                            <p className="text-xl font-bold">S/ {resumenReporte.totalVenta.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="py-12 text-center">
+                            <Icon icon="solar:chart-2-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500">No se encontraron comprobantes</p>
+                            <p className="text-sm text-gray-400 mt-1">Selecciona un rango de fechas diferente</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     )
+
 }
 
 export default ReportesComprobantes;

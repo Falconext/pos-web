@@ -317,7 +317,7 @@ const EditEmpresa = () => {
 
   if (!empresa) {
     return (
-      <div className="px-0 py-0 md:px-8 md:py-4">
+      <div className="px-0 py-0 md:px-0 md:py-4">
         <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
           <div className="text-center py-10">
             <Icon icon="mdi:alert-circle-outline" className="mx-auto text-6xl text-red-400 mb-4" />
@@ -333,7 +333,7 @@ const EditEmpresa = () => {
   }
 
   return (
-    <div className="px-0 py-0 md:px-8 md:py-4">
+    <div className="px-0 py-0 md:px-0 md:py-4">
       <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
         {/* Header */}
         <div className="flex items-center mb-6 pt-5 md:pt-0">
@@ -545,8 +545,8 @@ const EditEmpresa = () => {
               )}
               <p><strong>Estado:</strong>
                 <span className={`ml-2 px-2 py-1 rounded text-xs ${empresa?.estado === 'ACTIVO'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
                   }`}>
                   {empresa.estado}
                 </span>
@@ -565,8 +565,8 @@ const EditEmpresa = () => {
                     <div
                       key={plan.id}
                       className={`flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 ${isCurrent
-                          ? 'border-[#4F46E5] shadow-[0_0_0_1px_rgba(79,70,229,0.4)]'
-                          : 'border-gray-200 hover:shadow-md'
+                        ? 'border-[#4F46E5] shadow-[0_0_0_1px_rgba(79,70,229,0.4)]'
+                        : 'border-gray-200 hover:shadow-md'
                         }`}
                     >
                       <div>
@@ -575,14 +575,43 @@ const EditEmpresa = () => {
                         </p>
                         <p className="text-2xl font-semibold text-[#111827] mb-1">
                           S/ {plan.costo}
-                          <span className="text-sm font-normal text-[#6B7280]"> / mensual</span>
+                          <span className="text-sm font-normal text-[#6B7280] ml-1">
+                            / {plan.tipoFacturacion ? plan.tipoFacturacion.toLowerCase() : 'mensual'}
+                          </span>
                         </p>
+                        <div className="mt-2 space-y-1">
+                          {plan.tieneTienda && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Tienda Virtual
+                            </div>
+                          )}
+                          {plan.tieneCulqi && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Pagos con Culqi
+                            </div>
+                          )}
+                          {plan.tieneDeliveryGPS && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Delivery con GPS
+                            </div>
+                          )}
+                          {plan.tieneGaleria && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Galería de Imágenes
+                            </div>
+                          )}
+                          {plan.tieneBanners && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <span className="text-green-500 mr-1">✓</span> Banners Promocionales
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <button
                         type="button"
                         className={`mt-4 w-full h-10 rounded-full text-sm font-semibold transition-colors ${isCurrent
-                            ? 'bg-[#1D4ED8] text-white'
-                            : 'bg-white text-[#1D4ED8] border border-[#1D4ED8] hover:bg-[#1D4ED8] hover:text-white'
+                          ? 'bg-[#1D4ED8] text-white'
+                          : 'bg-white text-[#1D4ED8] border border-[#1D4ED8] hover:bg-[#1D4ED8] hover:text-white'
                           }`}
                         onClick={() =>
                           handleSelectChange(

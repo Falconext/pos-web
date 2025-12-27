@@ -91,54 +91,58 @@ const NotificacionesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen px-3 md:px-8 pt-0 md:pt-5 pb-10">
+    <div className="min-h-screen pb-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Notificaciones</h1>
+          <p className="text-sm text-gray-500 mt-1">Centro de alertas y mensajes del sistema</p>
+        </div>
         {noLeidas > 0 && (
           <button
             onClick={marcarTodasComoLeidas}
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md font-medium text-sm"
           >
-            <Icon icon="material-symbols:done-all" className="h-5 w-5" />
+            <Icon icon="solar:check-read-bold" className="text-lg" />
             Marcar todas como leídas
           </button>
         )}
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-5 md:p-6 shadow-md">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm text-blue-600 font-medium">Total</p>
-              <p className="text-2xl md:text-3xl font-bold text-blue-900">{notificaciones?.length || 0}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{notificaciones?.length || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <Icon icon="material-symbols:notifications" className="h-6 w-6 text-blue-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Icon icon="solar:bell-bold" className="text-xl text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-5 md:p-6 shadow-md">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm text-red-600 font-medium">Sin Leer</p>
-              <p className="text-2xl md:text-3xl font-bold text-red-900">{noLeidas || 0}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sin Leer</p>
+              <p className="text-3xl font-bold text-red-600 mt-1">{noLeidas || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <Icon icon="material-symbols:mark-email-unread" className="h-6 w-6 text-red-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
+              <Icon icon="solar:letter-unread-bold" className="text-xl text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-5 md:p-6 shadow-md sm:col-span-2 md:col-span-1">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm text-green-600 font-medium">Leídas</p>
-              <p className="text-2xl md:text-3xl font-bold text-green-900">{(notificaciones?.length - noLeidas) || 0}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Leídas</p>
+              <p className="text-3xl font-bold text-emerald-600 mt-1">{(notificaciones?.length - noLeidas) || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <Icon icon="material-symbols:mark-email-read" className="h-6 w-6 text-green-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Icon icon="solar:letter-opened-bold" className="text-xl text-white" />
             </div>
           </div>
         </div>
@@ -146,9 +150,9 @@ const NotificacionesPage: React.FC = () => {
 
       {/* Lista de Notificaciones */}
       {notificaciones?.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-            <Icon icon="material-symbols:notifications-off" className="h-10 w-10 text-gray-400" />
+            <Icon icon="solar:bell-off-linear" className="h-10 w-10 text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No tienes notificaciones</h3>
           <p className="text-gray-600 max-w-md mx-auto">
@@ -164,15 +168,15 @@ const NotificacionesPage: React.FC = () => {
               <div
                 key={notificacion.id}
                 onClick={() => handleNotificacionClick(notificacion)}
-                className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden ${!notificacion.leida ? 'ring-2 ring-blue-400' : ''}`}
+                className={`bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all cursor-pointer overflow-hidden ${!notificacion.leida ? 'ring-2 ring-blue-400' : ''}`}
               >
                 {/* Header con degradado y color */}
-                <div className={`bg-gradient-to-r p-4 pb-3 border-b border-gray-200`}>
+                <div className="p-4 pb-3 border-b border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className={`flex-shrink-0 w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm`}>
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
                       <Icon icon={icon} className={`h-5 w-5 ${iconColor}`} />
                     </div>
-                    <div className="flex min-w-0 items-center">
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-sm line-clamp-2 leading-tight">{notificacion.titulo}</h3>
                       {!notificacion.leida && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white mt-1">
@@ -184,13 +188,13 @@ const NotificacionesPage: React.FC = () => {
                 </div>
 
                 {/* Body blanco */}
-                <div className="p-4 bg-white">
+                <div className="p-4">
                   <p className="text-sm text-gray-700 mb-3 line-clamp-3">
                     {notificacion.mensaje}
                   </p>
 
                   <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Icon icon="material-symbols:schedule" className="h-3.5 w-3.5" />
+                    <Icon icon="solar:clock-circle-bold-duotone" className="h-3.5 w-3.5" />
                     <span>{formatFecha(notificacion.creadoEn)}</span>
                   </div>
                 </div>
@@ -204,3 +208,4 @@ const NotificacionesPage: React.FC = () => {
 };
 
 export default NotificacionesPage;
+

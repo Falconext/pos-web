@@ -9,9 +9,7 @@ import ClientesPage from './pages/admin/Clientes'
 import ReporteContabilidad from './pages/admin/contabilidad/Reporte'
 import ReporteInformales from './pages/admin/contabilidad/ReporteInformales'
 import ArqueoCaja from './pages/admin/contabilidad/Arqueo'
-import CajaDashboard from './pages/admin/caja/Dashboard'
-import HistorialCaja from './pages/admin/caja/Historial'
-import ArqueoCajaNew from './pages/admin/caja/Arqueo'
+import CajaIndex from './pages/admin/caja/Index'
 import ComprobantesPage from './pages/admin/facturacion/Comprobantes'
 import ComprobantesInformales from './pages/admin/facturacion/ComprobantesInformales'
 import Invoice from './pages/admin/facturacion/Nuevo'
@@ -23,8 +21,6 @@ import InventarioDashboard from './pages/admin/kardex/Dashboard'
 import KardexProductos from './pages/admin/kardex/Productos'
 import UsuariosIndex from './pages/admin/usuarios/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
-import ReporteTurno from './pages/admin/caja/ReporteTurno'
-import ReporteUsuarios from './pages/admin/caja/ReporteUsuarios'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
 import CombosTienda from './pages/admin/tienda/Combos'
@@ -36,9 +32,10 @@ import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
 import TiendaLogin from './pages/TiendaLogin'
 import TiendaHome from './pages/TiendaHome'
 import DisenoRubros from './pages/admin/sistema/DisenoRubros'
+import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
 
 function App() {
-  console.log('App initialized')
+  console.log('App initialized - Checkpoint')
   return (
     <BrowserRouter>
       <Alert />
@@ -72,11 +69,7 @@ function App() {
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
           <Route path="contabilidad/reporte-informales" element={<ReporteInformales />} />
           <Route path="contabilidad/arqueo" element={<ArqueoCaja />} />
-          <Route path="caja" element={<CajaDashboard />} />
-          <Route path="caja/historial" element={<HistorialCaja />} />
-          <Route path="caja/arqueo" element={<ArqueoCajaNew />} />
-          <Route path="caja/reporte-turno" element={<ReporteTurno />} />
-          <Route path="caja/reporte-usuarios" element={<ReporteUsuarios />} />
+          <Route path="caja" element={<CajaIndex />} />
           <Route path="facturacion/comprobantes" element={<ComprobantesPage />} />
           <Route path="facturacion/comprobantes-informales" element={<ComprobantesInformales />} />
           <Route path="pagos" element={<Pagos />} />
@@ -93,6 +86,7 @@ function App() {
           <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
           {/* Rutas de ADMIN_SISTEMA */}
           <Route path="sistema/diseno-rubros" element={<DisenoRubros />} />
+          <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
         </Route>
         {/* Rutas de tienda */}
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}

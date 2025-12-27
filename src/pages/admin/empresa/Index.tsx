@@ -166,7 +166,7 @@ const EmpresasIndex = () => {
   }
 
   return (
-    <div className="px-0 py-0 md:px-8 md:py-4">
+    <div className="px-0 py-0 md:px-0 md:py-4">
       <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
 
 

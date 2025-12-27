@@ -7,7 +7,7 @@ export default function CombosAdmin() {
   // Zustand stores
   const { combos, loading, fetchCombos, createCombo, updateCombo, deleteCombo, toggleActivo: toggleComboActivo } = useCombosStore();
   const { products, getAllProducts } = useProductsStore();
-  
+
   const [showModal, setShowModal] = useState(false);
   const [editingCombo, setEditingCombo] = useState<Combo | null>(null);
 
@@ -162,114 +162,118 @@ export default function CombosAdmin() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Combos</h1>
-          <p className="text-sm text-gray-500">Gestiona tus combos y ofertas especiales</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Combos</h1>
+          <p className="text-sm text-gray-500 mt-1">Gestiona tus combos y ofertas especiales</p>
         </div>
         <button
           onClick={() => abrirModal()}
-          className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+          className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-2.5 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-sm hover:shadow-md font-medium"
         >
-          <Icon icon="mdi:plus" width={20} />
+          <Icon icon="solar:add-circle-bold" width={20} />
           Nuevo Combo
         </button>
       </div>
 
       {/* Lista de Combos */}
       {combos.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <Icon icon="mdi:food" className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 mb-4">No hay combos creados</p>
+        <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <Icon icon="solar:bag-smile-bold-duotone" className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-500 mb-4">No hay combos creados</p>
           <button
             onClick={() => abrirModal()}
-            className="text-orange-500 hover:text-orange-600 font-medium"
+            className="text-orange-500 hover:text-orange-600 font-medium flex items-center gap-2 mx-auto"
           >
+            <Icon icon="solar:add-circle-linear" />
             Crear tu primer combo
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {combos.map((combo) => (
             <div
               key={combo.id}
-              className={`bg-white rounded-xl shadow-sm border overflow-hidden ${!combo.activo ? 'opacity-60' : ''}`}
+              className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all ${!combo.activo ? 'opacity-60' : ''}`}
             >
               {/* Imagen */}
-              <div className="relative h-40 bg-gradient-to-br from-orange-400 to-red-500">
+              <div className="relative h-44 bg-gradient-to-br from-orange-400 to-red-500">
                 {combo.imagenUrl ? (
                   <img src={combo.imagenUrl} alt={combo.nombre} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Icon icon="mdi:food" className="w-16 h-16 text-white/30" />
+                    <Icon icon="solar:bag-smile-bold-duotone" className="w-20 h-20 text-white/30" />
                   </div>
                 )}
-                <div className="absolute top-2 right-2 flex gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${combo.activo ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
+                <div className="absolute top-3 right-3 flex gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm ${combo.activo ? 'bg-green-500/90 text-white' : 'bg-gray-500/90 text-white'}`}>
                     {combo.activo ? 'Activo' : 'Inactivo'}
                   </span>
-                  <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  <span className="bg-red-500/90 text-white px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
                     -{Math.round(Number(combo.descuentoPorcentaje))}%
                   </span>
                 </div>
               </div>
 
               {/* Info */}
-              <div className="p-4">
-                <h3 className="font-bold text-lg mb-1">{combo.nombre}</h3>
+              <div className="p-5">
+                <h3 className="font-bold text-lg mb-1 text-gray-900">{combo.nombre}</h3>
                 <p className="text-sm text-gray-500 mb-3 line-clamp-2">{combo.descripcion || 'Sin descripción'}</p>
 
                 {/* Productos */}
-                <div className="mb-3 text-xs text-gray-600">
-                  <p className="font-semibold mb-1">Incluye:</p>
-                  <ul className="space-y-1">
+                <div className="mb-4 text-xs text-gray-600">
+                  <p className="font-semibold mb-2 text-gray-700">Incluye:</p>
+                  <ul className="space-y-1.5">
                     {combo.items.slice(0, 3).map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-1">
-                        <Icon icon="mdi:check" className="text-green-500" />
-                        {item.cantidad}x {item.producto?.descripcion || `Producto #${item.productoId}`}
+                      <li key={idx} className="flex items-center gap-2">
+                        <Icon icon="solar:check-circle-bold" className="text-green-500" />
+                        <span className="truncate">{item.cantidad}x {item.producto?.descripcion || `Producto #${item.productoId}`}</span>
                       </li>
                     ))}
                     {combo.items.length > 3 && (
-                      <li className="text-gray-400">+{combo.items.length - 3} más</li>
+                      <li className="text-gray-400 pl-6">+{combo.items.length - 3} más</li>
                     )}
                   </ul>
                 </div>
 
                 {/* Precios */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-xl p-3">
                   <div>
                     <p className="text-xs text-gray-400 line-through">S/ {Number(combo.precioRegular).toFixed(2)}</p>
                     <p className="text-xl font-bold text-orange-500">S/ {Number(combo.precioCombo).toFixed(2)}</p>
                   </div>
-                  <p className="text-sm text-green-600 font-semibold">
-                    Ahorra S/ {(Number(combo.precioRegular) - Number(combo.precioCombo)).toFixed(2)}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Ahorra</p>
+                    <p className="text-sm text-green-600 font-bold">
+                      S/ {(Number(combo.precioRegular) - Number(combo.precioCombo)).toFixed(2)}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Acciones */}
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleActivo(combo)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${combo.activo
-                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${combo.activo
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
                       }`}
                   >
                     {combo.activo ? 'Desactivar' : 'Activar'}
                   </button>
                   <button
                     onClick={() => abrirModal(combo)}
-                    className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
+                    className="p-2.5 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors"
                   >
-                    <Icon icon="mdi:pencil" width={18} />
+                    <Icon icon="solar:pen-bold" width={18} />
                   </button>
                   <button
                     onClick={() => handleEliminarCombo(combo.id)}
-                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                    className="p-2.5 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-colors"
                   >
-                    <Icon icon="mdi:trash-can" width={18} />
+                    <Icon icon="solar:trash-bin-trash-bold" width={18} />
                   </button>
                 </div>
               </div>

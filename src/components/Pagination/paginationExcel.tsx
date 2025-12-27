@@ -16,13 +16,13 @@ interface IProps {
 
 const PaginationExcel = ({ pages, setcurrentPage, currentPage, setitemsPerPage, indexOfLastItem, indexOfFirstItem, data, optionSelect }: IProps) => {
 
-    const [options, ] = useState([
+    const [options,] = useState([
         { id: 1, value: 10 },
         { id: 2, value: 25 },
         { id: 3, value: 50 }
     ]);
 
-    const [pageNumberLimit, ] = useState(10);
+    const [pageNumberLimit,] = useState(10);
     const [maxPageNumberLimit, setMaxPageNumberLimit] = useState(10)
     const [minPageNumberLimit, setMinPageNumberLimit] = useState(0);
 
@@ -114,7 +114,7 @@ const PaginationExcel = ({ pages, setcurrentPage, currentPage, setitemsPerPage, 
 
 
                 {
-                    currentPage !== pages[pages.length - 1] &&
+                    currentPage !== pages[pages?.length - 1] &&
                     <li className="" onClick={handleNextbtn}>
                         <span className="">&raquo;</span>
                     </li>

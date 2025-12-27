@@ -161,11 +161,10 @@ export default function DisenoRubros() {
                 <button
                   key={rubro.id}
                   onClick={() => setRubroSeleccionado(rubro.id)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    rubroSeleccionado === rubro.id
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${rubroSeleccionado === rubro.id
                       ? 'bg-[#6A6CFF] text-white'
                       : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   {rubro.nombre}
                 </button>
@@ -197,11 +196,10 @@ export default function DisenoRubros() {
                         <button
                           key={plantilla.id}
                           onClick={() => setDiseno({ ...diseno, plantillaId: plantilla.id })}
-                          className={`p-4 rounded-lg border-2 text-left transition-colors ${
-                            diseno.plantillaId === plantilla.id
+                          className={`p-4 rounded-lg border-2 text-left transition-colors ${diseno.plantillaId === plantilla.id
                               ? 'border-[#6A6CFF] bg-blue-50'
                               : 'border-gray-200 hover:border-gray-300'
-                          }`}
+                            }`}
                         >
                           <div className="font-medium">{plantilla.nombre}</div>
                           <div className="text-sm text-gray-600">{plantilla.descripcion}</div>
@@ -376,10 +374,10 @@ export default function DisenoRubros() {
                             diseno.bordeRadius === 'none'
                               ? '0'
                               : diseno.bordeRadius === 'small'
-                              ? '4px'
-                              : diseno.bordeRadius === 'medium'
-                              ? '8px'
-                              : '16px',
+                                ? '4px'
+                                : diseno.bordeRadius === 'medium'
+                                  ? '8px'
+                                  : '16px',
                         }}
                       >
                         Botón de Ejemplo

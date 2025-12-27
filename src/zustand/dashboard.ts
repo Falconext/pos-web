@@ -17,12 +17,12 @@ export interface IDashboardState {
     getTotalPaymentsMonth: () => void;
     getTotalPaymentToday: () => void;
     totalAttendancePatientsByToday: [];
-    getTotalAmountByDate: () => void;
+    getTotalAmountByDate: (fechaInicio: string, fechaFin: string) => void;
     getPatientPackagesByState: () => void;
     dataPatientPackagesByState: []
     getPaymentMethods: () => void;
     dataPaymentMethods: []
-    getTotalAmountByDatePayment: () => void
+    getTotalAmountByDatePayment: (fechaInicio: string, fechaFin: string) => void
     getNewClientsByDate: (fechaInicio: string, fechaFin: string) => void
 }
 
@@ -85,9 +85,9 @@ export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) 
         } catch (error) {
         }
     },
-    getTotalAmountByDate: async () => {
+    getTotalAmountByDate: async (fechaInicio: string, fechaFin: string) => {
         try {
-            const resp: any = await get(`dashboard/ingresos-por-fecha-comprobante`);
+            const resp: any = await get(`dashboard/ingresos-por-fecha-comprobante?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
             console.log(resp);
             if (resp.code === 1) {
                 set({
@@ -101,9 +101,9 @@ export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) 
         } catch (error) {
         }
     },
-    getTotalAmountByDatePayment: async () => {
+    getTotalAmountByDatePayment: async (fechaInicio: string, fechaFin: string) => {
         try {
-            const resp: any = await get(`dashboard/ingresos-por-fecha-medio-pago`);
+            const resp: any = await get(`dashboard/ingresos-por-fecha-medio-pago?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
             console.log(resp);
             if (resp.code === 1) {
                 set({

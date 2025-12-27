@@ -11,7 +11,7 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Helvetica Now Display"', 'Inter', 'system-ui', 'sans-serif'],
+                sans: ['Urbanist', '"Helvetica Now Display"', 'Inter', 'system-ui', 'sans-serif'],
                 inter: ['Inter', 'system-ui', 'sans-serif'],
                 roboto: ['Roboto', 'system-ui', 'sans-serif'],
                 poppins: ['Poppins', 'system-ui', 'sans-serif'],

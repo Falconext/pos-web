@@ -3,7 +3,7 @@
 
 :root {
   /* Default font family variable to allow easy override */
-  --font-sans: 'Helvetica Now Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-sans: 'Urbanist', 'Helvetica Now Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 @tailwind base;

@@ -111,7 +111,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
     const categoriesTable = categories?.map((item: any, index: number) => ({
         '#': index + 1,
         categoriaId: item.id,
-        nombre: item.nombre
+        'Categoría': item.nombre
     }))
 
     const confirmDeleteCategory = () => {

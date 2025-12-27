@@ -20,15 +20,15 @@ interface IProps {
     setitemsPerPage?: any
 }
 
-const Pagination = ({ pages, currentPage,setitemsPerPage, indexOfFirstItem,indexOfLastItem, setcurrentPage, total, optionSelect }: IProps) => {
+const Pagination = ({ pages, currentPage, setitemsPerPage, indexOfFirstItem, indexOfLastItem, setcurrentPage, total, optionSelect }: IProps) => {
 
-    const [options, ] = useState([
+    const [options,] = useState([
         { id: 1, value: 10 },
         { id: 2, value: 25 },
         { id: 3, value: 50 }
     ]);
 
-    const [pageNumberLimit, ] = useState(10);
+    const [pageNumberLimit,] = useState(10);
     const [maxPageNumberLimit, setMaxPageNumberLimit] = useState(10)
     const [minPageNumberLimit, setMinPageNumberLimit] = useState(0);
 
@@ -102,7 +102,7 @@ const Pagination = ({ pages, currentPage,setitemsPerPage, indexOfFirstItem,index
 
 
                 {
-                    pages?.map((num : any) => {
+                    pages?.map((num: any) => {
                         if (num < maxPageNumberLimit + 1 && num > minPageNumberLimit) {
                             return (
                                 <li className={`${styles[isActive(num)]}`} key={num} onClick={() => handleClick(num)}>
@@ -119,7 +119,7 @@ const Pagination = ({ pages, currentPage,setitemsPerPage, indexOfFirstItem,index
                 }
 
                 {
-                    currentPage !== pages[pages.length - 1] &&
+                    currentPage !== pages[pages?.length - 1] &&
                     <li className="" onClick={handleNextbtn}>
                         <span className="">&raquo;</span>
                     </li>

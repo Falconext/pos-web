@@ -208,70 +208,85 @@ const InventarioDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="md:p-6 p-3 px-0 md:px-8 pt-4">
+    <div className="min-h-screen pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard de Inventario</h1>
+          <p className="text-sm text-gray-500 mt-1">Resumen general del estado de tu inventario</p>
+        </div>
+        <button
+          onClick={fetchDashboardData}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <Icon icon="solar:refresh-linear" className="text-lg" />
+          Actualizar
+        </button>
+      </div>
+
       {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Icon icon="mingcute:package-fill" width={24} height={24} className="text-blue-600" />
-            </div>
-            <div className="ml-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-500">Total Productos</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 mt-1">
                 {dashboardData.resumenGeneral.totalProductos.toLocaleString()}
               </p>
             </div>
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+              <Icon icon="solar:box-bold-duotone" className="text-blue-600 text-2xl" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Icon icon="mingcute:dollar-fill" width={24} height={24} className="text-green-600" />
-            </div>
-            <div className="ml-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-500">Valor Inventario</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 mt-1">
                 {formatCurrency(dashboardData.resumenGeneral.valorTotalInventario)}
               </p>
             </div>
+            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
+              <Icon icon="solar:wallet-money-bold-duotone" className="text-emerald-600 text-2xl" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Icon icon="mingcute:alert-triangle-fill" width={24} height={24} className="text-yellow-600" />
-            </div>
-            <div className="ml-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-500">Stock Crítico</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-amber-600 mt-1">
                 {dashboardData.resumenGeneral.productosStockCritico}
               </p>
             </div>
+            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+              <Icon icon="solar:danger-triangle-bold-duotone" className="text-amber-600 text-2xl" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Icon icon="mingcute:x-circle-fill" width={24} height={24} className="text-red-600" />
-            </div>
-            <div className="ml-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-500">Sin Stock</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-red-600 mt-1">
                 {dashboardData.resumenGeneral.productosStockCero}
               </p>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+              <Icon icon="solar:close-circle-bold-duotone" className="text-red-600 text-2xl" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Gráficos con Tremor */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
-          <Title>Estado del stock</Title>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <Title className="text-gray-900 font-bold">Estado del stock</Title>
           <TremorBarChart
             className="mt-4 h-64"
             data={stockChartData}
@@ -279,7 +294,7 @@ const InventarioDashboard: React.FC = () => {
             categories={["Stock normal", "Stock crítico", "Sin stock"]}
             colors={["emerald", "amber", "rose"]}
             showLegend
-            showGridLines
+            showGridLines={false}
             showAnimation
             yAxisWidth={56}
             valueFormatter={(value: number) =>
@@ -288,8 +303,8 @@ const InventarioDashboard: React.FC = () => {
           />
         </Card>
 
-        <Card className="border border-tremor-border bg-tremor-background shadow-tremorCard">
-          <Title>Distribución del inventario</Title>
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <Title className="text-gray-900 font-bold">Distribución del inventario</Title>
           <DonutChart
             className="mt-4 h-64"
             data={pieData}
@@ -304,25 +319,28 @@ const InventarioDashboard: React.FC = () => {
       </div>
 
       {/* Alertas y productos críticos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Productos con stock crítico */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Stock Crítico</h3>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon icon="solar:danger-triangle-bold-duotone" className="text-amber-500 text-xl" />
+            <h3 className="font-semibold text-gray-800">Stock Crítico</h3>
+          </div>
           {dashboardData.topProductos.stockCritico.length > 0 ? (
             <div className="space-y-3">
               {dashboardData.topProductos.stockCritico.map((producto) => (
-                <div key={producto.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div key={producto.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{producto.codigo}</p>
                     <p className="text-xs text-gray-500 truncate">{producto.descripcion}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-yellow-600">
+                      <span className="text-xs text-amber-600 font-medium">
                         Stock: {producto.stock} / Mínimo: {producto.stockMinimo}
                       </span>
                     </div>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-bold text-gray-900">
                       {formatCurrency(producto.valorTotal)}
                     </p>
                   </div>
@@ -330,17 +348,23 @@ const InventarioDashboard: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No hay productos con stock crítico</p>
+            <div className="text-center py-8">
+              <Icon icon="solar:check-circle-bold-duotone" className="text-4xl text-emerald-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No hay productos con stock crítico</p>
+            </div>
           )}
         </div>
 
         {/* Productos obsoletos */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Productos Obsoletos</h3>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon icon="solar:clock-circle-bold-duotone" className="text-gray-500 text-xl" />
+            <h3 className="font-semibold text-gray-800">Productos Obsoletos</h3>
+          </div>
           {dashboardData.topProductos.obsoletos.length > 0 ? (
             <div className="space-y-3">
               {dashboardData.topProductos.obsoletos.map((producto) => (
-                <div key={producto.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={producto.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{producto.codigo}</p>
                     <p className="text-xs text-gray-500 truncate">{producto.descripcion}</p>
@@ -351,7 +375,7 @@ const InventarioDashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-bold text-gray-900">
                       {formatCurrency(producto.valorInmovilizado)}
                     </p>
                     <p className="text-xs text-gray-500">{producto.stock} unidades</p>
@@ -360,19 +384,22 @@ const InventarioDashboard: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No hay productos obsoletos detectados</p>
+            <div className="text-center py-8">
+              <Icon icon="solar:check-circle-bold-duotone" className="text-4xl text-emerald-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No hay productos obsoletos detectados</p>
+            </div>
           )}
         </div>
       </div>
 
       {/* Movimientos recientes */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Movimientos Recientes</h3>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+          <Icon icon="solar:history-bold-duotone" className="text-blue-600 text-xl" />
+          <h3 className="font-semibold text-gray-800">Movimientos Recientes</h3>
         </div>
-        <div className='p-5'>
-          {
-          dashboardData.movimientosRecientes.length > 0 ? (
+        <div className="p-4">
+          {dashboardData.movimientosRecientes.length > 0 ? (
             <DataTable actions={[]} bodyData={dashboardData.movimientosRecientes.map((movimiento) => ({
               fecha: formatDate(movimiento.fecha),
               producto: `${movimiento.producto?.codigo || ''} - ${movimiento.producto?.descripcion || 'Sin descripción'}`,
@@ -386,9 +413,11 @@ const InventarioDashboard: React.FC = () => {
                 'Cantidad',
               ]} />
           ) : (
-            <p className="text-sm text-gray-500">No hay movimientos recientes</p>
-          )
-        }
+            <div className="text-center py-8">
+              <Icon icon="solar:inbox-linear" className="text-4xl text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No hay movimientos recientes</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

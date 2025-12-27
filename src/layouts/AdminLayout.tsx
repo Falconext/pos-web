@@ -142,24 +142,51 @@ export default function AdminLayout() {
 
   console.log(auth)
 
+  // Determine theme based on role
+  const isSystemAdmin = auth?.rol === 'ADMIN_SISTEMA'
+
+  const theme = {
+    primaryBg: isSystemAdmin ? 'bg-indigo-600' : 'bg-blue-600',
+    primaryLightBg: isSystemAdmin ? 'bg-indigo-50' : 'bg-blue-50',
+    primaryText: isSystemAdmin ? 'text-indigo-700' : 'text-blue-700',
+    primaryBorder: isSystemAdmin ? 'border-indigo-100' : 'border-blue-100',
+    activeLink: isSystemAdmin
+      ? 'flex items-center bg-indigo-50 text-indigo-700 px-4 py-3 text-sm font-semibold rounded-xl transition-all'
+      : 'flex items-center bg-blue-50 text-blue-700 px-4 py-3 text-sm font-semibold rounded-lg transition-all',
+    inactiveLink: isSystemAdmin
+      ? 'flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl transition-all'
+      : 'flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all',
+    mainPadding: isSystemAdmin ? 'p-2 md:p-4' : 'p-6', // Revert padding for company
+    sidebarRadius: isSystemAdmin ? 'rounded-xl' : 'rounded-lg',
+    sidebarLogoShadow: isSystemAdmin ? 'shadow-indigo-200' : 'shadow-blue-200',
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
 
       {/* Sidebar/Drawer */}
-      <aside className={`fixed inset-y-0 left-0 bg-white p-5 space-y-4 h-screen overflow-y-auto w-[85%] max-w-[320px] transform transition-transform duration-300 ease-in-out md:static md:w-[260px] md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
-        <h2 className="text-xl mb-10 font-bold flex items-center text-[#4d4d4d] ml-3">
-          <img width={35} src="/fnlogo.png" className="ml-0 mr-1 rounded-xl" alt="logo" />
-          FALCONEXT
-        </h2>
+      <aside className={`fixed inset-y-0 left-0 bg-white border-r border-gray-200 p-5 space-y-6 h-screen overflow-y-auto w-[85%] max-w-[280px] transform transition-transform duration-300 ease-in-out md:static md:w-[280px] md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
+        <div className="flex items-center gap-3 px-2 mb-8">
+          <div className={`w-10 h-10 ${theme.sidebarRadius} ${theme.primaryBg} flex items-center justify-center shadow-lg ${theme.sidebarLogoShadow}`}>
+            <Icon icon="solar:bolt-bold" className="text-white text-2xl" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight leading-none">FALCONEXT</h2>
+            <p className="text-[10px] text-gray-500 font-medium tracking-wide">PANEL ADMINISTRATIVO</p>
+          </div>
+        </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1.5">
           {auth?.rol === 'ADMIN_SISTEMA' && (
             <>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/empresas" className={({ isActive }) => isActive || location.pathname.startsWith('/administrador/empresas') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                <Icon icon="mdi:company" className="mr-2" width="24" height="24" /> Empresas
+              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/empresas" className={({ isActive }) => isActive || location.pathname.startsWith('/administrador/empresas') ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:buildings-2-bold-duotone" className="mr-3 text-xl" /> Empresas
               </NavLink>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/diseno-rubros" className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                <Icon icon="mdi:palette-outline" className="mr-2" width="24" height="24" /> Diseño por Rubro
+              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/diseno-rubros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:palette-bold-duotone" className="mr-3 text-xl" /> Diseño por Rubro
+              </NavLink>
+              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-global" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:database-bold-duotone" className="mr-3 text-xl" /> Catálogo Global
               </NavLink>
             </>
           )}
@@ -168,29 +195,32 @@ export default function AdminLayout() {
             <>
               {/* Dashboard - disponible para todos los usuarios */}
               {hasPermission(auth, 'dashboard') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Administrador') }} to="/administrador" end className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                  <Icon icon="basil:chart-pie-alt-outline" className="mr-2" width="24" height="24" /> Dashboard
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Administrador') }} to="/administrador" end className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:chart-2-bold-duotone" className="mr-3 text-xl" /> Dashboard
                 </NavLink>
               )}
               {/* Kardex / Catálogo (según rubro) */}
               {hasPermission(auth, 'kardex') && (
                 <div>
-                  <button onClick={() => { toggleAccordion('kardex'); setNameNavbar(menuLabels.kardexTitle) }} className={location.pathname.includes('/administrador/kardex') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                    <Icon icon={menuLabels.kardexIcon} className="mr-2" width="24" height="24" /> {menuLabels.kardexTitle}
-                    <Icon icon={isKardexSubmenuOpen ? 'basil:caret-up-outline' : 'mdi:chevron-down'} className="ml-auto" width="20" />
+                  <button onClick={() => { toggleAccordion('kardex'); setNameNavbar(menuLabels.kardexTitle) }} className={location.pathname.includes('/administrador/kardex') ? `flex items-center justify-between w-full ${theme.primaryLightBg} ${theme.primaryText} px-4 py-3 text-sm font-semibold ${theme.sidebarRadius} transition-all text-left` : `flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 ${theme.sidebarRadius} transition-all text-left`}>
+                    <div className="flex items-center">
+                      <Icon icon={isRestaurante ? 'solar:chef-hat-bold-duotone' : 'solar:box-bold-duotone'} className="mr-3 text-xl" />
+                      {menuLabels.kardexTitle}
+                    </div>
+                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isKardexSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
                   </button>
                   {isKardexSubmenuOpen && (
-                    <div className="ml-8 space-y-2 mt-2">
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/dashboard" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/dashboard" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Dashboard
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         {menuLabels.productosLabel}
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Combos
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex" end className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex" end className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Movimientos
                       </NavLink>
                     </div>
@@ -200,8 +230,8 @@ export default function AdminLayout() {
 
               {/* Clientes */}
               {hasPermission(auth, 'clientes') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Clientes') }} to="/administrador/clientes" className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                  <Icon icon="basil:user-plus-outline" className="mr-2" width="24" height="24" /> Clientes
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Clientes') }} to="/administrador/clientes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:users-group-rounded-bold-duotone" className="mr-3 text-xl" /> Clientes
                 </NavLink>
               )}
 
@@ -211,16 +241,18 @@ export default function AdminLayout() {
                   {/* Facturación SUNAT - Solo para empresas formales */}
                   {auth?.empresa?.tipoEmpresa === 'FORMAL' && (
                     <div>
-                      <button onClick={() => { toggleAccordion('fact'); setNameNavbar('Facturacion') }} className={(location.pathname.includes('/administrador/facturacion/comprobantes') || location.pathname.includes('/administrador/facturacion/nuevo')) && !location.pathname.includes('informales') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                        <Icon icon="basil:file-outline" className="mr-2" width="24" height="24" /> Fact. SUNAT
-                        <Icon icon={isFactSubmenuOpen ? 'basil:caret-up-outline' : 'basil:caret-down-solid'} className="ml-auto" width="20" />
+                      <button onClick={() => { toggleAccordion('fact'); setNameNavbar('Facturacion') }} className={(location.pathname.includes('/administrador/facturacion/comprobantes') || location.pathname.includes('/administrador/facturacion/nuevo')) && !location.pathname.includes('informales') ? `flex items-center justify-between w-full ${theme.primaryLightBg} ${theme.primaryText} px-4 py-3 text-sm font-semibold ${theme.sidebarRadius} transition-all text-left` : `flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 ${theme.sidebarRadius} transition-all text-left`}>
+                        <div className="flex items-center">
+                          <Icon icon="solar:bill-list-bold-duotone" className="mr-3 text-xl" /> Fact. SUNAT
+                        </div>
+                        <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isFactSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
                       </button>
                       {isFactSubmenuOpen && (
-                        <div className="ml-8 space-y-2 mt-2">
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                        <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                             Comprobantes SUNAT
                           </NavLink>
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                             Crear comprobantes
                           </NavLink>
                         </div>
@@ -231,18 +263,20 @@ export default function AdminLayout() {
                   {/* Comprobantes informales - Para empresas informales */}
                   {(auth?.empresa?.tipoEmpresa === 'FORMAL' || auth?.empresa?.tipoEmpresa === 'INFORMAL') && (
                     <div>
-                      <button onClick={() => { toggleAccordion('informal'); setNameNavbar('Comprobantes Informales') }} className={location.pathname.includes('/administrador/facturacion/comprobantes-informales') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                        <Icon icon="raphael:paper" className="mr-2" width="24" height="24" /> Notas de Pedido
-                        <Icon icon={isInformalSubmenuOpen ? 'basil:caret-up-outline' : 'basil:caret-down-solid'} className="ml-auto" width="20" />
+                      <button onClick={() => { toggleAccordion('informal'); setNameNavbar('Comprobantes Informales') }} className={location.pathname.includes('/administrador/facturacion/comprobantes-informales') ? `flex items-center justify-between w-full ${theme.primaryLightBg} ${theme.primaryText} px-4 py-3 text-sm font-semibold ${theme.sidebarRadius} transition-all text-left` : `flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 ${theme.sidebarRadius} transition-all text-left`}>
+                        <div className="flex items-center">
+                          <Icon icon="solar:notes-bold-duotone" className="mr-3 text-xl" /> Notas de Pedido
+                        </div>
+                        <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isInformalSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
                       </button>
                       {isInformalSubmenuOpen && (
-                        <div className="ml-8 space-y-2 mt-2">
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes-informales" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                        <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes-informales" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                             Notas de ventas
                           </NavLink>
                           {
                             auth?.empresa?.tipoEmpresa === 'INFORMAL' && (
-                              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                                 Crear comprobantes
                               </NavLink>
                             )
@@ -254,8 +288,8 @@ export default function AdminLayout() {
 
                   {/* Pagos - visible si tiene permiso 'pagos' */}
                   {hasPermission(auth, 'pagos') && (
-                    <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Pagos') }} to="/administrador/pagos" className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                      <Icon icon="hugeicons:money-bag-01" className="mr-2" width="24" height="24" /> Gestión de Pagos
+                    <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Pagos') }} to="/administrador/pagos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                      <Icon icon="solar:wallet-money-bold-duotone" className="mr-3 text-xl" /> Gestión de Pagos
                     </NavLink>
                   )}
                 </>
@@ -263,19 +297,21 @@ export default function AdminLayout() {
               {/* Reportes/Contabilidad */}
               {hasPermission(auth, 'reportes') && (
                 <div>
-                  <button onClick={() => { toggleAccordion('cont'); setNameNavbar('Contabilidad') }} className={location.pathname.includes('/administrador/contabilidad') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                    <Icon icon="solar:calculator-linear" className="mr-2" width="24" height="24" /> Contabilidad
-                    <Icon icon={isContSubmenuOpen ? 'basil:caret-up-outline' : 'basil:caret-down-solid'} className="ml-auto" width="20" />
+                  <button onClick={() => { toggleAccordion('cont'); setNameNavbar('Contabilidad') }} className={location.pathname.includes('/administrador/contabilidad') ? `flex items-center justify-between w-full ${theme.primaryLightBg} ${theme.primaryText} px-4 py-3 text-sm font-semibold ${theme.sidebarRadius} transition-all text-left` : `flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 ${theme.sidebarRadius} transition-all text-left`}>
+                    <div className="flex items-center">
+                      <Icon icon="solar:calculator-bold-duotone" className="mr-3 text-xl" /> Contabilidad
+                    </div>
+                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isContSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
                   </button>
                   {isContSubmenuOpen && (
-                    <div className="ml-8 space-y-2 mt-2">
+                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
                       {auth?.empresa?.tipoEmpresa === 'FORMAL' && (
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                           Reporte Formales (SUNAT)
                         </NavLink>
                       )}
                       {auth?.empresa?.tipoEmpresa === 'INFORMAL' && (
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte-informales" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte-informales" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                           Reporte Informales
                         </NavLink>
                       )}
@@ -286,49 +322,29 @@ export default function AdminLayout() {
 
               {/* Caja - visible si tiene permiso 'caja' */}
               {hasPermission(auth, 'caja') && (
-                <div>
-                  <button onClick={() => { toggleAccordion('caja'); setNameNavbar('Caja') }} className={location.pathname.includes('/administrador/caja') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                    <Icon icon="hugeicons:atm-01" className="mr-2" width="24" height="24" /> Caja
-                    <Icon icon={isCajaSubmenuOpen ? 'basil:caret-up-outline' : 'basil:caret-down-solid'} className="ml-auto" width="20" />
-                  </button>
-                  {isCajaSubmenuOpen && (
-                    <div className="ml-8 space-y-2 mt-2">
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/caja" end className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                        Dashboard
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/caja/historial" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                        Historial
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/caja/arqueo" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                        Arqueo
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/caja/reporte-turno" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                        Reporte de Turno
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/caja/reporte-usuarios" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                        Reporte de Usuarios
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Caja') }} to="/administrador/caja" className={({ isActive }) => (isActive && location.pathname === '/administrador/caja') ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:cash-out-bold-duotone" className="mr-3 text-xl" /> Control de Caja
+                </NavLink>
               )}
 
               {/* Tienda Virtual - Solo si el plan lo permite */}
               {auth?.empresa?.plan?.tieneTienda && (auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
                 <div>
-                  <button onClick={() => { toggleAccordion('tienda'); setNameNavbar('Tienda Virtual') }} className={location.pathname.includes('/administrador/tienda') ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl w-full text-left' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d] w-full text-left'}>
-                    <Icon icon="mdi:storefront-outline" className="mr-2" width="24" height="24" /> Tienda Virtual
-                    <Icon icon={isTiendaSubmenuOpen ? 'basil:caret-up-outline' : 'basil:caret-down-solid'} className="ml-auto" width="20" />
+                  <button onClick={() => { toggleAccordion('tienda'); setNameNavbar('Tienda Virtual') }} className={location.pathname.includes('/administrador/tienda') ? `flex items-center justify-between w-full ${theme.primaryLightBg} ${theme.primaryText} px-4 py-3 text-sm font-semibold ${theme.sidebarRadius} transition-all text-left` : `flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 ${theme.sidebarRadius} transition-all text-left`}>
+                    <div className="flex items-center">
+                      <Icon icon="solar:shop-bold-duotone" className="mr-3 text-xl" /> Tienda Virtual
+                    </div>
+                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isTiendaSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
                   </button>
                   {isTiendaSubmenuOpen && (
-                    <div className="ml-8 space-y-2 mt-2">
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Pedidos
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Modificadores
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? 'flex bg-[#f0f0f5] px-4 py-2 text-[14px] text-[#474747] rounded-xl' : 'text-[14px] flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
+                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Configuración
                       </NavLink>
                     </div>
@@ -338,21 +354,21 @@ export default function AdminLayout() {
 
               {/* Usuarios - Solo para Administradores */}
               {hasPermission(auth, 'usuarios') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Usuarios') }} to="/administrador/usuarios" className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                  <Icon icon="solar:user-broken" className="mr-2" width="24" height="24" /> Usuarios
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Usuarios') }} to="/administrador/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:users-group-two-rounded-bold-duotone" className="mr-3 text-xl" /> Usuarios
                 </NavLink>
               )}
 
               {/* Notificaciones - Para usuarios de empresa */}
               {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Notificaciones') }} to="/administrador/notificaciones" className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                  <Icon icon="basil:notification-outline" className="mr-2" width="24" height="24" /> Notificaciones
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Notificaciones') }} to="/administrador/notificaciones" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:bell-bold-duotone" className="mr-3 text-xl" /> Notificaciones
                 </NavLink>
               )}
 
               {/* Perfil - disponible para todos */}
-              <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Perfil') }} to="/administrador/perfil" className={({ isActive }) => isActive ? 'flex bg-[#6A6CFF] px-4 py-2 text-[16px] text-white rounded-xl' : 'flex px-4 py-2 rounded-xl text-[#4d4d4d]'}>
-                <Icon icon="solar:user-circle-broken" className="mr-2" width="24" height="24" /> Perfil
+              <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Perfil') }} to="/administrador/perfil" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:user-circle-bold-duotone" className="mr-3 text-xl" /> Perfil
               </NavLink>
             </>
           )}
@@ -368,19 +384,19 @@ export default function AdminLayout() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-[#F3F4F6]">
-        <div className="bg-white p-3 px-3 md:px-5 mt-5 md:ml-8 mb-0 ml-3 mr-3 md:mb-0 md:mr-8 flex justify-between items-center rounded-xl">
-          <div className="flex items-center gap-3">
+      <main className="flex-1 overflow-y-auto bg-gray-50/50">
+        <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200">
+          <div className="flex items-center gap-4">
             <button
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors focus:ring-2 focus:ring-indigo-100"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Abrir menú"
             >
-              <Icon icon="mdi:menu" width="24" className="text-gray-700" />
+              <Icon icon="solar:hamburger-menu-linear" width="24" className="text-gray-700" />
             </button>
-            <h2 className="font-bold">{nameNavbar}</h2>
+            <h2 className="text-lg font-bold text-gray-800 tracking-tight">{nameNavbar}</h2>
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-3 md:gap-4">
             {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
               <div className="hidden md:block">
                 <NotificacionesCampana />
@@ -390,15 +406,15 @@ export default function AdminLayout() {
             <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-full outline-none focus:outline-none"
+                className="flex items-center gap-3 rounded-full outline-none focus:outline-none hover:bg-gray-50 p-1 md:pr-3 transition-colors border border-transparent hover:border-gray-200"
                 onClick={() => setIsUserMenuOpen((p) => !p)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
               >
                 <img
-                  width={40}
-                  height={40}
-                  className="border border-[#afafb0] rounded-full"
+                  width={38}
+                  height={38}
+                  className="rounded-full shadow-sm object-cover"
                   src={
                     auth?.empresa?.logo
                       ? auth.empresa.logo.startsWith('data:image')
@@ -408,61 +424,49 @@ export default function AdminLayout() {
                   }
                   alt=""
                 />
-                <div className="hidden md:flex flex-col items-start">
-                  <label className="font-medium leading-4">{auth?.nombre}</label>
-                  <p className="text-[12px] text-[#666] leading-5">{auth?.empresa?.nombreComercial}</p>
+                <div className="hidden md:flex flex-col items-start gap-0.5">
+                  <span className="text-sm font-semibold text-gray-700 leading-none">{auth?.nombre?.split(' ')[0]}</span>
+                  <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider leading-none">{auth?.rol?.replace('ADMIN_', '')?.replace('USUARIO_', '')}</span>
                 </div>
-                <Icon icon="mdi:chevron-down" className="hidden md:block text-[#666]" />
+                <Icon icon="solar:alt-arrow-down-bold" className="hidden md:block text-gray-400" width="16" />
               </button>
 
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl border-gray-200 bg-white shadow-lg z-50">
-                  <div className="px-4 py-3 border-b border-gray-200">
-                    <p className="text-sm font-medium truncate">{auth?.nombre}</p>
-                    <p className="text-xs text-gray-500 truncate">{auth?.empresa?.nombreComercial}</p>
+                <div className="absolute right-0 mt-3 w-60 rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/50 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100">
+                    <p className="text-sm font-bold text-gray-900 truncate">{auth?.nombre}</p>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">{auth?.empresa?.nombreComercial}</p>
                   </div>
-                  <ul className="py-1" role="menu">
+                  <ul className="py-2" role="menu">
                     <li>
                       <button
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50"
+                        className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-gray-600 hover:${theme.primaryLightBg} hover:${theme.primaryText} transition-colors`}
                         onClick={() => { setIsUserMenuOpen(false); navigate('/administrador/perfil') }}
                         role="menuitem"
                       >
-                        <Icon icon="solar:user-circle-broken" width="18" />
+                        <Icon icon="solar:user-circle-broken" width="20" />
                         Perfil
                       </button>
                     </li>
                     {(auth?.empresa?.slugTienda || auth?.empresa?.plan?.tieneTienda) && (
                       <li>
                         <button
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50"
+                          className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-gray-600 hover:${theme.primaryLightBg} hover:${theme.primaryText} transition-colors`}
                           onClick={() => { setIsUserMenuOpen(false); if (auth?.empresa?.slugTienda) navigate(`/tienda/${auth.empresa.slugTienda}`); else navigate('/administrador/tienda/configuracion'); }}
                           role="menuitem"
                         >
-                          <Icon icon="mdi:storefront-outline" width="18" />
+                          <Icon icon="solar:shop-linear" width="20" />
                           Ir a tienda virtual
-                        </button>
-                      </li>
-                    )}
-                    {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
-                      <li>
-                        <button
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50"
-                          onClick={() => { setIsUserMenuOpen(false); navigate('/administrador/notificaciones') }}
-                          role="menuitem"
-                        >
-                          <Icon icon="basil:notification-outline" width="18" />
-                          Notificaciones
                         </button>
                       </li>
                     )}
                     <li>
                       <button
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        className="w-full flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                         onClick={() => { setIsUserMenuOpen(false); logout() }}
                         role="menuitem"
                       >
-                        <Icon icon="mdi:logout" width="18" />
+                        <Icon icon="solar:logout-broken" width="20" />
                         Cerrar sesión
                       </button>
                     </li>
@@ -471,8 +475,9 @@ export default function AdminLayout() {
               )}
             </div>
           </div>
-        </div>
-        <div className="p-3 md:p-0">
+        </header>
+
+        <div className={`${theme.mainPadding} mx-auto`}>
           <Outlet />
         </div>
       </main>

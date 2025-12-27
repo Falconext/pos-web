@@ -133,7 +133,7 @@ const ComprobantesInformales = () => {
                             <span>Imprimir</span>
                         </button>
                         {/* Botón de impresión térmica - solo se muestra en macOS */}
-                        
+
                         <button
                             type="button"
                             disabled={!rowBase.s3PdfUrl}
@@ -414,7 +414,7 @@ const ComprobantesInformales = () => {
     console.log(invoice)
 
     return (
-        <div className="px-0 py-0 md:px-8 md:py-4">
+        <div className="min-h-screen pb-4">
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
@@ -433,50 +433,63 @@ const ComprobantesInformales = () => {
                 totalInWords={numberToWords(parseFloat(invoice?.mtoImpVenta)) + " SOLES"}
                 observation={invoice?.observaciones}
             />
-            <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
-                <div className="mb-5 pt-5 md:pt-0">
-                    <div className="grid grid-cols-12 gap-3 justify-between items-center">
-                        <div className="md:col-start-1 md:col-end-5 col-span-12">
+
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Comprobantes Informales</h1>
+                    <p className="text-sm text-gray-500 mt-1">Notas de venta, proformas y otros comprobantes</p>
+                </div>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Filters Section */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
+                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="lg:col-span-2">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
-                        <div className="md:col-start-5 md:col-end-13 col-span-12 grid gap-3 relative">
-                            <div className="md:col-start-1 md:col-end-3 col-span-12">
-                                <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
-                            </div>
-                            <div className="md:col-start-3 md:col-end-5 col-span-12">
-                                <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
-                            </div>
-                            <div className="md:col-start-5 md:col-end-7 col-span-12">
-                                <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
-                            </div>
-                            <div className="md:col-start-7 md:col-end-10 col-span-12">
-                                <Select onChange={handleSelectPrint} label="Ticket" name="" defaultValue={printSize} options={print} error="" />
-                            </div>
+                        <div>
+                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
+                        </div>
+                        <div>
+                            <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
+                        </div>
+                        <div>
+                            <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
                         </div>
                     </div>
+                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+                        <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
+                    </div>
                 </div>
-                <div className='w-full'>
 
-                    {
-                        productsTable?.length > 0 ? (
-                            <>
-                                <div className="overflow-x-auto md:overflow-x-visible">
-                                    <DataTable bodyData={productsTable}
-                                        headerColumns={[
-                                            'Fecha',
-                                            'Serie',
-                                            'Nro.',
-                                            'Comprobante',
-                                            'Doc. Afiliado',
-                                            'Num doc',
-                                            'Cliente',
-                                            'Importe',
-                                            'Saldo',
-                                            'Estado',
-                                            'Acciones'
-                                        ]} />
-                                </div>
-
+                {/* Table Content */}
+                <div className="p-4">
+                    {productsTable?.length > 0 ? (
+                        <>
+                            <div className="overflow-x-auto">
+                                <DataTable bodyData={productsTable}
+                                    headerColumns={[
+                                        'Fecha',
+                                        'Serie',
+                                        'Nro.',
+                                        'Comprobante',
+                                        'Doc. Afiliado',
+                                        'Num doc',
+                                        'Cliente',
+                                        'Importe',
+                                        'Saldo',
+                                        'Estado',
+                                        'Acciones'
+                                    ]} />
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
                                 <Pagination
                                     data={productsTable}
                                     optionSelect
@@ -488,88 +501,96 @@ const ComprobantesInformales = () => {
                                     pages={pages}
                                     total={totalInvoices}
                                 />
-                            </>
-                        ) :
-                            <TableSkeleton arrayData={productsTable} />
-                    }
+                            </div>
+                        </>
+                    ) : (
+                        <div className="py-12 text-center">
+                            <Icon icon="solar:document-text-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500">No se encontraron comprobantes</p>
+                            <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
+                        </div>
+                    )}
                 </div>
-                {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
-                {(isOpenModalPagoParcial && paymentFlow.payment) && (
-                    <ModalPaymentUnified
-                        isOpen={isOpenModalPagoParcial}
-                        isLoading={paymentFlow.isLoading}
-                        paymentType={paymentFlow.payment.tipo}
-                        saldoPendiente={parseFloat(formValues?.saldo?.replace('S/ ', '') || '0')}
-                        totalComprobante={parseFloat(formValues?.total?.replace('S/ ', '') || '0')}
-                        comprobanteInfo={{
-                            id: formValues.id,
-                            serie: formValues.serie,
-                            correlativo: formValues.correlativo,
-                            cliente: formValues.client,
-                            total: parseFloat(formValues?.total?.replace('S/ ', '') || '0')
-                        }}
-                        onConfirm={handleConfirmPago}
-                        onCancel={() => {
-                            setIsOpenModalPagoParcial(false);
-                            paymentFlow.reset();
-                        }}
-                        error={paymentFlow.error || ''}
-                    />
-                )}
-                {isOpenModalWhatsApp && comprobanteWhatsApp && (
-                    <ModalEnviarWhatsApp
-                        isOpen={isOpenModalWhatsApp}
-                        onClose={() => {
-                            setIsOpenModalWhatsApp(false);
-                            setComprobanteWhatsApp(null);
-                        }}
-                        comprobante={comprobanteWhatsApp}
-                    />
-                )}
-                <Modal
-                    isOpenModal={isOpenModalPdf}
-                    closeModal={() => setIsOpenModalPdf(false)}
-                    title="Vista previa del PDF"
-                    width="980px"
-                >
-                    <div className="p-3 space-y-3">
-                        <div className="flex justify-end">
-                            <a
-                                href={pdfUrl || '#'}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-3 py-1.5 text-xs rounded-md bg-[#6A6CFF] text-white hover:opacity-90"
-                            >
-                                Descargar
-                            </a>
-                        </div>
-                        <div className="h-[80vh]">
-                            {pdfUrl ? (
-                                <iframe src={pdfUrl} className="w-full h-full rounded-lg border" />
-                            ) : (
-                                <div className="text-center text-gray-500 text-sm">No hay PDF disponible</div>
-                            )}
-                        </div>
-                    </div>
-                </Modal>
-                {paymentFlow.showReceipt && paymentFlow.receiptData && (
-                    <PaymentReceipt
-                        comprobante={paymentFlow.receiptData.comprobante}
-                        saldo={formValues?.saldo}
-                        payment={paymentFlow.receiptData.payment}
-                        numeroRecibo={paymentFlow.receiptData.numeroRecibo}
-                        nuevoSaldo={paymentFlow.receiptData.nuevoSaldo}
-                        detalles={paymentFlow.receiptData.detalles}
-                        cliente={paymentFlow.receiptData.cliente}
-                        pagosHistorial={paymentFlow.receiptData.pagosHistorial}
-                        totalPagado={paymentFlow.receiptData.totalPagado}
-                        company={auth}
-                        onClose={handleCloseReceipt}
-                    />
-                )}
             </div>
+
+            {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
+
+            {(isOpenModalPagoParcial && paymentFlow.payment) && (
+                <ModalPaymentUnified
+                    isOpen={isOpenModalPagoParcial}
+                    isLoading={paymentFlow.isLoading}
+                    paymentType={paymentFlow.payment.tipo}
+                    saldoPendiente={parseFloat(formValues?.saldo?.replace('S/ ', '') || '0')}
+                    totalComprobante={parseFloat(formValues?.total?.replace('S/ ', '') || '0')}
+                    comprobanteInfo={{
+                        id: formValues.id,
+                        serie: formValues.serie,
+                        correlativo: formValues.correlativo,
+                        cliente: formValues.client,
+                        total: parseFloat(formValues?.total?.replace('S/ ', '') || '0')
+                    }}
+                    onConfirm={handleConfirmPago}
+                    onCancel={() => {
+                        setIsOpenModalPagoParcial(false);
+                        paymentFlow.reset();
+                    }}
+                    error={paymentFlow.error || ''}
+                />
+            )}
+            {isOpenModalWhatsApp && comprobanteWhatsApp && (
+                <ModalEnviarWhatsApp
+                    isOpen={isOpenModalWhatsApp}
+                    onClose={() => {
+                        setIsOpenModalWhatsApp(false);
+                        setComprobanteWhatsApp(null);
+                    }}
+                    comprobante={comprobanteWhatsApp}
+                />
+            )}
+            <Modal
+                isOpenModal={isOpenModalPdf}
+                closeModal={() => setIsOpenModalPdf(false)}
+                title="Vista previa del PDF"
+                width="980px"
+            >
+                <div className="p-3 space-y-3">
+                    <div className="flex justify-end">
+                        <a
+                            href={pdfUrl || '#'}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 text-xs rounded-md bg-[#6A6CFF] text-white hover:opacity-90"
+                        >
+                            Descargar
+                        </a>
+                    </div>
+                    <div className="h-[80vh]">
+                        {pdfUrl ? (
+                            <iframe src={pdfUrl} className="w-full h-full rounded-lg border" />
+                        ) : (
+                            <div className="text-center text-gray-500 text-sm">No hay PDF disponible</div>
+                        )}
+                    </div>
+                </div>
+            </Modal>
+            {paymentFlow.showReceipt && paymentFlow.receiptData && (
+                <PaymentReceipt
+                    comprobante={paymentFlow.receiptData.comprobante}
+                    saldo={formValues?.saldo}
+                    payment={paymentFlow.receiptData.payment}
+                    numeroRecibo={paymentFlow.receiptData.numeroRecibo}
+                    nuevoSaldo={paymentFlow.receiptData.nuevoSaldo}
+                    detalles={paymentFlow.receiptData.detalles}
+                    cliente={paymentFlow.receiptData.cliente}
+                    pagosHistorial={paymentFlow.receiptData.pagosHistorial}
+                    totalPagado={paymentFlow.receiptData.totalPagado}
+                    company={auth}
+                    onClose={handleCloseReceipt}
+                />
+            )}
         </div>
     );
+
 };
 
 export default ComprobantesInformales;

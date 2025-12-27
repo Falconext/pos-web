@@ -76,10 +76,10 @@ const Pagos = () => {
     console.log(row)
     const original = pagos?.find((p: any) => p.id === row.id);
     if (!original) return;
-    
+
     setSelectedPago(original);
     setLoadingDetalles(true);
-    
+
     try {
       // Usar el comprobanteId del pago para cargar los detalles completos
       const comprobanteId = original.comprobanteId;
@@ -129,14 +129,27 @@ const Pagos = () => {
 
   console.log(selectedPago?.comprobante)
 
-  
+
   return (
-    <div className="px-0 py-0 md:px-8 md:py-4">
-      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white rounded-lg">
-        {/* Filtros */}
-        <div className="mb-5">
-          <div className="grid grid-cols-12 gap-3">
-            <div className="md:col-start-1 md:col-end-5 col-span-12">
+    <div className="min-h-screen pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Historial de Pagos</h1>
+          <p className="text-sm text-gray-500 mt-1">Todos los pagos registrados en comprobantes</p>
+        </div>
+      </div>
+
+      {/* Main Content Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Filters Section */}
+        <div className="p-5 border-b border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
+            <h3 className="font-semibold text-gray-800">Filtros</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
               <InputPro
                 name="search"
                 onChange={(e: any) => setSearchTerm(e.target.value)}
@@ -144,38 +157,36 @@ const Pagos = () => {
                 isLabel
               />
             </div>
-            <div className="md:col-start-5 md:col-end-13 col-span-12 grid gap-3">
-              <div className="md:col-start-1 md:col-end-3 col-span-12">
-                <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
-              </div>
-              <div className="md:col-start-3 md:col-end-5 col-span-12">
-                <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
-              </div>
-              <div className="md:col-start-5 md:col-end-7 col-span-12">
-                <Select
-                  error={''}
-                  label="Medio de pago"
-                  name="medioPago"
-                  onChange={handleSelect}
-                  options={[
-                    { value: 'TODOS', label: 'Todos los medios' },
-                    { value: 'EFECTIVO', label: 'Efectivo' },
-                    { value: 'YAPE', label: 'Yape' },
-                    { value: 'PLIN', label: 'Plin' },
-                    { value: 'TRANSFERENCIA', label: 'Transferencia' },
-                    { value: 'TARJETA', label: 'Tarjeta' },
-                  ]}
-                />
-              </div>
+            <div>
+              <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
+            </div>
+            <div>
+              <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
+            </div>
+            <div>
+              <Select
+                error={''}
+                label="Medio de pago"
+                name="medioPago"
+                onChange={handleSelect}
+                options={[
+                  { value: 'TODOS', label: 'Todos los medios' },
+                  { value: 'EFECTIVO', label: 'Efectivo' },
+                  { value: 'YAPE', label: 'Yape' },
+                  { value: 'PLIN', label: 'Plin' },
+                  { value: 'TRANSFERENCIA', label: 'Transferencia' },
+                  { value: 'TARJETA', label: 'Tarjeta' },
+                ]}
+              />
             </div>
           </div>
         </div>
 
-        {/* Tabla */}
-        <div className="w-full">
+        {/* Table Content */}
+        <div className="p-4">
           {pagosTable?.length > 0 ? (
             <>
-              <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
+              <div className="overflow-x-auto">
                 <DataTable
                   actions={actions}
                   bodyData={pagosTable}
@@ -191,60 +202,67 @@ const Pagos = () => {
                   ]}
                 />
               </div>
-
-              <Pagination
-                data={pagosTable}
-                optionSelect
-                currentPage={currentPage}
-                indexOfFirstItem={indexOfFirstItem}
-                indexOfLastItem={indexOfLastItem}
-                setcurrentPage={setCurrentPage}
-                setitemsPerPage={setItemsPerPage}
-                pages={pages}
-                total={totalPagos}
-              />
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <Pagination
+                  data={pagosTable}
+                  optionSelect
+                  currentPage={currentPage}
+                  indexOfFirstItem={indexOfFirstItem}
+                  indexOfLastItem={indexOfLastItem}
+                  setcurrentPage={setCurrentPage}
+                  setitemsPerPage={setItemsPerPage}
+                  pages={pages}
+                  total={totalPagos}
+                />
+              </div>
             </>
           ) : (
-            <TableSkeleton arrayData={pagosTable} />
+            <div className="py-12 text-center">
+              <Icon icon="solar:wallet-money-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No se encontraron pagos</p>
+              <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
+            </div>
           )}
         </div>
-        {showReceipt && selectedPago && (
-          <PaymentReceipt
-            saldo={selectedPago.comprobante?.saldo}
-            comprobante={comprobanteDetalles || selectedPago.comprobante}
-            payment={{
-              tipo: 'PAGO_PARCIAL',
-              monto: selectedPago.monto,
-              medioPago: selectedPago.medioPago,
-              observacion: selectedPago.observacion,
-              referencia: selectedPago.referencia,
-            }}
-            numeroRecibo={`REC-${selectedPago.id}`}
-            nuevoSaldo={0} // Ya procesado
-            detalles={comprobanteDetalles?.detalles || []}
-            cliente={comprobanteDetalles?.cliente || selectedPago.comprobante?.cliente}
-            company={auth}
-            onClose={() => {
-              setShowReceipt(false);
-              setSelectedPago(null);
-              setComprobanteDetalles(null);
-            }}
-          />
-        )}
-        
-        {loadingDetalles && (
-          <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 shadow-xl">
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="text-gray-700">Cargando detalles del comprobante...</span>
-              </div>
+      </div>
+
+      {showReceipt && selectedPago && (
+        <PaymentReceipt
+          saldo={selectedPago.comprobante?.saldo}
+          comprobante={comprobanteDetalles || selectedPago.comprobante}
+          payment={{
+            tipo: 'PAGO_PARCIAL',
+            monto: selectedPago.monto,
+            medioPago: selectedPago.medioPago,
+            observacion: selectedPago.observacion,
+            referencia: selectedPago.referencia,
+          }}
+          numeroRecibo={`REC-${selectedPago.id}`}
+          nuevoSaldo={0}
+          detalles={comprobanteDetalles?.detalles || []}
+          cliente={comprobanteDetalles?.cliente || selectedPago.comprobante?.cliente}
+          company={auth}
+          onClose={() => {
+            setShowReceipt(false);
+            setSelectedPago(null);
+            setComprobanteDetalles(null);
+          }}
+        />
+      )}
+
+      {loadingDetalles && (
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-gray-700">Cargando detalles del comprobante...</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
+
 };
 
 export default Pagos;
