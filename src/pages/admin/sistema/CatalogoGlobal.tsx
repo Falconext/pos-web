@@ -434,6 +434,7 @@ const CatalogoGlobal = () => {
                                     <img
                                         src={p.imagenUrl}
                                         alt={p.nombre}
+                                        referrerPolicy="no-referrer"
                                         className="h-full w-full object-contain"
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
