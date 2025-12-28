@@ -98,6 +98,42 @@ export default function PerfilIndex() {
         })
     }
 
+    // Si es Super Admin, mostrar vista simplificada
+    if (perfil?.rol === 'ADMIN_SISTEMA') {
+        return (
+            <div className="p-6 max-w-4xl mx-auto">
+                <h1 className="text-2xl font-bold text-gray-800 mb-6">Perfil de Administrador del Sistema</h1>
+                <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-2xl">
+                            {perfil.nombre.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-semibold">{perfil.nombre}</h2>
+                            <p className="text-gray-500">{perfil.email}</p>
+                            <span className="inline-block mt-1 bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold">SUPER ADMIN</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">Rol</h3>
+                            <p className="font-medium text-gray-900">{perfil.rol}</p>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">Estado</h3>
+                            <p className="font-medium text-green-600">{perfil.estado}</p>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">Fecha Creación</h3>
+                            <p className="font-medium text-gray-900">{formatearFecha(perfil.fechaCreacion)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     const obtenerEstadoSuscripcion = () => {
         if (!perfil?.empresa.fechaExpiracion) return 'Sin información'
 

@@ -33,6 +33,7 @@ import TiendaLogin from './pages/TiendaLogin'
 import TiendaHome from './pages/TiendaHome'
 import DisenoRubros from './pages/admin/sistema/DisenoRubros'
 import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
+import Planes from './pages/admin/sistema/Planes'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -87,6 +88,7 @@ function App() {
           {/* Rutas de ADMIN_SISTEMA */}
           <Route path="sistema/diseno-rubros" element={<DisenoRubros />} />
           <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
+          <Route path="sistema/planes" element={<Planes />} />
         </Route>
         {/* Rutas de tienda */}
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}
