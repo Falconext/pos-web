@@ -8,6 +8,7 @@ import useAlertStore from "@/zustand/alert";
 import DataTable from "@/components/Datatable";
 import InputPro from "@/components/InputPro";
 import Pagination from "@/components/Pagination";
+import ModalConfirm from "@/components/ModalConfirm";
 
 interface Props {
     isOpen: boolean;
@@ -93,6 +94,8 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
         }
     };
 
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
     const handleImport = async () => {
         if (selectedIds.length === 0) return;
         try {
@@ -109,11 +112,14 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
         }
     };
 
-    const handleImportAll = async () => {
-        if (!window.confirm("¿Estás seguro de IMPORTAR TODO el catálogo disponible para tu rubro?\n\n- Se omitirán los productos que ya tienes registrados (por código).\n- Se actualizarán las imágenes de productos existentes si no tienen imagen.\n- Solo se agregarán los nuevos.")) return;
+    const handleImportAllClick = () => {
+        setIsConfirmOpen(true);
+    };
 
+    const executeImportAll = async () => {
         try {
             setImporting(true);
+            setIsConfirmOpen(false);
             const { data } = await apiClient.post('/plantillas/importar-todo');
             const msg = `${data.message}: ${data.imported} nuevos, ${data.updated || 0} imágenes actualizadas`;
             useAlertStore.getState().alert(msg, "success");
@@ -236,8 +242,8 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                 <div className="p-4 border-t flex justify-between gap-3 bg-white rounded-b-lg">
                     <div>
                         <Button
-                            onClick={handleImportAll}
-                            color="secondary" // Using secondary but styled differently via class if needed, or just secondary
+                            onClick={handleImportAllClick}
+                            color="secondary"
                             disabled={importing || plantillas.length === 0}
                             className="bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
                         >
@@ -270,6 +276,20 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                     </div>
                 </div>
             </div>
+
+            <ModalConfirm
+                isOpenModal={isConfirmOpen}
+                setIsOpenModal={setIsConfirmOpen}
+                confirmSubmit={executeImportAll}
+                title="¿Importar TODO el catálogo?"
+                information="Esta acción importará todos los productos disponibles para tu rubro."
+            >
+                <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-gray-600">
+                    <li>Se omitirán los productos ya registrados (por código).</li>
+                    <li>Se actualizarán imágenes faltantes.</li>
+                    <li>Solo se agregarán nuevos productos.</li>
+                </ul>
+            </ModalConfirm>
         </div>
     );
 }
