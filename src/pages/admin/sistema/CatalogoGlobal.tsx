@@ -431,17 +431,23 @@ const CatalogoGlobal = () => {
                             ),
                             'imagen': p.imagenUrl ? (
                                 <div className="h-12 w-12 bg-white border border-gray-200 rounded-md overflow-hidden flex items-center justify-center shadow-sm">
-                                    <img
-                                        src={p.imagenUrl}
-                                        alt={p.nombre}
-                                        referrerPolicy="no-referrer"
-                                        className="h-full w-full object-contain"
-                                        onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.style.display = 'none';
-                                            target.parentElement!.innerHTML = '<span class="text-[10px] text-gray-300">N/A</span>';
-                                        }}
-                                    />
+                                    <a href={p.imagenUrl} target="_blank" rel="noopener noreferrer" className="w-full h-full flex items-center justify-center">
+                                        <img
+                                            src={p.imagenUrl}
+                                            alt={p.nombre}
+                                            referrerPolicy="no-referrer"
+                                            className="h-full w-full object-contain"
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                                // We append a text span to the PARENT (the anchor tag)
+                                                const span = document.createElement('span');
+                                                span.className = 'text-[10px] text-gray-300';
+                                                span.innerText = 'Err';
+                                                target.parentElement?.appendChild(span);
+                                            }}
+                                        />
+                                    </a>
                                 </div>
                             ) : (
                                 <div className="h-12 w-12 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center">
