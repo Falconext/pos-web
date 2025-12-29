@@ -371,8 +371,10 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             }
             try {
                 const newId = product?.data?.id;
-                let urlFinal: string | null = formValues.imagenUrl || null; // Use auto-generated URL as starting point
+                let urlFinal: string | null = null;
+
                 if (newId && filePrincipal) {
+                    // User uploaded a file - use the existing file upload endpoint
                     const fd = new FormData();
                     fd.append('file', filePrincipal);
                     const resp2 = await apiClient.post(`/producto/${newId}/imagen`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -381,7 +383,22 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                     if (nuevaUrl) {
                         urlFinal = nuevaUrl;
                     }
+                } else if (newId && imageToSave) {
+                    // We have an auto-generated external URL - upload it to S3
+                    try {
+                        const resp3 = await apiClient.post(`/producto/${newId}/imagen-url`, { url: imageToSave });
+                        const signed = resp3?.data?.signedUrl || resp3?.data?.data?.signedUrl;
+                        const s3Url = signed || resp3?.data?.data?.url || resp3?.data?.url || null;
+                        if (s3Url) {
+                            urlFinal = s3Url;
+                            useAlertStore.getState().alert('Imagen guardada en servidor', 'success');
+                        }
+                    } catch (imgError) {
+                        console.error('Error uploading auto-generated image to S3:', imgError);
+                        // Continue without S3 image
+                    }
                 }
+
                 // Insertar/actualizar en store con imagen final si existe
                 upsertProductLocal({
                     id: Number(newId),
