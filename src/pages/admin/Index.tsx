@@ -113,13 +113,13 @@ export default function AdminIndex() {
             <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
           </div>
           <div className="flex items-center gap-2 py-2 rounded-xl">
-            <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
+            <Calendar left name="fechaFin" onChange={handleDate} text="Fecha Fin" />
           </div>
         </div>
       </div>
 
       <Grid numItemsSm={2} numItemsLg={4} className="gap-4 md:gap-6 mb-6">
-        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
+        <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow p">
           <Flex justifyContent="between" alignItems="center">
             <div>
               <Text className="font-medium text-gray-500">Comprobantes</Text>

@@ -220,9 +220,11 @@ export default function AdminLayout() {
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         {menuLabels.productosLabel}
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
-                        Combos
-                      </NavLink>
+                      {auth?.empresa?.plan?.tieneTienda && (
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
+                          Combos
+                        </NavLink>
+                      )}
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex" end className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Movimientos
                       </NavLink>
