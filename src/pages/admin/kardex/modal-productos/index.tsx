@@ -187,9 +187,11 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         }
         setIsCategorizing(true);
         try {
-            const { data } = await apiClient.post('/producto/ia/categorizar', { nombre: formValues.descripcion });
-            if (data.success && data.data) {
-                const aiData = data.data;
+            const response = await apiClient.post('/producto/ia/categorizar', { nombre: formValues.descripcion });
+            // Backend wraps response in { code, message, data }
+            const result = response.data?.data || response.data;
+            if (result?.success && result?.data) {
+                const aiData = result.data;
                 const updates: any = {};
 
                 // Update description if shorter or better? The prompt says "generate short description".
@@ -242,11 +244,13 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         }
         setIsGeneratingImage(true);
         try {
-            const { data } = await apiClient.post('/producto/ia/generar-imagen', { nombre: query });
-            if (data.success && data.url) {
-                setPreviewPrincipal(data.url);
+            const response = await apiClient.post('/producto/ia/generar-imagen', { nombre: query });
+            // Backend wraps response in { code, message, data }
+            const result = response.data?.data || response.data;
+            if (result?.success && result?.url) {
+                setPreviewPrincipal(result.url);
                 // Set to formValues so it persists if no file is uploaded
-                setFormValues((prev: any) => ({ ...prev, imagenUrl: data.url }));
+                setFormValues((prev: any) => ({ ...prev, imagenUrl: result.url }));
                 useAlertStore.getState().alert('Imagen encontrada', 'success');
             } else {
                 useAlertStore.getState().alert('No se encontró imagen', 'info');
