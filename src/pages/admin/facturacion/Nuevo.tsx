@@ -599,21 +599,6 @@ const Invoice = () => {
 
             {/* LEFT PANEL: PRODUCT CATALOG */}
             <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-2xl shadow-sm h-full overflow-hidden">
-                {/* Serie/Correlativo Header */}
-                {dataReceipt?.serie && (
-                    <div className="px-5 pt-4 pb-2 border-b border-gray-100 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl text-white">
-                                <span className="text-xs font-medium block">Próximo Comprobante</span>
-                                <span className="text-lg font-bold">{dataReceipt?.serie}-{String(dataReceipt?.correlativo).padStart(8, '0')}</span>
-                            </div>
-                            <div className="text-gray-500 text-sm">
-                                <span className="font-semibold text-gray-700">{formValues?.comprobante}</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {/* Header: Search & Categories */}
                 <div className="p-5 border-b border-gray-100">
                     <div className="flex gap-2 mb-4">
@@ -761,6 +746,15 @@ const Invoice = () => {
                 {/* Invoice Config Header */}
                 <div className="p-5 border-b border-gray-100 bg-gray-50/50">
                     <div className="grid grid-cols-2 gap-3 mb-3">
+                        {dataReceipt?.serie && (
+                            <div className="pb-2 col-span-2 border-b border-gray-100 flex w-full items-center justify-center">
+                                <div className="flex justify-center gap-3">
+                                    <div className="">
+                                        <span className="text-sm text-center mx-auto font-bold">{dataReceipt?.serie}-{String(dataReceipt?.correlativo).padStart(8, '0')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="col-span-2">
                             <Select
                                 defaultValue={formValues?.comprobante}
