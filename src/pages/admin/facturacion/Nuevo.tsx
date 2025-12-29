@@ -599,17 +599,42 @@ const Invoice = () => {
 
             {/* LEFT PANEL: PRODUCT CATALOG */}
             <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-2xl shadow-sm h-full overflow-hidden">
+                {/* Serie/Correlativo Header */}
+                {dataReceipt?.serie && (
+                    <div className="px-5 pt-4 pb-2 border-b border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl text-white">
+                                <span className="text-xs font-medium block">Próximo Comprobante</span>
+                                <span className="text-lg font-bold">{dataReceipt?.serie}-{String(dataReceipt?.correlativo).padStart(8, '0')}</span>
+                            </div>
+                            <div className="text-gray-500 text-sm">
+                                <span className="font-semibold text-gray-700">{formValues?.comprobante}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header: Search & Categories */}
                 <div className="p-5 border-b border-gray-100">
-                    <div className="relative mb-4">
-                        <input
-                            type="text"
-                            placeholder="Buscar productos..."
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-gray-700 outline-none transition-all placeholder-gray-400 font-medium"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <Icon icon="solar:magnifer-linear" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
+                    <div className="flex gap-2 mb-4">
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                placeholder="Buscar productos..."
+                                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-gray-700 outline-none transition-all placeholder-gray-400 font-medium"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <Icon icon="solar:magnifer-linear" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
+                        </div>
+                        <button
+                            onClick={() => setIsOpenModalProduct(true)}
+                            className="flex items-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all shadow-lg shadow-green-200"
+                            title="Crear producto nuevo"
+                        >
+                            <Icon icon="solar:add-circle-bold" className="text-xl" />
+                            <span className="hidden md:inline">Producto</span>
+                        </button>
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -686,7 +711,7 @@ const Invoice = () => {
                                     {/* Product Info */}
                                     <div className="px-3 pb-4 pt-1">
                                         <h4 className="font-semibold text-gray-800 text-sm line-clamp-2 leading-snug mb-2 min-h-[2.5rem] capitalize" style={{ textTransform: 'none' }}>
-                                            {item.descripcion?.toLowerCase()}
+                                            {item.descripcion?.toUpperCase()}
                                         </h4>
 
                                         <div className="flex items-center justify-between gap-2">

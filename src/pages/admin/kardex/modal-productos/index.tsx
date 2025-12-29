@@ -350,7 +350,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             }
             try {
                 const newId = product?.data?.id;
-                let urlFinal: string | null = null;
+                let urlFinal: string | null = formValues.imagenUrl || null; // Use auto-generated URL as starting point
                 if (newId && filePrincipal) {
                     const fd = new FormData();
                     fd.append('file', filePrincipal);
