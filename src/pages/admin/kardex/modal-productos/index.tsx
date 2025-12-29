@@ -48,7 +48,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
     const { categories } = useCategoriesStore();
     // Marcas
     const { brands, getAllBrands } = useBrandsStore();
-    
+
     // Modificadores
     const { grupos: gruposModificadores, getAllGrupos } = useModificadoresStore();
     const [gruposSeleccionados, setGruposSeleccionados] = useState<number[]>([]);
@@ -107,7 +107,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         });
     }
 
-    
+
 
     useEffect(() => {
         // Evitar llamadas repetidas: solo cargar si están vacíos en el store
@@ -169,11 +169,94 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
     // Toggle grupo seleccionado
     const toggleGrupoSeleccionado = (grupoId: number) => {
-        setGruposSeleccionados(prev => 
-            prev.includes(grupoId) 
+        setGruposSeleccionados(prev =>
+            prev.includes(grupoId)
                 ? prev.filter(id => id !== grupoId)
                 : [...prev, grupoId]
         );
+    };
+
+    // AI Features
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const [isCategorizing, setIsCategorizing] = useState(false);
+
+    const handleAutoCategorize = async () => {
+        if (!formValues.descripcion) {
+            useAlertStore.getState().alert('Ingresa el nombre del producto primero', 'warning');
+            return;
+        }
+        setIsCategorizing(true);
+        try {
+            const { data } = await apiClient.post('/producto/ia/categorizar', { nombre: formValues.descripcion });
+            if (data.success && data.data) {
+                const aiData = data.data;
+                const updates: any = {};
+
+                // Update description if shorter or better? The prompt says "generate short description".
+                // Maybe append or replace? Let's keep original name as description and maybe use AI description for "descripcionLarga" if exists, or just overwrite if user wants?
+                // The task says "auto-categorizing products based on their descriptions".
+                // I'll update fields if found.
+                if (aiData.descripcion) {
+                    // updates.descripcion = aiData.descripcion; // Optional: overwrite name? detailed description might be better elsewhere.
+                    // User might prefer keeping their name. Let's strictly update Category and Brand.
+                }
+
+                if (aiData.categoria) {
+                    const cat = categories.find((c: any) => c.nombre.toUpperCase() === aiData.categoria.toUpperCase());
+                    if (cat) {
+                        updates.categoriaId = cat.id;
+                        updates.categoriaNombre = cat.nombre;
+                    }
+                }
+
+                if (aiData.marca) {
+                    const brand = brands.find((b: any) => b.nombre.toUpperCase() === aiData.marca.toUpperCase());
+                    if (brand) {
+                        updates.marcaId = brand.id;
+                        updates.marcaNombre = brand.nombre;
+                    }
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    setFormValues((prev: any) => ({ ...prev, ...updates }));
+                    useAlertStore.getState().alert('Categorizado automáticamente', 'success');
+                } else {
+                    useAlertStore.getState().alert('No se encontraron coincidencias exactas de categoría/marca', 'info');
+                }
+            } else {
+                useAlertStore.getState().alert('No se pudo categorizar', 'info');
+            }
+        } catch (error) {
+            console.error(error);
+            useAlertStore.getState().alert('Error al categorizar con IA', 'error');
+        } finally {
+            setIsCategorizing(false);
+        }
+    };
+
+    const handleAutoImage = async () => {
+        const query = formValues.descripcion;
+        if (!query) {
+            useAlertStore.getState().alert('Ingresa el nombre del producto para buscar imagen', 'warning');
+            return;
+        }
+        setIsGeneratingImage(true);
+        try {
+            const { data } = await apiClient.post('/producto/ia/generar-imagen', { nombre: query });
+            if (data.success && data.url) {
+                setPreviewPrincipal(data.url);
+                // Set to formValues so it persists if no file is uploaded
+                setFormValues((prev: any) => ({ ...prev, imagenUrl: data.url }));
+                useAlertStore.getState().alert('Imagen encontrada', 'success');
+            } else {
+                useAlertStore.getState().alert('No se encontró imagen', 'info');
+            }
+        } catch (e) {
+            console.error(e);
+            useAlertStore.getState().alert('Error al buscar imagen', 'error');
+        } finally {
+            setIsGeneratingImage(false);
+        }
     };
 
     const handleSubmitProduct = async () => {
@@ -406,6 +489,23 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                         </div>
                                     )}
                                     <p className="text-[11px] text-gray-500 mt-2">Recomendación: 800x800px, JPG o PNG. Peso máximo 2MB.</p>
+
+                                    <div className="mt-3 pt-3 border-t border-gray-100">
+                                        <button
+                                            type="button"
+                                            onClick={handleAutoImage}
+                                            disabled={isGeneratingImage || !formValues.descripcion}
+                                            className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${!formValues.descripcion
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
+                                                }`}
+                                        >
+                                            <Icon icon={isGeneratingImage ? "mdi:loading" : "mdi:magic-staff"}
+                                                className={isGeneratingImage ? "animate-spin" : ""}
+                                                width={16} />
+                                            {isGeneratingImage ? 'Buscando...' : 'Auto-Generar Imagen'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -531,8 +631,25 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                         <div className="col-span-3 md:col-span-1">
                             <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label={labels.codigo} />
                         </div>
-                        <div className="col-span-3 md:col-span-1">
-                            <InputPro autocomplete="off" value={formValues?.descripcion} error={errors.descripcion} name="descripcion" onChange={handleChange} isLabel label={labels.nombre} />
+                        <div className="col-span-3 md:col-span-1 relative">
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-sm font-medium text-gray-700">{labels.nombre}</label>
+                                <button
+                                    type="button"
+                                    onClick={handleAutoCategorize}
+                                    disabled={isCategorizing || !formValues.descripcion}
+                                    className={`text-[10px] flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors ${!formValues.descripcion
+                                        ? 'text-gray-300 bg-gray-50'
+                                        : 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200'
+                                        }`}
+                                    title="Auto-detectar categoría y marca basada en el nombre"
+                                >
+                                    <Icon icon={isCategorizing ? "mdi:loading" : "mdi:sparkles"}
+                                        className={isCategorizing ? "animate-spin" : ""} />
+                                    {isCategorizing ? 'Analizando...' : 'Auto-Categorizar'}
+                                </button>
+                            </div>
+                            <InputPro autocomplete="off" value={formValues?.descripcion} error={errors.descripcion} name="descripcion" onChange={handleChange} isLabel={false} />
                         </div>
                         <div className={`col-span-3  ${isRestaurante ? 'md:col-span-2' : 'md:col-span-2 flex gap-2'}`}>
                             <Select defaultValue={formValues.afectacionNombre || "Gravado - operación onerosa"} error={""} isSearch options={afectaciones} id="tipoAfectacionIGV" name="afectacionNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Tipo de afectvación" />
@@ -561,21 +678,21 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                 />
                             </div>
                             {!isRestaurante && (
-                              <div className="w-full">
-                                  <Select
-                                      defaultValue={formValues.marcaNombre}
-                                      error={""}
-                                      isSearch
-                                      options={brands?.map((item: IBrand) => ({ id: item?.id, value: `${item?.nombre}` }))}
-                                      id="marcaId"
-                                      name="marcaNombre"
-                                      value=""
-                                      onChange={handleChangeSelect}
-                                      icon="clarity:box-plot-line"
-                                      isIcon
-                                      label="Marca"
-                                  />
-                              </div>
+                                <div className="w-full">
+                                    <Select
+                                        defaultValue={formValues.marcaNombre}
+                                        error={""}
+                                        isSearch
+                                        options={brands?.map((item: IBrand) => ({ id: item?.id, value: `${item?.nombre}` }))}
+                                        id="marcaId"
+                                        name="marcaNombre"
+                                        value=""
+                                        onChange={handleChangeSelect}
+                                        icon="clarity:box-plot-line"
+                                        isIcon
+                                        label="Marca"
+                                    />
+                                </div>
                             )}
                         </div>
 
@@ -786,18 +903,16 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                             key={grupo.id}
                                             type="button"
                                             onClick={() => toggleGrupoSeleccionado(grupo.id)}
-                                            className={`p-3 rounded-lg border-2 transition-all text-left ${
-                                                gruposSeleccionados.includes(grupo.id)
-                                                    ? 'border-[#6A6CFF] bg-[#6A6CFF]/5'
-                                                    : 'border-gray-200 hover:border-gray-300'
-                                            }`}
+                                            className={`p-3 rounded-lg border-2 transition-all text-left ${gruposSeleccionados.includes(grupo.id)
+                                                ? 'border-[#6A6CFF] bg-[#6A6CFF]/5'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                                }`}
                                         >
                                             <div className="flex items-start gap-2">
-                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
-                                                    gruposSeleccionados.includes(grupo.id)
-                                                        ? 'border-[#6A6CFF] bg-[#6A6CFF]'
-                                                        : 'border-gray-300'
-                                                }`}>
+                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${gruposSeleccionados.includes(grupo.id)
+                                                    ? 'border-[#6A6CFF] bg-[#6A6CFF]'
+                                                    : 'border-gray-300'
+                                                    }`}>
                                                     {gruposSeleccionados.includes(grupo.id) && (
                                                         <Icon icon="mdi:check" className="text-white" width={12} height={12} />
                                                     )}
