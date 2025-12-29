@@ -16,6 +16,24 @@ export const MODULOS_SISTEMA = [
   { id: 'pagos', nombre: 'Gestión de pagos', descripcion: 'Cobros, pagos y conciliaciones' },
 ];
 
+// Helper para parsear permisos de forma segura (maneja JSON y formato legacy 'ALL')
+const safeParsePermisos = (permisos: string | null | undefined): string[] => {
+  if (!permisos) return [];
+  // Si ya es un array (no debería pasar pero por seguridad)
+  if (Array.isArray(permisos)) return permisos;
+  // Manejar formato legacy 'ALL' 
+  if (permisos === 'ALL') return ['*'];
+  // Intentar parsear como JSON
+  try {
+    const parsed = JSON.parse(permisos);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    // Si falla el parsing, devolver array vacío
+    console.warn('Error parsing permisos:', permisos);
+    return [];
+  }
+};
+
 export interface IUsuario {
   id: number;
   nombre: string;
@@ -42,13 +60,13 @@ export interface IUsersState {
   usuarios: IUsuario[];
   totalUsuarios: number;
   loading: boolean;
-  
+
   // Métodos CRUD
   getAllUsers: (params: { page?: number; limit?: number; search?: string }) => Promise<void>;
   createUser: (data: IFormUsuario) => Promise<void>;
   updateUser: (id: number, data: Partial<IFormUsuario>) => Promise<void>;
   toggleUserState: (id: number) => Promise<void>;
-  
+
   // Utilidades
   resetUsers: () => void;
   hasPermission: (userPermisos: string[], modulo: string) => boolean;
@@ -64,26 +82,26 @@ export const useUsersStore = create<IUsersState>()(
       getAllUsers: async (params) => {
         try {
           set({ loading: true });
-          
+
           const filteredParams = Object.entries(params)
             .filter(([_, value]) => value !== undefined)
             .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
 
           const query = new URLSearchParams(filteredParams).toString();
           const response: any = await get(`usuario?${query}`);
-          
+
           if (response.code === 1) {
             // Parsear permisos de JSON a array
             const usuariosConPermisos = (response.data.items || []).map((user: any) => ({
               ...user,
-              permisos: user.permisos ? JSON.parse(user.permisos) : [],
+              permisos: safeParsePermisos(user.permisos),
             }));
-            
+
             set({
               usuarios: usuariosConPermisos,
               totalUsuarios: response.data.total || 0,
             });
-            
+
             useAlertStore.setState({ success: true });
           } else {
             set({ usuarios: [], totalUsuarios: 0 });
@@ -101,9 +119,9 @@ export const useUsersStore = create<IUsersState>()(
       createUser: async (data) => {
         try {
           set({ loading: true });
-          
+
           const response: any = await post('usuario', data);
-          
+
           if (response.code === 1) {
             // Recargar la lista de usuarios
             await _get().getAllUsers({ page: 1, limit: 50 });
@@ -122,22 +140,22 @@ export const useUsersStore = create<IUsersState>()(
       updateUser: async (id, data) => {
         try {
           set({ loading: true });
-          
+
           const response: any = await put(`usuario/${id}`, data);
-          
+
           if (response.code === 1) {
             // Actualizar el usuario en el estado local
             const usuarioActualizado = {
               ...response.data,
-              permisos: response.data.permisos ? JSON.parse(response.data.permisos) : [],
+              permisos: safeParsePermisos(response.data.permisos),
             };
-            
+
             set((state) => ({
               usuarios: state.usuarios.map((user) =>
                 user.id === id ? { ...user, ...usuarioActualizado } : user
               ),
             }));
-            
+
             useAlertStore.getState().alert('Usuario actualizado exitosamente', 'success');
           } else {
             useAlertStore.getState().alert(response.message || 'Error al actualizar usuario', 'error');
@@ -153,7 +171,7 @@ export const useUsersStore = create<IUsersState>()(
       toggleUserState: async (id) => {
         try {
           set({ loading: true });
-          
+
           const usuario = _get().usuarios.find((u) => u.id === id);
           if (!usuario) {
             useAlertStore.getState().alert('Usuario no encontrado', 'error');
@@ -162,14 +180,14 @@ export const useUsersStore = create<IUsersState>()(
 
           const nuevoEstado = usuario.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
           const response: any = await patch(`usuario/${id}/estado`, { estado: nuevoEstado });
-          
+
           if (response.code === 1) {
             set((state) => ({
               usuarios: state.usuarios.map((user) =>
                 user.id === id ? { ...user, estado: nuevoEstado } : user
               ),
             }));
-            
+
             const mensaje = nuevoEstado === 'ACTIVO' ? 'Usuario activado' : 'Usuario desactivado';
             useAlertStore.getState().alert(mensaje, 'success');
           } else {
@@ -190,10 +208,10 @@ export const useUsersStore = create<IUsersState>()(
       hasPermission: (userPermisos: string[], modulo: string) => {
         // Si no tiene permisos definidos, no tiene acceso
         if (!userPermisos || userPermisos.length === 0) return false;
-        
+
         // Si tiene acceso completo
         if (userPermisos.includes('*')) return true;
-        
+
         // Si tiene acceso específico al módulo
         return userPermisos.includes(modulo);
       },

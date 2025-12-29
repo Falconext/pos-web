@@ -77,7 +77,7 @@ const AutoScrollTable = ({
 
     return (
         <div className={styles.autoScrollTable}>
-            <div className="flex justify-between border-b border-[#e5e7eb] pb-2">
+            <div className="flex justify-between items-center px-4 py-3 border-b border-[#e5e7eb]">
                 <Button
                     onClick={startScrollLeft}
                     disabled={isScrollingLeft}

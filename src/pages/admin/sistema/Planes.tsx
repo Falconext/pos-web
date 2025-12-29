@@ -18,6 +18,7 @@ interface Plan {
     limiteUsuarios: number;
     maxImagenesProducto: number;
     maxBanners: number;
+    maxComprobantes: number;
     // Features
     esPrueba: boolean;
     tieneTienda: boolean;
@@ -44,6 +45,7 @@ const Planes = () => {
         limiteUsuarios: 1,
         maxImagenesProducto: 1,
         maxBanners: 0,
+        maxComprobantes: 100,
         esPrueba: false,
         tieneTienda: false,
         tieneBanners: false,
@@ -65,7 +67,7 @@ const Planes = () => {
         try {
             setLoading(true);
             const { data } = await apiClient.get('/plan');
-            setPlanes(Array.isArray(data) ? data : []);
+            setPlanes(Array.isArray(data) ? data : (data.data || []));
         } catch (error: any) {
             console.error(error);
             alert('Error al cargar planes', 'error');
@@ -84,6 +86,7 @@ const Planes = () => {
             limiteUsuarios: 1,
             maxImagenesProducto: 1,
             maxBanners: 0,
+            maxComprobantes: 100,
             esPrueba: false,
             tieneTienda: false,
             tieneBanners: false,
@@ -168,24 +171,35 @@ const Planes = () => {
         </div>
     );
 
-    const headerColumns = ['Nombre', 'Costo', 'Duración', 'Empresas', 'Estado', 'Tienda', 'Acciones'];
+    const headerColumns = ['Nombre', 'Costo', 'Duración', 'Max Compr.', 'Empresas', 'Estado', 'Tienda', 'Acciones'];
     const bodyData = planes.map(p => ({
         'Nombre': <div className="font-medium text-gray-900">{p.nombre}<div className="text-xs text-gray-500">{p.descripcion}</div></div>,
         'Costo': `S/ ${Number(p.costo).toFixed(2)}`,
         'Duración': `${p.duracionDias} días`,
+        'Max Compr.': <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-medium">{p.maxComprobantes || 100}</span>,
         'Empresas': <span className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-600 font-medium">{p._count?.empresas || 0} asignadas</span>,
         'Estado': p.esPrueba ? <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded text-xs">Prueba</span> : <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs">Comercial</span>,
         'Tienda': p.tieneTienda
             ? <Icon icon="mdi:check-circle" className="text-green-500" width={20} />
             : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
         'Acciones': (
-            <div className="flex gap-2">
-                <Button color="secondary" onClick={() => handleOpenEdit(p)} className="p-1 min-w-0">
-                    <Icon icon="mdi:pencil" width={18} />
-                </Button>
-                <Button color="danger" onClick={() => confirmDelete(p.id)} className="p-1 min-w-0">
-                    <Icon icon="mdi:trash-can" width={18} />
-                </Button>
+            <div className="flex gap-3">
+                <button
+                    type="button"
+                    onClick={() => handleOpenEdit(p)}
+                    className="p-1 hover:opacity-70 transition-opacity cursor-pointer"
+                    title="Editar"
+                >
+                    <Icon icon="mdi:pencil" width={20} height={20} style={{ color: '#19A249' }} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => confirmDelete(p.id)}
+                    className="p-1 hover:opacity-70 transition-opacity cursor-pointer"
+                    title="Eliminar"
+                >
+                    <Icon icon="mdi:trash-can" width={20} height={20} style={{ color: '#EC5F4F' }} />
+                </button>
             </div>
         )
     }));
@@ -220,9 +234,10 @@ const Planes = () => {
                 closeModal={() => setIsModalOpen(false)}
                 title={isEdit ? 'Editar Plan' : 'Nuevo Plan'}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2 md:col-span-1">
                         <InputPro
+                            isLabel
                             label="Nombre del Plan"
                             name="nombre"
                             value={form.nombre}
@@ -232,6 +247,7 @@ const Planes = () => {
                     </div>
                     <div className="col-span-2 md:col-span-1">
                         <InputPro
+                            isLabel
                             label="Costo (S/)"
                             name="costo"
                             type="number"
@@ -241,6 +257,7 @@ const Planes = () => {
                     </div>
                     <div className="col-span-2">
                         <InputPro
+                            isLabel
                             label="Descripción"
                             name="descripcion"
                             value={form.descripcion}
@@ -250,6 +267,7 @@ const Planes = () => {
                     </div>
                     <div className="col-span-2 md:col-span-1">
                         <InputPro
+                            isLabel
                             label="Duración (Días)"
                             name="duracionDias"
                             type="number"
@@ -259,11 +277,22 @@ const Planes = () => {
                     </div>
                     <div className="col-span-2 md:col-span-1">
                         <InputPro
+                            isLabel
                             label="Límite Usuarios"
                             name="limiteUsuarios"
                             type="number"
                             value={form.limiteUsuarios}
                             onChange={(e) => setForm({ ...form, limiteUsuarios: Number(e.target.value) })}
+                        />
+                    </div>
+                    <div className="col-span-2 md:col-span-1">
+                        <InputPro
+                            isLabel
+                            label="Máx. Comprobantes/mes"
+                            name="maxComprobantes"
+                            type="number"
+                            value={form.maxComprobantes}
+                            onChange={(e) => setForm({ ...form, maxComprobantes: Number(e.target.value) })}
                         />
                     </div>
 
@@ -283,6 +312,7 @@ const Planes = () => {
                     {form.tieneTienda && (
                         <div className="col-span-2 grid grid-cols-2 gap-4 mt-2 bg-blue-50 p-4 rounded-lg">
                             <InputPro
+                                isLabel
                                 label="Máx. Banners"
                                 name="maxBanners"
                                 type="number"
@@ -290,6 +320,7 @@ const Planes = () => {
                                 onChange={(e) => setForm({ ...form, maxBanners: Number(e.target.value) })}
                             />
                             <InputPro
+                                isLabel
                                 label="Máx. Img/Producto"
                                 name="maxImagenesProducto"
                                 type="number"
@@ -300,7 +331,7 @@ const Planes = () => {
                     )}
                 </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="flex justify-end gap-2 p-4 pt-0 mt-0">
                     <Button onClick={() => setIsModalOpen(false)} color="secondary" outline>Cancelar</Button>
                     <Button onClick={handleSubmit} color="primary" disabled={loading}>{loading ? 'Guardando...' : 'Guardar Plan'}</Button>
                 </div>

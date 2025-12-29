@@ -65,6 +65,13 @@ interface EditFormData {
   fechaExpiracion: string;
   providerToken?: string;
   providerId?: string;
+  usuario?: {
+    nombre?: string;
+    email?: string;
+    password?: string;
+    dni?: string;
+    celular?: string;
+  };
 }
 
 export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSaved }: EmpresaFormModalProps) {
@@ -117,6 +124,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     fechaExpiracion: '',
     providerToken: '',
     providerId: '',
+    usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
   const [createData, setCreateData] = useState<CreateFormData>(initialCreate);
@@ -140,20 +148,15 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     }
   }, [open, isEdit, empresaId, getRubros, getUbigeos, getPlanes, obtenerEmpresa, initialCreate]);
 
-  // Reset estados al cerrar el modal para evitar "fantasmas" entre aperturas
-  useEffect(() => {
-    if (!open) {
-      setLogoPreview('');
-      setCreateData(initialCreate);
-      setEditData(initialEdit);
-      setErrors({});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  // Resto del código...
 
   // Populate edit form when empresa loads
   useEffect(() => {
     if (open && isEdit && empresa && empresaId && empresa.id === empresaId) {
+      const adminUser = (empresa as any).usuarios && (empresa as any).usuarios.length > 0
+        ? (empresa as any).usuarios[0]
+        : {};
+
       setEditData({
         id: empresa.id,
         ruc: empresa.ruc,
@@ -171,6 +174,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         fechaExpiracion: empresa.fechaExpiracion.split('T')[0],
         providerToken: (empresa as any).providerToken || '',
         providerId: (empresa as any).providerId || '',
+        usuario: {
+          nombre: adminUser.nombre || '',
+          email: adminUser.email || '',
+          dni: adminUser.dni || '',
+          celular: adminUser.celular || '',
+          password: '', // Password empty by default
+        }
       });
       setInitialEditPlanId(empresa.plan?.id || 0);
       // Resetear y asignar logo según la empresa actual
@@ -231,7 +241,18 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target as any;
     if (isEdit) {
-      setEditData(prev => ({ ...prev, [name]: value } as any));
+      if (name.startsWith('usuario.')) {
+        const field = name.split('.')[1];
+        setEditData(prev => ({
+          ...prev,
+          usuario: {
+            ...prev.usuario,
+            [field]: value
+          }
+        }));
+      } else {
+        setEditData(prev => ({ ...prev, [name]: value } as any));
+      }
     } else {
       if (name.startsWith('usuario.')) {
         const field = name.split('.')[1];
@@ -364,9 +385,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
             ].map((t: any) => (
               <button
                 key={t.id}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
-                  activeTab === t.id ? 'bg-white shadow border border-gray-200 font-semibold' : 'hover:bg-white'
-                }`}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${activeTab === t.id ? 'bg-white shadow border border-gray-200 font-semibold' : 'hover:bg-white'
+                  }`}
                 onClick={() => setActiveTab(t.id)}
               >
                 {t.label}
@@ -385,7 +405,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
                   <InputPro name="nombreComercial" label="Nombre Comercial" isLabel value={isEdit ? editData.nombreComercial : createData.nombreComercial} onChange={handleChange} error={errors.nombreComercial} />
                   <Select name="rubroId" label="Rubro" options={rubrosOptions} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
-                  <Select error={() => {}} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
+                  <Select error={() => { }} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
                   <div className="md:col-span-2">
                     <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />
                   </div>
@@ -461,8 +481,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                         >
                           {isEdit
                             ? (initialEditPlanId !== undefined && initialEditPlanId !== editData.planId
-                                ? 'Guardar cambios para configurar'
-                                : ((empresa as any)?.slugTienda ? 'Gestionar tienda' : 'Configurar tienda'))
+                              ? 'Guardar cambios para configurar'
+                              : ((empresa as any)?.slugTienda ? 'Gestionar tienda' : 'Configurar tienda'))
                             : 'Guardar y configurar'}
                         </Button>
                       )
@@ -500,6 +520,26 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   <InputPro name="usuario.celular" label="Celular" isLabel value={createData.usuario.celular} onChange={handleChange} error={errors['usuario.celular']} />
                   <div className="md:col-span-2">
                     <InputPro name="usuario.password" label="Contraseña" type="password" isLabel value={createData.usuario.password} onChange={handleChange} error={errors['usuario.password']} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'admin' && isEdit && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">Nota:</span> Aquí puedes actualizar los datos del administrador principal de la empresa.
+                    Si dejas la contraseña en blanco, se mantendrá la actual.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputPro name="usuario.nombre" label="Nombre Completo" isLabel value={editData.usuario?.nombre || ''} onChange={handleChange} />
+                  <InputPro name="usuario.dni" label="DNI" isLabel value={editData.usuario?.dni || ''} onChange={handleChange} maxLength={8} />
+                  <InputPro name="usuario.email" label="Email" type="email" isLabel value={editData.usuario?.email || ''} onChange={handleChange} />
+                  <InputPro name="usuario.celular" label="Celular" isLabel value={editData.usuario?.celular || ''} onChange={handleChange} />
+                  <div className="md:col-span-2">
+                    <InputPro name="usuario.password" label="Nueva Contraseña (dejar en blanco para mantener)" type="password" isLabel value={editData.usuario?.password || ''} onChange={handleChange} />
                   </div>
                 </div>
               </div>

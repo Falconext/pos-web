@@ -188,6 +188,9 @@ export default function AdminLayout() {
               <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-global" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
                 <Icon icon="solar:database-bold-duotone" className="mr-3 text-xl" /> Catálogo Global
               </NavLink>
+              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:card-bold-duotone" className="mr-3 text-xl" /> Planes
+              </NavLink>
             </>
           )}
 
