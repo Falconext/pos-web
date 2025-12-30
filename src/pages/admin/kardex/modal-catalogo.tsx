@@ -157,7 +157,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[90vh] flex flex-col">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-8xl h-[90vh] flex flex-col">
                 {/* Header */}
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
                     <div>

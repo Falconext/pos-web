@@ -49,8 +49,8 @@ export function DashboardPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold mb-4">Información</h2>
             <p className="text-gray-500">
-              {auth?.rol === 'ADMIN_SISTEMA' 
-                ? 'Administrador del Sistema' 
+              {auth?.rol === 'ADMIN_SISTEMA'
+                ? 'Administrador del Sistema'
                 : `Empresa: ${auth?.empresa?.razonSocial}`}
             </p>
           </div>

@@ -167,7 +167,7 @@ export default function AdminLayout() {
       {/* Sidebar/Drawer */}
       <aside className={`fixed inset-y-0 left-0 bg-white border-r border-gray-200 p-5 space-y-6 h-screen overflow-y-auto w-[85%] max-w-[280px] transform transition-transform duration-300 ease-in-out md:static md:w-[280px] md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
         <div className="flex items-center gap-3 px-2 mb-8">
-          <div className={`w-10 h-10 ${theme.sidebarRadius} ${theme.primaryBg} flex items-center justify-center shadow-lg ${theme.sidebarLogoShadow} overflow-hidden`}>
+          <div className={`w-10 h-10 flex items-center justify-center rounded-full shadow-lg ${theme.sidebarLogoShadow} overflow-hidden`}>
             <img src="/fnlogo.png" alt="Falconext" className="w-7 h-7 object-contain" />
           </div>
           <div>

@@ -129,7 +129,7 @@ export default function ProductoDetalle() {
 
   return (
     <div className={`min-h-screen bg-gray-50 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-8xl mx-auto px-4 py-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-black mb-6">
           <Icon icon="mdi:arrow-left" /> Volver
         </button>

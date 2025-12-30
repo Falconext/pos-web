@@ -405,7 +405,7 @@ const CreateEmpresa = () => {
           </div>
         )}
 
-        <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm">
+        <div className="max-w-8xl mx-auto bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Ingresa los datos de la empresa</h2>
 
           <form onSubmit={handleSubmit} className="space-y-8">
