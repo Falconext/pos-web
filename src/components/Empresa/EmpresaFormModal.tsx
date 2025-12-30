@@ -162,7 +162,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         ruc: empresa.ruc,
         razonSocial: empresa.razonSocial,
         direccion: empresa.direccion,
-        planId: empresa.plan?.id || 0,
+        planId: Number(empresa?.plan?.id || (empresa as any)?.planId || 0),
         tipoEmpresa: (empresa as any).tipoEmpresa || 'FORMAL',
         departamento: empresa.departamento || '',
         provincia: empresa.provincia || '',
@@ -199,6 +199,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const ubigeosOptions = ubigeos.map((u: any) => ({ id: u.codigo, value: `${u.departamento} - ${u.provincia} - ${u.distrito}` }));
   const selectedPlan: any = useMemo(() => {
     const id = isEdit ? editData.planId : createData.planId;
+    console.log('[DEBUG] selectedPlan - isEdit:', isEdit, 'editData.planId:', editData.planId, 'createData.planId:', createData.planId, 'looking for id:', id);
     return (planes as any[] || []).find((p: any) => p.id === id);
   }, [planes, isEdit, editData.planId, createData.planId]);
 
@@ -207,7 +208,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     return (planes as any[] || []).filter((p: any) => !!p?.tieneTienda);
   }, [planes]);
 
-  console.log(storePlans)
+  console.log('[DEBUG] empresa:', empresa, 'empresa.plan:', empresa?.plan, 'editData.planId:', editData.planId);
   // Seleccionar automáticamente un plan con tienda virtual
   const selectFirstStorePlan = () => {
     if (!storePlans || storePlans.length === 0) {
@@ -430,7 +431,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 {/* Planes como tarjetas */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {planes && Array.isArray(planes) && planes.map((plan: any) => {
-                    const selected = (isEdit ? editData.planId : createData.planId) === plan.id;
+                    const selectedPlanId = Number(isEdit ? editData.planId : createData.planId);
+                    const selected = selectedPlanId === Number(plan.id);
                     return (
                       <div key={plan.id} onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))} className={`p-4 border rounded-lg cursor-pointer transition ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}>
                         <div className="font-semibold text-gray-800">{plan.nombre}</div>

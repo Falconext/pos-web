@@ -26,6 +26,7 @@ interface Plan {
     tieneGaleria: boolean;
     tieneCulqi: boolean;
     tieneDeliveryGPS: boolean;
+    tieneTicketera: boolean;
     _count?: { empresas: number };
 }
 
@@ -52,6 +53,7 @@ const Planes = () => {
         tieneGaleria: false,
         tieneCulqi: false,
         tieneDeliveryGPS: false,
+        tieneTicketera: false,
     });
 
     const [modalConfirmOpen, setModalConfirmOpen] = useState(false);
@@ -93,6 +95,7 @@ const Planes = () => {
             tieneGaleria: false,
             tieneCulqi: false,
             tieneDeliveryGPS: false,
+            tieneTicketera: false,
         });
         setIsModalOpen(true);
     };
@@ -171,16 +174,22 @@ const Planes = () => {
         </div>
     );
 
-    const headerColumns = ['Nombre', 'Costo', 'Duración', 'Max Compr.', 'Empresas', 'Estado', 'Tienda', 'Acciones'];
+    const headerColumns = ['Nombre', 'Costo', 'Duración', 'Anual', 'Max Compr.', 'Empresas', 'Estado', 'Tienda', 'Ticketera', 'Acciones'];
     const bodyData = planes.map(p => ({
         'Nombre': <div className="font-medium text-gray-900">{p.nombre}<div className="text-xs text-gray-500">{p.descripcion}</div></div>,
         'Costo': `S/ ${Number(p.costo).toFixed(2)}`,
         'Duración': `${p.duracionDias} días`,
+        'Anual': p.duracionDias >= 360
+            ? <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">Anual</span>
+            : <span className="text-gray-500 text-xs">Mensual</span>,
         'Max Compr.': <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-medium">{p.maxComprobantes || 100}</span>,
         'Empresas': <span className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-600 font-medium">{p._count?.empresas || 0} asignadas</span>,
         'Estado': p.esPrueba ? <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded text-xs">Prueba</span> : <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs">Comercial</span>,
         'Tienda': p.tieneTienda
             ? <Icon icon="mdi:check-circle" className="text-green-500" width={20} />
+            : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
+        'Ticketera': p.tieneTicketera
+            ? <Icon icon="mdi:printer" className="text-blue-500" width={20} />
             : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
         'Acciones': (
             <div className="flex gap-3">
@@ -298,13 +307,35 @@ const Planes = () => {
 
                     <div className="col-span-2 mt-4 bg-gray-50 p-4 rounded-lg">
                         <h3 className="font-semibold text-gray-700 mb-3 block">Características y Funciones</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                            <Toggle label="Plan de Prueba (Gratuito)" value={form.esPrueba || false} onChange={v => setForm({ ...form, esPrueba: v })} />
-                            <Toggle label="Tienda Virtual" value={form.tieneTienda || false} onChange={v => setForm({ ...form, tieneTienda: v })} />
-                            <Toggle label="Banners Publicitarios" value={form.tieneBanners || false} onChange={v => setForm({ ...form, tieneBanners: v })} />
-                            <Toggle label="Galería de Imágenes" value={form.tieneGaleria || false} onChange={v => setForm({ ...form, tieneGaleria: v })} />
-                            <Toggle label="Pasarela Pagos (Culqi)" value={form.tieneCulqi || false} onChange={v => setForm({ ...form, tieneCulqi: v })} />
-                            <Toggle label="Delivery GPS Tracker" value={form.tieneDeliveryGPS || false} onChange={v => setForm({ ...form, tieneDeliveryGPS: v })} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div className="space-y-1">
+                                <Toggle label="Plan de Prueba (Gratuito)" value={form.esPrueba || false} onChange={v => setForm({ ...form, esPrueba: v })} />
+                                <p className="text-xs text-gray-500">Sin costo, ideal para demos y evaluación</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Toggle label="Tienda Virtual" value={form.tieneTienda || false} onChange={v => setForm({ ...form, tieneTienda: v })} />
+                                <p className="text-xs text-gray-500">Catálogo web, combos y pedidos online</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Toggle label="Banners Publicitarios" value={form.tieneBanners || false} onChange={v => setForm({ ...form, tieneBanners: v })} />
+                                <p className="text-xs text-gray-500">Carrusel de promociones en tienda virtual</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Toggle label="Galería de Imágenes" value={form.tieneGaleria || false} onChange={v => setForm({ ...form, tieneGaleria: v })} />
+                                <p className="text-xs text-gray-500">Múltiples imágenes por producto</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Toggle label="Pasarela Pagos (Culqi)" value={form.tieneCulqi || false} onChange={v => setForm({ ...form, tieneCulqi: v })} />
+                                <p className="text-xs text-gray-500">Pagos con tarjeta y Yape en la tienda</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Toggle label="Delivery GPS Tracker" value={form.tieneDeliveryGPS || false} onChange={v => setForm({ ...form, tieneDeliveryGPS: v })} />
+                                <p className="text-xs text-gray-500">Seguimiento en tiempo real de pedidos</p>
+                            </div>
+                            <div className="space-y-1">
+                                <Toggle label="Ticketera (Impresión Térmica)" value={form.tieneTicketera || false} onChange={v => setForm({ ...form, tieneTicketera: v })} />
+                                <p className="text-xs text-gray-500">Imprime tickets y recibos en impresora POS</p>
+                            </div>
                         </div>
                     </div>
 

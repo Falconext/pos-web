@@ -35,6 +35,8 @@ interface Plan {
   descripcion?: string;
   limiteUsuarios?: number;
   costo?: number;
+  tieneTienda?: boolean;
+  tieneTicketera?: boolean;
 }
 
 interface Rubro {
@@ -130,12 +132,12 @@ interface EmpresasState {
   suscripcion: Suscripcion | null;
   loading: boolean;
   error: string | null;
-  
+
   // Paginación
   currentPage: number;
   totalPages: number;
   totalEmpresas: number;
-  
+
   // Acciones - Empresas
   listarEmpresas: (params?: ListEmpresaDto) => Promise<void>;
   crearEmpresa: (data: CreateEmpresaDto) => Promise<Empresa>;
@@ -144,10 +146,10 @@ interface EmpresasState {
   cambiarEstadoEmpresa: (id: number, estado: 'ACTIVO' | 'INACTIVO') => Promise<void>;
   obtenerMiEmpresa: () => Promise<void>;
 
-  
+
   // Acciones - Suscripciones
   obtenerSuscripcion: () => Promise<void>;
-  
+
   // Acciones auxiliares
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -174,14 +176,14 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
   listarEmpresas: async (params = {}) => {
     set({ loading: true, error: null });
     try {
-      const response = await apiClient.get<EmpresasListResponse>('/empresa/listar', { 
+      const response = await apiClient.get<EmpresasListResponse>('/empresa/listar', {
         params: {
           page: 1,
           limit: 10,
           ...params
         }
       });
-      const { data} : any = response;
+      const { data }: any = response;
       set({
         empresas: data.data.empresas,
         currentPage: data.data.page,
@@ -190,9 +192,9 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
         loading: false
       });
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al cargar empresas', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al cargar empresas',
+        loading: false
       });
     }
   },
@@ -201,13 +203,13 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await apiClient.post<Empresa>('/empresa/crear', data);
-      
+
       set({ loading: false });
       return response.data;
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al crear empresa', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al crear empresa',
+        loading: false
       });
       throw error;
     }
@@ -216,13 +218,13 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
   obtenerEmpresa: async (id: number) => {
     set({ loading: true, error: null });
     try {
-      const response : any = await apiClient.get<Empresa>(`/empresa/${id}`);
+      const response: any = await apiClient.get<Empresa>(`/empresa/${id}`);
       console.log(response)
       set({ empresa: response?.data?.data, loading: false });
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al obtener empresa', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al obtener empresa',
+        loading: false
       });
     }
   },
@@ -232,7 +234,7 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     try {
       // Preparar datos para envío como JSON
       const updateData: any = { ...data };
-      
+
       // Si hay logo como File, convertir a base64
       if (data.logo instanceof File) {
         const reader = new FileReader();
@@ -248,22 +250,22 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
           'Content-Type': 'application/json'
         }
       });
-      
+
       // Actualizar la empresa en la lista si existe
       const { empresas } = get();
-      const updatedEmpresas = empresas.map(emp => 
+      const updatedEmpresas = empresas.map(emp =>
         emp.id === data.id ? response.data : emp
       );
-      
-      set({ 
+
+      set({
         empresas: updatedEmpresas,
         empresa: response.data,
-        loading: false 
+        loading: false
       });
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al actualizar empresa', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al actualizar empresa',
+        loading: false
       });
       throw error;
     }
@@ -273,21 +275,21 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await apiClient.patch(`/empresa/${id}/estado`, { estado });
-      
+
       // Actualizar la empresa en la lista
       const { empresas } = get();
-      const updatedEmpresas = empresas.map(emp => 
+      const updatedEmpresas = empresas.map(emp =>
         emp.id === id ? { ...emp, estado } : emp
       );
-      
-      set({ 
+
+      set({
         empresas: updatedEmpresas,
-        loading: false 
+        loading: false
       });
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al cambiar estado', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al cambiar estado',
+        loading: false
       });
       throw error;
     }
@@ -299,9 +301,9 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
       const response = await apiClient.get<Empresa>('/empresa/mia');
       set({ miEmpresa: response.data, loading: false });
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al obtener mi empresa', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al obtener mi empresa',
+        loading: false
       });
     }
   },
@@ -313,9 +315,9 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
       const response = await apiClient.get<Suscripcion>('/suscripcion');
       set({ suscripcion: response.data, loading: false });
     } catch (error: any) {
-      set({ 
-        error: error?.response?.data?.message || 'Error al obtener suscripción', 
-        loading: false 
+      set({
+        error: error?.response?.data?.message || 'Error al obtener suscripción',
+        loading: false
       });
     }
   },

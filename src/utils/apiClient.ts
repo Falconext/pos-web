@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '@/zustand/auth'
 
-const BASE_URL = import.meta.env.VITE_API_URL
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.falconext.pe/api'
 
 let isRefreshing = false
 let failedQueue: Array<{

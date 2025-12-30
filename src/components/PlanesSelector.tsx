@@ -7,6 +7,8 @@ interface Plan {
   descripcion?: string;
   limiteUsuarios?: number;
   costo?: number;
+  tieneTienda?: boolean;
+  tieneTicketera?: boolean;
 }
 
 interface PlanesSelectorProps {
@@ -84,21 +86,21 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
       <label className="block text-sm font-medium text-gray-700">
         Seleccionar Plan de Suscripción *
       </label>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {planes.map((plan) => {
           const colors = getPlanColor(plan.nombre);
           const icon = getPlanIcon(plan.nombre);
           const isSelected = selectedPlanId === plan.id;
           const isHovered = hoveredPlan === plan.id;
-          
+
           return (
             <div
               key={plan.id}
               className={`
                 relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200
-                ${isSelected 
-                  ? `${colors.border} ${colors.bg} ring-2 ring-blue-500 ring-opacity-50` 
+                ${isSelected
+                  ? `${colors.border} ${colors.bg} ring-2 ring-blue-500 ring-opacity-50`
                   : `border-gray-200 bg-white hover:${colors.bg} hover:${colors.border}`
                 }
                 ${isHovered ? 'transform scale-105 shadow-lg' : 'shadow-sm'}
@@ -113,18 +115,18 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
                   <Icon icon="mdi:check" className="w-4 h-4" />
                 </div>
               )}
-              
+
               {/* Header del plan */}
               <div className="text-center mb-3">
-                <Icon 
-                  icon={icon} 
-                  className={`mx-auto text-3xl mb-2 ${colors.accent}`} 
+                <Icon
+                  icon={icon}
+                  className={`mx-auto text-3xl mb-2 ${colors.accent}`}
                 />
                 <h3 className={`font-bold text-lg ${colors.text}`}>
                   {plan.nombre}
                 </h3>
               </div>
-              
+
               {/* Precio */}
               <div className="text-center mb-3">
                 <div className={`text-2xl font-bold ${colors.accent}`}>
@@ -132,7 +134,7 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
                 </div>
                 <div className="text-sm text-gray-500">por mes</div>
               </div>
-              
+
               {/* Características */}
               <div className="space-y-2 text-sm">
                 <div className="flex items-center text-gray-600">
@@ -141,7 +143,7 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
                     {plan.limiteUsuarios ? `${plan.limiteUsuarios} usuarios` : 'Usuarios ilimitados'}
                   </span>
                 </div>
-                
+
                 {plan.descripcion && (
                   <div className="flex items-start text-gray-600">
                     <Icon icon="mdi:information-outline" className="mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -149,7 +151,7 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
                   </div>
                 )}
               </div>
-              
+
               {/* Botón de selección */}
               <div className="mt-4">
                 <button
@@ -168,7 +170,7 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
           );
         })}
       </div>
-      
+
       {/* Error message */}
       {error && (
         <p className="text-sm text-red-600 mt-2">{error}</p>
