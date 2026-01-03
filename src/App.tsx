@@ -19,6 +19,7 @@ import PerfilIndex from './pages/admin/perfil/Index'
 import KardexIndex from './pages/admin/kardex/Index'
 import InventarioDashboard from './pages/admin/kardex/Dashboard'
 import KardexProductos from './pages/admin/kardex/Productos'
+import Lotes from './pages/admin/kardex/Lotes'
 import UsuariosIndex from './pages/admin/usuarios/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
@@ -77,6 +78,7 @@ function App() {
           <Route path="facturacion/nuevo" element={<Invoice />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
+          <Route path="kardex/lotes" element={<Lotes />} />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
           <Route path="usuarios" element={<UsuariosIndex />} />

@@ -9,6 +9,7 @@ import DataTable from "@/components/Datatable";
 import InputPro from "@/components/InputPro";
 import Pagination from "@/components/Pagination";
 import ModalConfirm from "@/components/ModalConfirm";
+import GeneradorProductos from "./GeneradorProductos";
 
 interface Props {
     isOpen: boolean;
@@ -121,12 +122,33 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
             setImporting(true);
             setIsConfirmOpen(false);
             const { data } = await apiClient.post('/plantillas/importar-todo');
-            const msg = `${data.message}: ${data.imported} nuevos, ${data.updated || 0} imágenes actualizadas`;
+            const resp = data?.data || data;
+            const imported = resp.imported || 0;
+            const updated = resp.updated || 0;
+            const msg = `${resp.message}. Se agregaron ${imported} productos nuevos y se actualizaron ${updated}.`;
             useAlertStore.getState().alert(msg, "success");
             onSuccess();
             onClose();
         } catch (error: any) {
             useAlertStore.getState().alert(error.response?.data?.message || "Error al importar todo", "error");
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    const [activeTab, setActiveTab] = useState<'catalogo' | 'generador'>('catalogo');
+
+    const handleImportAI = async (products: any[]) => {
+        try {
+            setImporting(true);
+            const { data } = await apiClient.post('/plantillas/importar-data', { productos: products });
+            useAlertStore.getState().alert(`${data.imported} productos generados e importados correctamente`, "success");
+            onSuccess();
+            onClose();
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.response?.data?.message || "Error al importar productos IA", "error");
         } finally {
             setImporting(false);
         }
@@ -157,123 +179,161 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-8xl h-[90vh] flex flex-col">
-                {/* Header */}
-                <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800">
-                            Catálogo de Productos - {auth?.empresa?.rubro?.nombre}
-                        </h2>
-                        <p className="text-sm text-gray-500">Selecciona los productos que deseas importar a tu inventario</p>
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
+                {/* Header with Tabs */}
+                <div className="bg-gray-50 border-b">
+                    <div className="flex justify-between items-center p-4 pb-0">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800">
+                                Catálogo de Productos
+                            </h2>
+                            <p className="text-sm text-gray-500 mb-3">Gestiona tu inventario de {auth?.empresa?.rubro?.nombre}</p>
+                        </div>
+                        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 mb-3">
+                            <Icon icon="mdi:close" width={28} />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
-                        <Icon icon="mdi:close" width={28} />
-                    </button>
+
+                    {/* Tabs */}
+                    <div className="flex px-4 gap-6">
+                        <button
+                            onClick={() => setActiveTab('catalogo')}
+                            className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'catalogo'
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            <Icon icon="solar:box-bold" className="inline mr-2" />
+                            Catálogo Global
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('generador')}
+                            className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'generador'
+                                ? 'border-purple-600 text-purple-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            <Icon icon="solar:magic-stick-3-bold" className="inline mr-2" />
+                            Generador con IA <span className="text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded ml-1">Beta</span>
+                        </button>
+                    </div>
                 </div>
 
-                {/* Filters */}
-                <div className="p-4 border-b flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div className="w-full md:w-1/3">
-                        <InputPro
-                            name="search"
-                            label="Buscar producto"
-                            placeholder="Nombre, código o descripción..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">
-                            {selectedIds.length} seleccionados
-                        </span>
-                        {selectedIds.length > 0 && (
-                            <button
-                                onClick={() => setSelectedIds([])}
-                                className="text-xs text-red-500 hover:text-red-700 underline"
-                            >
-                                Limpiar selección
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Table Content */}
-                <div className="flex-1 overflow-hidden p-4 bg-gray-50 flex flex-col">
-                    <div className="bg-white rounded-lg border shadow-sm flex-1 overflow-hidden relative">
-                        {loading && (
-                            <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                {/* Content */}
+                <div className="flex-1 overflow-hidden bg-gray-50">
+                    {activeTab === 'catalogo' ? (
+                        <div className="flex flex-col h-full">
+                            {/* Filters */}
+                            <div className="p-4 border-b bg-white flex flex-col md:flex-row gap-4 items-center justify-between">
+                                <div className="w-full md:w-1/3">
+                                    <InputPro
+                                        name="search"
+                                        label="Buscar producto"
+                                        placeholder="Nombre, código o descripción..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600 font-medium">
+                                        {selectedIds.length} seleccionados
+                                    </span>
+                                    {selectedIds.length > 0 && (
+                                        <button
+                                            onClick={() => setSelectedIds([])}
+                                            className="text-xs text-red-500 hover:text-red-700 underline"
+                                        >
+                                            Limpiar selección
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        )}
 
-                        <div className="h-full overflow-auto">
-                            {plantillas.length > 0 ? (
-                                <DataTable
-                                    headerColumns={headerColumns}
-                                    bodyData={bodyData}
-                                />
-                            ) : (
-                                !loading && (
-                                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                                        <Icon icon="mdi:package-variant-closed" width={48} className="mb-2 opacity-50" />
-                                        <p>No se encontraron productos en el catálogo</p>
+                            {/* Table */}
+                            <div className="flex-1 overflow-hidden p-4">
+                                <div className="bg-white rounded-lg border shadow-sm h-full overflow-hidden relative flex flex-col">
+                                    {loading && (
+                                        <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1 overflow-auto">
+                                        {plantillas.length > 0 ? (
+                                            <DataTable
+                                                headerColumns={headerColumns}
+                                                bodyData={bodyData}
+                                            />
+                                        ) : (
+                                            !loading && (
+                                                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                                                    <Icon icon="mdi:package-variant-closed" width={48} className="mb-2 opacity-50" />
+                                                    <p>No se encontraron productos en el catálogo</p>
+                                                </div>
+                                            )
+                                        )}
                                     </div>
-                                )
-                            )}
-                        </div>
-                    </div>
+                                </div>
+                            </div>
 
-                    {/* Pagination */}
-                    {total > limit && (
-                        <div className="mt-4 flex justify-center">
-                            <Pagination
-                                pages={Array.from({ length: Math.ceil(total / limit) }, (_, i) => i + 1)}
-                                currentPage={page}
-                                setcurrentPage={setPage}
-                                indexOfFirstItem={(page - 1) * limit}
-                                indexOfLastItem={Math.min(page * limit, total)}
-                                total={total}
-                            />
+                            {/* Pagination */}
+                            {total > limit && (
+                                <div className="p-2 bg-white border-t flex justify-center">
+                                    <Pagination
+                                        pages={Array.from({ length: Math.ceil(total / limit) }, (_, i) => i + 1)}
+                                        currentPage={page}
+                                        setcurrentPage={setPage}
+                                        indexOfFirstItem={(page - 1) * limit}
+                                        indexOfLastItem={Math.min(page * limit, total)}
+                                        total={total}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Footer Actions */}
+                            <div className="p-4 border-t flex justify-between gap-3 bg-white">
+                                <div>
+                                    <Button
+                                        onClick={handleImportAllClick}
+                                        color="secondary"
+                                        disabled={importing || plantillas.length === 0}
+                                        className="bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
+                                    >
+                                        {importing ? '...' : (
+                                            <>
+                                                <Icon icon="mdi:database-arrow-down-outline" className="mr-2" />
+                                                Importar TODO el catálogo
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button onClick={onClose} color="secondary" outline>
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        onClick={handleImport}
+                                        color="primary"
+                                        disabled={selectedIds.length === 0 || importing}
+                                    >
+                                        {importing ? (
+                                            <><span className="animate-spin mr-2">⏳</span> Importando...</>
+                                        ) : (
+                                            <>
+                                                <Icon icon="mdi:import" className="mr-2" />
+                                                Importar ({selectedIds.length})
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
+                    ) : (
+                        <GeneradorProductos
+                            onImport={handleImportAI}
+                            onCancel={() => setActiveTab('catalogo')}
+                        />
                     )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t flex justify-between gap-3 bg-white rounded-b-lg">
-                    <div>
-                        <Button
-                            onClick={handleImportAllClick}
-                            color="secondary"
-                            disabled={importing || plantillas.length === 0}
-                            className="bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
-                        >
-                            {importing ? '...' : (
-                                <>
-                                    <Icon icon="mdi:database-arrow-down-outline" className="mr-2" />
-                                    Importar TODO el catálogo
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button onClick={onClose} color="secondary" outline>
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={handleImport}
-                            color="primary"
-                            disabled={selectedIds.length === 0 || importing}
-                        >
-                            {importing ? (
-                                <><span className="animate-spin mr-2">⏳</span> Importando...</>
-                            ) : (
-                                <>
-                                    <Icon icon="mdi:import" className="mr-2" />
-                                    Importar ({selectedIds.length})
-                                </>
-                            )}
-                        </Button>
-                    </div>
                 </div>
             </div>
 

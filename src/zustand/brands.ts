@@ -15,11 +15,19 @@ export interface IBrandsState {
   addBrand: (data: { nombre: string }) => Promise<void>;
   editBrand: (data: { id: number; nombre: string }) => Promise<void>;
   deleteBrand: (id: number) => Promise<void>;
+  formValues: { id: number; nombre: string };
+  isEdit: boolean;
+  setFormValues: (data: { id: number; nombre: string }) => void;
+  setIsEdit: (value: boolean) => void;
 }
 
 export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
   brands: [],
   totalBrands: 0,
+  formValues: { id: 0, nombre: "" },
+  isEdit: false,
+  setFormValues: (data: { id: number; nombre: string }) => set({ formValues: data }),
+  setIsEdit: (value: boolean) => set({ isEdit: value }),
 
   getAllBrands: async () => {
     try {

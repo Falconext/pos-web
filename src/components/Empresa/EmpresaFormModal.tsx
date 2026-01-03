@@ -405,13 +405,14 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
                   <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
                   <InputPro name="nombreComercial" label="Nombre Comercial" isLabel value={isEdit ? editData.nombreComercial : createData.nombreComercial} onChange={handleChange} error={errors.nombreComercial} />
-                  <Select name="rubroId" label="Rubro" options={rubrosOptions} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
+                  {/* @ts-ignore */}
+                  <Select name="rubroId" label="Rubro" options={rubrosOptions} value={isEdit ? rubrosOptions.find((r: any) => r.id === editData.rubroId)?.value : rubrosOptions.find((r: any) => r.id === createData.rubroId)?.value} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
                   <Select error={() => { }} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
                   <div className="md:col-span-2">
                     <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />
                   </div>
                   <div className="md:col-span-2">
-                    <Select name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
+                    <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>

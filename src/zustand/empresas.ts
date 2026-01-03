@@ -104,6 +104,8 @@ interface ListEmpresaDto {
   limit?: number;
   sort?: 'id' | 'ruc' | 'razonSocial' | 'fechaActivacion' | 'fechaExpiracion';
   order?: 'asc' | 'desc';
+  estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
+  tipoEmpresa?: 'FORMAL' | 'INFORMAL' | '';
 }
 
 interface EmpresasListResponse {

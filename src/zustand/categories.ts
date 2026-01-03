@@ -13,16 +13,27 @@ export interface ICategoriesState {
     // getDocument: (data: IDocument) => void
     addCategory: (data: IFormCategories) => void
     editCategory: (data: IFormCategories) => void
-    getAllCategories: (params: any,callback?: Function,
+    getAllCategories: (params: any, callback?: Function,
         allProperties?: boolean) => void
     // updateDocument: (data: any) => void
     deleteCategory: (data: IFormCategories) => void
+    formValues: IFormCategories;
+    isEdit: boolean;
+    setFormValues: (data: IFormCategories) => void;
+    setIsEdit: (value: boolean) => void;
 }
 
 export const useCategoriesStore = create<ICategoriesState>()(devtools((set, _get) => ({
     category: "",
-    categories: [], 
-    getAllCategories: async (params: any,  callback?: Function,
+    categories: [],
+    formValues: {
+        categoriaId: 0,
+        nombre: ""
+    },
+    isEdit: false,
+    setFormValues: (data: IFormCategories) => set({ formValues: data }),
+    setIsEdit: (value: boolean) => set({ isEdit: value }),
+    getAllCategories: async (params: any, callback?: Function,
         _allProperties?: boolean) => {
         try {
             // useAlertStore.setState({ loading: true })

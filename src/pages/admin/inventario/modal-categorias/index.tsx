@@ -18,14 +18,26 @@ interface IPropsProducts {
 
 const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProducts) => {
 
+    // Initial form constant
     const initialForm: IFormCategories = {
         categoriaId: 0,
         nombre: ""
     }
 
-    const [formValues, setFormValues] = useState(initialForm);
-    const [isEdit, setIsEdit] = useState<boolean>(false);
-    const { categories, addCategory, editCategory, deleteCategory, getAllCategories } = useCategoriesStore();
+    // Zustand Store
+    const {
+        categories,
+        addCategory,
+        editCategory,
+        deleteCategory,
+        getAllCategories,
+        formValues,
+        setFormValues,
+        isEdit,
+        setIsEdit
+    } = useCategoriesStore();
+
+    // Local UI state
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [currentPage, setcurrentPage] = useState(1);
     const [itemsPerPage, setitemsPerPage] = useState(50);
@@ -36,11 +48,10 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
 
     const validateForm = () => {
         const newErrors: any = {
-            // codigo: formValues?.codigo && formValues?.codigo.trim() !== "" ? "" : "El código del producto es obligatorio",
             nombre: formValues?.nombre && formValues?.nombre.trim() !== "" ? "" : "El nombre de categoría es obligatorio",
         };
         setErrors(newErrors);
-        return Object.values(newErrors).every((error) => !error); // Retorna `true` si no hay errores
+        return Object.values(newErrors).every((error) => !error);
     };
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -51,20 +62,31 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
     }
 
     useEffect(() => {
+        // Reset form when modal opens
+        if (isOpenModal) {
+            setFormValues(initialForm);
+            setIsEdit(false);
+            setErrors({ nombre: "" });
+        }
         getAllCategories({})
-    }, [])
+    }, [isOpenModal]) // Added isOpenModal to reset on open
 
     const handleGetCategory = (data: IFormCategories) => {
-        setFormValues(data)
+        console.log('[DEBUG] handleGetCategory data:', data);
+        setFormValues({
+            categoriaId: data.categoriaId,
+            nombre: data.nombre
+        })
         setIsEdit(true);
+        setErrors({ nombre: "" });
     }
 
-    console.log(formValues)
+    console.log('[DEBUG CATEGORY FORM]', formValues)
 
     const handleDeleteCategory = (data: IFormCategories) => {
         setFormValues({
-            ...formValues,
-            categoriaId: data.categoriaId
+            categoriaId: data.categoriaId,
+            nombre: data.nombre
         })
         setIsOpenModalConfirm(true)
     }
@@ -75,6 +97,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
             ...formValues,
             [name]: value
         });
+        if (errors.nombre) setErrors({ nombre: "" });
     };
 
     const actions: any =
@@ -98,14 +121,15 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
             return;
         }
 
-        if (formValues.categoriaId !== 0) {
-            console.log(formValues)
+        if (isEdit && formValues.categoriaId !== 0) {
             editCategory(formValues)
         } else {
-            console.log("hello")
             addCategory(formValues)
         }
+        // Store handles success alert, but we should reset form after success or keep it?
+        // Usually reset. 
         setFormValues(initialForm)
+        setIsEdit(false)
     }
 
     console.log(categories)
@@ -119,6 +143,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
     const confirmDeleteCategory = () => {
         deleteCategory(formValues)
         setFormValues(initialForm)
+        setIsEdit(false)
         setIsOpenModalConfirm(false)
     }
 
@@ -127,12 +152,22 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
             {isOpenModal && <Modal width="650px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar categoria" : "Nueva categoria"}>
                 <div className="px-6 mt-5 grid grid-cols-2 justify-between items-center border-b border-[#e5e7eb] pb-10">
                     <div className="">
-                        <InputPro autocomplete="off" value={formValues?.nombre} error={errors.nombre} name="nombre" onChange={handleChange} isLabel label="Nombre de la categoría" />
+                        <InputPro
+                            key={`input-cat-${formValues.categoriaId}`}
+                            autocomplete="off"
+                            value={formValues.nombre || ''}
+                            error={errors.nombre}
+                            name="nombre"
+                            onChange={handleChange}
+                            isLabel
+                            label="Nombre de la categoría"
+                        />
                     </div>
                     <div className="flex justify-end gap-5 mt-10 relative top-[-7px]">
                         <Button color="black" outline onClick={() => {
                             setIsEdit(false)
                             setFormValues(initialForm)
+                            setErrors({ nombre: "" })
                         }}>Limpiar</Button>
                         <Button color="secondary" onClick={handleSubmitCategory}>{isEdit ? "Editar" : "Guardar"}</Button>
                     </div>

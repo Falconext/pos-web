@@ -16,6 +16,7 @@ import { useBrandsStore } from '@/zustand/brands';
 import type { IBrand } from '@/zustand/brands';
 import { useModificadoresStore } from '@/zustand/modificadores';
 import type { GrupoModificador } from '@/zustand/modificadores';
+import { useRubroFeatures } from '@/utils/rubro-features';
 
 interface IPropsProducts {
     formValues: IFormProduct
@@ -67,6 +68,9 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         imagen: isRestaurante ? 'Imagen del plato' : 'Imagen del producto',
         precio: isRestaurante ? 'Precio (S/)' : 'Precio de Venta (S/)',
     };
+
+    // Detectar funcionalidades según rubro
+    const features = useRubroFeatures(auth?.empresa?.rubro?.nombre);
 
     // Imagen principal
     const [filePrincipal, setFilePrincipal] = useState<File | null>(null);
@@ -287,13 +291,6 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             }
         }
 
-        // Aviso UX no bloqueante si no hay marca seleccionada
-        try {
-            if (!formValues?.marcaId) {
-                useAlertStore.getState().alert('Sugerencia: asigna una marca para mejorar filtros y reportes', 'warning');
-            }
-        } catch { /* noop */ }
-
         // Calcular el stock final basado en el tipo de ajuste
         let stockFinal = Number(formValues?.stock);
         if (isEdit && tipoAjusteStock !== 'ninguno') {
@@ -350,7 +347,6 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                     // Only upload if it's an external URL (not already an S3 URL)
                     if (externalUrl && !externalUrl.includes('amazonaws.com')) {
                         try {
-                            useAlertStore.getState().alert('Subiendo imagen a servidor...', 'info');
                             const resp = await apiClient.post(`/producto/${formValues.productoId}/imagen-url`, { url: externalUrl });
                             const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
                             const s3Url = signed || resp?.data?.data?.url || resp?.data?.url || null;
@@ -759,6 +755,155 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                 </div>
                             )}
                         </div>
+
+                        {/* 🆕 CAMPOS PARA FARMACIA/BOTICA */}
+                        {features.gestionLotes && (
+                            <>
+                                <div className="col-span-3 md:col-span-1">
+                                    <InputPro
+                                        autocomplete="off"
+                                        value={(formValues as any)?.principioActivo || ''}
+                                        name="principioActivo"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Principio Activo"
+                                        placeholder="Ej: Paracetamol"
+                                    />
+                                </div>
+                                <div className="col-span-3 md:col-span-1">
+                                    <InputPro
+                                        autocomplete="off"
+                                        value={(formValues as any)?.laboratorio || ''}
+                                        name="laboratorio"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Laboratorio"
+                                        placeholder="Ej: Bayer"
+                                    />
+                                </div>
+                                <div className="col-span-3 md:col-span-1">
+                                    <InputPro
+                                        autocomplete="off"
+                                        value={(formValues as any)?.concentracion || ''}
+                                        name="concentracion"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Concentración"
+                                        placeholder="Ej: 500mg"
+                                    />
+                                </div>
+                                <div className="col-span-3 md:col-span-1">
+                                    <InputPro
+                                        autocomplete="off"
+                                        value={(formValues as any)?.presentacion || ''}
+                                        name="presentacion"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Presentación"
+                                        placeholder="Ej: Caja x 100 tabletas"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* 🆕 FRACCIONAMIENTO (FARMACIA) */}
+                        {features.permiteFraccionamiento && (
+                            <div className="col-span-3 border-t pt-4 mt-4">
+                                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <Icon icon="solar:box-minimalistic-bold-duotone" width={16} />
+                                    Unidades de Compra/Venta
+                                </h5>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <InputPro
+                                        autocomplete="off"
+                                        value={(formValues as any)?.unidadCompra || ''}
+                                        name="unidadCompra"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Unidad Compra"
+                                        placeholder="CAJA"
+                                    />
+                                    <InputPro
+                                        autocomplete="off"
+                                        value={(formValues as any)?.unidadVenta || ''}
+                                        name="unidadVenta"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Unidad Venta"
+                                        placeholder="BLISTER"
+                                    />
+                                    <InputPro
+                                        autocomplete="off"
+                                        type="number"
+                                        value={(formValues as any)?.factorConversion || 1}
+                                        name="factorConversion"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Factor"
+                                        placeholder="1"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Ejemplo: 1 CAJA = 10 BLÍSTER (Factor = 10)
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 🆕 CÓDIGO DE BARRAS (BODEGA/SUPERMARKET) */}
+                        {features.usaCodigoBarras && (
+                            <div className="col-span-3 md:col-span-2">
+                                <InputPro
+                                    autocomplete="off"
+                                    value={(formValues as any)?.codigoBarras || ''}
+                                    name="codigoBarras"
+                                    onChange={handleChange}
+                                    isLabel
+                                    label="Código de Barras"
+                                    placeholder="EAN-13 o UPC"
+                                />
+                            </div>
+                        )}
+
+                        {/* 🆕 OFERTAS (SUPERMARKET) */}
+                        {features.gestionOfertas && (
+                            <div className="col-span-3 border-t pt-4 mt-4">
+                                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <Icon icon="solar:tag-price-bold-duotone" width={16} />
+                                    Ofertas y Promociones
+                                </h5>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <InputPro
+                                        autocomplete="off"
+                                        type="number"
+                                        step="0.01"
+                                        value={(formValues as any)?.precioOferta || ''}
+                                        name="precioOferta"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Precio Oferta (S/)"
+                                        placeholder="0.00"
+                                    />
+                                    <InputPro
+                                        autocomplete="off"
+                                        type="date"
+                                        value={(formValues as any)?.fechaInicioOferta || ''}
+                                        name="fechaInicioOferta"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Inicio Oferta"
+                                    />
+                                    <InputPro
+                                        autocomplete="off"
+                                        type="date"
+                                        value={(formValues as any)?.fechaFinOferta || ''}
+                                        name="fechaFinOferta"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="Fin Oferta"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className={`col-span-3 md:col-span-1 grid ${isRestaurante ? 'grid-cols-1' : 'grid-cols-2'} gap-5`}>
                             <InputPro

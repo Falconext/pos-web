@@ -108,7 +108,8 @@ export default function Checkout() {
   };
 
   const calcularIGV = () => {
-    return calcularSubtotal() * 0.18;
+    // El IGV ya está incluido, así que lo extraemos: Total - (Total / 1.18)
+    return calcularSubtotal() - (calcularSubtotal() / 1.18);
   };
 
   const calcularCostoEnvio = () => {
@@ -119,7 +120,8 @@ export default function Checkout() {
   };
 
   const calcularTotal = () => {
-    return calcularSubtotal() + calcularIGV() + calcularCostoEnvio();
+    // El subtotal ya incluye IGV, solo sumamos el costo de envío
+    return calcularSubtotal() + calcularCostoEnvio();
   };
 
   const enviarPedido = async (e: React.FormEvent) => {
@@ -449,8 +451,8 @@ export default function Checkout() {
             </div>
             <div className="border-t pt-3 space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>S/ {calcularSubtotal().toFixed(2)}</span>
+                <span>Subtotal (Base)</span>
+                <span>S/ {(calcularSubtotal() / 1.18).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>IGV (18%)</span>

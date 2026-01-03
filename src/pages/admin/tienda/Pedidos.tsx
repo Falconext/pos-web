@@ -26,7 +26,10 @@ export default function PedidosTienda() {
     try {
       const params = filtroEstado ? `?estado=${filtroEstado}` : '';
       const { data } = await apiClient.get(`/tienda/pedidos${params}`);
-      const raw = (data?.data || []) as any[];
+      // Handle paginated response: data = {data: {data: [], total, page, ...}}
+      // Or old format: data = {data: []}
+      const responseData = data?.data;
+      const raw = (Array.isArray(responseData) ? responseData : responseData?.data || []) as any[];
       const normalizados = raw.map((p) => ({
         ...p,
         subtotal: Number(p?.subtotal ?? 0),

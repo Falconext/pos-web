@@ -189,7 +189,7 @@ export default function SeguimientoPedido() {
                                         <Icon icon="mdi:alarm" className="w-5 h-5" />
                                     </span>
                                     <div>
-                                        <p className="text-[13px] text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>Estimated delivery</p>
+                                        <p className="text-[13px] text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>Tiempo estimado</p>
                                         <p className="text-xs text-gray-500">{fechaEstimada}</p>
                                     </div>
                                 </div>
@@ -202,7 +202,7 @@ export default function SeguimientoPedido() {
                             {/* Tarjeta: Order tracking */}
                             <div className={`bg-white ${borderRadius} shadow-sm p-6 border border-gray-100`}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold">Order tracking</h2>
+                                    <h2 className="text-lg font-semibold">Estado del pedido</h2>
                                     <span className="text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>№{pedido.codigoSeguimiento}</span>
                                 </div>
                                 {/* Estado actual */}
@@ -222,7 +222,7 @@ export default function SeguimientoPedido() {
 
                             {/* Detalle de orden */}
                             <div className={`bg-white ${borderRadius} shadow-sm p-6 border border-gray-100`}>
-                                <h3 className="text-lg font-semibold mb-4">Order №{pedido.codigoSeguimiento}</h3>
+                                <h3 className="text-lg font-semibold mb-4">Orden №{pedido.codigoSeguimiento}</h3>
                                 <div className="space-y-3 mb-4">
                                     {pedido.items.map((item: any) => (
                                         <div key={item.id} className="flex items-center justify-between">
@@ -251,15 +251,15 @@ export default function SeguimientoPedido() {
                                     </div>
                                     <div className="flex justify-between text-gray-600">
                                         <span>Delivery</span>
-                                        <span>{pedido.costoEnvio > 0 ? `S/ ${pedido.costoEnvio.toFixed(2)}` : 'Free'}</span>
+                                        <span>{pedido.costoEnvio > 0 ? `S/ ${pedido.costoEnvio.toFixed(2)}` : 'Gratis'}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-600">
-                                        <span>Delivery time</span>
+                                        <span>Tiempo entrega</span>
                                         <span>{tiempoBase}-{tiempoBase + 10} min</span>
                                     </div>
                                     <div className="flex justify-between font-bold pt-2 border-t">
                                         <span>Total</span>
-                                        <span>S/ {pedido.total.toFixed(2)}</span>
+                                        <span>S/ {(Number(pedido.subtotal) + Number(pedido.costoEnvio)).toFixed(2)}</span>
                                     </div>
                                 </div>
 
@@ -277,13 +277,13 @@ export default function SeguimientoPedido() {
                                 )}
                             </div>
 
-                            {/* Botón Back to Home */}
+                            {/* Botón Volver */}
                             <button
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate(`/tienda/${slug}`)}
                                 className={`w-full py-3 ${btnRadius} text-white font-semibold`}
                                 style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
                             >
-                                Back to Home
+                                Volver a la Tienda
                             </button>
                         </div>
                     );

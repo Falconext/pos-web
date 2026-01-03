@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import InputPro from "@/components/InputPro";
 import Button from "@/components/Button";
-import { Icon } from "@iconify/react"; // Keeping Iconify for general use or legacy
+import { Icon } from "@iconify/react";
 
 import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
@@ -11,6 +11,7 @@ import Modal from "@/components/Modal";
 import Select from "@/components/Select";
 import { useAuthStore } from "@/zustand/auth";
 import DataTable from "@/components/Datatable";
+import { usePlantillasStore } from "@/zustand/plantillas";
 
 interface Plantilla {
     id: number;
@@ -26,14 +27,15 @@ interface Plantilla {
 }
 
 const CatalogoGlobal = () => {
-    const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [search, setSearch] = useState("");
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(50);
-    const [total, setTotal] = useState(0);
+    // Zustand Store
+    const {
+        plantillas, total, loading, page, limit, search, rubroId,
+        setPage, setLimit, setSearch, setRubroId, getPlantillas,
+        deletePlantilla, deletePlantillasMasivo, updateLocalPlantilla
+    } = usePlantillasStore();
+
+    // Local UI state
     const [rubros, setRubros] = useState<any[]>([]);
-    const [selectedRubro, setSelectedRubro] = useState<number | undefined>(undefined);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -55,40 +57,20 @@ const CatalogoGlobal = () => {
 
     useEffect(() => {
         loadRubros();
+        // Initial load if empty or just always ensuring data?
+        // Let's call data fetch on mount to be safe, or if store is persistent user navigates away and back.
+        // For fresh data on mount:
+        getPlantillas(true);
     }, []);
-
-    useEffect(() => {
-        loadPlantillas();
-    }, [page, search, selectedRubro]);
 
     const loadRubros = async () => {
         try {
             const response = await apiClient.get('/rubro');
-            console.log(response)
             const data = response.data;
-            // Handle { data: [...] } or [...]
             const list = Array.isArray(data) ? data : (data?.data || []);
             setRubros(list);
-            console.log("Rubros loaded:", list);
         } catch (error) {
             console.error(error);
-        }
-    };
-
-    const loadPlantillas = async () => {
-        try {
-            setLoading(true);
-            const response = await apiClient.get('/plantillas', {
-                params: { page, limit, search, rubroId: selectedRubro }
-            });
-            const body = response.data;
-            const list = Array.isArray(body?.data?.data) ? body.data?.data : [];
-            setPlantillas(list);
-            setTotal(body?.data?.total || 0);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -111,6 +93,7 @@ const CatalogoGlobal = () => {
             if (isEdit && form.id) {
                 await apiClient.post(`/plantillas/${form.id}`, payload);
                 alert("Plantilla actualizada", "success");
+                updateLocalPlantilla(form.id, payload); // Optimistic-ish update for text fields
             } else {
                 const { data } = await apiClient.post('/plantillas', payload);
                 plantillaId = data.id;
@@ -120,27 +103,32 @@ const CatalogoGlobal = () => {
             if (selectedFile && plantillaId) {
                 const formData = new FormData();
                 formData.append('file', selectedFile);
-                await apiClient.post(`/plantillas/${plantillaId}/imagen`, formData, {
+                const { data } = await apiClient.post(`/plantillas/${plantillaId}/imagen`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 alert("Imagen subida correctamente", "success");
+                // Update image URL locally if we have response
+                if (data.url || data.imagenUrl) {
+                    updateLocalPlantilla(plantillaId, { imagenUrl: data.url || data.imagenUrl });
+                }
             }
 
             setIsModalOpen(false);
             setSelectedFile(null);
-            loadPlantillas();
+            getPlantillas(true); // Refresh list to be sure (especially for new items)
         } catch (error: any) {
             console.error("Error submitting form:", error);
             alert(error.response?.data?.message || "Error al guardar (ver consola)", "error");
         }
     };
+
     const handleDelete = async () => {
         if (!deleteId) return;
         try {
-            await apiClient.post(`/plantillas/${deleteId}/delete`);
+            await deletePlantilla(deleteId); // Uses local update
             alert("Plantilla eliminada", "success");
             setModalConfirmOpen(false);
-            loadPlantillas();
+            // No loadPlantillas() here!
         } catch (error: any) {
             alert(error.response?.data?.message || "Error al eliminar", "error");
         }
@@ -149,7 +137,6 @@ const CatalogoGlobal = () => {
     const handleImportFromCompany = async () => {
         if (!empresaIdToImport || !rubroIdToImport) return;
         try {
-            setLoading(true);
             const { data } = await apiClient.post('/plantillas/importar-de-empresa', {
                 empresaId: empresaIdToImport,
                 rubroId: rubroIdToImport
@@ -158,11 +145,9 @@ const CatalogoGlobal = () => {
             setIsModalImportOpen(false);
             setEmpresaIdToImport(undefined);
             setRubroIdToImport(undefined);
-            loadPlantillas();
+            getPlantillas(true);
         } catch (error: any) {
             alert(error.response?.data?.message || "Error al importar", "error");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -187,13 +172,13 @@ const CatalogoGlobal = () => {
         try {
             setCategorizando(true);
             const { data } = await apiClient.post('/plantillas/categorizar-ia', {
-                rubroId: selectedRubro,
-                soloSinCategoria: false  // Recategorizar TODOS los productos
+                rubroId: rubroId, // Use store rubroId
+                soloSinCategoria: false
             });
 
             if (data.success) {
                 alert(`✅ ${data.message}. Procesados: ${data.procesados} de ${data.total}`, "success");
-                loadPlantillas();
+                getPlantillas(true); // Refresh required here as many items changed
             } else {
                 alert(data.message || "Error al categorizar", "error");
             }
@@ -208,12 +193,21 @@ const CatalogoGlobal = () => {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [actionLoading, setActionLoading] = useState(false);
     const [buscandoImagenes, setBuscandoImagenes] = useState(false);
+    const [processingId, setProcessingId] = useState<number | null>(null);
 
     const toggleSelect = (id: number) => {
         setSelectedIds(prev =>
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     };
+
+    useEffect(() => {
+        if (buscandoImagenes) {
+            console.log("[CatalogoGlobal] Plantillas state updated during search. Length:", plantillas.length);
+            const conImagen = plantillas.filter(p => p.imagenUrl).length;
+            console.log("[CatalogoGlobal] products with image:", conImagen);
+        }
+    }, [plantillas, buscandoImagenes]);
 
     const toggleSelectAll = () => {
         if (selectedIds.length === plantillas.length && plantillas.length > 0) {
@@ -238,6 +232,7 @@ const CatalogoGlobal = () => {
         try {
             for (const p of sinImagen) {
                 try {
+                    setProcessingId(p.id); // Show spinner on this row
                     const { data } = await apiClient.post('/plantillas/search-image', {
                         id: p.id,
                         nombre: p.nombre
@@ -245,15 +240,21 @@ const CatalogoGlobal = () => {
 
                     if (data.success && data.url) {
                         count++;
-                        setPlantillas(prev => prev.map(item =>
-                            item.id === p.id ? { ...item, imagenUrl: data.url } : item
-                        ));
+                        console.log(`[CatalogoGlobal] Image found for ${p.id}: ${data.url}`);
+                        // Update local state instead of full refresh
+                        updateLocalPlantilla(p.id, { imagenUrl: data.url });
+                    } else {
+                        console.log(`[CatalogoGlobal] No image found for ${p.id}`);
                     }
-                    await new Promise(r => setTimeout(r, 1000));
+                    // Await removed/reduced to make it snappy, relying on processing time.
+                    // Or keep small delay if needed. Let's keep a tiny one for visual "tick"
+                    await new Promise(r => setTimeout(r, 200));
                 } catch (error) {
                     console.error("Error buscando imagen:", error);
                 }
             }
+            setProcessingId(null);
+            getPlantillas(true); // Refrescar lista para asegurar que se vean las imágenes
             alert(`Proceso finalizado. Se encontraron ${count} imágenes nuevas.`, "success");
         } catch (e) {
             console.error(e);
@@ -268,8 +269,11 @@ const CatalogoGlobal = () => {
             setActionLoading(true);
             await apiClient.post('/plantillas/masivo/delete-images', { ids: selectedIds });
             alert("Imágenes eliminadas correctamente", "success");
+
+            // Local update
+            selectedIds.forEach(id => updateLocalPlantilla(id, { imagenUrl: '' }));
+
             setSelectedIds([]);
-            loadPlantillas();
         } catch (error: any) {
             alert(error.response?.data?.message || "Error al eliminar imágenes", "error");
         } finally {
@@ -281,10 +285,9 @@ const CatalogoGlobal = () => {
         if (!window.confirm(`¿Estás seguro de ELIMINAR ${selectedIds.length} PRODUCTOS del catálogo?\nEsta acción es irreversible y eliminará las plantillas.`)) return;
         try {
             setActionLoading(true);
-            await apiClient.post('/plantillas/masivo/delete', { ids: selectedIds });
+            await deletePlantillasMasivo(selectedIds); // Uses local update
             alert("Productos eliminados correctamente", "success");
             setSelectedIds([]);
-            loadPlantillas();
         } catch (error: any) {
             alert(error.response?.data?.message || "Error al eliminar productos", "error");
         } finally {
@@ -315,8 +318,8 @@ const CatalogoGlobal = () => {
                         name="rubro"
                         label="Filtrar por Rubro"
                         options={rubros.map(r => ({ id: r.id, value: r.nombre }))}
-                        value={rubros.find(r => r.id === selectedRubro)?.nombre || ""}
-                        onChange={(id) => setSelectedRubro(Number(id))}
+                        value={rubros.find(r => r.id === rubroId)?.nombre || ""}
+                        onChange={(id) => setRubroId(Number(id))}
                         placeholder="Todos los rubros"
                         error=""
                     />
@@ -440,7 +443,6 @@ const CatalogoGlobal = () => {
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
                                                 target.style.display = 'none';
-                                                // We append a text span to the PARENT (the anchor tag)
                                                 const span = document.createElement('span');
                                                 span.className = 'text-[10px] text-gray-300';
                                                 span.innerText = 'Err';
@@ -450,9 +452,15 @@ const CatalogoGlobal = () => {
                                     </a>
                                 </div>
                             ) : (
-                                <div className="h-12 w-12 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center">
-                                    <Icon icon="solar:gallery-linear" className="text-gray-300 w-5 h-5" />
-                                </div>
+                                processingId === p.id ? (
+                                    <div className="h-12 w-12 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center animate-pulse">
+                                        <Icon icon="mdi:loading" className="text-blue-500 w-5 h-5 animate-spin" />
+                                    </div>
+                                ) : (
+                                    <div className="h-12 w-12 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center">
+                                        <Icon icon="solar:gallery-linear" className="text-gray-300 w-5 h-5" />
+                                    </div>
+                                )
                             ),
                             'nombre': p.nombre,
                             'marca': p.marca ? (

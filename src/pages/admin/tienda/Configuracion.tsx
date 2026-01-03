@@ -4,6 +4,7 @@ import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
+import ModalConfirm from '@/components/ModalConfirm';
 
 export default function ConfiguracionTienda() {
   const [config, setConfig] = useState<any>(null);
@@ -42,8 +43,18 @@ export default function ConfiguracionTienda() {
   const [previewYapeUrl, setPreviewYapeUrl] = useState<string>('');
   const [previewPlinUrl, setPreviewPlinUrl] = useState<string>('');
 
+  // Estado para modal de confirmación
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteQrType, setDeleteQrType] = useState<'yape' | 'plin' | null>(null);
+
+  // Estado para banners
+  const [banners, setBanners] = useState<any[]>([]);
+  const [loadingBanners, setLoadingBanners] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+
   useEffect(() => {
     cargarConfiguracion();
+    cargarBanners();
   }, []);
 
   const cargarConfiguracion = async () => {
@@ -110,6 +121,42 @@ export default function ConfiguracionTienda() {
     }
   };
 
+  const eliminarQr = async (tipo: 'yape' | 'plin') => {
+    // Mostrar modal de confirmación
+    setDeleteQrType(tipo);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmarEliminarQr = async () => {
+    if (!deleteQrType) return;
+    const tipo = deleteQrType;
+    setShowConfirmDelete(false);
+    setDeleteQrType(null);
+    try {
+      // Limpiar del formData
+      setFormData((prev) => ({
+        ...prev,
+        yapeQrUrl: tipo === 'yape' ? '' : prev.yapeQrUrl,
+        plinQrUrl: tipo === 'plin' ? '' : prev.plinQrUrl,
+      }));
+      if (tipo === 'yape') {
+        setPreviewYapeUrl('');
+        setYapeFile(null);
+      }
+      if (tipo === 'plin') {
+        setPreviewPlinUrl('');
+        setPlinFile(null);
+      }
+      // Guardar en servidor (enviar URL vacía)
+      await apiClient.patch('/tienda/config', {
+        [tipo === 'yape' ? 'yapeQrUrl' : 'plinQrUrl']: null,
+      });
+      alert(`QR de ${tipo.toUpperCase()} eliminado correctamente`, 'success');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al eliminar QR', 'error');
+    }
+  };
+
   // Helper para transformar texto en slug válido
   const slugify = (text: string) =>
     text
@@ -172,6 +219,70 @@ export default function ConfiguracionTienda() {
     }
   };
 
+  // Funciones para banners
+  const cargarBanners = async () => {
+    try {
+      setLoadingBanners(true);
+      const { data } = await apiClient.get('/banners');
+      setBanners(data.data || []);
+    } catch (error: any) {
+      console.error('Error al cargar banners:', error);
+    } finally {
+      setLoadingBanners(false);
+    }
+  };
+
+  const subirBanner = async (file: File) => {
+    try {
+      // Validar tamaño
+      if (file.size > 2.5 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 2.5MB', 'error');
+        return;
+      }
+
+      // Validar tipo
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipo de archivo no permitido. Solo JPG, PNG o WebP', 'error');
+        return;
+      }
+
+      setUploadingBanner(true);
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('titulo', 'Banner');
+      fd.append('orden', banners.length.toString());
+
+      await apiClient.post('/banners/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      alert('Banner subido exitosamente', 'success');
+      cargarBanners();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al subir banner', 'error');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const eliminarBanner = async (id: number) => {
+    try {
+      await apiClient.delete(`/banners/${id}`);
+      alert('Banner eliminado exitosamente', 'success');
+      cargarBanners();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al eliminar banner', 'error');
+    }
+  };
+
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      subirBanner(file);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -197,6 +308,15 @@ export default function ConfiguracionTienda() {
 
   return (
     <div className="min-h-screen pb-4">
+      {/* Modal de confirmación para eliminar QR */}
+      <ModalConfirm
+        isOpenModal={showConfirmDelete}
+        setIsOpenModal={setShowConfirmDelete}
+        confirmSubmit={confirmarEliminarQr}
+        title={`Eliminar QR de ${deleteQrType?.toUpperCase() || ''}`}
+        information={`¿Estás seguro de que deseas eliminar el código QR de ${deleteQrType?.toUpperCase() || ''}? Esta acción no se puede deshacer.`}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
@@ -320,18 +440,31 @@ export default function ConfiguracionTienda() {
                         <Icon icon="solar:upload-minimalistic-bold-duotone" className="text-3xl text-gray-400 mb-2" />
                         <span className="text-sm text-gray-500">{yapeFile ? yapeFile.name : 'Seleccionar imagen'}</span>
                       </label>
-                      <Button
-                        type="button"
-                        onClick={() => subirQr('yape')}
-                        disabled={yapeUploading || !yapeFile}
-                        color="lila"
-                        className="w-full mt-3"
-                      >
-                        {yapeUploading ? 'Subiendo...' : 'Subir QR'}
-                      </Button>
+                      <div className='mt-3'>
+                        <Button
+                          type="button"
+                          onClick={() => subirQr('yape')}
+                          disabled={yapeUploading || !yapeFile}
+                          color="lila"
+                          fill
+                          className="w-full mt-3 object-cover"
+                        >
+                          {yapeUploading ? 'Subiendo...' : 'Subir QR'}
+                        </Button>
+                      </div>
                     </div>
                     {(previewYapeUrl || formData.yapeQrUrl) ? (
-                      <img src={previewYapeUrl || formData.yapeQrUrl} alt="QR Yape" className="w-32 h-32 object-cover rounded-xl border border-gray-200" />
+                      <div className="relative">
+                        <img src={previewYapeUrl || formData.yapeQrUrl} alt="QR Yape" className="w-28 h-auto max-h-40 object-contain rounded-xl border border-gray-200" />
+                        <button
+                          type="button"
+                          onClick={() => eliminarQr('yape')}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors shadow-md"
+                          title="Eliminar QR"
+                        >
+                          <Icon icon="solar:trash-bin-trash-bold" className="text-xs" />
+                        </button>
+                      </div>
                     ) : (
                       <div className="w-32 h-32 rounded-xl border border-gray-200 bg-gray-100 flex items-center justify-center">
                         <Icon icon="solar:qr-code-linear" className="text-4xl text-gray-300" />
@@ -367,18 +500,32 @@ export default function ConfiguracionTienda() {
                         <Icon icon="solar:upload-minimalistic-bold-duotone" className="text-3xl text-gray-400 mb-2" />
                         <span className="text-sm text-gray-500">{plinFile ? plinFile.name : 'Seleccionar imagen'}</span>
                       </label>
-                      <Button
-                        type="button"
-                        onClick={() => subirQr('plin')}
-                        disabled={plinUploading || !plinFile}
-                        color="lila"
-                        className="w-full mt-3"
-                      >
-                        {plinUploading ? 'Subiendo...' : 'Subir QR'}
-                      </Button>
+                      <div className='mt-3'>
+                        <Button
+                          type="button"
+                          onClick={() => subirQr('plin')}
+                          disabled={plinUploading || !plinFile}
+                          color="lila"
+                          fill
+                          className="w-full mt-3"
+                        >
+
+                          {plinUploading ? 'Subiendo...' : 'Subir QR'}
+                        </Button>
+                      </div>
                     </div>
                     {(previewPlinUrl || formData.plinQrUrl) ? (
-                      <img src={previewPlinUrl || formData.plinQrUrl} alt="QR Plin" className="w-32 h-32 object-cover rounded-xl border border-gray-200" />
+                      <div className="relative">
+                        <img src={previewPlinUrl || formData.plinQrUrl} alt="QR Plin" className="w-28 h-auto max-h-40 object-contain rounded-xl border border-gray-200" />
+                        <button
+                          type="button"
+                          onClick={() => eliminarQr('plin')}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors shadow-md"
+                          title="Eliminar QR"
+                        >
+                          <Icon icon="solar:trash-bin-trash-bold" className="text-xs" />
+                        </button>
+                      </div>
                     ) : (
                       <div className="w-32 h-32 rounded-xl border border-gray-200 bg-gray-100 flex items-center justify-center">
                         <Icon icon="solar:qr-code-linear" className="text-4xl text-gray-300" />
@@ -440,6 +587,7 @@ export default function ConfiguracionTienda() {
                 value={formData.costoEnvioFijo}
                 onChange={handleChange}
                 placeholder="0.00"
+                isLabel
               />
             )}
 
@@ -450,6 +598,7 @@ export default function ConfiguracionTienda() {
                 value={formData.direccionRecojo}
                 onChange={handleChange}
                 placeholder="Av. Principal 123, Distrito, Ciudad"
+                isLabel
               />
             )}
 
@@ -460,8 +609,97 @@ export default function ConfiguracionTienda() {
               value={formData.tiempoPreparacionMin}
               onChange={handleChange}
               placeholder="30"
+              isLabel
             />
           </div>
+        </div>
+
+        {/* Banners de Tienda Virtual */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Icon icon="solar:gallery-bold-duotone" className="text-xl text-purple-500" />
+              Banners de Tienda Virtual
+            </h3>
+            <span className="text-xs text-gray-500">{banners.length} / 5 banners</span>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-4">
+            Los banners aparecerán en el slider principal de tu tienda. Tamaño recomendado: 1920x600px, máximo 2.5MB.
+          </p>
+
+          {loadingBanners ? (
+            <div className="flex items-center justify-center py-12">
+              <Icon icon="eos-icons:loading" className="w-8 h-8 text-gray-400" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Banners existentes */}
+              {banners.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {banners.map((banner, index) => (
+                    <div key={banner.id} className="relative group">
+                      <div className="aspect-[16/5] rounded-lg overflow-hidden border-2 border-gray-200">
+                        <img
+                          src={banner.imagenUrl}
+                          alt={banner.titulo || `Banner ${index + 1}`}
+                          className="w-full h-full object-fill"
+                        />
+                      </div>
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => eliminarBanner(banner.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                        >
+                          <Icon icon="mdi:delete" className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-gray-700 text-center">
+                        {banner.titulo || `Banner ${index + 1}`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Botón para subir nuevo banner */}
+              {banners.length < 5 && (
+                <div>
+                  <label className="block">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                        onChange={handleBannerFileChange}
+                        disabled={uploadingBanner}
+                        className="hidden"
+                      />
+                      {uploadingBanner ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <Icon icon="eos-icons:loading" className="w-12 h-12 text-purple-500" />
+                          <p className="text-sm text-gray-600">Subiendo banner...</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <Icon icon="solar:gallery-add-bold" className="w-12 h-12 text-gray-400" />
+                          <p className="text-sm font-medium text-gray-700">Click para subir banner</p>
+                          <p className="text-xs text-gray-500">JPG, PNG o WebP (máx. 2.5MB)</p>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {banners.length === 0 && !uploadingBanner && (
+                <div className="text-center py-8 text-gray-500">
+                  <Icon icon="solar:gallery-bold" className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm">No hay banners aún. Sube tu primer banner para comenzar.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Colores */}

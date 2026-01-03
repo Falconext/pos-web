@@ -47,7 +47,7 @@ const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadIm
                 return (
                     <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-100 flex flex-col">
                         {/* Imagen */}
-                        <div className="relative h-48 bg-gray-100 group">
+                        <div className="relative h-[50px] w-[50px] bg-gray-100 group">
                             {(product as any).imagenUrl ? (
                                 <>
                                     {!loaded[product.id] && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
@@ -57,7 +57,7 @@ const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadIm
                                         loading="lazy"
                                         decoding="async"
                                         onLoad={() => setLoaded((prev) => ({ ...prev, [product.id]: true }))}
-                                        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded[product.id] ? 'opacity-100' : 'opacity-0'}`}
+                                        className={`w-[50px] h-[50px] object-contain transition-opacity duration-500 ${loaded[product.id] ? 'opacity-100' : 'opacity-0'}`}
                                     />
                                 </>
                             ) : (

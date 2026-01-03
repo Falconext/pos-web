@@ -111,7 +111,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
     const categoriesTable = categories?.map((item: any, index: number) => ({
         '#': index + 1,
         categoriaId: item.id,
-        'Categoría': item.nombre
+        nombre: item.nombre
     }))
 
     const confirmDeleteCategory = () => {
@@ -145,7 +145,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
                                         <DataTable actions={actions} bodyData={categoriesTable} tableInitFinal={false}
                                             headerColumns={[
                                                 '#',
-                                                'Categoría'
+                                                'nombre'
                                             ]} />
                                     </div>
                                     <Pagination

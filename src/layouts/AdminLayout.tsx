@@ -220,6 +220,17 @@ export default function AdminLayout() {
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         {menuLabels.productosLabel}
                       </NavLink>
+                      {/* Lotes - Solo para farmacias/boticas */}
+                      {(() => {
+                        const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
+                        const esFarmacia = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
+                        return esFarmacia ? (
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/lotes" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
+                            <Icon icon="solar:pill-bold-duotone" className="mr-2" width={16} />
+                            Lotes y Vencimientos
+                          </NavLink>
+                        ) : null;
+                      })()}
                       {auth?.empresa?.plan?.tieneTienda && (
                         <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                           Combos

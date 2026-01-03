@@ -29,7 +29,8 @@ const EmpresasIndex = () => {
 
   // Estados locales
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [tipoFiltro, setTipoFiltro] = useState<string>(''); // '' = todos, 'FORMAL', 'INFORMAL'
+  const [tipoFiltro, setTipoFiltro] = useState<'FORMAL' | 'INFORMAL' | ''>(''); // '' = todos, 'FORMAL', 'INFORMAL'
+  const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'INACTIVO' | 'TODOS'>('TODOS');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
@@ -55,9 +56,11 @@ const EmpresasIndex = () => {
       page: currentPageState,
       limit: itemsPerPage,
       sort: 'id',
-      order: 'desc'
+      order: 'desc',
+      estado: estadoFiltro,
+      tipoEmpresa: tipoFiltro
     });
-  }, [debounceSearch, currentPageState, itemsPerPage]);
+  }, [debounceSearch, currentPageState, itemsPerPage, estadoFiltro, tipoFiltro]);
 
   // Cerrar modal cuando se complete una acción exitosa
   useEffect(() => {
@@ -116,24 +119,20 @@ const EmpresasIndex = () => {
   const empresasTable = empresas?.map((empresa: any) => {
     console.log('Empresa individual:', empresa); // Debug
 
-    const incluyeTienda = empresa?.plan?.tieneTienda;
-    const tiendaEstado = !incluyeTienda
-      ? 'No incluida'
-      : empresa.slugTienda
-        ? 'Activa'
-        : 'Incluida (sin configurar)';
+    const tiendaEstado = empresa.plan?.tieneTienda && empresa?.slugTienda
+      ? 'Activa'
+      : empresa.plan?.tieneTienda && !empresa?.slugTienda
+        ? 'Disponible'
+        : 'No disponible';
 
     return {
       id: empresa.id,
-      ruc: empresa.ruc,
-      razonSocial: empresa.razonSocial,
-      nombreComercial: empresa.nombreComercial || '-',
-      plan:
-        typeof empresa.plan === 'object' && empresa.plan
-          ? `${empresa.plan.nombre} (S/ ${empresa.plan.costo})`
-          : typeof empresa.plan === 'string'
-            ? empresa.plan
-            : '-',
+      'RUC': empresa.ruc,
+      'Razon Social': empresa.razonSocial,
+      'Nombre Comercial': empresa.nombreComercial || '-',
+      'Tipo': empresa.tipoEmpresa === 'FORMAL' ? 'Formal' : 'Informal',
+      'Rubro': empresa?.rubro?.nombre || '-',
+      plan: empresa.plan?.nombre || '-',
       tienda: tiendaEstado,
       fechaActivacion: new Date(empresa.fechaActivacion).toLocaleDateString(),
       fechaExpiracion: new Date(empresa.fechaExpiracion).toLocaleDateString(),
@@ -197,113 +196,133 @@ const EmpresasIndex = () => {
               withLabel
             />
           </div>
-          <div className="flex md:block items-center mt-5 md:mt-0">
-            <Button
-              color="secondary"
-              onClick={() => {
-                setEmpresaEditingId(undefined);
-                setEmpresaModalMode('create');
-                setOpenEmpresaModal(true);
+          <div className="md:w-1/5 w-full">
+            <Select
+              name="estadoFiltro"
+              label="Estado"
+              error={() => { }}
+              options={[
+                { id: 'TODOS', value: 'Todos' },
+                { id: 'ACTIVO', value: 'Activos' },
+                { id: 'INACTIVO', value: 'Inactivos' }
+              ]}
+              onChange={(id: any) => {
+                setEstadoFiltro(id);
+                setCurrentPageState(1);
               }}
-            >
-              Nueva Empresa
-            </Button>
+              withLabel
+              value={estadoFiltro}
+            />
           </div>
         </div>
-
-        {/* Mostrar error si existe */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        {/* Tabla de datos */}
-        <div className="">
-          {empresasTable?.length > 0 ? (
-            <>
-              <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
-                <DataTable
-                  actions={actions}
-                  bodyData={empresasTable}
-                  headerColumns={[
-                    'RUC',
-                    'Razon Social',
-                    'Nombre Comercial',
-                    'Plan',
-                    'Tienda Virtual',
-                    'Activación',
-                    'Expiración',
-                    'Estado',
-                  ]}
-                />
-              </div>
-
-              {/* Paginación */}
-              <div className="mt-6">
-                <Pagination
-                  pages={pages}
-                  currentPage={currentPageState}
-                  setcurrentPage={setCurrentPageState}
-                  indexOfFirstItem={indexOfFirstItem}
-                  indexOfLastItem={Math.min(indexOfLastItem, totalEmpresas)}
-                  total={totalEmpresas}
-                  setitemsPerPage={setItemsPerPage}
-                  optionSelect={true}
-                />
-              </div>
-            </>
-          ) : (
-            !loading && (
-              <div className="text-center py-10">
-                <Icon icon="mdi:office-building-outline" className="mx-auto text-6xl text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600">No se encontraron empresas</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchTerm ? 'No hay empresas que coincidan con tu búsqueda' : 'Aún no tienes empresas registradas'}
-                </p>
-                <Button
-                  color="secondary"
-                  onClick={() => {
-                    setEmpresaEditingId(undefined);
-                    setEmpresaModalMode('create');
-                    setOpenEmpresaModal(true);
-                  }}
-                >
-                  Crear Primera Empresa
-                </Button>
-              </div>
-            )
-          )}
+        <div className="flex md:block items-center mt-5 md:mt-0">
+          <Button
+            color="secondary"
+            onClick={() => {
+              setEmpresaEditingId(undefined);
+              setEmpresaModalMode('create');
+              setOpenEmpresaModal(true);
+            }}
+          >
+            Nueva Empresa
+          </Button>
         </div>
-
-        {/* Modal de confirmación */}
-        <ModalConfirm
-          isOpenModal={isOpenModalConfirm}
-          setIsOpenModal={setIsOpenModalConfirm}
-          title={selectedEmpresa?.accion === 'contactar' ? 'Activar Empresa Informal' : `${selectedEmpresa?.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'} Empresa`}
-          information={
-            selectedEmpresa?.accion === 'contactar'
-              ? `Al contactar a "${selectedEmpresa?.razonSocial}", se creará automáticamente una suscripción INFORMAL de S/ 20 con vigencia de 30 días. ¿Deseas proceder?`
-              : `¿Estás seguro que deseas ${selectedEmpresa?.estado === 'ACTIVO' ? 'desactivar' : 'activar'} la empresa "${selectedEmpresa?.razonSocial}"?`
-          }
-          confirmSubmit={confirmAction}
-        />
-
-        {/* Modal Crear/Editar Empresa */}
-        <EmpresaFormModal
-          open={openEmpresaModal}
-          mode={empresaModalMode}
-          empresaId={empresaEditingId}
-          onClose={() => setOpenEmpresaModal(false)}
-          onSaved={() => listarEmpresas({
-            search: debounceSearch,
-            page: currentPageState,
-            limit: itemsPerPage,
-            sort: 'id',
-            order: 'desc'
-          })}
-        />
       </div>
+
+      {/* Mostrar error si existe */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Tabla de datos */}
+      <div className="">
+        {empresasTable?.length > 0 ? (
+          <>
+            <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
+              <DataTable
+                actions={actions}
+                bodyData={empresasTable}
+                headerColumns={[
+                  'RUC',
+                  'Razon Social',
+                  'Nombre Comercial',
+                  'Tipo',
+                  'Rubro',
+                  'Plan',
+                  'Tienda Virtual',
+                  'Activación',
+                  'Expiración',
+                  'Estado',
+                ]}
+              />
+            </div>
+
+            {/* Paginación */}
+            <div className="mt-6">
+              <Pagination
+                pages={pages}
+                currentPage={currentPageState}
+                setcurrentPage={setCurrentPageState}
+                indexOfFirstItem={indexOfFirstItem}
+                indexOfLastItem={Math.min(indexOfLastItem, totalEmpresas)}
+                total={totalEmpresas}
+                setitemsPerPage={setItemsPerPage}
+                optionSelect={true}
+              />
+            </div>
+          </>
+        ) : (
+          !loading && (
+            <div className="text-center py-10">
+              <Icon icon="mdi:office-building-outline" className="mx-auto text-6xl text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600">No se encontraron empresas</h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm ? 'No hay empresas que coincidan con tu búsqueda' : 'Aún no tienes empresas registradas'}
+              </p>
+              <Button
+                color="secondary"
+                onClick={() => {
+                  setEmpresaEditingId(undefined);
+                  setEmpresaModalMode('create');
+                  setOpenEmpresaModal(true);
+                }}
+              >
+                Crear Primera Empresa
+              </Button>
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Modal de confirmación */}
+      <ModalConfirm
+        isOpenModal={isOpenModalConfirm}
+        setIsOpenModal={setIsOpenModalConfirm}
+        title={selectedEmpresa?.accion === 'contactar' ? 'Activar Empresa Informal' : `${selectedEmpresa?.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'} Empresa`}
+        information={
+          selectedEmpresa?.accion === 'contactar'
+            ? `Al contactar a "${selectedEmpresa?.razonSocial}", se creará automáticamente una suscripción INFORMAL de S/ 20 con vigencia de 30 días. ¿Deseas proceder?`
+            : `¿Estás seguro que deseas ${selectedEmpresa?.estado === 'ACTIVO' ? 'desactivar' : 'activar'} la empresa "${selectedEmpresa?.razonSocial}"?`
+        }
+        confirmSubmit={confirmAction}
+      />
+
+      {/* Modal Crear/Editar Empresa */}
+      <EmpresaFormModal
+        open={openEmpresaModal}
+        mode={empresaModalMode}
+        empresaId={empresaEditingId}
+        onClose={() => setOpenEmpresaModal(false)}
+        onSaved={() => listarEmpresas({
+          search: debounceSearch,
+          page: currentPageState,
+          limit: itemsPerPage,
+          sort: 'id',
+          order: 'desc'
+        })}
+      />
     </div>
   );
 };

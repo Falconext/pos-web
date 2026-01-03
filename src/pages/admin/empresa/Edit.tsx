@@ -134,6 +134,33 @@ const EditEmpresa = () => {
     }
   }, [empresa, id]);
 
+  // Preparar opciones para selects - Moved up for access in debug useEffect
+  const planesOptions = planes && Array.isArray(planes) ? planes.map((plan: any) => ({
+    id: plan.id,
+    value: `${plan.nombre} - S/ ${plan.costo} ${plan.descripcion ? `(${plan.descripcion})` : ''}`
+  })) : [];
+
+  const rubrosOptions = rubros && Array.isArray(rubros) ? rubros : [];
+
+  const ubigeosOptions = ubigeos && Array.isArray(ubigeos) ? ubigeos.map((ubigeo: any) => ({
+    id: ubigeo.codigo,
+    value: `${ubigeo.departamento} - ${ubigeo.provincia} - ${ubigeo.distrito}`
+  })) : [];
+
+  // Debug useEffect for Rubro
+  useEffect(() => {
+    console.log('[DEBUG RUBRO]', {
+      empresaRubro: empresa?.rubro,
+      formDataRubro: formData.rubro,
+      formDataRubroId: formData.rubroId,
+      rubrosOptionsLen: rubrosOptions?.length,
+      rubrosOptions: rubrosOptions,
+      derivedValueFromOptions: (rubrosOptions as any[])?.find((r: any) => r.id === formData.rubroId)?.value
+    });
+  }, [empresa, formData.rubro, formData.rubroId, rubrosOptions]);
+
+  console.log(formData)
+
   // Redirigir cuando se actualice exitosamente
   useEffect(() => {
     if (success === true && !isSubmitting) {
@@ -298,18 +325,8 @@ const EditEmpresa = () => {
     }
   };
 
-  // Preparar opciones para selects
-  const planesOptions = planes && Array.isArray(planes) ? planes.map((plan: any) => ({
-    id: plan.id,
-    value: `${plan.nombre} - S/ ${plan.costo} ${plan.descripcion ? `(${plan.descripcion})` : ''}`
-  })) : [];
+  // Opciones movidas arriba
 
-  const rubrosOptions = rubros && Array.isArray(rubros) ? rubros : [];
-
-  const ubigeosOptions = ubigeos && Array.isArray(ubigeos) ? ubigeos.map((ubigeo: any) => ({
-    id: ubigeo.codigo,
-    value: `${ubigeo.departamento} - ${ubigeo.provincia} - ${ubigeo.distrito}`
-  })) : [];
 
   if (isLoading) {
     return <Loading />;
@@ -331,6 +348,8 @@ const EditEmpresa = () => {
       </div>
     );
   }
+
+  console.log("EL FORMDATA DEL FORMULARIO", formData)
 
   return (
     <div className="px-0 py-0 md:px-0 md:py-4">
@@ -403,7 +422,7 @@ const EditEmpresa = () => {
                   name="rubroId"
                   label="Rubro"
                   options={rubrosOptions}
-                  value={formData?.rubro}
+                  value={formData.rubro || (rubrosOptions as any[])?.find((r: any) => r.id === formData.rubroId)?.value || ''}
                   onChange={handleSelectChange}
                   error={errors.rubroId}
                   withLabel

@@ -128,28 +128,12 @@ const KardexProductos = () => {
         } catch (_) { /* noop */ }
     }, [vistaActual, vistaStorageKey]);
 
-    // Cargar columnas: priorizar servidor, fallback a localStorage
+    // Cargar columnas: solo localStorage (backend no implementado)
     useEffect(() => {
-        const loadColumns = async () => {
+        const loadColumns = () => {
             if (!auth?.empresaId) return;
 
-            try {
-                // Intentar cargar desde servidor primero
-                const res = await apiClient.get(`/preferencias/tabla`, {
-                    params: { tabla: 'productos', empresaId: auth.empresaId },
-                });
-                const serverCols = res?.data?.visibleColumns;
-                if (Array.isArray(serverCols) && serverCols.length) {
-                    let restored: string[] = allColumns.filter((c) => serverCols.includes(c));
-                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
-                    setVisibleColumns(restored);
-                    return; // Éxito, no necesitamos localStorage
-                }
-            } catch (_e) {
-                // Si falla servidor, intentar localStorage
-            }
-
-            // Fallback a localStorage
+            // Cargar desde localStorage
             try {
                 const defaultKey = columnsStorageKey.replace(`${auth.empresaId}`, 'default');
                 const candidates = [columnsStorageKey, defaultKey];
@@ -184,17 +168,7 @@ const KardexProductos = () => {
         } catch (e) {
             // noop
         }
-        // Persistir también en backend
-        const persist = async () => {
-            try {
-                const toSave = visibleColumns.includes('Acciones') ? visibleColumns : [...visibleColumns, 'Acciones'];
-                await apiClient.put(`/preferencias/tabla`, { visibleColumns: toSave }, {
-                    params: { tabla: 'productos', empresaId: auth?.empresaId },
-                });
-            } catch (_e) { /* noop */ }
-        };
-        if (auth?.empresaId) persist();
-    }, [visibleColumns, columnsStorageKey, auth?.empresaId]);
+    }, [visibleColumns, columnsStorageKey]);
     const toggleColumn = (column: string) => {
         if (column === 'Acciones') return; // Siempre visible
         setVisibleColumns(prev => {
@@ -604,6 +578,17 @@ const KardexProductos = () => {
         }
     };
 
+    const [isOpenModalDeleteAll, setIsOpenModalDeleteAll] = useState(false);
+    const { deleteAllProducts } = useProductsStore();
+
+    // ... (existing code)
+
+    const confirmDeleteAllProducts = async () => {
+        await deleteAllProducts();
+        setIsOpenModalDeleteAll(false);
+        await getAllProducts({ page: currentPage, limit: itemsPerPage, search: debounce });
+    };
+
     return (
         <div className="min-h-screen pb-4">
             {/* Header */}
@@ -612,26 +597,37 @@ const KardexProductos = () => {
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{labels.titulo}</h1>
                     <p className="text-sm text-gray-500 mt-1">Gestiona tu inventario de {labels.titulo.toLowerCase()}</p>
                 </div>
-                <Button
-                    color="secondary"
-                    onClick={() => {
-                        setFormValues(initialForm);
-                        setErrors({
-                            descripcion: "",
-                            categoriaId: 0,
-                            description: "",
-                            precioUnitario: "",
-                            stock: "",
-                            codigo: "",
-                            unidadMedida: ""
-                        });
-                        setIsOpenModal(true);
-                    }}
-                    className="flex items-center gap-2"
-                >
-                    <Icon icon="solar:add-circle-bold" className="text-lg" />
-                    {labels.nuevoBtn}
-                </Button>
+                <div className="flex gap-3">
+                    <Button
+                        color="secondary"
+                        outline
+                        className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300"
+                        onClick={() => setIsOpenModalDeleteAll(true)}
+                    >
+                        <Icon icon="solar:trash-bin-trash-bold" className="text-lg mr-2" />
+                        Eliminar todo
+                    </Button>
+                    <Button
+                        color="secondary"
+                        onClick={() => {
+                            setFormValues(initialForm);
+                            setErrors({
+                                descripcion: "",
+                                categoriaId: 0,
+                                description: "",
+                                precioUnitario: "",
+                                stock: "",
+                                codigo: "",
+                                unidadMedida: ""
+                            });
+                            setIsOpenModal(true);
+                        }}
+                        className="flex items-center gap-2"
+                    >
+                        <Icon icon="solar:add-circle-bold" className="text-lg" />
+                        {labels.nuevoBtn}
+                    </Button>
+                </div>
             </div>
 
             {/* Main Content Card */}
@@ -703,8 +699,6 @@ const KardexProductos = () => {
                         </div>
                     </div>
                 </div>
-
-                {/* Products Content */}
                 <div className="p-4">
                     {/* Input oculto para subir imágenes */}
                     <input
@@ -743,9 +737,17 @@ const KardexProductos = () => {
             {isOpenModalCategory && <ModalCategories isOpenModal={isOpenModalCategory} setIsOpenModal={setIsOpenModalCategory} closeModal={closeModal} />}
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmToggleroduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information={labels.confirmarEstado} />}
             {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalDelete} setIsOpenModal={setIsOpenModalDelete} title={labels.eliminar} information={labels.eliminarInfo} />}
+            {isOpenModalDeleteAll && (
+                <ModalConfirm
+                    confirmSubmit={confirmDeleteAllProducts}
+                    isOpenModal={isOpenModalDeleteAll}
+                    setIsOpenModal={setIsOpenModalDeleteAll}
+                    title="Eliminar todos los productos"
+                    information="¿Estás seguro de que deseas eliminar TODOS los productos? Esta acción moverá todos los productos a la papelera (excepto los del sistema) y no se mostrarán en el inventario. Esta acción no se puede deshacer fácilmente."
+                />
+            )}
         </div>
     );
-
 };
 
 export default KardexProductos;

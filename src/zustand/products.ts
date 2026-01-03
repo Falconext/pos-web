@@ -21,6 +21,7 @@ export interface IProductsState {
     exportProducts: (empresaId: number, search?: string) => void;
     importProducts: (file: File) => Promise<void>;
     deleteProduct: (productoId: number) => Promise<void>;
+    deleteAllProducts: () => Promise<void>;
     setProductImage: (productoId: number, imagenUrl: string) => void;
     upsertProductLocal: (product: any) => void;
 }
@@ -72,6 +73,26 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             useAlertStore.getState().alert('Producto eliminado correctamente', 'success');
         } catch (error: any) {
             useAlertStore.getState().alert(error?.message || 'Error al eliminar el producto', 'error');
+        } finally {
+            useAlertStore.setState({ loading: false });
+        }
+    },
+    deleteAllProducts: async () => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await del(`producto/empresa/eliminar-todo`);
+            if (resp.code === 1) {
+                set({
+                    products: [],
+                    totalProducts: 0
+                }, false, 'DELETE_ALL_PRODUCTS');
+                useAlertStore.setState({ success: true });
+                useAlertStore.getState().alert(resp.message || 'Se eliminaron todos los productos', 'success');
+            } else {
+                useAlertStore.getState().alert('Error al eliminar productos', 'error');
+            }
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.message || 'Error al eliminar productos', 'error');
         } finally {
             useAlertStore.setState({ loading: false });
         }
@@ -167,8 +188,8 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                         console.warn('No se pudo crear el movimiento de kardex:', kardexError);
                         // No interrumpir el flujo principal si falla el kardex
                     }
-                }   
-                
+                }
+
                 useAlertStore.setState({ success: true });
                 set((state) => ({
                     products: state.products.map((product: IProduct) =>
@@ -182,7 +203,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                     ),
                 }), false, "UPDATE_PRODUCT");
                 useAlertStore.setState({ loading: false })
-                const message = stockAnterior !== stockNuevo 
+                const message = stockAnterior !== stockNuevo
                     ? "Se actualizó el producto correctamente y se registró el ajuste en kardex"
                     : "Se actualizó el producto correctamente";
                 useAlertStore.getState().alert(message, "success");
@@ -303,8 +324,20 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             }
 
             if (result.code === 1) {
-                useAlertStore.setState({ success: true });
-                useAlertStore.getState().alert('Productos importados exitosamente', 'success');
+                const details = result.data || {};
+                const exitosos = details.exitosos || 0;
+                const fallidos = details.fallidos || 0;
+
+                if (exitosos === 0 && fallidos > 0) {
+                    // Caso donde todo falló pero el envoltorio (wrapper) dio éxito
+                    const primerError = details.detalles?.find((d: any) => d.error)?.error || 'Error desconocido';
+                    useAlertStore.getState().alert(`No se importó ningún producto. ${primerError}`, 'error');
+                } else {
+                    useAlertStore.setState({ success: true });
+                    useAlertStore.getState().alert(`Se importaron ${exitosos} productos correctamente.`, 'success');
+                    // Refresh list automatically to show imported items
+                    await _get().getAllProducts({ page: 1, limit: 50 });
+                }
             } else {
                 throw new Error(result.message || 'Error al importar los productos');
             }
