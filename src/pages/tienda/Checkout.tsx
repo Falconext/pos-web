@@ -241,9 +241,9 @@ export default function Checkout() {
           <h1 className="text-2xl md:text-3xl font-bold">Complete su pedido</h1>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20 md:pb-0">
           {/* Formulario */}
-          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-6`}>
+          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-4 md:p-6`}>
             <h2 className="text-lg font-semibold mb-4">Tus Datos</h2>
             <form onSubmit={enviarPedido} className="space-y-4">
               <div>
@@ -421,7 +421,7 @@ export default function Checkout() {
           </div>
 
           {/* Resumen */}
-          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-6 h-fit`}>
+          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-4 md:p-6 h-fit md:sticky md:top-24`}>
             <h2 className="text-lg font-semibold mb-4">Resumen del pedido</h2>
             <div className="space-y-3 mb-4">
               {carritoState.map((item: any) => (

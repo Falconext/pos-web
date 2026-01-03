@@ -6,9 +6,10 @@ interface ProductCardProps {
     slug: string;
     diseno: any;
     onAddToCart: (producto: any) => void;
+    onClick?: () => void;
 }
 
-export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart }: ProductCardProps) {
+export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     const getBotonStyle = () => {
@@ -22,14 +23,17 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
     const btnRadius = getBotonStyle();
 
     return (
-        <div className="group flex flex-col h-full bg-white">
+        <div
+            className="group flex flex-col h-full bg-white cursor-pointer rounded-xl p-6"
+            onClick={onClick}
+        >
             {/* Image Container - Aspect Ratio Square/Portrait with Gray BG per reference */}
             <div
-                className="relative w-full aspect-[3/4] overflow-hidden bg-gray-50 rounded-2xl mb-4"
+                className="relative w-full aspect-[3/4] overflow-hidden rounded-2xl mb-4"
             >
                 {/* Loader placeholder */}
                 {!imageLoaded && producto.imagenUrl && (
-                    <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+                    <div className="absolute inset-0 animate-pulse" />
                 )}
 
                 {producto.imagenUrl ? (

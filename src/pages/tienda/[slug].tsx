@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import SliderBanners from '@/components/tienda/SliderBanners';
@@ -40,6 +40,7 @@ export default function TiendaPublica() {
   const [modificadoresProducto, setModificadoresProducto] = useState<any[]>([]);
   const [seleccionesModificadores, setSeleccionesModificadores] = useState<Record<number, number[]>>({});
   const [loadingModificadores, setLoadingModificadores] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     cargarTienda();
@@ -64,6 +65,26 @@ export default function TiendaPublica() {
     } catch { }
     setIsCartLoaded(true);
   }, [slug]);
+
+  const [searchParams] = useSearchParams();
+  const productIdParam = searchParams.get('product');
+
+  useEffect(() => {
+    if (productIdParam && slug) {
+      const fetchAndAction = async () => {
+        try {
+          const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${productIdParam}`);
+          const product = data.data || data;
+          if (product) {
+            handleAgregarProducto(product);
+            // Remove param to avoid re-triggering on refresh
+            navigate('.', { replace: true });
+          }
+        } catch (e) { console.error('Error handling banner product link:', e) }
+      }
+      fetchAndAction();
+    }
+  }, [productIdParam, slug]);
 
   // Función para refrescar las URLs de imágenes del carrito
   const refrescarImagenesCarrito = async (carritoActual: any[]) => {
@@ -268,6 +289,14 @@ export default function TiendaPublica() {
 
   // Abrir modal de personalización o agregar directo si no tiene modificadores
   const handleAgregarProducto = async (producto: any) => {
+    const blockedRubros = ['ferreteria', 'ventas de materiales de construccion', 'farmacia', 'botica'];
+    const isBlocked = blockedRubros.some(r => tienda?.rubro?.nombre?.toLowerCase().includes(r));
+
+    if (isBlocked) {
+      agregarAlCarritoDirecto(producto);
+      return;
+    }
+
     const mods = await cargarModificadoresProducto(producto.id);
 
     if (mods.length > 0) {
@@ -530,10 +559,19 @@ export default function TiendaPublica() {
             {/* Header: Showing X results... + Sort + Applied Filters */}
             <div className="mb-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <p className="text-gray-500 text-sm">
-                  Mostrando <span className="font-bold text-gray-900">{filteredProductos.length}</span> resultados
-                  {search && <> for "<span className="font-bold text-gray-900">{search}</span>"</>}
-                </p>
+                <div className="flex items-center justify-between gap-4">
+                  <button
+                    onClick={() => setShowMobileFilters(true)}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    <Icon icon="mdi:filter-variant" className="w-5 h-5" />
+                    Filtros
+                  </button>
+                  <p className="text-gray-500 text-sm">
+                    Mostrando <span className="font-bold text-gray-900">{filteredProductos.length}</span> resultados
+                    {search && <> for "<span className="font-bold text-gray-900">{search}</span>"</>}
+                  </p>
+                </div>
               </div>
 
               {/* Applied Filters Chips */}
@@ -611,6 +649,10 @@ export default function TiendaPublica() {
                             slug={slug || ''}
                             diseno={diseno}
                             onAddToCart={agregarAlCarrito}
+                            onClick={() => {
+                              // If blocked rubro, maybe do something else? For now always detail.
+                              navigate(`producto/${producto.id}`);
+                            }}
                           />
                         ))
                       )}
@@ -682,7 +724,7 @@ export default function TiendaPublica() {
                     <div className="flex-1 flex flex-col justify-between py-1">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{item.descripcion}</h3>
-                        {item.modificadores && item.modificadores.length > 0 && (
+                        {item.modificadores && item.modificadores.length > 0 && !(['ferreteria', 'ventas de materiales de construccion', 'farmacia', 'botica'].some(r => tienda?.rubro?.nombre?.toLowerCase().includes(r))) && (
                           <p className="text-xs text-gray-500 mt-1">
                             + {item.modificadores.length} extras
                           </p>
@@ -777,6 +819,44 @@ export default function TiendaPublica() {
                 className="w-full bg-black text-white py-3 font-bold uppercase rounded-lg"
               >
                 Agregar al Carrito
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Filter Drawer */}
+      {showMobileFilters && (
+        <div className="fixed inset-0 z-[999999] lg:hidden flex">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setShowMobileFilters(false)} />
+          <div className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 animate-in slide-in-from-left">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+              <h2 className="text-lg font-bold uppercase tracking-wide">Filtros</h2>
+              <button onClick={() => setShowMobileFilters(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <Icon icon="mdi:close" className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <StoreSidebar
+                categories={allCategories}
+                selectedCats={selectedCats}
+                setSelectedCats={setSelectedCats}
+                search={search}
+                setSearch={setSearch}
+                diseno={diseno}
+                totalProducts={total}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+              />
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="w-full bg-black text-white py-3 font-bold uppercase rounded-lg"
+              >
+                Ver {filteredProductos.length} Resultados
               </button>
             </div>
           </div>

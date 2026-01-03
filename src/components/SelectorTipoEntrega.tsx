@@ -21,14 +21,14 @@ export default function SelectorTipoEntrega({
         <div className="space-y-3">
             <label className="block text-sm font-medium mb-2">Tipo de entrega *</label>
 
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {aceptaRecojo && (
                     <button
                         type="button"
                         onClick={() => onChange('RECOJO')}
                         className={`p-4 border-2 rounded-lg transition-all ${tipoEntrega === 'RECOJO'
-                                ? 'border-blue-600 bg-blue-50'
-                                : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400'
                             }`}
                     >
                         <div className="flex items-center gap-3">
@@ -61,8 +61,8 @@ export default function SelectorTipoEntrega({
                         type="button"
                         onClick={() => onChange('ENVIO')}
                         className={`p-4 border-2 rounded-lg transition-all ${tipoEntrega === 'ENVIO'
-                                ? 'border-green-600 bg-green-50'
-                                : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-green-600 bg-green-50'
+                            : 'border-gray-300 hover:border-gray-400'
                             }`}
                     >
                         <div className="flex items-center gap-3">

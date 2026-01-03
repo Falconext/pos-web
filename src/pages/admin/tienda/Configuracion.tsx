@@ -52,10 +52,109 @@ export default function ConfiguracionTienda() {
   const [loadingBanners, setLoadingBanners] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
+  // Search products for banners
+  const [productSearch, setProductSearch] = useState('');
+  const [productResults, setProductResults] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [searchingProducts, setSearchingProducts] = useState(false);
+
+  // Editing state
+  const [editingBanner, setEditingBanner] = useState<any>(null);
+  const [editSearch, setEditSearch] = useState('');
+  const [editResults, setEditResults] = useState<any[]>([]);
+  const [editSelectedProduct, setEditSelectedProduct] = useState<any>(null);
+  const [searchingEdit, setSearchingEdit] = useState(false);
+
   useEffect(() => {
     cargarConfiguracion();
     cargarBanners();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (productSearch.trim().length > 2) {
+        setSearchingProducts(true);
+        try {
+          // Using public endpoint for ease, or admin endpoint if available.
+          // Admin usually has /producto
+          const { data } = await apiClient.get('/producto', {
+            params: {
+              limit: 5,
+              page: 1,
+              search: productSearch
+            }
+          });
+          // data.data (response from axios) -> .data (payload) -> .productos (array based on user input)
+          const payload = data.data;
+          setProductResults(payload?.productos || payload?.data || payload || []);
+        } catch (error) {
+          console.error(error);
+          setProductResults([]);
+        } finally {
+          setSearchingProducts(false);
+        }
+      } else {
+        setProductResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [productSearch]);
+
+  // Efecto para búsqueda en edición
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (editSearch.trim().length > 2) {
+        setSearchingEdit(true);
+        try {
+          const { data } = await apiClient.get('/producto', {
+            params: { limit: 5, page: 1, search: editSearch }
+          });
+          const payload = data.data;
+          setEditResults(payload?.productos || payload?.data || payload || []);
+        } catch (error) {
+          console.error(error);
+          setEditResults([]);
+        } finally {
+          setSearchingEdit(false);
+        }
+      } else {
+        setEditResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [editSearch]);
+
+  const handleUpdateBanner = async () => {
+    if (!editingBanner) return;
+    try {
+      setSaving(true);
+      await apiClient.patch(`/banners/${editingBanner.id}`, {
+        productoId: editSelectedProduct?.id || null,
+        // If we supported title editing, we'd add it here
+      });
+      alert('Banner actualizado correctamente', 'success');
+      setEditingBanner(null);
+      setEditSelectedProduct(null);
+      setEditSearch('');
+      cargarBanners();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al actualizar banner', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEditModal = (banner: any) => {
+    setEditingBanner(banner);
+    if (banner.producto) {
+      setEditSelectedProduct(banner.producto);
+      setEditSearch(banner.producto.descripcion);
+    } else {
+      setEditSelectedProduct(null);
+      setEditSearch('');
+    }
+  };
 
   const cargarConfiguracion = async () => {
     try {
@@ -252,6 +351,9 @@ export default function ConfiguracionTienda() {
       fd.append('file', file);
       fd.append('titulo', 'Banner');
       fd.append('orden', banners.length.toString());
+      if (selectedProduct) {
+        fd.append('productoId', selectedProduct.id.toString());
+      }
 
       await apiClient.post('/banners/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -259,6 +361,10 @@ export default function ConfiguracionTienda() {
 
       alert('Banner subido exitosamente', 'success');
       cargarBanners();
+      // Reset selection
+      setSelectedProduct(null);
+      setProductSearch('');
+      setProductResults([]);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error al subir banner', 'error');
     } finally {
@@ -649,53 +755,171 @@ export default function ConfiguracionTienda() {
                       <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
+                          onClick={() => openEditModal(banner)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                          title="Editar enlace"
+                        >
+                          <Icon icon="solar:pen-bold" className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => eliminarBanner(banner.id)}
                           className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                          title="Eliminar banner"
                         >
                           <Icon icon="mdi:delete" className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="mt-2 text-sm font-medium text-gray-700 text-center">
-                        {banner.titulo || `Banner ${index + 1}`}
+                      <p className="mt-2 text-sm font-medium text-gray-700 text-center truncate px-2">
+                        {banner.producto ? `🔗 ${banner.producto.descripcion}` : (banner.titulo || `Banner ${index + 1}`)}
                       </p>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Botón para subir nuevo banner */}
-              {banners.length < 5 && (
-                <div>
-                  <label className="block">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/jpg"
-                        onChange={handleBannerFileChange}
-                        disabled={uploadingBanner}
-                        className="hidden"
-                      />
-                      {uploadingBanner ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <Icon icon="eos-icons:loading" className="w-12 h-12 text-purple-500" />
-                          <p className="text-sm text-gray-600">Subiendo banner...</p>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <Icon icon="solar:gallery-add-bold" className="w-12 h-12 text-gray-400" />
-                          <p className="text-sm font-medium text-gray-700">Click para subir banner</p>
-                          <p className="text-xs text-gray-500">JPG, PNG o WebP (máx. 2.5MB)</p>
+              {/* Modal Edición de Banner */}
+              {editingBanner && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+                    <h3 className="text-lg font-bold mb-4">Editar Enlace del Banner</h3>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Producto Vinculado</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={editSearch}
+                          onChange={(e) => { setEditSearch(e.target.value); if (!e.target.value) setEditSelectedProduct(null); }}
+                          placeholder="Buscar producto..."
+                          className="w-full rounded-lg border-gray-300 focus:ring-black focus:border-black"
+                        />
+                        {editSelectedProduct && (
+                          <button
+                            type="button"
+                            onClick={() => { setEditSelectedProduct(null); setEditSearch(''); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                          >
+                            <Icon icon="mdi:close-circle" />
+                          </button>
+                        )}
+
+                        {/* Resultados search edit */}
+                        {editSearch.length > 2 && !editSelectedProduct && (
+                          <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-b-lg z-10 max-h-48 overflow-y-auto mt-1">
+                            {searchingEdit ? (
+                              <div className="p-3 text-center text-xs text-gray-500">Buscando...</div>
+                            ) : editResults.length > 0 ? (
+                              editResults.map(p => (
+                                <div
+                                  key={p.id}
+                                  onClick={() => { setEditSelectedProduct(p); setEditSearch(p.descripcion); setEditResults([]); }}
+                                  className="p-2 hover:bg-gray-50 cursor-pointer text-sm border-b last:border-0"
+                                >
+                                  <div className="font-medium truncate">{p.descripcion}</div>
+                                  <div className="text-xs text-gray-500">S/ {p.precioUnitario}</div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="p-3 text-center text-xs text-gray-500">No se encontraron productos</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {editSelectedProduct && (
+                        <div className="mt-2 text-xs text-green-600 flex items-center gap-1 font-medium bg-green-50 p-2 rounded">
+                          <Icon icon="mdi:link" />
+                          Vinculado a: {editSelectedProduct.descripcion}
                         </div>
                       )}
                     </div>
-                  </label>
+
+                    <div className="flex justify-end gap-2 mt-6">
+                      <Button type="button" color="secondary" onClick={() => setEditingBanner(null)}>Cancelar</Button>
+                      <Button type="button" onClick={handleUpdateBanner} disabled={saving}>
+                        {saving ? 'Guardando...' : 'Guardar Cambios'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {banners.length === 0 && !uploadingBanner && (
-                <div className="text-center py-8 text-gray-500">
-                  <Icon icon="solar:gallery-bold" className="w-16 h-16 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm">No hay banners aún. Sube tu primer banner para comenzar.</p>
+              {/* Botón para subir nuevo banner */}
+              {banners.length < 5 && (
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-semibold mb-3">Subir Nuevo Banner</h4>
+
+                  {/* Product Link Search */}
+                  <div className="mb-4 relative">
+                    <label className="block text-xs font-bold text-gray-700 mb-2">PASO 1: Vincular Producto (Opcional)</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Buscar producto para vincular..."
+                        className="w-full text-sm border-gray-300 rounded-md focus:ring-black focus:border-black placeholder-gray-400"
+                        disabled={!!selectedProduct}
+                      />
+                      {/* Results Dropdown inside relative container */}
+                      {productSearch.length > 2 && !selectedProduct && (
+                        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-b-lg z-10 max-h-48 overflow-y-auto mt-1">
+                          {searchingProducts ? (
+                            <div className="p-3 text-center text-xs text-gray-500">Buscando...</div>
+                          ) : productResults.length > 0 ? (
+                            productResults.map(p => (
+                              <div
+                                key={p.id}
+                                onClick={() => { setSelectedProduct(p); setProductSearch(p.descripcion); setProductResults([]); }}
+                                className="p-2 hover:bg-gray-50 cursor-pointer text-sm border-b last:border-0"
+                              >
+                                <div className="font-medium truncate">{p.descripcion}</div>
+                                <div className="text-xs text-gray-500">S/ {p.precioUnitario}</div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-3 text-center text-xs text-gray-500">No se encontraron productos</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* PASO 2 */}
+                    <div className="mt-6">
+                      <span className="block text-xs font-bold text-gray-700 mb-2">PASO 2: Subir Imagen del Banner</span>
+                      <label className="block w-full">
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all bg-white">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            onChange={handleBannerFileChange}
+                            disabled={uploadingBanner}
+                            className="hidden"
+                          />
+                          {uploadingBanner ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Icon icon="eos-icons:loading" className="w-12 h-12 text-purple-500" />
+                              <p className="text-sm text-gray-600">Subiendo banner...</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-2">
+                              <Icon icon="solar:gallery-add-bold" className="w-12 h-12 text-gray-400" />
+                              <p className="text-sm font-medium text-gray-700">Click para seleccionar imagen</p>
+                              <p className="text-xs text-gray-500">JPG, PNG o WebP (máx. 2.5MB)</p>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+
+                  {banners.length === 0 && !uploadingBanner && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Icon icon="solar:gallery-bold" className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">No hay banners aún. Sube tu primer banner para comenzar.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -740,7 +964,7 @@ export default function ConfiguracionTienda() {
             {saving ? 'Guardando...' : 'Guardar Configuración'}
           </Button>
         </div>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 }

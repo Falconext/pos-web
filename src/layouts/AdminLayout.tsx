@@ -357,9 +357,11 @@ export default function AdminLayout() {
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Pedidos
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
-                        Modificadores
-                      </NavLink>
+                      {isRestaurante && (
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
+                          Modificadores
+                        </NavLink>
+                      )}
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
                         Configuración
                       </NavLink>

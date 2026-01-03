@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
+import { useNavigate } from 'react-router-dom';
 
 interface SliderBannersProps {
     tienda: any;
@@ -7,6 +8,7 @@ interface SliderBannersProps {
 }
 
 export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
+    const navigate = useNavigate();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState<Record<number, boolean>>({});
 
@@ -43,7 +45,6 @@ export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
     ];
 
     // Si la tienda tiene banners reales (feature premium), usarlos. Si no, usar defaults bonitos.
-    // Asumimos que tienda.banners vendría del backend si tuviera el feature.
     const banners = tienda.banners && tienda.banners.length > 0 ? tienda.banners : defaultBanners;
 
     useEffect(() => {
@@ -137,7 +138,18 @@ export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
                 {mainBanners.map((banner: any, index: number) => (
                     <div
                         key={banner.id}
-                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'} cursor-pointer`}
+                        onClick={() => {
+                            if (banner.productoId) {
+                                navigate(`producto/${banner.productoId}`);
+                            } else if (banner.linkUrl) {
+                                if (banner.linkUrl.startsWith('http')) {
+                                    window.open(banner.linkUrl, '_blank');
+                                } else {
+                                    navigate(banner.linkUrl);
+                                }
+                            }
+                        }}
                     >
                         {renderBannerContent(banner, true)}
                     </div>
@@ -149,7 +161,7 @@ export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
                         {mainBanners.map((_: any, index: number) => (
                             <button
                                 key={index}
-                                onClick={() => setCurrentSlide(index)}
+                                onClick={(e) => { e.stopPropagation(); setCurrentSlide(index); }}
                                 className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? 'w-8 bg-white' : 'bg-white/50 hover:bg-white/80'}`}
                                 aria-label={`Ir a slide ${index + 1}`}
                             />
@@ -160,7 +172,20 @@ export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
 
             {/* Side Banner (Right) */}
             {hasSideBanner && sideBanner && (
-                <div className={`relative w-full h-[300px] md:h-[420px] overflow-hidden ${borderRadius} shadow-sm md:col-span-1 block`}>
+                <div
+                    className={`relative w-full h-[300px] md:h-[420px] overflow-hidden ${borderRadius} shadow-sm md:col-span-1 block cursor-pointer`}
+                    onClick={() => {
+                        if (sideBanner.productoId) {
+                            navigate(`producto/${sideBanner.productoId}`);
+                        } else if (sideBanner.linkUrl) {
+                            if (sideBanner.linkUrl.startsWith('http')) {
+                                window.open(sideBanner.linkUrl, '_blank');
+                            } else {
+                                navigate(sideBanner.linkUrl);
+                            }
+                        }
+                    }}
+                >
                     {renderBannerContent(sideBanner, true)}
                 </div>
             )}
