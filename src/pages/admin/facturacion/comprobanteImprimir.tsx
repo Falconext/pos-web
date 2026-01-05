@@ -76,7 +76,7 @@ const ComprobantePrintPage = ({
                             RUC: {company?.empresa?.ruc?.toUpperCase()}
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
+                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div>
                             <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">FECHA/HORA:</span> {moment(formValues?.fechaEmision).format('DD/MM/YYYY HH:mm:ss')}</p>
@@ -134,8 +134,8 @@ const ComprobantePrintPage = ({
                             </div>
                             <div className="border border-black px-4 pt-4 pb-2 text-center">
                                 <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
-                                <div className="text-lg font-bold">{receipt}</div>
-                                <div className='font-bold text-lg'>ELECTRONICA</div>
+                                <div className="text-lg font-bold">{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt}</div>
+                                <div className='font-bold text-lg'>{receipt === "COTIZACIÓN" ? "" : "ELECTRONICA"}</div>
                                 <div>{formValues?.serie}-{formValues?.correlativo}</div>
                             </div>
                         </div>

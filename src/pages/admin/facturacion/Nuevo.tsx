@@ -337,7 +337,7 @@ const Invoice = () => {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const navigate = useNavigate();
-    const [printSize, setPrintSize] = useState("TICKET");
+    const [printSize, setPrintSize] = useState(isQuotationRoute ? "A4" : "TICKET");
 
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
         const clientSelect = clients?.find((item: any) => value.split("-")[0] === item.nroDoc);
