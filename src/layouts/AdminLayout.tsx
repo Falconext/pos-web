@@ -31,6 +31,7 @@ export default function AdminLayout() {
   const [isKardexSubmenuOpen, setIsKardexSubmenuOpen] = useState(false)
   const [isCajaSubmenuOpen, setIsCajaSubmenuOpen] = useState(false)
   const [isTiendaSubmenuOpen, setIsTiendaSubmenuOpen] = useState(false)
+  const [isCotizSubmenuOpen, setIsCotizSubmenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
   const scrollYRef = useRef(0)
@@ -43,6 +44,7 @@ export default function AdminLayout() {
     setIsKardexSubmenuOpen(false)
     setIsCajaSubmenuOpen(false)
     setIsTiendaSubmenuOpen(false)
+    setIsCotizSubmenuOpen(false)
   }
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function AdminLayout() {
   }, [])
 
   // Alternar acordeón exclusivo
-  const toggleAccordion = (key: 'fact' | 'informal' | 'cont' | 'kardex' | 'caja' | 'tienda') => {
+  const toggleAccordion = (key: 'fact' | 'informal' | 'cont' | 'kardex' | 'caja' | 'tienda' | 'cotiz') => {
     if (key === 'fact') {
       const next = !isFactSubmenuOpen
       closeAllAccordions()
@@ -87,6 +89,10 @@ export default function AdminLayout() {
       const next = !isTiendaSubmenuOpen
       closeAllAccordions()
       setIsTiendaSubmenuOpen(next)
+    } else if (key === 'cotiz') {
+      const next = !isCotizSubmenuOpen
+      closeAllAccordions()
+      setIsCotizSubmenuOpen(next)
     }
   }
 
@@ -307,6 +313,28 @@ export default function AdminLayout() {
                     <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Pagos') }} to="/administrador/pagos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
                       <Icon icon="solar:wallet-money-bold-duotone" className="mr-3 text-xl" /> Gestión de Pagos
                     </NavLink>
+                  )}
+
+                  {/* Cotizaciones */}
+                  {hasPermission(auth, 'cotizaciones') && (
+                    <div>
+                      <button onClick={() => { toggleAccordion('cotiz'); setNameNavbar('Cotizaciones') }} className={location.pathname.includes('/administrador/cotizaciones') ? `flex items-center justify-between w-full ${theme.primaryLightBg} ${theme.primaryText} px-4 py-3 text-sm font-semibold ${theme.sidebarRadius} transition-all text-left` : `flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 ${theme.sidebarRadius} transition-all text-left`}>
+                        <div className="flex items-center">
+                          <Icon icon="solar:document-text-bold-duotone" className="mr-3 text-xl" /> Cotizaciones
+                        </div>
+                        <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isCotizSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
+                      </button>
+                      {isCotizSubmenuOpen && (
+                        <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/cotizaciones" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
+                            Ver cotizaciones
+                          </NavLink>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/cotizaciones/nuevo" className={({ isActive }) => isActive ? `flex items-center px-4 py-2 text-sm font-medium ${theme.primaryText} rounded-lg ${theme.primaryLightBg}/50` : 'flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg'}>
+                            Nueva cotización
+                          </NavLink>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </>
               )}

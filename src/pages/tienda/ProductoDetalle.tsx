@@ -23,6 +23,20 @@ export default function ProductoDetalle() {
   const [mostrarCarrito, setMostrarCarrito] = useState(false);
   const dragging = useRef(false);
 
+  // Admin Menu Logic
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const adminMenuRef = useRef<HTMLDivElement | null>(null);
+  const isLoggedIn = !!localStorage.getItem('ACCESS_TOKEN');
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (!adminMenuRef.current) return;
+      if (!adminMenuRef.current.contains(e.target as Node)) setIsAdminOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -188,6 +202,25 @@ export default function ProductoDetalle() {
             <button onClick={() => navigate(`/tienda/${slug}`)} className="hidden md:flex items-center gap-2 text-sm font-medium hover:text-gray-600">
               TIENDA
             </button>
+
+            {isLoggedIn && (
+              <div className="relative" ref={adminMenuRef}>
+                <button onClick={() => setIsAdminOpen((v) => !v)} className="text-sm font-medium hover:text-gray-600 flex items-center gap-1 uppercase tracking-wide">
+                  ADMIN PANEL
+                  <Icon icon={isAdminOpen ? "mdi:chevron-up" : "mdi:chevron-down"} width={16} />
+                </button>
+                {isAdminOpen && (
+                  <div className={`absolute right-0 mt-2 w-56 bg-white border border-gray-100 shadow-xl z-[60] py-2 rounded-lg`}>
+                    <ul className="text-sm text-gray-700">
+                      <li><button onClick={() => { setIsAdminOpen(false); navigate('/administrador'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">Ir a facturación</button></li>
+                      <li><button onClick={() => { setIsAdminOpen(false); navigate('/administrador/kardex/productos'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">Productos</button></li>
+                      <li><button onClick={() => { setIsAdminOpen(false); navigate('/administrador/tienda/pedidos'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">Pedidos</button></li>
+                      <li><button onClick={() => { setIsAdminOpen(false); navigate('/administrador/tienda/configuracion'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">Configuración tienda</button></li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => setMostrarCarrito(!mostrarCarrito)}
               className="relative flex items-center gap-2 text-sm font-medium hover:opacity-70 transition-opacity"
@@ -370,7 +403,7 @@ export default function ProductoDetalle() {
       {/* Related Products Slider */}
       <div className='max-w-7xl mx-auto'>
         {relatedProducts.length > 0 && (
-          <div className="border-t border-gray-100 pt-16 rounded-xl">
+          <div className="border-t border-gray-100 pt-16 rounded-xl mb-14">
             <h3 className="text-2xl font-bold mb-8 text-left tracking-wide">Productos que otros clientes tambien han comprado</h3>
             <div className="px-0"> {/* Padding for slider arrows */}
               <Slider {...settings}>

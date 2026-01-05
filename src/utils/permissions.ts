@@ -21,16 +21,16 @@ const normalizePerms = (perms: string[] = []): string[] => {
 export const hasPermission = (user: IUserPermissions | null, modulo: string): boolean => {
   // Si no hay usuario, no tiene acceso
   if (!user) return false;
-  
+
   // Si es admin del sistema o de la empresa, tiene acceso completo
   if (user.rol === 'ADMIN_EMPRESA' || user.rol === 'ADMIN_SISTEMA') return true;
-  
+
   // Si no tiene permisos definidos, no tiene acceso
   if (!user.permisos || user.permisos.length === 0) return false;
-  
+
   // Si tiene acceso completo (*)
   if (user.permisos.includes('*')) return true;
-  
+
   // Si tiene permiso específico al módulo
   const normalized = normalizePerms(user.permisos);
   return normalized.includes(modulo);
@@ -41,17 +41,17 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
  */
 export const getAvailableModules = (user: IUserPermissions | null): string[] => {
   if (!user) return [];
-  
+
   // Si es admin, tiene acceso a todos
   if (user.rol === 'ADMIN_EMPRESA' || user.rol === 'ADMIN_SISTEMA') {
-    return ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos'];
+    return ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones'];
   }
-  
+
   // Si tiene acceso completo
   if (user.permisos?.includes('*')) {
     return ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos'];
   }
-  
+
   // Devolver permisos específicos
   return normalizePerms(user.permisos || []);
 };
@@ -61,11 +61,11 @@ export const getAvailableModules = (user: IUserPermissions | null): string[] => 
  */
 export const filterSidebarItems = (items: any[], user: IUserPermissions | null) => {
   if (!user) return [];
-  
+
   return items.filter(item => {
     // Si no tiene módulo definido, mostrar siempre (ej: items de separación)
     if (!item.module) return true;
-    
+
     // Verificar permiso
     return hasPermission(user, item.module);
   });
@@ -76,14 +76,14 @@ export const filterSidebarItems = (items: any[], user: IUserPermissions | null) 
  */
 export const getRedirectPath = (user: IUserPermissions | null, intendedPath: string): string => {
   if (!user) return '/login';
-  
+
   const availableModules = getAvailableModules(user);
-  
+
   // Si tiene acceso al dashboard, enviarlo ahí
   if (availableModules.includes('dashboard')) {
     return '/administrador';
   }
-  
+
   // Si no, enviarlo al primer módulo disponible
   if (availableModules.length > 0) {
     const firstModule = availableModules[0];
@@ -96,11 +96,12 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       usuarios: '/administrador/usuarios',
       caja: '/administrador/caja',
       pagos: '/administrador/pagos',
+      cotizaciones: '/administrador/cotizaciones',
     };
-    
+
     return moduleRoutes[firstModule] || '/administrador';
   }
-  
+
   // Si no tiene ningún permiso, cerrar sesión
   return '/login';
 };

@@ -75,6 +75,8 @@ function App() {
           <Route path="facturacion/comprobantes" element={<ComprobantesPage />} />
           <Route path="facturacion/comprobantes-informales" element={<ComprobantesInformales />} />
           <Route path="pagos" element={<Pagos />} />
+          <Route path="cotizaciones" element={<Cotizaciones />} />
+          <Route path="cotizaciones/nuevo" element={<Invoice />} />
           <Route path="facturacion/nuevo" element={<Invoice />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
