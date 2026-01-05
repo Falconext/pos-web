@@ -338,6 +338,7 @@ const Invoice = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const navigate = useNavigate();
     const [printSize, setPrintSize] = useState(isQuotationRoute ? "A4" : "TICKET");
+    const [includeProductImages, setIncludeProductImages] = useState(isQuotationRoute);
 
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
         const clientSelect = clients?.find((item: any) => value.split("-")[0] === item.nroDoc);
@@ -588,6 +589,7 @@ const Invoice = () => {
                     mode={"vista previa"}
                     componentRef={componentRef}
                     size={printSize}
+                    includeProductImages={includeProductImages}
                     formValues={{
                         ...formValues,
                         serie: dataReceipt?.serie,
@@ -773,6 +775,21 @@ const Invoice = () => {
                                 label="Tipo Comprobante" isIcon icon="solar:file-text-linear"
                             />
                         </div>
+                        {isQuotationRoute && (
+                            <div className="col-span-2 flex items-center gap-2 pt-6">
+                                <input
+                                    type="checkbox"
+                                    id="includeImages"
+                                    checked={includeProductImages}
+                                    onChange={(e) => setIncludeProductImages(e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <label htmlFor="includeImages" className="text-xs font-medium text-gray-700 cursor-pointer select-none">
+                                    <Icon icon="solar:gallery-bold-duotone" className="inline mr-1 text-blue-600" />
+                                    Incluir imágenes
+                                </label>
+                            </div>
+                        )}
                     </div>
 
                     {/* Cliente - Solo mostrar cuando NO es nota de crédito/débito */}
