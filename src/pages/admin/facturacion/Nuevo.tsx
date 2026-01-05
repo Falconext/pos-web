@@ -20,7 +20,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import ModalReponseInvoice from "./modalResponseInvoice";
 import ModalProduct from "../inventario/modal-productos";
 import ModalClient from "../clientes/ModalCliente";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import ComprobantePrintPage from "./comprobanteImprimir";
 import Pagination from "@/components/Pagination";
@@ -102,6 +102,8 @@ const Invoice = () => {
     */
     const { auth } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
+    const location = useLocation();
+    const isQuotationRoute = location.pathname.includes('/cotizaciones/nuevo');
     const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT'];
     let tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
 
@@ -109,9 +111,11 @@ const Invoice = () => {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    const initialDocumentType = receipt === ""
-        ? (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA")
-        : receipt.toUpperCase();
+    const initialDocumentType = isQuotationRoute
+        ? "COTIZACIÓN"
+        : (receipt === ""
+            ? (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA")
+            : receipt.toUpperCase());
 
     const metodosContado = ['Efectivo', 'Yape', 'Plin'];
     const metodosCredito = ['Transferencia', 'Tarjeta'];
@@ -126,7 +130,7 @@ const Invoice = () => {
         currencyCode: "PEN",
         clienteNombre: "",
         comprobante: initialDocumentType,
-        tipoDoc: tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01",
+        tipoDoc: isQuotationRoute ? "COT" : (tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01"),
         detalles: [],
         discount: 0,
         motivo: "",
@@ -307,7 +311,11 @@ const Invoice = () => {
         { id: "NP", value: "NOTA DE PEDIDO" }, { id: "CP", value: "COMPROBANTE DE PAGO" }, { id: "RH", value: "RECIBO POR HONORARIO" },
     ]
 
-    let comprobantesGenerar = tipoEmpresa === "INFORMAL" ? tiposComprobantesInformales : tipoEmpresa === "FORMAL" ? tiposComprobanteFormales : tiposComprobanteFormales.concat(tiposComprobantesInformales)
+    const tiposCotizacion = [{ id: "COT", value: "COTIZACIÓN" }]
+
+    let comprobantesGenerar = isQuotationRoute
+        ? tiposCotizacion
+        : (tipoEmpresa === "INFORMAL" ? tiposComprobantesInformales : tipoEmpresa === "FORMAL" ? tiposComprobanteFormales : tiposComprobanteFormales.concat(tiposComprobantesInformales))
 
     // Default moneda
     useEffect(() => {
