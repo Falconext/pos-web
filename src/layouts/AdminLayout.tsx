@@ -11,7 +11,7 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { auth }: IAuthState = useAuthStore()
-  const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator } = useThemeStore()
+  const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact } = useThemeStore()
 
   // Detectar si el rubro es restaurante para cambiar nombres del menú
   const isRestaurante = useMemo(() => {
@@ -235,10 +235,16 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F4F5FA] font-sans">
+    <div
+      className="flex overflow-hidden bg-[#F4F5FA] font-sans transition-all duration-300"
+      style={{
+        zoom: isCompact ? '0.8' : '1',
+        height: isCompact ? '125vh' : '100vh'
+      }}
+    >
 
       {/* Sidebar/Drawer */}
-      <aside className={`fixed inset-y-0 left-0 ${theme.sidebarBg} ${theme.sidebarBorder} p-4 space-y-6 h-screen overflow-y-auto w-[85%] max-w-[280px] transform transition-transform duration-300 ease-in-out md:static md:w-[280px] md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
+      <aside className={`fixed inset-y-0 left-0 ${theme.sidebarBg} ${theme.sidebarBorder} p-4 space-y-6 h-full overflow-y-auto w-[85%] max-w-[280px] transform transition-transform duration-300 ease-in-out md:static md:w-[280px] md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
         <div className="flex items-center gap-3 px-2 mb-8 mt-2">
           <div className="flex items-center justify-center">
             <img src="/fnlogo.png" alt="Falconext" className="w-10 h-10 object-contain" />
@@ -589,6 +595,16 @@ export default function AdminLayout() {
           <div className="flex items-center">
             <div className="hidden md:block">
               <button
+                onClick={toggleCompact}
+                className={`p-2 rounded-full transition-colors ${isCompact ? 'text-indigo-600 bg-indigo-50' : 'text-gray-500 hover:bg-gray-100'}`}
+                title={isCompact ? "Desactivar Vista Compacta" : "Activar Vista Compacta (Zoom)"}
+              >
+                <Icon icon={isCompact ? "solar:minimize-square-3-bold" : "solar:maximize-square-3-linear"} width="24" />
+              </button>
+            </div>
+
+            <div className="hidden md:block">
+              <button
                 onClick={toggleConfigurator}
                 className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-full transition-colors"
                 title="Configuración de UI"
@@ -677,7 +693,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <div className={`${theme.mainPadding} mx-auto`}>
+        <div className={`${theme.mainPadding} mx-auto transition-all duration-300`}>
           <Outlet />
         </div>
       </main>

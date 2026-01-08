@@ -9,6 +9,7 @@ interface ThemeState {
     sidebarColor: SidebarColor;
     sidebarType: SidebarType;
     navbarFixed: boolean;
+    isCompact: boolean;
 
     // Actions
     toggleConfigurator: () => void;
@@ -16,6 +17,7 @@ interface ThemeState {
     setSidebarType: (type: SidebarType) => void;
     setNavbarFixed: (fixed: boolean) => void;
     closeConfigurator: () => void;
+    toggleCompact: () => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -25,15 +27,17 @@ export const useThemeStore = create<ThemeState>()(
             sidebarColor: 'info', // Default Blue
             sidebarType: 'dark', // Default Dark
             navbarFixed: true,
+            isCompact: true,
 
             toggleConfigurator: () => set((state) => ({ isOpen: !state.isOpen })),
             closeConfigurator: () => set({ isOpen: false }),
             setSidebarColor: (color) => set({ sidebarColor: color }),
             setSidebarType: (type) => set({ sidebarType: type }),
             setNavbarFixed: (fixed) => set({ navbarFixed: fixed }),
+            toggleCompact: () => set((state) => ({ isCompact: !state.isCompact })),
         }),
         {
-            name: 'theme-storage',
+            name: 'theme-storage-v2',
         }
     )
 );

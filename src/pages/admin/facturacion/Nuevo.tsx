@@ -29,10 +29,12 @@ import InputPro from "@/components/InputPro";
 import Button from "@/components/Button";
 import { get } from "@/utils/fetch";
 import ModalDetraccion, { DetraccionData } from "./ModalDetraccion";
+import { useThemeStore } from "@/zustand/theme";
 
 const Invoice = () => {
 
     const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt }: IInvoicesState = useInvoiceStore();
+    const { isCompact } = useThemeStore();
 
     // ... (imports and other setup)
 
@@ -837,13 +839,13 @@ const Invoice = () => {
         }
     }, [totalAdjusted, retencionData, auth?.empresa?.esAgenteRetencion, selectOperation?.codigo]);
 
-    const [isCompact, setIsCompact] = useState(false);
+    const [showMobileCart, setShowMobileCart] = useState(false);
 
     // ... (rest of useEffects)
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen md:min-h-0 md:h-[calc(100vh-80px)] md:overflow-hidden bg-[#F4F5FA] gap-4 md:gap-6 font-sans text-gray-800 pb-20 md:pb-0 transition-all duration-300"
-            style={{ zoom: isCompact ? '0.8' : '1' }}
+        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden bg-[#F4F5FA] gap-4 md:gap-6 font-sans text-gray-800 transition-all duration-300 ${!showMobileCart && isMobile ? 'pb-24' : 'pb-0'}`}
+            style={{ height: !isMobile ? (isCompact ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
         >
 
             {/* Hidden Print Component */}
@@ -897,15 +899,7 @@ const Invoice = () => {
                             <Icon icon="solar:magnifer-linear" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
                         </div>
 
-                        {/* Compact Mode Toggle */}
-                        <button
-                            onClick={() => setIsCompact(!isCompact)}
-                            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all shadow-lg ${isCompact ? 'bg-indigo-100 text-indigo-600 shadow-indigo-100' : 'bg-white text-gray-500 shadow-gray-100 hover:bg-gray-50'}`}
-                            title={isCompact ? "Desactivar Vista Compacta" : "Activar Vista Compacta (Zoom)"}
-                        >
-                            <Icon icon={isCompact ? "solar:minimize-square-3-bold" : "solar:maximize-square-3-linear"} className="text-xl" />
-                            <span className="hidden xl:inline">{isCompact ? "Compacto ON" : "Compacto OFF"}</span>
-                        </button>
+
 
                         <button
                             onClick={() => setIsOpenModalProduct(true)}
@@ -945,7 +939,7 @@ const Invoice = () => {
 
                 {/* Product Grid */}
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 scrollbar-thin">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-3 md:gap-4">
                         {filteredProducts?.map((item: any) => (
                             <div
                                 key={item.id}
@@ -1012,10 +1006,47 @@ const Invoice = () => {
                 </div>
             </div>
 
+
+            {/* Floating Mobile Cart Toggle */}
+            {
+                isMobile && !showMobileCart && productsInvoice.length > 0 && (
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-[50] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center justify-between pb-8">
+                        <div className="flex flex-col">
+                            <span className="text-gray-500 text-xs font-semibold">{productsInvoice.length} Items</span>
+                            <span className="text-xl font-bold text-gray-900">S/ {totalAdjusted.toFixed(2)}</span>
+                        </div>
+                        <button
+                            onClick={() => setShowMobileCart(true)}
+                            className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
+                        >
+                            <Icon icon="solar:cart-large-minimalistic-bold" className="text-xl" />
+                            Ver Pedido
+                        </button>
+                    </div>
+                )
+            }
+
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className="w-full md:w-[35%] flex flex-col h-auto md:h-full md:overflow-y-auto bg-white rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 overflow-hidden border border-white">
+            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full md:overflow-y-auto bg-white rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 overflow-hidden border border-white ${isMobile ? (showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
                 {/* Invoice Config Header */}
                 <div className="p-4 md:p-5 border-b border-gray-100 bg-gray-50/30">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            {/* Mobile Back Button */}
+                            {isMobile && (
+                                <button
+                                    onClick={() => setShowMobileCart(false)}
+                                    className="mr-2 p-2 -ml-2 text-gray-500 hover:text-gray-700 active:bg-gray-200 rounded-full"
+                                >
+                                    <Icon icon="solar:arrow-left-linear" className="text-2xl" />
+                                </button>
+                            )}
+                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                                <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
+                            </div>
+                            <h2 className="font-bold text-gray-800 text-lg">Detalle de Venta</h2>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="col-span-2 flex items-center justify-center gap-3">
                             <Select
@@ -1574,7 +1605,7 @@ const Invoice = () => {
                 initialData={retencionData}
                 mode="RETENCION"
             />
-        </div>
+        </div >
     )
 }
 
