@@ -4,6 +4,8 @@ import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import Select from '@/components/Select';
 import { Icon } from '@iconify/react';
+import { Calendar } from '@/components/Date';
+import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { useProductsStore } from '@/zustand/products';
@@ -29,6 +31,23 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
+    const [proveedores, setProveedores] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (isOpen) {
+            const fetchProveedores = async () => {
+                try {
+                    const response = await apiClient.get('/cliente/listar?persona=PROVEEDOR&limit=1000');
+                    if (response.data?.clientes) {
+                        setProveedores(response.data.clientes);
+                    }
+                } catch (error) {
+                    console.error('Error fetching proveedores:', error);
+                }
+            };
+            fetchProveedores();
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen && (!products || products.length === 0)) {
@@ -42,7 +61,7 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
         }
     }, [productoIdPrefill]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormValues(prev => ({ ...prev, [name]: value }));
         setErrors(prev => ({ ...prev, [name]: '' }));
@@ -122,7 +141,7 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
             <div className="px-4 pb-4">
                 <div className="space-y-4">
                     {/* Producto */}
-                    <div>
+                    <div className='mt-5'>
                         <Select
                             defaultValue={formValues.productoId ? products.find(p => p.id === Number(formValues.productoId))?.descripcion : ''}
                             error={errors.productoId}
@@ -139,6 +158,13 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                             isIcon
                             label="Producto"
                         />
+                        {formValues.productoId && (
+                            <div className="mt-1 flex justify-end">
+                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+                                    Stock Actual: {products.find(p => p.id === Number(formValues.productoId))?.stock || 0}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Código de Lote */}
@@ -158,21 +184,21 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                     </div>
 
                     {/* Fecha de Vencimiento */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Fecha de Vencimiento *
-                        </label>
-                        <input
-                            type="date"
+                    <div className="relative">
+                        <Calendar
+                            text="Fecha de Vencimiento *"
+                            value={formValues.fechaVencimiento ? moment(formValues.fechaVencimiento).format('DD/MM/YYYY') : ''}
+                            onChange={(date: string) => {
+                                // Convert DD/MM/YYYY to YYYY-MM-DD
+                                const [day, month, year] = date.split('/');
+                                const isoDate = `${year}-${month}-${day}`;
+                                setFormValues(prev => ({ ...prev, fechaVencimiento: isoDate }));
+                                setErrors(prev => ({ ...prev, fechaVencimiento: '' }));
+                            }}
                             name="fechaVencimiento"
-                            value={formValues.fechaVencimiento}
-                            onChange={handleChange}
-                            className={`w-full px-3 py-2.5 border ${errors.fechaVencimiento ? 'border-red-500' : 'border-gray-300'
-                                } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6A6CFF] focus:border-transparent`}
-                            min={new Date().toISOString().split('T')[0]}
                         />
                         {errors.fechaVencimiento && (
-                            <p className="text-xs text-red-500 mt-1">{errors.fechaVencimiento}</p>
+                            <p className="text-xs text-red-500 mt-1 absolute -bottom-4 left-0">{errors.fechaVencimiento}</p>
                         )}
                     </div>
 
@@ -204,15 +230,28 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                         </div>
                     </div>
 
+
                     {/* Proveedor */}
                     <div>
-                        <InputPro
+                        <Select
+                            defaultValue={formValues.proveedor}
+                            label="Proveedor (Opcional)"
+                            placeholder="Seleccione un proveedor"
+                            options={proveedores.map(p => ({
+                                id: p.nombre, // We use name as ID because backend expects string name
+                                value: p.nombre
+                            }))}
+                            id="proveedor"
                             name="proveedor"
                             value={formValues.proveedor}
-                            onChange={handleChange}
-                            label="Proveedor (Opcional)"
-                            placeholder="Nombre del proveedor"
-                            isLabel
+                            onChange={(idVal, val) => {
+                                setFormValues(prev => ({ ...prev, proveedor: String(val) }));
+                                setErrors(prev => ({ ...prev, proveedor: '' }));
+                            }}
+                            error={errors.proveedor}
+                            icon="solar:users-group-rounded-bold-duotone"
+                            isIcon
+                            isSearch
                         />
                     </div>
 

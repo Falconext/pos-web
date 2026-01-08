@@ -5,12 +5,14 @@ import { useRubroFeatures } from '@/utils/rubro-features';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import Button from '@/components/Button';
-import InputPro from '@/components/InputPro';
-import TableSkeleton from '@/components/Skeletons/table';
-import { useNavigate } from 'react-router-dom';
+import DataTable from '@/components/Datatable';
+import Pagination from '@/components/Pagination';
+import TableActionMenu from '@/components/TableActionMenu';
+import Select from '@/components/Select';
 import ModalCrearLote from './ModalCrearLote';
 import ModalAjusteStockLote from './ModalAjusteStockLote';
 import ModalHistorialLote from './ModalHistorialLote';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductoLote {
     id: number;
@@ -44,14 +46,29 @@ const GestionLotes = () => {
     const [isAjusteOpen, setIsAjusteOpen] = useState(false);
     const [isHistorialOpen, setIsHistorialOpen] = useState(false);
 
+    // Estado para paginación
+    const [currentPage, setcurrentPage] = useState(1);
+    const [itemsPerPage, setitemsPerPage] = useState(50);
+
+    // Estado para menú de acciones
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
+
     const abrirAjuste = (lote: ProductoLote) => {
         setLoteSeleccionado(lote);
         setIsAjusteOpen(true);
+        closeMenu();
     };
 
     const abrirHistorial = (lote: ProductoLote) => {
         setLoteSeleccionado(lote);
         setIsHistorialOpen(true);
+        closeMenu();
+    };
+
+    const closeMenu = () => {
+        setOpenAccionesId(null);
+        setAnchorEl(null);
     };
 
     // Redirigir si el rubro no usa lotes
@@ -77,6 +94,7 @@ const GestionLotes = () => {
 
             const { data } = await apiClient.get(endpoint);
             setLotes(data?.data || data || []);
+            setcurrentPage(1); // Resetear a página 1 al cambiar filtro
         } catch (error: any) {
             console.error('Error al cargar lotes:', error);
             useAlertStore.getState().alert('Error al cargar lotes', 'error');
@@ -103,11 +121,102 @@ const GestionLotes = () => {
         try {
             await apiClient.patch(`/producto/lotes/${loteId}/desactivar`);
             useAlertStore.getState().alert('Lote desactivado correctamente', 'success');
+            closeMenu();
             cargarLotes();
         } catch (error) {
             useAlertStore.getState().alert('Error al desactivar lote', 'error');
         }
     };
+
+    // Paginación client-side
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = lotes.slice(indexOfFirstItem, indexOfLastItem);
+    const pages: number[] = [];
+    for (let i = 1; i <= Math.ceil(lotes.length / itemsPerPage); i++) {
+        pages.push(i);
+    }
+
+    // Preparar datos para DataTable
+    const lotesTable = currentItems.map((lote) => {
+        const diasRestantes = calcularDiasParaVencer(lote.fechaVencimiento);
+        const isVencido = diasRestantes < 0;
+        const isPorVencer = diasRestantes >= 0 && diasRestantes <= 30;
+
+        const estadoBadge = isVencido ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 w-full justify-center">
+                <Icon icon="solar:close-circle-bold" className="mr-1" width={14} />
+                Vencido
+            </span>
+        ) : isPorVencer ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 w-full justify-center">
+                <Icon icon="solar:danger-triangle-bold" className="mr-1" width={14} />
+                {diasRestantes} días
+            </span>
+        ) : (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 w-full justify-center">
+                <Icon icon="solar:check-circle-bold" className="mr-1" width={14} />
+                Vigente
+            </span>
+        );
+
+        const stockBadge = (
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${lote.stockActual === 0
+                ? 'bg-gray-100 text-gray-700'
+                : lote.stockActual <= 5
+                    ? 'bg-red-100 text-red-700'
+                    : lote.stockActual <= 10
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-green-100 text-green-700'
+                }`}>
+                {lote.stockActual}
+            </span>
+        );
+
+        const acciones = (
+            <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (openAccionesId === lote.id) {
+                            setOpenAccionesId(null);
+                            setAnchorEl(null);
+                        } else {
+                            setOpenAccionesId(lote.id);
+                            setAnchorEl(e.currentTarget);
+                        }
+                    }}
+                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1 hover:bg-gray-50 transition-colors"
+                >
+                    <Icon icon="mdi:dots-vertical" width={18} height={18} />
+                </button>
+            </div>
+        );
+
+        return {
+            loteId: lote.id,
+            'Producto': lote.producto.descripcion,
+            'Código': lote.producto.codigo,
+            'Lote': lote.lote,
+            'Vencimiento': new Date(lote.fechaVencimiento).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            'Stock': stockBadge,
+            'Estado': estadoBadge,
+            'Acciones': acciones,
+            // Keep original object for actions
+            original: lote
+        };
+    });
+
+    const headerColumns = [
+        'Producto',
+        'Código',
+        'Lote',
+        'Vencimiento',
+        'Stock',
+        'Estado',
+        'Acciones'
+    ];
 
     if (!features.gestionLotes) {
         return null;
@@ -116,6 +225,7 @@ const GestionLotes = () => {
     return (
         <div className="min-h-screen px-2 pb-4">
             {/* Header */}
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Lotes</h1>
@@ -132,11 +242,48 @@ const GestionLotes = () => {
             </div>
 
             {/* Main Content Card */}
+            {lotes.length > 0 && (
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-orange-100 flex items-center gap-4">
+                        <div className="p-3 bg-orange-50 text-orange-600 rounded-xl">
+                            <Icon icon="solar:danger-triangle-bold-duotone" width={24} />
+                        </div>
+                        <div>
+                            <div className="text-2xl font-bold text-gray-900">{lotes.length}</div>
+                            <div className="text-sm text-gray-500">Lotes en lista</div>
+                        </div>
+                    </div>
+                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-indigo-100 flex items-center gap-4">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                            <Icon icon="solar:box-bold-duotone" width={24} />
+                        </div>
+                        <div>
+                            <div className="text-2xl font-bold text-gray-900">
+                                {lotes.reduce((acc, l) => acc + l.stockActual, 0)}
+                            </div>
+                            <div className="text-sm text-gray-500">Unidades totales</div>
+                        </div>
+                    </div>
+                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-4">
+                        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <Icon icon="solar:dollar-bold-duotone" width={24} />
+                        </div>
+                        <div>
+                            <div className="text-2xl font-bold text-gray-900">
+                                S/ {lotes.reduce((acc, l) => acc + (l.producto.precioUnitario * l.stockActual), 0).toFixed(2)}
+                            </div>
+                            <div className="text-sm text-gray-500">Valor en inventario</div>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Filters */}
+
+
                 <div className="p-5 border-b border-gray-100">
-                    <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex gap-2">
+                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                        <div className="flex flex-wrap gap-2">
                             <Button
                                 color={filtro === 'todos' ? 'primary' : 'lila'}
                                 outline={filtro !== 'todos'}
@@ -167,183 +314,66 @@ const GestionLotes = () => {
                         </div>
 
                         {filtro === 'por-vencer' && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">Próximos:</span>
-                                <select
-                                    value={diasAnticipacion}
-                                    onChange={(e) => setDiasAnticipacion(Number(e.target.value))}
-                                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6A6CFF] focus:border-transparent"
-                                >
-                                    <option value={15}>15 días</option>
-                                    <option value={30}>30 días</option>
-                                    <option value={60}>60 días</option>
-                                    <option value={90}>90 días</option>
-                                </select>
+                            <div className="w-48">
+                                <Select
+                                    label="Próximos"
+                                    name="diasAnticipacion"
+                                    value={diasAnticipacion + ' días'}
+                                    onChange={(id: any) => setDiasAnticipacion(Number(id))}
+                                    options={[
+                                        { id: 15, value: '15 días' },
+                                        { id: 30, value: '30 días' },
+                                        { id: 60, value: '60 días' },
+                                        { id: 90, value: '90 días' }
+                                    ]}
+                                    error={null}
+                                    readOnly
+                                />
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Table */}
-                <div className="p-4">
-                    {loading ? (
-                        <TableSkeleton />
-                    ) : lotes.length === 0 ? (
-                        <div className="text-center py-12">
-                            <Icon icon="solar:box-bold-duotone" className="mx-auto text-gray-300 mb-4" width={64} height={64} />
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay lotes {filtro === 'vencidos' ? 'vencidos' : 'por vencer'}</h3>
-                            <p className="text-sm text-gray-500">
-                                {filtro === 'vencidos'
-                                    ? '¡Excelente! No tienes productos vencidos.'
-                                    : `No hay productos que venzan en los próximos ${diasAnticipacion} días.`
-                                }
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-gray-200">
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Producto</th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Código</th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Lote</th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Vencimiento</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Stock</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Estado</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {lotes.map((lote) => {
-                                        const diasRestantes = calcularDiasParaVencer(lote.fechaVencimiento);
-                                        const isVencido = diasRestantes < 0;
-                                        const isPorVencer = diasRestantes >= 0 && diasRestantes <= 30;
-
-                                        return (
-                                            <tr
-                                                key={lote.id}
-                                                className="border-b border-gray-100 hover:bg-gray-50"
-                                            >
-                                                <td className="py-3 px-4 text-sm text-gray-900 font-medium">{lote.producto.descripcion}</td>
-                                                <td className="py-3 px-4 text-sm text-gray-600">{lote.producto.codigo}</td>
-                                                <td className="py-3 px-4 text-sm text-gray-900 font-mono">{lote.lote}</td>
-                                                <td className="py-3 px-4 text-sm text-gray-900">
-                                                    {new Date(lote.fechaVencimiento).toLocaleDateString('es-PE')}
-                                                </td>
-                                                <td className="py-3 px-4 text-center">
-                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${lote.stockActual === 0
-                                                        ? 'bg-gray-100 text-gray-700'
-                                                        : lote.stockActual <= 5
-                                                            ? 'bg-red-100 text-red-700'
-                                                            : lote.stockActual <= 10
-                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                : 'bg-green-100 text-green-700'
-                                                        }`}>
-                                                        {lote.stockActual}
-                                                    </span>
-                                                </td>
-                                                <td className="py-3 px-4 text-center">
-                                                    {isVencido ? (
-                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                                                            <Icon icon="solar:close-circle-bold" className="mr-1" width={14} />
-                                                            Vencido
-                                                        </span>
-                                                    ) : isPorVencer ? (
-                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                                                            <Icon icon="solar:danger-triangle-bold" className="mr-1" width={14} />
-                                                            {diasRestantes} días
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                                            <Icon icon="solar:check-circle-bold" className="mr-1" width={14} />
-                                                            Vigente
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="py-3 px-4 text-center">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        {/* Ver historial */}
-                                                        <button
-                                                            onClick={() => abrirHistorial(lote)}
-                                                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                            title="Ver movimientos del lote"
-                                                        >
-                                                            <Icon icon="solar:history-bold" width={16} />
-                                                        </button>
-                                                        {/* Ajustar stock */}
-                                                        {lote.activo && ( // Permitir ajustes incluso con stock 0 (ingresos)
-                                                            <button
-                                                                onClick={() => abrirAjuste(lote)}
-                                                                className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                                                                title="Ajustar stock del lote"
-                                                            >
-                                                                <Icon icon="solar:pen-bold" width={16} />
-                                                            </button>
-                                                        )}
-                                                        {/* Desactivar/Dar de baja */}
-                                                        {lote.activo && (
-                                                            <button
-                                                                onClick={() => handleDesactivarLote(lote.id)}
-                                                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                title={isVencido ? 'Dar de baja (producto vencido)' : 'Desactivar lote'}
-                                                            >
-                                                                <Icon icon="solar:trash-bin-bold" width={16} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {/* Stats Summary */}
+                <div className="p-3">
+                    <div className="overflow-x-auto">
+                        <DataTable
+                            bodyData={lotesTable}
+                            headerColumns={headerColumns}
+                        />
+                    </div>
                     {lotes.length > 0 && (
-                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-yellow-500 rounded-lg">
-                                        <Icon icon="solar:danger-triangle-bold" className="text-white" width={24} />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-gray-900">{lotes.length}</div>
-                                        <div className="text-sm text-gray-600">Lotes en alerta</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-500 rounded-lg">
-                                        <Icon icon="solar:box-bold" className="text-white" width={24} />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-gray-900">
-                                            {lotes.reduce((acc, l) => acc + l.stockActual, 0)}
-                                        </div>
-                                        <div className="text-sm text-gray-600">Unidades totales</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-green-500 rounded-lg">
-                                        <Icon icon="solar:dollar-bold" className="text-white" width={24} />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-gray-900">
-                                            S/ {lotes.reduce((acc, l) => acc + (l.producto.precioUnitario * l.stockActual), 0).toFixed(2)}
-                                        </div>
-                                        <div className="text-sm text-gray-600">Valor en inventario</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <Pagination
+                            data={lotes}
+                            optionSelect
+                            currentPage={currentPage}
+                            indexOfFirstItem={indexOfFirstItem}
+                            indexOfLastItem={indexOfLastItem}
+                            setcurrentPage={setcurrentPage}
+                            setitemsPerPage={setitemsPerPage}
+                            pages={pages}
+                            total={lotes.length}
+                        />
                     )}
                 </div>
+
+                {/* Empty State */}
+                {!loading && lotes.length === 0 && (
+                    <div className="text-center py-12">
+                        <Icon icon="solar:box-bold-duotone" className="mx-auto text-gray-300 mb-4" width={64} height={64} />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay lotes {filtro === 'vencidos' ? 'vencidos' : 'por vencer'}</h3>
+                        <p className="text-sm text-gray-500">
+                            {filtro === 'vencidos'
+                                ? '¡Excelente! No tienes productos vencidos.'
+                                : `No hay productos que venzan en los próximos ${diasAnticipacion} días.`
+                            }
+                        </p>
+                    </div>
+                )}
             </div>
+
+            {/* Stats Summary - Only show if there is data */}
+
 
             {/* Modales */}
             <ModalCrearLote
@@ -373,6 +403,50 @@ const GestionLotes = () => {
                 }}
                 lote={loteSeleccionado}
             />
+
+            <TableActionMenu
+                isOpen={!!openAccionesId && !!anchorEl}
+                anchorEl={anchorEl}
+                onClose={closeMenu}
+            >
+                {openAccionesId && (() => {
+                    const selectedLote = lotes.find(l => l.id === openAccionesId);
+                    if (!selectedLote) return null;
+
+                    return (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => abrirHistorial(selectedLote)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                            >
+                                <Icon icon="solar:history-bold" width={16} />
+                                <span>Ver historial</span>
+                            </button>
+                            {selectedLote.activo && (
+                                <button
+                                    type="button"
+                                    onClick={() => abrirAjuste(selectedLote)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                >
+                                    <Icon icon="solar:pen-bold" width={16} />
+                                    <span>Ajustar stock</span>
+                                </button>
+                            )}
+                            {selectedLote.activo && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleDesactivarLote(selectedLote.id)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                                >
+                                    <Icon icon="solar:trash-bin-bold" width={16} />
+                                    <span>Dar de baja</span>
+                                </button>
+                            )}
+                        </>
+                    )
+                })()}
+            </TableActionMenu>
         </div>
     );
 };

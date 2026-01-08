@@ -558,6 +558,7 @@ export default function CombosAdmin() {
                     name="precioCombo"
                     label="Precio Kit / Pack *"
                     type="number"
+                    isLabel
                     value={form.precioCombo}
                     onChange={(e) => setForm(prev => ({ ...prev, precioCombo: Number(e.target.value) }))}
                   />

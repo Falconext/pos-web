@@ -837,8 +837,14 @@ const Invoice = () => {
         }
     }, [totalAdjusted, retencionData, auth?.empresa?.esAgenteRetencion, selectOperation?.codigo]);
 
+    const [isCompact, setIsCompact] = useState(false);
+
+    // ... (rest of useEffects)
+
     return (
-        <div className="flex flex-col md:flex-row h-screen md:h-[calc(100vh-80px)] overflow-hidden bg-[#F4F5FA] gap-6 font-sans text-gray-800">
+        <div className="flex flex-col md:flex-row min-h-screen md:min-h-0 md:h-[calc(100vh-80px)] md:overflow-hidden bg-[#F4F5FA] gap-4 md:gap-6 font-sans text-gray-800 pb-20 md:pb-0 transition-all duration-300"
+            style={{ zoom: isCompact ? '0.8' : '1' }}
+        >
 
             {/* Hidden Print Component */}
             <div className="hidden">
@@ -876,9 +882,9 @@ const Invoice = () => {
             </div>
 
             {/* LEFT PANEL: PRODUCT CATALOG */}
-            <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-[32px] shadow-xl shadow-gray-200/50 h-full overflow-hidden border border-white">
+            <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white">
                 {/* Header: Search & Categories */}
-                <div className="p-5 border-b border-gray-100">
+                <div className="p-4 md:p-5 border-b border-gray-100">
                     <div className="flex gap-2 mb-4">
                         <div className="relative flex-1">
                             <input
@@ -890,6 +896,17 @@ const Invoice = () => {
                             />
                             <Icon icon="solar:magnifer-linear" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
                         </div>
+
+                        {/* Compact Mode Toggle */}
+                        <button
+                            onClick={() => setIsCompact(!isCompact)}
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all shadow-lg ${isCompact ? 'bg-indigo-100 text-indigo-600 shadow-indigo-100' : 'bg-white text-gray-500 shadow-gray-100 hover:bg-gray-50'}`}
+                            title={isCompact ? "Desactivar Vista Compacta" : "Activar Vista Compacta (Zoom)"}
+                        >
+                            <Icon icon={isCompact ? "solar:minimize-square-3-bold" : "solar:maximize-square-3-linear"} className="text-xl" />
+                            <span className="hidden xl:inline">{isCompact ? "Compacto ON" : "Compacto OFF"}</span>
+                        </button>
+
                         <button
                             onClick={() => setIsOpenModalProduct(true)}
                             className="flex items-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all shadow-lg shadow-green-200"
@@ -927,46 +944,46 @@ const Invoice = () => {
                 </div>
 
                 {/* Product Grid */}
-                <div className="flex-1 overflow-y-auto p-5 scrollbar-thin">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 scrollbar-thin">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4">
                         {filteredProducts?.map((item: any) => (
                             <div
                                 key={item.id}
-                                className="group bg-white rounded-[24px] p-3 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+                                className="group bg-white rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
                             >
                                 {/* Image Container */}
-                                <div className="aspect-[4/3] bg-[#F3F4F6] rounded-2xl mb-3 overflow-hidden relative flex items-center justify-center">
+                                <div className="aspect-[4/3] bg-[#F3F4F6] rounded-xl mb-2 overflow-hidden relative flex items-center justify-center">
                                     {item.imagenUrl ? (
                                         <img
                                             src={item.imagenUrl}
                                             alt={item.descripcion}
-                                            className="w-full h-full object-contain p-4 mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                                            className="w-full h-full object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                                         />
                                     ) : (
-                                        <Icon icon="solar:box-minimalistic-linear" className="text-4xl text-gray-300" />
+                                        <Icon icon="solar:box-minimalistic-linear" className="text-3xl text-gray-300" />
                                     )}
                                 </div>
 
                                 {/* Product Info */}
                                 <div className="flex-1 flex flex-col justify-between px-1">
-                                    <h4 className="font-bold text-gray-800 text-sm mb-3 line-clamp-2 leading-snug capitalize" style={{ textTransform: 'none' }}>
+                                    <h4 className="font-bold text-gray-800 text-[13px] mb-2 line-clamp-2 leading-snug capitalize" style={{ textTransform: 'none' }}>
                                         {item.descripcion?.toLowerCase()}
                                     </h4>
 
                                     <div className="flex items-end justify-between gap-2">
                                         <div>
-                                            <p className="text-lg font-black text-gray-900 leading-none mb-1">
+                                            <p className="text-base font-black text-gray-900 leading-none mb-0.5">
                                                 S/{Number(item.precioUnitario).toFixed(2)}
                                             </p>
-                                            <p className="text-[11px] text-gray-400 font-medium">
+                                            <p className="text-[10px] text-gray-400 font-medium">
                                                 Stock: {item.stock}
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => handleProductClick(item)}
-                                            className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all active:scale-95 flex items-center justify-center"
+                                            className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all active:scale-95 flex items-center justify-center"
                                         >
-                                            <Icon icon="solar:add-circle-bold" className="text-xl" />
+                                            <Icon icon="solar:add-circle-bold" className="text-lg" />
                                         </button>
                                     </div>
                                 </div>
@@ -996,9 +1013,9 @@ const Invoice = () => {
             </div>
 
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className="w-full md:w-[35%] flex flex-col h-[calc(100vh-100px)] overflow-y-auto bg-white rounded-[32px] h-full shadow-xl shadow-gray-200/50 overflow-hidden border border-white">
+            <div className="w-full md:w-[35%] flex flex-col h-auto md:h-full md:overflow-y-auto bg-white rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 overflow-hidden border border-white">
                 {/* Invoice Config Header */}
-                <div className="p-5 border-b border-gray-100 bg-gray-50/30">
+                <div className="p-4 md:p-5 border-b border-gray-100 bg-gray-50/30">
                     <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="col-span-2 flex items-center justify-center gap-3">
                             <Select
@@ -1092,7 +1109,7 @@ const Invoice = () => {
 
                         {/* Botón Retención 3% (Si NO es Detracción, monto >= 700 y es Agente de Retención) */}
                         {selectOperation?.codigo !== "0112" && totalAdjusted >= 700 && auth?.empresa?.esAgenteRetencion && (
-                            <div className="mt-2 col-span-2 mb-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <div className="mt-0 col-span-2 mb-0 bg-purple-50 border border-purple-200 rounded-lg p-3">
                                 <div className="space-y-2">
                                     <button
                                         type="button"
@@ -1317,11 +1334,11 @@ const Invoice = () => {
                                     <p className="font-bold text-gray-900">S/ {Number(item.total).toFixed(2)}</p>
                                 </div>
 
-                                <button onClick={() => setEditingIndex(index)} className="text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Icon icon="solar:pen-new-square-linear" />
+                                <button onClick={() => setEditingIndex(index)} className="text-blue-400 hover:text-blue-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
+                                    <Icon icon="solar:pen-new-square-linear" width={20} />
                                 </button>
-                                <button onClick={() => deleteProductInvoice(item)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Icon icon="hugeicons:delete-02" />
+                                <button onClick={() => deleteProductInvoice(item)} className="text-red-400 hover:text-red-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
+                                    <Icon icon="hugeicons:delete-02" width={20} />
                                 </button>
                             </div>
                         ))

@@ -327,7 +327,7 @@ const KardexProductos = () => {
 
         const allData: any = {
             productoId: item?.id,
-            'Img': (item as any)?.imagenUrl ? (<img src={(item as any).imagenUrl} alt={item?.descripcion} className="w-12 h-12 object-cover rounded" />) : '',
+            'Img': (item as any)?.imagenUrl ? (<img src={(item as any).imagenUrl} alt={item?.descripcion} className="w-16 h-16 object-cover rounded" />) : '',
             'Código': item?.codigo,
             'Producto': item?.descripcion,
             'Categoria': item?.categoria?.nombre || 'Sin categoría',
