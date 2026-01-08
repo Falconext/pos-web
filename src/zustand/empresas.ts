@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import apiClient from '../utils/apiClient';
+import { useAuthStore } from './auth';
 
 interface Empresa {
   id: number;
@@ -15,6 +16,7 @@ interface Empresa {
   distrito?: string;
   ubigeo?: string;
   nombreComercial?: string;
+  esAgenteRetencion?: boolean;
   plan: {
     id: number;
     nombre: string;
@@ -96,6 +98,7 @@ interface UpdateEmpresaDto {
   fechaExpiracion: string;
   providerToken?: string;
   providerId?: string;
+  esAgenteRetencion?: boolean;
 }
 
 interface ListEmpresaDto {
@@ -146,7 +149,9 @@ interface EmpresasState {
   obtenerEmpresa: (id: number) => Promise<void>;
   actualizarEmpresa: (data: UpdateEmpresaDto) => Promise<void>;
   cambiarEstadoEmpresa: (id: number, estado: 'ACTIVO' | 'INACTIVO') => Promise<void>;
+  eliminarEmpresa: (id: number) => Promise<void>;
   obtenerMiEmpresa: () => Promise<void>;
+  actualizarMiEmpresa: (data: Partial<UpdateEmpresaDto>) => Promise<Empresa>;
 
 
   // Acciones - Suscripciones
@@ -297,6 +302,29 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     }
   },
 
+  eliminarEmpresa: async (id: number) => {
+    set({ loading: true, error: null });
+    try {
+      await apiClient.delete(`/empresa/${id}`);
+
+      // Remover la empresa de la lista
+      const { empresas } = get();
+      const updatedEmpresas = empresas.filter(emp => emp.id !== id);
+
+      set({
+        empresas: updatedEmpresas,
+        totalEmpresas: get().totalEmpresas - 1,
+        loading: false
+      });
+    } catch (error: any) {
+      set({
+        error: error?.response?.data?.message || 'Error al eliminar empresa',
+        loading: false
+      });
+      throw error;
+    }
+  },
+
   obtenerMiEmpresa: async () => {
     set({ loading: true, error: null });
     try {
@@ -307,6 +335,36 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
         error: error?.response?.data?.message || 'Error al obtener mi empresa',
         loading: false
       });
+    }
+  },
+
+  actualizarMiEmpresa: async (data: Partial<UpdateEmpresaDto>) => {
+    set({ loading: true, error: null });
+    try {
+      // Si hay logo como File, convertir a base64
+      const updateData: any = { ...data };
+      if (data.logo instanceof File) {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(data.logo!);
+        });
+        updateData.logo = await base64Promise;
+      }
+
+      const response = await apiClient.put<Empresa>('/empresa/mia', updateData);
+      set({ miEmpresa: response.data, loading: false });
+
+      // Actualizar también el estado de autenticación para reflejar cambios en el header
+      await useAuthStore.getState().me();
+
+      return response.data;
+    } catch (error: any) {
+      set({
+        error: error?.response?.data?.message || 'Error al actualizar mi empresa',
+        loading: false
+      });
+      throw error;
     }
   },
 

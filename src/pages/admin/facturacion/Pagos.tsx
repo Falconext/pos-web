@@ -13,6 +13,12 @@ import PaymentReceipt from '@/components/PaymentReceipt';
 import { useAuthStore } from '@/zustand/auth';
 import InputPro from '@/components/InputPro';
 import { usePaymentFlow } from '@/hooks/usePaymentFlow';
+import { NavLink } from 'react-router-dom';
+
+const tabs = [
+  { label: 'Historial de Pagos', to: '/administrador/pagos', icon: 'solar:wallet-money-bold-duotone' },
+  { label: 'Cuentas por Cobrar', to: '/administrador/pagos/cuentas-cobrar', icon: 'solar:bill-list-bold-duotone' },
+];
 
 const Pagos = () => {
   const { auth } = useAuthStore();
@@ -131,17 +137,37 @@ const Pagos = () => {
 
 
   return (
-    <div className="min-h-screen pb-4">
+    <div className="min-h-screen px-2 pb-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Historial de Pagos</h1>
-          <p className="text-sm text-gray-500 mt-1">Todos los pagos registrados en comprobantes</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Pagos</h1>
+          <p className="text-sm text-gray-500 mt-1">Administra cobros y cuentas pendientes</p>
         </div>
       </div>
 
+      {/* Tabs Navigation */}
+      <div className="flex gap-2 mb-4">
+        {tabs.map((tab) => (
+          <NavLink
+            key={tab.to}
+            to={tab.to}
+            end={tab.to === '/administrador/pagos'}
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+              }`
+            }
+          >
+            <Icon icon={tab.icon} className="text-lg" />
+            {tab.label}
+          </NavLink>
+        ))}
+      </div>
+
       {/* Main Content Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
         {/* Filters Section */}
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-2 mb-4">
@@ -153,7 +179,7 @@ const Pagos = () => {
               <InputPro
                 name="search"
                 onChange={(e: any) => setSearchTerm(e.target.value)}
-                label="Buscar por comprobante o referencia"
+                label="Buscar por cliente, comprobante o referencia"
                 isLabel
               />
             </div>
@@ -183,7 +209,7 @@ const Pagos = () => {
         </div>
 
         {/* Table Content */}
-        <div className="p-4">
+        <div className="p-4 relative z-0">
           {pagosTable?.length > 0 ? (
             <>
               <div className="overflow-x-auto">
@@ -217,7 +243,7 @@ const Pagos = () => {
               </div>
             </>
           ) : (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center relative z-0">
               <Icon icon="solar:wallet-money-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">No se encontraron pagos</p>
               <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>

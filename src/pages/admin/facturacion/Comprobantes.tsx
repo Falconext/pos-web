@@ -16,6 +16,7 @@ import { useAuthStore } from "@/zustand/auth";
 import QRCode from 'qrcode'
 import { Calendar } from "@/components/Date";
 import Select from "@/components/Select";
+import { get } from "@/utils/fetch";
 import ModalConfirm from "@/components/ModalConfirm";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -201,11 +202,26 @@ const Comprobantes = () => {
                                 }
                                 setOpenAccionesId(null);
                             }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.estado === 'EMITIDO' || !canEmitirSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${(rowBase.estado === 'EMITIDO' || !canEmitirSunat) ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
                         >
                             <Icon icon="mdi:whatsapp" width={16} height={16} />
                             <span>Enviar WhatsApp</span>
                         </button>
+
+                        {/* Convertir Cotización a Factura/Boleta */}
+                        {(rowBase.comprobante?.includes('COTIZACI') || rowBase.tipoDoc === 'COT') && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleConvertirAFactura(rowBase);
+                                    setOpenAccionesId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-green-50 text-green-700 border-t border-gray-100"
+                            >
+                                <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
+                                <span className="font-medium">Convertir a Factura</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -225,21 +241,57 @@ const Comprobantes = () => {
         await getInvoice(data.id);
     };
 
-    const handleEnviarWhatsApp = (data: any) => {
-        const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
-        if (comprobanteData) {
-            setComprobanteWhatsApp({
-                id: comprobanteData.id,
-                serie: comprobanteData.serie,
-                correlativo: comprobanteData.correlativo,
-                comprobante: comprobanteData.comprobante,
-                total: comprobanteData.mtoImpVenta,
-                clienteNombre: comprobanteData.cliente?.nombre || 'Cliente',
-                clienteCelular: (comprobanteData as any).cliente?.telefono || '',
-                pdfUrl: comprobanteData.s3PdfUrl,
-            });
+    const handleEnviarWhatsApp = async (data: any) => {
+        try {
+            // Hacer fetch usando apiClient para obtener datos frescos con todas las relaciones
+            console.log("Fetching comprobante data for ID:", data.id);
+            const response: any = await get(`comprobante/${data.id}`);
+            console.log("Comprobante response:", response);
+
+            // Verificar si la respuesta viene envuelta en { code: 1, data: ... } o es directa
+            const freshComprobante = response.data || response;
+
+            if (!freshComprobante || !freshComprobante.id) {
+                console.error("Invalid comprobante data:", freshComprobante);
+                throw new Error("Datos de comprobante inválidos");
+            }
+
+            // Mapear al formato que espera el modal
+            const tipoDocMap: Record<string, string> = { '01': 'FACTURA', '03': 'BOLETA', '07': 'NOTA DE CREDITO', '08': 'NOTA DE DEBITO' };
+            const mappedData = {
+                id: freshComprobante.id,
+                serie: freshComprobante.serie,
+                correlativo: freshComprobante.correlativo,
+                comprobante: freshComprobante.comprobante || tipoDocMap[freshComprobante.tipoDoc] || 'COMPROBANTE',
+                total: Number(freshComprobante.mtoImpVenta || 0),
+                clienteNombre: freshComprobante.cliente?.nombre || 'Cliente',
+                clienteCelular: freshComprobante.cliente?.telefono || '',
+                pdfUrl: freshComprobante.s3PdfUrl,
+            };
+
+            console.log("Mapped data for WhatsApp:", mappedData);
+            setComprobanteWhatsApp(mappedData);
             setIsOpenModalWhatsApp(true);
+        } catch (error) {
+            console.error('Error al cargar datos del comprobante:', error);
+            useAlertStore.getState().alert('Error al cargar datos del comprobante', 'error');
         }
+    };
+
+    const handleConvertirAFactura = (data: any) => {
+        const cotizacion = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (!cotizacion) return;
+
+        navigate('/administrador/facturacion/nuevo', {
+            state: {
+                fromQuotation: true,
+                quotationData: {
+                    cliente: cotizacion.cliente,
+                    productos: cotizacion.detalles,
+                    observaciones: cotizacion.observaciones,
+                }
+            }
+        });
     };
 
     // Inicio de flujo de pago parcial (unificado)
@@ -473,7 +525,7 @@ const Comprobantes = () => {
     ]
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
@@ -484,13 +536,20 @@ const Comprobantes = () => {
                 productsInvoice={invoice?.detalles}
                 total={Number(invoice?.mtoImpVenta).toFixed(2)}
                 mode="off"
-
                 qrCodeDataUrl={qrCodeDataUrl}
                 discount={invoice?.discount}
                 receipt={comprobante || invoice?.comprobante}
                 selectedClient={invoice?.cliente}
                 totalInWords={numberToWords(parseFloat(invoice?.mtoImpVenta)) + " SOLES"}
                 observation={invoice?.observaciones}
+                // Parámetros de cotización guardados
+                includeProductImages={invoice?.cotizIncluirImagenes || false}
+                quotationDiscount={invoice?.cotizDescuento || 0}
+                quotationValidity={invoice?.cotizVigencia || 7}
+                quotationSignature={invoice?.cotizFirmante || ''}
+                quotationTerms={invoice?.cotizTerminos || ''}
+                quotationPaymentType={invoice?.cotizTipoPago || 'CONTADO'}
+                quotationAdvance={invoice?.cotizAdelanto || 0}
             />
 
             {/* Header */}
@@ -509,10 +568,8 @@ const Comprobantes = () => {
                         <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                         <h3 className="font-semibold text-gray-800">Filtros</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-2">
-                            <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-25 lg:grid-cols-5 gap-4">
+
                         <div>
                             <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
                         </div>
@@ -522,10 +579,11 @@ const Comprobantes = () => {
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
                         </div>
+                        <div className="flex justify-end">
+                            <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
+                        </div>
                     </div>
-                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
-                        <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
-                    </div>
+
                 </div>
 
                 {/* Table Content */}

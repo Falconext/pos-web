@@ -127,7 +127,7 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                             defaultValue={formValues.productoId ? products.find(p => p.id === Number(formValues.productoId))?.descripcion : ''}
                             error={errors.productoId}
                             isSearch
-                            options={products.map(p => ({
+                            options={(products || []).map(p => ({
                                 id: p.id,
                                 value: `${p.codigo} - ${p.descripcion}`,
                             }))}

@@ -14,6 +14,7 @@ import ComprobantesPage from './pages/admin/facturacion/Comprobantes'
 import ComprobantesInformales from './pages/admin/facturacion/ComprobantesInformales'
 import Invoice from './pages/admin/facturacion/Nuevo'
 import Pagos from './pages/admin/facturacion/Pagos'
+import CuentasPorCobrar from './pages/admin/facturacion/CuentasPorCobrar'
 import Cotizaciones from './pages/admin/cotizaciones/Cotizaciones'
 import EmpresasIndex from './pages/admin/empresa/Index'
 import PerfilIndex from './pages/admin/perfil/Index'
@@ -36,6 +37,11 @@ import TiendaHome from './pages/TiendaHome'
 import DisenoRubros from './pages/admin/sistema/DisenoRubros'
 import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
 import Planes from './pages/admin/sistema/Planes'
+import FinanceDashboard from './pages/admin/finanzas/Dashboard'
+import ComprasIndex from './pages/admin/compras/Index'
+import NuevaCompra from './pages/admin/compras/Nuevo'
+import ProveedoresPage from './pages/admin/compras/Proveedores'
+
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -69,6 +75,10 @@ function App() {
           <Route path="empresas/crear" element={<Navigate to="/administrador/empresas" replace />} />
           <Route path="empresas/editar/:id" element={<Navigate to="/administrador/empresas" replace />} />
           <Route path="clientes" element={<ClientesPage />} />
+
+          <Route path="compras" element={<ComprasIndex />} />
+          <Route path="compras/nuevo" element={<NuevaCompra />} />
+          <Route path="compras/proveedores" element={<ProveedoresPage />} />
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
           <Route path="contabilidad/reporte-informales" element={<ReporteInformales />} />
           <Route path="contabilidad/arqueo" element={<ArqueoCaja />} />
@@ -76,9 +86,11 @@ function App() {
           <Route path="facturacion/comprobantes" element={<ComprobantesPage />} />
           <Route path="facturacion/comprobantes-informales" element={<ComprobantesInformales />} />
           <Route path="pagos" element={<Pagos />} />
+          <Route path="pagos/cuentas-cobrar" element={<CuentasPorCobrar />} />
           <Route path="cotizaciones" element={<Cotizaciones />} />
           <Route path="cotizaciones/nuevo" element={<Invoice />} />
           <Route path="facturacion/nuevo" element={<Invoice />} />
+          <Route path="finanzas/dashboard" element={<FinanceDashboard />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
           <Route path="kardex/lotes" element={<Lotes />} />

@@ -164,34 +164,7 @@ const Comprobantes = () => {
                             <Icon icon="mdi:file-pdf-box" width={16} height={16} />
                             <span>Ver PDF</span>
                         </button>
-                        <button
-                            type="button"
-                            disabled={!rowBase.xmlSunat}
-                            onClick={() => {
-                                if (rowBase.xmlSunat) {
-                                    window.open(rowBase.xmlSunat, '_blank');
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.xmlSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="hugeicons:xml-02" width={16} height={16} />
-                            <span>Descargar XML</span>
-                        </button>
-                        <button
-                            type="button"
-                            disabled={!rowBase.cdrSunat}
-                            onClick={() => {
-                                if (rowBase.cdrSunat) {
-                                    window.open(rowBase.cdrSunat, '_blank');
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.cdrSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="mdi:zip-box-outline" width={16} height={16} />
-                            <span>Descargar CDR</span>
-                        </button>
+                        {/* Botones XML y CDR removidos - no aplican para cotizaciones */}
                         <button
                             type="button"
                             disabled={!(rowBase.estado === 'EMITIDO' || !canEmitirSunat)}
@@ -205,6 +178,19 @@ const Comprobantes = () => {
                         >
                             <Icon icon="mdi:whatsapp" width={16} height={16} />
                             <span>Enviar WhatsApp</span>
+                        </button>
+
+                        {/* Convertir Cotización a Factura */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                handleConvertirAFactura(rowBase);
+                                setOpenAccionesId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-green-50 text-green-700 border-t border-gray-100"
+                        >
+                            <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
+                            <span className="font-medium">Convertir a Factura</span>
                         </button>
                     </div>
                 )}
@@ -240,6 +226,22 @@ const Comprobantes = () => {
             });
             setIsOpenModalWhatsApp(true);
         }
+    };
+
+    const handleConvertirAFactura = (data: any) => {
+        const cotizacion = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (!cotizacion) return;
+
+        navigate('/administrador/facturacion/nuevo', {
+            state: {
+                fromQuotation: true,
+                quotationData: {
+                    cliente: cotizacion.cliente,
+                    productos: cotizacion.detalles,
+                    observaciones: cotizacion.observaciones,
+                }
+            }
+        });
     };
 
     // Inicio de flujo de pago parcial (unificado)
@@ -387,7 +389,7 @@ const Comprobantes = () => {
         setSearchClient(e.target.value)
     }
 
-    const [printSize, setPrintSize] = useState('TICKET');
+    const [printSize, setPrintSize] = useState('A4'); // Cotizaciones siempre en A4
     const [dimensions, setDimensions] = useState(() => {
         switch (printSize) {
             case 'TICKET': return { width: 80, height: 297 }; // 80mm width for ticket
@@ -437,7 +439,7 @@ const Comprobantes = () => {
     });
 
     useEffect(() => {
-        if (!shouldPrint || !invoice) return;
+        if (!shouldPrint || !invoice || !invoice.detalles) return;
 
         const timer = setTimeout(() => {
             if (componentRef?.current) {
@@ -473,25 +475,41 @@ const Comprobantes = () => {
     ]
 
     return (
-        <div className="min-h-screen pb-4">
-            <ComprobantePrintPage
-                company={auth}
-                componentRef={componentRef}
-                formValues={invoice}
-                size={printSize}
-                serie={invoice?.serie}
-                correlative={invoice?.correlativo}
-                productsInvoice={invoice?.detalles}
-                total={Number(invoice?.mtoImpVenta).toFixed(2)}
-                mode="off"
-
-                qrCodeDataUrl={qrCodeDataUrl}
-                discount={invoice?.discount}
-                receipt={comprobante || invoice?.comprobante}
-                selectedClient={invoice?.cliente}
-                totalInWords={numberToWords(parseFloat(invoice?.mtoImpVenta)) + " SOLES"}
-                observation={invoice?.observaciones}
-            />
+        <div className="min-h-screen px-2 pb-4">
+            {invoice && invoice.detalles && (
+                <ComprobantePrintPage
+                    company={auth}
+                    componentRef={componentRef}
+                    formValues={invoice}
+                    size={printSize}
+                    serie={invoice?.serie}
+                    correlative={invoice?.correlativo}
+                    productsInvoice={(() => {
+                        const mapped = invoice?.detalles?.map((det: any) => ({
+                            ...det,
+                            imagenUrl: det.producto?.imagenUrl || det.imagenUrl, // Flatten imagenUrl
+                        }));
+                        console.log('Products for PDF:', mapped);
+                        return mapped;
+                    })()}
+                    total={Number(invoice?.mtoImpVenta).toFixed(2)}
+                    mode="off"
+                    qrCodeDataUrl={qrCodeDataUrl}
+                    discount={invoice?.discount}
+                    receipt={comprobante || invoice?.comprobante}
+                    selectedClient={invoice?.cliente}
+                    totalInWords={numberToWords(parseFloat(invoice?.mtoImpVenta)) + " SOLES"}
+                    observation={invoice?.observaciones}
+                    // Parámetros de cotización guardados
+                    includeProductImages={invoice?.cotizIncluirImagenes || false}
+                    quotationDiscount={invoice?.cotizDescuento || 0}
+                    quotationValidity={invoice?.cotizVigencia || 7}
+                    quotationSignature={invoice?.cotizFirmante || ''}
+                    quotationTerms={invoice?.cotizTerminos || ''}
+                    quotationPaymentType={invoice?.cotizTipoPago || 'CONTADO'}
+                    quotationAdvance={invoice?.cotizAdelanto || 0}
+                />
+            )}
 
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -512,7 +530,7 @@ const Comprobantes = () => {
                         <h3 className="font-semibold text-gray-800">Filtros</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-1">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
                         <div>
@@ -524,10 +542,11 @@ const Comprobantes = () => {
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
                         </div>
+                        <div className="">
+                            <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
+                        </div>
                     </div>
-                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
-                        <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
-                    </div>
+
                 </div>
 
                 {/* Table Content */}

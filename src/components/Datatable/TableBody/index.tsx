@@ -191,13 +191,13 @@ const TableBody: FC<ITableBodyProps> = ({
                                         ) : key === 'estado' || key === 'tipo' ? (
                                             <div
                                                 className={
-                                                    cell === 'EMITIDO'
+                                                    cell === 'EMITIDO' || cell === 'ACEPTADO'
                                                         ? styles.successOrder
                                                         : cell === 'ACTIVO'
                                                             ? styles.activeOrder
-                                                            : cell === 'PENDIENTE'
+                                                            : cell === 'PENDIENTE' || cell === 'ENVIANDO'
                                                                 ? styles.activeOrder
-                                                                : cell === 'RECHAZADO'
+                                                                : cell === 'RECHAZADO' || cell === 'FALLIDO_ENVIO'
                                                                     ? styles.inactiveOrder
                                                                     : cell === 'PENDIENTE_PAGO'
                                                                         ? styles.activeOrder
@@ -213,7 +213,9 @@ const TableBody: FC<ITableBodyProps> = ({
                                                                                             ? styles.activeOrder
                                                                                             : cell === 'TRANSFERENCIA'
                                                                                                 ? styles.successOrder
-                                                                                                : styles.inactiveOrder
+                                                                                                : cell === 'ANULADO'
+                                                                                                    ? styles.inactiveOrder
+                                                                                                    : styles.inactiveOrder
                                                 }
                                             >
                                                 {cell === 'PENDIENTE'
@@ -240,7 +242,13 @@ const TableBody: FC<ITableBodyProps> = ({
                                                                                             ? 'PENDIENTE PAGO'
                                                                                             : cell === 'COMPLETADO'
                                                                                                 ? 'COMPLETADO'
-                                                                                                : 'INACTIVO'}
+                                                                                                : cell === 'ACEPTADO'
+                                                                                                    ? 'ACEPTADO'
+                                                                                                    : cell === 'ENVIANDO'
+                                                                                                        ? 'ENVIANDO'
+                                                                                                        : cell === 'FALLIDO_ENVIO'
+                                                                                                            ? 'FALLIDO ENVÍO'
+                                                                                                            : 'INACTIVO'}
                                             </div>
                                         ) : (
                                             isTruncatable ? (
@@ -266,8 +274,13 @@ const TableBody: FC<ITableBodyProps> = ({
                                 className={styles.tableActions}
                             >
                                 {actions.map((action: any, actionIndex: number) => {
+                                    // Check condition (legacy)
                                     if (action.condition && !action.condition(row)) {
-                                        return null; // No renderizar la acción si no se cumple la condición
+                                        return null;
+                                    }
+                                    // Check hide (new property used in Compras module)
+                                    if (action.hide && action.hide(row)) {
+                                        return null; // Hide the action if hide function returns true
                                     }
 
                                     const iconElement = typeof action.icon === 'function' ? action.icon(row) : action.icon;

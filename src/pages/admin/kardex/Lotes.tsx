@@ -9,10 +9,13 @@ import InputPro from '@/components/InputPro';
 import TableSkeleton from '@/components/Skeletons/table';
 import { useNavigate } from 'react-router-dom';
 import ModalCrearLote from './ModalCrearLote';
+import ModalAjusteStockLote from './ModalAjusteStockLote';
+import ModalHistorialLote from './ModalHistorialLote';
 
 interface ProductoLote {
     id: number;
     lote: string;
+    productoId: number;
     fechaVencimiento: string;
     stockActual: number;
     stockInicial: number;
@@ -37,6 +40,19 @@ const GestionLotes = () => {
     const [filtro, setFiltro] = useState<'todos' | 'por-vencer' | 'vencidos'>('por-vencer');
     const [diasAnticipacion, setDiasAnticipacion] = useState(30);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loteSeleccionado, setLoteSeleccionado] = useState<ProductoLote | null>(null);
+    const [isAjusteOpen, setIsAjusteOpen] = useState(false);
+    const [isHistorialOpen, setIsHistorialOpen] = useState(false);
+
+    const abrirAjuste = (lote: ProductoLote) => {
+        setLoteSeleccionado(lote);
+        setIsAjusteOpen(true);
+    };
+
+    const abrirHistorial = (lote: ProductoLote) => {
+        setLoteSeleccionado(lote);
+        setIsHistorialOpen(true);
+    };
 
     // Redirigir si el rubro no usa lotes
     useEffect(() => {
@@ -55,6 +71,8 @@ const GestionLotes = () => {
                 endpoint = '/producto/lotes/vencidos';
             } else if (filtro === 'por-vencer') {
                 endpoint = `/producto/lotes/por-vencer?dias=${diasAnticipacion}`;
+            } else {
+                endpoint = '/producto/lotes/todos';
             }
 
             const { data } = await apiClient.get(endpoint);
@@ -96,7 +114,7 @@ const GestionLotes = () => {
     }
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
@@ -119,6 +137,15 @@ const GestionLotes = () => {
                 <div className="p-5 border-b border-gray-100">
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex gap-2">
+                            <Button
+                                color={filtro === 'todos' ? 'primary' : 'lila'}
+                                outline={filtro !== 'todos'}
+                                onClick={() => setFiltro('todos')}
+                                className="text-sm"
+                            >
+                                <Icon icon="solar:box-bold" className="mr-1.5" />
+                                Todos
+                            </Button>
                             <Button
                                 color={filtro === 'por-vencer' ? 'warning' : 'lila'}
                                 outline={filtro !== 'por-vencer'}
@@ -195,8 +222,7 @@ const GestionLotes = () => {
                                         return (
                                             <tr
                                                 key={lote.id}
-                                                className={`border-b border-gray-100 hover:bg-gray-50 ${isVencido ? 'bg-red-50' : isPorVencer ? 'bg-yellow-50' : ''
-                                                    }`}
+                                                className="border-b border-gray-100 hover:bg-gray-50"
                                             >
                                                 <td className="py-3 px-4 text-sm text-gray-900 font-medium">{lote.producto.descripcion}</td>
                                                 <td className="py-3 px-4 text-sm text-gray-600">{lote.producto.codigo}</td>
@@ -235,15 +261,36 @@ const GestionLotes = () => {
                                                     )}
                                                 </td>
                                                 <td className="py-3 px-4 text-center">
-                                                    {lote.activo && (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {/* Ver historial */}
                                                         <button
-                                                            onClick={() => handleDesactivarLote(lote.id)}
-                                                            className="text-red-600 hover:text-red-700 text-xs font-medium"
-                                                            title="Desactivar lote"
+                                                            onClick={() => abrirHistorial(lote)}
+                                                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Ver movimientos del lote"
                                                         >
-                                                            <Icon icon="solar:trash-bin-bold" width={18} />
+                                                            <Icon icon="solar:history-bold" width={16} />
                                                         </button>
-                                                    )}
+                                                        {/* Ajustar stock */}
+                                                        {lote.activo && ( // Permitir ajustes incluso con stock 0 (ingresos)
+                                                            <button
+                                                                onClick={() => abrirAjuste(lote)}
+                                                                className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                                                title="Ajustar stock del lote"
+                                                            >
+                                                                <Icon icon="solar:pen-bold" width={16} />
+                                                            </button>
+                                                        )}
+                                                        {/* Desactivar/Dar de baja */}
+                                                        {lote.activo && (
+                                                            <button
+                                                                onClick={() => handleDesactivarLote(lote.id)}
+                                                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title={isVencido ? 'Dar de baja (producto vencido)' : 'Desactivar lote'}
+                                                            >
+                                                                <Icon icon="solar:trash-bin-bold" width={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -298,7 +345,7 @@ const GestionLotes = () => {
                 </div>
             </div>
 
-            {/* Modal Crear Lote */}
+            {/* Modales */}
             <ModalCrearLote
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -306,6 +353,25 @@ const GestionLotes = () => {
                     cargarLotes();
                     setIsModalOpen(false);
                 }}
+            />
+
+            <ModalAjusteStockLote
+                isOpen={isAjusteOpen}
+                onClose={() => {
+                    setIsAjusteOpen(false);
+                    setLoteSeleccionado(null);
+                }}
+                lote={loteSeleccionado}
+                onSuccess={cargarLotes}
+            />
+
+            <ModalHistorialLote
+                isOpen={isHistorialOpen}
+                onClose={() => {
+                    setIsHistorialOpen(false);
+                    setLoteSeleccionado(null);
+                }}
+                lote={loteSeleccionado}
             />
         </div>
     );

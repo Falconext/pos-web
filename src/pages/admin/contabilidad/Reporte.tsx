@@ -59,7 +59,7 @@ const ReportesComprobantes = () => {
     console.log(resumenReporte)
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>

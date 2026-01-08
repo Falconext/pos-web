@@ -42,8 +42,8 @@ export default function GeneradorProductos({ onImport, onCancel }: GeneradorProd
 
             setGeneratedProducts(products);
 
-            // Auto-select all by default
-            setSelectedIndexes(products.map((_: any, i: number) => i));
+            // Do not auto-select all
+            setSelectedIndexes([]);
 
         } catch (error: any) {
             console.error(error);
@@ -102,55 +102,80 @@ export default function GeneradorProductos({ onImport, onCancel }: GeneradorProd
     }));
 
     return (
-        <div className="flex flex-col h-full bg-gray-50">
-            {/* Search Bar */}
-            <div className="p-6 bg-white border-b shadow-sm">
-                <div className="max-w-3xl mx-auto text-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">
-                        Generador de Productos con IA
-                        <Icon icon="solar:magic-stick-3-bold-duotone" className="inline ml-2 text-purple-500" />
-                    </h2>
-                    <p className="text-gray-500 mt-2">
-                        Describe qué necesitas (ej: "Jarabes para la tos", "Cervezas importadas", "Tuberías de PVC") y la IA creará el catálogo por ti.
-                    </p>
-                </div>
-
-                <div className="flex gap-2 max-w-2xl mx-auto">
+        <div className="flex flex-col h-full bg-gray-50/50">
+            {/* Search Bar & Header - COMPACT VERSION */}
+            <div className="px-6 py-5 bg-white border-b border-gray-100 shadow-sm z-10 shrink-0">
+                <div className="flex items-center gap-6  mx-auto">
+                    {/* Left: Input & Title */}
                     <div className="flex-1">
-                        <InputPro
-                            name="query"
-                            placeholder="¿Qué productos buscas hoy?"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                        />
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="inline-flex items-center justify-center p-1.5 bg-fuchsia-100 rounded-lg text-fuchsia-600">
+                                <Icon icon="solar:magic-stick-3-bold-duotone" className="text-lg" />
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900">
+                                Generador de Productos con IA
+                            </h2>
+                        </div>
+
+                        <div className="relative group max-w-2xl">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Icon icon="solar:magnifer-linear" className="text-gray-400 text-lg group-focus-within:text-fuchsia-500 transition-colors" />
+                            </div>
+                            <input
+                                name="query"
+                                placeholder="Ej: Bodega pequeña, Ferretería industrial..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                                className="w-full pl-10 pr-4 h-[42px] bg-gray-50 border-0 text-gray-900 rounded-xl focus:ring-2 focus:ring-fuchsia-100 focus:bg-white transition-all placeholder:text-gray-400 outline-none text-sm font-medium"
+                                autoComplete="off"
+                            />
+                            <button
+                                onClick={handleGenerate}
+                                disabled={loading || !query.trim()}
+                                className="absolute right-1 top-1 h-[34px] px-4 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {loading ? (
+                                    <Icon icon="svg-spinners:180-ring-with-bg" />
+                                ) : (
+                                    <>Generar <Icon icon="solar:stars-minimalistic-bold-duotone" /></>
+                                )}
+                            </button>
+                        </div>
                     </div>
-                    <Button
-                        onClick={handleGenerate}
-                        color="purple"
-                        disabled={loading || !query.trim()}
-                        className="h-[42px] px-6"
-                    >
-                        {loading ? (
-                            <><span className="animate-spin mr-2">✨</span> Generando...</>
-                        ) : (
-                            <>Generar <Icon icon="solar:stars-minimalistic-bold" className="ml-2" /></>
-                        )}
-                    </Button>
+
+                    {/* Right: Compact Disclaimer */}
+                    <div className="shrink-0 max-w-[640px] relative">
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-3 h-full items-center">
+                            <Icon icon="solar:info-circle-bold-duotone" className="text-2xl text-amber-500 shrink-0" />
+                            <div>
+                                <h4 className="font-bold text-amber-800 text-md mb-0.5">Uso Inteligente</h4>
+                                <p className="text-[13px] text-amber-700/90 leading-tight">
+                                    Estimado usuario estas consultas son limitadas, los precios que vera son referenciales y tal vez no van acorde al mercado esta es una ayuda para poder generar un catálogo de productos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Results Area */}
-            <div className="flex-1 p-4 overflow-hidden flex flex-col">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 overflow-hidden relative">
+            <div className="flex-1 p-6 overflow-hidden flex flex-col max-w-7xl mx-auto w-full">
+                <div className="bg-white rounded-3xl shadow-xl shadow-gray-100/50 border border-gray-100 flex-1 overflow-hidden relative flex flex-col">
                     {loading && (
-                        <div className="absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center">
-                            <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-                            <p className="text-purple-600 font-medium animate-pulse">Consultando mercado y creando productos...</p>
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+                            <div className="relative">
+                                <div className="w-20 h-20 border-4 border-fuchsia-100 border-t-fuchsia-600 rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Icon icon="solar:magic-stick-3-bold-duotone" className="text-2xl text-fuchsia-600 animate-pulse" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-2">Creando catálogo...</h3>
+                            <p className="text-gray-500 font-medium">Esto puede tomar unos segundos</p>
                         </div>
                     )}
 
-                    <div className="h-full overflow-auto">
+                    <div className="h-full overflow-auto custom-scrollbar">
                         {generatedProducts.length > 0 ? (
                             <DataTable
                                 headerColumns={headerColumns}
@@ -158,9 +183,14 @@ export default function GeneradorProductos({ onImport, onCancel }: GeneradorProd
                             />
                         ) : (
                             !loading && (
-                                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                                    <Icon icon="solar:ufo-3-bold-duotone" width={64} className="mb-4 opacity-50" />
-                                    <p>Los resultados aparecerán aquí</p>
+                                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                                    <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                                        <Icon icon="solar:box-minimalistic-bold-duotone" className="text-4xl text-gray-300" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Tu catálogo aparecerá aquí</h3>
+                                    <p className="text-gray-500 max-w-sm mx-auto">
+                                        Ingresa una descripción arriba y deja que la IA haga el trabajo pesado por ti.
+                                    </p>
                                 </div>
                             )
                         )}
@@ -169,22 +199,25 @@ export default function GeneradorProductos({ onImport, onCancel }: GeneradorProd
             </div>
 
             {/* Footer Actions */}
-            <div className="p-4 bg-white border-t flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                    {selectedIndexes.length} productos seleccionados
+            <div className="px-8 py-5 bg-white border-t border-gray-100 flex justify-between items-center z-10">
+                <div className="text-sm font-medium text-gray-500">
+                    <span className="text-gray-900 font-bold">{selectedIndexes.length}</span> productos seleccionados
                 </div>
                 <div className="flex gap-3">
-                    <Button onClick={onCancel} color="secondary" outline>
-                        Volver al catálogo
-                    </Button>
-                    <Button
-                        onClick={handleImportClick}
-                        color="primary"
-                        disabled={selectedIndexes.length === 0}
+                    <button
+                        onClick={onCancel}
+                        className="px-6 py-2.5 text-gray-600 font-semibold hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors"
                     >
-                        <Icon icon="mdi:check-circle" className="mr-2" />
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleImportClick}
+                        disabled={selectedIndexes.length === 0}
+                        className="px-8 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-xl font-semibold shadow-lg shadow-fuchsia-200 hover:shadow-fuchsia-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                    >
+                        <Icon icon="solar:file-download-bold-duotone" className="text-xl" />
                         Importar Selección
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>

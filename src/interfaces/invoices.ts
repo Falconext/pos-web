@@ -90,4 +90,7 @@ export interface IFormInvoice {
     quantity: number
   }>
   currencyCode: string
+  // Optional fields for Credit/Detraction/Retention
+  cuotas?: Array<{ monto: number, fechaVencimiento: string }>
+  formaPagoTipo?: string
 }

@@ -26,7 +26,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
 
     // Pagination & Search
     const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(10);
+    const [limit, setLimit] = useState(50);
     const [total, setTotal] = useState(0);
     const [search, setSearch] = useState("");
 
@@ -157,7 +157,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
     if (!isOpen) return null;
 
     // Prepare DataTable props
-    const headerColumns = ['#', 'Nombre', 'Descripción', 'Precio', 'Categoría', 'U. Medida'];
+    const headerColumns = ['#', 'Imagen', 'Nombre', 'Descripción', 'Precio', 'Categoría', 'U. Medida'];
 
     const bodyData = plantillas.map((p) => ({
         '#': (
@@ -170,16 +170,34 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                 />
             </div>
         ),
-        'Nombre': p.nombre,
-        'Descripción': p.descripcion,
-        'Precio': `S/ ${Number(p.precioSugerido).toFixed(2)}`,
-        'Categoría': p.categoria || 'Sin Categoría',
-        'U. Medida': p.unidadConteo || 'NIU'
+        'Imagen': (
+            <div className="flex items-center justify-center h-10 w-10 bg-gray-100 rounded overflow-hidden border border-gray-200">
+                {p.imagenUrl ? (
+                    <img
+                        src={p.imagenUrl}
+                        alt={p.nombre}
+                        className="w-full h-full object-cover hover:scale-150 transition-transform cursor-zoom-in"
+                        title="Clic para ampliar"
+                        onClick={() => setPreviewImage(p.imagenUrl)}
+                    />
+                ) : (
+                    <Icon icon="mdi:image-off-outline" className="text-gray-400" width={20} />
+                )}
+            </div>
+        ),
+        'Nombre': <span className="text-xs font-medium text-gray-900">{p.nombre}</span>,
+        'Descripción': <span className="text-xs text-gray-500 line-clamp-1" title={p.descripcion}>{p.descripcion}</span>,
+        'Precio': <span className="font-semibold text-gray-900 text-xs">S/ {Number(p.precioSugerido).toFixed(2)}</span>,
+        'Categoría': <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">{p.categoria || 'Sin Categoría'}</span>,
+        'U. Medida': <span className="text-xs text-gray-500">{p.unidadConteo || 'NIU'}</span>
     }));
+
+    // Image Preview State
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden relative">
                 {/* Header with Tabs */}
                 <div className="bg-gray-50 border-b">
                     <div className="flex justify-between items-center p-4 pb-0">
@@ -350,6 +368,29 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                     <li>Solo se agregarán nuevos productos.</li>
                 </ul>
             </ModalConfirm>
+
+            {/* Image Preview Modal */}
+            {previewImage && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh] bg-transparent rounded-2xl overflow-hidden shadow-2xl">
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-colors z-20 backdrop-blur-md"
+                        >
+                            <Icon icon="solar:close-circle-bold" width={32} />
+                        </button>
+                        <img
+                            src={previewImage}
+                            alt="Vista previa"
+                            className="w-full h-full object-contain max-h-[85vh] rounded-lg"
+                            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -414,7 +414,7 @@ const ComprobantesInformales = () => {
     console.log(invoice)
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
@@ -451,7 +451,7 @@ const ComprobantesInformales = () => {
                         <h3 className="font-semibold text-gray-800">Filtros</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-2">
+                        <div className="">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
                         <div>
@@ -463,10 +463,11 @@ const ComprobantesInformales = () => {
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
                         </div>
+                        <div className="">
+                            <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
+                        </div>
                     </div>
-                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
-                        <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
-                    </div>
+
                 </div>
 
                 {/* Table Content */}

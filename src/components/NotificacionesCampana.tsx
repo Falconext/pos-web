@@ -3,6 +3,21 @@ import { Icon } from '@iconify/react';
 import { useNotificacionesStore } from '../zustand/notificaciones';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
+import { useAuthStore } from '@/zustand/auth';
+import { useRubroFeatures } from '@/utils/rubro-features';
+import apiClient from '@/utils/apiClient';
+
+interface LoteAlerta {
+  id: number;
+  lote: string;
+  fechaVencimiento: string;
+  stockActual: number;
+  producto: {
+    descripcion: string;
+    codigo: string;
+  };
+}
 
 const NotificacionesCampana: React.FC = () => {
   const {
@@ -24,8 +39,15 @@ const NotificacionesCampana: React.FC = () => {
     solicitarPermisoPush,
   } = useNotificacionesStore();
 
+  const { auth } = useAuthStore();
+  const features = useRubroFeatures(auth?.empresa?.rubro?.nombre);
+
   const panelRef = useRef<HTMLDivElement>(null);
   const [mostrarConfig, setMostrarConfig] = useState(false);
+
+  // Estado para alertas de lotes
+  const [lotesVencidos, setLotesVencidos] = useState<LoteAlerta[]>([]);
+  const [lotesPorVencer, setLotesPorVencer] = useState<LoteAlerta[]>([]);
 
   useEffect(() => {
     obtenerNotificaciones();
@@ -34,6 +56,38 @@ const NotificacionesCampana: React.FC = () => {
       detenerWebSocket();
     };
   }, [obtenerNotificaciones, iniciarWebSocket, detenerWebSocket]);
+
+  // Cargar alertas de lotes para farmacias
+  useEffect(() => {
+    if (!features.gestionLotes) return;
+
+    const cargarAlertasLotes = async () => {
+      try {
+        const [vencidosRes, porVencerRes] = await Promise.all([
+          apiClient.get('/producto/lotes/vencidos'),
+          apiClient.get('/producto/lotes/por-vencer?dias=15'),
+        ]);
+
+        const vencidos = vencidosRes.data?.data || vencidosRes.data || [];
+        const porVencer = porVencerRes.data?.data || porVencerRes.data || [];
+
+        setLotesVencidos(vencidos);
+        const hoy = new Date();
+        setLotesPorVencer(porVencer.filter((l: LoteAlerta) => new Date(l.fechaVencimiento) >= hoy));
+      } catch (error) {
+        console.error('Error al cargar alertas de lotes:', error);
+      }
+    };
+
+    cargarAlertasLotes();
+    // Verificar cada 5 minutos
+    const interval = setInterval(cargarAlertasLotes, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [features.gestionLotes]);
+
+  // Calcular total de alertas (notificaciones + lotes)
+  const totalLotesAlerta = lotesVencidos.length + lotesPorVencer.length;
+  const totalNoLeidas = noLeidas + totalLotesAlerta;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,12 +115,14 @@ const NotificacionesCampana: React.FC = () => {
     switch (tipo) {
       case 'CRITICAL':
       case 'ERROR':
+      case 'LOTE_VENCIDO':
         return {
           icon: 'mdi:alert-circle',
           color: 'text-red-600',
           bgColor: 'bg-red-50'
         };
       case 'WARNING':
+      case 'LOTE_POR_VENCER':
         return {
           icon: 'mdi:alert',
           color: 'text-orange-500',
@@ -111,7 +167,7 @@ const NotificacionesCampana: React.FC = () => {
         aria-label="Notificaciones"
       >
         <Icon icon="solar:bell-linear" className="h-6 w-6 text-[#515C6C]" />
-        {noLeidas > 0 && (
+        {totalNoLeidas > 0 && (
           <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
@@ -162,11 +218,79 @@ const NotificacionesCampana: React.FC = () => {
 
           {/* Lista tipo Cards */}
           <div className="max-h-[500px] overflow-y-auto p-4 space-y-3">
+            {/* 🆕 ALERTAS DE LOTES PARA FARMACIAS */}
+            {(lotesVencidos.length > 0 || lotesPorVencer.length > 0) && (
+              <>
+                {/* Lotes Vencidos */}
+                {lotesVencidos.length > 0 && (
+                  <Link
+                    to="/administrador/kardex/lotes"
+                    onClick={cerrarPanel}
+                    className="block bg-white p-3 rounded-xl shadow-sm border border-red-200 hover:border-red-300 transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <Icon icon="mdi:alert-circle" className="text-red-600" width={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-[14px] font-bold text-red-700">
+                          ⚠️ {lotesVencidos.length} producto{lotesVencidos.length > 1 ? 's' : ''} vencido{lotesVencidos.length > 1 ? 's' : ''}
+                        </h4>
+                        <p className="text-[12px] text-red-600">
+                          {lotesVencidos.slice(0, 2).map(l => l.producto.descripcion).join(', ')}
+                          {lotesVencidos.length > 2 && ` y ${lotesVencidos.length - 2} más`}
+                        </p>
+                        <span className="text-[11px] text-red-500 font-medium mt-1 inline-block">
+                          Click para gestionar →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+
+                {/* Lotes Por Vencer */}
+                {lotesPorVencer.length > 0 && (
+                  <Link
+                    to="/administrador/kardex/lotes"
+                    onClick={cerrarPanel}
+                    className="block bg-white p-3 rounded-xl shadow-sm border border-orange-200 hover:border-orange-300 transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Icon icon="mdi:alert" className="text-orange-500" width={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-[14px] font-bold text-orange-700">
+                          {lotesPorVencer.length} producto{lotesPorVencer.length > 1 ? 's' : ''} por vencer
+                        </h4>
+                        <p className="text-[12px] text-orange-600">
+                          {lotesPorVencer.slice(0, 2).map(l => {
+                            const dias = Math.ceil((new Date(l.fechaVencimiento).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                            return `${l.producto.descripcion} (${dias}d)`;
+                          }).join(', ')}
+                          {lotesPorVencer.length > 2 && ` y ${lotesPorVencer.length - 2} más`}
+                        </p>
+                        <span className="text-[11px] text-orange-500 font-medium mt-1 inline-block">
+                          Click para gestionar →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+
+                {/* Separador */}
+                {notificaciones?.length > 0 && (
+                  <div className="border-t border-gray-200 my-2"></div>
+                )}
+              </>
+            )}
+
+            {/* Notificaciones regulares */}
             {loading && notificaciones?.length === 0 ? (
               <div className="flex justify-center py-8">
                 <Icon icon="line-md:loading-loop" className="text-gray-400" width={24} />
               </div>
-            ) : notificaciones?.length === 0 ? (
+            ) : notificaciones?.length === 0 && lotesVencidos.length === 0 && lotesPorVencer.length === 0 ? (
               <div className="text-center py-10">
                 <Icon icon="solar:bell-off-linear" className="mx-auto text-gray-300 mb-2" width={48} />
                 <p className="text-gray-400 text-sm">No tienes notificaciones recientes</p>

@@ -65,6 +65,7 @@ interface EditFormData {
   fechaExpiracion: string;
   providerToken?: string;
   providerId?: string;
+  esAgenteRetencion?: boolean;
   usuario?: {
     nombre?: string;
     email?: string;
@@ -124,6 +125,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     fechaExpiracion: '',
     providerToken: '',
     providerId: '',
+    esAgenteRetencion: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -180,7 +182,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
           dni: adminUser.dni || '',
           celular: adminUser.celular || '',
           password: '', // Password empty by default
-        }
+        },
+        esAgenteRetencion: (empresa as any).esAgenteRetencion || false,
       });
       setInitialEditPlanId(empresa.plan?.id || 0);
       // Resetear y asignar logo según la empresa actual
@@ -414,6 +417,25 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   <div className="md:col-span-2">
                     <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
                   </div>
+                  {isEdit && (
+                    <div className="md:col-span-2">
+                      <label className="flex items-center space-x-2 p-4 border rounded-lg bg-purple-50 border-purple-100 cursor-pointer hover:bg-purple-100 transition-colors">
+                        <input
+                          type="checkbox"
+                          name="esAgenteRetencion"
+                          checked={editData.esAgenteRetencion || false}
+                          onChange={(e) => setEditData(prev => ({ ...prev, esAgenteRetencion: e.target.checked }))}
+                          className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-800">Soy Agente de Retención (SUNAT)</span>
+                          <span className="text-xs text-gray-500">
+                            Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT (Régimen de Retenciones del IGV).
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
                     <input type="file" accept="image/*" onChange={handleLogoChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />

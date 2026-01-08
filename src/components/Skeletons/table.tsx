@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Icon } from '@iconify/react';
 import './styles.css'
 import styles from './skeleton.module.css'
 
@@ -227,10 +228,10 @@ const TableSkeleton = ({ arrayData }: any) => {
                         </div>
                     </section> :
                     <div className={styles.not__data}>
-                        <div>
-                            <img src="/svg/nodata.svg" alt="" />
+                        <div className="flex flex-col items-center justify-center p-8">
+                            <Icon icon="solar:box-search-linear" className="text-gray-300 text-7xl mb-4" />
                             <div>
-                                <p className='font-bold'>Al parecer no hemos encontrado un registro de dicha busqueda, intentelo nuevamente al hacer una nueva busqueda.</p>
+                                <p className='font-medium text-gray-500 text-center text-sm'>No se encontraron resultados para tu búsqueda.</p>
                             </div>
                         </div>
 

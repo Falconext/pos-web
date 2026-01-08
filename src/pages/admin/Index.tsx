@@ -104,7 +104,7 @@ export default function AdminIndex() {
   }, [topSells])
 
   return (
-    <div className="min-h-screen pb-4">
+    <div className="min-h-screen px-2 pb-4">
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard General</h1>

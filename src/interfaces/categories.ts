@@ -1,10 +1,13 @@
 export type ICategory = {
-    id?: number
-    nombre: string
-    empresaId: string
+  id?: number
+  nombre: string
+  empresaId: string
+  _count?: {
+    productos: number
   }
-  
-  export type IFormCategories = {
-    categoriaId?: number
-    nombre: string
-  }
+}
+
+export type IFormCategories = {
+  categoriaId?: number
+  nombre: string
+}

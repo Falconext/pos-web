@@ -41,7 +41,7 @@ const ReciboPagoParcial = ({
             <div className='hidden'>
                 <div ref={componentRef} className="print-area p-5 text-sm">
                     <div className="">
-                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-16 h-16" />}
+                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-24 h-24 object-contain" />}
                         <h2 className="text-center text-xs font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h2>
                         <p className="text-center text-xs">
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
@@ -49,16 +49,16 @@ const ReciboPagoParcial = ({
                             RUC: {company?.empresa?.ruc?.toUpperCase()}
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        
+
                         <h2 className="text-center font-bold text-xs">RECIBO DE PAGO PARCIAL</h2>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        
+
                         <div className="text-center text-xs mb-2">
                             <p><span className="font-bold">Recibo Nro:</span> {numeroRecibo}</p>
                             <p><span className="font-bold">Fecha:</span> {fechaFormato} {horaActual}</p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        
+
                         <div className="text-xs mb-2">
                             <p><span className="font-bold">Comprobante Original:</span></p>
                             <p className="ml-2">Tipo: {comprobante?.tipoDoc}</p>
@@ -67,7 +67,7 @@ const ReciboPagoParcial = ({
                             <p className="ml-2">RUC/DNI: {comprobante?.cliente?.nroDoc}</p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        
+
                         <div className="text-xs mb-2">
                             <p className="flex justify-between">
                                 <span className="font-bold">Total Comprobante:</span>
@@ -79,7 +79,7 @@ const ReciboPagoParcial = ({
                             </p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        
+
                         <div className="text-xs mb-2">
                             <p className="flex justify-between font-bold text-sm bg-gray-100 p-1">
                                 <span>MONTO PAGADO:</span>
@@ -91,7 +91,7 @@ const ReciboPagoParcial = ({
                             </p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        
+
                         <div className="text-xs">
                             <p className="text-center font-bold mb-2">
                                 Nuevo Saldo Pendiente:
@@ -100,7 +100,7 @@ const ReciboPagoParcial = ({
                                 S/ {(Number(comprobante?.saldo || 0) - Number(montoPagado)).toFixed(2)}
                             </p>
                         </div>
-                        
+
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className="text-xs text-center mt-4">
                             Este comprobante acredita el pago parcial de la factura mencionada.<br />
@@ -110,7 +110,7 @@ const ReciboPagoParcial = ({
                     </div>
                 </div>
             </div>
-            <button 
+            <button
                 onClick={printFn}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
             >

@@ -15,6 +15,7 @@ import Button from "@/components/Button";
 import InputPro from "@/components/InputPro";
 import { useAuthStore } from "@/zustand/auth";
 import apiClient from "@/utils/apiClient";
+import TableActionMenu from "@/components/TableActionMenu";
 
 // import ModalClient from "./modal-clientes";
 
@@ -66,6 +67,7 @@ const Clients = () => {
     const [searchClient, setSearchClient] = useState<string>("");
     const [formValues, setFormValues] = useState<IFormClient>(initialForm);
     const [isEdit, setIsEdit] = useState(false);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [errors, setErrors] = useState({
         nombre: "",
         nroDoc: "",
@@ -275,31 +277,20 @@ const Clients = () => {
             <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
                 <button
                     type="button"
-                    onClick={() => setOpenAccionesId(isOpen ? null : item.id)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (openAccionesId === item.id) {
+                            setOpenAccionesId(null);
+                            setAnchorEl(null);
+                        } else {
+                            setOpenAccionesId(item.id);
+                            setAnchorEl(e.currentTarget);
+                        }
+                    }}
                     className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
                 >
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
-                {isOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                        <button
-                            type="button"
-                            onClick={() => { handleGetProduct(rowBase); setOpenAccionesId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-                            <Icon icon="material-symbols:edit" width={16} height={16} />
-                            <span>Editar</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { handleToggleClientState(rowBase); setOpenAccionesId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-                            <Icon icon="mdi:power" width={16} height={16} />
-                            <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
-                        </button>
-                    </div>
-                )}
             </div>
         );
 
@@ -344,7 +335,7 @@ const Clients = () => {
     console.log(formValues)
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
@@ -379,7 +370,7 @@ const Clients = () => {
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 {/* Search and Actions */}
                 <div className="p-5 border-b border-gray-100">
                     <div className="flex flex-col lg:flex-row gap-4">
@@ -450,7 +441,7 @@ const Clients = () => {
                 <div className="p-4">
                     {clientsTable?.length > 0 ? (
                         <>
-                            <div className="overflow-hidden overflow-x-auto">
+                            <div className="overflow-x-auto min-h-[450px]">
                                 <DataTable bodyData={clientsTable}
                                     headerColumns={visibleColumns} />
                             </div>
@@ -478,9 +469,40 @@ const Clients = () => {
                 </div>
             </div>
 
+            <TableActionMenu
+                isOpen={!!openAccionesId && !!anchorEl}
+                anchorEl={anchorEl}
+                onClose={() => { setOpenAccionesId(null); setAnchorEl(null); }}
+            >
+                {openAccionesId && (() => {
+                    const rowBase = clientsTable.find((r: any) => r.id === openAccionesId);
+                    if (!rowBase) return null;
+                    return (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => { handleGetProduct(rowBase); setOpenAccionesId(null); setAnchorEl(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                            >
+                                <Icon icon="material-symbols:edit" width={16} height={16} />
+                                <span>Editar</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { handleToggleClientState(rowBase); setOpenAccionesId(null); setAnchorEl(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                            >
+                                <Icon icon="mdi:power" width={16} height={16} />
+                                <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
+                            </button>
+                        </>
+                    );
+                })()}
+            </TableActionMenu>
+
             {isOpenModal && <ModalClient setErrors={setErrors} errors={errors} formValues={formValues} setFormValues={setFormValues} isEdit={isEdit} isOpenModal={isOpenModal} setIsOpenModal={setIsOpenModal} closeModal={closeModal} />}
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmDeleteProduct} isOpenModal={isOpenModalConfirm} setIsOpenModal={setIsOpenModalConfirm} title="Confirmación" information="¿Estás seguro que deseas cambiar el estado del cliente?" />}
-        </div>
+        </div >
     );
 
 };

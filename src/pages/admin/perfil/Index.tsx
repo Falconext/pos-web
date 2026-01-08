@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react'
 import { get } from '../../../utils/fetch'
 import Loading from '../../../components/Loading'
 import useAlertStore from '../../../zustand/alert'
+import useEmpresasStore from '@/zustand/empresas'
 
 interface PerfilData {
     id: number
@@ -57,9 +58,11 @@ export default function PerfilIndex() {
     const [perfil, setPerfil] = useState<PerfilData | null>(null)
     const [loading, setLoading] = useState(true)
     const { alert } = useAlertStore()
+    const [usageStats, setUsageStats] = useState<any>(null)
 
     useEffect(() => {
         cargarPerfil()
+        cargarUsageStats()
     }, [])
 
     const cargarPerfil = async () => {
@@ -80,6 +83,20 @@ export default function PerfilIndex() {
         }
     }
 
+    const cargarUsageStats = async () => {
+        try {
+            const response: any = await get('comprobante/usage')
+            if (response && response.data) {
+                setUsageStats(response.data)
+            } else if (response && !response.error) {
+                // Response might be direct data
+                setUsageStats(response)
+            }
+        } catch (error) {
+            console.error('Error loading usage stats:', error)
+        }
+    }
+
     const formatearFecha = (fecha: string) => {
         return new Date(fecha).toLocaleDateString('es-PE', {
             year: 'numeric',
@@ -89,6 +106,22 @@ export default function PerfilIndex() {
             minute: '2-digit'
         })
     }
+
+    const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            try {
+                // Call store action
+                await useEmpresasStore.getState().actualizarMiEmpresa({ logo: file });
+                useAlertStore.getState().alert("Logo actualizado correctamente", "success");
+                // Refresh profile to show new logo
+                cargarPerfil();
+            } catch (error) {
+                console.error(error);
+                useAlertStore.getState().alert("Error al actualizar logo", "error");
+            }
+        }
+    };
 
     const formatearFechaSolo = (fecha: string) => {
         return new Date(fecha).toLocaleDateString('es-PE', {
@@ -184,7 +217,7 @@ export default function PerfilIndex() {
     }
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
@@ -199,7 +232,7 @@ export default function PerfilIndex() {
 
                     <div className="flex items-center space-x-5">
                         <div className={`w-24 h-24 rounded-full p-1 border-2 ${theme.border} bg-white`}>
-                            <div className="w-full h-full bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full bg-gray-50 rounded-full flex items-center justify-center overflow-hidden relative group cursor-pointer">
                                 {perfil.empresa.logo ? (
                                     <img
                                         src={perfil.empresa.logo}
@@ -209,6 +242,21 @@ export default function PerfilIndex() {
                                 ) : (
                                     <Icon icon="solar:user-circle-bold-duotone" className={`w-14 h-14 ${theme.icon}`} />
                                 )}
+
+                                {/* Overlay for upload */}
+                                <div
+                                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => document.getElementById('logoInput')?.click()}
+                                >
+                                    <Icon icon="solar:camera-add-bold" className="text-white w-8 h-8" />
+                                </div>
+                                <input
+                                    type="file"
+                                    id="logoInput"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleLogoChange}
+                                />
                             </div>
                         </div>
                         <div className="flex-1">
@@ -225,6 +273,72 @@ export default function PerfilIndex() {
                         </div>
                     </div>
                 </div>
+
+                {/* Usage Stats Card - Only for FORMAL companies */}
+                {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
+                    <div className={`bg-white rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200' : usageStats.alerta80 ? 'border-orange-200' : 'border-gray-100'} p-5`}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <div className={`p-2 rounded-lg ${usageStats.limiteAlcanzado ? 'bg-red-100 text-red-600' : usageStats.alerta80 ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                    <Icon icon="solar:document-bold-duotone" width="20" />
+                                </div>
+                                Uso de Comprobantes SUNAT
+                            </h2>
+                            <span className="text-sm text-gray-500">{usageStats.mesActual}</span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mb-4">
+                            <div className="flex justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-700">
+                                    {usageStats.comprobantesEmitidos} / {usageStats.limiteMaximo} comprobantes
+                                </span>
+                                <span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600' : usageStats.alerta80 ? 'text-orange-600' : 'text-blue-600'}`}>
+                                    {usageStats.porcentajeUso}%
+                                </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div
+                                    className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`}
+                                    style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        {/* Alert messages */}
+                        {usageStats.limiteAlcanzado && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                                <Icon icon="solar:danger-triangle-bold" className="text-red-500 text-xl flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-bold text-red-700">Límite de comprobantes alcanzado</p>
+                                    <p className="text-sm text-red-600 mt-1">
+                                        Has alcanzado el máximo de {usageStats.limiteMaximo} comprobantes de tu plan "{usageStats.plan}".
+                                        Para continuar emitiendo, contacta a soporte para actualizar tu plan.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {usageStats.alerta80 && !usageStats.limiteAlcanzado && (
+                            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
+                                <Icon icon="solar:bell-bold" className="text-orange-500 text-xl flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-bold text-orange-700">Atención: 80% del límite utilizado</p>
+                                    <p className="text-sm text-orange-600 mt-1">
+                                        Te quedan {usageStats.restantes} comprobantes disponibles este mes.
+                                        Considera actualizar tu plan si necesitas emitir más.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {!usageStats.alerta80 && !usageStats.limiteAlcanzado && (
+                            <p className="text-sm text-gray-500">
+                                Te quedan <span className="font-bold text-blue-600">{usageStats.restantes}</span> comprobantes disponibles este mes.
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Información Personal */}

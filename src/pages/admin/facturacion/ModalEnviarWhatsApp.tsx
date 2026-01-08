@@ -41,7 +41,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
         setLoading(true);
         try {
             // Construir mensaje
-            const mensaje = `Hola ${comprobante.clienteNombre}, le enviamos su comprobante electrónico ${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')} por un total de S/ ${comprobante.total.toFixed(2)}.\n\nPuede descargarlo aquí: ${comprobante.pdfUrl || 'Solicítelo a administración'}\n\nGracias por su preferencia.`;
+            const mensaje = `Hola ${comprobante.clienteNombre}, le enviamos su comprobante electrónico ${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')} por un total de S/ ${(comprobante.total ?? 0).toFixed(2)}.\n\nPuede descargarlo aquí: ${comprobante.pdfUrl || 'Solicítelo a administración'}\n\nGracias por su preferencia.`;
 
             const link = `https://wa.me/51${numeroDestino.replace(/\+/g, '').replace('51', '').trim()}?text=${encodeURIComponent(mensaje)}`;
             window.open(link, '_blank');
@@ -101,7 +101,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
                         </p>
                         <p>
                             <span className="text-gray-600">Monto:</span>{' '}
-                            <span className="font-medium">S/ {comprobante.total.toFixed(2)}</span>
+                            <span className="font-medium">S/ {(comprobante.total ?? 0).toFixed(2)}</span>
                         </p>
                         {!comprobante.pdfUrl && (
                             <p className="text-amber-600 text-xs mt-2 italic">
@@ -133,7 +133,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
                         Vista previa del mensaje:
                     </p>
                     <div className="text-xs text-gray-700 whitespace-pre-wrap">
-                        {`Hola ${comprobante.clienteNombre}, le enviamos su comprobante electrónico ${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')} por un total de S/ ${comprobante.total.toFixed(2)}.\n\nPuede descargarlo aquí: ${comprobante.pdfUrl || '[Enlace no disponible]'}\n\nGracias por su preferencia.`}
+                        {`Hola ${comprobante.clienteNombre}, le enviamos su comprobante electrónico ${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')} por un total de S/ ${(comprobante.total ?? 0).toFixed(2)}.\n\nPuede descargarlo aquí: ${comprobante.pdfUrl || '[Enlace no disponible]'}\n\nGracias por su preferencia.`}
                     </div>
                 </div>
 

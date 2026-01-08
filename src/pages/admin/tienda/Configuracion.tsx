@@ -413,7 +413,7 @@ export default function ConfiguracionTienda() {
   }
 
   return (
-    <div className="min-h-screen pb-4">
+    <div className="min-h-screen pb-4 px-2">
       {/* Modal de confirmación para eliminar QR */}
       <ModalConfirm
         isOpenModal={showConfirmDelete}
@@ -653,6 +653,8 @@ export default function ConfiguracionTienda() {
             />
             <label className="text-sm text-gray-700">Acepto pago en efectivo contra entrega</label>
           </div>
+
+
         </div>
 
         {/* Configuración de Envío */}
@@ -887,29 +889,7 @@ export default function ConfiguracionTienda() {
                     {/* PASO 2 */}
                     <div className="mt-6">
                       <span className="block text-xs font-bold text-gray-700 mb-2">PASO 2: Subir Imagen del Banner</span>
-                      <label className="block w-full">
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all bg-white">
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/jpg"
-                            onChange={handleBannerFileChange}
-                            disabled={uploadingBanner}
-                            className="hidden"
-                          />
-                          {uploadingBanner ? (
-                            <div className="flex flex-col items-center gap-2">
-                              <Icon icon="eos-icons:loading" className="w-12 h-12 text-purple-500" />
-                              <p className="text-sm text-gray-600">Subiendo banner...</p>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center gap-2">
-                              <Icon icon="solar:gallery-add-bold" className="w-12 h-12 text-gray-400" />
-                              <p className="text-sm font-medium text-gray-700">Click para seleccionar imagen</p>
-                              <p className="text-xs text-gray-500">JPG, PNG o WebP (máx. 2.5MB)</p>
-                            </div>
-                          )}
-                        </div>
-                      </label>
+
                     </div>
                   </div>
 

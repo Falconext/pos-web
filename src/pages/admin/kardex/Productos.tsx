@@ -21,6 +21,7 @@ import CardRestaurante from "@/components/productos/CardRestaurante";
 import ListaBodega from "@/components/productos/ListaBodega";
 import TablaFerreteria from "@/components/productos/TablaFerreteria";
 import { useBrandsStore } from "@/zustand/brands";
+import TableActionMenu from "@/components/TableActionMenu";
 
 const KardexProductos = () => {
 
@@ -52,6 +53,7 @@ const KardexProductos = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const uploadImageRef = useRef<HTMLInputElement>(null);
     const [uploadTarget, setUploadTarget] = useState<{ id: number; tipo: 'principal' } | null>(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [uploading, setUploading] = useState(false);
     const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
     const [visibleColumns, setVisibleColumns] = useState<string[]>([
@@ -367,58 +369,36 @@ const KardexProductos = () => {
         rowBase.marcaId = allData.marcaId;
         rowBase.marcaNombre = allData.marcaNombre;
 
-        const isOpen = openAccionesId === item.id;
-
         const acciones = (
             <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
                 <button
                     type="button"
-                    onClick={() => setOpenAccionesId(isOpen ? null : item.id)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Close if clicking same button, else open
+                        if (openAccionesId === item.id) {
+                            setOpenAccionesId(null);
+                            setAnchorEl(null);
+                        } else {
+                            setOpenAccionesId(item.id);
+                            setAnchorEl(e.currentTarget);
+                        }
+                    }}
                     className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
                 >
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
-                {isOpen && (
-                    <div className="absolute flex flex-col right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                        <button
-                            type="button"
-                            onClick={() => { handleGetProduct(rowBase); setOpenAccionesId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-
-                            <span>Editar</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { setUploadTarget({ id: Number(rowBase.productoId), tipo: 'principal' }); uploadImageRef.current?.click(); setOpenAccionesId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-
-                            <span>Subir imagen</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { handleToggleClientState(rowBase); setOpenAccionesId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-
-                            <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { handleOpenDelete(rowBase); setOpenAccionesId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
-                        >
-
-                            <span>Eliminar</span>
-                        </button>
-                    </div>
-                )}
             </div>
         );
 
         return { ...rowBase, 'Acciones': acciones };
     })
+
+    // Helper to close menu
+    const closeMenu = () => {
+        setOpenAccionesId(null);
+        setAnchorEl(null);
+    }
 
     const handleToggleClientState = async (data: any) => {
         setFormValues(data);
@@ -590,7 +570,7 @@ const KardexProductos = () => {
     };
 
     return (
-        <div className="min-h-screen pb-4">
+        <div className="min-h-screen px-2 pb-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
@@ -715,6 +695,55 @@ const KardexProductos = () => {
                     {/* Modales */}
                     <ModalCategories isOpenModal={isOpenModalCategory} closeModal={() => setIsOpenModalCategory(false)} setIsOpenModal={setIsOpenModalCategory} />
                     <ModalMarcas isOpenModal={isOpenModalBrands} closeModal={() => setIsOpenModalBrands(false)} setIsOpenModal={setIsOpenModalBrands} />
+
+                    <TableActionMenu
+                        isOpen={!!openAccionesId && !!anchorEl}
+                        anchorEl={anchorEl}
+                        onClose={closeMenu}
+                    >
+                        {openAccionesId && (() => {
+                            // Find the row data for current ID to pass to handlers
+                            const rowBase = productsTable.find((r: any) => r.productoId === openAccionesId);
+                            if (!rowBase) return null;
+
+                            return (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => { handleGetProduct(rowBase); closeMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Icon icon="material-symbols:edit" width={16} height={16} />
+                                        <span>Editar</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setUploadTarget({ id: Number(Object(rowBase).productoId), tipo: 'principal' }); uploadImageRef.current?.click(); closeMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Icon icon="solar:upload-minimalistic-bold" width={16} height={16} />
+                                        <span>Subir imagen</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { handleToggleClientState(rowBase); closeMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Icon icon="mdi:power" width={16} height={16} />
+                                        <span>{Object(rowBase).estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { handleOpenDelete(rowBase); closeMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                                    >
+                                        <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} />
+                                        <span>Eliminar</span>
+                                    </button>
+                                </>
+                            );
+                        })()}
+                    </TableActionMenu>
                 </div>
             </div>
 

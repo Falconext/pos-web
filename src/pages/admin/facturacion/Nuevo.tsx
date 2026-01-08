@@ -27,6 +27,8 @@ import Pagination from "@/components/Pagination";
 import ModalEditLineItem from "./ModalEditLineItem";
 import InputPro from "@/components/InputPro";
 import Button from "@/components/Button";
+import { get } from "@/utils/fetch";
+import ModalDetraccion, { DetraccionData } from "./ModalDetraccion";
 
 const Invoice = () => {
 
@@ -104,7 +106,7 @@ const Invoice = () => {
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
     const location = useLocation();
     const isQuotationRoute = location.pathname.includes('/cotizaciones/nuevo');
-    const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT'];
+    const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT', 'COT']; // COT no requiere SUNAT
     let tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
 
     // POS STATES
@@ -207,6 +209,50 @@ const Invoice = () => {
         nombre: "", nroDoc: "", direccion: "", departamento: "", distrito: "", provincia: "", ubigeo: "", email: "", telefono: "", estado: "", tipoDocumentoId: 0, empresaId: 0,
     });
 
+    // DETRACCION STATES
+    const [tiposOperacion, setTiposOperacion] = useState<any[]>([]);
+    const [tiposDetraccion, setTiposDetraccion] = useState<any[]>([]);
+    const [mediosPagoDetraccion, setMediosPagoDetraccion] = useState<any[]>([]);
+
+    const [tipoDetraccionId, setTipoDetraccionId] = useState<number | undefined>(undefined);
+    const [medioPagoDetraccionId, setMedioPagoDetraccionId] = useState<number | undefined>(undefined);
+    const [cuentaBancoNacion, setCuentaBancoNacion] = useState<string>('');
+    const [porcentajeDetraccion, setPorcentajeDetraccion] = useState<number>(0);
+    const [montoDetraccion, setMontoDetraccion] = useState<number>(0);
+    const [isModalDetraccionOpen, setIsModalDetraccionOpen] = useState<boolean>(false);
+    const [cuotas, setCuotas] = useState<Array<{ monto: number; fechaVencimiento: string }>>([]);
+
+    // Retención 3%
+    const [isModalRetencionOpen, setIsModalRetencionOpen] = useState(false);
+    const [retencionData, setRetencionData] = useState<any>(null);
+
+    // Cargar Catálogos Detracción
+    useEffect(() => {
+        const loadMasters = async () => {
+            try {
+                const rOps: any = await get('comprobante/tipo-operacion');
+                const opsData = (rOps && Array.isArray(rOps)) ? rOps : (rOps?.data || []);
+                if (Array.isArray(opsData)) {
+                    setTiposOperacion(opsData);
+                    // Set default to VENTA INTERNA if exists and not set (and not Note)
+                    if (formValues.motivoId === 0 && !["NOTA DE CREDITO", "NOTA DE DEBITO"].includes(formValues.comprobante)) {
+                        const ventaInterna = opsData.find((op: any) => op.codigo === '0101');
+                        if (ventaInterna) setFormValues(prev => ({ ...prev, motivoId: ventaInterna.id }));
+                    }
+                }
+                const rDet: any = await get('comprobante/tipos-detraccion');
+                setTiposDetraccion((rDet && Array.isArray(rDet)) ? rDet : (rDet?.data || []));
+
+                const rMed: any = await get('comprobante/medios-pago-detraccion');
+                setMediosPagoDetraccion((rMed && Array.isArray(rMed)) ? rMed : (rMed?.data || []));
+            } catch (e) { console.error(e); }
+        };
+        loadMasters();
+    }, [formValues.comprobante]); // Reload if needed, but mostly one time. Added dependency for safety.
+
+    // Calcular Detracción Automaticamente
+
+
     const isMobile = useIsMobile();
     const [isOpenModalClient, setIsOpenModalClient] = useState<boolean>(false);
     const [isOpenModalProduct, setIsOpenModalProduct] = useState<boolean>(false);
@@ -226,6 +272,33 @@ const Invoice = () => {
         };
         updateProductInvoice(editingIndex, updated);
         setEditingIndex(-1);
+    };
+
+    const handleSaveRetencion = (data: any) => {
+        setRetencionData(data);
+        // Sincronizar forma de pago y cuotas con el formulario principal
+        const formaPagoUpper = data.formaPago?.toUpperCase() || 'CONTADO';
+        setFormValues(prev => ({
+            ...prev,
+            medioPago: formaPagoUpper,
+            cuotas: data.cuotas ? data.cuotas.map((c: any) => ({
+                monto: c.monto,
+                fechaVencimiento: c.fechaVencimiento // backend espera fechaPago o fechaVencimiento en cuotas? Revisar DTO.
+            })) : []
+        }));
+    };
+
+    const handleSaveDetraccion = (data: DetraccionData) => {
+        setTipoDetraccionId(data.tipoDetraccionId);
+        setMedioPagoDetraccionId(data.medioPagoDetraccionId);
+        setCuentaBancoNacion(data.cuentaBancoNacion);
+        setPorcentajeDetraccion(data.porcentajeDetraccion);
+        setMontoDetraccion(data.montoDetraccion);
+        setCuotas(data.cuotas || []);
+        // Update formaPagoTipo if user selected Credito
+        if (data.formaPago) {
+            setFormValues(prev => ({ ...prev, medioPago: data.formaPago || 'Contado' }));
+        }
     };
 
     const debounceSerie = useDebounce(serie, 200);
@@ -257,7 +330,86 @@ const Invoice = () => {
     // Initial Data Fetching for POS
     useEffect(() => {
         getAllCategories({});
-        // getAllProducts logic moved to dedicated effect
+    }, [])
+
+    // Update comprobante type when route changes
+    useEffect(() => {
+        const newComprobante = isQuotationRoute
+            ? "COTIZACIÓN"
+            : (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA");
+
+        const newTipoDoc = isQuotationRoute
+            ? "COT"
+            : (tipoEmpresa === "INFORMAL" ? "TICKET" : "01");
+
+        setFormValues(prev => ({
+            ...prev,
+            comprobante: newComprobante,
+            tipoDoc: newTipoDoc
+        }));
+    }, [isQuotationRoute, tipoEmpresa]);
+
+    // Set printSize based on route
+    useEffect(() => {
+        if (isQuotationRoute) {
+            setPrintSize("A4");
+        } else {
+            setPrintSize("TICKET");
+        }
+    }, [isQuotationRoute]);
+
+    // Cargar datos de cotización si viene de conversión
+    useEffect(() => {
+        const state = location.state as any;
+        if (state?.fromQuotation && state?.quotationData) {
+            const { cliente, productos, observaciones } = state.quotationData;
+
+            // Establecer cliente
+            if (cliente) {
+                setSelectedClient(cliente);
+                setFormValues(prev => ({
+                    ...prev,
+                    clienteId: cliente.id,
+                    clienteNombre: `${cliente.nroDoc}-${cliente.nombre}`
+                }));
+            }
+            console.log('Productos raw:', productos)
+            // Cargar productos al carrito
+            if (productos && Array.isArray(productos)) {
+                const productosConvertidos = productos.map((det: any) => {
+                    const prodId = det.producto?.id || det.productoId;
+                    // Buscar el producto en el catálogo para obtener la imagen (solo si products está cargado)
+                    const productoEnCatalogo = products && Array.isArray(products)
+                        ? products.find((p: any) => p.id === prodId)
+                        : null;
+
+                    return {
+                        id: prodId,
+                        productoId: prodId,
+                        descripcion: det.descripcion,
+                        cantidad: det.cantidad,
+                        precioUnitario: det.mtoPrecioUnitario,
+                        descuento: 0,
+                        unidad: det.unidad,
+                        imagenUrl: productoEnCatalogo?.imagenUrl || null, // Agregar imagen del catálogo
+                    };
+                });
+                // Limpiar productos existentes y agregar los nuevos
+                resetProductInvoice();
+                productosConvertidos.forEach(prod => addProductsInvoice(prod));
+            }
+
+            // Observaciones
+            if (observaciones) {
+                setFormValues(prev => ({ ...prev, observaciones }));
+            }
+
+            // Limpiar el state para que no se cargue de nuevo
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
+
+    useEffect(() => { // getAllProducts logic moved to dedicated effect
         getCreditDebitNoteTypes();
         getCurrencies();
         getDocumentTypes();
@@ -340,18 +492,33 @@ const Invoice = () => {
     const [printSize, setPrintSize] = useState(isQuotationRoute ? "A4" : "TICKET");
     const [includeProductImages, setIncludeProductImages] = useState(isQuotationRoute);
 
+    // Quotation-specific states
+    const [quotationDiscount, setQuotationDiscount] = useState(0); // Descuento global %
+    const [quotationValidity, setQuotationValidity] = useState(7); // Días de validez
+    const [quotationSignature, setQuotationSignature] = useState(''); // Nombre del firmante
+    const [quotationTerms, setQuotationTerms] = useState(''); // Términos y condiciones
+    const [quotationPaymentType, setQuotationPaymentType] = useState('CONTADO'); // CONTADO, CREDITO_30, etc.
+    const [quotationAdvance, setQuotationAdvance] = useState(0); // Adelanto %
+    const [isQuotationConfigOpen, setIsQuotationConfigOpen] = useState(false); // Acordeón
+
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
         const clientSelect = clients?.find((item: any) => value.split("-")[0] === item.nroDoc);
         if (clientSelect !== undefined) {
             setSelectedClient(clientSelect);
         }
-        const motivo: any = typesOperation.find((item: any) => Number(item.id) === Number(idValue));
-        const updatedFormValues = {
+
+        const updatedFormValues: any = {
             ...formValues,
             [name]: value,
-            [id]: idValue,
-            motivoId: motivo?.id
+            [id]: idValue
         };
+
+        // Fix: Solo buscar/actualizar motivo si estamos cambiando el selector de motivo
+        if (id === 'motivoId' || name === 'motivo') {
+            const motivo: any = typesOperation.find((item: any) => Number(item.id) === Number(idValue));
+            updatedFormValues.motivoId = motivo?.id;
+        }
+
         setFormValues(updatedFormValues);
     };
 
@@ -380,6 +547,16 @@ const Invoice = () => {
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
     const totalAdjusted = isDiscountGlobalApplicable ? Math.max(totalOriginal - descountGlobal, 0) : totalOriginal;
+
+    // Calcular Detracción Automaticamente (Mellado aquí para tener acceso a totalAdjusted)
+    useEffect(() => {
+        if (porcentajeDetraccion > 0 && totalAdjusted > 0) {
+            setMontoDetraccion(Number((totalAdjusted * porcentajeDetraccion / 100).toFixed(2)));
+        } else {
+            setMontoDetraccion(0);
+        }
+    }, [porcentajeDetraccion, totalAdjusted]);
+
     const igvRate = 0.18;
     const opGravadaAdjusted = totalAdjusted / (1 + igvRate);
     const igvAdjusted = totalAdjusted - opGravadaAdjusted;
@@ -404,6 +581,8 @@ const Invoice = () => {
         }));
     }, [pay, totalAdjusted]);
 
+
+
     const addInvoiceReceipt = async () => {
         if (!validateForm()) return;
         if (formValues?.comprobante === "FACTURA" && selectedClient?.nroDoc.length !== 11) {
@@ -424,7 +603,26 @@ const Invoice = () => {
 
         const fechaEmision = formatISO(new Date(), { representation: 'complete' });
 
-        if (formValues.tipoDoc === "NP" && adelanto > totalAdjusted) {
+        const selectedOperacion = tiposOperacion.find(op => op.id === formValues.motivoId);
+
+        // Validación Detracción
+        if (selectedOperacion?.codigo === '0112') {
+            if (!tipoDetraccionId || !cuentaBancoNacion || !porcentajeDetraccion || !montoDetraccion) {
+                return useAlertStore.getState().alert("Para operación sujeta a detracción, DEBE configurar la detracción (Cuenta, % y Monto).", "error");
+            }
+            if (totalAdjusted < 700) {
+                return useAlertStore.getState().alert("La detracción solo aplica para montos mayores a S/ 700.00", "error");
+            }
+        }
+
+        // Validación Retención
+        if (retencionData) {
+            if (!retencionData.montoDetraccion || retencionData.montoDetraccion <= 0) {
+                return useAlertStore.getState().alert("Para operación sujeta a retención, DEBE configurar el monto de retención.", "error");
+            }
+        }
+
+        if ((formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && adelanto > totalAdjusted) {
             return useAlertStore.getState().alert("El adelanto no puede ser mayor al total", "error");
         }
 
@@ -438,8 +636,13 @@ const Invoice = () => {
             }
         }
 
+        let observacionesFinal = formValues?.observaciones || formValues?.motivo;
+        if (retencionData) {
+            observacionesFinal = `${observacionesFinal} | Operación sujeta a Retención del 3% del IGV`.replace(/^ \| /, '');
+        }
+
         const baseData = {
-            tipoOperacionId: 1,
+            tipoOperacionId: formValues.motivoId || 1,
             fechaEmision,
             medioPago: paymentMethod,
             vuelto: formValues?.vuelto,
@@ -447,20 +650,43 @@ const Invoice = () => {
             clienteName: selectedClient?.nombre,
             tipoDoc: formValues?.tipoDoc,
             detalles: productsInvoice?.map((item: any) => ({
-                productoId: Number(item?.productoId !== undefined ? item?.productoId : item?.id),
+                productoId: Number(item?.productoId || item?.id) || null,
                 descripcion: item.descripcion,
                 cantidad: Number(item.cantidad),
                 nuevoValorUnitario: Number(item.precioUnitario),
                 descuento: Number(item.descuento ?? 0)
             })),
-            formaPagoTipo: "Contado",
+            formaPagoTipo: formValues.medioPago || "Contado",
             formaPagoMoneda: "PEN",
             tipoMoneda: "PEN",
             descuento: finalDiscount,
             leyenda: totalInWords,
-            observaciones: formValues?.observaciones || formValues?.motivo,
-            adelanto: formValues.tipoDoc === "NP" && adelanto > 0 ? adelanto : undefined,
-            fechaRecojo: formValues.tipoDoc === "NP" && fechaRecojoFinal ? fechaRecojoFinal : undefined,
+            observaciones: observacionesFinal,
+            adelanto: (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && adelanto > 0 ? adelanto : undefined,
+            fechaRecojo: (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && fechaRecojoFinal ? fechaRecojoFinal : undefined,
+            // Configuración de cotización (solo si es COT)
+            cotizIncluirImagenes: isQuotationRoute ? includeProductImages : undefined,
+            cotizDescuento: isQuotationRoute ? quotationDiscount : undefined,
+            cotizVigencia: isQuotationRoute ? quotationValidity : undefined,
+            cotizFirmante: isQuotationRoute ? quotationSignature : undefined,
+            cotizTerminos: isQuotationRoute ? quotationTerms : undefined,
+            cotizTipoPago: isQuotationRoute ? quotationPaymentType : undefined,
+            cotizAdelanto: isQuotationRoute ? quotationAdvance : undefined,
+            // Detraccion (solo si es operación 0112 y no hay retención activa)
+            ...(selectedOperacion?.codigo === '0112' && !retencionData ? {
+                tipoDetraccionId: tipoDetraccionId || undefined,
+                medioPagoDetraccionId: medioPagoDetraccionId || undefined,
+                cuentaBancoNacion: cuentaBancoNacion || undefined,
+                porcentajeDetraccion: porcentajeDetraccion > 0 ? porcentajeDetraccion : undefined,
+                montoDetraccion: montoDetraccion > 0 ? montoDetraccion : undefined,
+                cuotas: cuotas.length > 0 ? cuotas : undefined,
+            } : {}),
+            // Retención (si está configurada)
+            ...(retencionData ? {
+                retencionMonto: retencionData.montoDetraccion, // Usamos el mismo campo para monto
+                retencionPorcentaje: retencionData.porcentajeDetraccion, // Usamos el mismo campo para porcentaje
+                cuotas: formValues.cuotas && formValues.cuotas.length > 0 ? formValues.cuotas : undefined, // Cuotas ya sincronizadas en formValues
+            } : {}),
         };
 
         const finalData: any =
@@ -521,7 +747,8 @@ const Invoice = () => {
     }
 
     useEffect(() => {
-        if (formValues.motivoId) resetProductInvoice();
+        // Removed: resetProductInvoice was unnecessarily clearing products when changing operation type
+        // if (formValues.motivoId) resetProductInvoice();
     }, [formValues.motivoId])
 
     const ruc = "204812192919";
@@ -557,7 +784,14 @@ const Invoice = () => {
 
     const closeModalResponse = () => {
         setIsOpenModalSuccessInvoice(false);
-        setFormValues({ ...initFormValues, comprobante: formValues?.comprobante, tipoDoc: formValues.tipoDoc, vuelto: 0 });
+        const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
+        setFormValues({
+            ...initFormValues,
+            comprobante: formValues?.comprobante,
+            tipoDoc: formValues.tipoDoc,
+            vuelto: 0,
+            motivoId: ventaInterna ? ventaInterna.id : initFormValues.motivoId
+        });
         setPay(0);
         setChange(0);
         setPaymentMethod('Efectivo');
@@ -573,11 +807,39 @@ const Invoice = () => {
         setSelectProduct(null);
         setSerie("");
         setCorrelative("");
+        setRetencionData(null); // Reset retention data
+        setTipoDetraccionId(undefined); // Reset detraction data
+        setMedioPagoDetraccionId(undefined);
+        setCuentaBancoNacion('');
+        setPorcentajeDetraccion(0);
+        setMontoDetraccion(0);
+        setCuotas([]);
         setTimeout(() => getSerieAndCorrelativeByReceipt(auth?.empresa?.id, formValues?.tipoDoc), 1000);
     };
 
+    const selectOperation = tiposOperacion.find(op => op.id === formValues.motivoId);
+
+    // Auto-apply or clear retention data based on total and agent status
+    useEffect(() => {
+        // Clear if drops below 700
+        if (totalAdjusted < 700 && retencionData) {
+            setRetencionData(null);
+            return;
+        }
+
+        // Auto-apply if >= 700, is agent, not detraction, and not already set
+        if (totalAdjusted >= 700 && auth?.empresa?.esAgenteRetencion && selectOperation?.codigo !== "0112" && !retencionData) {
+            const monto = Number((totalAdjusted * 0.03).toFixed(2));
+            setRetencionData({
+                montoDetraccion: monto,
+                porcentajeDetraccion: 3
+            });
+        }
+    }, [totalAdjusted, retencionData, auth?.empresa?.esAgenteRetencion, selectOperation?.codigo]);
+
     return (
-        <div className="flex flex-col md:flex-row h-screen md:h-[calc(100vh-80px)] overflow-hidden bg-gray-100 gap-4 p-4 font-sans text-gray-800">
+        <div className="flex flex-col md:flex-row h-screen md:h-[calc(100vh-80px)] overflow-hidden bg-[#F4F5FA] gap-6 font-sans text-gray-800">
+
             {/* Hidden Print Component */}
             <div className="hidden">
                 <ComprobantePrintPage
@@ -590,6 +852,12 @@ const Invoice = () => {
                     componentRef={componentRef}
                     size={printSize}
                     includeProductImages={includeProductImages}
+                    quotationDiscount={quotationDiscount}
+                    quotationValidity={quotationValidity}
+                    quotationSignature={quotationSignature}
+                    quotationTerms={quotationTerms}
+                    quotationPaymentType={quotationPaymentType}
+                    quotationAdvance={quotationAdvance}
                     formValues={{
                         ...formValues,
                         serie: dataReceipt?.serie,
@@ -608,7 +876,7 @@ const Invoice = () => {
             </div>
 
             {/* LEFT PANEL: PRODUCT CATALOG */}
-            <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-2xl shadow-sm h-full overflow-hidden">
+            <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-[32px] shadow-xl shadow-gray-200/50 h-full overflow-hidden border border-white">
                 {/* Header: Search & Categories */}
                 <div className="p-5 border-b border-gray-100">
                     <div className="flex gap-2 mb-4">
@@ -632,20 +900,27 @@ const Invoice = () => {
                         </button>
                     </div>
 
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
                         <button
                             onClick={() => setSelectedCategoryId(0)}
-                            className={`px-4 py-2 rounded-xl whitespace-nowrap text-sm font-semibold transition-all ${selectedCategoryId === 0 ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${selectedCategoryId === 0 ? 'bg-[#5570F1] text-white shadow-lg shadow-indigo-500/30' : 'bg-white text-gray-600 shadow-sm hover:shadow-md'}`}
                         >
-                            TODOS
+                            <span>TODOS</span>
+                            {/* Badge simulation (Optional: can be removed if not needed, but adds to the 'look') */}
+                            <span className={`px-2 py-0.5 rounded-lg text-xs ${selectedCategoryId === 0 ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>
+                                {totalProducts || 0}
+                            </span>
                         </button>
                         {categories?.map((cat: any) => (
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategoryId(cat.id)}
-                                className={`px-4 py-2 rounded-xl whitespace-nowrap text-sm font-semibold transition-all ${selectedCategoryId === cat.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${selectedCategoryId === cat.id ? 'bg-[#5570F1] text-white shadow-lg shadow-indigo-500/30' : 'bg-white text-gray-600 shadow-sm hover:shadow-md'}`}
                             >
-                                {cat.nombre.toUpperCase()}
+                                <span>{cat.nombre.toUpperCase()}</span>
+                                <span className={`px-2 py-0.5 rounded-lg text-xs ${selectedCategoryId === cat.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>
+                                    {cat._count?.productos || 0}
+                                </span>
                             </button>
                         ))}
                     </div>
@@ -653,81 +928,50 @@ const Invoice = () => {
 
                 {/* Product Grid */}
                 <div className="flex-1 overflow-y-auto p-5 scrollbar-thin">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                        {filteredProducts?.map((item: any) => {
-                            // Generate a consistent color based on category name
-                            const categoryColors: Record<string, string> = {
-                                'BEBIDAS': 'bg-orange-100 text-orange-600',
-                                'ABARROTES': 'bg-emerald-100 text-emerald-600',
-                                'LIMPIEZA': 'bg-cyan-100 text-cyan-600',
-                                'PINTURAS Y ACABADOS': 'bg-pink-100 text-pink-600',
-                                'HERRAMIENTAS': 'bg-amber-100 text-amber-700',
-                                'ELECTRICIDAD': 'bg-yellow-100 text-yellow-700',
-                                'GASFITERIA': 'bg-blue-100 text-blue-600',
-                                'CEMENTO Y AGREGADOS': 'bg-gray-200 text-gray-700',
-                                'FIERROS Y ACERO': 'bg-slate-200 text-slate-700',
-                            };
-                            const categoryColor = item.categoria?.nombre
-                                ? (categoryColors[item.categoria.nombre.toUpperCase()] || 'bg-indigo-100 text-indigo-600')
-                                : 'bg-gray-100 text-gray-500';
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {filteredProducts?.map((item: any) => (
+                            <div
+                                key={item.id}
+                                className="group bg-white rounded-[24px] p-3 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+                            >
+                                {/* Image Container */}
+                                <div className="aspect-[4/3] bg-[#F3F4F6] rounded-2xl mb-3 overflow-hidden relative flex items-center justify-center">
+                                    {item.imagenUrl ? (
+                                        <img
+                                            src={item.imagenUrl}
+                                            alt={item.descripcion}
+                                            className="w-full h-full object-contain p-4 mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <Icon icon="solar:box-minimalistic-linear" className="text-4xl text-gray-300" />
+                                    )}
+                                </div>
 
-                            return (
-                                <div
-                                    key={item.id}
-                                    onClick={() => handleProductClick(item)}
-                                    className="group bg-white rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden"
-                                >
-                                    {/* Image Container - Gray rounded background */}
-                                    <div className="aspect-square bg-gray-100 rounded-md m-2 overflow-hidden relative flex items-center justify-center">
-                                        {item.imagenUrl ? (
-                                            <img
-                                                src={item.imagenUrl}
-                                                alt={item.descripcion}
-                                                className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
-                                                onError={(e) => {
-                                                    const target = e.target as HTMLImageElement;
-                                                    target.style.display = 'none';
-                                                    target.parentElement!.innerHTML = '<div class="flex items-center justify-center w-full h-full text-gray-300"><svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M21 16.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11.5zm-2 0V5H5v10.56l7-3.5 7 4.44zM8.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg></div>';
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="flex items-center justify-center w-full h-full text-gray-300">
-                                                <Icon icon="solar:box-minimalistic-linear" className="text-5xl" />
-                                            </div>
-                                        )}
-                                        {/* Hover Add Button */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
-                                            <div className="bg-white shadow-lg p-2 rounded-full">
-                                                <Icon icon="solar:add-circle-bold" className="text-blue-600 text-2xl" />
-                                            </div>
-                                        </div>
-                                    </div>
+                                {/* Product Info */}
+                                <div className="flex-1 flex flex-col justify-between px-1">
+                                    <h4 className="font-bold text-gray-800 text-sm mb-3 line-clamp-2 leading-snug capitalize" style={{ textTransform: 'none' }}>
+                                        {item.descripcion?.toLowerCase()}
+                                    </h4>
 
-                                    {/* Product Info */}
-                                    <div className="px-3 pb-4 pt-1">
-                                        <h4 className="font-semibold text-gray-800 text-sm line-clamp-2 leading-snug mb-2 min-h-[2.5rem] capitalize" style={{ textTransform: 'none' }}>
-                                            {item.descripcion?.toUpperCase()}
-                                        </h4>
-
-                                        <div className="flex items-center justify-between gap-2">
-                                            {/* Category Badge */}
-                                            {item.categoria?.nombre ? (
-                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${categoryColor} truncate max-w-[70%]`}>
-                                                    {item.categoria.nombre}
-                                                </span>
-                                            ) : (
-                                                <span className="text-xs text-gray-400">-</span>
-                                            )}
-
-                                            {/* Price */}
-                                            <span className="font-bold text-gray-900 text-sm whitespace-nowrap">
+                                    <div className="flex items-end justify-between gap-2">
+                                        <div>
+                                            <p className="text-lg font-black text-gray-900 leading-none mb-1">
                                                 S/{Number(item.precioUnitario).toFixed(2)}
-                                            </span>
+                                            </p>
+                                            <p className="text-[11px] text-gray-400 font-medium">
+                                                Stock: {item.stock}
+                                            </p>
                                         </div>
+                                        <button
+                                            onClick={() => handleProductClick(item)}
+                                            className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all active:scale-95 flex items-center justify-center"
+                                        >
+                                            <Icon icon="solar:add-circle-bold" className="text-xl" />
+                                        </button>
                                     </div>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
                     {!filteredProducts?.length && (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -752,41 +996,144 @@ const Invoice = () => {
             </div>
 
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className="w-full md:w-[35%] flex flex-col bg-white rounded-2xl h-full shadow-sm overflow-hidden border border-gray-100">
+            <div className="w-full md:w-[35%] flex flex-col h-[calc(100vh-100px)] overflow-y-auto bg-white rounded-[32px] h-full shadow-xl shadow-gray-200/50 overflow-hidden border border-white">
                 {/* Invoice Config Header */}
-                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                <div className="p-5 border-b border-gray-100 bg-gray-50/30">
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                        {dataReceipt?.serie && (
-                            <div className="pb-2 col-span-2 border-b border-gray-100 flex w-full items-center justify-center">
-                                <div className="flex justify-center gap-3">
-                                    <div className="">
-                                        <span className="text-sm text-center mx-auto font-bold">{dataReceipt?.serie}-{String(dataReceipt?.correlativo).padStart(8, '0')}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <div className="col-span-2">
+                        <div className="col-span-2 flex items-center justify-center gap-3">
                             <Select
-                                defaultValue={formValues?.comprobante}
+                                value={formValues?.comprobante}
                                 isSearch options={comprobantesGenerar}
                                 id="tipoDoc" name="comprobante"
                                 error=""
-                                value="" onChange={handleChangeSelect}
+                                onChange={handleChangeSelect}
                                 label="Tipo Comprobante" isIcon icon="solar:file-text-linear"
                             />
+                            {/* {dataReceipt?.serie && (
+                                <div className="">
+                                    <div className="">
+                                        <div className="">
+                                            <span className="">{dataReceipt?.serie}-{String(dataReceipt?.correlativo).padStart(8, '0')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )} */}
                         </div>
+
+
+
+                        {/* Tipo de Operación y Detracción */}
+                        {(!["NOTA DE CREDITO", "NOTA DE DEBITO", "COTIZACIÓN"].includes(formValues?.comprobante)) && (
+                            <div className="col-span-2 space-y-2 mt-2">
+                                <div>
+                                    <Select
+                                        value={tiposOperacion.find((op: any) => Number(op.id) === Number(formValues.motivoId))?.descripcion || ""}
+                                        options={tiposOperacion.map((op: any) => ({ id: op.id, value: op.descripcion }))}
+                                        label="Tipo de Operación"
+                                        id="motivoId"
+                                        name="motivo"
+                                        onChange={(idVal, val, name, id) => {
+                                            // Custom handler needed/wrapper because Select calls (id, value, name, idField)
+                                            // And we need to trigger side effects like clearing detraction.
+                                            // Original Select uses: onChange(item.id, item.value, name, idField);
+
+                                            const newId = Number(idVal);
+                                            const updatedForm = { ...formValues, motivoId: newId };
+
+                                            // Reset detracción si cambia
+                                            if (newId !== tiposOperacion.find(op => op.codigo === '0112')?.id) {
+                                                setTipoDetraccionId(undefined);
+                                                setMedioPagoDetraccionId(undefined);
+                                                setPorcentajeDetraccion(0);
+                                                setCuentaBancoNacion('');
+                                            }
+                                            // Reset retención si cambia
+                                            setRetencionData(null);
+                                            setFormValues(updatedForm); // Update form directly or via handleChangeSelect if prefer single path
+                                        }}
+                                        error=""
+                                        isIcon
+                                        icon="solar:bill-list-linear"
+                                        isSearch
+                                    />
+                                </div>
+
+                                {/* Panel Detracción Compacto */}
+                                {selectOperation?.codigo === '0112' && (
+                                    <div className="space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsModalDetraccionOpen(true)}
+                                            className="w-full p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border-2 border-blue-200 flex items-center justify-between group transition-all"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1.5 bg-blue-500 rounded-lg group-hover:scale-110 transition-transform">
+                                                    <Icon icon="solar:settings-bold" className="text-white" width={16} />
+                                                </div>
+                                                <span className="text-sm font-semibold text-blue-700">Configurar Detracción</span>
+                                            </div>
+                                            <Icon icon="solar:alt-arrow-right-linear" className="text-blue-600 group-hover:translate-x-1 transition-transform" width={18} />
+                                        </button>
+                                        {tipoDetraccionId && (
+                                            <div className="flex items-center justify-between bg-green-50 p-2.5 rounded-lg border border-green-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div className="flex items-center gap-2">
+                                                    <Icon icon="solar:check-circle-bold" className="text-green-600" width={18} />
+                                                    <span className="text-xs font-medium text-green-700">
+                                                        {tiposDetraccion.find(t => t.id === tipoDetraccionId)?.descripcion || 'Configurado'}
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs font-bold text-green-800">S/ {montoDetraccion.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Botón Retención 3% (Si NO es Detracción, monto >= 700 y es Agente de Retención) */}
+                        {selectOperation?.codigo !== "0112" && totalAdjusted >= 700 && auth?.empresa?.esAgenteRetencion && (
+                            <div className="mt-2 col-span-2 mb-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                                <div className="space-y-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalRetencionOpen(true)}
+                                        className="w-full p-3 bg-gradient-to-r from-purple-50 to-fuchsia-50 hover:from-purple-100 hover:to-fuchsia-100 rounded-xl border-2 border-purple-200 flex items-center justify-between group transition-all"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-purple-500 rounded-lg group-hover:scale-110 transition-transform">
+                                                <Icon icon="solar:percent-circle-bold" className="text-white" width={16} />
+                                            </div>
+                                            <span className="text-sm font-semibold text-purple-700">Configurar Retención 3%</span>
+                                        </div>
+                                        <Icon icon="solar:alt-arrow-right-linear" className="text-purple-600 group-hover:translate-x-1 transition-transform" width={18} />
+                                    </button>
+
+                                    {retencionData && (
+                                        <div className="flex items-center justify-between bg-purple-100 p-2.5 rounded-lg border border-purple-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="flex items-center gap-2">
+                                                <Icon icon="solar:check-circle-bold" className="text-purple-600" width={18} />
+                                                <span className="text-xs font-medium text-purple-700">Reg. Retenciones del IGV (3%)</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-purple-800">Retención: S/ {retencionData.montoDetraccion?.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {isQuotationRoute && (
-                            <div className="col-span-2 flex items-center gap-2 pt-6">
+                            <div className="col-span-2 flex items-center gap-2 pt-0">
                                 <input
                                     type="checkbox"
                                     id="includeImages"
                                     checked={includeProductImages}
                                     onChange={(e) => setIncludeProductImages(e.target.checked)}
                                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                    style={{ accentColor: '#4F46E5' }}
                                 />
-                                <label htmlFor="includeImages" className="text-xs font-medium text-gray-700 cursor-pointer select-none">
-                                    <Icon icon="solar:gallery-bold-duotone" className="inline mr-1 text-blue-600" />
-                                    Incluir imágenes
+                                <label htmlFor="includeImages" className="text-sm font-medium text-gray-700 cursor-pointer select-none flex items-center gap-1">
+                                    <Icon icon="solar:gallery-bold-duotone" className="text-blue-600" />
+                                    Incluir imágenes del producto
                                 </label>
                             </div>
                         )}
@@ -794,7 +1141,7 @@ const Invoice = () => {
 
                     {/* Cliente - Solo mostrar cuando NO es nota de crédito/débito */}
                     {formValues?.comprobante !== "NOTA DE CREDITO" && formValues?.comprobante !== "NOTA DE DEBITO" && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 justify-between items-center">
                             <div className="flex-1">
                                 <Select
                                     handleGetData={handleGetDataClient}
@@ -806,86 +1153,108 @@ const Invoice = () => {
                                     label="Cliente" isIcon icon="solar:user-linear"
                                 />
                             </div>
-                            <button onClick={() => setIsOpenModalClient(true)} className="p-3 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors">
-                                <Icon icon="solar:user-plus-bold" />
+                            <button onClick={() => setIsOpenModalClient(true)} className="px-4 py-3 relative top-2 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 border border-blue-100 transition-colors shadow-sm">
+                                <Icon icon="solar:user-plus-bold" className="text-xl" />
                             </button>
                         </div>
                     )}
 
-                    {/* Sección para NOTA DE CRÉDITO / DÉBITO - Compacta */}
+                    {/* Sección para NOTA DE CRÉDITO / DÉBITO - Mejorada */}
                     {(formValues?.comprobante === "NOTA DE CREDITO" || formValues?.comprobante === "NOTA DE DEBITO") && (
-                        <div className="mt-2 text-sm bg-amber-50/50 rounded-lg border border-amber-100 p-2">
-                            {/* Selectores + Busqueda en Grid Compacto */}
-                            <div className="grid grid-cols-12 gap-2 items-end">
-                                <div className="col-span-4">
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">Tipo Doc</label>
-                                    <select
-                                        className="w-full text-xs p-1.5 rounded border border-gray-300 bg-white focus:outline-none focus:border-blue-500"
-                                        value={receiptNoteId}
-                                        onChange={(e) => setReceiptNoteId(e.target.value)}
-                                    >
-                                        {receiptsToNote.map(opt => <option key={opt.id} value={opt.id}>{opt.value}</option>)}
-                                    </select>
+                        <div className="mt-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-50">
+                                <div className="p-1.5 bg-amber-100 rounded-lg">
+                                    <Icon icon="solar:file-check-bold-duotone" className="text-amber-600" width={18} />
+                                </div>
+                                <h4 className="font-bold text-gray-700 text-sm">Documento a Modificar</h4>
+                            </div>
+
+                            {/* Grid de campos */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="col-span-1">
+                                    <Select
+                                        label="Tipo Documento"
+                                        value={receiptsToNote.find(r => r.id === receiptNoteId)?.value || ""}
+                                        options={receiptsToNote.map((r: any) => ({ id: r.id, value: r.value }))}
+                                        id="receiptNoteId"
+                                        name="receiptNoteId"
+                                        onChange={(id, val) => setReceiptNoteId(id)}
+                                        error=""
+                                        isIcon icon="solar:file-text-linear"
+                                    />
                                 </div>
 
-                                <div className="col-span-8">
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">Operación</label>
-                                    <select
-                                        className="w-full text-xs p-1.5 rounded border border-gray-300 bg-white focus:outline-none focus:border-blue-500"
-                                        value={formValues?.motivoId || ""}
-                                        onChange={(e) => {
-                                            const selectedId = Number(e.target.value);
+                                <div className="col-span-1">
+                                    <Select
+                                        label="Motivo / Operación"
+                                        value={((typesOperation as any[])?.find((op: any) => op.id === Number(formValues.motivoId))?.descripcion) || ""}
+                                        options={(typesOperation as any[])?.map((item: any) => ({ id: item.id, value: item.descripcion })) || []}
+                                        id="motivoId"
+                                        name="motivo"
+                                        onChange={(idValue, val) => {
+                                            const selectedId = Number(idValue);
                                             const selected: any = typesOperation?.find((op: any) => op.id === selectedId);
                                             if (selected) {
                                                 handleChangeSelect(selectedId, selected.descripcion, 'motivo', 'motivoId');
                                             }
                                         }}
-                                    >
-                                        <option value="">Seleccione...</option>
-                                        {typesOperation?.map((item: any) => (
-                                            <option key={item.id} value={item.id}>{item.descripcion}</option>
-                                        ))}
-                                    </select>
+                                        error=""
+                                        isSearch
+                                        isIcon icon="solar:list-check-linear"
+                                        left
+                                    />
                                 </div>
 
-                                <div className="col-span-3">
-                                    <input
-                                        className="w-full text-xs p-1.5 rounded border border-gray-300 focus:outline-none focus:border-blue-500 uppercase"
-                                        placeholder="Serie"
+                                <div className="col-span-1">
+                                    <InputPro
+                                        label="Serie"
                                         value={serie}
                                         onChange={(e) => setSerie(e.target.value.toUpperCase())}
+                                        name="serie"
+                                        placeholder="F001"
+                                        isLabel
+                                        uppercase
+                                        className="uppercase"
                                     />
                                 </div>
-                                <div className="col-span-7">
-                                    <input
-                                        className="w-full text-xs p-1.5 rounded border border-gray-300 focus:outline-none focus:border-blue-500"
-                                        placeholder="Correlativo"
-                                        value={correlative}
-                                        onChange={(e) => setCorrelative(e.target.value)}
-                                    />
-                                </div>
-                                <div className="col-span-2">
+
+                                <div className="col-span-1 relative flex gap-2">
+                                    <div className="flex-1">
+                                        <InputPro
+                                            label="Correlativo"
+                                            value={correlative}
+                                            onChange={(e) => setCorrelative(e.target.value)}
+                                            name="correlative"
+                                            placeholder="00000001"
+                                            isLabel
+                                            type="number"
+                                        />
+                                    </div>
                                     <button
                                         onClick={() => getInvoiceBySerieCorrelative(serie.toUpperCase(), correlative, formValues.motivoId)}
-                                        className="w-full p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center justify-center"
+                                        className="absolute right-0 bottom-0 h-[46px] w-[46px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95"
                                         title="Buscar Documento"
                                     >
-                                        <Icon icon="solar:magnifer-bold" />
+                                        <Icon icon="solar:magnifer-bold" className="text-xl" />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Info Documento Compacta */}
+                            {/* Info Documento Encontrado */}
                             {invoiceData && (
-                                <div className="mt-2 flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded px-3 py-1.5">
-                                    <div className="flex items-center gap-2">
-                                        <Icon icon="solar:check-circle-bold" className="text-emerald-500" />
-                                        <span className="font-bold text-gray-700 text-xs">{invoiceData?.serie}-{invoiceData?.correlativo}</span>
+                                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                                            <Icon icon="solar:check-circle-bold" className="text-emerald-500" width={18} />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-700 text-sm">{invoiceData?.serie}-{String(invoiceData?.correlativo).padStart(8, '0')}</div>
+                                            <div className="text-[11px] text-emerald-600 font-medium truncate max-w-[150px]">{invoiceData?.cliente?.nombre}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-xs text-right">
-                                        <span className="text-gray-500 text-[10px] block">Total Original</span>
-                                        <div className="font-bold text-gray-800">S/ {Number(invoiceData?.mtoImpVenta || 0).toFixed(2)}</div>
-                                        <div className="text-[10px] text-emerald-600 font-medium truncate max-w-[150px]">{invoiceData?.cliente?.nombre}</div>
+                                    <div className="text-right">
+                                        <span className="text-gray-400 text-[10px] uppercase font-bold tracking-wider">Total</span>
+                                        <div className="font-black text-gray-800 text-lg leading-none">S/ {Number(invoiceData?.mtoImpVenta || 0).toFixed(2)}</div>
                                     </div>
                                 </div>
                             )}
@@ -948,11 +1317,11 @@ const Invoice = () => {
                                     <p className="font-bold text-gray-900">S/ {Number(item.total).toFixed(2)}</p>
                                 </div>
 
-                                <button onClick={() => setEditingIndex(index)} className="text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                                <button onClick={() => setEditingIndex(index)} className="text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Icon icon="solar:pen-new-square-linear" />
                                 </button>
                                 <button onClick={() => deleteProductInvoice(item)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Icon icon="solar:trash-bin-linear" />
+                                    <Icon icon="hugeicons:delete-02" />
                                 </button>
                             </div>
                         ))
@@ -960,7 +1329,7 @@ const Invoice = () => {
                 </div>
 
                 {/* Calculations Section */}
-                <div className="p-5 bg-gray-50 border-t border-gray-100">
+                <div className="p-5 pt-2 bg-gray-50 border-t border-gray-100">
                     <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm text-gray-500">
                             <span>Op. Gravada</span>
@@ -980,7 +1349,139 @@ const Invoice = () => {
                             <span>TOTAL</span>
                             <span>S/ {totalAdjusted.toFixed(2)}</span>
                         </div>
+
+                        {/* Adelanto field for NP and OT */}
+                        {(formValues.tipoDoc === 'NP' || formValues.tipoDoc === 'OT') && !isQuotationRoute && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                                <label className="text-xs font-medium text-gray-700 block mb-1">
+                                    Adelanto (opcional)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">S/</span>
+                                    <input
+                                        type="number"
+                                        value={adelanto || ''}
+                                        onChange={(e) => setAdelanto(Number(e.target.value) || 0)}
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        max={totalAdjusted}
+                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                {adelanto > 0 && (
+                                    <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Saldo pendiente:</span>
+                                            <span className="font-bold text-orange-600">
+                                                S/ {Math.max(0, totalAdjusted - adelanto).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
+
+                    {/* Quotation-specific fields - Collapsible */}
+                    {isQuotationRoute && (
+                        <div className="border-t">
+                            <button
+                                onClick={() => setIsQuotationConfigOpen(!isQuotationConfigOpen)}
+                                className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 transition-colors"
+                            >
+                                <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
+                                    <Icon icon="solar:settings-bold-duotone" className="text-blue-600" />
+                                    Configuración Cotización
+                                </span>
+                                <Icon
+                                    icon={isQuotationConfigOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                                    className="text-gray-500"
+                                />
+                            </button>
+
+                            {isQuotationConfigOpen && (
+                                <div className="space-y-2 pb-3 px-1">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-700 block mb-1">Descuento (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={quotationDiscount}
+                                                onChange={(e) => setQuotationDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
+                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-700 block mb-1">Vigencia</label>
+                                            <select
+                                                value={quotationValidity}
+                                                onChange={(e) => setQuotationValidity(Number(e.target.value))}
+                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value={3}>3 días</option>
+                                                <option value={7}>7 días</option>
+                                                <option value={15}>15 días</option>
+                                                <option value={30}>30 días</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-700 block mb-1">Condición Pago</label>
+                                            <select
+                                                value={quotationPaymentType}
+                                                onChange={(e) => setQuotationPaymentType(e.target.value)}
+                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            >
+                                                <option value="CONTADO">Contado</option>
+                                                <option value="CREDITO_30">Crédito 30d</option>
+                                                <option value="CREDITO_60">Crédito 60d</option>
+                                                <option value="CREDITO_90">Crédito 90d</option>
+                                                <option value="ADELANTO">Adelanto</option>
+                                            </select>
+                                        </div>
+                                        {quotationPaymentType === 'ADELANTO' && (
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-700 block mb-1">Adelanto (%)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={quotationAdvance}
+                                                    onChange={(e) => setQuotationAdvance(Math.min(100, Math.max(0, Number(e.target.value))))}
+                                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    placeholder="50"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-700 block mb-1">Responsable</label>
+                                        <input
+                                            type="text"
+                                            value={quotationSignature}
+                                            onChange={(e) => setQuotationSignature(e.target.value)}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Nombre"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-700 block mb-1">Términos</label>
+                                        <textarea
+                                            value={quotationTerms}
+                                            onChange={(e) => setQuotationTerms(e.target.value)}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                            placeholder="Garantía, entrega..."
+                                            rows={2}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Payment Methods */}
                     <div className="mb-4">
@@ -999,14 +1500,23 @@ const Invoice = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
+                        {isQuotationRoute && (
+                            <button
+                                onClick={() => printFn()}
+                                className="col-span-2 py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-200/50"
+                            >
+                                <Icon icon="solar:download-bold" className="text-xl" />
+                                Exportar PDF Directo
+                            </button>
+                        )}
                         <button
                             onClick={() => handleOpenNewTab("vista previa")}
-                            className="col-span-1 py-3.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+                            className="col-span-1 py-4 bg-white border-2 border-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2"
                         >
                             <Icon icon="solar:eye-linear" className="text-xl" />
                             PREVIA
                         </button>
-                        <button onClick={addInvoiceReceipt} className="col-span-1 py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 flex items-center justify-center gap-2">
+                        <button onClick={addInvoiceReceipt} className="col-span-1 py-4 bg-[#1C1C24] text-white rounded-2xl font-bold hover:bg-[#2A2A35] transition-all shadow-xl shadow-gray-300/50 flex items-center justify-center gap-2">
                             <Icon icon="solar:printer-minimalistic-bold" className="text-xl" />
                             {isMobile ? "EMITIR" : "EMITIR"}
                         </button>
@@ -1019,6 +1529,34 @@ const Invoice = () => {
             {isOpenModalProduct && <ModalProduct setSelectProduct={setSelectProduct} isInvoice initialForm={initialFormProduct} setErrors={setErrorsProduct} setFormValues={setFormValuesProduct} isOpenModal={isOpenModalProduct} errors={errorsProduct} formValues={formValuesProduct} isEdit={false} setIsOpenModal={setIsOpenModalProduct} closeModal={closeModal} />}
             {isOpenModalClient && <ModalClient isOpenModal={isOpenModalClient} errors={errorsClient} setErrors={setErrorsClient} formValues={formValuesClient} setFormValues={setFormValuesClient} isEdit={false} setIsOpenModal={setIsOpenModalClient} closeModal={closeModal} />}
             {editingIndex !== -1 && <ModalEditLineItem isOpen={editingIndex !== -1} onClose={() => setEditingIndex(-1)} item={productsInvoice[editingIndex]} onSave={handleSaveEdit} />}
+
+            <ModalDetraccion
+                isOpen={isModalDetraccionOpen}
+                onClose={() => setIsModalDetraccionOpen(false)}
+                onSave={handleSaveDetraccion}
+                initialData={tipoDetraccionId ? {
+                    tipoDetraccionId: tipoDetraccionId || 0,
+                    medioPagoDetraccionId: medioPagoDetraccionId || 0,
+                    cuentaBancoNacion: cuentaBancoNacion || '',
+                    porcentajeDetraccion: porcentajeDetraccion || 0,
+                    montoDetraccion: montoDetraccion || 0,
+                    formaPago: formValues.medioPago as 'Contado' | 'Credito' || 'Contado',
+                    cuotas: cuotas || [],
+                } : null}
+                totalFactura={total || 0}
+                tiposDetraccion={tiposDetraccion}
+                mediosPagoDetraccion={mediosPagoDetraccion}
+            />
+            <ModalDetraccion
+                isOpen={isModalRetencionOpen}
+                onClose={() => setIsModalRetencionOpen(false)}
+                onSave={handleSaveRetencion}
+                totalFactura={totalAdjusted}
+                tiposDetraccion={tiposDetraccion}
+                mediosPagoDetraccion={mediosPagoDetraccion}
+                initialData={retencionData}
+                mode="RETENCION"
+            />
         </div>
     )
 }

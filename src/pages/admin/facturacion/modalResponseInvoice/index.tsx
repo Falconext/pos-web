@@ -58,6 +58,8 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
         resetProductInvoice();
         if (['BOLETA', 'FACTURA', 'NOTA DE CREDITO', 'NOTA DE DEBITO'].includes(comprobante)) {
             navigate('/administrador/facturacion/comprobantes')
+        } else if (comprobante === 'COTIZACIÓN') {
+            navigate('/administrador/cotizaciones')
         } else {
             navigate('/administrador/facturacion/comprobantes-informales')
         }
@@ -86,8 +88,12 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                                 </div>
                             </div>
                             <div className="flex gap-3 mt-5 mb-2 justify-between flex-wrap">
-                                <Button color="black" outline onClick={goListInvoice}>Ir a lista de comprobantes</Button>
-                                <Button color="primary" outline onClick={handleOpenNewTab}>Imprimir comprobante</Button>
+                                <Button color="black" outline onClick={goListInvoice}>
+                                    {comprobante === 'COTIZACIÓN' ? 'Ir a lista de cotizaciones' : 'Ir a lista de comprobantes'}
+                                </Button>
+                                <Button color="primary" outline onClick={handleOpenNewTab}>
+                                    {comprobante === 'COTIZACIÓN' ? 'Imprimir cotización' : 'Imprimir comprobante'}
+                                </Button>
                                 <Button color="secondary" outline onClick={() => closeModal()}>Nueva {comprobante.toLowerCase()}</Button>
                             </div>
                         </>
