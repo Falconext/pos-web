@@ -315,7 +315,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                                         onClick={handleImportAllClick}
                                         color="secondary"
                                         disabled={importing || plantillas.length === 0}
-                                        className="bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
+                                        className="bg-indigo-900 text-[#fff] border-indigo-200"
                                     >
                                         {importing ? '...' : (
                                             <>
