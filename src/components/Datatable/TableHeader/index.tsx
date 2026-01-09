@@ -10,7 +10,7 @@ const TableHeader: FC<ITableHeaderProps> = ({ columns, colorFont, onSort, action
                     const key = isObject ? column.key : (column as string);
                     const label = isObject ? column.label : (column as string);
                     return (
-                        <th key={key} style={{ color: colorFont }} onClick={() => onSort(key)}>
+                        <th key={key} style={{ color: colorFont, textAlign: (key === 'estado' || key === 'tipo' || key === 'status') ? 'center' : 'left' }} onClick={() => onSort(key)}>
                             {label}
                         </th>
                     );

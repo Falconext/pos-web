@@ -12,6 +12,7 @@ import Select from "@/components/Select";
 import { useAuthStore } from "@/zustand/auth";
 import DataTable from "@/components/Datatable";
 import { usePlantillasStore } from "@/zustand/plantillas";
+import { useEmpresasStore } from "@/zustand/empresas";
 
 interface Plantilla {
     id: number;
@@ -33,6 +34,8 @@ const CatalogoGlobal = () => {
         setPage, setLimit, setSearch, setRubroId, getPlantillas,
         deletePlantilla, deletePlantillasMasivo, updateLocalPlantilla
     } = usePlantillasStore();
+
+    const { listarEmpresas, empresas } = useEmpresasStore();
 
     // Local UI state
     const [rubros, setRubros] = useState<any[]>([]);
@@ -57,6 +60,7 @@ const CatalogoGlobal = () => {
 
     useEffect(() => {
         loadRubros();
+        listarEmpresas();
         // Initial load if empty or just always ensuring data?
         // Let's call data fetch on mount to be safe, or if store is persistent user navigates away and back.
         // For fresh data on mount:
@@ -622,14 +626,16 @@ const CatalogoGlobal = () => {
                         Se usarán los códigos de producto para evitar duplicados.
                     </p>
 
-                    <InputPro
-                        label="Empresa ID"
+
+
+                    <Select
+                        label="Empresa de Origen"
                         name="empresaIdToImport"
-                        type="number"
-                        value={empresaIdToImport}
-                        onChange={(e: any) => setEmpresaIdToImport(Number(e.target.value))}
-                        isLabel
-                        placeholder="Ej. 1"
+                        options={empresas.map(e => ({ id: e.id, value: `${e.ruc} - ${e.razonSocial}` }))}
+                        value={empresas.find(e => e.id === empresaIdToImport) ? `${empresas.find(e => e.id === empresaIdToImport)?.ruc} - ${empresas.find(e => e.id === empresaIdToImport)?.razonSocial}` : ""}
+                        onChange={(id) => setEmpresaIdToImport(Number(id))}
+                        placeholder="Seleccione Empresa"
+                        error={!empresaIdToImport ? "Requerido" : ""}
                     />
 
                     <Select

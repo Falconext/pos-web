@@ -155,6 +155,7 @@ const TableBody: FC<ITableBodyProps> = ({
                                         color: colorFont,
                                         whiteSpace: hasAddressAndName ? 'normal' : undefined,
                                         overflowWrap: hasAddressAndName ? 'break-word' : undefined,
+                                        textAlign: (key === 'estado' || key === 'tipo' || key === 'status') ? 'center' : 'left'
                                     }}
                                 >
                                     {isEditable ? (
