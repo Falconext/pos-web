@@ -28,6 +28,7 @@ import { usePaymentFlow, PaymentType } from "@/hooks/usePaymentFlow";
 import ModalPaymentUnified from "@/components/ModalPaymentUnified";
 import PaymentReceipt from "@/components/PaymentReceipt";
 import Modal from "@/components/Modal";
+import TableActionMenu from "@/components/TableActionMenu";
 
 const Comprobantes = () => {
     const navigate = useNavigate();
@@ -49,7 +50,18 @@ const Comprobantes = () => {
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
-    const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
+    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+    const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
+
+    const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, row: any) => {
+        setMenuAnchor(event.currentTarget);
+        setSelectedMenuRow(row);
+    };
+
+    const handleCloseMenu = () => {
+        setMenuAnchor(null);
+        setSelectedMenuRow(null);
+    };
     const paymentFlow = usePaymentFlow();
     const [isOpenModalPagoParcial, setIsOpenModalPagoParcial] = useState(false);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
@@ -82,19 +94,7 @@ const Comprobantes = () => {
         };
     }, []);
 
-    // Cerrar menú de acciones al hacer click fuera
-    useEffect(() => {
-        const handleClickOutside = () => {
-            if (openAccionesId !== null) {
-                setOpenAccionesId(null);
-            }
-        };
 
-        document.addEventListener('click', handleClickOutside);
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-        };
-    }, [openAccionesId]);
 
     console.log(invoices)
 
@@ -120,111 +120,14 @@ const Comprobantes = () => {
 
         const canEmitirSunat = ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(rowBase.comprobante);
 
-        const isOpen = openAccionesId === rowBase.id;
-
         const acciones = (
-            <div
-                className="relative inline-block"
-                onClick={(e) => e.stopPropagation()} // evitar que el click burbujee al documento
+            <button
+                type="button"
+                onClick={(e) => handleOpenMenu(e, { ...rowBase, tipoDoc: item.tipoDoc, cotizIncluirImagenes: (item as any).cotizIncluirImagenes })}
+                className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1 hover:bg-gray-50"
             >
-                <button
-                    type="button"
-                    onClick={() => setOpenAccionesId(isOpen ? null : rowBase.id)}
-                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
-                >
-                    <Icon icon="mdi:dots-vertical" width={18} height={18} />
-                </button>
-                {isOpen && (
-                    <div className="fixed flex-col right-10 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-[99999999]">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleGetReceipt(rowBase);
-                                setOpenAccionesId(null);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-                            <Icon icon="mingcute:print-line" width={16} height={16} />
-                            <span>Imprimir</span>
-                        </button>
-                        {/* Botón de impresión térmica - solo se muestra en macOS */}
-                        <button
-                            type="button"
-                            disabled={!rowBase.s3PdfUrl}
-                            onClick={() => {
-                                if (rowBase.s3PdfUrl) {
-                                    setPdfUrl(rowBase.s3PdfUrl as string);
-                                    const corr = String(rowBase.correlativo || '').padStart(8, '0');
-                                    setPdfName(`${rowBase.serie}-${corr}.pdf`);
-                                    setIsOpenModalPdf(true);
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.s3PdfUrl ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="mdi:file-pdf-box" width={16} height={16} />
-                            <span>Ver PDF</span>
-                        </button>
-                        <button
-                            type="button"
-                            disabled={!rowBase.xmlSunat}
-                            onClick={() => {
-                                if (rowBase.xmlSunat) {
-                                    window.open(rowBase.xmlSunat, '_blank');
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.xmlSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="hugeicons:xml-02" width={16} height={16} />
-                            <span>Descargar XML</span>
-                        </button>
-                        <button
-                            type="button"
-                            disabled={!rowBase.cdrSunat}
-                            onClick={() => {
-                                if (rowBase.cdrSunat) {
-                                    window.open(rowBase.cdrSunat, '_blank');
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.cdrSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="mdi:zip-box-outline" width={16} height={16} />
-                            <span>Descargar CDR</span>
-                        </button>
-                        <button
-                            type="button"
-                            disabled={!(rowBase.estado === 'EMITIDO' || !canEmitirSunat)}
-                            onClick={() => {
-                                if (rowBase.estado === 'EMITIDO' || !canEmitirSunat) {
-                                    handleEnviarWhatsApp(rowBase);
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${(rowBase.estado === 'EMITIDO' || !canEmitirSunat) ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="mdi:whatsapp" width={16} height={16} />
-                            <span>Enviar WhatsApp</span>
-                        </button>
-
-                        {/* Convertir Cotización a Factura/Boleta */}
-                        {(rowBase.comprobante?.includes('COTIZACI') || rowBase.tipoDoc === 'COT') && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    handleConvertirAFactura(rowBase);
-                                    setOpenAccionesId(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-green-50 text-green-700 border-t border-gray-100"
-                            >
-                                <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
-                                <span className="font-medium">Convertir a Factura</span>
-                            </button>
-                        )}
-                    </div>
-                )}
-            </div>
+                <Icon icon="mdi:dots-vertical" width={18} height={18} />
+            </button>
         );
 
         return {
@@ -561,7 +464,7 @@ const Comprobantes = () => {
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 {/* Filters Section */}
                 <div className="p-5 border-b border-gray-100">
                     <div className="flex items-center gap-2 mb-4">
@@ -725,6 +628,117 @@ const Comprobantes = () => {
                     onClose={handleCloseReceipt}
                 />
             )}
+
+            {/* Menu de Acciones Flotante con Portal */}
+            <TableActionMenu
+                isOpen={Boolean(menuAnchor)}
+                anchorEl={menuAnchor}
+                onClose={handleCloseMenu}
+            >
+                {selectedMenuRow && (() => {
+                    const rowBase = selectedMenuRow;
+                    const canEmitirSunat = ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(rowBase.comprobante);
+
+                    return (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleGetReceipt(rowBase);
+                                    handleCloseMenu();
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                            >
+                                <Icon icon="mingcute:print-line" width={16} height={16} />
+                                <span>Imprimir</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={!rowBase.s3PdfUrl}
+                                onClick={() => {
+                                    if (rowBase.s3PdfUrl) {
+                                        setPdfUrl(rowBase.s3PdfUrl as string);
+                                        const corr = String(rowBase.correlativo || '').padStart(8, '0');
+                                        setPdfName(`${rowBase.serie}-${corr}.pdf`);
+                                        setIsOpenModalPdf(true);
+                                    }
+                                    handleCloseMenu();
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.s3PdfUrl ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                            >
+                                <Icon icon="mdi:file-pdf-box" width={16} height={16} />
+                                <span>Ver PDF</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={!rowBase.xmlSunat}
+                                onClick={() => {
+                                    if (rowBase.xmlSunat) {
+                                        window.open(rowBase.xmlSunat, '_blank');
+                                    }
+                                    handleCloseMenu();
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.xmlSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                            >
+                                <Icon icon="hugeicons:xml-02" width={16} height={16} />
+                                <span>Descargar XML</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={!rowBase.cdrSunat}
+                                onClick={() => {
+                                    if (rowBase.cdrSunat) {
+                                        window.open(rowBase.cdrSunat, '_blank');
+                                    }
+                                    handleCloseMenu();
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.cdrSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                            >
+                                <Icon icon="mdi:zip-box-outline" width={16} height={16} />
+                                <span>Descargar CDR</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={!(rowBase.estado === 'EMITIDO' || !canEmitirSunat)}
+                                onClick={() => {
+                                    if (rowBase.estado === 'EMITIDO' || !canEmitirSunat) {
+                                        handleEnviarWhatsApp(rowBase);
+                                    }
+                                    handleCloseMenu();
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${(rowBase.estado === 'EMITIDO' || !canEmitirSunat) ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                            >
+                                <Icon icon="mdi:whatsapp" width={16} height={16} />
+                                <span>Enviar WhatsApp</span>
+                            </button>
+
+                            {(rowBase.comprobante?.includes('COTIZACI') || rowBase.tipoDoc === 'COT') && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleConvertirAFactura(rowBase);
+                                        handleCloseMenu();
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-green-50 text-green-700 border-t border-gray-100"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                >
+                                    <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
+                                    <span className="font-medium">Convertir a Factura</span>
+                                </button>
+                            )}
+                        </>
+                    );
+                })()}
+            </TableActionMenu>
         </div>
     );
 

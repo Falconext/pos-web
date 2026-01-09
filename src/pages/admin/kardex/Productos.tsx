@@ -106,6 +106,9 @@ const KardexProductos = () => {
                 const savedVista = localStorage.getItem(vistaStorageKey) as 'cards' | 'tabla' | 'lista' | null;
                 if (savedVista) {
                     setVistaActual(savedVista);
+                } else if (window.innerWidth < 768 && !isRestaurante) {
+                    // Si es móvil y no es restaurante, usar vista lista por defecto para mejor UX
+                    setVistaActual('lista');
                 }
                 // Luego intentar cargar configuración de diseño de backend
                 const { data } = await apiClient.get('/diseno-rubro/mi-empresa');
@@ -579,9 +582,8 @@ const KardexProductos = () => {
                 </div>
                 <div className="flex gap-3">
                     <Button
-                        color="secondary"
                         outline
-                        className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300"
+                        className="bg-red-50 text-red-600 border-red-200"
                         onClick={() => setIsOpenModalDeleteAll(true)}
                     >
                         <Icon icon="solar:trash-bin-trash-bold" className="text-lg mr-2" />

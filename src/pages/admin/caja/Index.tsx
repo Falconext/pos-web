@@ -7,7 +7,7 @@ const CajaIndex: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'CONTROL' | 'HISTORIAL'>('CONTROL');
 
     return (
-        <div className="space-y-6 max-w-8xl mx-auto">
+        <div className="space-y-6 max-w-8xl px-2 mx-auto">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -18,12 +18,12 @@ const CajaIndex: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+            <div className="flex gap-2 mb-4">
                 <button
                     onClick={() => setActiveTab('CONTROL')}
-                    className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'CONTROL'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'CONTROL'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                         }`}
                 >
                     <Icon icon="solar:shop-2-bold-duotone" className="text-lg" />
@@ -31,9 +31,9 @@ const CajaIndex: React.FC = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('HISTORIAL')}
-                    className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'HISTORIAL'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'HISTORIAL'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                         }`}
                 >
                     <Icon icon="solar:history-bold-duotone" className="text-lg" />

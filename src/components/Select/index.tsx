@@ -144,7 +144,7 @@ const Select = ({
         }
     };
 
-    const resultsOptions: any = !search ? optionSearch : optionSearch?.filter((option: any) => (typeof option.id === "string" || typeof option.value === "string") && option?.id?.toLowerCase().includes(search.toLocaleLowerCase()) || option?.value?.toLowerCase().includes(search.toLocaleLowerCase()));
+    const resultsOptions: any = (!search || handleGetData) ? optionSearch : optionSearch?.filter((option: any) => (typeof option.id === "string" || typeof option.value === "string") && option?.id?.toLowerCase().includes(search.toLocaleLowerCase()) || option?.value?.toLowerCase().includes(search.toLocaleLowerCase()));
 
     const optionsHeigth: CSSProperties = {
         height: resultsOptions && resultsOptions.length > 10 ? "215px" : "auto",
@@ -191,7 +191,7 @@ const Select = ({
 
                 {isOpen && (
                     <motion.ul
-                     animate={left ? { x: -140, y: 10 } : top ? { x: 0, y: -300 } : right ? { y: 40 } : { x: 0, y: 10 }}
+                        animate={left ? { x: -140, y: 10 } : top ? { x: 0, y: -300 } : right ? { y: 40 } : { x: 0, y: 10 }}
                         initial={left ? { y: 10, x: -10 } : top ? { x: 0, y: -350 } : right ? { y: 20 } : { y: 40 }}
                         style={optionsHeigth}
                         className={styles.content__listOptions}

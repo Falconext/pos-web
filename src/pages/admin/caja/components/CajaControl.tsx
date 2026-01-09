@@ -70,6 +70,23 @@ const CajaControl: React.FC = () => {
         return <div className="p-8 flex justify-center"><Icon icon="eos-icons:loading" className="text-3xl text-blue-600" /></div>;
     }
 
+    const handleOpenCierre = () => {
+        if (estadoCaja && estadoCaja.ventasDelDia) {
+            const { mediosPago } = estadoCaja.ventasDelDia;
+            const montoInicial = Number(estadoCaja.movimiento?.montoInicial || 0);
+
+            setFormCierre({
+                montoEfectivo: montoInicial + Number(mediosPago.EFECTIVO || 0),
+                montoYape: Number(mediosPago.YAPE || 0),
+                montoPlin: Number(mediosPago.PLIN || 0),
+                montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0),
+                montoTarjeta: Number(mediosPago.TARJETA || 0),
+                observaciones: ''
+            });
+        }
+        setShowCierre(true);
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
 
@@ -104,7 +121,7 @@ const CajaControl: React.FC = () => {
                     <div className="flex flex-col items-end gap-3">
                         {isAbierta ? (
                             <button
-                                onClick={() => setShowCierre(true)}
+                                onClick={handleOpenCierre}
                                 className="bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-6 py-3 rounded-xl font-bold shadow-sm transition-all transform hover:scale-105 flex items-center gap-2"
                             >
                                 <Icon icon="solar:stop-circle-bold" className="text-xl" />
@@ -148,8 +165,7 @@ const CajaControl: React.FC = () => {
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Ingresos (Hoy)</p>
                             <p className="text-2xl font-bold text-gray-800">
-                                {/* Placeholder for real calculated income if available in store, otherwise static/0 */}
-                                {formatCurrency(0)}
+                                {formatCurrency(Number(estadoCaja?.ventasDelDia?.totalIngresos || 0))}
                             </p>
                         </div>
                     </div>
@@ -170,7 +186,7 @@ const CajaControl: React.FC = () => {
 
             {/* Modals */}
             {showApertura && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 bg-black/50 top-[-30px] z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
                         <div className="bg-emerald-50 p-6 border-b border-emerald-100">
                             <h3 className="text-xl font-bold text-emerald-900 flex items-center gap-2">
@@ -205,7 +221,7 @@ const CajaControl: React.FC = () => {
             )}
 
             {showCierre && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
                         <div className="bg-slate-50 p-6 border-b border-gray-100">
                             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -223,7 +239,6 @@ const CajaControl: React.FC = () => {
                                     onChange={(e: any) => setFormCierre({ ...formCierre, montoEfectivo: parseFloat(e.target.value) })}
                                     isLabel
                                     autoFocus
-                                    className="border-blue-200 bg-blue-50/30"
                                 />
                             </div>
                             <InputPro

@@ -180,5 +180,15 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     display: inline-block;
+    display: inline-block;
     vertical-align: bottom;
+}
+
+.compact tbody tr td {
+    padding: 0px 10px !important;
+    font-size: 11px;
+}
+
+.compact thead tr th {
+    padding: 8px 20px 8px 12px;
 }

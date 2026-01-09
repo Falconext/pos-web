@@ -39,7 +39,7 @@ const GestionLotes = () => {
 
     const [lotes, setLotes] = useState<ProductoLote[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filtro, setFiltro] = useState<'todos' | 'por-vencer' | 'vencidos'>('por-vencer');
+    const [filtro, setFiltro] = useState<'todos' | 'por-vencer' | 'vencidos'>('todos');
     const [diasAnticipacion, setDiasAnticipacion] = useState(30);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loteSeleccionado, setLoteSeleccionado] = useState<ProductoLote | null>(null);

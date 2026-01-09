@@ -1,4 +1,5 @@
 import { FC, useState, useEffect, useMemo } from 'react';
+import { Icon } from '@iconify/react';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
 import { IDataTableProps } from './types';
@@ -6,7 +7,7 @@ import styles from './table.module.css';
 import AutoScrollTable from '../Autoscrolltable';
 // import notfound from './../../assets/svg/logoblack.svg';
 
-const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, color, idTable, colorFont, colorRow, actions }: any) => {
+const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, color, idTable, colorFont, colorRow, actions, isCompact }: any) => {
 
     const [data, setData] = useState(bodyData);
 
@@ -93,19 +94,19 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
             <div className="shadow-md rounded-lg">
                 {
                     data?.length > 0 ?
-                        <table className={styles.table} id={idTable} style={{ backgroundColor: color }}>
+                        <table className={`${styles.table} ${isCompact ? styles.compact : ''}`} id={idTable} style={{ backgroundColor: color }}>
                             <TableHeader columns={resolvedColumns} colorFont={colorFont} onSort={handleSort} actions={actions} />
                             <TableBody
                                 formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} columns={resolvedColumns} />
                         </table>
-                        : <div className={styles.not__data}>
-                            <div className='text-center mx-auto mt-48'>
-                                {/* <img className='text-center mx-auto' src={""} alt="" /> */}
-                                <div>
-                                    <p className='font-bold'>Al parecer no hemos encontrado un registro de dicha búsqueda, inténtelo nuevamente al hacer una nueva búsqueda.</p>
-                                </div>
+                        : <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                            <div className="bg-gray-50 p-6 rounded-full mb-4">
+                                <Icon icon="solar:box-minimalistic-linear" className="text-6xl text-gray-300" />
                             </div>
-
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">No se encontraron registros</h3>
+                            <p className="text-sm text-gray-500 text-center">
+                                Intenta ajustar los filtros o realiza una nueva búsqueda para encontrar lo que necesitas.
+                            </p>
                         </div>
                 }
             </div>

@@ -162,7 +162,7 @@ const BrandList = () => {
       <div className="px-6">
         <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible mt-4">
           {marcas?.length > 0 ? (
-            <DataTable actions={actions} bodyData={marcasTable} tableInitFinal={false} headerColumns={["#", "nombre"]} />
+            <DataTable actions={actions} bodyData={marcasTable} tableInitFinal={false} headerColumns={["#", "nombre"]} isCompact={true} />
           ) : (
             <TableSkeleton arrayData={marcas || []} />
           )}

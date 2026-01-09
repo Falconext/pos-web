@@ -9,7 +9,7 @@ interface ButtonProps {
   type?: any;
   onClick?: any;
   isLoading?: boolean;
-  className?: string;
+  className?: string; // It was already here but not used
   onMouseEnter?: any;
   onMouseLeave?: any;
   fill?: boolean;
@@ -20,6 +20,7 @@ interface ButtonProps {
   outline?: boolean;
   id?: string;
   title?: string;
+  style?: CSSProperties;
 }
 
 const Button = ({
@@ -39,6 +40,8 @@ const Button = ({
   outline,
   title,
   isLoading,
+  className,
+  style,
 }: ButtonProps) => {
   const iconButton: CSSProperties = {
     right: onlyIcon ? "0px" : "6px",
@@ -96,14 +99,14 @@ const Button = ({
       title={title}
     >
       <button
-        style={paddingButton}
+        style={{ ...paddingButton, ...style }}
         onClick={onClick}
         type={type}
         onKeyDown={onKeyDown}
         id={id}
         disabled={isLoading || disabled}
         className={`flex ${fill ? 'w-full' : ""} justify-center ${colorStyles[color]} text-center transition-colors duration-300 text-[13px] items-center cursor-pointer rounded-lg font-semibold font-inter border ${isIcon ? "p-[6px_15px]" : onlyIcon ? "p-[5px_3px]" : "p-[12px_15px]"
-          } ${isLoading ? "relative" : ""}`}
+          } ${isLoading ? "relative" : ""} ${className || ""}`}
       >
         {isLoading ? (
           <span className="w-5 h-5 border-2 border-white border-b-transparent rounded-full inline-block box-border animate-spin"></span>

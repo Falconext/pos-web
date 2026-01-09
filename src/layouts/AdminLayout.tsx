@@ -421,7 +421,7 @@ export default function AdminLayout() {
               {/* Compras */}
               {hasPermission(auth, 'kardex') && (
                 <div>
-                  <button onClick={() => { toggleAccordion('compras'); setNameNavbar('Compras') }} className={location.pathname.includes('/administrador/compras') ? theme.accordionActive : theme.accordionInactive}>
+                  <button onClick={() => { toggleAccordion('compras'); setNameNavbar('Compras') }} className={location.pathname.includes('/administrador/compras') && !location.search.includes('por_pagar') ? theme.accordionActive : theme.accordionInactive}>
                     <div className="flex items-center">
                       <Icon icon="solar:cart-large-minimalistic-bold-duotone" className="mr-3 text-xl" />
                       Compras
@@ -575,7 +575,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
-        <header className={`sticky top-0 z-30 flex items-center justify-between px-6 py-4 backdrop-blur-md transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'} ${sidebarType === 'white' ? 'bg-white/80' : 'bg-[#F4F5FA]/80'}`}>
+        <header className={`z-30 flex items-center justify-between px-6 py-4 backdrop-blur-md transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'} ${sidebarType === 'white' ? 'bg-white/80' : 'bg-[#F4F5FA]/80'}`}>
           <div className="flex items-center gap-4">
             <button
               className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors focus:ring-2 focus:ring-indigo-100"

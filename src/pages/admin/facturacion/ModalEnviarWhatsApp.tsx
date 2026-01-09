@@ -4,7 +4,7 @@ import Modal from '@/components/Modal';
 import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import useAlertStore from '@/zustand/alert';
-import { enviarComprobantePorWhatsApp, verificarEstadoWhatsApp } from '@/zustand/whatsapp';
+
 
 interface ModalEnviarWhatsAppProps {
     isOpen: boolean;
@@ -141,14 +141,14 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, comprobante }: ModalEnviarWhatsA
                 <div className="flex gap-3">
                     <Button
                         onClick={handleClose}
-                        className="flex-1 bg-gray-500 hover:bg-gray-600"
+                        className="flex-1 text-[#222] bg-gray-200"
                         disabled={loading}
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleEnviar}
-                        className="flex-1 bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                        className="flex-1 text-[#fff] bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
                         disabled={loading || !comprobante.pdfUrl}
                     >
                         <Icon icon="mdi:whatsapp" className="text-xl" />

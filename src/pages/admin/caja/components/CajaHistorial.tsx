@@ -14,6 +14,7 @@ const CajaHistorial: React.FC = () => {
         pagination,
         filters,
         obtenerHistorialCaja,
+        exportarArqueo, // Added export action
         setFilters,
         clearFilters,
     } = useCajaStore();
@@ -21,6 +22,7 @@ const CajaHistorial: React.FC = () => {
     const [localFilters, setLocalFilters] = useState(filters);
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         obtenerHistorialCaja(page, limit);
@@ -40,6 +42,17 @@ const CajaHistorial: React.FC = () => {
     const applyFilters = () => {
         setFilters(localFilters);
         setPage(1);
+    };
+
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await exportarArqueo(localFilters.fechaInicio, localFilters.fechaFin);
+        } catch (error) {
+            console.error("Error exporting:", error);
+        } finally {
+            setExporting(false);
+        }
     };
 
     const resetFilters = () => {
@@ -65,16 +78,6 @@ const CajaHistorial: React.FC = () => {
     ];
 
     const data = historialCaja?.map((turno: any) => {
-        // Mapping fields based on standard shift structure
-        // Adjust these fields if your API response is different
-        // Based on Historial.tsx it seems to list "movimientos"? Or "turnos"?
-        // Historial.tsx used to just list movements. But "CajaHistorial" implies Shifts.
-        // If historialCaja returns movements (APERTURA, CIERRE, INGRESO, EGRESO), then this table shows movements. 
-        // Ideally we want SHIFTS (Apertura -> Cierre). 
-        // But let's assume historialCaja is listing movements for now as per previous file.
-        // Actually, if I look at Historial.tsx (lines 68-91), it handles 'APERTURA', 'CIERRE'.
-        // So it is a list of movements.
-
         return {
             'Estado': (
                 <span className={`px-2 py-1 rounded text-xs font-bold ${turno.tipoMovimiento === 'APERTURA' ? 'bg-green-100 text-green-700' :
@@ -121,43 +124,86 @@ const CajaHistorial: React.FC = () => {
     })) || [];
 
     return (
-        <div className="space-y-4 animate-in fade-in">
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-end">
-                <div className="w-full md:w-auto">
-                    <Calendar name="fechaInicio" onChange={handleDate} text="Fecha Inicio" value={localFilters.fechaInicio ? moment(localFilters.fechaInicio).format('DD/MM/YYYY') : ''} />
+        <div className="animate-in fade-in">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+                {/* Filters Section */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
+                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <Calendar
+                                name="fechaInicio"
+                                onChange={handleDate}
+                                text="Fecha Inicio"
+                                value={localFilters.fechaInicio ? moment(localFilters.fechaInicio).format('DD/MM/YYYY') : ''}
+                            />
+                        </div>
+                        <div>
+                            <Calendar
+                                name="fechaFin"
+                                onChange={handleDate}
+                                text="Fecha Fin"
+                                value={localFilters.fechaFin ? moment(localFilters.fechaFin).format('DD/MM/YYYY') : ''}
+                            />
+                        </div>
+                        <div className="flex gap-3 relative ">
+                            <Button onClick={applyFilters} color="primary" className="flex-1">
+                                <Icon icon="solar:filter-bold-duotone" className="mr-2 text-lg" />
+                                Filtrar
+                            </Button>
+                            <Button onClick={resetFilters} color="secondary" outline className="px-4">
+                                <Icon icon="solar:restart-bold-duotone" className="mr-2 text-lg" />
+                                Limpiar
+                            </Button>
+                            <div>
+                                <Button
+                                    onClick={handleExport}
+                                    className=""
+                                    fill
+                                    style={{
+                                        backgroundColor: '#079669',
+                                        color: '#ECFEF6',
+                                        paddingLeft: '40px',
+                                        paddingRight: '40px'
+                                    }}
+                                    disabled={exporting}
+                                >
+                                    {exporting ? <Icon icon="eos-icons:loading" className="mr-2" /> : <Icon icon="solar:file-download-bold-duotone" className="mr-2 text-xl" />}
+                                    {exporting ? 'Exportando...' : 'Exportar Excel'}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="w-full md:w-auto">
-                    <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" value={localFilters.fechaFin ? moment(localFilters.fechaFin).format('DD/MM/YYYY') : ''} />
-                </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                    <Button onClick={applyFilters} color="primary" className="flex-1 md:flex-none">
-                        <Icon icon="solar:filter-bold-duotone" className="mr-2" /> Filtrar
-                    </Button>
-                    <Button onClick={resetFilters} color="secondary" outline>
-                        <Icon icon="solar:restart-bold-duotone" />
-                    </Button>
+
+                {/* Table Content */}
+                <div className="p-4 relative z-0">
+                    <div className="overflow-x-auto">
+                        <DataTable
+                            headerColumns={movementColumns}
+                            bodyData={movementData}
+                        />
+                    </div>
+
+                    {pagination && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <Pagination
+                                data={historialCaja}
+                                total={pagination.total}
+                                currentPage={page}
+                                setcurrentPage={setPage}
+                                setitemsPerPage={setLimit}
+                                indexOfFirstItem={(page - 1) * limit}
+                                indexOfLastItem={Math.min(page * limit, pagination.total)}
+                                pages={Array.from({ length: pagination.totalPages }, (_, i) => i + 1)}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <DataTable
-                    headerColumns={movementColumns}
-                    bodyData={movementData}
-                />
-            </div>
-
-            {pagination && (
-                <Pagination
-                    data={historialCaja}
-                    total={pagination.total}
-                    currentPage={page}
-                    setcurrentPage={setPage}
-                    setitemsPerPage={setLimit}
-                    indexOfFirstItem={(page - 1) * limit}
-                    indexOfLastItem={Math.min(page * limit, pagination.total)}
-                    pages={Array.from({ length: pagination.totalPages }, (_, i) => i + 1)}
-                />
-            )}
         </div>
     );
 };

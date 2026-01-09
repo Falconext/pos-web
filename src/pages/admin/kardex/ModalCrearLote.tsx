@@ -8,7 +8,10 @@ import { Calendar } from '@/components/Date';
 import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
-import { useProductsStore } from '@/zustand/products';
+import { useProductsStore } from '@/zustand/products'; // Keeping for type if needed, or remove if unused. Checking usage.. 
+// Actually I will remove the hook usage but maybe keep import if I used types, but I don't see types imported from there used explicitly in the code shown.
+// I will just remove the import line 11 to avoid unused var warning if I remove usage.
+import { useKardexStore } from '@/zustand/kardex';
 
 interface Props {
     isOpen: boolean;
@@ -18,7 +21,9 @@ interface Props {
 }
 
 const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props) => {
-    const { products, getAllProducts } = useProductsStore();
+    const [productOptions, setProductOptions] = useState<any[]>([]);
+    const [providerOptions, setProviderOptions] = useState<any[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
     const [formValues, setFormValues] = useState({
         productoId: productoIdPrefill || '',
@@ -31,29 +36,53 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
-    const [proveedores, setProveedores] = useState<any[]>([]);
 
+    // Initial prefill fetch
     useEffect(() => {
-        if (isOpen) {
-            const fetchProveedores = async () => {
+        if (productoIdPrefill) {
+            const fetchProduct = async () => {
                 try {
-                    const response = await apiClient.get('/cliente/listar?persona=PROVEEDOR&limit=1000');
-                    if (response.data?.clientes) {
-                        setProveedores(response.data.clientes);
+                    const response = await apiClient.get(`/producto/${productoIdPrefill}`);
+                    const productData = response.data?.data || response.data; // Handle wrapped or unwrapped
+                    if (productData) {
+                        setSelectedProduct(productData);
+                        setProductOptions([productData]);
                     }
                 } catch (error) {
-                    console.error('Error fetching proveedores:', error);
+                    console.error("Error fetching prefilled product", error);
                 }
             };
-            fetchProveedores();
+            fetchProduct();
         }
-    }, [isOpen]);
+    }, [productoIdPrefill]);
 
-    useEffect(() => {
-        if (isOpen && (!products || products.length === 0)) {
-            getAllProducts({ page: 1, limit: 1000 });
+    // Search handlers
+    // Search handlers
+    const handleSearchProducts = async (query: string, callback: () => void) => {
+        try {
+            const response = await apiClient.get(`/producto/listar?search=${query}&limit=20`);
+            const products = response.data?.data?.productos || [];
+            setProductOptions(products);
+        } catch (error) {
+            console.error('Error searching products:', error);
+        } finally {
+            callback();
         }
-    }, [isOpen]);
+    };
+
+    const handleSearchProviders = async (query: string, callback: () => void) => {
+        try {
+            const response = await apiClient.get(`/cliente/listar?persona=PROVEEDOR&search=${query}&limit=20`);
+            const clients = response.data?.data?.clientes || [];
+            setProviderOptions(clients);
+        } catch (error) {
+            console.error('Error searching providers:', error);
+        } finally {
+            callback();
+        }
+    };
+
+
 
     useEffect(() => {
         if (productoIdPrefill) {
@@ -70,6 +99,11 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
     const handleSelectChange = (idValue: any, value: any, name: any) => {
         setFormValues(prev => ({ ...prev, [name]: idValue }));
         setErrors(prev => ({ ...prev, [name]: '' }));
+
+        if (name === 'productoId') {
+            const prod = productOptions.find(p => p.id === Number(idValue));
+            if (prod) setSelectedProduct(prod);
+        }
     };
 
     const validate = () => {
@@ -109,6 +143,9 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                 costoUnitario: '',
                 proveedor: '',
             });
+            setProductOptions([]);
+            setProviderOptions([]);
+            setSelectedProduct(null);
             onSuccess();
         } catch (error: any) {
             const message = error.response?.data?.message || 'Error al crear lote';
@@ -128,8 +165,13 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
             proveedor: '',
         });
         setErrors({});
+        setProductOptions([]);
+        setProviderOptions([]);
+        setSelectedProduct(null);
         onClose();
     };
+
+    console.log(productOptions)
 
     return (
         <Modal
@@ -143,25 +185,26 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                     {/* Producto */}
                     <div className='mt-5'>
                         <Select
-                            defaultValue={formValues.productoId ? products.find(p => p.id === Number(formValues.productoId))?.descripcion : ''}
+                            defaultValue={selectedProduct ? `${selectedProduct.codigo} - ${selectedProduct.descripcion}` : ''}
                             error={errors.productoId}
                             isSearch
-                            options={(products || []).map(p => ({
+                            handleGetData={handleSearchProducts}
+                            options={productOptions.map(p => ({
                                 id: p.id,
                                 value: `${p.codigo} - ${p.descripcion}`,
                             }))}
                             id="productoId"
                             name="productoId"
-                            value=""
+                            value={selectedProduct && Number(selectedProduct.id) === Number(formValues.productoId) ? `${selectedProduct.codigo} - ${selectedProduct.descripcion}` : undefined}
                             onChange={handleSelectChange}
                             icon="solar:box-bold-duotone"
                             isIcon
                             label="Producto"
                         />
-                        {formValues.productoId && (
+                        {formValues.productoId && selectedProduct && (
                             <div className="mt-1 flex justify-end">
                                 <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
-                                    Stock Actual: {products.find(p => p.id === Number(formValues.productoId))?.stock || 0}
+                                    Stock Actual: {selectedProduct.stock || 0}
                                 </span>
                             </div>
                         )}
@@ -234,15 +277,19 @@ const ModalCrearLote = ({ isOpen, onClose, onSuccess, productoIdPrefill }: Props
                     {/* Proveedor */}
                     <div>
                         <Select
+                            // defaultValue={formValues.proveedor} 
+                            // Note: defaultValue logic might need adjustment if it's just a text value or an ID
+                            // The original code passed `formValues.proveedor` as defaultValue.
                             defaultValue={formValues.proveedor}
                             label="Proveedor (Opcional)"
                             placeholder="Seleccione un proveedor"
-                            options={proveedores.map(p => ({
-                                id: p.nombre, // We use name as ID because backend expects string name
+                            options={providerOptions.map(p => ({
+                                id: p.nombre,
                                 value: p.nombre
                             }))}
                             id="proveedor"
                             name="proveedor"
+                            handleGetData={handleSearchProviders}
                             value={formValues.proveedor}
                             onChange={(idVal, val) => {
                                 setFormValues(prev => ({ ...prev, proveedor: String(val) }));

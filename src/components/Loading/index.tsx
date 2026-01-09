@@ -1,17 +1,23 @@
-import styles from './loading.module.css';
-import './styles.css';
+import { Icon } from '@iconify/react';
 
 const Loading = () => {
     return (
-        <div className={styles.loading__wrapper}>
-            <div className="cube-wrapper">
-                <div className="cube-folding">
-                    <span className="leaf1"></span>
-                    <span className="leaf2"></span>
-                    <span className="leaf3"></span>
-                    <span className="leaf4"></span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-300">
+            <div className="flex flex-col items-center gap-4">
+                {/* Logo Animado */}
+                <div className="relative">
+                    <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                    <div className="relative w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center border border-indigo-50">
+                        <Icon icon="solar:bolt-bold" className="text-indigo-600 text-3xl animate-pulse rounded-full" />
+                    </div>
+                    {/* Ring Spinner */}
+                    <div className="absolute -inset-4 border-2 border-indigo-100 border-t-indigo-600 rounded-full w-24 h-24 animate-spin"></div>
                 </div>
-                <span className="loading text-[#222]" data-name="Loading">Cargando</span>
+
+                <div className="text-center space-y-1 mt-4">
+                    <h3 className="text-lg font-bold text-gray-800 tracking-tight">Falconext</h3>
+                    <p className="text-sm text-indigo-500 font-medium animate-pulse">Cargando...</p>
+                </div>
             </div>
         </div>
     );

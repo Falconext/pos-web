@@ -10,7 +10,7 @@ export interface ITableBodyProps {
     colorRow?: string;
     payments?: any
     colorFont?: string;
-    actions?: IAction[]; 
+    actions?: IAction[];
 }
 
 export interface IDataTableProps {
@@ -29,7 +29,8 @@ export interface IDataTableProps {
     idTable?: string;
     colorFont?: string;
     colorRow?: string;
-    actions?: IAction[]; 
+    isCompact?: boolean;
+    actions?: IAction[];
 }
 
 export interface IAction {

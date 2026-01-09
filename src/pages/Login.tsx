@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import useAlertStore from "@/zustand/alert";
 import banner from '@/assets/fnlogin.png'
 import { Icon } from "@iconify/react";
+import Loading from "../components/Loading";
 
 interface IUserForm {
   email: string;
@@ -71,11 +72,7 @@ export default function Login() {
   }, [auth, navigate]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Alert /> {/* Renderiza el componente Alert */}
-      </div>
-    );
+    return <Loading />;
   }
 
   if (auth && !isLoading) {

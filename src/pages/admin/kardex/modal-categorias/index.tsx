@@ -146,7 +146,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
                                             headerColumns={[
                                                 '#',
                                                 'nombre'
-                                            ]} />
+                                            ]} isCompact={true} />
                                     </div>
                                     <Pagination
                                         data={categories}
