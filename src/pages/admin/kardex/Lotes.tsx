@@ -335,30 +335,8 @@ const GestionLotes = () => {
                 </div>
 
                 {/* Table */}
-                <div className="p-3">
-                    <div className="overflow-x-auto">
-                        <DataTable
-                            bodyData={lotesTable}
-                            headerColumns={headerColumns}
-                        />
-                    </div>
-                    {lotes.length > 0 && (
-                        <Pagination
-                            data={lotes}
-                            optionSelect
-                            currentPage={currentPage}
-                            indexOfFirstItem={indexOfFirstItem}
-                            indexOfLastItem={indexOfLastItem}
-                            setcurrentPage={setcurrentPage}
-                            setitemsPerPage={setitemsPerPage}
-                            pages={pages}
-                            total={lotes.length}
-                        />
-                    )}
-                </div>
-
-                {/* Empty State */}
-                {!loading && lotes.length === 0 && (
+                {/* Table or Empty State */}
+                {!loading && lotes.length === 0 ? (
                     <div className="text-center py-12">
                         <Icon icon="solar:box-bold-duotone" className="mx-auto text-gray-300 mb-4" width={64} height={64} />
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay lotes {filtro === 'vencidos' ? 'vencidos' : 'por vencer'}</h3>
@@ -368,6 +346,28 @@ const GestionLotes = () => {
                                 : `No hay productos que venzan en los próximos ${diasAnticipacion} días.`
                             }
                         </p>
+                    </div>
+                ) : (
+                    <div className="p-3">
+                        <div className="overflow-x-auto">
+                            <DataTable
+                                bodyData={lotesTable}
+                                headerColumns={headerColumns}
+                            />
+                        </div>
+                        {lotes.length > 0 && (
+                            <Pagination
+                                data={lotes}
+                                optionSelect
+                                currentPage={currentPage}
+                                indexOfFirstItem={indexOfFirstItem}
+                                indexOfLastItem={indexOfLastItem}
+                                setcurrentPage={setcurrentPage}
+                                setitemsPerPage={setitemsPerPage}
+                                pages={pages}
+                                total={lotes.length}
+                            />
+                        )}
                     </div>
                 )}
             </div>
