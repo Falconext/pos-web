@@ -12,6 +12,7 @@ import moment from "moment";
 import ModalDetalleCompra from "./ModalDetalleCompra";
 import ModalRegistrarPagoCompra from "./ModalRegistrarPagoCompra";
 import ModalHistorialPagosCompra from "./ModalHistorialPagosCompra";
+import ModalNuevaCompra from "./ModalNuevaCompra";
 import Select from '@/components/Select';
 import { Calendar } from '../../../components/Date';
 
@@ -25,6 +26,7 @@ const ComprasIndex = () => {
     const [selectedCompra, setSelectedCompra] = useState<any>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showHistorialModal, setShowHistorialModal] = useState(false);
+    const [showNuevaCompraModal, setShowNuevaCompraModal] = useState(false);
 
     const [currentPage, setcurrentPage] = useState(1);
     const [itemsPerPage, setitemsPerPage] = useState(50);
@@ -169,18 +171,16 @@ const ComprasIndex = () => {
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cuentas por Pagar / Compras</h1>
                     <p className="text-sm text-gray-500 mt-1">Gestión de compras y pagos a proveedores</p>
                 </div>
-                <Link to="/administrador/compras/nuevo">
-                    <Button color="secondary" className="flex items-center gap-2">
-                        <Icon icon="solar:cart-plus-bold" className="text-lg" />
-                        Nueva Compra
-                    </Button>
-                </Link>
+                <Button color="secondary" className="flex items-center gap-2" onClick={() => setShowNuevaCompraModal(true)}>
+                    <Icon icon="solar:cart-plus-bold" className="text-lg" />
+                    Nueva Compra
+                </Button>
             </div>
 
             {/* Main Content Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Stats Row */}
-                <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-50">
+                <div className="p-5 border-b border-gray-100">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -315,6 +315,24 @@ const ComprasIndex = () => {
                     }}
                 />
             )}
+
+            <ModalNuevaCompra
+                isOpen={showNuevaCompraModal}
+                onClose={() => setShowNuevaCompraModal(false)}
+                onSuccess={() => {
+                    setShowNuevaCompraModal(false);
+                    // Refresh the list
+                    const params: any = {
+                        page: currentPage,
+                        limit: itemsPerPage,
+                        search: debounce,
+                        estadoPago: estadoPago === 'TODOS' ? undefined : estadoPago
+                    };
+                    if (fechaInicio) params.fechaInicio = fechaInicio;
+                    if (fechaFin) params.fechaFin = fechaFin;
+                    listarCompras(params);
+                }}
+            />
         </div >
     );
 }

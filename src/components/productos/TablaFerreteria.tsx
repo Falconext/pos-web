@@ -33,7 +33,7 @@ const TablaFerreteria = ({
 
     return (
         <>
-            <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
+            <div className="w-full overflow-x-auto">
                 <DataTable bodyData={productsTable} headerColumns={visibleColumns} />
             </div>
             <Pagination

@@ -41,8 +41,8 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                 </div>
             ) : (
                 <div className="p-4 space-y-6">
-                    {/* Header Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    {/*Header Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-xl border border-gray-200">
                         <div>
                             <label className="block text-xs text-gray-500 font-medium mb-1 mt-1">Proveedor</label>
                             <div className="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 border border-gray-200">
@@ -77,7 +77,7 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                         <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Productos</h3>
                         <div className="overflow-x-auto border border-gray-100 rounded-xl">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-600 font-medium">
+                                <thead className="bg-white text-gray-600 font-medium border-b border-gray-200">
                                     <tr>
                                         <th className="px-3 py-2">Producto</th>
                                         <th className="px-3 py-2 text-center">Cant.</th>
@@ -119,7 +119,7 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                             <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Cronograma de Pagos</h3>
                             <div className="overflow-x-auto border border-gray-100 rounded-xl">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 text-gray-600 font-medium">
+                                    <thead className="bg-white text-gray-600 font-medium border-b border-gray-200">
                                         <tr>
                                             <th className="px-3 py-2 text-center">Nro</th>
                                             <th className="px-3 py-2 text-center">Vencimiento</th>
@@ -164,7 +164,7 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
 
                     {/* Footer Totals */}
                     <div className="flex justify-end">
-                        <div className="w-full md:w-1/3 space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="w-full md:w-1/3 space-y-2 p-4 rounded-xl border border-gray-200">
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>Op. Gravada</span>
                                 <span>S/ {subtotal.toFixed(2)}</span>

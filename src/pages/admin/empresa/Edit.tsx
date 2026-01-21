@@ -28,6 +28,10 @@ interface FormData {
   fechaExpiracion: string;
   providerToken?: string;
   providerId?: string;
+  bancoNombre?: string;
+  numeroCuenta?: string;
+  cci?: string;
+  monedaCuenta?: string;
 }
 
 interface FormErrors {
@@ -124,7 +128,11 @@ const EditEmpresa = () => {
         fechaActivacion: empresa.fechaActivacion.split('T')[0],
         fechaExpiracion: empresa.fechaExpiracion.split('T')[0],
         providerToken: (empresa as any).providerToken || '',
-        providerId: (empresa as any).providerId || ''
+        providerId: (empresa as any).providerId || '',
+        bancoNombre: (empresa as any).bancoNombre || '',
+        numeroCuenta: (empresa as any).numeroCuenta || '',
+        cci: (empresa as any).cci || '',
+        monedaCuenta: (empresa as any).monedaCuenta || 'SOLES'
       });
 
       // Mostrar logo actual si existe
@@ -510,6 +518,69 @@ const EditEmpresa = () => {
                   onChange={handleInputChange}
                   error={errors.fechaExpiracion}
                   isLabel
+                />
+              </div>
+
+              <div>
+                <InputPro
+                  name="fechaExpiracion"
+                  label="Fecha de Expiración"
+                  type="date"
+                  value={formData.fechaExpiracion}
+                  onChange={handleInputChange}
+                  error={errors.fechaExpiracion}
+                  isLabel
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Información Bancaria */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Información Bancaria (Para Cotizaciones)</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputPro
+                  name="bancoNombre"
+                  label="Nombre del Banco"
+                  value={formData.bancoNombre || ''}
+                  onChange={handleInputChange}
+                  isLabel
+                  placeholder="Ej: INTERBANK"
+                />
+              </div>
+              <div>
+                <Select
+                  name="monedaCuenta"
+                  label="Moneda"
+                  options={[
+                    { id: 'SOLES', value: 'SOLES' },
+                    { id: 'DOLARES', value: 'DOLARES' }
+                  ]}
+                  value={formData.monedaCuenta || 'SOLES'}
+                  onChange={(id, value) => setFormData(prev => ({ ...prev, monedaCuenta: id as string }))}
+                  withLabel
+                  error={errors.monedaCuenta}
+                />
+              </div>
+              <div>
+                <InputPro
+                  name="numeroCuenta"
+                  label="N° Cuenta"
+                  value={formData.numeroCuenta || ''}
+                  onChange={handleInputChange}
+                  isLabel
+                  placeholder="Ej: 200-3006350516"
+                />
+              </div>
+              <div>
+                <InputPro
+                  name="cci"
+                  label="CCI"
+                  value={formData.cci || ''}
+                  onChange={handleInputChange}
+                  isLabel
+                  placeholder="Ej: 003-200-003006350516-35"
                 />
               </div>
             </div>

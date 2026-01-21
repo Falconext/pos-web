@@ -37,10 +37,12 @@ import TiendaHome from './pages/TiendaHome'
 import DisenoRubros from './pages/admin/sistema/DisenoRubros'
 import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
 import Planes from './pages/admin/sistema/Planes'
+import ModulosPage from './pages/admin/sistema/Modulos'
 import FinanceDashboard from './pages/admin/finanzas/Dashboard'
 import ComprasIndex from './pages/admin/compras/Index'
 import NuevaCompra from './pages/admin/compras/Nuevo'
 import ProveedoresPage from './pages/admin/compras/Proveedores'
+import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
 
 
 function App() {
@@ -79,6 +81,7 @@ function App() {
           <Route path="compras" element={<ComprasIndex />} />
           <Route path="compras/nuevo" element={<NuevaCompra />} />
           <Route path="compras/proveedores" element={<ProveedoresPage />} />
+          <Route path="guia-remision" element={<GuiaRemision />} />
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
           <Route path="contabilidad/reporte-informales" element={<ReporteInformales />} />
           <Route path="contabilidad/arqueo" element={<ArqueoCaja />} />
@@ -106,6 +109,7 @@ function App() {
           <Route path="sistema/diseno-rubros" element={<DisenoRubros />} />
           <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
           <Route path="sistema/planes" element={<Planes />} />
+          <Route path="sistema/modulos" element={<ModulosPage />} />
         </Route>
         {/* Rutas de tienda */}
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}

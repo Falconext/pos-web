@@ -11,7 +11,7 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Mona Sans"', 'Urbanist', '"Helvetica Now Display"', 'Inter', 'system-ui', 'sans-serif'],
+                sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                 mona: ['"Mona Sans"', 'system-ui', 'sans-serif'],
                 inter: ['Inter', 'system-ui', 'sans-serif'],
                 roboto: ['Roboto', 'system-ui', 'sans-serif'],

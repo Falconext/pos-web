@@ -49,40 +49,40 @@ const ModalHistorialPagosCompra = ({ compra, onClose }: ModalHistorialPagosCompr
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] flex flex-col">
                 {/* Header */}
-                <div className="bg-[#111] p-4 text-white flex items-center justify-between">
+                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                            <Icon icon="solar:history-bold-duotone" className="text-2xl" />
+                        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                            <Icon icon="solar:history-bold-duotone" className="text-2xl text-blue-600" />
                         </div>
                         <div>
-                            <h3 className="font-bold">Historial de Pagos (Compras)</h3>
-                            <p className="text-sm text-white/70">
+                            <h3 className="font-bold text-gray-900">Historial de Pagos</h3>
+                            <p className="text-sm text-gray-500">
                                 {compra?.serie}-{compra?.numero}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-white/70 hover:text-white">
-                        <Icon icon="mdi:close" className="text-xl" />
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <Icon icon="solar:close-circle-linear" className="text-2xl" />
                     </button>
                 </div>
 
                 {/* Info de la Compra */}
-                <div className="p-4 border-b border-gray-100 bg-gray-50">
+                <div className="p-4 border-b border-gray-100">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                            <p className="text-gray-500">Proveedor</p>
+                            <p className="text-gray-500 text-xs mb-1">Proveedor</p>
                             <p className="font-medium text-gray-900">{compra?.proveedor?.nombre || 'Sin nombre'}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500">Fecha Emisión</p>
+                            <p className="text-gray-500 text-xs mb-1">Fecha Emisión</p>
                             <p className="font-medium text-gray-900">{moment(compra?.fechaEmision).format('DD/MM/YYYY')}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500">Total</p>
+                            <p className="text-gray-500 text-xs mb-1">Total</p>
                             <p className="font-medium text-gray-900">S/ {totalCompra.toFixed(2)}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500">Saldo</p>
+                            <p className="text-gray-500 text-xs mb-1">Saldo</p>
                             <p className={`font-bold ${saldoPendiente > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                                 S/ {saldoPendiente.toFixed(2)}
                             </p>
@@ -93,17 +93,17 @@ const ModalHistorialPagosCompra = ({ compra, onClose }: ModalHistorialPagosCompr
                 {/* Resumen de Pagos */}
                 <div className="p-4 border-b border-gray-100">
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-blue-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-blue-600 mb-1">Total Compra</p>
-                            <p className="text-lg font-bold text-blue-700">S/ {totalCompra.toFixed(2)}</p>
+                        <div className="bg-white border border-blue-200 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-600 mb-1">Total Compra</p>
+                            <p className="text-lg font-bold text-gray-900">S/ {totalCompra.toFixed(2)}</p>
                         </div>
-                        <div className="bg-green-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-green-600 mb-1">Total Pagado</p>
-                            <p className="text-lg font-bold text-green-700">S/ {totalPagado.toFixed(2)}</p>
+                        <div className="bg-white border border-green-200 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-600 mb-1">Total Pagado</p>
+                            <p className="text-lg font-bold text-gray-900">S/ {totalPagado.toFixed(2)}</p>
                         </div>
-                        <div className={`${saldoPendiente > 0 ? 'bg-orange-50' : 'bg-emerald-50'} rounded-xl p-3 text-center`}>
-                            <p className={`text-xs ${saldoPendiente > 0 ? 'text-orange-600' : 'text-emerald-600'} mb-1`}>Saldo Pendiente</p>
-                            <p className={`text-lg font-bold ${saldoPendiente > 0 ? 'text-orange-700' : 'text-emerald-700'}`}>
+                        <div className={`bg-white ${saldoPendiente > 0 ? 'border-orange-200' : 'border-emerald-200'} border rounded-xl p-3 text-center`}>
+                            <p className={`text-xs ${saldoPendiente > 0 ? 'text-gray-600' : 'text-gray-600'} mb-1`}>Saldo Pendiente</p>
+                            <p className={`text-lg font-bold ${saldoPendiente > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
                                 S/ {saldoPendiente.toFixed(2)}
                             </p>
                         </div>

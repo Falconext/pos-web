@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import styles from './autoScrollTable.module.css';
 import Button from '../Button';
+import { Icon } from '@iconify/react';
 
 interface AutoScrollTableProps {
     children: React.ReactNode;
@@ -75,29 +76,45 @@ const AutoScrollTable = ({
         setIsScrollingLeft(true);
     };
 
+    const [hasOverflow, setHasOverflow] = useState(false);
+
+    const checkOverflow = () => {
+        if (tableContainerRef.current) {
+            const { scrollWidth, clientWidth } = tableContainerRef.current;
+            setHasOverflow(scrollWidth > clientWidth);
+        }
+    };
+
+    useEffect(() => {
+        checkOverflow();
+        window.addEventListener('resize', checkOverflow);
+        return () => window.removeEventListener('resize', checkOverflow);
+    }, [children]);
+
     return (
         <div className={styles.autoScrollTable}>
-            <div className="flex justify-between items-center px-2 py-3 border-b border-[#e5e7eb]">
-                <Button
-                    onClick={startScrollLeft}
-                    disabled={isScrollingLeft}
-                    color="lila"
-                    outline
-                    title="Desplazar hacia la izquierda"
-                >
-                    Inicio
-                </Button>
+            {hasOverflow && (
+                <div className="flex justify-end items-center gap-2 px-4 py-2 rounded-t-xl">
+                    <span className="text-xs text-gray-400 font-medium mr-2">Desplazamiento rápido</span>
+                    <button
+                        onClick={startScrollLeft}
+                        disabled={isScrollingLeft}
+                        className={`p-1.5 rounded-lg border border-gray-200 transition-all duration-200 ${isScrollingLeft ? 'bg-indigo-50 text-indigo-600 shadow-inner' : 'bg-white text-gray-500 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-sm'}`}
+                        title="Ir al inicio"
+                    >
+                        <Icon icon="solar:double-alt-arrow-left-bold-duotone" width={20} height={20} />
+                    </button>
 
-                <Button
-                    onClick={startScrollRight}
-                    disabled={isScrollingRight}
-                    color="lila"
-                    outline
-                    title="Desplazar hacia la derecha"
-                >
-                    Final
-                </Button>
-            </div>
+                    <button
+                        onClick={startScrollRight}
+                        disabled={isScrollingRight}
+                        className={`p-1.5 rounded-lg border border-gray-200 transition-all duration-200 ${isScrollingRight ? 'bg-indigo-50 text-indigo-600 shadow-inner' : 'bg-white text-gray-500 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-sm'}`}
+                        title="Ir al final"
+                    >
+                        <Icon icon="solar:double-alt-arrow-right-bold-duotone" width={20} height={20} />
+                    </button>
+                </div>
+            )}
             <div ref={tableContainerRef} className={styles.tableContainer}>
                 {children}
             </div>

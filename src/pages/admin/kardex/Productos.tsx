@@ -64,10 +64,7 @@ const KardexProductos = () => {
         'Marca',
         'Precio Venta',
         'Costo',
-        'Margen',
-        'Ganancia/Unidad',
         'Stock',
-        'Stock minimo',
         'U.M',
         'Estado',
         'Acciones'
@@ -85,10 +82,7 @@ const KardexProductos = () => {
         'Marca',
         'Precio Venta',
         'Costo',
-        'Margen',
-        'Ganancia/Unidad',
         'Stock',
-        'Stock minimo',
         'U.M',
         'Estado',
         'Acciones'
@@ -215,7 +209,21 @@ const KardexProductos = () => {
         marcaNombre: "",
         estado: "",
         costoPromedio: 0,
-        costoUnitario: 0
+        costoUnitario: 0,
+        // Campos Farmacia
+        principioActivo: "",
+        concentracion: "",
+        presentacion: "",
+        laboratorio: "",
+        // Campos Bodega/Supermercado
+        codigoBarras: "",
+        unidadCompra: "",
+        unidadVenta: "",
+        factorConversion: 1,
+        // Campos Ofertas
+        precioOferta: 0,
+        fechaInicioOferta: "",
+        fechaFinOferta: ""
     }
 
     const [isOpenModal, setIsOpenModal] = useState(false);
@@ -263,10 +271,17 @@ const KardexProductos = () => {
                 precioUnitario: Number(originalProduct.precioUnitario),
                 costoUnitario: Number(originalProduct.costoUnitario || originalProduct.costoPromedio || 0),
                 costoPromedio: Number(originalProduct.costoPromedio || 0),
-                stock: originalProduct.stock,
                 stockMinimo: originalProduct.stockMinimo || 0,
                 stockMaximo: originalProduct.stockMaximo || 0,
                 imagenUrl: (originalProduct as any)?.imagenUrl || '',
+                // Campos Farmacia explicit mapping
+                principioActivo: (originalProduct as any).principioActivo || '',
+                concentracion: (originalProduct as any).concentracion || '',
+                presentacion: (originalProduct as any).presentacion || '',
+                laboratorio: (originalProduct as any).laboratorio || '',
+                unidadCompra: (originalProduct as any).unidadCompra || '',
+                unidadVenta: (originalProduct as any).unidadVenta || '',
+                factorConversion: Number((originalProduct as any).factorConversion || 1),
             });
         }
     };
@@ -330,7 +345,29 @@ const KardexProductos = () => {
 
         const allData: any = {
             productoId: item?.id,
-            'Img': (item as any)?.imagenUrl ? (<img src={(item as any).imagenUrl} alt={item?.descripcion} className="rounded" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />) : '',
+            'Img': (item as any)?.imagenUrl ? (
+                <div className="h-[43px] w-[43px] bg-white border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center p-1">
+                    <img
+                        src={(item as any).imagenUrl}
+                        alt={item?.descripcion}
+                        className="h-full w-full object-contain"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.classList.add('bg-gray-50');
+                            // Fallback icon could be appended or shown if we used a different structure, 
+                            // but simpler to just hide img and show bg. 
+                            // Or better: Use state/fallback component, but this is a mapped object.
+                            // I'll stick to basic img and rely on the else block for null urls. 
+                            // For broken URLs, the onError hide is tricky inside a map.
+                            // I'll leave the onError to hide strict and maybe show a span.
+                        }}
+                    />
+                </div>
+            ) : (
+                <div className="h-11 w-11 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                    <Icon icon="solar:gallery-linear" width={24} height={24} />
+                </div>
+            ),
             'Código': item?.codigo,
             'Producto': item?.descripcion,
             'Categoria': item?.categoria?.nombre || 'Sin categoría',
@@ -344,11 +381,11 @@ const KardexProductos = () => {
             'Margen': margen > 0 ? `${margen.toFixed(1)}%` : '-',
             'Ganancia/Unidad': gananciaUnidad > 0 ? `S/ ${gananciaUnidad.toFixed(2)}` : '-',
             'Stock': (
-                <span className={`inline-flex items-center text-xs font-semibold ${item?.stock <= 5
-                    ? 'bg-red-400 text-white px-2 py-1 rounded'
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${item?.stock <= 5
+                    ? 'bg-red-100 text-red-700'
                     : item?.stock <= 10
-                        ? 'bg-yellow-400 text-white px-2 py-1 rounded'
-                        : 'bg-green-400 text-white px-2 py-1 rounded'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-emerald-100 text-emerald-700'
                     }`}>
                     {item?.stock}
                 </span>
@@ -387,9 +424,9 @@ const KardexProductos = () => {
                             setAnchorEl(e.currentTarget);
                         }
                     }}
-                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
+                    className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 >
-                    <Icon icon="mdi:dots-vertical" width={18} height={18} />
+                    <Icon icon="mdi:dots-vertical" width={20} height={20} />
                 </button>
             </div>
         );

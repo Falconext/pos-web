@@ -212,7 +212,7 @@ export default function AdminIndex() {
       <Grid numItemsSm={1} numItemsLg={2} className="gap-4 md:gap-6 mt-4 md:mt-6">
         <Card className="ring-1 ring-gray-200 shadow-sm rounded-xl p-4">
           <Title className="text-gray-900 font-bold mb-4">Top de productos más vendidos</Title>
-          <div className="mt-4 overflow-x-auto ring-1 ring-gray-200 rounded-lg">
+          <div className="mt-4 overflow-x-auto">
             <DataTable
               bodyData={topTableData}
               headerColumns={["Codigo", "Descripcion", "Stock", "Cant. Vendido"]}

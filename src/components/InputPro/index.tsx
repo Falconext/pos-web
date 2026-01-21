@@ -66,9 +66,9 @@ const InputPro: FC<IInput> = ({
   const [localValue, setLocalValue] = useState<string | number>(value);
 
   const commonClasses =
-    "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 " +
-    "shadow-[0_0_0_1px_rgba(15,23,42,0.02)] focus:shadow-[0_0_0_1px_rgba(15,23,42,0.32)] focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 " +
-    "disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150";
+    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 " +
+    "focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 transition-all duration-150";
 
   useEffect(() => {
     setLocalValue(value);
@@ -178,10 +178,10 @@ const InputPro: FC<IInput> = ({
   };
 
   return (
-    <div className="relative z-0 rounded-sm">
+    <div className="relative">
       <div className={mode === "flex" ? "flex items-center" : ""}>
         <div>
-          {isLabel && <label className="text-[14px] text-[#515C6C]">{label}</label>}
+          {isLabel && <label className="block text-sm font-semibold text-gray-900 mb-2">{label}</label>}
         </div>
         {renderInput()}
       </div>

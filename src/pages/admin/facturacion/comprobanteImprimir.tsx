@@ -24,6 +24,7 @@ const ComprobantePrintPage = ({
     quotationTerms = '',
     quotationPaymentType = 'CONTADO',
     quotationAdvance = 0,
+    retencionData = null
 }: any) => {
 
 
@@ -32,7 +33,7 @@ const ComprobantePrintPage = ({
     useEffect(() => {
         // Force re-render or update logic if needed
         // This ensures the component updates when props change
-    }, [productsInvoice, totalInWords, qrCodeDataUrl, observation, company, formValues, mode, total, receipt, selectedClient, discount, size, includeProductImages, quotationDiscount, quotationValidity, quotationSignature]);
+    }, [productsInvoice, totalInWords, qrCodeDataUrl, observation, company, formValues, mode, total, receipt, selectedClient, discount, size, includeProductImages, quotationDiscount, quotationValidity, quotationSignature, retencionData]);
 
     const totalReceipt = productsInvoice?.reduce((sum: any, p: any) => sum + Number(p.total || p.mtoPrecioUnitario * p.cantidad || 0), 0);
     const totalPrices = productsInvoice?.reduce((sum: any, p: any) => sum + (Number(p.precioUnitario || p.mtoPrecioUnitario || 0) * (p.cantidad || 0)), 0);
@@ -57,6 +58,13 @@ const ComprobantePrintPage = ({
             ? rawBase64
             : `data:${mime};base64,${rawBase64}`)
         : undefined;
+
+    // Fallback: Detect retention from observation if data prop is missing
+    const hasRetentionText = observation?.toUpperCase().includes("RETENCIÓN") && observation?.toUpperCase().includes("3%");
+    const calculatedRetention = hasRetentionText ? Number((Number(total) * 0.03).toFixed(2)) : 0;
+
+    const displayRetencionMonto = retencionData ? Number(retencionData.montoDetraccion || 0) : calculatedRetention;
+    const shouldShowRetention = retencionData || (hasRetentionText && calculatedRetention > 0);
 
     console.log(formValues)
 
@@ -100,7 +108,7 @@ const ComprobantePrintPage = ({
                                     <div className="space-y-0.5">
                                         <div className="flex justify-between">
                                             <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Tipo Detracción:</span>
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.tipoDetraccion.codigo} - {formValues.tipoDetraccion.descripcion} ({formValues.tipoDetraccion.porcentaje}%)</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Monto Detracción:</span>
@@ -113,7 +121,7 @@ const ComprobantePrintPage = ({
                                         {formValues.medioPagoDetraccion && (
                                             <div className="flex justify-between">
                                                 <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Medio de Pago:</span>
-                                                <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.medioPagoDetraccion.codigo} - {formValues.medioPagoDetraccion.descripcion}</span>
+                                                <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.medioPagoDetraccion?.codigo} - {formValues.medioPagoDetraccion?.descripcion}</span>
                                             </div>
                                         )}
                                     </div>
@@ -149,12 +157,26 @@ const ComprobantePrintPage = ({
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{Number(totalReceipt * 0.82).toFixed(2)}</div></label>
-                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{Number(totalReceipt * 0.18).toFixed(2)}</div></label>
-                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{Number(totalReceipt).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18)).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18))).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{Number(formValues?.mtoImpVenta ?? totalReceipt).toFixed(2)}</div></label>
+                        {
+                            shouldShowRetention && (
+                                <>
+                                    <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}>
+                                        <div className="">RETENCIÓN (3%):</div>
+                                        <div>{displayRetencionMonto.toFixed(2)}</div>
+                                    </label>
+                                    <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between font-bold`}>
+                                        <div className="">IMPORTE NETO:</div>
+                                        <div>{Number(totalReceipt - displayRetencionMonto).toFixed(2)}</div>
+                                    </label>
+                                </>
+                            )
+                        }
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.formaPagoTipo?.toUpperCase() || 'CONTADO'}</p>
-                        {formValues?.formaPagoTipo === 'Credito' && formValues?.cuotas?.length > 0 && (
+                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</p>
+                        {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
                             <div className="mt-1 mb-1">
                                 <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
                                 {formValues.cuotas.map((cuota: any, idx: number) => (
@@ -181,108 +203,211 @@ const ComprobantePrintPage = ({
                         <hr className="my-1 border-dashed border-[#222]" />
                     </div>
                 ) : (
-                    <div className="w-full">
-                        {/* Use visual layout with images for quotations */}
-                        {receipt === "COTIZACIÓN" && includeProductImages ? (
+                    <div className="w-full text-xs font-sans">
+                        {receipt === "COTIZACIÓN" ? (
                             <div className="w-full">
+                                {/* Header with Emisor and Cliente Boxes */}
+                                {/* RESTORED: Header with Logo and Company Info */}
                                 <div className="flex justify-between items-start mb-4">
-                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] mr-4 object-contain object-left" />}
-                                    <div className="flex-1">
+                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" />}
+                                    <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RUC: {company?.empresa?.ruc}</p>
+                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />CELULAR: {company?.celular}<br />EMAIL: {company?.email}</p>
                                     </div>
-                                    <div className="border border-black px-4 pt-2 pb-2 text-center">
+                                    <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
                                         <div className="text-lg font-bold">COTIZACIÓN</div>
+                                        {/* <div className='font-bold text-lg'>ELECTRONICA</div> */}
                                         <div>{formValues?.serie}-{formValues?.correlativo}</div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 text-xs mb-3">
-                                    <div>
-                                        <p><span className="font-bold">CLIENTE:</span> {selectedClient?.nombre?.toUpperCase() || ''}</p>
-                                        <p><span className="font-bold">RUC/DNI:</span> {selectedClient?.nroDoc || ''}</p>
+
+                                {/* Data Section: Cliente (Left) and Datos Cotización (Right) */}
+                                <div className="flex gap-4 mb-8 items-stretch">
+                                    {/* Cliente Box */}
+                                    <div className="w-1/2 flex flex-col">
+                                        <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DEL CLIENTE</div>
+                                        <div className="border border-black rounded-lg p-3 flex-1 h-auto">
+                                            <div className="grid grid-cols-[70px_1fr] gap-y-1">
+                                                <span className="font-bold">CLIENTE:</span>
+                                                <span className="break-words">{selectedClient?.nombre?.toUpperCase()}</span>
+
+                                                <span className="font-bold">RUC:</span>
+                                                <span>{selectedClient?.nroDoc}</span>
+
+                                                <span className="font-bold">EMAIL:</span>
+                                                <span className="break-all">{selectedClient?.email || '-'}</span>
+
+                                                <span className="font-bold">TELF:</span>
+                                                <span>{selectedClient?.telefono || '-'}</span>
+
+                                                <span className="font-bold">DIR:</span>
+                                                <span className="break-words leading-tight">{selectedClient?.direccion?.toUpperCase() || '-'}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p><span className="font-bold">FECHA:</span> {new Date().toLocaleDateString()}</p>
-                                        <p><span className="font-bold">VIGENCIA:</span> 7 días</p>
+
+                                    {/* Datos de la Cotización Box */}
+                                    <div className="w-1/2 flex flex-col">
+                                        <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DE LA COTIZACIÓN</div>
+                                        <div className="border border-black rounded-lg p-3 flex-1 h-auto">
+                                            <div className="grid grid-cols-[110px_1fr] gap-y-1">
+                                                <span className="font-bold">FECHA EMISIÓN:</span>
+                                                <span>{moment(formValues?.fechaEmision).format('DD/MM/YYYY')}</span>
+
+                                                <span className="font-bold">CONDICIÓN:</span>
+                                                <span>
+                                                    {quotationPaymentType === 'CONTADO' ? 'CONTADO' :
+                                                        quotationPaymentType === 'CREDITO_30' ? 'CREDITO 30 DIAS' :
+                                                            quotationPaymentType === 'CREDITO_60' ? 'CREDITO 60 DIAS' :
+                                                                quotationPaymentType === 'CREDITO_90' ? 'CREDITO 90 DIAS' :
+                                                                    quotationPaymentType === 'ADELANTO' ? `ADELANTO ${quotationAdvance}%` : 'CONTADO'}
+                                                </span>
+
+                                                <span className="font-bold">VALIDEZ:</span>
+                                                <span>{quotationValidity} días</span>
+
+                                                <span className="font-bold">MONEDA:</span>
+                                                <span>SOLES</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="border border-gray-300 rounded-lg overflow-hidden mb-3">
-                                    <div className="grid grid-cols-12 gap-2 bg-gray-100 p-2 text-xs font-bold border-b">
-                                        <div className="col-span-2 text-center">IMAGEN</div>
-                                        <div className="col-span-5">DESCRIPCIÓN</div>
-                                        <div className="col-span-1 text-center">CANT.</div>
-                                        <div className="col-span-2 text-right">P.U.</div>
-                                        <div className="col-span-2 text-right">IMPORTE</div>
+
+                                {/* Product Table */}
+                                <div className="w-full mb-4">
+                                    {/* Table Header */}
+                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 text-xs py-1">
+                                        <div className="w-[8%] text-center border-r border-gray-400">N°</div>
+                                        <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
+                                        <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
+                                        {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
+                                        {/* <div className="w-[10%] text-center border-r border-gray-400">CÓDIGO</div> */}
+                                        <div className={`flex-1 text-center border-r border-gray-400 px-2`}>DESCRIPCIÓN</div>
+                                        {/* <div className="w-[10%] text-center border-r border-gray-400">V.UNIT.</div> */}
+                                        {/* <div className="w-[8%] text-center border-r border-gray-400">IGV.</div> */}
+                                        <div className="w-[10%] text-center border-r border-gray-400">P.UNIT.</div>
+                                        <div className="w-[10%] text-center">TOTAL</div>
                                     </div>
-                                    {productsInvoice?.map((item: any, i: any) => (
-                                        <div key={i} className="grid grid-cols-12 gap-2 p-2 items-center text-xs">
-                                            <div className="col-span-2 flex justify-center">
-                                                {item.imagenUrl ? (
-                                                    <img src={item.imagenUrl} alt={item.descripcion} className="w-16 h-16 object-cover rounded" />
-                                                ) : (
-                                                    <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400">
-                                                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
+
+                                    {/* Table Body */}
+                                    {productsInvoice?.map((item: any, i: number) => {
+                                        const pUnit = Number(item?.mtoPrecioUnitario || item?.precioUnitario || item?.producto?.precioUnitario || 0);
+                                        const cant = Number(item?.cantidad || 0);
+                                        const totalItem = Number(item?.total || (pUnit * cant));
+
+                                        return (
+                                            <div key={i} className="flex border-b border-l border-r border-gray-300 text-xs">
+                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
+                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{cant.toFixed(3)}</div>
+                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
+                                                {includeProductImages && (
+                                                    <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">
+                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover" alt="" /> : '-'}
                                                     </div>
                                                 )}
+                                                {/* <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.codigo || '-'}</div> */}
+                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">{item?.descripcion?.toUpperCase()}</div>
+                                                {/* <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit / 1.18).toFixed(2)}</div> */}
+                                                {/* <div className="w-[8%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit - (pUnit / 1.18)).toFixed(2)}</div> */}
+                                                <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
+                                                <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
                                             </div>
-                                            <div className="col-span-5">
-                                                <p className="font-medium">{item?.descripcion?.toUpperCase() || ''}</p>
-                                                {item.categoria?.nombre && <p className="text-gray-500 text-[10px]">{item.categoria.nombre}</p>}
-                                                {item?.lotes && item.lotes.length > 0 && (
-                                                    <div className="flex flex-col mt-1 text-gray-600">
-                                                        {item.lotes.map((l: any, idx: number) => (
-                                                            <span key={idx} className="text-[9px]">Lote: {l.lote} - Venc: {moment(l.fechaVencimiento).format('DD/MM/YYYY')}</span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="col-span-1 text-center font-medium">{item?.cantidad || 0}</div>
-                                            <div className="col-span-2 text-right">S/ {Number(item?.precioUnitario || item?.producto?.precioUnitario || 0).toFixed(2)}</div>
-                                            <div className="col-span-2 text-right font-bold">S/ {Number(item?.total || (item?.cantidad * item?.producto?.precioUnitario) || 0).toFixed(2)}</div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="w-1/2">
-                                        <p className="text-xs font-bold mb-1">SON: {totalInWords || ''}</p>
-                                        {observation && <p className="text-xs mt-2"><span className="font-bold">OBSERVACIONES:</span><br />{observation?.toUpperCase()}</p>}
-                                    </div>
-                                    <div className="w-1/2 bg-gray-50 p-3 rounded border">
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span>Subtotal:</span>
-                                            <span>S/ {round2(Number(total) / 1.18).toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span>IGV (18%):</span>
-                                            <span>S/ {round2(Number(total) * 0.18 / 1.18).toFixed(2)}</span>
-                                        </div>
-                                        {quotationDiscount > 0 && (
-                                            <div className="flex justify-between text-xs text-green-600 mb-1">
-                                                <span>Descuento ({quotationDiscount}%):</span>
-                                                <span>- S/ {round2(Number(total) * quotationDiscount / 100).toFixed(2)}</span>
+
+                                {/* Total in Words & Footer Section */}
+                                <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center italic text-lg bg-gray-50">
+                                    SON: {totalInWords}
+                                </div>
+
+                                <div className="border border-black rounded-lg p-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="w-2/3 pr-4">
+                                            <div className="font-bold mb-1">OBSERVACIONES:</div>
+                                            <div className="text-xs">{observation?.toUpperCase() || 'TIEMPO DE ENTREGA 1 DIAS DESPUES DE HABER RECIBIDO Y CONFIRMADO LA OC'}</div>
+
+                                            {quotationTerms && (
+                                                <div className="mt-2 text-xs">
+                                                    <span className="font-bold">TÉRMINOS:</span> {quotationTerms}
+                                                </div>
+                                            )}
+
+                                            {/* Footer Info */}
+                                            <div className="mt-8">
+                                                <p className="font-bold">DEPOSITAR A NOMBRE DE {company?.empresa?.razonSocial}</p>
+                                                <p className="mt-1 font-bold">BANCO {(company?.empresa as any)?.bancoNombre?.toUpperCase() || ''}</p>
+                                                <p className="font-bold">MONEDA {(company?.empresa as any)?.monedaCuenta || 'SOLES'}</p>
+                                                <p className="font-bold">N° CUENTA</p>
+                                                <p>{(company?.empresa as any)?.numeroCuenta || ''}</p>
+                                                <p className="font-bold">CCI</p>
+                                                <p>{(company?.empresa as any)?.cci || ''}</p>
                                             </div>
-                                        )}
-                                        <div className="flex justify-between text-sm font-bold border-t pt-2 mt-2">
-                                            <span>TOTAL:</span>
-                                            <span>S/ {quotationDiscount > 0 ? round2(Number(total) * (1 - quotationDiscount / 100)).toFixed(2) : round2(Number(total)).toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="w-1/3 text-right space-y-1">
+                                            <div className="flex justify-between">
+                                                <span className="font-bold">OP. GRAVADAS:</span>
+                                                <span>S/ {Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18)).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="font-bold">OP. EXONERADAS:</span>
+                                                <span>S/ 0.00</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="font-bold">OP. INAFECTAS:</span>
+                                                <span>S/ 0.00</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="font-bold">OP. GRATUITAS:</span>
+                                                <span>S/ 0.00</span>
+                                            </div>
+                                            <div className="flex justify-between font-bold">
+                                                <span>SUB TOTAL:</span>
+                                                <span>S/ {Number(formValues?.subTotal ?? totalReceipt).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>DESCUENTOS TOTAL:</span>
+                                                <span>S/ 0.00</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="font-bold">IGV 18%:</span>
+                                                <span>S/ {Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18))).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-lg font-bold border-t border-black pt-1 mt-1">
+                                                <span>MONTO TOTAL:</span>
+                                                <span>S/ {Number(formValues?.mtoImpVenta ?? totalReceipt).toFixed(2)}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-center text-xs text-gray-600 mt-4 pt-3 border-t">
-                                    <p>Esta cotización tiene una vigencia de {quotationValidity} día{quotationValidity > 1 ? 's' : ''} calendario</p>
-                                    <p className="mt-1">{company?.celular} | {company?.email}</p>
-                                    {quotationSignature && (
-                                        <div className="mt-6 pt-4 inline-block">
-                                            <div className="mb-2">_______________________________</div>
-                                            <p className="font-bold">{quotationSignature}</p>
-                                            <p className="text-[10px] text-gray-500">Firma del Responsable</p>
+                                {/* <div className="mt-4 flex justify-center">
+                                        {qrCodeDataUrl && <img src={qrCodeDataUrl} className="w-24 h-24" alt="QR" />}
+                                    </div> */}
+
+
+                                {/* Custom Footer: Gracias / Vuelva Pronto / FalcoNext */}
+                                <div className="mt-8 text-center text-xs">
+                                    <div className="font-bold mb-1">
+                                        GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS DE {company?.empresa?.rubro?.nombre?.toUpperCase() || 'SERVICIOS'}
+                                    </div>
+                                    <div className="font-bold mb-8">VUELVA PRONTO</div>
+
+                                    <div className="flex justify-between items-end border-t border-gray-400 pt-1">
+                                        <div className="text-left text-[10px] text-gray-500 font-mono">
+                                            USUARIO: {formValues?.vendedor || 'ADMIN'} {moment().format('DD/MM/YYYY HH:mm')}
                                         </div>
-                                    )}
+
+                                        <div className="text-right text-[10px] text-gray-500">
+                                            <div className="font-bold italic">FalcoNext ™</div>
+                                            <div>Comprobante emitido a través de www.falconext.pe</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            /* Standard template without images */
+                            /* Standard invoice footer (Existing Logic for non-quotation) */
                             <div className="w-full">
                                 <div className="flex justify-between items-start">
                                     {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" />}
@@ -292,8 +417,8 @@ const ComprobantePrintPage = ({
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
-                                        <div className="text-lg font-bold">{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt}</div>
-                                        <div className='font-bold text-lg'>{receipt === "COTIZACIÓN" ? "" : "ELECTRONICA"}</div>
+                                        <div className="text-lg font-bold">{receipt}</div>
+                                        <div className='font-bold text-lg'>ELECTRONICA</div>
                                         <div>{formValues?.serie}-{formValues?.correlativo}</div>
                                     </div>
                                 </div>
@@ -301,10 +426,10 @@ const ComprobantePrintPage = ({
                                     <div>
                                         <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">CLIENTE:</div> {selectedClient?.nombre?.toUpperCase() || ''}</label>
                                         <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">DIRECCION:</div><p className='w-[450px]'> {selectedClient?.direccion?.toUpperCase() || '-'}</p></label>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">FORMA PAGO:</div> {formValues?.formaPagoTipo?.toUpperCase() || 'CONTADO'}</label>
+                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">FORMA PAGO:</div> {formValues?.medioPago?.toUpperCase() || 'CONTADO'}</label>
                                         <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">MEDIO PAGO:</div> {formValues?.medioPago?.toUpperCase()} S/ {round2(totalPrices).toFixed(2)}</label>
 
-                                        {formValues?.formaPagoTipo === 'Credito' && formValues?.cuotas?.length > 0 && (
+                                        {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
                                             <div className="mt-2 border p-1 border-gray-300">
                                                 <div className="text-xs font-bold mb-1">Cronograma de Cuotas:</div>
                                                 <div className="grid grid-cols-2 gap-2">
@@ -332,7 +457,7 @@ const ComprobantePrintPage = ({
                                         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
                                             <div className="flex">
                                                 <span className="text-xs font-bold w-[130px]">Tipo Detracción:</span>
-                                                <span className="text-xs">{formValues.tipoDetraccion.codigo} - {formValues.tipoDetraccion.descripcion} ({formValues.tipoDetraccion.porcentaje}%)</span>
+                                                <span className="text-xs">{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</span>
                                             </div>
                                             <div className="flex">
                                                 <span className="text-xs font-bold w-[100px]">Cuenta BN:</span>
@@ -345,7 +470,7 @@ const ComprobantePrintPage = ({
                                             {formValues.medioPagoDetraccion && (
                                                 <div className="flex">
                                                     <span className="text-xs font-bold w-[100px]">Medio de Pago:</span>
-                                                    <span className="text-xs">{formValues.medioPagoDetraccion.codigo} - {formValues.medioPagoDetraccion.descripcion}</span>
+                                                    <span className="text-xs">{formValues.medioPagoDetraccion?.codigo} - {formValues.medioPagoDetraccion?.descripcion}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -392,46 +517,16 @@ const ComprobantePrintPage = ({
                                             <p className="text-xs text-green-600"><span className="font-bold">DESCUENTO ({quotationDiscount}%):</span> - S/ {round2(Number(total) * quotationDiscount / 100).toFixed(2)}</p>
                                         )}
                                         <p className="text-xs"><span className="font-bold">IMPORTE TOTAL:</span> S/ {quotationDiscount > 0 ? round2(Number(total) * (1 - quotationDiscount / 100)).toFixed(2) : round2(Number(total)).toFixed(2)}</p>
+                                        {shouldShowRetention && (
+                                            <>
+                                                <p className="text-xs"><span className="font-bold">RETENCIÓN (3%):</span> S/ {displayRetencionMonto.toFixed(2)}</p>
+                                                <p className="text-xs"><span className="font-bold">IMPORTE NETO:</span> S/ {Number(Number(total) - displayRetencionMonto).toFixed(2)}</p>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="border border-black p-2 mt-2 relative mb-10">
-                                    {receipt === "COTIZACIÓN" ? (
-                                        /* Quotation-specific footer */
-                                        <div>
-                                            <p className="text-xs"><span className="font-bold">OBSERVACIONES:</span><br />{observation?.toUpperCase() || ''}</p>
-
-                                            {quotationTerms && (
-                                                <p className="text-xs mt-2"><span className="font-bold">TÉRMINOS Y CONDICIONES:</span><br />{quotationTerms}</p>
-                                            )}
-
-                                            <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                                                <div>
-                                                    <span className="font-bold">CONDICIÓN DE PAGO:</span> {
-                                                        quotationPaymentType === 'CONTADO' ? 'Contado' :
-                                                            quotationPaymentType === 'CREDITO_30' ? 'Crédito 30 días' :
-                                                                quotationPaymentType === 'CREDITO_60' ? 'Crédito 60 días' :
-                                                                    quotationPaymentType === 'CREDITO_90' ? 'Crédito 90 días' :
-                                                                        quotationPaymentType === 'ADELANTO' ? `Adelanto ${quotationAdvance}%` : 'Contado'
-                                                    }
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="font-bold">VIGENCIA:</span> {quotationValidity} día{quotationValidity > 1 ? 's' : ''}
-                                                </div>
-                                            </div>
-
-                                            <p className="text-xs mt-2 text-center">{company?.celular} | {company?.email}</p>
-                                            {quotationSignature && (
-                                                <div className="mt-6 pt-4 border-t text-center">
-                                                    <div className="mb-2">_______________________________</div>
-                                                    <p className="font-bold">{quotationSignature}</p>
-                                                    <p className="text-[10px] text-gray-500">Firma del Responsable</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        /* Standard invoice footer */
-                                        <p className="text-xs"><span className="font-bold">OBSERVACIONES:</span><br />{observation?.toUpperCase() || ''}<br />Representación impresa del Comprobante de Pago Electrónico.<br />Autorizado mediante Resolución de Intendencia N° 080-005-000153/SUNAT.<br />Emite a través de APISPERU - Proveedor Autorizado por SUNAT.</p>
-                                    )}
+                                    <p className="text-xs"><span className="font-bold">OBSERVACIONES:</span><br />{observation?.toUpperCase() || ''}<br />Representación impresa del Comprobante de Pago Electrónico.<br />Autorizado mediante Resolución de Intendencia N° 080-005-000153/SUNAT.<br />Emite a través de APISPERU - Proveedor Autorizado por SUNAT.</p>
                                     {qrCodeDataUrl && !receipt?.includes("COTIZACIÓN") && <img src={qrCodeDataUrl} alt="QR" className="absolute bottom-2 right-2 w-12 h-12" />}
                                 </div>
                             </div>
@@ -439,7 +534,7 @@ const ComprobantePrintPage = ({
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

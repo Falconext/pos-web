@@ -1,8 +1,42 @@
-import { ChangeEvent, FC } from 'react';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
 import styles from './../table.module.css';
+import { Icon } from '@iconify/react';
 import { useInvoiceStore } from '@/zustand/invoices';
 import useAlertStore from '@/zustand/alert';
 
+// Componente optimizado para edición local
+const EditableCell = ({ value, type, onChange, disabled, className }: any) => {
+    const [localValue, setLocalValue] = useState(value);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    const handleBlur = () => {
+        // Solo notificar si hubo cambios
+        if (localValue != value) {
+            onChange(localValue);
+        }
+    };
+
+    const handleKeyDown = (e: any) => {
+        if (e.key === 'Enter') {
+            e.currentTarget.blur();
+        }
+    };
+
+    return (
+        <input
+            type={type}
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className={className}
+            disabled={disabled}
+        />
+    );
+};
 
 interface ITableBodyProps {
     data: any[];
@@ -101,10 +135,10 @@ const TableBody: FC<ITableBodyProps> = ({
                 return (
                     <tr
                         key={index}
-                        style={{
-                            backgroundColor: isCanceled ? '#24262E' : "#fff",
-                            opacity: isCanceled ? 1 : 1,
-                        }}
+                        className={`
+                            group transition-colors duration-200
+                            ${isCanceled ? 'bg-gray-50' : 'bg-white'}
+                        `}
                     >
                         {columns.map((col, cellIndex) => {
                             // Handle logic for column key extraction (similar to TableHeader)
@@ -152,24 +186,23 @@ const TableBody: FC<ITableBodyProps> = ({
                                 <td
                                     key={cellIndex}
                                     style={{
-                                        color: colorFont,
-                                        whiteSpace: hasAddressAndName ? 'normal' : undefined,
-                                        overflowWrap: hasAddressAndName ? 'break-word' : undefined,
+                                        color: isCanceled ? '#5b6982ff' : "#000000", // Dim text if canceled
                                         textAlign: (key === 'estado' || key === 'tipo' || key === 'status') ? 'center' : 'left'
                                     }}
+                                    className="py-2 bg-[#fff] px-6 text-sm text-gray-600 border-b border-[#E6E7EB]"
                                 >
                                     {isEditable ? (
-                                        <input
+                                        <EditableCell
                                             type={key === 'descripcion' ? 'text' : 'number'}
                                             value={cellValue}
-                                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                            onChange={(newValue: any) =>
                                                 handleInputChange(
                                                     index,
                                                     key,
-                                                    key === 'descripcion' ? e.target.value : e.target.value
+                                                    newValue
                                                 )
                                             }
-                                            className="w-full py-1 px-3 border text-[#4d4d4d] text-[13px] border-[#dadada] rounded-xl"
+                                            className="w-full py-1.5 px-3 border-0 bg-gray-50 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-100 transition-all"
                                             disabled={!isEditable}
                                         />
                                     )
@@ -191,74 +224,65 @@ const TableBody: FC<ITableBodyProps> = ({
                                             )
                                         ) : key === 'estado' || key === 'tipo' ? (
                                             <div
-                                                className={
-                                                    cell === 'EMITIDO' || cell === 'ACEPTADO'
-                                                        ? styles.successOrder
-                                                        : cell === 'ACTIVO'
-                                                            ? styles.activeOrder
-                                                            : cell === 'PENDIENTE' || cell === 'ENVIANDO'
-                                                                ? styles.activeOrder
-                                                                : cell === 'RECHAZADO' || cell === 'FALLIDO_ENVIO'
-                                                                    ? styles.inactiveOrder
-                                                                    : cell === 'PENDIENTE_PAGO'
-                                                                        ? styles.activeOrder
-                                                                        : cell === 'PAGO_PARCIAL'
-                                                                            ? styles.activeOrder
-                                                                            : cell === 'COMPLETADO'
-                                                                                ? styles.activeOrder
-                                                                                : cell === 'INGRESO'
-                                                                                    ? styles.successOrder
-                                                                                    : cell === 'SALIDA'
-                                                                                        ? styles.inactiveOrder
-                                                                                        : cell === 'AJUSTE'
-                                                                                            ? styles.activeOrder
-                                                                                            : cell === 'TRANSFERENCIA'
-                                                                                                ? styles.successOrder
-                                                                                                : cell === 'ANULADO'
-                                                                                                    ? styles.inactiveOrder
-                                                                                                    : styles.inactiveOrder
-                                                }
+                                                className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium
+                                                    ${cell === 'EMITIDO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' ? 'bg-emerald-100 text-emerald-700' :
+                                                        cell === 'PENDIENTE' || cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'ACTIVO' || cell === 'COMPLETADO' || cell === 'AJUSTE' || cell === 'ENVIANDO' ? 'bg-amber-100 text-amber-700' :
+                                                            cell === 'PARTIAL' ? 'bg-blue-100 text-blue-700' :
+                                                                cell === 'RECHAZADO' || cell === 'ANULADO' || cell === 'SALIDA' || cell === 'FALLIDO_ENVIO' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-gray-100 text-gray-700'
+                                                    }`}
                                             >
-                                                {cell === 'PENDIENTE'
-                                                    ? 'PENDIENTE'
-                                                    : cell === 'INGRESO'
-                                                        ? 'INGRESO'
-                                                        : cell === 'SALIDA'
-                                                            ? 'SALIDA'
-                                                            : cell === 'AJUSTE'
-                                                                ? 'AJUSTE'
-                                                                : cell === 'TRANSFERENCIA'
-                                                                    ? 'TRANSFERENCIA'
-                                                                    : cell === 'ACTIVO'
-                                                                        ? 'ACTIVO'
-                                                                        : cell === 'EMITIDO'
-                                                                            ? 'EMITIDO'
-                                                                            : cell === 'RECHAZADO'
-                                                                                ? 'RECHAZADO'
-                                                                                : cell === 'ANULADO'
-                                                                                    ? 'ANULADO'
-                                                                                    : cell === 'PENDIENTE_PAGO'
-                                                                                        ? 'PENDIENTE DE PAGO'
-                                                                                        : cell === 'PAGO_PARCIAL'
-                                                                                            ? 'PENDIENTE PAGO'
-                                                                                            : cell === 'COMPLETADO'
-                                                                                                ? 'COMPLETADO'
-                                                                                                : cell === 'ACEPTADO'
-                                                                                                    ? 'ACEPTADO'
-                                                                                                    : cell === 'ENVIANDO'
-                                                                                                        ? 'ENVIANDO'
-                                                                                                        : cell === 'FALLIDO_ENVIO'
-                                                                                                            ? 'FALLIDO ENVÍO'
-                                                                                                            : 'INACTIVO'}
+                                                <span className="capitalize">
+                                                    {cell === 'PENDIENTE'
+                                                        ? 'Pendiente'
+                                                        : cell === 'INGRESO'
+                                                            ? 'Ingreso'
+                                                            : cell === 'SALIDA'
+                                                                ? 'Salida'
+                                                                : cell === 'AJUSTE'
+                                                                    ? 'Ajuste'
+                                                                    : cell === 'TRANSFERENCIA'
+                                                                        ? 'Transferencia'
+                                                                        : cell === 'ACTIVO'
+                                                                            ? 'Activo'
+                                                                            : cell === 'EMITIDO'
+                                                                                ? 'Emitido'
+                                                                                : cell === 'RECHAZADO'
+                                                                                    ? 'Rechazado'
+                                                                                    : cell === 'ANULADO'
+                                                                                        ? 'Anulado'
+                                                                                        : cell === 'PENDIENTE_PAGO'
+                                                                                            ? 'Pendiente Pago'
+                                                                                            : cell === 'PAGO_PARCIAL'
+                                                                                                ? 'Parcial'
+                                                                                                : cell === 'COMPLETADO'
+                                                                                                    ? 'Completado'
+                                                                                                    : cell === 'ACEPTADO'
+                                                                                                        ? 'Aceptado'
+                                                                                                        : cell === 'ENVIANDO'
+                                                                                                            ? 'Enviando'
+                                                                                                            : cell === 'FALLIDO_ENVIO'
+                                                                                                                ? 'Fallido Envío'
+                                                                                                                : cell?.toString().toLowerCase()}
+                                                </span>
                                             </div>
                                         ) : (
                                             isTruncatable ? (
-                                                <span className={styles.truncate} title={cellValue}>
-                                                    {cellValue}
+                                                <span className={`${styles.truncate} font-medium capitalize`} title={cellValue}>
+                                                    {cellValue.toLowerCase()}
                                                 </span>
                                             ) : (
-                                                <div className="flex">
-                                                    {cell as React.ReactNode}
+                                                <div className="flex font-medium">
+                                                    {(() => {
+                                                        const keyLower = key.toString().toLowerCase();
+                                                        const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria');
+                                                        const isString = typeof cell === 'string';
+
+                                                        if (isString && !isCode) {
+                                                            return <span className="capitalize">{cell.toString().toLowerCase()}</span>;
+                                                        }
+                                                        return cell as React.ReactNode;
+                                                    })()}
                                                 </div>
                                             )
                                         )}
@@ -267,12 +291,7 @@ const TableBody: FC<ITableBodyProps> = ({
                         })}
                         {actions && actions.length > 0 && (
                             <td
-                                style={{
-                                    color: colorFont,
-                                    whiteSpace: hasAddressAndName ? 'normal' : undefined,
-                                    overflowWrap: hasAddressAndName ? 'break-word' : undefined
-                                }}
-                                className={styles.tableActions}
+                                className={`py-4 px-6 border-b border-[#E6E7EB] sticky right-0 z-10 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)] ${isCanceled ? 'bg-[#fff]' : 'bg-white'}`}
                             >
                                 {actions.map((action: any, actionIndex: number) => {
                                     // Check condition (legacy)
@@ -288,9 +307,9 @@ const TableBody: FC<ITableBodyProps> = ({
                                     const tooltipText = typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip;
 
                                     return (
-                                        <div key={actionIndex} className={styles.tooltipContainer}>
+                                        <div key={actionIndex} className={styles.tooltipContainer} style={{ marginRight: '8px' }}>
                                             <button
-                                                className={styles[`${action.className}`]}
+                                                className="p-2 rounded-lg text-gray-500 transition-colors"
                                                 onClick={() => action.onClick(row)}
                                             >
                                                 {iconElement}

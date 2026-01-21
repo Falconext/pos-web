@@ -378,7 +378,7 @@ const Clients = () => {
                             <InputPro name="cliente" value={searchClient} onChange={handleChange} label="Buscar por cliente y RUC" isLabel />
                         </div>
                         <div className="flex flex-wrap gap-2 items-end">
-                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            {/* <div className="relative" onClick={(e) => e.stopPropagation()}>
                                 <Button
                                     color="lila"
                                     outline
@@ -403,7 +403,7 @@ const Clients = () => {
                                         ))}
                                     </div>
                                 )}
-                            </div>
+                            </div> */}
                             <Button
                                 color="success"
                                 outline
@@ -441,7 +441,7 @@ const Clients = () => {
                 <div className="p-4">
                     {clientsTable?.length > 0 ? (
                         <>
-                            <div className="overflow-x-auto min-h-[450px]">
+                            <div className="min-h-[450px]">
                                 <DataTable bodyData={clientsTable}
                                     headerColumns={visibleColumns} />
                             </div>
@@ -475,7 +475,7 @@ const Clients = () => {
                 onClose={() => { setOpenAccionesId(null); setAnchorEl(null); }}
             >
                 {openAccionesId && (() => {
-                    const rowBase = clientsTable.find((r: any) => r.id === openAccionesId);
+                    const rowBase = clients.find((c: any) => c.id === openAccionesId);
                     if (!rowBase) return null;
                     return (
                         <>

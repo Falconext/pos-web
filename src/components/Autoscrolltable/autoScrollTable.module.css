@@ -31,11 +31,30 @@
 }
 
 .tableContainer {
-    max-width: 100%; /* Asegurarse de que el contenedor no exceda el ancho disponible */
-    overflow-x: auto; /* Permitir scroll horizontal para que funcionen Inicio/Final */
-    overflow-y: visible; /* No recortar contenido vertical; dropdowns y tooltips pueden salir del contenedor */
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
     border-radius: 4px;
-    white-space: nowrap; /* Evitar que el contenido se envuelva */
+    white-space: nowrap;
+    scroll-behavior: smooth;
 }
 
-/* Estilo para la barra de desplazamiento horizontal (opcional) */
+/* Custom Scrollbar */
+.tableContainer::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.tableContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.tableContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.tableContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

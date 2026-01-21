@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState, useMemo } from "react";
 import Select from "@/components/Select";
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
 import { IExtentionsState, useExtentionsStore } from "@/zustand/extentions";
@@ -29,6 +29,7 @@ import InputPro from "@/components/InputPro";
 import Button from "@/components/Button";
 import { get } from "@/utils/fetch";
 import ModalDetraccion, { DetraccionData } from "./ModalDetraccion";
+import ModalConfiguracionCotizacion, { QuotationConfig } from "./ModalConfiguracionCotizacion";
 import { useThemeStore } from "@/zustand/theme";
 
 const Invoice = () => {
@@ -502,6 +503,34 @@ const Invoice = () => {
     const [quotationPaymentType, setQuotationPaymentType] = useState('CONTADO'); // CONTADO, CREDITO_30, etc.
     const [quotationAdvance, setQuotationAdvance] = useState(0); // Adelanto %
     const [isQuotationConfigOpen, setIsQuotationConfigOpen] = useState(false); // Acordeón
+    const [isQuotationConfigModalOpen, setIsQuotationConfigModalOpen] = useState(false); // Modal de configuración
+    const [hasOpenedConfigModal, setHasOpenedConfigModal] = useState(false); // Para abrir solo una vez
+
+
+    // Auto-open config modal cuando se entra a cotizaciones/nuevo
+    useEffect(() => {
+        if (isQuotationRoute && !hasOpenedConfigModal) {
+            setIsQuotationConfigModalOpen(true);
+            setHasOpenedConfigModal(true);
+        }
+    }, [isQuotationRoute, hasOpenedConfigModal]);
+
+    // Handler para guardar configuración de cotización
+    const handleSaveQuotationConfig = (config: QuotationConfig) => {
+        setIncludeProductImages(config.includeProductImages);
+        setQuotationDiscount(config.quotationDiscount);
+        setQuotationValidity(config.quotationValidity);
+        setQuotationSignature(config.quotationSignature);
+        setQuotationTerms(config.quotationTerms);
+        setQuotationPaymentType(config.quotationPaymentType);
+        setQuotationAdvance(config.quotationAdvance);
+
+        // Actualizar observaciones en formValues
+        setFormValues(prev => ({
+            ...prev,
+            observaciones: config.observaciones
+        }));
+    };
 
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
         const clientSelect = clients?.find((item: any) => value.split("-")[0] === item.nroDoc);
@@ -545,7 +574,7 @@ const Invoice = () => {
         deleteProductInvoice(row);
     };
 
-    const { total, discount: productDiscount, hasDiscount } = calculateTotals(productsInvoice);
+    const { total, discount: productDiscount, hasDiscount } = useMemo(() => calculateTotals(productsInvoice), [productsInvoice]);
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
     const totalAdjusted = isDiscountGlobalApplicable ? Math.max(totalOriginal - descountGlobal, 0) : totalOriginal;
@@ -844,7 +873,7 @@ const Invoice = () => {
     // ... (rest of useEffects)
 
     return (
-        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden bg-[#F4F5FA] gap-4 md:gap-6 font-sans text-gray-800 transition-all duration-300 ${!showMobileCart && isMobile ? 'pb-24' : 'pb-0'}`}
+        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden gap-4 md:gap-6 font-sans text-gray-800 transition-all duration-300 ${!showMobileCart && isMobile ? 'pb-24' : 'pb-0'}`}
             style={{ height: !isMobile ? (isCompact ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
         >
 
@@ -871,7 +900,15 @@ const Invoice = () => {
                         serie: dataReceipt?.serie,
                         correlativo: dataReceipt?.correlativo,
                         numDocAfectado: `${serie}-${correlative}`,
-                        medioPago: formValues?.comprobante === "NOTA DE PEDIDO" ? "" : paymentMethod
+                        medioPago: formValues?.comprobante === "NOTA DE PEDIDO" ? "" : paymentMethod,
+                        // Add detraction data
+                        ...(tipoDetraccionId ? {
+                            tipoDetraccion: tiposDetraccion.find(t => t.id === tipoDetraccionId),
+                            montoDetraccion: montoDetraccion,
+                            cuentaBancoNacion: cuentaBancoNacion,
+                            medioPagoDetraccion: mediosPagoDetraccion.find(m => m.id === medioPagoDetraccionId),
+                            cuotas: cuotas
+                        } : {})
                     }}
                     serie={serie}
                     correlative={correlative}
@@ -880,11 +917,12 @@ const Invoice = () => {
                     selectedClient={selectedClient}
                     totalInWords={totalInWords}
                     observation={formValues?.observaciones || formValues?.motivo}
+                    retencionData={retencionData}
                 />
             </div>
 
             {/* LEFT PANEL: PRODUCT CATALOG */}
-            <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white">
+            <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white rounded-[24px] shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white">
                 {/* Header: Search & Categories */}
                 <div className="p-4 md:p-5 border-b border-gray-100">
                     <div className="flex gap-2 mb-4">
@@ -903,7 +941,7 @@ const Invoice = () => {
 
                         <button
                             onClick={() => setIsOpenModalProduct(true)}
-                            className="flex items-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all shadow-lg shadow-green-200"
+                            className="flex items-center gap-2 px-4 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold transition-all"
                             title="Crear producto nuevo"
                         >
                             <Icon icon="solar:add-circle-bold" className="text-xl" />
@@ -914,11 +952,10 @@ const Invoice = () => {
                     <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
                         <button
                             onClick={() => setSelectedCategoryId(0)}
-                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${selectedCategoryId === 0 ? 'bg-[#5570F1] text-white shadow-lg shadow-indigo-500/30' : 'bg-white text-gray-600 shadow-sm hover:shadow-md'}`}
+                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${selectedCategoryId === 0 ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
                         >
                             <span>TODOS</span>
-                            {/* Badge simulation (Optional: can be removed if not needed, but adds to the 'look') */}
-                            <span className={`px-2 py-0.5 rounded-lg text-xs ${selectedCategoryId === 0 ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>
+                            <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${selectedCategoryId === 0 ? 'bg-white text-gray-900' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
                                 {totalProducts || 0}
                             </span>
                         </button>
@@ -926,10 +963,10 @@ const Invoice = () => {
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategoryId(cat.id)}
-                                className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${selectedCategoryId === cat.id ? 'bg-[#5570F1] text-white shadow-lg shadow-indigo-500/30' : 'bg-white text-gray-600 shadow-sm hover:shadow-md'}`}
+                                className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${selectedCategoryId === cat.id ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
                             >
                                 <span>{cat.nombre.toUpperCase()}</span>
-                                <span className={`px-2 py-0.5 rounded-lg text-xs ${selectedCategoryId === cat.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>
+                                <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${selectedCategoryId === cat.id ? 'bg-white text-gray-900' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
                                     {cat._count?.productos || 0}
                                 </span>
                             </button>
@@ -975,7 +1012,7 @@ const Invoice = () => {
                                         </div>
                                         <button
                                             onClick={() => handleProductClick(item)}
-                                            className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all active:scale-95 flex items-center justify-center"
+                                            className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all active:scale-95 flex items-center justify-center"
                                         >
                                             <Icon icon="solar:add-circle-bold" className="text-lg" />
                                         </button>
@@ -1017,7 +1054,7 @@ const Invoice = () => {
                         </div>
                         <button
                             onClick={() => setShowMobileCart(true)}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
+                            className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-colors"
                         >
                             <Icon icon="solar:cart-large-minimalistic-bold" className="text-xl" />
                             Ver Pedido
@@ -1041,7 +1078,7 @@ const Invoice = () => {
                                     <Icon icon="solar:arrow-left-linear" className="text-2xl" />
                                 </button>
                             )}
-                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                            <div className="p-2 bg-gray-100 text-gray-900 rounded-xl">
                                 <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
                             </div>
                             <h2 className="font-bold text-gray-800 text-lg">Detalle de Venta</h2>
@@ -1088,12 +1125,17 @@ const Invoice = () => {
                                             const newId = Number(idVal);
                                             const updatedForm = { ...formValues, motivoId: newId };
 
+                                            const selectedOp = tiposOperacion.find(op => Number(op.id) === newId);
+
                                             // Reset detracción si cambia
-                                            if (newId !== tiposOperacion.find(op => op.codigo === '0112')?.id) {
+                                            if (selectedOp?.codigo !== '0112') {
                                                 setTipoDetraccionId(undefined);
                                                 setMedioPagoDetraccionId(undefined);
                                                 setPorcentajeDetraccion(0);
                                                 setCuentaBancoNacion('');
+                                            } else {
+                                                // Si es Sujeta a Detraccion (0112), abrir modal automáticamente
+                                                setIsModalDetraccionOpen(true);
                                             }
                                             // Reset retención si cambia
                                             setRetencionData(null);
@@ -1112,15 +1154,15 @@ const Invoice = () => {
                                         <button
                                             type="button"
                                             onClick={() => setIsModalDetraccionOpen(true)}
-                                            className="w-full p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border-2 border-blue-200 flex items-center justify-between group transition-all"
+                                            className="w-full p-3 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl border-2 border-gray-300 flex items-center justify-between group transition-all"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <div className="p-1.5 bg-blue-500 rounded-lg group-hover:scale-110 transition-transform">
+                                                <div className="p-1.5 bg-gray-900 rounded-lg group-hover:scale-110 transition-transform">
                                                     <Icon icon="solar:settings-bold" className="text-white" width={16} />
                                                 </div>
-                                                <span className="text-sm font-semibold text-blue-700">Configurar Detracción</span>
+                                                <span className="text-sm font-semibold text-gray-900">Configurar Detracción</span>
                                             </div>
-                                            <Icon icon="solar:alt-arrow-right-linear" className="text-blue-600 group-hover:translate-x-1 transition-transform" width={18} />
+                                            <Icon icon="solar:alt-arrow-right-linear" className="text-gray-900 group-hover:translate-x-1 transition-transform" width={18} />
                                         </button>
                                         {tipoDetraccionId && (
                                             <div className="flex items-center justify-between bg-green-50 p-2.5 rounded-lg border border-green-200 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -1140,29 +1182,29 @@ const Invoice = () => {
 
                         {/* Botón Retención 3% (Si NO es Detracción, monto >= 700 y es Agente de Retención) */}
                         {selectOperation?.codigo !== "0112" && totalAdjusted >= 700 && auth?.empresa?.esAgenteRetencion && (
-                            <div className="mt-0 col-span-2 mb-0 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <div className="mt-0 col-span-2 mb-0 bg-gray-50 border border-gray-200 rounded-lg p-3">
                                 <div className="space-y-2">
                                     <button
                                         type="button"
                                         onClick={() => setIsModalRetencionOpen(true)}
-                                        className="w-full p-3 bg-gradient-to-r from-purple-50 to-fuchsia-50 hover:from-purple-100 hover:to-fuchsia-100 rounded-xl border-2 border-purple-200 flex items-center justify-between group transition-all"
+                                        className="w-full p-3 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl border-2 border-gray-300 flex items-center justify-between group transition-all"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <div className="p-1.5 bg-purple-500 rounded-lg group-hover:scale-110 transition-transform">
+                                            <div className="p-1.5 bg-gray-900 rounded-lg group-hover:scale-110 transition-transform">
                                                 <Icon icon="solar:percent-circle-bold" className="text-white" width={16} />
                                             </div>
-                                            <span className="text-sm font-semibold text-purple-700">Configurar Retención 3%</span>
+                                            <span className="text-sm font-semibold text-gray-900">Configurar Retención 3%</span>
                                         </div>
-                                        <Icon icon="solar:alt-arrow-right-linear" className="text-purple-600 group-hover:translate-x-1 transition-transform" width={18} />
+                                        <Icon icon="solar:alt-arrow-right-linear" className="text-gray-900 group-hover:translate-x-1 transition-transform" width={18} />
                                     </button>
 
                                     {retencionData && (
-                                        <div className="flex items-center justify-between bg-purple-100 p-2.5 rounded-lg border border-purple-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="flex items-center justify-between bg-gray-100 p-2.5 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
                                             <div className="flex items-center gap-2">
-                                                <Icon icon="solar:check-circle-bold" className="text-purple-600" width={18} />
-                                                <span className="text-xs font-medium text-purple-700">Reg. Retenciones del IGV (3%)</span>
+                                                <Icon icon="solar:check-circle-bold" className="text-gray-900" width={18} />
+                                                <span className="text-xs font-medium text-gray-900">Reg. Retenciones del IGV (3%)</span>
                                             </div>
-                                            <span className="text-xs font-bold text-purple-800">Retención: S/ {retencionData.montoDetraccion?.toFixed(2)}</span>
+                                            <span className="text-xs font-bold text-gray-900">Retención: S/ {retencionData.montoDetraccion?.toFixed(2)}</span>
                                         </div>
                                     )}
                                 </div>
@@ -1176,11 +1218,11 @@ const Invoice = () => {
                                     id="includeImages"
                                     checked={includeProductImages}
                                     onChange={(e) => setIncludeProductImages(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                                    style={{ accentColor: '#4F46E5' }}
+                                    className="w-4 h-4 text-gray-900 bg-gray-100 border-gray-300 rounded focus:ring-gray-900"
+                                    style={{ accentColor: '#1C1C24' }}
                                 />
                                 <label htmlFor="includeImages" className="text-sm font-medium text-gray-700 cursor-pointer select-none flex items-center gap-1">
-                                    <Icon icon="solar:gallery-bold-duotone" className="text-blue-600" />
+                                    <Icon icon="solar:gallery-bold-duotone" className="text-gray-900" />
                                     Incluir imágenes del producto
                                 </label>
                             </div>
@@ -1201,7 +1243,7 @@ const Invoice = () => {
                                     label="Cliente" isIcon icon="solar:user-linear"
                                 />
                             </div>
-                            <button onClick={() => setIsOpenModalClient(true)} className="px-4 py-3 relative top-2 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 border border-blue-100 transition-colors shadow-sm">
+                            <button onClick={() => setIsOpenModalClient(true)} className="px-4 py-3 relative top-2 bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-200 border border-gray-300 transition-colors shadow-sm">
                                 <Icon icon="solar:user-plus-bold" className="text-xl" />
                             </button>
                         </div>
@@ -1280,7 +1322,7 @@ const Invoice = () => {
                                     </div>
                                     <button
                                         onClick={() => getInvoiceBySerieCorrelative(serie.toUpperCase(), correlative, formValues.motivoId)}
-                                        className="absolute right-0 bottom-0 h-[46px] w-[46px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95"
+                                        className="absolute right-0 bottom-0 h-[46px] w-[46px] flex items-center justify-center bg-gray-900 hover:bg-black text-white rounded-xl transition-all active:scale-95"
                                         title="Buscar Documento"
                                     >
                                         <Icon icon="solar:magnifer-bold" className="text-xl" />
@@ -1320,9 +1362,9 @@ const Invoice = () => {
                         </div>
                     ) : (
                         productsInvoice.map((item: any, index: number) => (
-                            <div key={index} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-dashed border-gray-200 hover:border-blue-300 transition-colors group">
+                            <div key={index} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-dashed border-gray-200 hover:border-gray-900/30 transition-colors group">
                                 <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    {item.imagenUrl ? <img src={item.imagenUrl} className="w-full h-full object-cover rounded-lg" /> : <Icon icon="solar:box-linear" className="text-gray-400" />}
+                                    {item.imagenUrl ? <img src={item.imagenUrl} className="w-full h-full object-contain rounded-lg" /> : <Icon icon="solar:box-linear" className="text-gray-400" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h5 className="font-bold text-gray-800 text-sm line-clamp-1">{item.descripcion}</h5>
@@ -1343,7 +1385,7 @@ const Invoice = () => {
                                                 deleteProductInvoice(item)
                                             }
                                         }}
-                                        className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-blue-600"
+                                        className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900"
                                     >
                                         <Icon icon="solar:minus-circle-linear" />
                                     </button>
@@ -1355,7 +1397,7 @@ const Invoice = () => {
                                             if (item.stock < newQty) return useAlertStore.getState().alert("Max stock alcanzado", "warning");
                                             updateProductInvoice(index, calculateLineItem(item, newQty));
                                         }}
-                                        className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-blue-600"
+                                        className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900"
                                     >
                                         <Icon icon="solar:add-circle-linear" />
                                     </button>
@@ -1365,7 +1407,7 @@ const Invoice = () => {
                                     <p className="font-bold text-gray-900">S/ {Number(item.total).toFixed(2)}</p>
                                 </div>
 
-                                <button onClick={() => setEditingIndex(index)} className="text-blue-400 hover:text-blue-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
+                                <button onClick={() => setEditingIndex(index)} className="text-gray-900/50 hover:text-gray-900 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
                                     <Icon icon="solar:pen-new-square-linear" width={20} />
                                 </button>
                                 <button onClick={() => deleteProductInvoice(item)} className="text-red-400 hover:text-red-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
@@ -1413,11 +1455,11 @@ const Invoice = () => {
                                         placeholder="0.00"
                                         step="0.01"
                                         max={totalAdjusted}
-                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                                     />
                                 </div>
                                 {adelanto > 0 && (
-                                    <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                                    <div className="mt-2 p-2 bg-gray-100 rounded-lg">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Saldo pendiente:</span>
                                             <span className="font-bold text-orange-600">
@@ -1434,100 +1476,14 @@ const Invoice = () => {
                     {isQuotationRoute && (
                         <div className="border-t">
                             <button
-                                onClick={() => setIsQuotationConfigOpen(!isQuotationConfigOpen)}
+                                onClick={() => setIsQuotationConfigModalOpen(true)}
                                 className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 transition-colors"
                             >
                                 <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
-                                    <Icon icon="solar:settings-bold-duotone" className="text-blue-600" />
+                                    <Icon icon="solar:settings-bold-duotone" className="text-gray-900" />
                                     Configuración Cotización
                                 </span>
-                                <Icon
-                                    icon={isQuotationConfigOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
-                                    className="text-gray-500"
-                                />
                             </button>
-
-                            {isQuotationConfigOpen && (
-                                <div className="space-y-2 pb-3 px-1">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label className="text-xs font-medium text-gray-700 block mb-1">Descuento (%)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={quotationDiscount}
-                                                onChange={(e) => setQuotationDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
-                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-medium text-gray-700 block mb-1">Vigencia</label>
-                                            <select
-                                                value={quotationValidity}
-                                                onChange={(e) => setQuotationValidity(Number(e.target.value))}
-                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                            >
-                                                <option value={3}>3 días</option>
-                                                <option value={7}>7 días</option>
-                                                <option value={15}>15 días</option>
-                                                <option value={30}>30 días</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label className="text-xs font-medium text-gray-700 block mb-1">Condición Pago</label>
-                                            <select
-                                                value={quotationPaymentType}
-                                                onChange={(e) => setQuotationPaymentType(e.target.value)}
-                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                            >
-                                                <option value="CONTADO">Contado</option>
-                                                <option value="CREDITO_30">Crédito 30d</option>
-                                                <option value="CREDITO_60">Crédito 60d</option>
-                                                <option value="CREDITO_90">Crédito 90d</option>
-                                                <option value="ADELANTO">Adelanto</option>
-                                            </select>
-                                        </div>
-                                        {quotationPaymentType === 'ADELANTO' && (
-                                            <div>
-                                                <label className="text-xs font-medium text-gray-700 block mb-1">Adelanto (%)</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    value={quotationAdvance}
-                                                    onChange={(e) => setQuotationAdvance(Math.min(100, Math.max(0, Number(e.target.value))))}
-                                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                    placeholder="50"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-gray-700 block mb-1">Responsable</label>
-                                        <input
-                                            type="text"
-                                            value={quotationSignature}
-                                            onChange={(e) => setQuotationSignature(e.target.value)}
-                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                            placeholder="Nombre"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-gray-700 block mb-1">Términos</label>
-                                        <textarea
-                                            value={quotationTerms}
-                                            onChange={(e) => setQuotationTerms(e.target.value)}
-                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                                            placeholder="Garantía, entrega..."
-                                            rows={2}
-                                        />
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
 
@@ -1539,7 +1495,7 @@ const Invoice = () => {
                                 <button
                                     key={m}
                                     onClick={() => setPaymentMethod(m)}
-                                    className={`p-2 rounded-xl text-xs font-bold transition-all border ${paymentMethod === m ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}
+                                    className={`p-2 rounded-xl text-xs font-bold transition-all border ${paymentMethod === m ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'}`}
                                 >
                                     {m}
                                 </button>
@@ -1547,11 +1503,11 @@ const Invoice = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="flex gap-3">
                         {isQuotationRoute && (
                             <button
                                 onClick={() => printFn()}
-                                className="col-span-2 py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-200/50"
+                                className="col-span-2 py-3.5 px-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2"
                             >
                                 <Icon icon="solar:download-bold" className="text-xl" />
                                 Exportar PDF Directo
@@ -1559,13 +1515,13 @@ const Invoice = () => {
                         )}
                         <button
                             onClick={() => handleOpenNewTab("vista previa")}
-                            className="col-span-1 py-4 bg-white border-2 border-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2"
+                            className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm"
                         >
-                            <Icon icon="solar:eye-linear" className="text-xl" />
+                            <Icon icon="solar:eye-linear" className="text-lg" />
                             PREVIA
                         </button>
-                        <button onClick={addInvoiceReceipt} className="col-span-1 py-4 bg-[#1C1C24] text-white rounded-2xl font-bold hover:bg-[#2A2A35] transition-all shadow-xl shadow-gray-300/50 flex items-center justify-center gap-2">
-                            <Icon icon="solar:printer-minimalistic-bold" className="text-xl" />
+                        <button onClick={addInvoiceReceipt} className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 text-sm">
+                            <Icon icon="solar:printer-minimalistic-bold" className="text-lg" />
                             {isMobile ? "EMITIR" : "EMITIR"}
                         </button>
                     </div>
@@ -1604,6 +1560,23 @@ const Invoice = () => {
                 mediosPagoDetraccion={mediosPagoDetraccion}
                 initialData={retencionData}
                 mode="RETENCION"
+            />
+
+            {/* Modal de Configuración de Cotización */}
+            <ModalConfiguracionCotizacion
+                isOpen={isQuotationConfigModalOpen}
+                onClose={() => setIsQuotationConfigModalOpen(false)}
+                onSave={handleSaveQuotationConfig}
+                initialConfig={{
+                    includeProductImages,
+                    quotationDiscount,
+                    quotationValidity,
+                    quotationSignature,
+                    quotationTerms,
+                    quotationPaymentType,
+                    quotationAdvance,
+                    observaciones: formValues.observaciones
+                }}
             />
         </div >
     )

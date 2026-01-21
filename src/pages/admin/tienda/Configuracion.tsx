@@ -33,6 +33,11 @@ export default function ConfiguracionTienda() {
     aceptaEnvio: true,
     direccionRecojo: '',
     tiempoPreparacionMin: 30,
+    // Información Bancaria
+    bancoNombre: '',
+    numeroCuenta: '',
+    cci: '',
+    monedaCuenta: 'SOLES',
   });
 
   // Subida de QR
@@ -180,6 +185,10 @@ export default function ConfiguracionTienda() {
         aceptaEnvio: data.data.aceptaEnvio ?? true,
         direccionRecojo: data.data.direccionRecojo || '',
         tiempoPreparacionMin: data.data.tiempoPreparacionMin || 30,
+        bancoNombre: data.data.bancoNombre || '',
+        numeroCuenta: data.data.numeroCuenta || '',
+        cci: data.data.cci || '',
+        monedaCuenta: data.data.monedaCuenta || 'SOLES',
       });
       setPreviewYapeUrl(data.data.yapeQrSignedUrl || data.data.yapeQrUrl || '');
       setPreviewPlinUrl(data.data.plinQrSignedUrl || data.data.plinQrUrl || '');
@@ -654,6 +663,62 @@ export default function ConfiguracionTienda() {
             <label className="text-sm text-gray-700">Acepto pago en efectivo contra entrega</label>
           </div>
 
+          {/* Información Bancaria (Cotizaciones) */}
+          <div className="mt-8 pt-5 border-t border-gray-100">
+            <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Icon icon="solar:card-transfer-bold-duotone" className="text-xl text-blue-500" />
+              Cuenta Bancaria (Para Cotizaciones)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputPro
+                  name="bancoNombre"
+                  label="Nombre del Banco"
+                  value={formData.bancoNombre}
+                  onChange={handleChange}
+                  isLabel
+                  placeholder="Ej: INTERBANK"
+                />
+              </div>
+              <div>
+                <div className="mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Moneda</label>
+                </div>
+                <select
+                  name="monedaCuenta"
+                  value={formData.monedaCuenta}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border-gray-300 focus:ring-black focus:border-black"
+                >
+                  <option value="SOLES">SOLES</option>
+                  <option value="DOLARES">DOLARES</option>
+                </select>
+              </div>
+              <div>
+                <InputPro
+                  name="numeroCuenta"
+                  label="N° Cuenta"
+                  value={formData.numeroCuenta}
+                  onChange={handleChange}
+                  isLabel
+                  placeholder="Ej: 200-3006350516"
+                />
+              </div>
+              <div>
+                <InputPro
+                  name="cci"
+                  label="CCI"
+                  value={formData.cci}
+                  onChange={handleChange}
+                  isLabel
+                  placeholder="Ej: 003-200-003006350516-35"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Esta información se mostrará en el pie de página de tus cotizaciones impresas.
+            </p>
+          </div>
 
         </div>
 

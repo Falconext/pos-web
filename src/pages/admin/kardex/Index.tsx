@@ -221,8 +221,8 @@ const KardexIndex: React.FC = () => {
     {
       onClick: handleAbrirModal,
       className: "edit",
-      icon: <Icon color="#66AD78" icon="material-symbols:edit" />,
-      tooltip: "Editar"
+      icon: <Icon className="text-blue-500" icon="solar:eye-bold" width={20} height={20} />,
+      tooltip: "Ver Detalle"
     }
   ];
 
@@ -399,85 +399,117 @@ const KardexIndex: React.FC = () => {
         isOpenModal={!!selectedMovimiento}
         closeModal={() => setSelectedMovimiento(null)}
         title="Detalle del Movimiento"
+        position="right"
+        height="auto"
+        width="450px"
       >
         {selectedMovimiento && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Fecha</label>
-                <p className="text-sm text-gray-900">{formatDate(selectedMovimiento.fecha)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tipo</label>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTipoMovimientoColor(selectedMovimiento.tipoMovimiento)}`}>
-                  {selectedMovimiento.tipoMovimiento}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Producto</label>
-                <p className="text-sm text-gray-900">
-                  {selectedMovimiento.producto.codigo} - {selectedMovimiento.producto.descripcion}
-                </p>
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Concepto</label>
-                <p className="text-sm text-gray-900">{selectedMovimiento.concepto}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Cantidad</label>
-                <p className="text-sm text-gray-900">{selectedMovimiento.cantidad} {selectedMovimiento.producto.unidadMedida.codigo}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Costo Unitario</label>
-                <p className="text-sm text-gray-900">{formatCurrency(selectedMovimiento.costoUnitario)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Stock Anterior</label>
-                <p className="text-sm text-gray-900">{selectedMovimiento.stockAnterior}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Stock Actual</label>
-                <p className="text-sm font-medium text-gray-900">{selectedMovimiento.stockActual}</p>
-              </div>
-              {selectedMovimiento.valorTotal && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Valor Total</label>
-                  <p className="text-sm font-medium text-gray-900">{formatCurrency(selectedMovimiento.valorTotal)}</p>
+          <div className="flex flex-col gap-6 p-6">
+
+            {/* Header Section: Product & Type */}
+
+
+            {/* Content Stack - Single Column */}
+            <div className="flex flex-col gap-6">
+
+              {/* Transaction Details */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                  <Icon icon="solar:clipboard-list-linear" className="text-gray-400" />
+                  <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    Detalles Operación
+                  </h5>
                 </div>
-              )}
-              {selectedMovimiento.usuario && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Usuario</label>
-                  <p className="text-sm text-gray-900">{selectedMovimiento.usuario.nombre}</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatDate(selectedMovimiento.fecha)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Cantidad</label>
+                    <div className="text-sm font-bold text-gray-900">
+                      {selectedMovimiento.cantidad} {selectedMovimiento.producto?.unidadMedida?.codigo || 'UN'}
+                    </div>
+                  </div>
                 </div>
-              )}
-              {selectedMovimiento.comprobante && (
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Comprobante</label>
-                  <p className="text-sm text-gray-900">
-                    {selectedMovimiento.comprobante.tipoDoc} {selectedMovimiento.comprobante.serie}-{selectedMovimiento.comprobante.correlativo}
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Concepto</label>
+                  <p className="text-sm text-gray-800 bg-gray-50 border border-gray-100 p-3 rounded-lg">
+                    {selectedMovimiento.concepto}
                   </p>
                 </div>
-              )}
-              {selectedMovimiento.observacion && (
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Observación</label>
-                  <p className="text-sm text-gray-900">{selectedMovimiento.observacion}</p>
+
+                {selectedMovimiento.lote && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Lote</label>
+                    <p className="text-sm font-medium text-gray-900">{selectedMovimiento.lote}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Financial & Stock */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                  <Icon icon="solar:chart-square-linear" className="text-gray-400" />
+                  <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    Valores y Stock
+                  </h5>
                 </div>
-              )}
-              {selectedMovimiento.lote && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Lote</label>
-                  <p className="text-sm text-gray-900">{selectedMovimiento.lote}</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg text-center">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Stock Anterior</label>
+                    <p className="text-lg font-semibold text-gray-700 leading-none">{selectedMovimiento.stockAnterior}</p>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-center">
+                    <label className="block text-xs font-medium text-blue-600 mb-1">Stock Actual</label>
+                    <p className="text-lg font-bold text-blue-700 leading-none">{selectedMovimiento.stockActual}</p>
+                  </div>
                 </div>
-              )}
-              {selectedMovimiento.fechaVencimiento && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Fecha Vencimiento</label>
-                  <p className="text-sm text-gray-900">{formatDate(selectedMovimiento.fechaVencimiento)}</p>
+
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Costo Unit.</label>
+                    <p className="text-sm font-medium text-gray-900">{
+                      !isNaN(Number(selectedMovimiento.costoUnitario)) ? formatCurrency(Number(selectedMovimiento.costoUnitario)) : '-'
+                    }</p>
+                  </div>
+                  {selectedMovimiento.valorTotal && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Valor Total</label>
+                      <p className="text-sm font-bold text-emerald-600">{
+                        !isNaN(Number(selectedMovimiento.valorTotal)) ? formatCurrency(Number(selectedMovimiento.valorTotal)) : '-'
+                      }</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
+
+            {/* Footer: Metadata */}
+            {(selectedMovimiento.usuario || selectedMovimiento.comprobante) && (
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mt-auto flex flex-col gap-2 text-xs text-gray-500">
+                {selectedMovimiento.usuario && (
+                  <div className="flex items-center gap-2">
+                    <Icon icon="solar:user-circle-linear" width={16} />
+                    <span>Responsable: <span className="font-medium text-gray-700">{selectedMovimiento.usuario.nombre}</span></span>
+                  </div>
+                )}
+                {selectedMovimiento.comprobante && (
+                  <div className="flex items-center gap-2 border-t border-gray-200 pt-2">
+                    <Icon icon="solar:document-linear" width={16} />
+                    <span>Documento: <span className="font-medium text-gray-700">
+                      {selectedMovimiento.comprobante.tipoDoc} {selectedMovimiento.comprobante.serie}-{selectedMovimiento.comprobante.correlativo}
+                    </span></span>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
       </Modal>

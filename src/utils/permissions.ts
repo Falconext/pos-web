@@ -3,6 +3,11 @@
 export interface IUserPermissions {
   permisos?: string[];
   rol?: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA';
+  empresa?: {
+    plan?: {
+      modulosAsignados?: { modulo: { codigo: string } }[]
+    }
+  }
 }
 
 const PERM_MAP: Record<string, string> = {
@@ -22,10 +27,23 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
   // Si no hay usuario, no tiene acceso
   if (!user) return false;
 
-  // Si es admin del sistema o de la empresa, tiene acceso completo
-  if (user.rol === 'ADMIN_EMPRESA' || user.rol === 'ADMIN_SISTEMA') return true;
+  // Si es admin del sistema, tiene acceso total siempre
+  if (user.rol === 'ADMIN_SISTEMA') return true;
 
-  // Si no tiene permisos definidos, no tiene acceso
+  // 1. Validar restricción del Plan
+  const planModulos = user.empresa?.plan?.modulosAsignados?.map((m) => m.modulo.codigo);
+
+  // Si el plan tiene módulos asignados, verificar que el módulo solicitado esté incluido
+  if (planModulos && planModulos.length > 0) {
+    if (!planModulos.includes(modulo)) {
+      return false; // El plan no permite este módulo
+    }
+  }
+
+  // Si es admin de empresa, tiene acceso a todo lo que permite su plan
+  if (user.rol === 'ADMIN_EMPRESA') return true;
+
+  // 2. Validar permisos individuales de usuario
   if (!user.permisos || user.permisos.length === 0) return false;
 
   // Si tiene acceso completo (*)
@@ -42,18 +60,26 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
 export const getAvailableModules = (user: IUserPermissions | null): string[] => {
   if (!user) return [];
 
-  // Si es admin, tiene acceso a todos
-  if (user.rol === 'ADMIN_EMPRESA' || user.rol === 'ADMIN_SISTEMA') {
-    return ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones'];
+  // Módulos base del sistema
+  let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones'];
+
+  // Si es admin del sistema, tiene todo
+  if (user.rol === 'ADMIN_SISTEMA') return allModules;
+
+  // 1. Filtrar por Plan
+  const planModulos = user.empresa?.plan?.modulosAsignados?.map((m) => m.modulo.codigo);
+  if (planModulos && planModulos.length > 0) {
+    allModules = allModules.filter(m => planModulos.includes(m));
   }
 
-  // Si tiene acceso completo
-  if (user.permisos?.includes('*')) {
-    return ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos'];
-  }
+  // Si es admin de empresa, devolver los permitidos por el plan
+  if (user.rol === 'ADMIN_EMPRESA') return allModules;
 
-  // Devolver permisos específicos
-  return normalizePerms(user.permisos || []);
+  // 2. Filtrar por permisos individuales
+  if (user.permisos?.includes('*')) return allModules;
+
+  const userPerms = normalizePerms(user.permisos || []);
+  return allModules.filter(m => userPerms.includes(m));
 };
 
 /**
@@ -97,6 +123,7 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       caja: '/administrador/caja',
       pagos: '/administrador/pagos',
       cotizaciones: '/administrador/cotizaciones',
+      dashboard: '/administrador'
     };
 
     return moduleRoutes[firstModule] || '/administrador';

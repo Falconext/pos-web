@@ -28,6 +28,20 @@ export type IProduct = {
     nombre: string
     empresaId: number
   }
+  // Campos Farmacia
+  principioActivo?: string
+  concentracion?: string
+  presentacion?: string
+  laboratorio?: string
+  // Campos Bodega/Supermercado
+  codigoBarras?: string
+  unidadCompra?: string
+  unidadVenta?: string
+  factorConversion?: number
+  // Campos Ofertas
+  precioOferta?: number
+  fechaInicioOferta?: string | Date
+  fechaFinOferta?: string | Date
 }
 
 
@@ -52,4 +66,18 @@ export type IFormProduct = {
   costoPromedio?: number
   costoUnitario?: number
   imagenUrl?: string
+  // Campos Farmacia
+  principioActivo?: string
+  concentracion?: string
+  presentacion?: string
+  laboratorio?: string
+  // Campos Bodega/Supermercado
+  codigoBarras?: string
+  unidadCompra?: string
+  unidadVenta?: string
+  factorConversion?: number
+  // Campos Ofertas
+  precioOferta?: number
+  fechaInicioOferta?: string | Date
+  fechaFinOferta?: string | Date
 }

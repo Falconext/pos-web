@@ -35,6 +35,7 @@ export default function AdminLayout() {
   const [isCajaSubmenuOpen, setIsCajaSubmenuOpen] = useState(false)
   const [isTiendaSubmenuOpen, setIsTiendaSubmenuOpen] = useState(false)
   const [isCotizSubmenuOpen, setIsCotizSubmenuOpen] = useState(false)
+  const [isGuiasSubmenuOpen, setIsGuiasSubmenuOpen] = useState(false)
   const [isComprasSubmenuOpen, setIsComprasSubmenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
@@ -51,6 +52,7 @@ export default function AdminLayout() {
     setIsTiendaSubmenuOpen(false)
     setIsCotizSubmenuOpen(false)
     setIsComprasSubmenuOpen(false)
+    setIsGuiasSubmenuOpen(false)
   }
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function AdminLayout() {
   }, [])
 
   // Alternar acordeón exclusivo
-  const toggleAccordion = (key: 'fact' | 'informal' | 'cont' | 'kardex' | 'caja' | 'tienda' | 'cotiz' | 'compras') => {
+  const toggleAccordion = (key: 'fact' | 'informal' | 'cont' | 'kardex' | 'caja' | 'tienda' | 'cotiz' | 'compras' | 'guias') => {
     if (key === 'fact') {
       const next = !isFactSubmenuOpen
       closeAllAccordions()
@@ -103,6 +105,10 @@ export default function AdminLayout() {
       const next = !isComprasSubmenuOpen
       closeAllAccordions()
       setIsComprasSubmenuOpen(next)
+    } else if (key === 'guias') {
+      const next = !isGuiasSubmenuOpen
+      closeAllAccordions()
+      setIsGuiasSubmenuOpen(next)
     }
   }
 
@@ -236,7 +242,7 @@ export default function AdminLayout() {
 
   return (
     <div
-      className="flex overflow-hidden bg-[#F4F5FA] font-sans transition-all duration-300"
+      className="flex overflow-hidden bg-[#fff] font-sans transition-all duration-300"
       style={{
         zoom: isCompact ? '0.8' : '1',
         height: isCompact ? '125vh' : '100vh'
@@ -269,6 +275,9 @@ export default function AdminLayout() {
               </NavLink>
               <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
                 <Icon icon="solar:card-bold-duotone" className="mr-3 text-xl" /> Planes
+              </NavLink>
+              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:widget-bold-duotone" className="mr-3 text-xl" /> Módulos
               </NavLink>
             </>
           )}
@@ -305,16 +314,6 @@ export default function AdminLayout() {
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                         {menuLabels.productosLabel}
                       </NavLink>
-                      {/* Lotes */}
-                      {(() => {
-                        const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
-                        const esFarmacia = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
-                        return esFarmacia ? (
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/lotes" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                            Lotes y Vencimientos
-                          </NavLink>
-                        ) : null;
-                      })()}
                       {/* Combos */}
                       {(() => {
                         const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
@@ -406,6 +405,13 @@ export default function AdminLayout() {
                 </div>
               )}
 
+              {/* Guías de Remisión - Solo para empresas formales */}
+              {hasPermission(auth, 'comprobantes') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Guías de Remisión') }} to="/administrador/guia-remision" className={({ isActive }) => isActive || location.pathname.includes('/administrador/guia-remision') ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:delivery-bold-duotone" className="mr-3 text-xl" /> Guías de Remisión
+                </NavLink>
+              )}
+
               {/* Clientes */}
               {hasPermission(auth, 'clientes') && (
                 <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Clientes') }} to="/administrador/clientes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
@@ -433,9 +439,9 @@ export default function AdminLayout() {
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras" end className={({ isActive }) => isActive && location.pathname === '/administrador/compras' ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                         Gestión de Compras
                       </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                      {/* <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                         Nueva Compra
-                      </NavLink>
+                      </NavLink> */}
                       <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras/proveedores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                         Proveedores
                       </NavLink>

@@ -123,7 +123,7 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
         <div ref={ref} className={styles.date}>
             <div className={disabled && styles.disabled}>
                 <div className={mode === 'flex' ? styles.modeFlex : ''}>
-                    <div className={styles.icon__date} onClick={() => setIsOpen(!isOpen)}>
+                    <div className="absolute top-2 right-2" onClick={() => setIsOpen(!isOpen)}>
                         <Icon icon={Icons.date} />
                     </div>
                 </div>

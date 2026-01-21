@@ -91,10 +91,10 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
 
     return (
         <AutoScrollTable>
-            <div className="shadow-md rounded-lg">
+            <div className="shadow-sm rounded-xl border border-gray-200 bg-white">
                 {
                     data?.length > 0 ?
-                        <table className={`${styles.table} ${isCompact ? styles.compact : ''}`} id={idTable} style={{ backgroundColor: color }}>
+                        <table className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`} id={idTable}>
                             <TableHeader columns={resolvedColumns} colorFont={colorFont} onSort={handleSort} actions={actions} />
                             <TableBody
                                 formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} columns={resolvedColumns} />

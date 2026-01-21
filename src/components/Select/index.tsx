@@ -182,7 +182,7 @@ const Select = ({
                                 <span className={styles.select__loader__icon}></span>
                             </div>
                             :
-                            <div className="absolute z-10 right-3 top-9">
+                            <div className="absolute z-10 right-3 top-10">
                                 <Icon icon="ep:arrow-down-bold" onClick={() => setIsOpen(!isOpen)} />
                             </div>
                     }

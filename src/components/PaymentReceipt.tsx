@@ -160,11 +160,25 @@ const PaymentReceipt = ({
                 <span className="w-1/5 text-[18px]">Importe</span>
               </div>
               {(detalles || comprobante?.data?.detalles || comprobante?.detalles)?.map((item: any, i: any) => (
-                <div key={i} className="flex">
-                  <span className="w-1/5 text-[18px] text-center">{item?.cantidad || 0}</span>
-                  <span className="w-3/5 text-[18px] text-left capitalize">{item?.descripcion?.toLowerCase() || ''}</span>
-                  <span className="w-1/5 text-[18px] text-left">{Number(item?.mtoPrecioUnitario || item?.mtoValorUnitario || 0).toFixed(2)}</span>
-                  <span className="w-1/5 text-[18px] text-right">{Number((item?.mtoPrecioUnitario || 0) * (item?.cantidad || 1)).toFixed(2)}</span>
+                <div key={i} className="flex flex-col mb-1">
+                  <div className="flex">
+                    <span className="w-1/5 text-[18px] text-center">{item?.cantidad || 0}</span>
+                    <span className="w-3/5 text-[18px] text-left capitalize">{item?.descripcion?.toLowerCase() || ''}</span>
+                    <span className="w-1/5 text-[18px] text-left">{Number(item?.mtoPrecioUnitario || item?.mtoValorUnitario || 0).toFixed(2)}</span>
+                    <span className="w-1/5 text-[18px] text-right">{Number((item?.mtoPrecioUnitario || 0) * (item?.cantidad || 1)).toFixed(2)}</span>
+                  </div>
+                  {/* Mostrar Lote y Vencimiento si existen */}
+                  {(item?.lotes && Array.isArray(item.lotes) && item.lotes.length > 0) ? (
+                    item.lotes.map((lote: any, lIdx: number) => (
+                      <div key={lIdx} className="text-left w-full pl-8 text-[16px]">
+                        LOTE: {lote.lote} | VENC: {new Date(lote.fechaVencimiento).toLocaleDateString('es-PE')}
+                      </div>
+                    ))
+                  ) : item?.lote ? (
+                    <div className="text-left w-full pl-8 text-[16px]">
+                      LOTE: {item.lote} {item.fechaVencimiento ? `| VENC: ${new Date(item.fechaVencimiento).toLocaleDateString('es-PE')}` : ''}
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>

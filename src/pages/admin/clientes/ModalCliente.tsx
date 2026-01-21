@@ -126,8 +126,8 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
 
     return (
         <div>
-            {isOpenModal && <Modal width="750px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar cliente" : "Nuevo cliente"}>
-                <div className="md:px-6 grid md:grid-cols-2 mt-5 gap-5">
+            {isOpenModal && <Modal width="600px" height="auto" position="right" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar cliente" : "Nuevo cliente"}>
+                <div className="md:px-6 grid grid-cols-1 mt-5 gap-5">
                     <div className="">
                         <InputPro autocomplete="off" error={errors.nroDoc} value={formValues?.nroDoc} name="nroDoc" onChange={handleChange} isLabel label="Nro. documento" />
                     </div>
@@ -147,7 +147,7 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
                         <InputPro autocomplete="off" value={formValues?.telefono} error={errors.telefono} name="phone" onChange={handleChange} isLabel label="Celular" />
                     </div>
                     <div className="col-start-1 col-end-3">
-                        <SelectUbigeo value={`${formValues?.departamento}/${formValues?.provincia}/${formValues?.distrito}`} isSearch options={ubigeos} name="nombreUbigeo" id="ubigeo" onChange={handleChangeSelect} label="Seleccionar ubigeo de la empresa" />
+                        <SelectUbigeo value={formValues?.departamento ? `${formValues?.departamento}/${formValues?.provincia}/${formValues?.distrito}` : ""} isSearch options={ubigeos} name="nombreUbigeo" id="ubigeo" onChange={handleChangeSelect} label="Seleccionar ubigeo de la empresa" />
                     </div>
                 </div>
                 <div className="flex gap-5 justify-end mt-10 mb-5 md:pr-5">

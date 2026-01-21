@@ -32,16 +32,14 @@
 }
 
 .table tbody tr td {
-    background: #fff;
-    font-size: 12px;
-    padding: 8px 13px !important;
+    /* background: #fff; Removed to allow hover effects */
+    font-size: 13px;
+    /* Slightly larger default */
+    /* padding: 8px 13px !important; Removed !important */
     vertical-align: middle;
-    z-index: 9999999;
     color: #686868;
-    /* font-family: 'Helvetica Now Display'; */
     white-space: nowrap;
     font-weight: 500;
-    text-transform: uppercase;
 }
 
 /* Only apply flex to action buttons container, not all divs */

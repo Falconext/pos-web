@@ -64,14 +64,14 @@
 }
 
 .content__listOptions li:hover {
-    background-color: #F0EEFD;
+    background-color: #f3f4f6;
     /* font-family: 'Helvetica Neue' !important; */
-    color: rgb(12, 12, 12);
+    color: #111827;
     transition: 0.2s;
 }
 
 .content__listOptions li:hover p {
-    color: #6A6CFF;
+    color: #111827;
 }
 
 .content__listOptions p {
@@ -83,7 +83,7 @@
     cursor: pointer !important;
     transition: 0.2s;
     padding: 10px;
-    color: #5e6278;
+    color: #374151;
 }
 
 .content__listOptions input {
@@ -96,13 +96,13 @@
 }
 
 .selectedOption {
-    background-color: #F0EEFD;
-    color: #6A6CFF !important;
+    background-color: #f3f4f6;
+    color: #111827 !important;
     transition: 0.2s;
 }
 
 .selectedOption p {
-    color: #6A6CFF !important;
+    color: #111827 !important;
 }
 
 .content__listOptions input:focus-within,

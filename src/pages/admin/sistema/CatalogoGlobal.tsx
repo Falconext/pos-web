@@ -432,18 +432,18 @@ const CatalogoGlobal = () => {
                                         type="checkbox"
                                         checked={selectedIds.includes(p.id)}
                                         onChange={() => toggleSelect(p.id)}
-                                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                                     />
                                 </div>
                             ),
                             'imagen': p.imagenUrl ? (
-                                <div className="h-12 w-12 bg-white border border-gray-200 rounded-md overflow-hidden flex items-center justify-center shadow-sm">
+                                <div className="h-16 w-16 bg-white border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center shadow-sm">
                                     <a href={p.imagenUrl} target="_blank" rel="noopener noreferrer" className="w-full h-full flex items-center justify-center">
                                         <img
                                             src={p.imagenUrl}
                                             alt={p.nombre}
                                             referrerPolicy="no-referrer"
-                                            className="h-full w-full object-contain"
+                                            className="h-full w-full object-contain p-1"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
                                                 target.style.display = 'none';
@@ -457,12 +457,12 @@ const CatalogoGlobal = () => {
                                 </div>
                             ) : (
                                 processingId === p.id ? (
-                                    <div className="h-12 w-12 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center animate-pulse">
-                                        <Icon icon="mdi:loading" className="text-blue-500 w-5 h-5 animate-spin" />
+                                    <div className="h-16 w-16 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center animate-pulse">
+                                        <Icon icon="mdi:loading" className="text-blue-500 w-6 h-6 animate-spin" />
                                     </div>
                                 ) : (
-                                    <div className="h-12 w-12 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center">
-                                        <Icon icon="solar:gallery-linear" className="text-gray-300 w-5 h-5" />
+                                    <div className="h-16 w-16 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center">
+                                        <Icon icon="solar:gallery-linear" className="text-gray-300 w-6 h-6" />
                                     </div>
                                 )
                             ),
@@ -474,7 +474,12 @@ const CatalogoGlobal = () => {
                             ) : (
                                 <span className="text-gray-300 text-xs italic">S/M</span>
                             ),
-                            'categoría': p.categoria ? <span className="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-100">{p.categoria}</span> : '-',
+                            'categoría': p.categoria ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600">
+                                    <Icon icon="solar:tag-linear" width={12} />
+                                    {p.categoria}
+                                </span>
+                            ) : '-',
                             'rubro': p.rubro?.nombre || '-',
                             'precio sug.': <span className="font-semibold text-gray-700">S/ {Number(p.precioSugerido).toFixed(2)}</span>,
                         }))}
