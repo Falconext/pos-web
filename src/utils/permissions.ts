@@ -61,7 +61,7 @@ export const getAvailableModules = (user: IUserPermissions | null): string[] => 
   if (!user) return [];
 
   // Módulos base del sistema
-  let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones'];
+  let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones', 'guia_remision', 'compras'];
 
   // Si es admin del sistema, tiene todo
   if (user.rol === 'ADMIN_SISTEMA') return allModules;
@@ -123,6 +123,8 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       caja: '/administrador/caja',
       pagos: '/administrador/pagos',
       cotizaciones: '/administrador/cotizaciones',
+      guia_remision: '/administrador/guia-remision',
+      compras: '/administrador/compras',
       dashboard: '/administrador'
     };
 

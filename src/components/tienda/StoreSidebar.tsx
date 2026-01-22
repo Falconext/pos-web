@@ -88,11 +88,12 @@ export default function StoreSidebar({
                         <p className="text-sm text-gray-400 italic">No hay categorías</p>
                     ) : (
                         categories.map((cat) => {
-                            const isSelected = selectedCats.includes(cat);
+                            const catName = typeof cat === 'object' ? (cat as any).nombre || (cat as any).codigo : cat;
+                            const isSelected = selectedCats.includes(catName);
                             return (
                                 <div
-                                    key={cat}
-                                    onClick={() => toggleCat(cat)}
+                                    key={catName}
+                                    onClick={() => toggleCat(catName)}
                                     className="flex items-center gap-3 cursor-pointer group select-none py-1"
                                 >
                                     {/* Checkbox */}
@@ -101,7 +102,7 @@ export default function StoreSidebar({
                                     </div>
                                     {/* Label */}
                                     <span className={`text-sm transition-colors ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-800'}`}>
-                                        {cat}
+                                        {catName}
                                     </span>
                                 </div>
                             );

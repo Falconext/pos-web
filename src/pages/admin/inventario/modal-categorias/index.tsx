@@ -9,6 +9,9 @@ import { IFormCategories } from "@/interfaces/categories"
 import ModalConfirm from "@/components/ModalConfirm"
 import InputPro from "@/components/InputPro"
 import Button from "@/components/Button"
+import ImageUploader from "@/components/ImageUploader"
+import apiClient from "@/utils/apiClient"
+import useAlertStore from "@/zustand/alert"
 
 interface IPropsProducts {
     isOpenModal: boolean
@@ -46,6 +49,9 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
         nombre: ""
     });
 
+    const [fileImage, setFileImage] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
     const validateForm = () => {
         const newErrors: any = {
             nombre: formValues?.nombre && formValues?.nombre.trim() !== "" ? "" : "El nombre de categoría es obligatorio",
@@ -67,15 +73,17 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
             setFormValues(initialForm);
             setIsEdit(false);
             setErrors({ nombre: "" });
+            setFileImage(null);
+            setPreviewUrl(null);
         }
         getAllCategories({})
     }, [isOpenModal]) // Added isOpenModal to reset on open
 
     const handleGetCategory = (data: IFormCategories) => {
-        console.log('[DEBUG] handleGetCategory data:', data);
         setFormValues({
             categoriaId: data.categoriaId,
-            nombre: data.nombre
+            nombre: data.nombre,
+            imagenUrl: data.imagenUrl
         })
         setIsEdit(true);
         setErrors({ nombre: "" });
@@ -116,20 +124,42 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
             }
         ]
 
-    const handleSubmitCategory = () => {
+    const handleSubmitCategory = async () => {
         if (!validateForm()) {
             return;
         }
 
+        let response: any;
         if (isEdit && formValues.categoriaId !== 0) {
-            editCategory(formValues)
+            response = await editCategory(formValues)
         } else {
-            addCategory(formValues)
+            response = await addCategory(formValues)
         }
-        // Store handles success alert, but we should reset form after success or keep it?
-        // Usually reset. 
+
+        if (response && response.id && fileImage) {
+            try {
+                const fd = new FormData();
+                fd.append('file', fileImage);
+                const url = `/categoria/${response.id}/imagen`;
+                await apiClient.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                useAlertStore.getState().alert('Imagen subida correctamente', 'success');
+                // Refrescar categorias para mostrar la nueva imagen
+                getAllCategories({});
+            } catch (error: any) {
+                console.error(error);
+                useAlertStore.getState().alert('Error al subir la imagen', 'error');
+            }
+        }
+
         setFormValues(initialForm)
+        setFileImage(null)
+        setPreviewUrl(null)
         setIsEdit(false)
+        if (!fileImage) {
+            // Si no hubo imagen para subir, cerramos el modal aqui (si hubo, el alert de success ya cerro o refresco?)
+            // Mejor cerrar siempre
+            setIsOpenModal(false);
+        }
     }
 
     console.log(categories)
@@ -150,24 +180,44 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
     return (
         <>
             {isOpenModal && <Modal width="650px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar categoria" : "Nueva categoria"}>
-                <div className="px-6 mt-5 grid grid-cols-2 justify-between items-center border-b border-[#e5e7eb] pb-10">
-                    <div className="">
-                        <InputPro
-                            key={`input-cat-${formValues.categoriaId}`}
-                            autocomplete="off"
-                            value={formValues.nombre || ''}
-                            error={errors.nombre}
-                            name="nombre"
-                            onChange={handleChange}
-                            isLabel
-                            label="Nombre de la categoría"
-                        />
+                <div className="px-6 mt-5 grid grid-cols-1 gap-6 border-b border-[#e5e7eb] pb-6">
+                    <div className="flex flex-col gap-4">
+                        <div className="w-full">
+                            <InputPro
+                                key={`input-cat-${formValues.categoriaId}`}
+                                autocomplete="off"
+                                value={formValues.nombre || ''}
+                                error={errors.nombre}
+                                name="nombre"
+                                onChange={handleChange}
+                                isLabel
+                                label="Nombre de la categoría"
+                            />
+                        </div>
+
+                        <div className="w-full">
+                            <ImageUploader
+                                label="Imagen de la Categoría"
+                                previewUrl={previewUrl || formValues.imagenUrl || null}
+                                onFileSelect={(file) => {
+                                    setFileImage(file);
+                                    setPreviewUrl(URL.createObjectURL(file));
+                                }}
+                                onRemove={() => {
+                                    setFileImage(null);
+                                    setPreviewUrl(null);
+                                }}
+                            />
+                        </div>
                     </div>
-                    <div className="flex justify-end gap-5 mt-10 relative top-[-7px]">
+
+                    <div className="flex justify-end gap-3">
                         <Button color="black" outline onClick={() => {
                             setIsEdit(false)
                             setFormValues(initialForm)
                             setErrors({ nombre: "" })
+                            setFileImage(null)
+                            setPreviewUrl(null)
                         }}>Limpiar</Button>
                         <Button color="secondary" onClick={handleSubmitCategory}>{isEdit ? "Editar" : "Guardar"}</Button>
                     </div>

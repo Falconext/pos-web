@@ -11,8 +11,8 @@ interface AutoScrollTableProps {
 
 const AutoScrollTable = ({
     children,
-    scrollSpeed = 100,
-    intervalTime = 0,
+    scrollSpeed = 300,
+    intervalTime = 10,
 }: AutoScrollTableProps) => {
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const [isScrollingRight, setIsScrollingRight] = useState(false);

@@ -1085,7 +1085,7 @@ const Invoice = () => {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div className="col-span-2 flex items-center justify-center gap-3">
+                        <div className="col-span-1 md:col-span-2 flex items-center justify-center gap-3">
                             <Select
                                 value={formValues?.comprobante}
                                 isSearch options={comprobantesGenerar}
@@ -1109,7 +1109,7 @@ const Invoice = () => {
 
                         {/* Tipo de Operación y Detracción */}
                         {(!["NOTA DE CREDITO", "NOTA DE DEBITO", "COTIZACIÓN"].includes(formValues?.comprobante)) && (
-                            <div className="col-span-2 space-y-2 mt-2">
+                            <div className="col-span-1 md:col-span-2 space-y-2 mt-0 md:mt-2">
                                 <div>
                                     <Select
                                         value={tiposOperacion.find((op: any) => Number(op.id) === Number(formValues.motivoId))?.descripcion || ""}
@@ -1362,65 +1362,81 @@ const Invoice = () => {
                         </div>
                     ) : (
                         productsInvoice.map((item: any, index: number) => (
-                            <div key={index} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-dashed border-gray-200 hover:border-gray-900/30 transition-colors group">
-                                <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    {item.imagenUrl ? <img src={item.imagenUrl} className="w-full h-full object-contain rounded-lg" /> : <Icon icon="solar:box-linear" className="text-gray-400" />}
+                            <div key={index} className="flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-white p-3 md:p-2 rounded-xl border border-dashed border-gray-200 hover:border-gray-900/30 transition-colors group relative">
+                                {/* Top Section: Image & Description (Mobile: Top, Desktop: Left) */}
+                                <div className="flex items-start md:items-center gap-3 w-full md:w-auto md:flex-1">
+                                    <div className="w-16 h-16 md:w-12 md:h-12 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-full h-full object-contain rounded-lg" /> : <Icon icon="solar:box-linear" className="text-gray-400" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h5 className="font-bold text-gray-800 text-sm md:text-sm line-clamp-2 md:line-clamp-1 leading-tight md:leading-normal mb-1 md:mb-0">{item.descripcion}</h5>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                            <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 font-medium">PU: S/{Number(item.precioUnitario).toFixed(2)}</span>
+                                            {Number(item.descuento) > 0 && <span className="text-green-600 font-bold">-{item.descuento}%</span>}
+                                        </div>
+                                    </div>
+                                    {/* Mobile Only Delete Button (Top Right) */}
+                                    <button onClick={() => deleteProductInvoice(item)} className="md:hidden text-gray-400 hover:text-red-500 p-1 -mt-1 -mr-1">
+                                        <Icon icon="solar:trash-bin-trash-linear" width={20} />
+                                    </button>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <h5 className="font-bold text-gray-800 text-sm line-clamp-1">{item.descripcion}</h5>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        <span>PU: S/{Number(item.precioUnitario).toFixed(2)}</span>
-                                        {Number(item.descuento) > 0 && <span className="text-green-600">-{item.descuento}%</span>}
+
+                                {/* Bottom Section: Controls & Total (Mobile: Bottom, Desktop: Right) */}
+                                <div className="flex items-center justify-between gap-3 w-full md:w-auto">
+                                    {/* Qty Controls */}
+                                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                                        <button
+                                            onClick={() => {
+                                                if (item.cantidad > 1) {
+                                                    const index = productsInvoice.indexOf(item);
+                                                    updateProductInvoice(index, calculateLineItem(item, Number(item.cantidad) - 1));
+                                                } else {
+                                                    deleteProductInvoice(item)
+                                                }
+                                            }}
+                                            className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900 active:scale-95 transition-transform"
+                                        >
+                                            <Icon icon="solar:minus-circle-linear" width={18} />
+                                        </button>
+                                        <span className="w-10 md:w-8 text-center font-bold text-sm">{item.cantidad}</span>
+                                        <button
+                                            onClick={() => {
+                                                const index = productsInvoice.indexOf(item);
+                                                const newQty = Number(item.cantidad) + 1;
+                                                if (item.stock < newQty) return useAlertStore.getState().alert("Max stock alcanzado", "warning");
+                                                updateProductInvoice(index, calculateLineItem(item, newQty));
+                                            }}
+                                            className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900 active:scale-95 transition-transform"
+                                        >
+                                            <Icon icon="solar:add-circle-linear" width={18} />
+                                        </button>
+                                    </div>
+
+                                    {/* Price & Actions Wrapper */}
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right min-w-[70px]">
+                                            <p className="font-extrabold text-gray-900 text-base md:text-sm">S/ {Number(item.total).toFixed(2)}</p>
+                                        </div>
+
+                                        {/* Desktop Actions */}
+                                        <div className="flex items-center">
+                                            <button onClick={() => setEditingIndex(index)} className="text-gray-900/50 hover:text-gray-900 p-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <Icon icon="solar:pen-new-square-linear" width={20} />
+                                            </button>
+                                            <button onClick={() => deleteProductInvoice(item)} className="hidden md:block text-red-400 hover:text-red-600 p-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <Icon icon="hugeicons:delete-02" width={20} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Qty Controls */}
-                                <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                                    <button
-                                        onClick={() => {
-                                            if (item.cantidad > 1) {
-                                                const index = productsInvoice.indexOf(item);
-                                                updateProductInvoice(index, calculateLineItem(item, Number(item.cantidad) - 1));
-                                            } else {
-                                                deleteProductInvoice(item)
-                                            }
-                                        }}
-                                        className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900"
-                                    >
-                                        <Icon icon="solar:minus-circle-linear" />
-                                    </button>
-                                    <span className="w-8 text-center font-bold text-sm">{item.cantidad}</span>
-                                    <button
-                                        onClick={() => {
-                                            const index = productsInvoice.indexOf(item);
-                                            const newQty = Number(item.cantidad) + 1;
-                                            if (item.stock < newQty) return useAlertStore.getState().alert("Max stock alcanzado", "warning");
-                                            updateProductInvoice(index, calculateLineItem(item, newQty));
-                                        }}
-                                        className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900"
-                                    >
-                                        <Icon icon="solar:add-circle-linear" />
-                                    </button>
-                                </div>
-
-                                <div className="text-right min-w-[60px]">
-                                    <p className="font-bold text-gray-900">S/ {Number(item.total).toFixed(2)}</p>
-                                </div>
-
-                                <button onClick={() => setEditingIndex(index)} className="text-gray-900/50 hover:text-gray-900 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
-                                    <Icon icon="solar:pen-new-square-linear" width={20} />
-                                </button>
-                                <button onClick={() => deleteProductInvoice(item)} className="text-red-400 hover:text-red-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
-                                    <Icon icon="hugeicons:delete-02" width={20} />
-                                </button>
                             </div>
                         ))
                     )}
                 </div>
 
                 {/* Calculations Section */}
-                <div className="p-5 pt-2 bg-gray-50 border-t border-gray-100">
-                    <div className="space-y-2 mb-4">
+                <div className="p-3 pt-2 md:p-5 bg-gray-50 border-t border-gray-100">
+                    <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
                         <div className="flex justify-between text-sm text-gray-500">
                             <span>Op. Gravada</span>
                             <span>S/ {opGravadaAdjusted.toFixed(2)}</span>
@@ -1488,14 +1504,14 @@ const Invoice = () => {
                     )}
 
                     {/* Payment Methods */}
-                    <div className="mb-4">
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Metodo de Pago</label>
+                    <div className="mb-3 md:mb-4">
+                        <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2 block">Metodo de Pago</label>
                         <div className="grid grid-cols-4 gap-2">
                             {metodosContado.map((m) => (
                                 <button
                                     key={m}
                                     onClick={() => setPaymentMethod(m)}
-                                    className={`p-2 rounded-xl text-xs font-bold transition-all border ${paymentMethod === m ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'}`}
+                                    className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${paymentMethod === m ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'}`}
                                 >
                                     {m}
                                 </button>
@@ -1515,12 +1531,12 @@ const Invoice = () => {
                         )}
                         <button
                             onClick={() => handleOpenNewTab("vista previa")}
-                            className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm"
+                            className="flex-1 py-2.5 md:py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-xs md:text-sm"
                         >
                             <Icon icon="solar:eye-linear" className="text-lg" />
                             PREVIA
                         </button>
-                        <button onClick={addInvoiceReceipt} className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 text-sm">
+                        <button onClick={addInvoiceReceipt} className="flex-1 py-2.5 md:py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 text-xs md:text-sm">
                             <Icon icon="solar:printer-minimalistic-bold" className="text-lg" />
                             {isMobile ? "EMITIR" : "EMITIR"}
                         </button>

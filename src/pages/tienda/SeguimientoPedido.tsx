@@ -133,7 +133,7 @@ export default function SeguimientoPedido() {
     };
 
     return (
-        <div className={`min-h-screen bg-gray-50 py-8 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
+        <div className={`min-h-screen bg-gray-50 py-8 ${fontFamily}`} style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'sans-serif') }}>
             <div className="max-w-3xl mx-auto px-4">
                 {/* Encabezado */}
                 <div className="flex items-center gap-3 mb-6">
@@ -144,7 +144,7 @@ export default function SeguimientoPedido() {
                     >
                         <Icon icon="mdi:chevron-left" className="w-6 h-6" />
                     </button>
-                    <h1 className="text-2xl md:text-3xl font-bold">Order status</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold">Estado del pedido</h1>
                 </div>
 
                 {/* Formulario de búsqueda */}
@@ -275,16 +275,18 @@ export default function SeguimientoPedido() {
                                         Contactar al negocio
                                     </a>
                                 )}
+
+
+                                {/* Botón Volver */}
+                                <button
+                                    onClick={() => navigate(`/tienda/${slug}`)}
+                                    className={`w-full text-[#EA570C] mt-3 py-3 ${btnRadius} font-semibold`}
+                                    style={{ backgroundColor: diseno.colorPrimario || '#FFF7EC' }}
+                                >
+                                    Volver a la Tienda
+                                </button>
                             </div>
 
-                            {/* Botón Volver */}
-                            <button
-                                onClick={() => navigate(`/tienda/${slug}`)}
-                                className={`w-full py-3 ${btnRadius} text-white font-semibold`}
-                                style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
-                            >
-                                Volver a la Tienda
-                            </button>
                         </div>
                     );
                 })()}

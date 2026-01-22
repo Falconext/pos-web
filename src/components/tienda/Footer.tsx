@@ -7,87 +7,137 @@ interface FooterProps {
 
 export default function Footer({ tienda, diseno }: FooterProps) {
     const year = new Date().getFullYear();
-    const textColor = diseno.colorPrimario || '#000';
+    const primaryColor = diseno.colorPrimario || '#045659';
+    const accentColor = '#ff9900'; // Naranja para botón de suscribir y hovers
 
     return (
-        <footer className="bg-white border-t border-gray-100 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 py-12">
-                <div className="grid md:grid-cols-3 gap-8 mb-8">
-                    {/* Columna 1: Info Tienda */}
-                    <div>
-                        <h3 className="font-bold text-lg mb-4" style={{ color: textColor }}>{tienda.nombreComercial || 'Nuestra Tienda'}</h3>
-                        <p className="text-gray-500 text-sm mb-4 max-w-xs">
-                            {tienda.descripcionTienda || 'Los mejores productos para ti, con la calidad y garantía que mereces.'}
+        <footer className="bg-[#002626] text-gray-300 font-sans mt-auto border-t border-[#045659]/30">
+            {/* Main Footer Content */}
+            <div className="max-w-screen-xl mx-auto px-6 py-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+
+                    {/* Column 1: Brand & Subscribe */}
+                    <div className="space-y-6">
+                        {/* Brand */}
+                        <div className="mb-4">
+                            {tienda.logo ? (
+                                <img src={tienda.logo} alt={tienda.nombreComercial} className="h-16 w-auto object-contain bg-white/10 p-2 rounded-lg backdrop-blur-sm" />
+                            ) : (
+                                <h2 className="text-3xl font-bold text-white tracking-tight">{tienda.nombreComercial || 'FalconStore'}</h2>
+                            )}
+                        </div>
+
+                        <p className="text-sm leading-relaxed text-gray-400">
+                            {tienda.descripcionTienda || 'Construimos experiencias de comercio electrónico escalables y de alto rendimiento.'}
                         </p>
-                        <div className="flex gap-3">
-                            {tienda.facebookUrl && (
-                                <a href={tienda.facebookUrl} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors">
-                                    <Icon icon="mdi:facebook" width={24} />
-                                </a>
-                            )}
-                            {tienda.instagramUrl && (
-                                <a href={tienda.instagramUrl} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-pink-600 transition-colors">
-                                    <Icon icon="mdi:instagram" width={24} />
-                                </a>
-                            )}
-                            {tienda.tiktokUrl && (
-                                <a href={tienda.tiktokUrl} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors">
-                                    <Icon icon="ic:baseline-tiktok" width={24} />
-                                </a>
-                            )}
-                            {tienda.whatsappTienda && (
-                                <a href={`https://wa.me/${tienda.whatsappTienda.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-green-600 transition-colors">
-                                    <Icon icon="mdi:whatsapp" width={24} />
-                                </a>
-                            )}
+
+                        {/* Social Media */}
+                        <div className="pt-4 space-y-3">
+                            <h4 className="text-white font-bold text-sm">Redes Sociales</h4>
+                            <div className="flex gap-3">
+                                {tienda.facebookUrl && (
+                                    <a href={tienda.facebookUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
+                                        <Icon icon="ic:baseline-facebook" width={20} className="text-white group-hover:scale-110 transition-transform" />
+                                    </a>
+                                )}
+                                {tienda.instagramUrl && (
+                                    <a href={tienda.instagramUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
+                                        <Icon icon="mdi:instagram" width={20} className="text-white group-hover:scale-110 transition-transform" />
+                                    </a>
+                                )}
+                                {tienda.tiktokUrl && (
+                                    <a href={tienda.tiktokUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
+                                        <Icon icon="ic:baseline-tiktok" width={20} className="text-white group-hover:scale-110 transition-transform" />
+                                    </a>
+                                )}
+                                {tienda.linkedinUrl && (
+                                    <a href={tienda.linkedinUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
+                                        <Icon icon="mdi:linkedin" width={20} className="text-white group-hover:scale-110 transition-transform" />
+                                    </a>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Columna 2: Enlaces Rápidos */}
+                    {/* Column 2: Information */}
                     <div>
-                        <h3 className="font-bold text-lg mb-4" style={{ color: textColor }}>Enlaces</h3>
-                        <ul className="space-y-2 text-sm text-gray-500">
-                            <li><a href="#" className="hover:text-gray-900 transition-colors">Inicio</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition-colors">Catálogo</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition-colors">Ofertas</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition-colors">Contacto</a></li>
+                        <h3 className="text-white font-bold text-lg mb-6">Información</h3>
+                        <ul className="space-y-4 text-sm">
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Sobre Nosotros</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Información de Delivery</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Políticas de Privacidad</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Términos y Condiciones</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Política de Devoluciones</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Ser Vendedor</a></li>
                         </ul>
                     </div>
 
-                    {/* Columna 3: Contacto */}
+                    {/* Column 3: Quick Links */}
                     <div>
-                        <h3 className="font-bold text-lg mb-4" style={{ color: textColor }}>Contacto</h3>
-                        <ul className="space-y-3 text-sm text-gray-500">
-                            {tienda.direccion && (
-                                <li className="flex items-start gap-2">
-                                    <Icon icon="mdi:map-marker" className="flex-shrink-0 mt-0.5" />
-                                    <span>{tienda.direccion}</span>
-                                </li>
-                            )}
+                        <h3 className="text-white font-bold text-lg mb-6">Enlaces Rápidos</h3>
+                        <ul className="space-y-4 text-sm">
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Mi Cuenta</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Carrito de Compras</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Lista de Deseos</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Historial de Pedidos</a></li>
+                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Pedidos Internacionales</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Column 4: My Accounts (Adapted to Store Info) */}
+                    <div>
+                        <h3 className="text-white font-bold text-lg mb-6">Contacto & Ayuda</h3>
+                        <ul className="space-y-4 text-sm">
                             {tienda.whatsappTienda && (
-                                <li className="flex items-center gap-2">
-                                    <Icon icon="mdi:phone" className="flex-shrink-0" />
-                                    <span>{tienda.whatsappTienda}</span>
+                                <li className="flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-[#043d3d] flex items-center justify-center flex-shrink-0">
+                                        <Icon icon="mdi:whatsapp" className="text-[#ff9900]" />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-gray-500">Whatsapp</div>
+                                        <div className="text-white font-medium">{tienda.whatsappTienda}</div>
+                                    </div>
                                 </li>
                             )}
-                            <li className="flex items-center gap-2">
-                                <Icon icon="mdi:clock-outline" className="flex-shrink-0" />
-                                <span>{tienda.horarioAtencion || 'Lun - Dom: 9am - 6pm'}</span>
+                            <li className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#043d3d] flex items-center justify-center flex-shrink-0">
+                                    <Icon icon="mdi:email-outline" className="text-[#ff9900]" />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Email</div>
+                                    <div className="text-white font-medium">{tienda.correo || tienda.email || 'soporte@falconext.com'}</div>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#043d3d] flex items-center justify-center flex-shrink-0">
+                                    <Icon icon="mdi:map-marker-outline" className="text-[#ff9900]" />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Ubicación</div>
+                                    <div className="text-white font-medium">{tienda.direccion || 'Lima, Perú'}</div>
+                                </div>
                             </li>
                         </ul>
                     </div>
-                </div>
 
-                <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-xs text-gray-400">
-                        &copy; {year} {tienda.nombreComercial}. Todos los derechos reservados.
+                </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="border-t border-[#045659]/30 bg-[#001f1f]">
+                <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p className="text-sm text-gray-400">
+                        &copy; {year} <span className="text-[#ff9900] font-bold">Falconext</span>. Todos los derechos reservados.
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span>Powered by</span>
-                        <a href="https://falconnext.com" target="_blank" rel="noreferrer" className="font-bold text-gray-600 hover:text-blue-600 flex items-center gap-1 transition-colors">
-                            <Icon icon="mdi:lightning-bolt" className="text-yellow-500" />
-                            FalconNext
-                        </a>
+
+                    {/* Payment Icons */}
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white px-3 py-1 rounded h-8 min-w-[50px] flex items-center justify-center overflow-hidden shadow-sm">
+                            <span className="text-xs font-black text-[#7D00FF]">Yape</span>
+                        </div>
+                        <div className="bg-white px-3 py-1 rounded h-8 min-w-[50px] flex items-center justify-center overflow-hidden shadow-sm">
+                            <span className="text-xs font-black text-[#00C8FF]">Plin</span>
+                        </div>
                     </div>
                 </div>
             </div>

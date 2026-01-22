@@ -8,16 +8,14 @@ import ModalConfirm from "@/components/ModalConfirm";
 import InputPro from "@/components/InputPro";
 import Button from "@/components/Button";
 import { useBrandsStore } from "@/zustand/brands";
+import CircularImageUploader from "@/components/CircularImageUploader";
+import apiClient from "@/utils/apiClient";
+import useAlertStore from "@/zustand/alert";
 
 interface IPropsMarcas {
   isOpenModal: boolean;
   closeModal: any;
   setIsOpenModal: Dispatch<boolean>;
-}
-
-interface IFormMarca {
-  id: number;
-  nombre: string;
 }
 
 // Sub-component: Formulario de Marca
@@ -28,10 +26,24 @@ const BrandForm = ({ closeModal }: { closeModal: any }) => {
   const setIsEdit = useBrandsStore(state => state.setIsEdit);
   const addBrand = useBrandsStore(state => state.addBrand);
   const editBrand = useBrandsStore(state => state.editBrand);
+  const updateBrandImage = useBrandsStore(state => state.updateBrandImage);
 
   const [errors, setErrors] = useState({ nombre: "" });
   const [loading, setLoading] = useState(false);
-  const initialForm: IFormMarca = { id: 0, nombre: "" };
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const initialForm: { id: number; nombre: string; imagenUrl?: string } = { id: 0, nombre: "", imagenUrl: "" };
+
+  useEffect(() => {
+    // Sync local preview with store formValues
+    if (formValues.imagenUrl) {
+      setPreviewUrl(formValues.imagenUrl);
+    } else {
+      setPreviewUrl(null);
+    }
+    setImageFile(null);
+  }, [formValues.id, formValues.imagenUrl]);
 
   const validateForm = () => {
     const newErrors: any = {
@@ -51,35 +63,72 @@ const BrandForm = ({ closeModal }: { closeModal: any }) => {
     if (!validateForm()) return;
     try {
       setLoading(true);
+      let brand: any;
+
       if (isEdit && formValues.id !== 0) {
-        await editBrand({ id: formValues.id, nombre: formValues.nombre.trim() });
+        brand = await editBrand({ id: formValues.id, nombre: formValues.nombre.trim() });
       } else {
-        await addBrand({ nombre: formValues.nombre.trim() });
+        brand = await addBrand({ nombre: formValues.nombre.trim() });
       }
+
+      // Handle Image Upload
+      const entityId = brand?.id || (isEdit ? formValues.id : null);
+      if (imageFile && entityId) {
+        const fd = new FormData();
+        fd.append('file', imageFile);
+
+        const imgResp = await apiClient.post(`/marca/${entityId}/imagen`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        if (imgResp.data?.url) {
+          updateBrandImage(entityId, imgResp.data.url);
+        }
+      }
+
       setFormValues(initialForm);
       setIsEdit(false);
+      setImageFile(null);
+      setPreviewUrl(null);
+      // Refresh list not needed as store updates locally, but image might need reload if not returning url
+      // For now, assume consistent.
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="px-6 mt-5 grid grid-cols-2 justify-between items-center border-b border-[#e5e7eb] pb-10">
-      <div>
-        <InputPro
-          key={`input-marca-${formValues.id}`}
-          autocomplete="off"
-          value={formValues.nombre || ''}
-          error={errors.nombre}
-          name="nombre"
-          onChange={handleChange}
-          isLabel
-          label="Nombre de la marca"
-        />
-      </div>
-      <div className="flex justify-end gap-5 mt-10 relative top-[-7px]">
-        <Button color="black" outline onClick={() => { setIsEdit(false); setFormValues(initialForm); setErrors({ nombre: "" }); }}>Limpiar</Button>
-        <Button color="secondary" disabled={loading} onClick={handleSubmitMarca}>{isEdit ? "Editar" : "Guardar"}</Button>
+    <div className="px-6 mt-5">
+      <div className="flex flex-col md:flex-row gap-6 items-start border-b border-[#e5e7eb] pb-10">
+        <div className="flex-shrink-0">
+          <CircularImageUploader
+            imageUrl={previewUrl}
+            onFileSelect={(file) => {
+              setImageFile(file);
+              setPreviewUrl(URL.createObjectURL(file));
+            }}
+          />
+        </div>
+
+        <div className="w-full flex-1">
+          <InputPro
+            key={`input-marca-${formValues.id}`}
+            autocomplete="off"
+            value={formValues.nombre || ''}
+            error={errors.nombre}
+            name="nombre"
+            onChange={handleChange}
+            isLabel
+            label="Nombre de la marca"
+          />
+        </div>
+
+        <div className="md:col-span-2 flex justify-end gap-5 mt-5 md:mt-7 relative">
+          <Button color="black" outline onClick={() => { setIsEdit(false); setFormValues(initialForm); setErrors({ nombre: "" }); }}>Limpiar</Button>
+          <Button color="secondary" disabled={loading} onClick={handleSubmitMarca}>{isEdit ? "Editar" : "Guardar"}</Button>
+        </div>
       </div>
     </div>
   );
@@ -89,18 +138,13 @@ const BrandForm = ({ closeModal }: { closeModal: any }) => {
 const BrandList = () => {
   const marcas = useBrandsStore(state => state.brands);
   const deleteBrand = useBrandsStore(state => state.deleteBrand);
-  // Los setters son estables, no causan re-render si se seleccionan así, 
-  // pero "useBrandsStore()" entero sí. Por eso seleccionamos las funciones específicas.
   const setFormValues = useBrandsStore(state => state.setFormValues);
   const setIsEdit = useBrandsStore(state => state.setIsEdit);
 
   const [currentPage, setcurrentPage] = useState(1);
-  const [itemsPerPage, setitemsPerPage] = useState(50);
+  const [itemsPerPage, setitemsPerPage] = useState(10);
   const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
-  const [loadingAction, setLoadingAction] = useState(false);
-
-  // Estado local para guardar qué item se va a eliminar (para el modal de confirmación)
-  const [itemToDelete, setItemToDelete] = useState<IFormMarca | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: number; nombre: string } | null>(null);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -110,8 +154,7 @@ const BrandList = () => {
   }
 
   const handleGetMarca = (data: any) => {
-    console.log('[DEBUG] handleGetMarca data:', data);
-    setFormValues({ id: data.id, nombre: data.nombre });
+    setFormValues({ id: data.id, nombre: data.nombre, imagenUrl: data.imagenUrl });
     setIsEdit(true);
   };
 
@@ -123,15 +166,11 @@ const BrandList = () => {
   const confirmDeleteMarca = async () => {
     if (!itemToDelete) return;
     try {
-      setLoadingAction(true);
       await deleteBrand(itemToDelete.id);
-      // Opcional: limpiar form si eliminamos el que se estaba editando?
-      // Por ahora mantenemos simple.
       setIsEdit(false);
-      setFormValues({ id: 0, nombre: "" }); // Reset form
+      setFormValues({ id: 0, nombre: "", imagenUrl: "" });
     } finally {
       setIsOpenModalConfirm(false);
-      setLoadingAction(false);
       setItemToDelete(null);
     }
   };
@@ -155,6 +194,7 @@ const BrandList = () => {
     '#': index + 1,
     id: item.id,
     nombre: item.nombre,
+    imagenUrl: item.imagenUrl, // Pass this so handleGetMarca can pick it up
   }));
 
   return (
@@ -203,15 +243,13 @@ const ModalMarcas = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsMarcas) 
 
   useEffect(() => {
     if (isOpenModal) {
-      // Cargar marcas si no hay
       if (!marcas || marcas.length === 0) {
         getAllBrands();
       }
-      // Reset form al abrir
-      setFormValues({ id: 0, nombre: "" });
+      setFormValues({ id: 0, nombre: "", imagenUrl: "" });
       setIsEdit(false);
     }
-  }, [isOpenModal, getAllBrands, marcas, setFormValues, setIsEdit]);
+  }, [isOpenModal]);
 
   return (
     <>

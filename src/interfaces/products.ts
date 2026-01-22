@@ -28,6 +28,10 @@ export type IProduct = {
     nombre: string
     empresaId: number
   }
+  marca?: {
+    id: number
+    nombre: string
+  }
   // Campos Farmacia
   principioActivo?: string
   concentracion?: string

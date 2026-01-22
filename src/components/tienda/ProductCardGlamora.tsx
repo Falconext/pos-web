@@ -12,76 +12,89 @@ interface ProductCardProps {
 export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    const getBotonStyle = () => {
-        switch (diseno.estiloBoton) {
-            case 'square': return 'rounded-none';
-            case 'pill': return 'rounded-full';
-            default: return 'rounded-xl';
-        }
-    };
+    // Extraction of integer and decimal parts for styling
+    const price = Number(producto.precioUnitario || 0);
+    const priceInt = Math.floor(price);
+    const priceDec = price.toFixed(2).split('.')[1];
 
-    const btnRadius = getBotonStyle();
+    // Determine category name and unit safely
+    const categoryName = producto.categoria && typeof producto.categoria === 'object'
+        ? (producto.categoria.nombre || 'General')
+        : (producto.categoria || 'General');
+
+    const unidadMedida = producto.unidadMedida
+        ? (typeof producto.unidadMedida === 'object' ? producto.unidadMedida.nombre : producto.unidadMedida)
+        : '';
 
     return (
-        <div
-            className="group flex flex-col h-full bg-white cursor-pointer rounded-xl p-6"
-            onClick={onClick}
-        >
-            {/* Image Container - Aspect Ratio Square/Portrait with Gray BG per reference */}
+        <div className="group flex flex-col h-full bg-white overflow-hidden rounded-xl border border-gray-100">
+            {/* Clickable Product Info Area - navigates to product detail */}
             <div
-                className="relative w-full aspect-[3/4] overflow-hidden rounded-2xl mb-4"
+                className="flex flex-col items-center cursor-pointer flex-1"
+                onClick={onClick}
             >
-                {/* Loader placeholder */}
-                {!imageLoaded && producto.imagenUrl && (
-                    <div className="absolute inset-0 animate-pulse" />
-                )}
+                {/* Image Area - Centered & Clean */}
+                <div className="p-6 pb-4 flex items-center justify-center relative w-full">
+                    {producto.imagenUrl ? (
+                        <img
+                            src={producto.imagenUrl}
+                            alt={producto.descripcion}
+                            onLoad={() => setImageLoaded(true)}
+                            className={`w-32 h-32 object-contain transition-transform duration-500 group-hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div className="w-32 h-32 flex items-center justify-center text-gray-200">
+                            <Icon icon="solar:box-linear" className="w-12 h-12" />
+                        </div>
+                    )}
+                </div>
 
-                {producto.imagenUrl ? (
-                    <img
-                        src={producto.imagenUrl}
-                        alt={producto.descripcion}
-                        onLoad={() => setImageLoaded(true)}
-                        className={`w-full h-full object-scale-down object-center transition-all duration-700 ease-in-out group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        loading="lazy"
-                    />
-                ) : (
-                    <div className="flex items-center justify-center w-full h-full text-gray-300">
-                        <Icon icon="mdi:image-off" width={48} strokeWidth={1} />
-                    </div>
-                )}
-            </div>
-
-            {/* Info - Matches Reference: Title left, Price right, Category bubbles below */}
-            <div className="flex flex-col flex-1 gap-3">
-                <div className="flex justify-between items-start gap-4">
-                    <h3
-                        className="text-sm font-bold text-gray-900 uppercase tracking-wide line-clamp-2 min-h-[2.8rem]"
-                        style={{ lineHeight: '1.4' }}
-                    >
+                {/* Content - Centered */}
+                <div className="flex flex-col items-center px-4 pb-2 text-center flex-1 w-full">
+                    {/* Title */}
+                    <h3 className="text-[#045659] font-bold text-base leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                         {producto.descripcion}
                     </h3>
-                    <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                        S/ {Number(producto.precioUnitario).toFixed(2)}
-                    </span>
-                </div>
 
-                {/* Categories as Color Swatch Replacements */}
-                <div className="flex flex-wrap gap-2">
-                    <span
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600"
-                    >
-                        {producto.categoria?.nombre || 'General'}
-                    </span>
-                </div>
+                    {/* Subtitle - Category in parentheses */}
+                    <p className="text-gray-400 text-xs font-normal mb-3">
+                        ({categoryName})
+                    </p>
 
-                {/* Add to Cart Button */}
-                <div className="mt-auto">
+                    {/* Unit of Measure */}
+                    {unidadMedida && (
+                        <p className="text-gray-500 text-xs mb-2">
+                            {unidadMedida}
+                        </p>
+                    )}
+
+                    {/* Price - Large & Centered */}
+                    <div className="flex items-start text-[#045659] leading-none mb-4">
+                        <span className="text-3xl font-extrabold tracking-tight">
+                            {priceInt}.
+                        </span>
+                        <span className="text-lg font-bold align-top mt-0.5">
+                            {priceDec}S/
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Button Area - Add to Cart */}
+            <div className="relative w-full">
+                {/* Background section */}
+                <div className="bg-[#EDE9E3] h-14 w-full relative flex items-center justify-center rounded-b-xl">
                     <button
-                        onClick={(e) => { e.stopPropagation(); onAddToCart(producto); }}
-                        className={`w-full bg-black text-white py-3 ${btnRadius} text-[10px] font-bold uppercase tracking-widest hover:bg-gray-900 transition-all active:scale-95 flex items-center justify-center gap-2`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onAddToCart(producto);
+                        }}
+                        className="w-full h-full flex items-center justify-center hover:bg-[#e8ede3] transition-colors rounded-b-xl cursor-pointer"
+                        aria-label="Agregar al carrito"
                     >
-                        <Icon icon="solar:cart-large-minimalistic-bold" width={16} />
-                        Agregar al carrito
+                        <Icon icon="mdi:plus" className="w-8 h-8 text-[#2d6a6d] group-hover/btn:scale-110 transition-transform font-bold" />
                     </button>
                 </div>
             </div>

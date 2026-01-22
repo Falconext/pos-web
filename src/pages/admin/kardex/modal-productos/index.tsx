@@ -57,6 +57,13 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
     // Modificadores
     const { grupos: gruposModificadores, getAllGrupos } = useModificadoresStore();
     const [gruposSeleccionados, setGruposSeleccionados] = useState<number[]>([]);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Detectar si el rubro es restaurante para simplificar el formulario
     const isRestaurante = (() => {
@@ -104,6 +111,27 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         fechaVencimiento: ''
     });
 
+    // Wholesale / Tiered Pricing State
+    const [wholesaleOptions, setWholesaleOptions] = useState<{ nombre: string, precio: string, id?: number, esNuevo?: boolean }[]>([]);
+    const [newWholesaleOption, setNewWholesaleOption] = useState({ nombre: '', precio: '' });
+    const [wholesaleGroupId, setWholesaleGroupId] = useState<number | null>(null);
+
+    const handleAddWholesaleOption = () => {
+        console.log('➕ Adding wholesale option:', newWholesaleOption);
+        if (!newWholesaleOption.nombre || !newWholesaleOption.precio) {
+            console.log('⚠️ Validation failed - missing nombre or precio');
+            return;
+        }
+        const updatedOptions = [...wholesaleOptions, { ...newWholesaleOption, esNuevo: true }];
+        console.log('✅ Updated wholesaleOptions:', updatedOptions);
+        setWholesaleOptions(updatedOptions);
+        setNewWholesaleOption({ nombre: '', precio: '' });
+    };
+
+    const handleRemoveWholesaleOption = (idx: number) => {
+        setWholesaleOptions(wholesaleOptions.filter((_, i) => i !== idx));
+    };
+
     const validateForm = () => {
         const newErrors: any = {
             // codigo: formValues?.codigo && formValues?.codigo.trim() !== "" ? "" : "El código del producto es obligatorio",
@@ -145,8 +173,8 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         if (!brands || brands.length === 0) {
             getAllBrands();
         }
-        // Cargar grupos de modificadores si es restaurante y aún no existen en store
-        if (isRestaurante && (!gruposModificadores || gruposModificadores.length === 0)) {
+        // Cargar grupos de modificadores (ahora disponible para todos)
+        if (!gruposModificadores || gruposModificadores.length === 0) {
             getAllGrupos();
         }
     }, [])
@@ -166,7 +194,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             setPreviewPrincipal((formValues as any).imagenUrl);
         }
         // Cargar grupos asignados al producto en edición
-        if (isEdit && isRestaurante && formValues?.productoId) {
+        if (isEdit && formValues?.productoId) {
             cargarGruposAsignados(formValues.productoId);
         }
     }, [isOpenModal, isEdit])
@@ -179,6 +207,9 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             setGruposSeleccionados([]);
             // Reset creation batch
             setCreationLote({ lote: '', fechaVencimiento: '' });
+            setCreationLote({ lote: '', fechaVencimiento: '' });
+            setWholesaleOptions([]);
+            setWholesaleGroupId(null);
         }
     }, [isOpenModal])
 
@@ -188,7 +219,53 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
             const res = await apiClient.get(`/modificadores/productos/${productoId}`);
             // El backend ahora retorna directamente el array en res.data.data
             const grupos = res?.data?.data || res?.data || [];
+            console.log('🔍 Grupos loaded:', JSON.stringify(grupos, null, 2));
+
             setGruposSeleccionados(grupos.map((g: any) => g.grupoId));
+
+            // Cargar wholesale options del grupo auto-generado
+            // Check both g.grupoNombre and g.grupo.nombre
+            const autoGroup = grupos.find((g: any) => {
+                const nombreGrupo = g.grupoNombre || g.grupo?.nombre;
+                console.log('🔍 Checking group:', { grupoId: g.grupoId, nombreGrupo, rawG: g });
+                return nombreGrupo && (nombreGrupo.startsWith('Precios:') || nombreGrupo === 'Precios por Cantidad');
+            });
+            console.log('🔍 AutoGroup found:', autoGroup);
+
+            if (autoGroup) {
+                // Fetch full group details with options
+                try {
+                    const groupRes = await apiClient.get(`/modificadores/grupos/${autoGroup.grupoId}`);
+                    // Backend may return nested structure: check data.data.data first, then fallbacks
+                    const groupDetails = groupRes.data.data?.data || groupRes.data.data || groupRes.data;
+                    console.log('🔍 Group details:', JSON.stringify(groupDetails, null, 2));
+                    console.log('🔍 Checking condition:', {
+                        hasGroupDetails: !!groupDetails,
+                        hasOpciones: !!groupDetails?.opciones,
+                        opcionesLength: groupDetails?.opciones?.length,
+                        precioUnitario: formValues.precioUnitario
+                    });
+                    if (groupDetails && groupDetails.opciones) {
+                        const options = groupDetails.opciones.map((op: any) => ({
+                            id: op.id,
+                            nombre: op.nombre,
+                            // Precio Extra + Base Price = Total Price shown to user
+                            precio: (Number(op.precioExtra) + Number(formValues.precioUnitario || 0)).toFixed(2)
+                        }));
+                        console.log('✅ Setting wholesale options:', options);
+                        setWholesaleOptions(options);
+                        setWholesaleGroupId(autoGroup.grupoId);
+                    } else {
+                        console.log('❌ Condition failed - not setting options');
+                    }
+                } catch (err) {
+                    console.error('Error fetching wholesale group details', err);
+                }
+            } else {
+                console.log('⚠️ No autoGroup found, clearing wholesale data');
+                setWholesaleGroupId(null);
+            }
+
         } catch (error) {
             console.error('Error al cargar grupos asignados:', error);
         }
@@ -292,6 +369,50 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
 
 
+    const syncWholesaleOptions = async (dedicatedGroupId: number, basePrice: number) => {
+        console.log('🔧 syncWholesaleOptions called:', { dedicatedGroupId, basePrice, wholesaleOptions });
+        if (!dedicatedGroupId) {
+            console.log('⚠️ No dedicatedGroupId, skipping');
+            return;
+        }
+
+        try {
+            // Sync Options
+            console.log('📥 Fetching current options for group:', dedicatedGroupId);
+            const groupDetailsRes = await apiClient.get(`/modificadores/grupos/${dedicatedGroupId}`);
+            const currentOptions = groupDetailsRes.data.data?.opciones || [];
+            console.log('Current options:', currentOptions);
+
+            // Delete removed
+            const optionsIdsParam = wholesaleOptions.map(o => o.id).filter(Boolean);
+            const toDelete = currentOptions.filter((o: any) => !optionsIdsParam.includes(o.id));
+            console.log('Options to delete:', toDelete);
+            for (const op of toDelete) {
+                console.log('🗑️ Deleting option:', op.id);
+                await apiClient.delete(`/modificadores/opciones/${op.id}`);
+            }
+
+            // Upsert
+            for (const opt of wholesaleOptions) {
+                const extra = Math.max(0, Number(opt.precio) - basePrice);
+                console.log('Processing option:', { opt, extra, basePrice });
+                if (opt.id) {
+                    console.log('📝 Updating option:', opt.id);
+                    await apiClient.patch(`/modificadores/opciones/${opt.id}`, { nombre: opt.nombre, precioExtra: extra });
+                } else {
+                    console.log('➕ Creating new option:', opt.nombre);
+                    await apiClient.post(`/modificadores/grupos/${dedicatedGroupId}/opciones`, {
+                        nombre: opt.nombre, precioExtra: extra, esDefault: false
+                    });
+                }
+            }
+            console.log('✅ Sync complete');
+        } catch (e) {
+            console.error('❌ Error syncing:', e);
+        }
+    };
+
+
     const handleSubmitProduct = async () => {
         console.log(formValues)
         if (!validateForm()) {
@@ -349,16 +470,70 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                     stockMinimo: formValues?.stockMinimo != null ? Number(formValues?.stockMinimo) : undefined,
                     stockMaximo: formValues?.stockMaximo != null ? Number(formValues?.stockMaximo) : undefined,
                 });
-                // Guardar asignación de modificadores si es restaurante (siempre, incluso si está vacío para eliminar asignaciones previas)
-                if (isRestaurante) {
+                // Guardar asignación de modificadores (SINGLE CALL including Wholesale Group)
+                console.log('🔍 Wholesale Debug:', {
+                    wholesaleOptionsLength: wholesaleOptions.length,
+                    wholesaleGroupId,
+                    wholesaleOptions,
+                    formValuesDescripcion: formValues.descripcion
+                });
+
+                let finalWholesaleGroupId = wholesaleGroupId;
+                // If we need a group but don't have one (or cleared it, although we don't clear variable here if options empty? No, we check length)
+                if (wholesaleOptions.length > 0 && !finalWholesaleGroupId) {
+                    // Create it now
+                    console.log('📦 Creating new wholesale group...');
                     try {
-                        await apiClient.post(`/modificadores/productos/${formValues.productoId}`, {
-                            grupos: gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }))
+                        const newGroupRes = await apiClient.post('/modificadores/grupos', {
+                            nombre: `Precios: ${formValues.descripcion?.substring(0, 30)}`,
+                            descripcion: 'Autogenerado desde Kardex',
+                            seleccionMin: 0,
+                            seleccionMax: 1,
+                            esObligatorio: false
                         });
-                    } catch (e) {
-                        console.error('Error al asignar modificadores:', e);
+                        console.log('🔍 Backend Response:', JSON.stringify(newGroupRes.data, null, 2));
+                        // Backend returns nested structure: data.data.data.id
+                        finalWholesaleGroupId = newGroupRes.data.data.data?.id || newGroupRes.data.data?.id || newGroupRes.data?.id;
+                        console.log('✅ Wholesale group created with ID:', finalWholesaleGroupId);
+                        setWholesaleGroupId(finalWholesaleGroupId);
+                    } catch (err) {
+                        console.error('❌ Error creating wholesale group:', err);
                     }
                 }
+
+                try {
+                    // Prepare all groups to save
+                    // Avoid duplicating if finalWholesaleGroupId is already in gruposSeleccionados (it shouldn't be if we manage strictly, but safety first)
+                    const baseGroups = gruposSeleccionados.filter(id => id !== finalWholesaleGroupId);
+                    const allGroups = baseGroups.map((id, idx) => ({ grupoId: id, ordenOverride: idx }));
+
+                    if (finalWholesaleGroupId && wholesaleOptions.length > 0) {
+                        allGroups.push({ grupoId: finalWholesaleGroupId, ordenOverride: -1 }); // Priority
+                    }
+
+                    console.log('📋 Assigning groups to product:', {
+                        productId: formValues.productoId,
+                        allGroups,
+                        finalWholesaleGroupId
+                    });
+
+                    await apiClient.post(`/modificadores/productos/${formValues.productoId}`, {
+                        grupos: allGroups
+                    });
+
+                    console.log('✅ Groups assigned successfully');
+
+                    // Sync Options Logic AFTER assignment
+                    if (finalWholesaleGroupId && wholesaleOptions.length > 0) {
+                        console.log('🔄 Syncing wholesale options...');
+                        await syncWholesaleOptions(Number(finalWholesaleGroupId), Number(formValues.precioUnitario));
+                        console.log('✅ Wholesale options synced');
+                    }
+
+                } catch (e) {
+                    console.error('❌ Error al asignar modificadores:', e);
+                }
+
                 try {
                     if (filePrincipal) {
                         // User uploaded a file
@@ -501,12 +676,36 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                 } catch (e) {
                     // noop
                 }
-                // Guardar asignación de modificadores para producto nuevo si es restaurante
-                if (isRestaurante && product?.data?.id) {
+                // Guardar asignación de modificadores (New Product)
+                if (product?.data?.id) {
+                    let finalWholesaleGroupId = null;
+                    if (wholesaleOptions.length > 0) {
+                        try {
+                            const newGroupRes = await apiClient.post('/modificadores/grupos', {
+                                nombre: `Precios: ${formValues.descripcion?.substring(0, 30)}`,
+                                descripcion: 'Autogenerado desde Kardex',
+                                seleccionMin: 0,
+                                seleccionMax: 1,
+                                esObligatorio: false
+                            });
+                            // Backend returns nested structure: data.data.data.id
+                            finalWholesaleGroupId = newGroupRes.data.data.data?.id || newGroupRes.data.data?.id || newGroupRes.data?.id;
+                        } catch (err) { console.error(err); }
+                    }
+
                     try {
+                        const allGroups = gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }));
+                        if (finalWholesaleGroupId) {
+                            allGroups.push({ grupoId: finalWholesaleGroupId, ordenOverride: -1 });
+                        }
+
                         await apiClient.post(`/modificadores/productos/${product.data.id}`, {
-                            grupos: gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }))
+                            grupos: allGroups
                         });
+
+                        if (finalWholesaleGroupId) {
+                            await syncWholesaleOptions(Number(finalWholesaleGroupId), Number(formValues.precioUnitario));
+                        }
                     } catch (e) {
                         console.error('Error al asignar modificadores:', e);
                     }
@@ -547,7 +746,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                         title={isEdit ? `Editar ${labels.titulo}` : `Nuevo ${labels.titulo}`}
                         icon="solar:box-minimalistic-bold-duotone"
                     >
-                        <div className={`${isRestaurante ? 'grid-cols-1 md:grid-cols-2' : isFarmacia ? 'flex flex-col gap-6' : 'grid-cols-3'} grid px-4 gap-5`}>
+                        <div className={`${isRestaurante ? 'grid-cols-1 md:grid-cols-2' : isFarmacia ? 'flex flex-col gap-6' : 'grid-cols-1 md:grid-cols-3'} grid px-4 gap-5`}>
                             <div className={isFarmacia ? 'w-full' : ''}>
                                 {/* Imagen principal - Más compacta para farmacia */}
                                 <div className={`mt-5 ${isFarmacia ? 'w-full' : ''}`}>
@@ -654,8 +853,10 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
                                     {/* Batch Fields for New Product (Moved here for better layout) */}
 
+
+
                                     {!isRestaurante && !isFarmacia && (Number(formValues?.precioUnitario || 0) > 0 || Number(formValues?.costoUnitario || 0) > 0 || Number(formValues?.stock || 0) > 0) && (
-                                        <div className="col-span-2 mt-4 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
+                                        <div className="hidden md:block col-span-2 mt-4 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
                                             <div className="flex items-center gap-2 mb-4">
                                                 <div className="p-1 bg-blue-500 rounded-lg">
                                                     <Icon icon="mdi:chart-line" className="text-white" width={20} height={20} />
@@ -1080,7 +1281,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                                 name="precioUnitario"
                                                 onChange={handleChange}
                                                 isLabel
-                                                label={labels.precio}
+                                                label={isMobile ? (isRestaurante ? 'Precio' : 'Precio Venta') : labels.precio}
                                             />
                                             {/* Costo unitario - Solo para rubros no restaurante */}
                                             {!isRestaurante && (
@@ -1092,7 +1293,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                                     name="costoUnitario"
                                                     onChange={handleChange}
                                                     isLabel
-                                                    label="Costo Unitario (S/)"
+                                                    label={isMobile ? "Costo Unitario" : "Costo Unitario (S/)"}
                                                     placeholder="Costo de compra"
                                                 />
                                             )}
@@ -1212,7 +1413,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                                                     name="stockMaximo"
                                                                     onChange={handleChange}
                                                                     isLabel
-                                                                    label="Stock máximo (opcional)"
+                                                                    label={isMobile ? "Stock máximo" : "Stock máximo (opcional)"}
                                                                     placeholder="Ej. 100"
                                                                 />
                                                             </div>
@@ -1249,13 +1450,89 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                                                                 name="stockMaximo"
                                                                 onChange={handleChange}
                                                                 isLabel
-                                                                label="Stock máximo (opcional)"
+                                                                label={isMobile ? "Stock máximo" : "Stock máximo (opcional)"}
                                                                 placeholder="Ej. 100"
                                                             />
                                                         </div>
                                                     </div>
                                                 )}
                                             </div>
+                                        </div>
+
+                                        {/* WHOLESALE PRICING SECTION (Relocated) */}
+                                        <div className="col-span-2 mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <div className="p-1 bg-green-500 rounded-lg">
+                                                    <Icon icon="mdi:tag-multiple" className="text-white" width={20} height={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-lg font-bold text-gray-900 leading-none">Precios por Cantidad / Mayorista</h4>
+                                                    <p className="text-xs text-gray-500 mt-1">Define presentaciones especiales (ej. Docena) con su precio de venta final.</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                                <div className="grid grid-cols-12 gap-2 p-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                                    <div className="col-span-6">Nombre Presentación</div>
+                                                    <div className="col-span-4">Precio Final</div>
+                                                    <div className="col-span-2 text-center">Acción</div>
+                                                </div>
+
+                                                {wholesaleOptions.length > 0 ? (
+                                                    wholesaleOptions.map((opt, idx) => (
+                                                        <div key={idx} className="grid grid-cols-12 gap-2 p-3 border-b border-gray-100 items-center last:border-0 hover:bg-gray-50">
+                                                            <div className="col-span-6 font-medium text-gray-900">{opt.nombre}</div>
+                                                            <div className="col-span-4 font-bold text-green-700">S/ {Number(opt.precio).toFixed(2)}</div>
+                                                            <div className="col-span-2 text-center">
+                                                                <button
+                                                                    onClick={() => handleRemoveWholesaleOption(idx)}
+                                                                    className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded"
+                                                                >
+                                                                    <Icon icon="mdi:trash-can-outline" width={18} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-center text-sm text-gray-400 italic">
+                                                        No hay precios configurados. Agrega uno abajo.
+                                                    </div>
+                                                )}
+
+                                                {/* Add New Row */}
+                                                <div className="grid grid-cols-12 gap-2 p-3 bg-blue-50/50">
+                                                    <div className="col-span-6">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Ej. Docena, Caja x 24..."
+                                                            className="w-full text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 px-3 py-1.5"
+                                                            value={newWholesaleOption.nombre}
+                                                            onChange={(e) => setNewWholesaleOption({ ...newWholesaleOption, nombre: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-4 relative">
+                                                        <span className="absolute left-2 top-1.5 text-gray-500 text-sm">S/</span>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            className="w-full text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pl-7 py-1.5"
+                                                            value={newWholesaleOption.precio}
+                                                            onChange={(e) => setNewWholesaleOption({ ...newWholesaleOption, precio: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 flex justify-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleAddWholesaleOption}
+                                                            disabled={!newWholesaleOption.nombre || !newWholesaleOption.precio}
+                                                            className="bg-blue-600 text-white p-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                                        >
+                                                            <Icon icon="mdi:plus" width={20} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                         </div>
 
                                     </div>
@@ -1333,7 +1610,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
                         </div >
 
-                        <div className="flex gap-4 justify-end mt-8 pt-6 mb-5 md:pr-5 border-t border-dashed border-gray-200">
+                        <div className="flex gap-4 px-6 justify-end mt-8 pt-6 mb-5 md:pr-5 border-t border-dashed border-gray-200">
                             <Button className="border border-gray-300 !text-gray-700 hover:bg-gray-50 px-6" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
                             <Button color="black" className="px-6" onClick={handleSubmitProduct} disabled={loading}>
                                 {loading ? (

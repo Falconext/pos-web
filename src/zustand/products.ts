@@ -192,14 +192,21 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
 
                 useAlertStore.setState({ success: true });
                 set((state) => ({
-                    products: state.products.map((product: IProduct) =>
-                        product.id === data?.productoId ? {
-                            ...product,
-                            unidadMedida: { nombre: data.unidadMedidaNombre },
-                            categoria: { nombre: data.categoriaNombre },
-                            marca: data.marcaId ? { id: data.marcaId, nombre: data.marcaNombre } : undefined,
-                            ...data,
-                        } : product
+                    products: state.products.map((product: IProduct) => {
+                        if (product.id === data?.productoId) {
+                            return {
+                                ...product,
+                                ...data,
+                                unidadMedida: { nombre: data.unidadMedidaNombre },
+                                categoria: { nombre: data.categoriaNombre },
+                                marca: data.marcaId ? {
+                                    id: Number(data.marcaId),
+                                    nombre: data.marcaNombre
+                                } : undefined,
+                            } as any
+                        }
+                        return product
+                    }
                     ),
                 }), false, "UPDATE_PRODUCT");
                 useAlertStore.setState({ loading: false })

@@ -197,7 +197,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden relative">
+            <div className="bg-white rounded-none md:rounded-lg shadow-xl w-full h-full md:max-w-7xl md:h-[90vh] flex flex-col overflow-hidden relative">
                 {/* Header with Tabs */}
                 <div className="bg-gray-50 border-b">
                     <div className="flex justify-between items-center p-4 pb-0">
@@ -243,7 +243,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                         <div className="flex flex-col h-full">
                             {/* Filters */}
                             <div className="p-4 border-b bg-white flex flex-col md:flex-row gap-4 items-center justify-between">
-                                <div className="w-full md:w-1/3">
+                                <div className="w-full md:w-1/3 mb-3 md:mb-0">
                                     <InputPro
                                         name="search"
                                         label="Buscar producto"
@@ -309,7 +309,7 @@ export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
                             )}
 
                             {/* Footer Actions */}
-                            <div className="p-4 border-t flex justify-between gap-3 bg-white">
+                            <div className="p-4 border-t flex flex-col md:flex-row justify-between gap-3 bg-white">
                                 <div>
                                     <Button
                                         onClick={handleImportAllClick}

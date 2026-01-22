@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Icon } from '@iconify/react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface SliderBannersProps {
@@ -9,186 +8,234 @@ interface SliderBannersProps {
 
 export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
     const navigate = useNavigate();
-    const [currentSlide, setCurrentSlide] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState<Record<number, boolean>>({});
 
     const handleImageLoad = (index: number) => {
         setImagesLoaded(prev => ({ ...prev, [index]: true }));
     };
 
-    // Banners por defecto si no hay configurados (mockup para "hermosa y profesional")
-    const defaultBanners = [
+    // Mockup Banners Data - Matching "PioMart" Style (Spanish)
+    const mockBanners = [
         {
-            id: 1,
-            titulo: 'Ofertas de Temporada',
-            subtitulo: 'Descuentos de hasta 50%',
-            bgGradient: `linear-gradient(135deg, ${diseno.colorPrimario || '#f97316'}, ${diseno.colorSecundario || '#ef4444'})`,
-            imagen: null, // Usar gradiente
-            boton: 'Ver ofertas'
+            id: 'main-1',
+            type: 'main', // Large Slider
+            titulo: 'Mejores Muebles',
+            subtitulo: 'Salas, comedores y escritorios para crear la armonía perfecta en tu hogar.',
+            boton: 'Ver Catálogo',
+            imagenUrl: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=2070', // Sofa/Furniture
+            bgGradient: 'bg-[#E5EADF]' // Light sage/gray background - Soft and clean
         },
         {
-            id: 2,
-            titulo: 'Nuevos Productos',
-            subtitulo: 'Descubre lo último en nuestro catálogo',
-            bgGradient: `linear-gradient(135deg, ${diseno.colorSecundario || '#ef4444'}, ${diseno.colorAccento || '#3b82f6'})`,
-            imagen: null,
-            boton: 'Explorar'
+            id: 'main-2',
+            type: 'main',
+            titulo: 'Iluminación Moderna',
+            subtitulo: 'Ilumina tus espacios con nuestra colección exclusiva de lámparas.',
+            boton: 'Ver Colección',
+            imagenUrl: 'https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?auto=format&fit=crop&q=80&w=1935', // Lamp
+            bgGradient: 'bg-[#F0F0F0]'
         },
         {
-            id: 3,
-            titulo: 'Envío Gratis',
-            subtitulo: 'En compras mayores a S/ 100',
-            bgGradient: `linear-gradient(135deg, ${diseno.colorAccento || '#3b82f6'}, ${diseno.colorPrimario || '#f97316'})`,
-            imagen: null,
-            boton: 'Más info'
+            id: 'side-1',
+            type: 'sidebar', // Tall Right Banner
+            titulo: 'Estilos Para Tu Temporada',
+            subtitulo: 'Gran Liquidación 50%',
+            boton: 'Comprar',
+            imagenUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=1020', // Fashion Model
+            bgGradient: 'bg-[#FDF3E7]' // Light beige/peach
+        },
+        {
+            id: 'sub-1',
+            type: 'sub', // Bottom Left 1
+            titulo: 'Moda Hombres',
+            subtitulo: 'Liquidación 50%',
+            boton: 'Ver Más',
+            imagenUrl: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?auto=format&fit=crop&q=80&w=1000', // Men Fashion
+            bgGradient: 'bg-[#E6F0F5]' // Light blueish gray
+        },
+        {
+            id: 'sub-2',
+            type: 'sub', // Bottom Left 2
+            titulo: 'Verano',
+            subtitulo: 'Hasta 30% Dscto en Tienda',
+            highlighedText: '30% OFF',
+            boton: null, // No button, just clickable card
+            imagenUrl: 'https://images.unsplash.com/photo-1519238263496-6362d74c1123?auto=format&fit=crop&q=80&w=1000', // Kid/Summer
+            bgGradient: 'bg-[#FFF0F0]' // Very light pink
         }
     ];
 
-    // Si la tienda tiene banners reales (feature premium), usarlos. Si no, usar defaults bonitos.
-    const banners = tienda.banners && tienda.banners.length > 0 ? tienda.banners : defaultBanners;
+    // Use store banners if available, otherwise use mock
+    const hasLiveBanners = tienda?.banners && Array.isArray(tienda.banners) && tienda.banners.length > 0;
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % banners.length);
-        }, 5000);
-        return () => clearInterval(timer);
-    }, [banners.length]);
+    // Process live banners to match expected structure
+    const processedLiveBanners = hasLiveBanners ? tienda.banners.map((b: any) => {
+        let type = 'sub';
+        let bgGradient = 'bg-gray-100';
 
-    const getBordeRadius = () => {
-        switch (diseno.bordeRadius) {
-            case 'none': return 'rounded-none';
-            case 'small': return 'rounded-lg';
-            case 'large': return 'rounded-2xl';
-            case 'full': return 'rounded-[2rem]'; // More rounded
-            default: return 'rounded-2xl';
-        }
+        // Simple mapping based on order
+        if (b.orden === 0) { type = 'main'; bgGradient = 'bg-[#E3EDE5]'; } // 1st = Main
+        else if (b.orden === 1) { type = 'main'; bgGradient = 'bg-[#F0F0F0]'; } // 2nd = Main (if exists)
+        else if (b.orden === 2) { type = 'sidebar'; bgGradient = 'bg-[#FDF3E7]'; } // 3rd = Sidebar
+        else { type = 'sub'; bgGradient = 'bg-[#E6F0F5]'; } // Rest = Sub
+
+        return {
+            id: b.id,
+            type,
+            titulo: b.titulo || '',
+            subtitulo: b.subtitulo || '',
+            boton: b.linkUrl ? (b.boton || 'Ver más') : null, // Show button if link exists
+            imagenUrl: b.imagenUrl,
+            bgGradient,
+            linkUrl: b.linkUrl,
+            highlighedText: b.orden >= 3 ? 'Oferta' : undefined
+        };
+    }) : [];
+
+    const bannersToUse = hasLiveBanners ? processedLiveBanners : mockBanners;
+
+    // --- LOGIC UPDATE: Intelligent Slot Filling ---
+    // 1. Main Banner: Always the first available one
+    const mainBanner = bannersToUse.length > 0 ? bannersToUse[0] : null;
+
+    // Filter remaining
+    const remainingAfterMain = bannersToUse.filter((b: any) => b !== mainBanner);
+
+    // 2. Side Banner: Explicit sidebar OR the next available one
+    let sideBanner = remainingAfterMain.find((b: any) => b.type === 'sidebar');
+    if (!sideBanner && remainingAfterMain.length > 0) {
+        sideBanner = remainingAfterMain[0];
+    }
+
+    // Filter remaining
+    const remainingAfterSide = remainingAfterMain.filter((b: any) => b !== sideBanner);
+
+    // 3. Sub Banners: Use ALL remaining banners
+    const subBanners = remainingAfterSide;
+
+    const renderButton = (text: string | null, colorClass: string = 'bg-[#045659]') => {
+        if (!text) return null;
+        return (
+            <button className={`${colorClass} text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all`}>
+                {text}
+            </button>
+        );
     };
 
-    const borderRadius = getBordeRadius();
-
-    // Lógica de Grid (Split Layout)
-    const hasSideBanner = banners.length > 1;
-    const mainBanners = hasSideBanner ? banners.slice(0, banners.length - 1) : banners;
-    const sideBanner = hasSideBanner ? banners[banners.length - 1] : null;
-
-    // Ajustar slide index si cambia la longitud
-    useEffect(() => {
-        if (currentSlide >= mainBanners.length) {
-            setCurrentSlide(0);
-        }
-    }, [mainBanners.length]);
-
-    // Timer para slider
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % mainBanners.length);
-        }, 5000);
-        return () => clearInterval(timer);
-    }, [mainBanners.length]);
-
-    const renderBannerContent = (banner: any, showText = true) => (
-        <>
-            {banner.imagenUrl ? (
-                <div className="relative w-full h-full">
-                    {/* Skeleton loader */}
-                    {!imagesLoaded[banner.id] && (
-                        <div className="absolute inset-0 bg-gray-200 animate-pulse z-20" />
-                    )}
-
-                    <img
-                        src={banner.imagenUrl}
-                        alt={banner.titulo || 'Banner'}
-                        className={`w-full h-full object-cover transition-opacity duration-700 ease-in-out ${imagesLoaded[banner.id] ? 'opacity-100' : 'opacity-0'}`}
-                        onLoad={() => handleImageLoad(banner.id)}
-                    />
-                </div>
-            ) : (
-                <div
-                    className="w-full h-full relative"
-                    style={{ background: banner.bgGradient }}
-                >
-                    {showText && (
-                        <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-12 text-white">
-                            <span className="inline-block py-1 px-3 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold uppercase tracking-wider mb-3 border border-white/30 w-fit">
-                                Destacado
-                            </span>
-                            <h2 className="text-3xl md:text-5xl font-bold mb-3 leading-tight">
-                                {banner.titulo}
-                            </h2>
-                            <p className="text-base md:text-lg mb-6 opacity-90">
-                                {banner.subtitulo}
-                            </p>
-                            <button
-                                className="bg-white text-gray-900 px-6 py-2.5 rounded-full font-bold hover:bg-gray-100 transition-transform hover:scale-105 active:scale-95 shadow-lg w-fit"
-                                style={{ color: diseno.colorPrimario }}
-                            >
-                                {banner.boton || 'Ver más'}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-        </>
-    );
+    if (!mainBanner) return null;
 
     return (
-        <div className={`grid grid-cols-1 ${hasSideBanner ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-6 mb-12`}>
-            {/* Main Slider (Left) */}
-            <div className={`relative w-full h-[300px] md:h-[420px] overflow-hidden ${borderRadius} shadow-sm group md:col-span-2`}>
-                {mainBanners.map((banner: any, index: number) => (
-                    <div
-                        key={banner.id}
-                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'} cursor-pointer`}
-                        onClick={() => {
-                            if (banner.productoId) {
-                                navigate(`producto/${banner.productoId}`);
-                            } else if (banner.linkUrl) {
-                                if (banner.linkUrl.startsWith('http')) {
-                                    window.open(banner.linkUrl, '_blank');
-                                } else {
-                                    navigate(banner.linkUrl);
-                                }
-                            }
-                        }}
-                    >
-                        {renderBannerContent(banner, true)}
-                    </div>
-                ))}
+        <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[520px]">
 
-                {/* Indicadores Slider */}
-                {mainBanners.length > 1 && (
-                    <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-20">
-                        {mainBanners.map((_: any, index: number) => (
-                            <button
-                                key={index}
-                                onClick={(e) => { e.stopPropagation(); setCurrentSlide(index); }}
-                                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? 'w-8 bg-white' : 'bg-white/50 hover:bg-white/80'}`}
-                                aria-label={`Ir a slide ${index + 1}`}
-                            />
+                {/* LEFT COLUMN: Main + Sub Banners */}
+                <div className="lg:col-span-8 flex flex-col gap-6 h-full">
+
+                    {/* TOP: Main Banner (Static, no slider) */}
+                    <div className="flex-1 relative rounded-3xl overflow-hidden shadow-sm group h-[300px] lg:h-auto">
+                        <div className={`absolute inset-0 ${mainBanner.bgGradient}`}>
+                            <div className="h-full w-full flex items-center relative">
+                                {/* Content Left */}
+                                <div
+                                    className={`w-full md:w-1/2 p-8 md:p-12 z-20 flex flex-col justify-center items-start ${mainBanner.linkUrl ? 'cursor-pointer' : ''}`}
+                                    onClick={() => mainBanner.linkUrl && navigate(mainBanner.linkUrl)}
+                                >
+                                    <span className="inline-block bg-white/60 backdrop-blur-sm text-[#045659] text-xs font-bold px-3 py-1 rounded-md mb-4 uppercase tracking-wider">
+                                        Tendencia
+                                    </span>
+                                    <h2 className="text-3xl md:text-5xl font-extrabold text-[#1a1a1a] mb-4 leading-tight">
+                                        {mainBanner.titulo}
+                                    </h2>
+                                    <p className="text-gray-600 mb-8 text-sm md:text-base max-w-sm leading-relaxed">
+                                        {mainBanner.subtitulo}
+                                    </p>
+                                    <div onClick={(e) => { e.stopPropagation(); mainBanner.linkUrl && navigate(mainBanner.linkUrl); }}>
+                                        {renderButton(mainBanner.boton)}
+                                    </div>
+                                </div>
+
+                                {/* Image Right */}
+                                <div className="absolute right-0 top-0 bottom-0 w-3/5 md:w-1/2">
+                                    <img
+                                        src={mainBanner.imagenUrl}
+                                        className={`w-full h-full object-contain top-4 relative object-center group-hover:translate-x-0 transition-transform duration-700 ease-in-out ${imagesLoaded[mainBanner.id] ? 'opacity-100' : 'opacity-0'}`}
+                                        onLoad={() => handleImageLoad(mainBanner.id)}
+                                        alt={mainBanner.titulo}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--tw-gradient-from)] via-transparent to-transparent md:hidden" />
+                                </div>
+
+                                {/* Decoration */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[450px] md:h-[450px] bg-white/30 rounded-full blur-3xl -z-10" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* BOTTOM: Sub Banners Grid */}
+                    <div className="min-h-[200px] grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {subBanners.map((banner: any) => (
+                            <div
+                                key={banner.id}
+                                className={`rounded-3xl overflow-hidden relative shadow-sm hover:shadow-md transition-all group ${banner.bgGradient} ${banner.linkUrl ? 'cursor-pointer' : ''}`}
+                                onClick={() => banner.linkUrl && navigate(banner.linkUrl)}
+                            >
+                                <div className="absolute inset-0 flex items-center justify-between p-6">
+                                    <div className="w-1/2 z-10 flex flex-col items-start justify-center h-full">
+                                        <div className="text-xs font-bold text-[#E94E55] mb-1 uppercase tracking-wide">
+                                            {banner.highlighedText || 'Oferta'}
+                                        </div>
+                                        <h3 className="text-xl md:text-2xl font-extrabold text-[#1a1a1a] mb-4 leading-tight">
+                                            {banner.titulo}
+                                        </h3>
+                                        {banner.boton ? (
+                                            <button className="bg-[#1a1a1a] text-white px-5 py-2 rounded-full text-xs font-bold hover:bg-[#333] transition-colors shadow-lg">
+                                                {banner.boton}
+                                            </button>
+                                        ) : (
+                                            <div className="text-[#045659] font-black text-2xl lg:text-3xl">
+                                                {banner.subtitulo}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="w-1/2 h-full absolute right-0 bottom-0">
+                                        <img
+                                            src={banner.imagenUrl}
+                                            className="w-full h-full object-cover object-bottom transition-transform duration-500 group-hover:scale-110"
+                                            alt={banner.titulo}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
-                )}
-            </div>
 
-            {/* Side Banner (Right) */}
-            {hasSideBanner && sideBanner && (
-                <div
-                    className={`relative w-full h-[300px] md:h-[420px] overflow-hidden ${borderRadius} shadow-sm md:col-span-1 block cursor-pointer`}
-                    onClick={() => {
-                        if (sideBanner.productoId) {
-                            navigate(`producto/${sideBanner.productoId}`);
-                        } else if (sideBanner.linkUrl) {
-                            if (sideBanner.linkUrl.startsWith('http')) {
-                                window.open(sideBanner.linkUrl, '_blank');
-                            } else {
-                                navigate(sideBanner.linkUrl);
-                            }
-                        }
-                    }}
-                >
-                    {renderBannerContent(sideBanner, true)}
                 </div>
-            )}
+
+                {/* RIGHT COLUMN: Tall Sidebar Banner */}
+                {sideBanner && (
+                    <div className="lg:col-span-4 h-[400px] lg:h-full relative rounded-3xl overflow-hidden shadow-sm group bg-[#F7ECDC]">
+                        <div className="absolute inset-0 p-8 flex flex-col h-full z-20">
+                            <span className="text-[#8B5E3C] font-bold mb-2 uppercase tracking-wide">Colección</span>
+                            <h2 className="text-3xl md:text-5xl font-extrabold text-[#1a1a1a] mb-6 leading-[1.1]">
+                                {sideBanner.titulo}
+                            </h2>
+                            <p className="text-gray-700 mb-6 text-sm font-medium">
+                                {sideBanner.subtitulo}
+                            </p>
+                            <button className="bg-[#A05C33] text-white px-8 py-3 rounded-full text-sm font-bold shadow-xl hover:bg-[#8B4D28] transition-colors w-fit mt-auto mb-12 lg:mb-0">
+                                {sideBanner.boton || 'Comprar'}
+                            </button>
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-full h-3/5 lg:h-2/2 z-10 p-4">
+                            <img
+                                src={sideBanner.imagenUrl}
+                                className="w-full h-full object-cover object-top lg:object-bottom transition-transform duration-700"
+                                alt={sideBanner.titulo}
+                            />
+                        </div>
+                    </div>
+                )}
+
+            </div>
         </div>
     );
 }

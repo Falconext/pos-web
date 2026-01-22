@@ -3,6 +3,9 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import SelectorTipoEntrega from '@/components/SelectorTipoEntrega';
+import StoreHeader from '@/components/tienda/StoreHeader';
+import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
+import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -10,13 +13,17 @@ export default function Checkout() {
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { carrito, tienda } = location.state || {};
-  const [carritoState, setCarritoState] = useState<any[]>(carrito || []);
+  const { carrito: carritoStateInitial, tienda } = location.state || {}; // Rename to initial
+  const [carritoState, setCarritoState] = useState<any[]>(carritoStateInitial || []);
 
   const [configPago, setConfigPago] = useState<any>(null);
   const [configEnvio, setConfigEnvio] = useState<any>(null);
   const [enviando, setEnviando] = useState(false);
   const [pedidoCreado, setPedidoCreado] = useState<any>(null);
+  const [erroresForm, setErroresForm] = useState<Record<string, string>>({});
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [formData, setFormData] = useState({
     clienteNombre: '',
@@ -24,15 +31,18 @@ export default function Checkout() {
     clienteEmail: '',
     clienteDireccion: '',
     clienteReferencia: '',
-    medioPago: 'YAPE',
+    medioPago: 'EFECTIVO', // Default to Cash/POS as per visual cues usually
     observaciones: '',
     referenciaTransf: '',
     tipoEntrega: 'RECOJO' as 'RECOJO' | 'ENVIO',
   });
 
+  const [search, setSearch] = useState(''); // For header
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
   useEffect(() => {
     // rehidratar si no vino por state
-    if ((!carrito || carrito.length === 0) && slug) {
+    if ((!carritoState || carritoState.length === 0) && slug) {
       try {
         const saved = localStorage.getItem(`tienda:${slug}:carrito`);
         if (saved) {
@@ -52,23 +62,65 @@ export default function Checkout() {
         return;
       }
     }
+    setIsLoaded(true);
     cargarConfigPago();
     cargarConfigEnvio();
   }, []);
 
-  // Asegurar persistencia: guardar carrito de Checkout en localStorage
+  // Live search for header suggestions
   useEffect(() => {
+    if (!search || search.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, {
+          params: { search, limit: 5 }
+        });
+        // La API devuelve { code: 1, message: 'OK', data: { data: [...], total: 4 } }
+        // Necesitamos extraer data.data.data
+        const items = data?.data?.data || data?.data || [];
+        setSearchResults(Array.isArray(items) ? items : []);
+      } catch (error) {
+        console.error("Error searching products:", error);
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search, slug]);
+
+  useEffect(() => {
+    if (!isLoaded || !slug) return;
     try {
-      if (slug && Array.isArray(carritoState) && carritoState.length > 0) {
+      if (Array.isArray(carritoState) && carritoState.length > 0) {
         localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(carritoState));
+      } else {
+        localStorage.removeItem(`tienda:${slug}:carrito`);
       }
     } catch { }
-  }, [slug, carritoState]);
+  }, [slug, carritoState, isLoaded]);
 
   const cargarConfigPago = async () => {
     try {
       const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/payment-config`);
-      setConfigPago(data.data || data);
+      const rawConfig = data.data || data;
+
+      // Normalize config for modal
+      const normalizedConfig = {
+        ...rawConfig,
+        yapeQR: rawConfig.yapeQrUrl || rawConfig.yapeQR,
+        plinQR: rawConfig.plinQrUrl || rawConfig.plinQR,
+        yapeNumero: rawConfig.yapeNumero || rawConfig.yapePhone,
+        plinNumero: rawConfig.plinNumero || rawConfig.plinPhone,
+        whatsappTienda: rawConfig.whatsappTienda || rawConfig.whatsapp || rawConfig.telefono || rawConfig.celular
+      };
+
+      setConfigPago(normalizedConfig);
+
+      // Set default payment method if available
+      if (normalizedConfig.aceptaEfectivo) setFormData(p => ({ ...p, medioPago: 'EFECTIVO' }));
+      else if (normalizedConfig.yapeQrUrl) setFormData(p => ({ ...p, medioPago: 'YAPE' }));
     } catch (error) {
       console.error('Error al cargar config de pago:', error);
     }
@@ -82,12 +134,9 @@ export default function Checkout() {
         aceptaRecojo: !!raw.aceptaRecojo,
         aceptaEnvio: !!raw.aceptaEnvio,
         direccionRecojo: raw.direccionRecojo || raw.direccion || '',
-        costoEnvio: Number(
-          raw.costoEnvioFijo ?? raw.costoEnvio ?? raw.shippingCost ?? raw.costo_envio_fijo ?? 0
-        ),
+        costoEnvio: Number(raw.costoEnvioFijo ?? raw.costoEnvio ?? 0),
       };
       setConfigEnvio(normalized);
-      // Si solo acepta uno, establecerlo por defecto
       if (normalized.aceptaRecojo && !normalized.aceptaEnvio) {
         setFormData(prev => ({ ...prev, tipoEntrega: 'RECOJO' }));
       } else if (!normalized.aceptaRecojo && normalized.aceptaEnvio) {
@@ -101,15 +150,58 @@ export default function Checkout() {
   const handleChange = (e: any) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user starts typing
+    if (erroresForm[name]) {
+      setErroresForm((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validarFormulario = (): boolean => {
+    const errores: Record<string, string> = {};
+
+    // Validar nombre
+    if (!formData.clienteNombre.trim()) {
+      errores.clienteNombre = 'El nombre es requerido';
+    }
+
+    // Validar teléfono
+    if (!formData.clienteTelefono.trim()) {
+      errores.clienteTelefono = 'El teléfono es requerido';
+    }
+
+    // Validar email
+    if (!formData.clienteEmail.trim()) {
+      errores.clienteEmail = 'El email es requerido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.clienteEmail)) {
+      errores.clienteEmail = 'El email no es válido';
+    }
+
+    // Validar dirección si es envío
+    if (formData.tipoEntrega === 'ENVIO' && !formData.clienteDireccion.trim()) {
+      errores.clienteDireccion = 'La dirección es requerida para envío';
+    }
+
+    setErroresForm(errores);
+    return Object.keys(errores).length === 0;
+  };
+
+  const updateQuantity = (id: any, newQty: number) => {
+    if (newQty < 1) {
+      // Remove item
+      const newCart = carritoState.filter(i => i.id !== id);
+      setCarritoState(newCart);
+      if (newCart.length === 0) navigate(`/tienda/${slug}`);
+    } else {
+      setCarritoState(carritoState.map(i => i.id === id ? { ...i, cantidad: newQty } : i));
+    }
   };
 
   const calcularSubtotal = () => {
     return carritoState.reduce((sum: number, item: any) => sum + Number(item.precioUnitario) * item.cantidad, 0);
-  };
-
-  const calcularIGV = () => {
-    // El IGV ya está incluido, así que lo extraemos: Total - (Total / 1.18)
-    return calcularSubtotal() - (calcularSubtotal() / 1.18);
   };
 
   const calcularCostoEnvio = () => {
@@ -120,26 +212,40 @@ export default function Checkout() {
   };
 
   const calcularTotal = () => {
-    // El subtotal ya incluye IGV, solo sumamos el costo de envío
     return calcularSubtotal() + calcularCostoEnvio();
   };
 
-  const enviarPedido = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEnviando(true);
+  const enviarPedido = async () => {
+    // Validar formulario antes de enviar
+    if (!validarFormulario()) {
+      // Scroll to first error
+      const firstErrorField = document.querySelector('.border-red-300');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
 
+    setEnviando(true);
     try {
       const items = carritoState.map((item: any) => ({
-        productoId: item.id,
+        productoId: item.productoId || item.id, // Use original product ID
         cantidad: item.cantidad,
+        modificadores: item.modificadores // Include modifiers if backend supports
       }));
 
       const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, {
         ...formData,
         items,
+        total: calcularTotal()
       });
 
-      setPedidoCreado(data.data || data);
+      const orderData = data.data || data;
+      setPedidoCreado(orderData);
+      setShowConfirmModal(false);
+      setShowPaymentModal(true); // Show payment confirmation modal
+      setCarritoState([]); // Clear state, effect will clear storage
+      localStorage.removeItem(`tienda:${slug}:carrito`); // Force clear just in case
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error al crear pedido');
     } finally {
@@ -148,336 +254,310 @@ export default function Checkout() {
   };
 
   const diseno = tienda?.diseno || {};
-
-  const getBordeRadius = () => {
-    switch (diseno.bordeRadius) {
-      case 'none': return 'rounded-none';
-      case 'small': return 'rounded';
-      case 'large': return 'rounded-2xl';
-      case 'full': return 'rounded-3xl';
-      default: return 'rounded-xl';
-    }
-  };
-
-  const getBotonStyle = () => {
-    switch (diseno.estiloBoton) {
-      case 'square': return 'rounded-none';
-      case 'pill': return 'rounded-full';
-      default: return 'rounded-lg';
-    }
-  };
-
-  const getFontFamily = () => {
-    switch (diseno.tipografia) {
-      case 'Roboto': return 'font-roboto';
-      case 'Open Sans': return 'font-opensans';
-      case 'Lato': return 'font-lato';
-      case 'Poppins': return 'font-poppins';
-      case 'Montserrat': return 'font-montserrat';
-      case 'Raleway': return 'font-raleway';
-      case 'Ubuntu': return 'font-ubuntu';
-      case 'Manrope': return 'font-manrope';
-      case 'Rubik': return 'font-rubik';
-      case 'Inter': return 'font-inter';
-      default: return 'font-sans';
-    }
-  };
-
-  const borderRadius = getBordeRadius();
-  const btnRadius = getBotonStyle();
-  const fontFamily = getFontFamily();
-
-  if (pedidoCreado) {
-    return (
-      <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-4 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
-        <div className={`max-w-md w-full bg-white ${borderRadius} border border-gray-100 shadow-sm p-8 text-center`}>
-          <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${diseno.colorPrimario}10` }}>
-            <Icon icon="mdi:check" className="w-10 h-10 text-orange-600" style={{ color: diseno.colorPrimario }} />
-          </div>
-          <h2 className="text-2xl font-bold mb-1">¡Pedido recibido!</h2>
-          <p className="text-gray-600 mb-4">Tu pedido #{pedidoCreado.id} ha sido registrado.</p>
-
-          <div className={`bg-orange-50 p-4 ${borderRadius} mb-4 border border-orange-100`} style={{ backgroundColor: `${diseno.colorPrimario}10`, borderColor: `${diseno.colorPrimario}30` }}>
-            <p className="text-sm text-gray-600 mb-1">Código de seguimiento</p>
-            <p className="text-xl font-bold text-orange-600" style={{ color: diseno.colorPrimario }}>{pedidoCreado.codigoSeguimiento}</p>
-            <p className="text-xs text-gray-500 mt-2">Guárdalo para rastrear tu pedido</p>
-          </div>
-
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate(`/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`)}
-              className={`w-full py-3 ${btnRadius} text-white font-semibold hover:opacity-95`}
-              style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
-            >
-              Rastrear mi pedido
-            </button>
-            <button
-              onClick={() => navigate(`/tienda/${slug}`)}
-              className={`w-full py-3 ${btnRadius} font-semibold border border-gray-200 hover:bg-gray-50`}
-            >
-              Volver a la tienda
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const fontFamily = diseno.tipografia || 'Inter, sans-serif';
 
   return (
-    <div className={`min-h-screen bg-gray-50 py-8 ${fontFamily}`} style={{ fontFamily: diseno.tipografia }}>
-      <div className="max-w-4xl mx-auto px-4">
-        <button
-          onClick={() => navigate(`/tienda/${slug}`)}
-          className="flex items-center gap-2 text-gray-600 hover:text-black mb-6"
-        >
-          <Icon icon="mdi:arrow-left" />
-          Volver a la tienda
-        </button>
+    <div className="min-h-screen bg-[#F9FAFB]" style={{ fontFamily: '"Mona Sans", ' + fontFamily }}>
+      {/* Header for Checkout (simplified or full) */}
+      <StoreHeader
+        tienda={tienda}
+        slug={slug || ''}
+        carritoCount={carritoState.length}
+        onToggleCart={() => { }} // Disabled in checkout
+        isAdminOpen={false}
+        setIsAdminOpen={() => { }}
+        adminMenuRef={{ current: null }}
+        search={search}
+        setSearch={setSearch}
+        categories={[]}
+        onSelectCategory={() => { }}
+        recommendedProducts={searchResults}
+        hideCart={true}
+        onSearch={() => {
+          if (search.trim()) {
+            window.location.href = `/tienda/${slug}?search=${encodeURIComponent(search)}`;
+          }
+        }}
+      />
 
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate(`/tienda/${slug}`)} className="p-2 rounded-full bg-white shadow hover:bg-gray-50" aria-label="Volver">
-            <Icon icon="mdi:chevron-left" className="w-6 h-6" />
-          </button>
-          <h1 className="text-2xl md:text-3xl font-bold">Complete su pedido</h1>
-        </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-3 gap-8">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20 md:pb-0">
-          {/* Formulario */}
-          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-4 md:p-6`}>
-            <h2 className="text-lg font-semibold mb-4">Tus Datos</h2>
-            <form onSubmit={enviarPedido} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre completo *</label>
-                <input
-                  type="text"
-                  name="clienteNombre"
-                  value={formData.clienteNombre}
-                  onChange={handleChange}
-                  required
-                  className={`w-full border ${borderRadius} p-2`}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Teléfono / WhatsApp *</label>
-                <input
-                  type="tel"
-                  name="clienteTelefono"
-                  value={formData.clienteTelefono}
-                  onChange={handleChange}
-                  required
-                  className={`w-full border ${borderRadius} p-2`}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email (opcional)</label>
-                <input
-                  type="email"
-                  name="clienteEmail"
-                  value={formData.clienteEmail}
-                  onChange={handleChange}
-                  className={`w-full border ${borderRadius} p-2`}
-                />
-              </div>
+          {/* Left Column: Delivery & Items */}
+          <div className="lg:col-span-2 space-y-6">
 
-              {/* Selector de tipo de entrega */}
-              {configEnvio && (
-                <SelectorTipoEntrega
-                  tipoEntrega={formData.tipoEntrega}
-                  onChange={(tipo) => setFormData(prev => ({ ...prev, tipoEntrega: tipo }))}
-                  aceptaRecojo={configEnvio.aceptaRecojo}
-                  aceptaEnvio={configEnvio.aceptaEnvio}
-                  costoEnvio={Number(configEnvio.costoEnvio || 0)}
-                  direccionRecojo={configEnvio.direccionRecojo}
-                />
-              )}
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {formData.tipoEntrega === 'ENVIO' ? 'Dirección de entrega *' : 'Dirección de entrega (opcional)'}
-                </label>
-                <input
-                  type="text"
-                  name="clienteDireccion"
-                  value={formData.clienteDireccion}
-                  onChange={handleChange}
-                  required={formData.tipoEntrega === 'ENVIO'}
-                  className={`w-full border ${borderRadius} p-2`}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Referencia de ubicación</label>
-                <input
-                  type="text"
-                  name="clienteReferencia"
-                  value={formData.clienteReferencia}
-                  onChange={handleChange}
-                  placeholder="Ej: Casa blanca, puerta verde"
-                  className={`w-full border ${borderRadius} p-2`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Método de pago *</label>
-                <div className="space-y-2">
-                  {configPago?.yapeQrUrl && (
-                    <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
-                      <input
-                        type="radio"
-                        name="medioPago"
-                        value="YAPE"
-                        checked={formData.medioPago === 'YAPE'}
-                        onChange={handleChange}
-                      />
-                      <span>Yape</span>
-                    </label>
-                  )}
-                  {configPago?.plinQrUrl && (
-                    <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
-                      <input
-                        type="radio"
-                        name="medioPago"
-                        value="PLIN"
-                        checked={formData.medioPago === 'PLIN'}
-                        onChange={handleChange}
-                      />
-                      <span>Plin</span>
-                    </label>
-                  )}
-                  {configPago?.aceptaEfectivo && (
-                    <label className={`flex items-center gap-3 p-3 border ${borderRadius} hover:bg-gray-50`}>
-                      <input
-                        type="radio"
-                        name="medioPago"
-                        value="EFECTIVO"
-                        checked={formData.medioPago === 'EFECTIVO'}
-                        onChange={handleChange}
-                      />
-                      <span>Efectivo</span>
-                    </label>
-                  )}
+            {/* Delivery Information Card */}
+            {configEnvio && (
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-[#045659]">Información de entrega</h2>
+                  <button className="flex items-center gap-1 text-[#F05542] font-semibold text-sm hover:underline">
+                    <Icon icon="solar:pen-bold" /> Editar
+                  </button>
                 </div>
-              </div>
 
-              {(formData.medioPago === 'YAPE' || formData.medioPago === 'PLIN') && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium mb-2">Escanea el QR para pagar:</p>
-                  {formData.medioPago === 'YAPE' && configPago?.yapeQrUrl && (
-                    <div className="text-center">
-                      <img
-                        src={configPago.yapeQrUrl}
-                        alt="QR Yape"
-                        className="w-full h-full mx-auto mb-2"
-                      />
-                      <p className="text-sm">Número: {configPago.yapeNumero}</p>
+                {/* Address / Type Selector */}
+                <div className="flex gap-4 items-start">
+                  <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center flex-shrink-0 text-gray-500">
+                    <Icon icon="solar:map-point-bold-duotone" width={24} />
+                  </div>
+                  <div className="flex-1">
+                    {/* Simple Tabs for Delivery Type */}
+                    <div className="flex gap-4 mb-4 border-b border-gray-100 pb-2">
+                      {configEnvio.aceptaEnvio && (
+                        <label className={`cursor-pointer pb-2 font-bold text-sm ${formData.tipoEntrega === 'ENVIO' ? 'text-[#045659] border-b-2 border-[#045659]' : 'text-gray-400'}`}>
+                          <input type="radio" className="hidden" name="tipoEntrega" value="ENVIO" checked={formData.tipoEntrega === 'ENVIO'} onChange={handleChange} />
+                          Delivery
+                        </label>
+                      )}
+                      {configEnvio.aceptaRecojo && (
+                        <label className={`cursor-pointer pb-2 font-bold text-sm ${formData.tipoEntrega === 'RECOJO' ? 'text-[#045659] border-b-2 border-[#045659]' : 'text-gray-400'}`}>
+                          <input type="radio" className="hidden" name="tipoEntrega" value="RECOJO" checked={formData.tipoEntrega === 'RECOJO'} onChange={handleChange} />
+                          Recojo en tienda
+                        </label>
+                      )}
                     </div>
-                  )}
-                  {formData.medioPago === 'PLIN' && configPago?.plinQrUrl && (
-                    <div className="text-center">
-                      <img
-                        src={configPago.plinQrUrl}
-                        alt="QR Plin"
-                        className="w-48 h-48 mx-auto mb-2"
-                      />
-                      <p className="text-sm">Número: {configPago.plinNumero}</p>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          name="clienteNombre"
+                          placeholder="Nombre completo *"
+                          value={formData.clienteNombre}
+                          onChange={handleChange}
+                          className={`w-full bg-gray-50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#045659]/20 ${erroresForm.clienteNombre ? 'border-2 border-red-300' : 'border-none'
+                            }`}
+                        />
+                        {erroresForm.clienteNombre && (
+                          <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteNombre}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <input
+                          type="tel"
+                          name="clienteTelefono"
+                          placeholder="Teléfono *"
+                          value={formData.clienteTelefono}
+                          onChange={handleChange}
+                          className={`w-full bg-gray-50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#045659]/20 ${erroresForm.clienteTelefono ? 'border-2 border-red-300' : 'border-none'
+                            }`}
+                        />
+                        {erroresForm.clienteTelefono && (
+                          <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteTelefono}</p>
+                        )}
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <input
+                          type="email"
+                          name="clienteEmail"
+                          placeholder="Email *"
+                          value={formData.clienteEmail}
+                          onChange={handleChange}
+                          className={`w-full bg-gray-50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#045659]/20 ${erroresForm.clienteEmail ? 'border-2 border-red-300' : 'border-none'
+                            }`}
+                        />
+                        {erroresForm.clienteEmail && (
+                          <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteEmail}</p>
+                        )}
+                      </div>
+
+                      {formData.tipoEntrega === 'ENVIO' ? (
+                        <div className="md:col-span-2">
+                          <input
+                            type="text"
+                            name="clienteDireccion"
+                            placeholder="Dirección de entrega *"
+                            value={formData.clienteDireccion}
+                            onChange={handleChange}
+                            className={`w-full bg-gray-50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#045659]/20 ${erroresForm.clienteDireccion ? 'border-2 border-red-300' : 'border-none'
+                              }`}
+                          />
+                          {erroresForm.clienteDireccion && (
+                            <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteDireccion}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="md:col-span-2 p-3 bg-yellow-50 text-yellow-800 rounded-xl text-sm flex items-center gap-2">
+                          <Icon icon="solar:shop-bold" />
+                          <span>Recojo en: {configEnvio.direccionRecojo}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium mb-1">
-                      Número desde el que pagaste (opcional)
-                    </label>
-                    <input
-                      type="text"
-                      name="referenciaTransf"
-                      value={formData.referenciaTransf}
-                      onChange={handleChange}
-                      placeholder="999 999 999"
-                      className={`w-full border ${borderRadius} p-2`}
-                    />
                   </div>
                 </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Observaciones</label>
-                <textarea
-                  name="observaciones"
-                  value={formData.observaciones}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Ej: Sin cebolla, extra picante..."
-                  className={`w-full border ${borderRadius} p-2`}
-                />
               </div>
+            )}
+
+            {/* Review Item by Store */}
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  {tienda?.logo ? <img src={tienda.logo} className="w-8 h-8 rounded-full bg-gray-100" /> : <div className="w-8 h-8 bg-red-500 rounded-full text-white flex items-center justify-center font-bold">T</div>}
+                  <div>
+                    <h3 className="font-bold text-[#045659]">{tienda?.nombreComercial || 'Tienda'}</h3>
+                    <p className="text-xs text-gray-400">Entrega en 15 minutos</p>
+                  </div>
+                </div>
+                <Icon icon="mdi:chevron-up" className="text-gray-400" />
+              </div>
+
+              <div className="space-y-6">
+                {carritoState.map((item) => (
+                  <div key={item.id} className="flex gap-4 items-center bg-[#F9FAFB] p-4 rounded-2xl">
+                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-1 border border-gray-100">
+                      {item.imagenUrl ? <img src={item.imagenUrl} className="w-full h-full object-contain" /> : <Icon icon="solar:box-linear" className="text-gray-300" />}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-[#045659] text-sm line-clamp-1">{item.descripcion}</h4>
+                      <p className="text-xs text-gray-500">
+                        {typeof item.unidadMedida === 'object' && item.unidadMedida !== null
+                          ? (item.unidadMedida.nombre || item.unidadMedida.codigo || 'Unidad')
+                          : (item.unidadMedida || 'Unidad')}
+                      </p>
+
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="font-bold text-lg text-[#045659]">{Math.floor(Number(item.precioUnitario))}</span>
+                        <span className="text-xs font-bold text-[#045659] align-top">.{Number(item.precioUnitario).toFixed(2).split('.')[1]} S/</span>
+                      </div>
+                    </div>
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => updateQuantity(item.id, item.cantidad - 1)} className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-white transition-colors text-gray-500">
+                        <Icon icon={item.cantidad === 1 ? "solar:trash-bin-trash-linear" : "mdi:minus"} width={16} />
+                      </button>
+                      <span className="font-bold text-gray-900 w-4 text-center">{item.cantidad}</span>
+                      <button onClick={() => updateQuantity(item.id, item.cantidad + 1)} className="w-8 h-8 rounded-full border border-[#045659] text-[#045659] flex items-center justify-center hover:bg-[#045659] hover:text-white transition-colors">
+                        <Icon icon="mdi:plus" width={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm text-gray-500 cursor-pointer hover:text-red-500" onClick={() => navigate(`/tienda/${slug}`)}>
+                <div className="flex items-center gap-2">
+                  <Icon icon="solar:restart-linear" />
+                  Reemplazar con otros productos
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-24">
+              <h2 className="text-xl font-bold text-[#045659] mb-6">Resumen de orden</h2>
+
+              {/* Payment Methods */}
+              <div className="space-y-3 mb-6">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.medioPago === 'YAPE' ? 'border-[#F05542]' : 'border-gray-300'}`}>
+                    {formData.medioPago === 'YAPE' && <div className="w-2.5 h-2.5 bg-[#F05542] rounded-full" />}
+                  </div>
+                  <input type="radio" name="medioPago" value="YAPE" className="hidden" onChange={handleChange} checked={formData.medioPago === 'YAPE'} />
+                  <span className="text-sm font-medium text-gray-700">Yape / Plin (Online)</span>
+                </label>
+                {configPago?.aceptaEfectivo && (
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.medioPago === 'EFECTIVO' ? 'border-[#F05542]' : 'border-gray-300'}`}>
+                      {formData.medioPago === 'EFECTIVO' && <div className="w-2.5 h-2.5 bg-[#F05542] rounded-full" />}
+                    </div>
+                    <input type="radio" name="medioPago" value="EFECTIVO" className="hidden" onChange={handleChange} checked={formData.medioPago === 'EFECTIVO'} />
+                    <span className="text-sm font-medium text-gray-700">Contraentrega (Efectivo)</span>
+                  </label>
+                )}
+                {/* <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.medioPago === 'POS' ? 'border-[#F05542]' : 'border-gray-300'}`}>
+                    {formData.medioPago === 'POS' && <div className="w-2.5 h-2.5 bg-[#F05542] rounded-full" />}
+                  </div>
+                  <input type="radio" name="medioPago" value="POS" className="hidden" onChange={handleChange} checked={formData.medioPago === 'POS'} />
+                  <span className="text-sm font-medium text-gray-700">Tarjeta (POS)</span>
+                </label> */}
+              </div>
+
+              {/* Promo Code */}
+              <div className="flex gap-2 mb-6 bg-gray-50 p-2 rounded-xl">
+                <input type="text" placeholder="Añadir Promo" className="bg-transparent border-none text-sm w-full focus:ring-0 px-2" />
+                <button className="bg-[#045659] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase">Aplicar</button>
+              </div>
+
+              {/* Cost Breakdown */}
+              <div className="space-y-3 border-b border-gray-100 pb-6 mb-6">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-gray-900">S/ {calcularSubtotal().toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Costo de envío</span>
+                  <span className="font-bold text-gray-900">S/ {calcularCostoEnvio().toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end mb-6">
+                <span className="text-xl font-bold text-[#045659]">Total</span>
+                <div className="text-right">
+                  <span className="text-2xl font-extrabold text-[#045659]">S/ {calcularTotal().toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* <div className="border border-gray-200 rounded-xl p-3 flex items-center justify-center gap-2 mb-4 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                <span className="text-sm font-medium text-gray-600">Pagar en cuotas con</span>
+                <span className="bg-pink-100 text-pink-600 px-2 py-0.5 rounded text-xs font-bold italic">Klarna.</span>
+              </div> */}
 
               <button
-                type="submit"
-                disabled={enviando}
-                className={`w-full text-white py-3 ${btnRadius} font-semibold hover:opacity-95 disabled:bg-gray-400`}
-                style={{ backgroundColor: diseno.colorPrimario || '#f97316' }}
+                onClick={() => {
+                  if (validarFormulario()) {
+                    setShowConfirmModal(true);
+                  }
+                }}
+                disabled={enviando || carritoState.length === 0}
+                className="w-full bg-[#BCE766] hover:bg-[#aed859] text-[#045659] py-4 rounded-full font-bold uppercase tracking-wide transition-all shadow-sm disabled:opacity-50"
               >
-                {enviando ? 'Enviando...' : 'Completar pedido'}
+                {enviando ? 'Procesando...' : 'Confirmar Orden'}
               </button>
-            </form>
+
+            </div>
           </div>
 
-          {/* Resumen */}
-          <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-4 md:p-6 h-fit md:sticky md:top-24`}>
-            <h2 className="text-lg font-semibold mb-4">Resumen del pedido</h2>
-            <div className="space-y-3 mb-4">
-              {carritoState.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {item.imagenUrl ? (
-                      <img src={item.imagenUrl} alt={item.descripcion} className="w-12 h-12 rounded object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-gray-400">
-                        <Icon icon="mdi:image-off" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-sm">{item.descripcion}</p>
-                      {/* Mostrar modificadores seleccionados */}
-                      {item.modificadores && item.modificadores.length > 0 && (
-                        <p className="text-xs text-gray-400 truncate">
-                          {item.modificadores.map((m: any) => m.opcionNombre).join(', ')}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500">{item.cantidad} item{item.cantidad > 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <div className="text-sm font-semibold">S/ {(Number(item.precioUnitario) * item.cantidad).toFixed(2)}</div>
-                </div>
-              ))}
-            </div>
-            <div className="border-t pt-3 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal (Base)</span>
-                <span>S/ {(calcularSubtotal() / 1.18).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>IGV (18%)</span>
-                <span>S/ {calcularIGV().toFixed(2)}</span>
-              </div>
-              {formData.tipoEntrega === 'ENVIO' && calcularCostoEnvio() > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Costo de envío</span>
-                  <span>S/ {calcularCostoEnvio().toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span>Tiempo de entrega</span>
-                <span>{((tienda as any)?.diseno?.tiempoEntregaMin ?? (tienda as any)?.tiempoPreparacionMin ?? 15)}-
-                  {(((tienda as any)?.diseno?.tiempoEntregaMax ?? (((tienda as any)?.diseno?.tiempoEntregaMin ?? (tienda as any)?.tiempoPreparacionMin ?? 15) + 10)))} min
-                </span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2">
-                <span>Total</span>
-                <span>S/ {calcularTotal().toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
+
+      {/* Payment Confirmation Modal */}
+      {pedidoCreado && (
+        <PaymentConfirmationModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            // Redirect to tracking page
+            window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`;
+          }}
+          orderData={{
+            id: pedidoCreado.id,
+            codigoSeguimiento: pedidoCreado.codigoSeguimiento,
+            total: pedidoCreado.total || calcularTotal(),
+            medioPago: formData.medioPago,
+            tipoEntrega: formData.tipoEntrega,
+            clienteNombre: formData.clienteNombre
+          }}
+          paymentConfig={configPago}
+          storeSlug={slug || ''}
+        />
+      )}
+
+      <ConfirmOrderModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={enviarPedido}
+        total={calcularTotal()}
+        loading={enviando}
+        tiendaColor={diseno?.colorPrimario || '#045659'}
+      />
     </div>
   );
 }

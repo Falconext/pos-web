@@ -657,64 +657,66 @@ const KardexProductos = () => {
                         <div className="flex-1">
                             <InputPro name="search" value={searchClient} onChange={handleChange} label={labels.buscar} isLabel />
                         </div>
-                        <div className="flex flex-wrap gap-2 top-8 relative">
-                            <Button
-                                color="lila"
-                                outline
-                                onClick={() => setIsOpenModalCategory(true)}
-                                className="text-sm"
-                            >
-                                <Icon icon="solar:tag-bold-duotone" className="mr-1.5" />
-                                Categorías
-                            </Button>
-                            <Button
-                                color="lila"
-                                outline
-                                onClick={() => setIsOpenModalBrands(true)}
-                                className="text-sm"
-                            >
-                                <Icon icon="solar:star-bold-duotone" className="mr-1.5" />
-                                Marcas
-                            </Button>
-                            <Button
-                                color="success"
-                                outline
-                                onMouseEnter={() => setIsHoveredExp(true)}
-                                onMouseLeave={() => setIsHoveredExp(false)}
-                                onClick={() => exportProducts(auth?.empresaId, debounce)}
-                                className="text-sm"
-                            >
-                                <Icon icon="solar:export-bold" className="mr-1.5" />
-                                Exportar
-                            </Button>
-                            <div className="relative">
-                                <input
-                                    type="file"
-                                    accept=".xlsx, .xls"
-                                    ref={fileInputRef}
-                                    onChange={handleImportExcel}
-                                    className="hidden"
-                                />
+                        <div className="w-full flex md:top-8 relative lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
+                            <div className="flex gap-2 whitespace-nowrap px-1">
+                                <Button
+                                    color="lila"
+                                    outline
+                                    onClick={() => setIsOpenModalCategory(true)}
+                                    className="text-sm"
+                                >
+                                    <Icon icon="solar:tag-bold-duotone" className="mr-1.5" />
+                                    Categorías
+                                </Button>
+                                <Button
+                                    color="lila"
+                                    outline
+                                    onClick={() => setIsOpenModalBrands(true)}
+                                    className="text-sm"
+                                >
+                                    <Icon icon="solar:star-bold-duotone" className="mr-1.5" />
+                                    Marcas
+                                </Button>
                                 <Button
                                     color="success"
                                     outline
-                                    onMouseEnter={() => setIsHoveredImp(true)}
-                                    onMouseLeave={() => setIsHoveredImp(false)}
-                                    onClick={() => fileInputRef.current?.click()}
+                                    onMouseEnter={() => setIsHoveredExp(true)}
+                                    onMouseLeave={() => setIsHoveredExp(false)}
+                                    onClick={() => exportProducts(auth?.empresaId, debounce)}
                                     className="text-sm"
                                 >
-                                    <Icon icon="solar:import-bold" className="mr-1.5" />
-                                    Importar
+                                    <Icon icon="solar:export-bold" className="mr-1.5" />
+                                    Exportar
+                                </Button>
+                                <div className="relative inline-block">
+                                    <input
+                                        type="file"
+                                        accept=".xlsx, .xls"
+                                        ref={fileInputRef}
+                                        onChange={handleImportExcel}
+                                        className="hidden"
+                                    />
+                                    <Button
+                                        color="success"
+                                        outline
+                                        onMouseEnter={() => setIsHoveredImp(true)}
+                                        onMouseLeave={() => setIsHoveredImp(false)}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="text-sm"
+                                    >
+                                        <Icon icon="solar:import-bold" className="mr-1.5" />
+                                        Importar
+                                    </Button>
+                                </div>
+                                <Button
+                                    color="primary"
+                                    onClick={() => setIsOpenModalCatalog(true)}
+                                    className="text-sm"
+                                >
+                                    <Icon icon="solar:cloud-download-bold" className="mr-1.5" />
+                                    Catálogo
                                 </Button>
                             </div>
-                            <Button
-                                color="primary"
-                                onClick={() => setIsOpenModalCatalog(true)}
-                                className="text-sm"
-                            >
-                                <Icon icon="solar:cloud-download-bold" className="mr-1.5" />
-                                Catálogo
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -729,7 +731,9 @@ const KardexProductos = () => {
                         disabled={uploading}
                     />
 
-                    {renderContent()}
+                    <div className="overflow-x-auto">
+                        {renderContent()}
+                    </div>
 
                     {/* Modales */}
                     <ModalCategories isOpenModal={isOpenModalCategory} closeModal={() => setIsOpenModalCategory(false)} setIsOpenModal={setIsOpenModalCategory} />

@@ -9,6 +9,8 @@ import { IFormCategories } from "@/interfaces/categories"
 import ModalConfirm from "@/components/ModalConfirm"
 import InputPro from "@/components/InputPro"
 import Button from "@/components/Button"
+import CircularImageUploader from "@/components/CircularImageUploader"
+import apiClient from "@/utils/apiClient"
 
 interface IPropsProducts {
     isOpenModal: boolean
@@ -25,10 +27,13 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
 
     const [formValues, setFormValues] = useState(initialForm);
     const [isEdit, setIsEdit] = useState<boolean>(false);
-    const { categories, addCategory, editCategory, deleteCategory, getAllCategories } = useCategoriesStore();
+    const { categories, addCategory, editCategory, deleteCategory, getAllCategories, updateCategoryImage } = useCategoriesStore();
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [currentPage, setcurrentPage] = useState(1);
     const [itemsPerPage, setitemsPerPage] = useState(50);
+
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const [errors, setErrors] = useState({
         nombre: ""
@@ -56,6 +61,8 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
 
     const handleGetCategory = (data: IFormCategories) => {
         setFormValues(data)
+        setPreviewUrl(data.imagenUrl || null)
+        setImageFile(null)
         setIsEdit(true);
     }
 
@@ -93,25 +100,57 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
             }
         ]
 
-    const handleSubmitCategory = () => {
+    const handleSubmitCategory = async () => {
         if (!validateForm()) {
             return;
         }
 
+        let result: any = null;
+
         if (formValues.categoriaId !== 0) {
             console.log(formValues)
-            editCategory(formValues)
+            result = await editCategory(formValues)
         } else {
             console.log("hello")
-            addCategory(formValues)
+            result = await addCategory(formValues)
         }
+
+        // Upload image if exists
+        const entityId = result?.id || (formValues.categoriaId !== 0 ? formValues.categoriaId : null);
+
+        if (imageFile && entityId) {
+            try {
+                const fd = new FormData();
+                fd.append('file', imageFile);
+                const imgResp = await apiClient.post(`/categoria/${entityId}/imagen`, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                if (imgResp.data?.url) {
+                    console.log("Updating store with URL:", imgResp.data.url);
+                    updateCategoryImage(entityId, imgResp.data.url);
+                } else {
+                    console.warn("No URL in response", imgResp);
+                }
+
+                // Only fetch all if necessary, but we are updating locally now
+                // getAllCategories({}); 
+            } catch (error) {
+                console.error("Error uploading image:", error);
+            }
+        }
+
         setFormValues(initialForm)
+        setPreviewUrl(null)
+        setImageFile(null)
+        setIsEdit(false)
     }
 
     const categoriesTable = categories?.map((item: any, index: number) => ({
         '#': index + 1,
         categoriaId: item.id,
-        nombre: item.nombre
+        nombre: item.nombre,
+        imagenUrl: item.imagenUrl
     }))
 
     const confirmDeleteCategory = () => {
@@ -123,14 +162,35 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
     return (
         <>
             {isOpenModal && <Modal width="650px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar categoria" : "Nueva categoria"}>
-                <div className="px-6 mt-5 grid grid-cols-2 justify-between items-center border-b border-[#e5e7eb] pb-10">
-                    <div className="">
-                        <InputPro autocomplete="off" value={formValues?.nombre} error={errors.nombre} name="nombre" onChange={handleChange} isLabel label="Nombre de la categoría" />
+                <div className="px-6 mt-5 flex flex-col md:flex-row gap-6 items-start border-b border-[#e5e7eb] pb-10">
+                    <div className="flex-shrink-0">
+                        <CircularImageUploader
+                            imageUrl={previewUrl}
+                            onFileSelect={(file) => {
+                                setImageFile(file);
+                                setPreviewUrl(URL.createObjectURL(file));
+                            }}
+                        />
                     </div>
-                    <div className="flex justify-end gap-5 mt-10 relative top-[-7px]">
+
+                    <div className="flex-1 w-full">
+                        <InputPro
+                            autocomplete="off"
+                            value={formValues?.nombre}
+                            error={errors.nombre}
+                            name="nombre"
+                            onChange={handleChange}
+                            isLabel
+                            label="Nombre de la categoría"
+                        />
+                    </div>
+
+                    <div className="md:col-span-2 flex justify-end gap-5 mt-5 md:mt-7 relative">
                         <Button color="black" outline onClick={() => {
                             setIsEdit(false)
                             setFormValues(initialForm)
+                            setPreviewUrl(null)
+                            setImageFile(null)
                         }}>Limpiar</Button>
                         <Button color="secondary" onClick={handleSubmitCategory}>{isEdit ? "Editar" : "Guardar"}</Button>
                     </div>

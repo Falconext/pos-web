@@ -318,7 +318,7 @@ export default function AdminLayout() {
                       {(() => {
                         const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
                         const esFarmacia = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
-                        return auth?.empresa?.plan?.tieneTienda && !esFarmacia ? (
+                        return !esFarmacia ? (
                           <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                             Kits / Packs
                           </NavLink>
@@ -406,7 +406,7 @@ export default function AdminLayout() {
               )}
 
               {/* Guías de Remisión - Solo para empresas formales */}
-              {hasPermission(auth, 'comprobantes') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+              {hasPermission(auth, 'guia_remision') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
                 <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Guías de Remisión') }} to="/administrador/guia-remision" className={({ isActive }) => isActive || location.pathname.includes('/administrador/guia-remision') ? theme.activeLink : theme.inactiveLink}>
                   <Icon icon="solar:delivery-bold-duotone" className="mr-3 text-xl" /> Guías de Remisión
                 </NavLink>
@@ -425,7 +425,7 @@ export default function AdminLayout() {
               </div>
 
               {/* Compras */}
-              {hasPermission(auth, 'kardex') && (
+              {hasPermission(auth, 'compras') && (
                 <div>
                   <button onClick={() => { toggleAccordion('compras'); setNameNavbar('Compras') }} className={location.pathname.includes('/administrador/compras') && !location.search.includes('por_pagar') ? theme.accordionActive : theme.accordionInactive}>
                     <div className="flex items-center">
@@ -529,11 +529,9 @@ export default function AdminLayout() {
                         <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                           Pedidos
                         </NavLink>
-                        {isRestaurante && (
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                            Modificadores
-                          </NavLink>
-                        )}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Modificadores
+                        </NavLink>
                         <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                           Configuración
                         </NavLink>

@@ -56,18 +56,26 @@ export default function ConfiguracionTienda() {
   const [banners, setBanners] = useState<any[]>([]);
   const [loadingBanners, setLoadingBanners] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  // New banner fields
+  const [newBannerTitle, setNewBannerTitle] = useState('');
+  const [newBannerSubtitle, setNewBannerSubtitle] = useState('');
+  const [newBannerLink, setNewBannerLink] = useState('');
+  const [newBannerOrden, setNewBannerOrden] = useState<number | ''>('');
 
   // Search products for banners
   const [productSearch, setProductSearch] = useState('');
   const [productResults, setProductResults] = useState<any[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [searchingProducts, setSearchingProducts] = useState(false);
 
   // Editing state
   const [editingBanner, setEditingBanner] = useState<any>(null);
+  const [editBannerTitle, setEditBannerTitle] = useState('');
+  const [editBannerSubtitle, setEditBannerSubtitle] = useState('');
+  const [editBannerLink, setEditBannerLink] = useState('');
+  const [editBannerOrden, setEditBannerOrden] = useState<number | ''>('');
+  const [editBannerFile, setEditBannerFile] = useState<File | null>(null);
   const [editSearch, setEditSearch] = useState('');
   const [editResults, setEditResults] = useState<any[]>([]);
-  const [editSelectedProduct, setEditSelectedProduct] = useState<any>(null);
   const [searchingEdit, setSearchingEdit] = useState(false);
 
   useEffect(() => {
@@ -134,13 +142,26 @@ export default function ConfiguracionTienda() {
     if (!editingBanner) return;
     try {
       setSaving(true);
-      await apiClient.patch(`/banners/${editingBanner.id}`, {
-        productoId: editSelectedProduct?.id || null,
-        // If we supported title editing, we'd add it here
+      const fd = new FormData();
+      if (editBannerTitle) fd.append('titulo', editBannerTitle);
+      if (editBannerSubtitle) fd.append('subtitulo', editBannerSubtitle);
+      if (editBannerLink) fd.append('linkUrl', editBannerLink);
+      if (editBannerFile) fd.append('file', editBannerFile);
+      if (editBannerOrden !== '' && editBannerOrden !== undefined) fd.append('orden', String(editBannerOrden));
+
+      // Even if fields are empty, we might want to allow clearing them? 
+      // Current logic implies upsert. Backend uses partial update.
+
+      await apiClient.patch(`/banners/${editingBanner.id}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       alert('Banner actualizado correctamente', 'success');
       setEditingBanner(null);
-      setEditSelectedProduct(null);
+      setEditBannerTitle('');
+      setEditBannerSubtitle('');
+      setEditBannerLink('');
+      setEditBannerOrden('');
+      setEditBannerFile(null);
       setEditSearch('');
       cargarBanners();
     } catch (error: any) {
@@ -152,13 +173,12 @@ export default function ConfiguracionTienda() {
 
   const openEditModal = (banner: any) => {
     setEditingBanner(banner);
-    if (banner.producto) {
-      setEditSelectedProduct(banner.producto);
-      setEditSearch(banner.producto.descripcion);
-    } else {
-      setEditSelectedProduct(null);
-      setEditSearch('');
-    }
+    setEditBannerTitle(banner.titulo || '');
+    setEditBannerSubtitle(banner.subtitulo || '');
+    setEditBannerLink(banner.linkUrl || '');
+    setEditBannerOrden(banner.orden ?? '');
+    setEditBannerFile(null);
+    setEditSearch('');
   };
 
   const cargarConfiguracion = async () => {
@@ -358,11 +378,12 @@ export default function ConfiguracionTienda() {
       setUploadingBanner(true);
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('titulo', 'Banner');
-      fd.append('orden', banners.length.toString());
-      if (selectedProduct) {
-        fd.append('productoId', selectedProduct.id.toString());
-      }
+      fd.append('titulo', newBannerTitle || 'Banner');
+      fd.append('subtitulo', newBannerSubtitle || '');
+      fd.append('linkUrl', newBannerLink || '');
+      // Use provided orden or calculate next orden
+      const ordenValue = newBannerOrden !== '' ? newBannerOrden : banners.length;
+      fd.append('orden', String(ordenValue));
 
       await apiClient.post('/banners/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -371,7 +392,10 @@ export default function ConfiguracionTienda() {
       alert('Banner subido exitosamente', 'success');
       cargarBanners();
       // Reset selection
-      setSelectedProduct(null);
+      setNewBannerTitle('');
+      setNewBannerSubtitle('');
+      setNewBannerLink('');
+      setNewBannerOrden('');
       setProductSearch('');
       setProductResults([]);
     } catch (error: any) {
@@ -810,21 +834,25 @@ export default function ConfiguracionTienda() {
               {/* Banners existentes */}
               {banners.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {banners.map((banner, index) => (
+                  {[...banners].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map((banner, index) => (
                     <div key={banner.id} className="relative group">
-                      <div className="aspect-[16/5] rounded-lg overflow-hidden border-2 border-gray-200">
+                      <div className="aspect-[21/9] rounded-lg overflow-hidden border-2 border-gray-200">
                         <img
                           src={banner.imagenUrl}
                           alt={banner.titulo || `Banner ${index + 1}`}
-                          className="w-full h-full object-fill"
+                          className="w-full h-full object-cover"
                         />
+                      </div>
+                      {/* Orden Badge */}
+                      <div className="absolute top-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        Orden: {banner.orden ?? '-'}
                       </div>
                       <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
                           onClick={() => openEditModal(banner)}
                           className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-lg transition-colors"
-                          title="Editar enlace"
+                          title="Editar banner"
                         >
                           <Icon icon="solar:pen-bold" className="w-4 h-4" />
                         </button>
@@ -838,7 +866,8 @@ export default function ConfiguracionTienda() {
                         </button>
                       </div>
                       <p className="mt-2 text-sm font-medium text-gray-700 text-center truncate px-2">
-                        {banner.producto ? `🔗 ${banner.producto.descripcion}` : (banner.titulo || `Banner ${index + 1}`)}
+                        {banner.titulo || `Banner ${index + 1}`}
+                        <span className="block text-xs text-gray-400 font-normal truncate">{banner.subtitulo}</span>
                       </p>
                     </div>
                   ))}
@@ -848,31 +877,76 @@ export default function ConfiguracionTienda() {
               {/* Modal Edición de Banner */}
               {editingBanner && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
-                    <h3 className="text-lg font-bold mb-4">Editar Enlace del Banner</h3>
+                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+                    <h3 className="text-lg font-bold mb-4">Editar Banner</h3>
 
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Producto Vinculado</label>
-                      <div className="relative">
+                    <div className="space-y-4">
+                      {/* Image Preview/Edit */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Banner</label>
+                        <div className="relative aspect-[21/9] rounded-lg overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors cursor-pointer bg-gray-50 flex items-center justify-center group/edit-img">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                            onChange={(e) => setEditBannerFile(e.target.files?.[0] || null)}
+                          />
+                          {editBannerFile ? (
+                            <img src={URL.createObjectURL(editBannerFile)} className="w-full h-full object-cover" alt="Preview" />
+                          ) : editingBanner.imagenUrl ? (
+                            <img src={editingBanner.imagenUrl} className="w-full h-full object-cover" alt="Current" />
+                          ) : (
+                            <span className="text-gray-400">Clic para subir imagen</span>
+                          )}
+
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/edit-img:opacity-100 transition-opacity pointer-events-none">
+                            <Icon icon="solar:camera-bold" className="text-white text-3xl" />
+                          </div>
+                        </div>
+                        {editBannerFile && <p className="text-xs text-green-600 mt-1">Nueva imagen seleccionada: {editBannerFile.name}</p>}
+                      </div>
+
+                      <InputPro
+                        label="Título"
+                        name="titulo"
+                        value={editBannerTitle}
+                        onChange={(e: any) => setEditBannerTitle(e.target.value)}
+                        placeholder="Ej: Gran Liquidación"
+                      />
+                      <InputPro
+                        label="Subtítulo / Descripción"
+                        name="subtitulo"
+                        value={editBannerSubtitle}
+                        onChange={(e: any) => setEditBannerSubtitle(e.target.value)}
+                        placeholder="Ej: Hasta 50% de descuento"
+                      />
+                      <InputPro
+                        label="Enlace / Link (Opcional)"
+                        name="link"
+                        value={editBannerLink}
+                        onChange={(e: any) => setEditBannerLink(e.target.value)}
+                        placeholder="Ej: /tienda/producto/xyz o https://..."
+                      />
+                      <InputPro
+                        label="Orden de visualización"
+                        name="orden"
+                        type="number"
+                        value={editBannerOrden}
+                        onChange={(e: any) => setEditBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Ej: 0, 1, 2... (menor = primero)"
+                      />
+
+                      {/* Helper para buscar producto y llenar link */}
+                      <div className="relative pt-2 border-t border-gray-100">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Buscar enlace a producto (Ayuda)</label>
                         <input
                           type="text"
                           value={editSearch}
-                          onChange={(e) => { setEditSearch(e.target.value); if (!e.target.value) setEditSelectedProduct(null); }}
-                          placeholder="Buscar producto..."
-                          className="w-full rounded-lg border-gray-300 focus:ring-black focus:border-black"
+                          onChange={(e) => setEditSearch(e.target.value)}
+                          placeholder="Buscar producto para obtener enlace..."
+                          className="w-full text-sm rounded-lg border-gray-300 focus:ring-black focus:border-black"
                         />
-                        {editSelectedProduct && (
-                          <button
-                            type="button"
-                            onClick={() => { setEditSelectedProduct(null); setEditSearch(''); }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
-                          >
-                            <Icon icon="mdi:close-circle" />
-                          </button>
-                        )}
-
-                        {/* Resultados search edit */}
-                        {editSearch.length > 2 && !editSelectedProduct && (
+                        {editSearch.length > 2 && (
                           <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-b-lg z-10 max-h-48 overflow-y-auto mt-1">
                             {searchingEdit ? (
                               <div className="p-3 text-center text-xs text-gray-500">Buscando...</div>
@@ -880,7 +954,11 @@ export default function ConfiguracionTienda() {
                               editResults.map(p => (
                                 <div
                                   key={p.id}
-                                  onClick={() => { setEditSelectedProduct(p); setEditSearch(p.descripcion); setEditResults([]); }}
+                                  onClick={() => {
+                                    setEditBannerLink(`/tienda/producto/${p.slug || p.id}`); // Assuming slug exists or fallback to id, ideally slug
+                                    setEditSearch('');
+                                    setEditResults([]);
+                                  }}
                                   className="p-2 hover:bg-gray-50 cursor-pointer text-sm border-b last:border-0"
                                 >
                                   <div className="font-medium truncate">{p.descripcion}</div>
@@ -893,12 +971,6 @@ export default function ConfiguracionTienda() {
                           </div>
                         )}
                       </div>
-                      {editSelectedProduct && (
-                        <div className="mt-2 text-xs text-green-600 flex items-center gap-1 font-medium bg-green-50 p-2 rounded">
-                          <Icon icon="mdi:link" />
-                          Vinculado a: {editSelectedProduct.descripcion}
-                        </div>
-                      )}
                     </div>
 
                     <div className="flex justify-end gap-2 mt-6">
@@ -916,20 +988,49 @@ export default function ConfiguracionTienda() {
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <h4 className="text-sm font-semibold mb-3">Subir Nuevo Banner</h4>
 
-                  {/* Product Link Search */}
-                  <div className="mb-4 relative">
-                    <label className="block text-xs font-bold text-gray-700 mb-2">PASO 1: Vincular Producto (Opcional)</label>
-                    <div className="relative">
+                  <div className="mb-4 space-y-3">
+                    <InputPro
+                      label="Título del Banner"
+                      name="tituloNew"
+                      value={newBannerTitle}
+                      onChange={(e: any) => setNewBannerTitle(e.target.value)}
+                      placeholder="Ej: Nueva Colección"
+                    />
+                    <InputPro
+                      label="Subtítulo (Opcional)"
+                      name="subtituloNew"
+                      value={newBannerSubtitle}
+                      onChange={(e: any) => setNewBannerSubtitle(e.target.value)}
+                      placeholder="Ej: Descuentos de verano"
+                    />
+                    <InputPro
+                      label="Enlace / Link (Opcional)"
+                      name="linkNew"
+                      value={newBannerLink}
+                      onChange={(e: any) => setNewBannerLink(e.target.value)}
+                      placeholder="Ej: /tienda/producto/xyz o https://..."
+                    />
+                    <InputPro
+                      label="Orden de visualización"
+                      name="ordenNew"
+                      type="number"
+                      value={newBannerOrden}
+                      onChange={(e: any) => setNewBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="Ej: 0, 1, 2... (menor = primero)"
+                    />
+
+                    <div className="relative pt-2">
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Ayuda: Buscar enlace de producto</label>
                       <input
                         type="text"
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        placeholder="Buscar producto para vincular..."
+                        placeholder="Buscar producto para autocompletar enlace..."
                         className="w-full text-sm border-gray-300 rounded-md focus:ring-black focus:border-black placeholder-gray-400"
-                        disabled={!!selectedProduct}
+                        disabled={!!newBannerLink && newBannerLink.length > 100} // Just visual feedback
                       />
                       {/* Results Dropdown inside relative container */}
-                      {productSearch.length > 2 && !selectedProduct && (
+                      {productSearch.length > 2 && (
                         <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-b-lg z-10 max-h-48 overflow-y-auto mt-1">
                           {searchingProducts ? (
                             <div className="p-3 text-center text-xs text-gray-500">Buscando...</div>
@@ -937,7 +1038,11 @@ export default function ConfiguracionTienda() {
                             productResults.map(p => (
                               <div
                                 key={p.id}
-                                onClick={() => { setSelectedProduct(p); setProductSearch(p.descripcion); setProductResults([]); }}
+                                onClick={() => {
+                                  setNewBannerLink(`/tienda/producto/${p.slug || p.id}`);
+                                  setProductSearch('');
+                                  setProductResults([]);
+                                }}
                                 className="p-2 hover:bg-gray-50 cursor-pointer text-sm border-b last:border-0"
                               >
                                 <div className="font-medium truncate">{p.descripcion}</div>
@@ -951,14 +1056,34 @@ export default function ConfiguracionTienda() {
                       )}
                     </div>
 
-                    {/* PASO 2 */}
-                    <div className="mt-6">
-                      <span className="block text-xs font-bold text-gray-700 mb-2">PASO 2: Subir Imagen del Banner</span>
-
-                    </div>
                   </div>
 
-
+                  <div className="mt-6">
+                    <span className="block text-xs font-bold text-gray-700 mb-2">Subir Imagen del Banner</span>
+                    <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        {uploadingBanner ? (
+                          <>
+                            <Icon icon="eos-icons:loading" className="w-10 h-10 text-blue-500 mb-3" />
+                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Subiendo banner...</span></p>
+                          </>
+                        ) : (
+                          <>
+                            <Icon icon="solar:cloud-upload-linear" className="w-10 h-10 text-gray-400 mb-3" />
+                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Clic para subir</span> o arrastra la imagen</p>
+                            <p className="text-xs text-gray-500">PNG, JPG o WEBP (MAX. 2.5MB)</p>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/jpg, image/webp"
+                        onChange={handleBannerFileChange}
+                        disabled={uploadingBanner}
+                      />
+                    </label>
+                  </div>
                   {banners.length === 0 && !uploadingBanner && (
                     <div className="text-center py-8 text-gray-500">
                       <Icon icon="solar:gallery-bold" className="w-16 h-16 mx-auto mb-3 text-gray-300" />

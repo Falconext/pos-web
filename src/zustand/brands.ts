@@ -6,6 +6,7 @@ import useAlertStore from './alert';
 export interface IBrand {
   id: number;
   nombre: string;
+  imagenUrl?: string;
 }
 
 export interface IBrandsState {
@@ -14,19 +15,20 @@ export interface IBrandsState {
   getAllBrands: () => Promise<void>;
   addBrand: (data: { nombre: string }) => Promise<void>;
   editBrand: (data: { id: number; nombre: string }) => Promise<void>;
+  updateBrandImage: (id: number, imageUrl: string) => void;
   deleteBrand: (id: number) => Promise<void>;
-  formValues: { id: number; nombre: string };
+  formValues: { id: number; nombre: string; imagenUrl?: string };
   isEdit: boolean;
-  setFormValues: (data: { id: number; nombre: string }) => void;
+  setFormValues: (data: { id: number; nombre: string; imagenUrl?: string }) => void;
   setIsEdit: (value: boolean) => void;
 }
 
 export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
   brands: [],
   totalBrands: 0,
-  formValues: { id: 0, nombre: "" },
+  formValues: { id: 0, nombre: "", imagenUrl: "" },
   isEdit: false,
-  setFormValues: (data: { id: number; nombre: string }) => set({ formValues: data }),
+  setFormValues: (data: { id: number; nombre: string; imagenUrl?: string }) => set({ formValues: data }),
   setIsEdit: (value: boolean) => set({ isEdit: value }),
 
   getAllBrands: async () => {
@@ -53,10 +55,11 @@ export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
       if (resp.code === 1) {
         useAlertStore.setState({ success: true });
         set((state) => ({
-          brands: [{ id: resp.data?.id, nombre: data.nombre.trim() }, ...state.brands],
+          brands: [{ id: resp.data?.id, nombre: data.nombre.trim(), imagenUrl: resp.data?.imagenUrl }, ...state.brands],
           totalBrands: (state.totalBrands || 0) + 1,
         }), false, 'ADD_BRAND');
         useAlertStore.getState().alert('Se agregó la marca correctamente', 'success');
+        return resp.data;
       } else {
         useAlertStore.getState().alert('Error al agregar la marca', 'error');
       }
@@ -74,9 +77,10 @@ export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
       if (resp.code === 1) {
         useAlertStore.setState({ success: true });
         set((state) => ({
-          brands: state.brands.map((b) => (b.id === data.id ? { ...b, nombre: data.nombre.trim() } : b)),
+          brands: state.brands.map((b) => (b.id === data.id ? { ...b, ...data } : b)),
         }), false, 'EDIT_BRAND');
         useAlertStore.getState().alert('Se actualizó la marca correctamente', 'success');
+        return resp.data;
       } else {
         useAlertStore.getState().alert('Error al actualizar la marca', 'error');
       }
@@ -85,6 +89,12 @@ export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
     } finally {
       useAlertStore.setState({ loading: false });
     }
+  },
+
+  updateBrandImage: (id: number, imageUrl: string) => {
+    set((state) => ({
+      brands: state.brands.map((b) => (b.id === id ? { ...b, imagenUrl: imageUrl } : b)),
+    }), false, 'UPDATE_BRAND_IMAGE');
   },
 
   deleteBrand: async (id: number) => {

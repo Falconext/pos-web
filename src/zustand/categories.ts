@@ -13,6 +13,7 @@ export interface ICategoriesState {
     // getDocument: (data: IDocument) => void
     addCategory: (data: IFormCategories) => void
     editCategory: (data: IFormCategories) => void
+    updateCategoryImage: (id: number, imageUrl: string) => void
     getAllCategories: (params: any, callback?: Function,
         allProperties?: boolean) => void
     // updateDocument: (data: any) => void
@@ -76,10 +77,12 @@ export const useCategoriesStore = create<ICategoriesState>()(devtools((set, _get
                     categories: [{
                         ...data,
                         id: resp.data.id,
+                        imagenUrl: resp.data.imagenUrl,
                     }, ...state.categories]
                 }), false, "ADD_CATEGORIES");
                 useAlertStore.setState({ loading: false });
                 useAlertStore.getState().alert("Se agrego la categoria correctamente", "success")
+                return resp.data;
             }
         } catch (error: any) {
             return useAlertStore.getState().alert(`${error}`, "error")
@@ -98,6 +101,7 @@ export const useCategoriesStore = create<ICategoriesState>()(devtools((set, _get
                 }), false, "UPDATE_CATEGORY");
                 useAlertStore.setState({ loading: false })
                 useAlertStore.getState().alert("Se actualizo la categoria correctamente", "success");
+                return resp.data;
             } else {
                 useAlertStore.setState({ loading: false })
                 useAlertStore.getState().alert("Error al editar el categoria", "error");
@@ -105,6 +109,13 @@ export const useCategoriesStore = create<ICategoriesState>()(devtools((set, _get
         } catch (error: any) {
             return useAlertStore.getState().alert(`${error}`, "error")
         }
+    },
+    updateCategoryImage: (id: number, imageUrl: string) => {
+        set((state) => ({
+            categories: state.categories.map((category: ICategory) =>
+                category.id === id ? { ...category, imagenUrl: imageUrl } : category
+            ),
+        }), false, "UPDATE_CATEGORY_IMAGE");
     },
     deleteCategory: async (data: IFormCategories) => {
         try {
