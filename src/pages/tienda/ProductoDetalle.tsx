@@ -10,7 +10,6 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 
@@ -190,10 +189,6 @@ export default function ProductoDetalle() {
       if (saved) current = JSON.parse(saved) || [];
     } catch { }
 
-    // Si tiene modificadores, agregamos siempre como nuevo item (o podríamos comparar deep equality de modifiers)
-    // Para simplificar, asumimos que si tiene modifiers es un item distinto o usamos el timestamp en ID.
-    // La logica anterior usaba timestamp, asi que siempre es nuevo item si tiene mods.
-
     // Si NO tiene modificadores, buscamos coincidencia
     if (!modificadores?.length) {
       const existe = current.find((i) => i.productoId === item.productoId && !i.modificadores?.length);
@@ -229,13 +224,6 @@ export default function ProductoDetalle() {
 
   const irACheckout = () => {
     if (!producto) return;
-
-    // Check if product (with current modifiers) is already in cart
-    // Logic: If it exists, just navigate. If not, add it.
-    // For simplicity with modifiers, we just check product ID if no modifiers.
-    // If modifiers exist, we might add it anyway or check deeper. 
-    // Given user complaint, let's try to find exact match.
-
     let exists = false;
     let currentCarrito = carrito;
 
@@ -246,30 +234,9 @@ export default function ProductoDetalle() {
     } catch { }
 
     if (modificadoresProducto.length > 0) {
-      // Complex check: if any item has same productID and SAME modifiers
-      // For now, to solve the "summing" issue simple:
-      // If they click Buy Now, and items > 0, we can assume they want to checkout what they entered?
-      // Or just trigger handleAgregarProducto only if not in cart.
-      // Let's rely on handleAgregar logic but modified
-      // Actually, handleAgregarProducto always adds.
 
-      // Let's manually check existence
-      // Difficulty: determining if "current selected modifiers" match "cart item modifiers".
-      // simpler approach: Just navigate if cart has this product, OR overwrite?
-      // User said: "me esta sumando... esta mal".
-      // If I click Buy Now, I probably want 1 item.
-      // Let's just navigate if card has this productID, regardless of mods? No that's bad.
-
-      // Better fix: "handleAgregarProducto" logic is "Add to cart".
-      // "Comprar Ahora" should be "Set Cart to THIS item" (Quick buy)? 
-      // No, that clears other items.
-
-      // Let's try: If item exists, update it to current quantity/selection?
-      // Or just Navigate?
     }
 
-    // Simplest interpretation of user request: "Don't add duplicate".
-    // We will check if an item with same ID exists (for simple products).
     const simpleMatch = currentCarrito.find(i => i.productoId === producto.id || i.id === producto.id);
 
     if (simpleMatch) {
@@ -277,8 +244,6 @@ export default function ProductoDetalle() {
       navigate(`/tienda/${slug}/checkout`, { state: { carrito: currentCarrito, tienda } });
     } else {
       // Not in cart -> Add then go
-      // We can't easily wait for state update of handleAgregarProducto in one tick if it uses setters.
-      // So we call specialized add that returns the new cart or navigates.
       agregarYRedirigir();
     }
   };
@@ -365,8 +330,8 @@ export default function ProductoDetalle() {
     dots: true,
     infinite: relatedProducts.length > 4,
     speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 4,
+    slidesToShow: 5,
+    slidesToScroll: 5,
     autoplay: true,
     autoplaySpeed: 3000,
     nextArrow: <NextArrow />,
@@ -374,9 +339,11 @@ export default function ProductoDetalle() {
     beforeChange: () => { dragging.current = true; },
     afterChange: () => { dragging.current = false; },
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 3, slidesToScroll: 3, arrows: false } }, // Hide arrows on tablet
-      { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 2, arrows: false } }, // Hide arrows on mobile
-      { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } }  // Hide arrows on small mobile
+      { breakpoint: 1280, settings: { slidesToShow: 4, slidesToScroll: 4 } },
+      { breakpoint: 1024, settings: { slidesToShow: 3, slidesToScroll: 3, arrows: false } },
+      { breakpoint: 850, settings: { slidesToShow: 2, slidesToScroll: 2, arrows: false } }, // Tablet/Large Mobile
+      { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } },
+      { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } } // Small mobile: 1 item
     ]
   };
 
@@ -404,7 +371,7 @@ export default function ProductoDetalle() {
   const allImages = [producto.imagenUrl, ...extras].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: '"Mona Sans", ' + fontFamily }}>
+    <div className="min-h-screen bg-white overflow-x-hidden" style={{ fontFamily: '"Mona Sans", ' + fontFamily }}>
       {/* Header Unificado */}
       <StoreHeader
         tienda={tienda}
@@ -516,27 +483,31 @@ export default function ProductoDetalle() {
             />
 
             {/* Action Buttons */}
-            <div className="flex gap-4 mb-6">
-              <div className="flex-1 flex items-center justify-between bg-[#F3F4F6] rounded-full px-6 py-3">
+            {/* Action Buttons */}
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6">
+              <div className="w-full md:flex-1 flex items-center justify-between bg-[#F3F4F6] rounded-full px-6 py-3 order-1 md:order-none">
                 <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-full w-8 h-8 flex items-center justify-center transition-colors font-bold pb-1">-</button>
                 <span className="font-bold text-gray-900">{cantidad}</span>
                 <button onClick={() => setCantidad(Math.min(producto.stock || 99, cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-full w-8 h-8 flex items-center justify-center transition-colors font-bold pb-1">+</button>
               </div>
 
-              <button
-                onClick={handleAgregarProducto}
-                className="flex-[2] bg-[#F3F4F6] hover:bg-[#e5e7eb] text-gray-900 py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors"
-              >
-                <Icon icon="solar:cart-large-minimalistic-linear" width={20} />
-                Agregar al carrito
-              </button>
+              <div className="flex gap-3 md:contents w-full order-2 md:order-none">
+                <button
+                  onClick={handleAgregarProducto}
+                  className="flex-1 md:flex-[2] bg-[#F3F4F6] hover:bg-[#e5e7eb] text-gray-900 py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors w-full md:w-auto"
+                >
+                  <Icon icon="solar:cart-large-minimalistic-linear" width={20} />
+                  <span className="hidden sm:inline">Agregar al carrito</span>
+                  <span className="sm:hidden">Agregar</span>
+                </button>
 
-              <button
-                onClick={irACheckout}
-                className="flex-[2] bg-[#BCE766] hover:bg-[#aed859] text-[#045659] py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                Comprar ahora
-              </button>
+                <button
+                  onClick={irACheckout}
+                  className="flex-1 md:flex-[2] bg-[#BCE766] hover:bg-[#aed859] text-[#045659] py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
+                >
+                  Comprar ahora
+                </button>
+              </div>
             </div>
 
             {/* Links: Wishlist & Compare */}
@@ -577,7 +548,7 @@ export default function ProductoDetalle() {
             </div>
 
             {/* Bottom Cards: Free Delivery & Great Deal */}
-            <div className="flex gap-4 mt-auto">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-auto">
               <div className="flex-1 bg-pink-50 rounded-xl p-4 flex items-center gap-4 border border-pink-100">
                 <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-pink-500 shadow-sm">
                   <Icon icon="solar:truck-bold-duotone" width={24} />
@@ -607,7 +578,7 @@ export default function ProductoDetalle() {
       {/* Related Products Slider */}
       <div className='max-w-7xl mx-auto'>
         {relatedProducts.length > 0 && (
-          <div className="border-t border-gray-100 pt-16 rounded-xl mb-14">
+          <div className="border-t border-gray-100 pt-16 rounded-xl mb-14 px-6">
             <h3 className="text-2xl font-bold mb-8 text-left tracking-wide">Producto similares</h3>
             <div className="px-0"> {/* Padding for slider arrows */}
               <Slider {...settings}>

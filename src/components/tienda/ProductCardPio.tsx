@@ -55,25 +55,28 @@ export default function ProductCardPio({ producto, diseno, onAddToCart, onClick 
                     <span>{producto.marca?.nombre || 'Exclusivo'}</span>
                 </div>
 
-                {/* Bottom Action Area: Price swaps with Button on Hover */}
-                <div className="mt-auto relative h-11 w-full flex items-center">
-                    {/* Price - Visible by default, Disappears on Hover */}
-                    <div className="absolute inset-0 flex items-baseline gap-2 transition-opacity duration-300 opacity-100 group-hover:opacity-0 z-10">
+                {/* Bottom Action Area */}
+                <div className="mt-auto flex items-center justify-between gap-3 pt-3 border-t border-gray-50">
+                    {/* Price */}
+                    <div className="flex flex-col">
                         <span className="text-lg font-extrabold text-[#045659]">
                             S/ {price.toFixed(2)}
                         </span>
                         {hasDiscount && (
-                            <span className="text-sm text-gray-400 line-through font-medium">
+                            <span className="text-xs text-gray-400 line-through font-medium">
                                 S/ {originalPrice.toFixed(2)}
                             </span>
                         )}
                     </div>
 
-                    {/* Button - Hidden by default, Appears on Hover replacing Price */}
-                    <div onClick={(e) => { e.stopPropagation(); onAddToCart(producto); }} className='absolute  inset-0 w-full h-full rounded-full bg-[#045659] text-white text-sm font-bold flex items-center justify-center gap-2 transition-opacity duration-300 opacity-0 group-hover:opacity-100 shadow-md z-20 hover:bg-[#034042]'>
-                        <Icon icon="solar:cart-plus-bold" width={18} />
-                        Añadir al Carrito
-                    </div>
+                    {/* Add Button - Icon only on mobile/desktop for cleaner look, or expanded */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onAddToCart(producto); }}
+                        className="w-10 h-10 rounded-full bg-[#045659] text-white flex items-center justify-center hover:bg-[#034042] hover:scale-105 transition-all shadow-sm active:scale-95 flex-shrink-0"
+                        title="Añadir al Carrito"
+                    >
+                        <Icon icon="solar:cart-plus-bold" width={20} />
+                    </button>
                 </div>
             </div>
         </div>

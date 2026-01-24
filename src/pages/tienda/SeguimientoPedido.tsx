@@ -148,19 +148,19 @@ export default function SeguimientoPedido() {
                 </div>
 
                 {/* Formulario de búsqueda */}
-                <div className={`bg-white ${borderRadius} shadow p-6 mb-6`}>
-                    <form onSubmit={handleSubmit} className="flex gap-3">
+                <div className={`bg-white ${borderRadius} shadow p-4 md:p-6 mb-6`}>
+                    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3">
                         <input
                             type="text"
                             value={codigo}
                             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
                             placeholder="Ej: PED-ABC123-XYZ"
-                            className={`flex-1 border ${borderRadius} px-4 py-3 text-lg`}
+                            className={`flex-1 border ${borderRadius} px-4 py-3 text-base md:text-lg w-full`}
                         />
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`bg-blue-600 text-white px-8 py-3 ${btnRadius} font-semibold hover:bg-blue-700 disabled:bg-gray-400`}
+                            className={`bg-blue-600 text-white px-6 md:px-8 py-3 ${btnRadius} font-semibold hover:bg-blue-700 disabled:bg-gray-400 w-full md:w-auto`}
                             style={{ backgroundColor: diseno.colorPrimario || '#2563eb' }}
                         >
                             {loading ? 'Buscando...' : 'Buscar'}
@@ -168,8 +168,8 @@ export default function SeguimientoPedido() {
                     </form>
                     {error && (
                         <div className={`mt-4 p-3 bg-red-50 text-red-600 ${borderRadius} flex items-center gap-2`}>
-                            <Icon icon="mdi:alert-circle" className="w-5 h-5" />
-                            <span>{error}</span>
+                            <Icon icon="mdi:alert-circle" className="w-5 h-5 flex-shrink-0" />
+                            <span className="text-sm">{error}</span>
                         </div>
                     )}
                 </div>
@@ -183,7 +183,7 @@ export default function SeguimientoPedido() {
                     return (
                         <div className="space-y-6">
                             {/* Tarjeta: Estimated delivery */}
-                            <div className={`bg-white ${borderRadius} shadow-sm p-4 flex items-center justify-between border border-gray-100`}>
+                            <div className={`bg-white ${borderRadius} shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-gray-100`}>
                                 <div className="flex items-center gap-3">
                                     <span className={`p-2 ${borderRadius} bg-orange-50 text-orange-600`} style={{ backgroundColor: `${diseno.colorPrimario}10`, color: diseno.colorPrimario }}>
                                         <Icon icon="mdi:alarm" className="w-5 h-5" />
@@ -193,17 +193,17 @@ export default function SeguimientoPedido() {
                                         <p className="text-xs text-gray-500">{fechaEstimada}</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-left md:text-right pl-12 md:pl-0">
                                     <p className="text-lg font-semibold">{horaEstimada}</p>
                                     <p className="text-xs text-gray-500">{tiempoBase}-{tiempoBase + 10} min</p>
                                 </div>
                             </div>
 
                             {/* Tarjeta: Order tracking */}
-                            <div className={`bg-white ${borderRadius} shadow-sm p-6 border border-gray-100`}>
-                                <div className="flex items-center justify-between mb-4">
+                            <div className={`bg-white ${borderRadius} shadow-sm p-4 md:p-6 border border-gray-100`}>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
                                     <h2 className="text-lg font-semibold">Estado del pedido</h2>
-                                    <span className="text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>№{pedido.codigoSeguimiento}</span>
+                                    <span className="text-orange-600 font-semibold text-sm break-all" style={{ color: diseno.colorPrimario }}>№{pedido.codigoSeguimiento}</span>
                                 </div>
                                 {/* Estado actual */}
                                 <div className="flex items-center justify-between mb-4">

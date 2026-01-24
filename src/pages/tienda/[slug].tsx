@@ -453,7 +453,7 @@ export default function TiendaPublica() {
       />
 
       {/* Main Content */}
-      <main className="max-w-screen-xl mx-auto px-6 py-8">
+      <main className="max-w-screen-xl mx-auto px-6 md:py-8">
         <div className="mb-12">
           <SliderBanners tienda={tienda} diseno={diseno} />
         </div>
@@ -563,7 +563,7 @@ export default function TiendaPublica() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                  <div className="grid mb-10 md:mb-0 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
                     {loading ? (
                       Array.from({ length: 10 }).map((_, i) => (
                         <div key={i} className="bg-white h-64 rounded-xl animate-pulse"></div>

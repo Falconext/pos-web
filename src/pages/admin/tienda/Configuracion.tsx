@@ -833,14 +833,14 @@ export default function ConfiguracionTienda() {
             <div className="space-y-4">
               {/* Banners existentes */}
               {banners.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {[...banners].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map((banner, index) => (
                     <div key={banner.id} className="relative group">
-                      <div className="aspect-[21/9] rounded-lg overflow-hidden border-2 border-gray-200">
+                      <div className="rounded-lg overflow-hidden border-2 border-gray-200">
                         <img
                           src={banner.imagenUrl}
                           alt={banner.titulo || `Banner ${index + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-[250px] object-fill"
                         />
                       </div>
                       {/* Orden Badge */}
@@ -892,9 +892,9 @@ export default function ConfiguracionTienda() {
                             onChange={(e) => setEditBannerFile(e.target.files?.[0] || null)}
                           />
                           {editBannerFile ? (
-                            <img src={URL.createObjectURL(editBannerFile)} className="w-full h-full object-cover" alt="Preview" />
+                            <img src={URL.createObjectURL(editBannerFile)} className="w-full h-full object-fill" alt="Preview" />
                           ) : editingBanner.imagenUrl ? (
-                            <img src={editingBanner.imagenUrl} className="w-full h-full object-cover" alt="Current" />
+                            <img src={editingBanner.imagenUrl} className="w-full h-full object-fill" alt="Current" />
                           ) : (
                             <span className="text-gray-400">Clic para subir imagen</span>
                           )}
@@ -955,7 +955,7 @@ export default function ConfiguracionTienda() {
                                 <div
                                   key={p.id}
                                   onClick={() => {
-                                    setEditBannerLink(`/tienda/producto/${p.slug || p.id}`); // Assuming slug exists or fallback to id, ideally slug
+                                    setEditBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); // Assuming slug exists or fallback to id, ideally slug
                                     setEditSearch('');
                                     setEditResults([]);
                                   }}
@@ -1039,7 +1039,7 @@ export default function ConfiguracionTienda() {
                               <div
                                 key={p.id}
                                 onClick={() => {
-                                  setNewBannerLink(`/tienda/producto/${p.slug || p.id}`);
+                                  setNewBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`);
                                   setProductSearch('');
                                   setProductResults([]);
                                 }}

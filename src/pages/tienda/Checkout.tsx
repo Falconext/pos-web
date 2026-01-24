@@ -280,7 +280,7 @@ export default function Checkout() {
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
 
           {/* Left Column: Delivery & Items */}
@@ -288,7 +288,7 @@ export default function Checkout() {
 
             {/* Delivery Information Card */}
             {configEnvio && (
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-[#045659]">Información de entrega</h2>
                   <button className="flex items-center gap-1 text-[#F05542] font-semibold text-sm hover:underline">
@@ -297,28 +297,28 @@ export default function Checkout() {
                 </div>
 
                 {/* Address / Type Selector */}
-                <div className="flex gap-4 items-start">
-                  <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center flex-shrink-0 text-gray-500">
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <div className="w-12 h-12 bg-gray-100 rounded-2xl hidden md:flex items-center justify-center flex-shrink-0 text-gray-500">
                     <Icon icon="solar:map-point-bold-duotone" width={24} />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     {/* Simple Tabs for Delivery Type */}
-                    <div className="flex gap-4 mb-4 border-b border-gray-100 pb-2">
+                    <div className="flex gap-4 mb-4 border-b border-gray-100 pb-2 overflow-x-auto">
                       {configEnvio.aceptaEnvio && (
-                        <label className={`cursor-pointer pb-2 font-bold text-sm ${formData.tipoEntrega === 'ENVIO' ? 'text-[#045659] border-b-2 border-[#045659]' : 'text-gray-400'}`}>
+                        <label className={`cursor-pointer pb-2 font-bold text-sm whitespace-nowrap ${formData.tipoEntrega === 'ENVIO' ? 'text-[#045659] border-b-2 border-[#045659]' : 'text-gray-400'}`}>
                           <input type="radio" className="hidden" name="tipoEntrega" value="ENVIO" checked={formData.tipoEntrega === 'ENVIO'} onChange={handleChange} />
                           Delivery
                         </label>
                       )}
                       {configEnvio.aceptaRecojo && (
-                        <label className={`cursor-pointer pb-2 font-bold text-sm ${formData.tipoEntrega === 'RECOJO' ? 'text-[#045659] border-b-2 border-[#045659]' : 'text-gray-400'}`}>
+                        <label className={`cursor-pointer pb-2 font-bold text-sm whitespace-nowrap ${formData.tipoEntrega === 'RECOJO' ? 'text-[#045659] border-b-2 border-[#045659]' : 'text-gray-400'}`}>
                           <input type="radio" className="hidden" name="tipoEntrega" value="RECOJO" checked={formData.tipoEntrega === 'RECOJO'} onChange={handleChange} />
                           Recojo en tienda
                         </label>
                       )}
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <input
                           type="text"

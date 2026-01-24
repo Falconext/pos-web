@@ -222,7 +222,7 @@ export default function StoreHeader({
             {/* Bottom Nav Bar - Categories */}
             {categories.length > 0 && (
                 <div className="border-t border-gray-100">
-                    <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-3 flex items-center gap-8 overflow-x-auto no-scrollbar">
+                    <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-3 flex items-center gap-3 md:gap-8 overflow-x-auto no-scrollbar">
 
                         {/* Categories Dropdown Button */}
                         <div className="relative z-50">

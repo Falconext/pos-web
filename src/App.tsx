@@ -119,6 +119,8 @@ function App() {
         <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalle />} />
         <Route path="/tienda/:slug/checkout" element={<Checkout />} />
         <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
+        {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}
+        <Route path="/tienda/:slug/*" element={<TiendaPublica />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

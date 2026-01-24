@@ -36,7 +36,7 @@ export default function CategoryCircles({ categories, selectedCats, onSelectCate
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-6">
                 {categories.map((cat, index) => {
                     const catName = typeof cat === 'object' ? (cat as any).nombre || (cat as any).codigo : cat;
                     const isSelected = selectedCats.includes(catName);
@@ -48,7 +48,7 @@ export default function CategoryCircles({ categories, selectedCats, onSelectCate
                             key={index}
                             onClick={() => onSelectCategory(catName)}
                             className={`
-                                group relative bg-white rounded-3xl p-6 flex flex-col items-center justify-between gap-4 cursor-pointer transition-all duration-300 border
+                                group relative bg-white rounded-3xl p-4 md:p-6 flex flex-col items-center justify-between gap-3 md:gap-4 cursor-pointer transition-all duration-300 border
                                 ${isSelected
                                     ? 'border-[#045659] shadow-xl scale-105 z-10'
                                     : 'border-transparent shadow-sm hover:shadow-lg hover:border-gray-100 hover:-translate-y-1'
@@ -57,7 +57,7 @@ export default function CategoryCircles({ categories, selectedCats, onSelectCate
                         >
                             {/* Circle Image Wrapper - with blue glow if active */}
                             <div className={`
-                                w-24 h-24 rounded-full p-1 relative z-10 bg-white
+                                w-20 h-20 md:w-24 md:h-24 rounded-full p-1 relative z-10 bg-white
                                 ${isSelected ? 'ring-2 ring-[#045659] shadow-lg' : ''}
                             `}>
                                 <div className="w-full h-full rounded-full overflow-hidden relative">
@@ -71,11 +71,11 @@ export default function CategoryCircles({ categories, selectedCats, onSelectCate
 
                             {/* Text Content */}
                             <div className="text-center w-full z-10">
-                                <h3 className="font-bold text-gray-900 text-sm md:text-base mb-3 leading-tight">{catName}</h3>
+                                <h3 className="font-bold text-gray-900 text-xs md:text-sm lg:text-base mb-2 md:mb-3 leading-tight min-h-[2.5em] flex items-center justify-center">{catName}</h3>
 
                                 {/* Button Logic */}
                                 <div className={`
-                                    inline-flex items-center gap-1 text-xs font-bold py-1.5 px-3 rounded-full transition-colors duration-300
+                                    inline-flex items-center gap-1 text-[10px] md:text-xs font-bold py-1 md:py-1.5 px-2 md:px-3 rounded-full transition-colors duration-300
                                     ${isSelected || isHoveredMock
                                         ? 'bg-[#045659] text-white hover:bg-[#034042]'
                                         : 'bg-transparent text-gray-400 group-hover:text-[#045659]'
@@ -86,7 +86,7 @@ export default function CategoryCircles({ categories, selectedCats, onSelectCate
                                 </div>
                             </div>
 
-                            {/* Background Decoration (optional soft gradient for active card) */}
+                            {/* Background Decoration */}
                             {(isSelected) && (
                                 <div className="absolute inset-0 bg-blue-50/30 rounded-3xl -z-0" />
                             )}
