@@ -8,8 +8,9 @@ export interface IUser {
     id: number
     nombre: string
     email: string
-    rol: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA'
+    rol: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA' | 'RESELLER'
     empresaId: any
+    resellerId?: number
     estado: string
     empresa: any
     permisos?: string[]

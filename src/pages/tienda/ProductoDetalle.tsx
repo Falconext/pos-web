@@ -339,11 +339,10 @@ export default function ProductoDetalle() {
     beforeChange: () => { dragging.current = true; },
     afterChange: () => { dragging.current = false; },
     responsive: [
-      { breakpoint: 1280, settings: { slidesToShow: 4, slidesToScroll: 4 } },
-      { breakpoint: 1024, settings: { slidesToShow: 3, slidesToScroll: 3, arrows: false } },
-      { breakpoint: 850, settings: { slidesToShow: 2, slidesToScroll: 2, arrows: false } }, // Tablet/Large Mobile
-      { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } },
-      { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } } // Small mobile: 1 item
+      { breakpoint: 1280, settings: { slidesToShow: 4, slidesToScroll: 1 } },
+      { breakpoint: 1024, settings: { slidesToShow: 3, slidesToScroll: 1, arrows: false } },
+      { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 1, arrows: false } },
+      { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } }
     ]
   };
 

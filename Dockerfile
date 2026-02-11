@@ -43,6 +43,7 @@ RUN echo "=== COPIED FILES ===" && ls -la . && echo "=== INDEX.HTML CONTENT ==="
 # Copy nginx template to enable envsubst of ${PORT}
 RUN mkdir -p /etc/nginx/templates
 COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY nginx-main.conf /etc/nginx/nginx.conf
 
 # Debug: Show nginx template
 RUN echo "=== NGINX TEMPLATE ===" && cat /etc/nginx/templates/default.conf.template

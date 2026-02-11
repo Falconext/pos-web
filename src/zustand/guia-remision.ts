@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { get as fetchGet, patch, post, del } from '../utils/fetch';
+import apiClient from '../utils/apiClient';
 import useAlertStore from './alert';
 
 export interface IDetalleGuiaRemision {
@@ -91,6 +92,8 @@ export interface IGuiaRemisionState {
     deleteGuiaRemision: (id: number) => Promise<{ success: boolean; error?: string }>;
     enviarSunat: (id: number) => Promise<{ success: boolean; error?: string }>;
     getSiguienteCorrelativo: (serie: string) => Promise<{ success: boolean; error?: string }>;
+    downloadPdf: (id: number) => Promise<{ success: boolean; error?: string }>;
+    enviarWhatsApp: (id: number, numero: string) => Promise<{ success: boolean; error?: string }>;
 
     // Manejo de detalles
     addDetalle: (detalle: IDetalleGuiaRemision) => void;
@@ -316,5 +319,53 @@ export const useGuiaRemisionStore = create<IGuiaRemisionState>()(devtools((set, 
             detallesGuia: [],
             siguienteCorrelativo: null
         }, false, 'RESET_GUIA_REMISION');
-    }
+    },
+    downloadPdf: async (id: number) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const response = await apiClient.get(`guia-remision/${id}/pdf`, {
+                responseType: 'blob'
+            });
+
+            if (response.data) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `guia-remision-${id}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                useAlertStore.setState({ loading: false });
+                return { success: true };
+            } else {
+                useAlertStore.setState({ loading: false });
+                useAlertStore.getState().alert('Error al descargar el PDF', 'error');
+                return { success: false, error: 'Error al descargar el PDF' };
+            }
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al descargar el PDF', 'error');
+            return { success: false, error: error.message || 'Error al descargar el PDF' };
+        }
+    },
+    enviarWhatsApp: async (id: number, numero: string) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await post(`whatsapp/enviar-guia/${id}`, { numeroDestino: numero });
+
+            if (resp && (resp.success || (resp.data && resp.data.success))) {
+                useAlertStore.setState({ loading: false });
+                useAlertStore.getState().alert('Guía enviada por WhatsApp exitosamente', 'success');
+                return { success: true };
+            } else {
+                useAlertStore.setState({ loading: false });
+                useAlertStore.getState().alert(resp?.message || resp?.error || 'Error al enviar WhatsApp', 'error');
+                return { success: false, error: resp?.message || resp?.error || 'Error al enviar WhatsApp' };
+            }
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al enviar WhatsApp', 'error');
+            return { success: false, error: error.message || 'Error al enviar WhatsApp' };
+        }
+    },
 })));

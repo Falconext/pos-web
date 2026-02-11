@@ -2,7 +2,7 @@
 
 export interface IUserPermissions {
   permisos?: string[];
-  rol?: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA';
+  rol?: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA' | 'RESELLER';
   empresa?: {
     plan?: {
       modulosAsignados?: { modulo: { codigo: string } }[]
@@ -61,7 +61,7 @@ export const getAvailableModules = (user: IUserPermissions | null): string[] => 
   if (!user) return [];
 
   // Módulos base del sistema
-  let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones', 'guia_remision', 'compras'];
+  let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones', 'guias-remision', 'compras'];
 
   // Si es admin del sistema, tiene todo
   if (user.rol === 'ADMIN_SISTEMA') return allModules;
@@ -123,7 +123,7 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       caja: '/administrador/caja',
       pagos: '/administrador/pagos',
       cotizaciones: '/administrador/cotizaciones',
-      guia_remision: '/administrador/guia-remision',
+      'guias-remision': '/administrador/guia-remision',
       compras: '/administrador/compras',
       dashboard: '/administrador'
     };

@@ -35,7 +35,7 @@ body {
   display: none !important;
 }
 
-@media (max-width: 600px) {
+/* @media (max-width: 600px) {
   .slick-slider button {
     display: none !important;
   }
@@ -48,7 +48,7 @@ body {
   .slick-slide {
     padding: 10px 25px 10px 15px;
   }
-}
+} */
 
 .tr-shadow {
   box-shadow: none !important;

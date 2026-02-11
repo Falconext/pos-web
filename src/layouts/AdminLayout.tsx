@@ -279,6 +279,9 @@ export default function AdminLayout() {
               <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
                 <Icon icon="solar:widget-bold-duotone" className="mr-3 text-xl" /> Módulos
               </NavLink>
+              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/resellers" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                <Icon icon="solar:users-group-two-rounded-bold-duotone" className="mr-3 text-xl" /> Distribuidores
+              </NavLink>
             </>
           )}
 
@@ -406,7 +409,7 @@ export default function AdminLayout() {
               )}
 
               {/* Guías de Remisión - Solo para empresas formales */}
-              {hasPermission(auth, 'guia_remision') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+              {hasPermission(auth, 'guias-remision') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
                 <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Guías de Remisión') }} to="/administrador/guia-remision" className={({ isActive }) => isActive || location.pathname.includes('/administrador/guia-remision') ? theme.activeLink : theme.inactiveLink}>
                   <Icon icon="solar:delivery-bold-duotone" className="mr-3 text-xl" /> Guías de Remisión
                 </NavLink>
@@ -550,6 +553,13 @@ export default function AdminLayout() {
               {hasPermission(auth, 'usuarios') && (
                 <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Usuarios') }} to="/administrador/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
                   <Icon icon="solar:users-group-two-rounded-bold-duotone" className="mr-3 text-xl" /> Usuarios
+                </NavLink>
+              )}
+
+              {/* Sedes */}
+              {(auth?.rol === 'ADMIN_EMPRESA' || hasPermission(auth, 'configuracion')) && (
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Sedes') }} to="/administrador/sedes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                  <Icon icon="solar:city-bold-duotone" className="mr-3 text-xl" /> Sedes
                 </NavLink>
               )}
 

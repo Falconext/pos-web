@@ -66,6 +66,8 @@ export default function Login() {
           navigate("/administrador/empresas");
         } else if (auth.rol === "ADMIN_EMPRESA" || auth.rol === "USUARIO_EMPRESA") {
           navigate("/administrador");
+        } else if (auth.rol === "RESELLER") {
+          navigate("/reseller");
         }
       }
     }

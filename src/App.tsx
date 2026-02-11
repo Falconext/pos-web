@@ -23,6 +23,7 @@ import InventarioDashboard from './pages/admin/kardex/Dashboard'
 import KardexProductos from './pages/admin/kardex/Productos'
 import Lotes from './pages/admin/kardex/Lotes'
 import UsuariosIndex from './pages/admin/usuarios/Index'
+import SedesIndex from './pages/admin/sedes/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
@@ -43,6 +44,11 @@ import ComprasIndex from './pages/admin/compras/Index'
 import NuevaCompra from './pages/admin/compras/Nuevo'
 import ProveedoresPage from './pages/admin/compras/Proveedores'
 import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
+import AdminResellers from './pages/admin/sistema/Resellers'
+import ResellerLayout from './layouts/ResellerLayout'
+import ResellerDashboard from './pages/reseller/Dashboard'
+import ResellerClientes from './pages/reseller/Clientes'
+import ResellerRecargas from './pages/reseller/Recargas'
 
 
 function App() {
@@ -100,6 +106,7 @@ function App() {
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
           <Route path="usuarios" element={<UsuariosIndex />} />
+          <Route path="sedes" element={<SedesIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
@@ -110,6 +117,21 @@ function App() {
           <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
           <Route path="sistema/planes" element={<Planes />} />
           <Route path="sistema/modulos" element={<ModulosPage />} />
+          <Route path="sistema/resellers" element={<AdminResellers />} />
+        </Route>
+
+        {/* Rutas de Reseller (Distribuidor) */}
+        <Route
+          path="/reseller"
+          element={
+            <ProtectedRoute>
+              <ResellerLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ResellerDashboard />} />
+          <Route path="clientes" element={<ResellerClientes />} />
+          <Route path="recargas" element={<ResellerRecargas />} />
         </Route>
         {/* Rutas de tienda */}
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}

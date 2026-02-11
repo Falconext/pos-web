@@ -14,6 +14,7 @@ import { useReactToPrint } from "react-to-print";
 import { useRef } from "react";
 import GuiaRemisionPrint from "./print/GuiaRemisionPrint";
 import { useAuthStore } from "@/zustand/auth";
+import apiClient from "@/utils/apiClient";
 
 const MOTIVOS_TRASLADO: Record<string, string> = {
     "01": "VENTA",
@@ -29,7 +30,7 @@ const MOTIVOS_TRASLADO: Record<string, string> = {
 };
 
 const GuiaRemision = () => {
-    const { getAllGuiasRemision, guiasRemision, enviarSunat, deleteGuiaRemision } = useGuiaRemisionStore();
+    const { getAllGuiasRemision, guiasRemision, enviarSunat, deleteGuiaRemision, downloadPdf } = useGuiaRemisionStore();
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -210,24 +211,62 @@ const GuiaRemision = () => {
             >
                 <div className="py-1">
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             handleCloseMenu();
-                            if (selectedRow?.pdfUrl || selectedRow?.s3PdfUrl) {
-                                window.open(selectedRow.pdfUrl || selectedRow.s3PdfUrl, '_blank');
-                            } else {
-                                useAlertStore.getState().alert("PDF no disponible aún", "info");
+                            if (selectedRow) {
+                                await downloadPdf(selectedRow.id);
                             }
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                     >
-                        <Icon icon="heroicons:document-text" className="mr-2" /> Ver PDF
+                        <Icon icon="heroicons:arrow-down-tray" className="mr-2" /> Descargar PDF
                     </button>
 
                     <button
-                        onClick={() => handlePrint(selectedRow)}
+                        onClick={() => {
+                            handleCloseMenu();
+                            // Open PDF in new tab for printing
+
+                            // Strategy: Fetch blob, create ObjectURL, open in new tab.
+                            apiClient.get(`guia-remision/${selectedRow.id}/pdf`, { responseType: 'blob' })
+                                .then(response => {
+                                    const file = new Blob([response.data], { type: 'application/pdf' });
+                                    const fileURL = URL.createObjectURL(file);
+                                    window.open(fileURL, '_blank');
+                                })
+                                .catch(err => {
+                                    useAlertStore.getState().alert('Error al abrir PDF para imprimir', 'error');
+                                });
+                        }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                     >
                         <Icon icon="solar:printer-bold" className="mr-2" /> Imprimir Formato
+                    </button>
+
+                    <button
+                        onClick={async () => {
+                            handleCloseMenu();
+                            // TODO: Call backend WhatsApp logic
+                            // For now just alert or mock
+                            const phoneNumber = selectedRow.cliente?.telefono || selectedRow.destinatarioNumDoc; // fallback?
+                            // We need a prompt or just send to default number? 
+                            // Usually we might want to confirm number.
+                            // Let's just implement the button to call a store function (to be created)
+                            // or verify functionality later.
+
+                            // For this step, I will just put the UI and a placeholder action.
+                            // Ideally, open a modal to confirm number? Or just send. 
+                            // The backend controller takes "numeroDestino".
+
+                            // Quick inputs prompt
+                            const numero = prompt("Ingrese número de WhatsApp (51xxxxxxxxx):", selectedRow.cliente?.telefono || "");
+                            if (numero) {
+                                await useGuiaRemisionStore.getState().enviarWhatsApp(selectedRow.id, numero);
+                            }
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
+                    >
+                        <Icon icon="logos:whatsapp-icon" className="mr-2" /> Enviar a WhatsApp
                     </button>
 
                     {selectedRow?.estadoSunat === 'PENDIENTE' && (
