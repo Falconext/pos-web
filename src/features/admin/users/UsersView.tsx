@@ -1,0 +1,229 @@
+import React from 'react';
+import { Icon } from '@iconify/react';
+import DataTable from '@/components/Datatable';
+import Button from '@/components/Button';
+import InputPro from '@/components/InputPro';
+import Pagination from '@/components/Pagination';
+import ModalConfirm from '@/components/ModalConfirm';
+import Loading from '@/components/Loading';
+import ModalUsuario from '../../../pages/admin/usuarios/ModalUsuario'; // Reusing existing modal for now
+import { useUsersViewModel } from './useUsersViewModel';
+
+export default function UsersView() {
+    const {
+        usuarios,
+        totalUsuarios,
+        loading,
+        currentPage,
+        itemsPerPage,
+        searchTerm,
+        showUserModal,
+        showConfirmModal,
+        selectedUser,
+        isEdit,
+        handleCreateUser,
+        handleEditUser,
+        handleToggleState,
+        confirmToggleState,
+        handleCloseUserModal,
+        handleCloseConfirmModal,
+        handleSearchChange,
+        handlePageChange,
+        handleItemsPerPageChange,
+        getPermisosData
+    } = useUsersViewModel();
+
+    const getEstadoBadge = (estado: string) => {
+        return estado === 'ACTIVO'
+            ? <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Activo</span>
+            : <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Inactivo</span>;
+    };
+
+    const getRolBadge = (rol: string) => {
+        return rol === 'ADMIN_EMPRESA'
+            ? <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Admin</span>
+            : <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Usuario</span>;
+    };
+
+    const getPermisosSummary = (permisos: string[] = []) => {
+        const data = getPermisosData(permisos);
+        if (data.type === 'none') {
+            return <span className="text-gray-400 text-xs">{data.label}</span>;
+        }
+        if (data.type === 'full') {
+            return <span className="text-green-600 text-xs font-medium">{data.label}</span>;
+        }
+        return (
+            <span className="text-blue-600 text-xs" title={data.tooltip}>
+                {data.label}
+            </span>
+        );
+    };
+
+    const usuariosTableData = usuarios.map((usuario) => ({
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        dni: usuario.dni,
+        celular: usuario.celular,
+        rol: getRolBadge(usuario.rol),
+        permisos: getPermisosSummary(usuario.permisos),
+        estado: usuario.estado === 'ACTIVO' ? 'Activo' : 'Inactivo', // Modified for display
+        statusComponent: getEstadoBadge(usuario.estado), // Custom component if needed by DataTable
+        // Para las acciones
+        _original: usuario,
+    }));
+
+    const actions = [
+        {
+            onClick: (data: any) => handleEditUser(data._original),
+            className: "edit",
+            icon: <Icon color="#66AD78" icon="material-symbols:edit" />,
+            tooltip: "Editar usuario"
+        },
+        {
+            onClick: (data: any) => handleToggleState(data._original),
+            className: "delete",
+            icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />,
+            tooltip: "Cambiar estado"
+        }
+    ];
+
+    if (loading && usuarios.length === 0) {
+        return <Loading />;
+    }
+
+    return (
+        <div className="min-h-screen px-2 pb-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Usuarios</h1>
+                    <p className="text-sm text-gray-500 mt-1">Administra los usuarios y sus permisos del sistema</p>
+                </div>
+                <Button
+                    color="secondary"
+                    onClick={handleCreateUser}
+                    className="flex items-center gap-2"
+                >
+                    <Icon icon="solar:user-plus-bold" width={18} />
+                    Nuevo Usuario
+                </Button>
+            </div>
+
+            {/* Estadísticas rápidas - Simplified logic here or moved to VM if complex */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 overflow-hidden relative">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Usuarios</p>
+                            <p className="text-3xl font-bold text-gray-900 mt-1">{totalUsuarios}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <Icon icon="solar:users-group-rounded-bold" width={24} className="text-white" />
+                        </div>
+                    </div>
+                </div>
+                {/* Other stats requiring backend count or calculated from current page (which is partial) 
+            For true stats, VM should provide them. Leaving placeholders or using current list if acceptable
+        */}
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Search Section */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Icon icon="solar:magnifer-bold-duotone" className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold text-gray-800">Buscar Usuarios</h3>
+                    </div>
+                    <div className="max-w-md">
+                        <InputPro
+                            type="text"
+                            value={searchTerm}
+                            name="search"
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            label="Buscar por nombre, email o DNI..."
+                            isLabel
+                        />
+                    </div>
+                </div>
+
+                {/* Tabla */}
+                <div className="p-4">
+                    {usuariosTableData.length > 0 ? (
+                        <>
+                            <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
+                                <DataTable
+                                    actions={actions}
+                                    bodyData={usuariosTableData.map(u => ({ ...u, estado: u.statusComponent }))} // Passing component as state
+                                    headerColumns={[
+                                        'Nombre',
+                                        'Email',
+                                        'DNI',
+                                        'Celular',
+                                        'Rol',
+                                        'Permisos',
+                                        'Estado'
+                                    ]}
+                                />
+                            </div>
+
+                            <Pagination
+                                data={usuariosTableData}
+                                optionSelect
+                                currentPage={currentPage}
+                                indexOfFirstItem={(currentPage - 1) * itemsPerPage}
+                                indexOfLastItem={Math.min(currentPage * itemsPerPage, totalUsuarios)}
+                                setcurrentPage={handlePageChange}
+                                setitemsPerPage={handleItemsPerPageChange}
+                                pages={Array.from({ length: Math.ceil(totalUsuarios / itemsPerPage) }, (_, i) => i + 1)}
+                                total={totalUsuarios}
+                            />
+                        </>
+                    ) : (
+                        <div className="text-center py-12">
+                            <Icon icon="mdi:account-group" width={64} height={64} className="text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                No hay usuarios registrados
+                            </h3>
+                            <p className="text-gray-500 mb-4">
+                                {searchTerm
+                                    ? 'No se encontraron usuarios con ese criterio de búsqueda.'
+                                    : 'Comienza creando tu primer usuario.'
+                                }
+                            </p>
+                            {!searchTerm && (
+                                <Button color="secondary" onClick={handleCreateUser}>
+                                    <Icon icon="material-symbols:add" width={20} height={20} className="mr-2" />
+                                    Crear primer usuario
+                                </Button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Modales */}
+            {showUserModal && (
+                <ModalUsuario
+                    isOpen={showUserModal}
+                    onClose={handleCloseUserModal}
+                    user={selectedUser}
+                    isEdit={isEdit}
+                />
+            )}
+
+            {showConfirmModal && selectedUser && (
+                <ModalConfirm
+                    isOpenModal={showConfirmModal}
+                    setIsOpenModal={handleCloseConfirmModal}
+                    title="Cambiar Estado de Usuario"
+                    information={`¿Estás seguro que deseas ${selectedUser.estado === 'ACTIVO' ? 'desactivar' : 'activar'
+                        } al usuario ${selectedUser.nombre}?`}
+                    confirmSubmit={confirmToggleState}
+                />
+            )}
+        </div>
+    );
+};

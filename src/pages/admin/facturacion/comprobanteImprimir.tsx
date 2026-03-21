@@ -76,8 +76,8 @@ const ComprobantePrintPage = ({
                 style={{
                     fontFamily:
                         size === 'TICKET'
-                            ? 'SFMono-Regular,VT323, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-                            : 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
+                            ? 'VT323, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+                            : 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
                     lineHeight: size === 'TICKET' ? 1.2 : undefined,
                     letterSpacing: size === 'TICKET' ? '0.2px' : undefined
                 }}

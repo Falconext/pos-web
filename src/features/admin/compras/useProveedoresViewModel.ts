@@ -1,0 +1,107 @@
+import { ChangeEvent, useEffect, useState } from 'react';
+import { useClientsStore } from '@/zustand/clients';
+import useAlertStore from '@/zustand/alert';
+import { IClient } from '@/interfaces/clients';
+import { useDebounce } from '@/hooks/useDebounce';
+import {
+    INITIAL_PROVEEDOR_ERRORS,
+    INITIAL_PROVEEDOR_FORM,
+    IProveedoresViewModelState,
+} from './ComprasModel';
+
+export const useProveedoresViewModel = () => {
+    const { getAllClients, clients, totalClients, toggleStateClient } = useClientsStore();
+    const { success } = useAlertStore();
+
+    const [state, setState] = useState<IProveedoresViewModelState>({
+        currentPage: 1,
+        itemsPerPage: 50,
+        searchClient: '',
+        isOpenModal: false,
+        isOpenModalConfirm: false,
+        formValues: INITIAL_PROVEEDOR_FORM,
+        isEdit: false,
+        errors: INITIAL_PROVEEDOR_ERRORS,
+        openAccionesId: null,
+    });
+
+    const debounce = useDebounce(state.searchClient, 600);
+
+    const indexOfLastItem = state.currentPage * state.itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - state.itemsPerPage;
+    const pages = Array.from(
+        { length: Math.ceil(totalClients / state.itemsPerPage) },
+        (_, i) => i + 1
+    );
+
+    // Fetch proveedores
+    useEffect(() => {
+        getAllClients({ page: state.currentPage, limit: state.itemsPerPage, search: debounce, persona: 'PROVEEDOR' });
+    }, [debounce, state.currentPage, state.itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Close modal on success
+    useEffect(() => {
+        if (success === true) setState(prev => ({ ...prev, isOpenModal: false, isEdit: false }));
+    }, [success]);
+
+    // Close dropdown on document click
+    useEffect(() => {
+        const handleDocClick = () => {
+            if (state.openAccionesId !== null) setState(prev => ({ ...prev, openAccionesId: null }));
+        };
+        document.addEventListener('click', handleDocClick);
+        return () => document.removeEventListener('click', handleDocClick);
+    }, [state.openAccionesId]);
+
+    // Table data
+    const proveedoresTable = clients?.map((item: IClient) => ({
+        id: item.id,
+        'Razón Social / Nombre': item.nombre,
+        'Documento': item.nroDoc.length === 8 ? 'DNI' : 'RUC',
+        'Nro. Doc': item.nroDoc,
+        'Celular': item.telefono,
+        'Dirección': item.direccion,
+        'Estado': item.estado,
+        _raw: item,
+    }));
+
+    const actions = {
+        openNewModal: () =>
+            setState(prev => ({ ...prev, formValues: INITIAL_PROVEEDOR_FORM, errors: INITIAL_PROVEEDOR_ERRORS, isOpenModal: true, isEdit: false })),
+        openEditModal: (data: IClient) =>
+            setState(prev => ({ ...prev, formValues: data as any, isOpenModal: true, isEdit: true, openAccionesId: null })),
+        closeModal: () =>
+            setState(prev => ({ ...prev, isOpenModal: false, isEdit: false })),
+        setFormValues: (values: any) =>
+            setState(prev => ({ ...prev, formValues: values })),
+        setErrors: (errors: any) =>
+            setState(prev => ({ ...prev, errors })),
+        openConfirmToggle: (data: IClient) =>
+            setState(prev => ({ ...prev, formValues: data as any, isOpenModalConfirm: true, openAccionesId: null })),
+        confirmToggleState: () => {
+            toggleStateClient(Number(state.formValues?.id));
+            setState(prev => ({ ...prev, isOpenModalConfirm: false }));
+        },
+        setIsOpenModalConfirm: (v: boolean) =>
+            setState(prev => ({ ...prev, isOpenModalConfirm: v })),
+        setcurrentPage: (page: number) =>
+            setState(prev => ({ ...prev, currentPage: page })),
+        setitemsPerPage: (items: number) =>
+            setState(prev => ({ ...prev, itemsPerPage: items })),
+        handleSearchChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            setState(prev => ({ ...prev, searchClient: e.target.value })),
+        setOpenAccionesId: (id: number | null) =>
+            setState(prev => ({ ...prev, openAccionesId: id })),
+    };
+
+    return {
+        ...state,
+        clients,
+        totalClients,
+        proveedoresTable,
+        indexOfLastItem,
+        indexOfFirstItem,
+        pages,
+        actions,
+    };
+};

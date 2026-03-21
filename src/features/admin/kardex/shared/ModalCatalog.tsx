@@ -17,7 +17,7 @@ interface Props {
     onSuccess: () => void;
 }
 
-export default function ModalCatalogo({ isOpen, onClose, onSuccess }: Props) {
+export default function ModalCatalog({ isOpen, onClose, onSuccess }: Props) {
     const { auth } = useAuthStore();
     const [plantillas, setPlantillas] = useState<any[]>([]);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);

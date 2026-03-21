@@ -4,6 +4,7 @@ import Modal from '@/components/Modal';
 import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import { useSedesStore } from '@/zustand/sedes';
+import { useCompaniesStore } from '@/zustand/companies';
 import { Sede } from '@/interfaces/Sede';
 
 interface Props {
@@ -14,7 +15,13 @@ interface Props {
 }
 
 const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
-    const { crearSede, actualizarSede, loading } = useSedesStore();
+    const { crearSede, actualizarSede, loading, sedes } = useSedesStore();
+    const { compania } = useCompaniesStore();
+
+    // Check limit
+    const maxSedes = compania?.plan?.maxSedes || 1;
+    const currentSedes = sedes.filter(s => s.activo).length;
+    const canCreate = isEdit || currentSedes < maxSedes;
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -86,6 +93,24 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
                         <Icon icon="mdi:office-building" width={20} height={20} />
                         Datos Generales
                     </h3>
+
+                    {!isEdit && !canCreate && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <Icon icon="mdi:alert-circle" className="h-5 w-5 text-red-500" />
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm text-red-700">
+                                        Has alcanzado el límite de sedes ({maxSedes}) permitido por tu plan.
+                                        <br />
+                                        Contacta a soporte para actualizar tu plan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="space-y-4">
                         <InputPro
                             type="text"
@@ -141,7 +166,7 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
                     <Button type="button" color="black" outline onClick={onClose} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button type="submit" color="secondary" disabled={loading}>
+                    <Button type="submit" color="secondary" disabled={loading || (!isEdit && !canCreate)}>
                         {loading ? (
                             <>
                                 <Icon icon="mdi:loading" className="animate-spin mr-2" /> Saving...

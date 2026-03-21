@@ -410,21 +410,22 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
             return { success: false, error: error.message || 'Error al registrar el pago' };
         }
     },
-    cancelInvoice: async (id: number) => {
+    cancelInvoice: async (id: number, motivo?: string) => {
         try {
-            const resp: any = await patch(`/comprobante/${id}/anular`, {});
-            if (resp.code === 1) {
+            const body = motivo ? { motivo } : {};
+            const resp: any = await patch(`/comprobante/${id}/anular`, body);
+            if (resp.code === 1 || resp.id) {
                 set(
                     (state) => ({
                         invoices: state.invoices.map((invoice) =>
                             invoice.id === id
-                                ? { ...invoice, estadoPago: 'ANULADO', saldo: 0 }
+                                ? { ...invoice, estadoPago: 'ANULADO', estadoEnvioSunat: 'ANULADO', saldo: 0 }
                                 : invoice
                         ),
                         invoiceData: state.invoiceData && state.invoiceData.comprobante?.id === id
                             ? {
                                 ...state.invoiceData,
-                                comprobante: { ...state.invoiceData.comprobante, estadoPago: 'ANULADO', saldo: 0 },
+                                comprobante: { ...state.invoiceData.comprobante, estadoPago: 'ANULADO', estadoEnvioSunat: 'ANULADO', saldo: 0 },
                                 ordenTrabajo: state.invoiceData.ordenTrabajo
                                     ? { ...state.invoiceData.ordenTrabajo, estadoPago: 'ANULADO', saldo: 0 }
                                     : null

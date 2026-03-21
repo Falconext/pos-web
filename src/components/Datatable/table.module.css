@@ -1,45 +1,84 @@
 .table {
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    /* Separación horizontal 0, vertical 10px entre filas */
 }
 
 .table thead tr {
     border: none;
     text-align: left;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .table thead {
-    border-bottom: 1px solid #E1E3EA;
+    border: none;
 }
 
 .table thead tr th {
     margin-bottom: 4px;
     margin-left: 1px;
-    letter-spacing: 0.03rem;
+    letter-spacing: 0.02rem;
     white-space: nowrap;
     border-radius: 0;
-    padding: 10px 20px 10px 12px;
+    padding: 10px 24px;
     box-sizing: border-box;
     border: none;
-    color: #515C6C;
-    font-family: 'Helvetica Now Display', Arial, sans-serif;
-    text-transform: uppercase;
-    font-size: 12px;
-    font-weight: 600;
+    color: #9C978D;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.table thead tr th:first-child {
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+.table thead tr th:last-child {
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
 }
 
 .table tbody tr {
-    border-bottom: 1px solid #E1E3EA;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(230, 225, 215, 0.5);
+    /* Outer soft ring */
+    border: none;
+    transition: all 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(230, 225, 215, 0.9);
 }
 
 .table tbody tr td {
-    /* background: #fff; Removed to allow hover effects */
     font-size: 13px;
-    /* Slightly larger default */
-    /* padding: 8px 13px !important; Removed !important */
     vertical-align: middle;
-    color: #686868;
     white-space: nowrap;
-    font-weight: 500;
+    padding: 8px 24px !important;
+    color: #5C554D !important;
+    font-weight: 500 !important;
+    background: rgba(244, 244, 244, 0.2) !important;
+    /* Semi translucido (no tan opaco) */
+    border-top: 1.5px solid #FFFFFF !important;
+    /* El resplandor blanco pedido */
+    border-bottom: 1.5px solid #FFFFFF !important;
+}
+
+/* Redondear las esquinas de los TD */
+.table tbody tr td:first-child {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-left: 1.5px solid #FFFFFF !important;
+}
+
+.table tbody tr td:last-child {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-right: 1.5px solid #FFFFFF !important;
 }
 
 /* Only apply flex to action buttons container, not all divs */
@@ -54,13 +93,21 @@
 }
 
 .table button {
-    background: #fff;
-    margin-right: 10px;
-    border: none;
-    border-radius: 6px;
-    width: 30px;
-    height: 30px;
+    background: transparent;
+    border: 1px solid #ECECEC;
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
     cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.table button:hover {
+    background: #fff;
+    border-color: #DFDFD9;
 }
 
 .table button svg {

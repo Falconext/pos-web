@@ -91,7 +91,7 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
 
     return (
         <AutoScrollTable>
-            <div className="shadow-sm rounded-xl border border-gray-200 bg-white">
+            <div>
                 {
                     data?.length > 0 ?
                         <table className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`} id={idTable}>
@@ -100,11 +100,11 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
                                 formValues={formValues} data={data} colorRow={colorRow} colorFont={colorFont} actions={actions} columns={resolvedColumns} />
                         </table>
                         : <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                            <div className="bg-gray-50 p-6 rounded-full mb-4">
+                            <div className="bg-white/50 p-6 rounded-full mb-4">
                                 <Icon icon="solar:box-minimalistic-linear" className="text-6xl text-gray-300" />
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">No se encontraron registros</h3>
-                            <p className="text-sm text-gray-500 text-center">
+                            <h3 className="text-lg font-medium text-[#8C8B88] mb-1">No se encontraron registros</h3>
+                            <p className="text-sm text-[#A09F9B] text-center">
                                 Intenta ajustar los filtros o realiza una nueva búsqueda para encontrar lo que necesitas.
                             </p>
                         </div>

@@ -51,7 +51,7 @@ export default function ResellerClientes() {
         }
 
         // Check ResellerId fallback (e.g. if key is different)
-        const resellerId = auth.resellerId || auth.user?.resellerId;
+        const resellerId = (auth as any).resellerId;
         console.log("Auth Object:", auth);
         console.log("Reseller ID:", resellerId);
 
@@ -78,7 +78,7 @@ export default function ResellerClientes() {
                 password: '',
                 planId: ''
             });
-            getClientes(auth.resellerId); // Refresh list
+            getClientes(auth.resellerId!); // Refresh list
         }
     };
 
@@ -179,7 +179,7 @@ export default function ResellerClientes() {
 
             {/* Details Modal */}
             <ClienteDetalleModal
-                resellerId={auth?.resellerId}
+                resellerId={auth?.resellerId!}
                 clienteId={selectedClientId}
                 isOpen={isDetailsOpen}
                 onClose={() => setIsDetailsOpen(false)}

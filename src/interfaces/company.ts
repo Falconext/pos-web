@@ -12,6 +12,7 @@ export interface IFormCompany {
     nombreComercial: string
     planNombre: string
     tipoEmpresa: string
+    maxSedes?: number
     ubigeo: string
     fechaActivacion: any;
     fechaExpiracion: any;

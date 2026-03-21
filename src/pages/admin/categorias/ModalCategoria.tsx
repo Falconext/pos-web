@@ -3,7 +3,6 @@ import InputPro from "@/components/InputPro";
 import Modal from "@/components/Modal";
 import ImageUploader from "@/components/ImageUploader";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
 
@@ -26,17 +25,8 @@ export default function ModalCategoria({
   initial,
   title,
 }: ModalCategoriaProps) {
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      nombre: "",
-    },
-  });
+  const [nombre, setNombre] = useState("");
+  const [nombreError, setNombreError] = useState("");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -45,32 +35,29 @@ export default function ModalCategoria({
   useEffect(() => {
     if (isOpen) {
       if (initial) {
-        setValue("nombre", initial.nombre);
+        setNombre(initial.nombre);
         setPreviewUrl(initial.imagenUrl || null);
       } else {
-        reset();
+        setNombre("");
+        setNombreError("");
         setPreviewUrl(null);
       }
       setImageFile(null);
     }
-  }, [isOpen, initial, setValue, reset]);
+  }, [isOpen, initial]);
 
-  const handleFormSubmit = async (data: { nombre: string }) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nombre.trim()) { setNombreError("El nombre es obligatorio"); return; }
+    setNombreError("");
     setLoading(true);
     try {
-      // 1. Submit basic data. Expect onSubmit to return the entity (created or updated)
-      const entity = await onSubmit({ ...initial, ...data });
-
-      // 2. Upload image if exists and we have an entity ID
+      const entity = await onSubmit({ ...initial, nombre });
       const entityId = entity?.id || initial?.categoriaId;
-
       if (imageFile && entityId) {
         const fd = new FormData();
         fd.append('file', imageFile);
-        const res = await apiClient.post(`/categoria/${entityId}/imagen`, fd);
-        if (res.data?.success || res.status === 200 || res.status === 201) {
-          // Success
-        }
+        await apiClient.post(`/categoria/${entityId}/imagen`, fd);
       }
       onClose();
     } catch (error) {
@@ -90,11 +77,13 @@ export default function ModalCategoria({
       width="500px"
       position="center"
     >
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4 p-4">
+      <form onSubmit={handleFormSubmit} className="flex flex-col gap-4 p-4">
         <InputPro
           label="Nombre"
-          {...register("nombre", { required: "El nombre es obligatorio" })}
-          error={errors.nombre}
+          name="nombre"
+          value={nombre}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setNombre(e.target.value)}
+          error={nombreError || undefined}
         />
 
         <ImageUploader

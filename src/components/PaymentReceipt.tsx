@@ -56,22 +56,31 @@ const PaymentReceipt = ({
   const printFn = useReactToPrint({
     // @ts-ignore
     contentRef: componentRef,
-    pageStyle: `@media print {
-      @page {
-        size: 80mm 297mm;
-        margin: 0;
+    pageStyle: `
+      @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+      @media print {
+        @page {
+          size: 80mm 297mm;
+          margin: 0;
+        }
+        * {
+          font-family: 'VT323', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        body {
+          width: 80mm;
+          height: 297mm;
+          overflow: hidden;
+          font-family: 'VT323', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        }
+        .p-5 {
+          width: 100%;
+          height: 100%;
+          box-sizing: border-box;
+        }
       }
-      body {
-        width: 80mm;
-        height: 297mm;
-        overflow: hidden;
-      }
-      .p-5 {
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-      }
-    }`,
+    `,
   });
 
   const getTitleByType = () => {

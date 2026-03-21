@@ -249,12 +249,6 @@ const PrintPDF = ({
             : `data:${mime};base64,${rawBase64}`)
         : undefined;
 
-    console.log(formValues)
-    console.log(receipt)
-    console.log(size)
-
-    console.log(logoDataUrl)
-
     return (
         <Document>
             <Page size={print} style={styles.page}>

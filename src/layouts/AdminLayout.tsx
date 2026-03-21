@@ -38,6 +38,7 @@ export default function AdminLayout() {
   const [isGuiasSubmenuOpen, setIsGuiasSubmenuOpen] = useState(false)
   const [isComprasSubmenuOpen, setIsComprasSubmenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // NUEVO ESTADO PARA DESKTOP
   const userMenuRef = useRef<HTMLDivElement | null>(null)
   const scrollYRef = useRef(0)
 
@@ -165,418 +166,461 @@ export default function AdminLayout() {
   // Determine theme based on role
   const isSystemAdmin = auth?.rol === 'ADMIN_SISTEMA'
 
-  /* THEME CONFIGURATION - VELOURÉ STYLE (DYNAMIC) */
+  // Mapping SidebarColor to gradient backgrounds
+  const getSidebarBackground = (color: string) => {
+    switch (color) {
+      case 'primary': // Pink/Fuchsia
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-fuchsia-100';
+      case 'dark': // Gray/Navy
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-slate-200';
+      case 'info': // Blue
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-blue-100';
+      case 'success': // Green
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-emerald-100';
+      case 'warning': // Orange
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-[#FFE5B4]';
+      case 'error': // Red
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-red-100';
+      default:
+        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-blue-100';
+    }
+  };
+
+  // Theme adaptado al diseño provisto por el usuario
   const theme = {
-    // Layout
     mainPadding: 'p-4 pt-4',
-    sidebarRadius: 'rounded-none md:rounded-r-none',
-    sidebarLogoShadow: 'shadow-none',
+    // Fondo general dinámico del sidebar basado en la configuración guardada
+    sidebarBg: getSidebarBackground(sidebarColor),
+    sidebarBorder: 'border-none',
 
-    // Sidebar Dynamic Styles
-    sidebarBg: sidebarType === 'dark'
-      ? 'bg-[#1C1C24]'
-      : sidebarType === 'white'
-        ? 'bg-white shadow-xl shadow-gray-200/50 border-r border-gray-100'
-        : 'bg-transparent',
-
-    sidebarText: sidebarType === 'white' ? 'text-gray-600' : 'text-gray-400',
-    sidebarBorder: sidebarType === 'white' ? 'border-r border-gray-100' : 'border-none',
-
-    // Color Mappings
-    activeColors: {
-      primary: 'bg-fuchsia-600 shadow-fuchsia-500/20',
-      dark: 'bg-gray-900 shadow-gray-500/20',
-      info: 'bg-blue-500 shadow-blue-500/20',
-      success: 'bg-emerald-500 shadow-emerald-500/20',
-      warning: 'bg-orange-500 shadow-orange-500/20',
-      error: 'bg-red-500 shadow-red-500/20',
-    },
-
-    // Dynamic Classes Helpers
+    // Links activos (como "Holidays" en el mockup)
+    // Fondo blanco, texto negro (#090909), sombra muy suave.
     get activeLink() {
-      const colorClass = this.activeColors[sidebarColor] || this.activeColors.info;
-      const textColor = 'text-white';
-      return `flex items-center w-full px-4 py-3.5 text-sm font-semibold ${textColor} ${colorClass} rounded-2xl shadow-lg transition-all duration-200 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'w-full px-4 py-3 rounded-2xl'} text-sm font-semibold text-[#090909] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all duration-200 group`;
     },
-
+    // Links inactivos (texto e icono #8D887F)
     get inactiveLink() {
-      const textColor = sidebarType === 'white' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white';
-      const bgHover = sidebarType === 'white' ? 'hover:bg-gray-100' : 'hover:bg-white/5';
-      return `flex items-center w-full px-4 py-3.5 text-sm font-medium ${textColor} ${bgHover} rounded-2xl transition-all duration-200 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'w-full px-4 py-3 rounded-2xl'} text-sm font-medium text-[#8D887F] hover:text-[#090909] hover:bg-white/60 transition-all duration-200 group`;
     },
-
-    // Accordions
+    // Accordion activo e inactivo
     get accordionActive() {
-      const colorClass = this.activeColors[sidebarColor] || this.activeColors.info;
-      const textColor = 'text-white';
-      return `flex items-center justify-between w-full px-4 py-3.5 text-sm font-semibold ${textColor} ${colorClass} rounded-2xl transition-all text-left shadow-lg`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'justify-between w-full px-4 py-3 rounded-2xl'} text-sm font-semibold text-[#090909] bg-white transition-all text-left shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]`;
     },
-
     get accordionInactive() {
-      const textColor = sidebarType === 'white' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white';
-      const bgHover = sidebarType === 'white' ? 'hover:bg-gray-50' : 'hover:bg-white/5';
-      return `flex items-center justify-between w-full px-4 py-3.5 text-sm font-medium ${textColor} ${bgHover} rounded-2xl transition-all text-left`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'justify-between w-full px-4 py-3 rounded-2xl'} text-sm font-medium text-[#8D887F] hover:text-[#090909] hover:bg-white/60 transition-all text-left`;
     },
-
-    // Submenu
-    submenuBorder: sidebarType === 'white' ? 'border-gray-200' : 'border-gray-700',
-
+    // Submenu links
+    submenuBorder: 'border-[#DBD1C7]',
     get submenuActiveLink() {
-      const textColor = sidebarType === 'white' ? 'text-gray-900' : 'text-white';
-      const bgHover = sidebarType === 'white' ? 'hover:bg-gray-100' : 'hover:bg-white/5';
-      return `flex items-center px-4 py-2.5 text-sm font-bold ${textColor} ${bgHover} rounded-xl transition-all`;
+      return `flex items-center px-4 py-2.5 text-sm font-bold text-[#090909] bg-white/60 rounded-xl transition-all`;
     },
-
     get submenuInactiveLink() {
-      const textColor = sidebarType === 'white' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-500 hover:text-white';
-      const bgHover = sidebarType === 'white' ? 'hover:bg-gray-50' : 'hover:bg-white/5';
-      return `flex items-center px-4 py-2.5 text-sm font-medium ${textColor} ${bgHover} rounded-xl transition-all`;
+      return `flex items-center px-4 py-2.5 text-sm font-medium text-[#8D887F] hover:text-[#090909] hover:bg-white/40 rounded-xl transition-all`;
     },
 
-    // Legacy support
-    primaryBg: 'bg-indigo-600',
-    primaryLightBg: 'bg-white/5',
-    primaryText: 'text-white',
-    primaryBorder: 'border-gray-700',
+    // Legacy support para bordes si quedó alguno
+    primaryBorder: 'border-[#DBD1C7]',
   }
 
   return (
     <div
       className="flex overflow-hidden bg-[#fff] font-sans transition-all duration-300"
       style={{
-        zoom: isCompact ? '0.8' : '1',
-        height: isCompact ? '125vh' : '100vh'
+        zoom: isCompact ? '0.9' : '1',
+        height: isCompact ? '110vh' : '100vh'
       }}
     >
 
       {/* Sidebar/Drawer */}
-      <aside className={`fixed inset-y-0 left-0 ${theme.sidebarBg} ${theme.sidebarBorder} p-4 space-y-6 h-full overflow-y-auto w-[85%] max-w-[280px] transform transition-transform duration-300 ease-in-out md:static md:w-[280px] md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
-        <div className="flex items-center gap-3 px-2 mb-8 mt-2">
-          <div className="flex items-center justify-center">
-            <img src="/fnlogo.png" alt="Falconext" className="w-10 h-10 object-contain" />
+      <aside className={`fixed inset-y-0 left-0 ${theme.sidebarBg} ${theme.sidebarBorder} flex flex-col p-4 w-[85%] max-w-[280px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[88px] items-center' : 'md:w-[280px]'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
+        <div className={`flex items-center px-2 mb-8 mt-2 ${isSidebarCollapsed ? 'justify-center flex-col gap-4' : 'justify-between'}`}>
+          <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center justify-center">
+              <img src="/fnlogo.png" alt="Falconext" className="w-8 h-8 object-contain" />
+            </div>
+            {!isSidebarCollapsed && (
+              <div>
+                <h2 className={`text-xl font-bold tracking-tight leading-none text-[#090909]`}>Falconext</h2>
+                <p className="text-[9px] text-[#8D887F] font-bold tracking-wide mt-1 uppercase">Panel Administrativo</p>
+              </div>
+            )}
           </div>
-          <div>
-            <h2 className={`text-xl font-bold tracking-tight leading-none ${sidebarType === 'white' ? 'text-gray-800' : 'text-white'}`}>FALCONEXT</h2>
-            <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PANEL ADMINISTRATIVO</p>
-          </div>
+          {/* Botón `<` inspirado en el mockup */}
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="hidden md:flex items-center justify-center w-8 h-8 bg-[#EAE8E4] text-[#8D887F] hover:bg-white hover:text-black rounded-lg transition-colors cursor-pointer border border-[#E0DED9]"
+          >
+            <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="16" />
+          </button>
         </div>
 
-        <nav className="space-y-1.5">
-          {auth?.rol === 'ADMIN_SISTEMA' && (
-            <>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/empresas" className={({ isActive }) => isActive || location.pathname.startsWith('/administrador/empresas') ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:buildings-2-bold-duotone" className="mr-3 text-xl" /> Empresas
-              </NavLink>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/diseno-rubros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:palette-bold-duotone" className="mr-3 text-xl" /> Diseño por Rubro
-              </NavLink>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-global" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:database-bold-duotone" className="mr-3 text-xl" /> Catálogo Global
-              </NavLink>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:card-bold-duotone" className="mr-3 text-xl" /> Planes
-              </NavLink>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:widget-bold-duotone" className="mr-3 text-xl" /> Módulos
-              </NavLink>
-              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/resellers" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:users-group-two-rounded-bold-duotone" className="mr-3 text-xl" /> Distribuidores
-              </NavLink>
-            </>
-          )}
-
-          {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
-            <>
-              {/* Dashboard */}
-              {hasPermission(auth, 'dashboard') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Administrador') }} to="/administrador" end className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:chart-2-bold-duotone" className="mr-3 text-xl" /> Dashboard
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden space-y-1.5 ${isSidebarCollapsed ? 'px-0 w-full scrollbar-none [&::-webkit-scrollbar]:hidden' : 'pr-1 custom-scrollbar'}`}>
+          <nav className="space-y-1.5 w-full">
+            {auth?.rol === 'ADMIN_SISTEMA' && (
+              <>
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/empresas" className={({ isActive }) => isActive || location.pathname.startsWith('/administrador/empresas') ? theme.activeLink : theme.inactiveLink} title="Empresas">
+                  <Icon icon="solar:buildings-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Empresas</span>}
                 </NavLink>
-              )}
-
-              {/* TÍTULO: INVENTARIO / CATÁLOGO */}
-              <div className="px-4 mt-6 mb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Inventario</span>
-              </div>
-
-              {/* Kardex / Catálogo */}
-              {hasPermission(auth, 'kardex') && (
-                <div>
-                  <button onClick={() => { toggleAccordion('kardex'); setNameNavbar(menuLabels.kardexTitle) }} className={location.pathname.includes('/administrador/kardex') ? theme.accordionActive : theme.accordionInactive}>
-                    <div className="flex items-center">
-                      <Icon icon={isRestaurante ? 'solar:chef-hat-bold-duotone' : 'solar:box-bold-duotone'} className="mr-3 text-xl" />
-                      {menuLabels.kardexTitle}
-                    </div>
-                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isKardexSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
-                  </button>
-                  {isKardexSubmenuOpen && (
-                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/dashboard" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Dashboard
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        {menuLabels.productosLabel}
-                      </NavLink>
-                      {/* Combos */}
-                      {(() => {
-                        const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
-                        const esFarmacia = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
-                        return !esFarmacia ? (
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                            Kits / Packs
-                          </NavLink>
-                        ) : null;
-                      })()}
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex" end className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Movimientos
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TÍTULO: VENTAS */}
-              <div className="px-4 mt-6 mb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ventas</span>
-              </div>
-
-              {/* Facturación SUNAT - Solo para empresas formales */}
-              {hasPermission(auth, 'comprobantes') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
-                <div>
-                  <button onClick={() => { toggleAccordion('fact'); setNameNavbar('Facturacion') }} className={(location.pathname.includes('/administrador/facturacion/comprobantes') || location.pathname.includes('/administrador/facturacion/nuevo')) && !location.pathname.includes('informales') ? theme.accordionActive : theme.accordionInactive}>
-                    <div className="flex items-center">
-                      <Icon icon="solar:bill-list-bold-duotone" className="mr-3 text-xl" /> Fact. SUNAT
-                    </div>
-                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isFactSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
-                  </button>
-                  {isFactSubmenuOpen && (
-                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Comprobantes SUNAT
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Crear comprobantes
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Comprobantes Informales */}
-              {hasPermission(auth, 'comprobantes') && (auth?.empresa?.tipoEmpresa === 'FORMAL' || auth?.empresa?.tipoEmpresa === 'INFORMAL') && (
-                <div>
-                  <button onClick={() => { toggleAccordion('informal'); setNameNavbar('Comprobantes Informales') }} className={location.pathname.includes('/administrador/facturacion/comprobantes-informales') ? theme.accordionActive : theme.accordionInactive}>
-                    <div className="flex items-center">
-                      <Icon icon="solar:notes-bold-duotone" className="mr-3 text-xl" /> Notas de Pedido
-                    </div>
-                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isInformalSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
-                  </button>
-                  {isInformalSubmenuOpen && (
-                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes-informales" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Notas de ventas
-                      </NavLink>
-                      {auth?.empresa?.tipoEmpresa === 'INFORMAL' && (
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Crear comprobantes
-                        </NavLink>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Cotizaciones */}
-              {hasPermission(auth, 'cotizaciones') && (
-                <div>
-                  <button onClick={() => { toggleAccordion('cotiz'); setNameNavbar('Cotizaciones') }} className={location.pathname.includes('/administrador/cotizaciones') ? theme.accordionActive : theme.accordionInactive}>
-                    <div className="flex items-center">
-                      <Icon icon="solar:document-text-bold-duotone" className="mr-3 text-xl" /> Cotizaciones
-                    </div>
-                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isCotizSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
-                  </button>
-                  {isCotizSubmenuOpen && (
-                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/cotizaciones" end className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Ver cotizaciones
-                      </NavLink>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/cotizaciones/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Nueva cotización
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Guías de Remisión - Solo para empresas formales */}
-              {hasPermission(auth, 'guias-remision') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Guías de Remisión') }} to="/administrador/guia-remision" className={({ isActive }) => isActive || location.pathname.includes('/administrador/guia-remision') ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:delivery-bold-duotone" className="mr-3 text-xl" /> Guías de Remisión
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/diseno-rubros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Diseño por Rubro">
+                  <Icon icon="solar:palette-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Diseño por Rubro</span>}
                 </NavLink>
-              )}
-
-              {/* Clientes */}
-              {hasPermission(auth, 'clientes') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Clientes') }} to="/administrador/clientes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:users-group-rounded-bold-duotone" className="mr-3 text-xl" /> Clientes
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-global" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Catálogo Global">
+                  <Icon icon="solar:database-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Catálogo Global</span>}
                 </NavLink>
-              )}
-
-              {/* TÍTULO: COMPRAS */}
-              <div className="px-4 mt-6 mb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Compras</span>
-              </div>
-
-              {/* Compras */}
-              {hasPermission(auth, 'compras') && (
-                <div>
-                  <button onClick={() => { toggleAccordion('compras'); setNameNavbar('Compras') }} className={location.pathname.includes('/administrador/compras') && !location.search.includes('por_pagar') ? theme.accordionActive : theme.accordionInactive}>
-                    <div className="flex items-center">
-                      <Icon icon="solar:cart-large-minimalistic-bold-duotone" className="mr-3 text-xl" />
-                      Compras
-                    </div>
-                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isComprasSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
-                  </button>
-                  {isComprasSubmenuOpen && (
-                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras" end className={({ isActive }) => isActive && location.pathname === '/administrador/compras' ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Gestión de Compras
-                      </NavLink>
-                      {/* <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Nueva Compra
-                      </NavLink> */}
-                      <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras/proveedores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                        Proveedores
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TÍTULO: FINANZAS / TESORERÍA */}
-              <div className="px-4 mt-6 mb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Finanzas / Tesorería</span>
-              </div>
-
-              {/* Dashboard Financiero */}
-              {hasPermission(auth, 'dashboard') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Dashboard Financiero') }} to="/administrador/finanzas/dashboard" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:chart-square-bold-duotone" className="mr-3 text-xl" /> Dashboard
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Planes">
+                  <Icon icon="solar:card-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Planes</span>}
                 </NavLink>
-              )}
-
-              {/* Caja */}
-              {hasPermission(auth, 'caja') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Caja') }} to="/administrador/caja" className={({ isActive }) => (isActive && location.pathname === '/administrador/caja') ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:cash-out-bold-duotone" className="mr-3 text-xl" /> Control de Caja
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Módulos">
+                  <Icon icon="solar:widget-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Módulos</span>}
                 </NavLink>
-              )}
-
-              {/* Pagos */}
-              {hasPermission(auth, 'pagos') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Pagos') }} to="/administrador/pagos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:wallet-money-bold-duotone" className="mr-3 text-xl" /> Cuentas por Cobrar
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/resellers" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Distribuidores">
+                  <Icon icon="solar:users-group-two-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Distribuidores</span>}
                 </NavLink>
-              )}
+              </>
+            )}
 
-              {/* Cuentas por Pagar */}
-              {hasPermission(auth, 'kardex') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Cuentas por Pagar') }} to="/administrador/compras?tab=por_pagar" className={({ isActive }) => location.search.includes('por_pagar') ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:bill-check-bold-duotone" className="mr-3 text-xl" /> Cuentas por Pagar
-                </NavLink>
-              )}
+            {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
+              <>
+                {/* Dashboard */}
+                {hasPermission(auth, 'dashboard') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Administrador') }} to="/administrador" end className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Dashboard">
+                    <Icon icon="solar:chart-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Dashboard</span>}
+                  </NavLink>
+                )}
 
-              {/* Reportes/Contabilidad */}
-              {hasPermission(auth, 'reportes') && (
-                <div>
-                  <button onClick={() => { toggleAccordion('cont'); setNameNavbar('Contabilidad') }} className={location.pathname.includes('/administrador/contabilidad') ? theme.accordionActive : theme.accordionInactive}>
-                    <div className="flex items-center">
-                      <Icon icon="solar:calculator-bold-duotone" className="mr-3 text-xl" /> Contabilidad
-                    </div>
-                    <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isContSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
-                  </button>
-                  {isContSubmenuOpen && (
-                    <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                      {auth?.empresa?.tipoEmpresa === 'FORMAL' && (
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Reporte Formales (SUNAT)
-                        </NavLink>
-                      )}
-                      {auth?.empresa?.tipoEmpresa === 'INFORMAL' && (
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte-informales" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Reporte Informales
-                        </NavLink>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-
-
-              {/* Tienda Virtual */}
-              {auth?.empresa?.plan?.tieneTienda && (auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
-                <>
+                {/* TÍTULO: INVENTARIO / CATÁLOGO */}
+                {!isSidebarCollapsed && (
                   <div className="px-4 mt-6 mb-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Canales Digitales</span>
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Inventario</span>
                   </div>
-                  <div>
-                    <button onClick={() => { toggleAccordion('tienda'); setNameNavbar('Tienda Virtual') }} className={location.pathname.includes('/administrador/tienda') ? theme.accordionActive : theme.accordionInactive}>
-                      <div className="flex items-center">
-                        <Icon icon="solar:shop-bold-duotone" className="mr-3 text-xl" /> Tienda Virtual
+                )}
+                {isSidebarCollapsed && <div className="h-4"></div>}
+
+                {/* Kardex / Catálogo */}
+                {hasPermission(auth, 'kardex') && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/kardex/productos'); } else { toggleAccordion('kardex'); } setNameNavbar(menuLabels.kardexTitle) }} className={location.pathname.includes('/administrador/kardex') ? theme.accordionActive : theme.accordionInactive} title={menuLabels.kardexTitle}>
+                      <div className="flex items-center justify-center">
+                        <Icon icon={isRestaurante ? 'solar:chef-hat-bold-duotone' : 'solar:box-bold-duotone'} className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>{menuLabels.kardexTitle}</span>}
                       </div>
-                      <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isTiendaSubmenuOpen ? 'rotate-180' : ''}`} width="18" />
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isKardexSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
                     </button>
-                    {isTiendaSubmenuOpen && (
-                      <div className={`ml-4 pl-4 border-l-2 ${theme.primaryBorder} space-y-1 mt-1`}>
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Pedidos
+                    {((!isSidebarCollapsed && isKardexSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">{menuLabels.kardexTitle}</div>}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/dashboard" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Dashboard
                         </NavLink>
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Modificadores
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          {menuLabels.productosLabel}
                         </NavLink>
-                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Configuración
+                        {/* Combos */}
+                        {(() => {
+                          const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
+                          const esFarmacia = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
+                          return !esFarmacia ? (
+                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/combos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                              Kits / Packs
+                            </NavLink>
+                          ) : null;
+                        })()}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex" end className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Movimientos
                         </NavLink>
                       </div>
                     )}
                   </div>
-                </>
-              )}
+                )}
 
-              {/* TÍTULO: SISTEMA */}
-              <div className="px-4 mt-6 mb-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sistema</span>
-              </div>
+                {/* TÍTULO: VENTAS */}
+                {!isSidebarCollapsed && (
+                  <div className="px-4 mt-6 mb-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ventas</span>
+                  </div>
+                )}
+                {isSidebarCollapsed && <div className="h-4"></div>}
 
-              {/* Usuarios */}
-              {hasPermission(auth, 'usuarios') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Usuarios') }} to="/administrador/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:users-group-two-rounded-bold-duotone" className="mr-3 text-xl" /> Usuarios
-                </NavLink>
-              )}
+                {/* Facturación SUNAT - Solo para empresas formales */}
+                {hasPermission(auth, 'comprobantes') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/facturacion/comprobantes'); } else { toggleAccordion('fact'); } setNameNavbar('Facturacion') }} className={(location.pathname.includes('/administrador/facturacion/comprobantes') || location.pathname.includes('/administrador/facturacion/nuevo')) && !location.pathname.includes('informales') ? theme.accordionActive : theme.accordionInactive} title="Fact. SUNAT">
+                      <div className="flex items-center justify-center">
+                        <Icon icon="solar:bill-list-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>Fact. SUNAT</span>}
+                      </div>
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isFactSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                    </button>
+                    {((!isSidebarCollapsed && isFactSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Fact. SUNAT</div>}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Comprobantes SUNAT
+                        </NavLink>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Crear comprobantes
+                        </NavLink>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* Sedes */}
-              {(auth?.rol === 'ADMIN_EMPRESA' || hasPermission(auth, 'configuracion')) && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Sedes') }} to="/administrador/sedes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:city-bold-duotone" className="mr-3 text-xl" /> Sedes
-                </NavLink>
-              )}
+                {/* Comprobantes Informales */}
+                {hasPermission(auth, 'comprobantes') && (auth?.empresa?.tipoEmpresa === 'FORMAL' || auth?.empresa?.tipoEmpresa === 'INFORMAL') && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/facturacion/comprobantes-informales'); } else { toggleAccordion('informal'); } setNameNavbar('Comprobantes Informales') }} className={location.pathname.includes('/administrador/facturacion/comprobantes-informales') ? theme.accordionActive : theme.accordionInactive} title="Notas de Pedido">
+                      <div className="flex items-center justify-center">
+                        <Icon icon="solar:notes-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>Notas de Pedido</span>}
+                      </div>
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isInformalSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                    </button>
+                    {((!isSidebarCollapsed && isInformalSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Notas de Pedido</div>}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/comprobantes-informales" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Notas de ventas
+                        </NavLink>
+                        {auth?.empresa?.tipoEmpresa === 'INFORMAL' && (
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/facturacion/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Crear comprobantes
+                          </NavLink>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* Notificaciones */}
-              {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
-                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Notificaciones') }} to="/administrador/notificaciones" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                  <Icon icon="solar:bell-bold-duotone" className="mr-3 text-xl" /> Notificaciones
-                </NavLink>
-              )}
+                {/* Cotizaciones */}
+                {hasPermission(auth, 'cotizaciones') && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/cotizaciones'); } else { toggleAccordion('cotiz'); } setNameNavbar('Cotizaciones') }} className={location.pathname.includes('/administrador/cotizaciones') ? theme.accordionActive : theme.accordionInactive} title="Cotizaciones">
+                      <div className="flex items-center justify-center">
+                        <Icon icon="solar:document-text-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>Cotizaciones</span>}
+                      </div>
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isCotizSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                    </button>
+                    {((!isSidebarCollapsed && isCotizSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Cotizaciones</div>}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/cotizaciones" end className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Ver cotizaciones
+                        </NavLink>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/cotizaciones/nuevo" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Nueva cotización
+                        </NavLink>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* Perfil */}
-              <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Perfil') }} to="/administrador/perfil" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
-                <Icon icon="solar:user-circle-bold-duotone" className="mr-3 text-xl" /> Perfil
-              </NavLink>
-            </>
-          )}
-        </nav>
+                {/* Guías de Remisión - Solo para empresas formales */}
+                {hasPermission(auth, 'guias-remision') && auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Guías de Remisión') }} to="/administrador/guia-remision" className={({ isActive }) => isActive || location.pathname.includes('/administrador/guia-remision') ? theme.activeLink : theme.inactiveLink} title="Guías de Remisión">
+                    <Icon icon="solar:delivery-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Guías de Remisión</span>}
+                  </NavLink>
+                )}
+
+                {/* Clientes */}
+                {hasPermission(auth, 'clientes') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Clientes') }} to="/administrador/clientes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Clientes">
+                    <Icon icon="solar:users-group-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Clientes</span>}
+                  </NavLink>
+                )}
+
+                {/* TÍTULO: COMPRAS */}
+                {!isSidebarCollapsed && (
+                  <div className="px-4 mt-6 mb-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Compras</span>
+                  </div>
+                )}
+                {isSidebarCollapsed && <div className="h-4"></div>}
+
+                {/* Compras */}
+                {hasPermission(auth, 'compras') && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/compras'); } else { toggleAccordion('compras'); } setNameNavbar('Compras') }} className={location.pathname.includes('/administrador/compras') && !location.search.includes('por_pagar') ? theme.accordionActive : theme.accordionInactive} title="Compras">
+                      <div className="flex items-center justify-center">
+                        <Icon icon="solar:cart-large-minimalistic-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>Compras</span>}
+                      </div>
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isComprasSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                    </button>
+                    {((!isSidebarCollapsed && isComprasSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Compras</div>}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras" end className={({ isActive }) => isActive && location.pathname === '/administrador/compras' ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Gestión de Compras
+                        </NavLink>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/compras/proveedores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Proveedores
+                        </NavLink>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TÍTULO: FINANZAS / TESORERÍA */}
+                {!isSidebarCollapsed && (
+                  <div className="px-4 mt-6 mb-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Finanzas / Tesorería</span>
+                  </div>
+                )}
+                {isSidebarCollapsed && <div className="h-4"></div>}
+
+                {/* Dashboard Financiero */}
+                {hasPermission(auth, 'dashboard') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Dashboard Financiero') }} to="/administrador/finanzas/dashboard" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Dashboard Financiero">
+                    <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Dashboard Financiero</span>}
+                  </NavLink>
+                )}
+
+                {/* Caja */}
+                {hasPermission(auth, 'caja') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Caja') }} to="/administrador/caja" className={({ isActive }) => (isActive && location.pathname === '/administrador/caja') ? theme.activeLink : theme.inactiveLink} title="Control de Caja">
+                    <Icon icon="solar:cash-out-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Control de Caja</span>}
+                  </NavLink>
+                )}
+
+                {/* Pagos */}
+                {hasPermission(auth, 'pagos') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Pagos') }} to="/administrador/pagos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Cuentas por Cobrar">
+                    <Icon icon="solar:wallet-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Cuentas por Cobrar</span>}
+                  </NavLink>
+                )}
+
+                {/* Cuentas por Pagar */}
+                {hasPermission(auth, 'kardex') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Cuentas por Pagar') }} to="/administrador/compras?tab=por_pagar" className={({ isActive }) => location.search.includes('por_pagar') ? theme.activeLink : theme.inactiveLink} title="Cuentas por Pagar">
+                    <Icon icon="solar:bill-check-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Cuentas por Pagar</span>}
+                  </NavLink>
+                )}
+
+                {/* Reportes/Contabilidad */}
+                {hasPermission(auth, 'reportes') && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate(auth?.empresa?.tipoEmpresa === 'INFORMAL' ? '/administrador/contabilidad/reporte-informales' : '/administrador/contabilidad/reporte'); } else { toggleAccordion('cont'); } setNameNavbar('Contabilidad') }} className={location.pathname.includes('/administrador/contabilidad') ? theme.accordionActive : theme.accordionInactive} title="Contabilidad">
+                      <div className="flex items-center justify-center">
+                        <Icon icon="solar:calculator-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>Contabilidad</span>}
+                      </div>
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isContSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                    </button>
+                    {((!isSidebarCollapsed && isContSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Contabilidad</div>}
+                        {auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Reporte Formales (SUNAT)
+                          </NavLink>
+                        )}
+                        {auth?.empresa?.tipoEmpresa === 'INFORMAL' && (
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte-informales" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Reporte Informales
+                          </NavLink>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tienda Virtual */}
+                {auth?.empresa?.plan?.tieneTienda && (auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
+                  <>
+                    {!isSidebarCollapsed && (
+                      <div className="px-4 mt-6 mb-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Canales Digitales</span>
+                      </div>
+                    )}
+                    {isSidebarCollapsed && <div className="h-4"></div>}
+                    <div className="relative group/submenu">
+                      <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/tienda/pedidos'); } else { toggleAccordion('tienda'); } setNameNavbar('Tienda Virtual') }} className={location.pathname.includes('/administrador/tienda') ? theme.accordionActive : theme.accordionInactive} title="Tienda Virtual">
+                        <div className="flex items-center justify-center">
+                          <Icon icon="solar:shop-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                          {!isSidebarCollapsed && <span>Tienda Virtual</span>}
+                        </div>
+                        {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isTiendaSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                      </button>
+                      {((!isSidebarCollapsed && isTiendaSubmenuOpen) || isSidebarCollapsed) && (
+                        <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                          {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Tienda Virtual</div>}
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Pedidos
+                          </NavLink>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Modificadores
+                          </NavLink>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Configuración
+                          </NavLink>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* TÍTULO: SISTEMA */}
+                {!isSidebarCollapsed && (
+                  <div className="px-4 mt-6 mb-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sistema</span>
+                  </div>
+                )}
+                {isSidebarCollapsed && <div className="h-4"></div>}
+
+                {/* Usuarios */}
+                {hasPermission(auth, 'usuarios') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Usuarios') }} to="/administrador/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Usuarios">
+                    <Icon icon="solar:users-group-two-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Usuarios</span>}
+                  </NavLink>
+                )}
+
+                {/* Sedes */}
+                {(auth?.rol === 'ADMIN_EMPRESA' || hasPermission(auth, 'configuracion')) && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Sedes') }} to="/administrador/sedes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Sedes">
+                    <Icon icon="solar:city-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Sedes</span>}
+                  </NavLink>
+                )}
+
+                {/* Notificaciones */}
+                {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
+                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Notificaciones') }} to="/administrador/notificaciones" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Notificaciones">
+                    <Icon icon="solar:bell-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Notificaciones</span>}
+                  </NavLink>
+                )}
+              </>
+            )}
+
+          </nav>
+        </div>
+
+        {/* Divider y configuración abajo */}
+        <div className="mt-4 pt-4 border-t border-[#DFDFD9] space-y-1.5 w-full">
+          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración Settings') }} to="/administrador/perfil" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Settings">
+            <Icon icon="solar:settings-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+            {!isSidebarCollapsed && <span>Settings</span>}
+          </NavLink>
+          <button onClick={() => { setIsSidebarOpen(false); logout() }} className={theme.inactiveLink} title="Logout">
+            <Icon icon="solar:logout-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+            {!isSidebarCollapsed && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Backdrop for mobile */}
@@ -589,7 +633,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
-        <header className={`z-30 flex items-center justify-between px-6 py-4 backdrop-blur-md transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'} ${sidebarType === 'white' ? 'bg-white/80' : 'bg-[#F4F5FA]/80'}`}>
+        <header className={`z-30 flex items-center justify-between px-6 py-4 bg-[#fff] border-b transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'} ${sidebarType === 'white' ? 'bg-white' : ''}`}>
           <div className="flex items-center gap-4">
             <button
               className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors focus:ring-2 focus:ring-indigo-100"

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function useOutsideClick(initial = false): [boolean, (v: boolean) => void, React.RefObject<HTMLDivElement>] {
+export default function useOutsideClick(initial = false): [boolean, (v: boolean) => void, React.RefObject<HTMLDivElement | null>] {
   const [isOpen, setIsOpen] = useState<boolean>(initial)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -14,5 +14,5 @@ export default function useOutsideClick(initial = false): [boolean, (v: boolean)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  return [isOpen, setIsOpen, ref]
+  return [isOpen, setIsOpen, ref] as const
 }

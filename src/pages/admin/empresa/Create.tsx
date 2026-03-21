@@ -386,7 +386,7 @@ const CreateEmpresa = () => {
         {/* Header */}
         <div className="flex items-center mb-6 pt-5 md:pt-0">
           <Button
-            color="tertiary"
+            variant="outline-secondary"
             onClick={() => navigate('/administrador/empresas')}
             className="mr-4"
           >
@@ -717,14 +717,14 @@ const CreateEmpresa = () => {
             <div className="flex justify-end space-x-4">
               <Button
                 type="button"
-                color="tertiary"
+                variant="outline-secondary"
                 onClick={() => navigate('/administrador/empresas')}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                color="secondary"
+                variant="secondary"
                 disabled={loading || isSubmitting}
               >
                 {isSubmitting ? 'Creando...' : 'Crear Empresa'}

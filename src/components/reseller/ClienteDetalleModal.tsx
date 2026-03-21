@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useResellerPanelStore } from '@/zustand/reseller-panel';
-import dayjs from 'dayjs'; // Or moment if dayjs not avail? User has moment.
+
 
 const EstadoBadge = ({ estado }: { estado: string }) => {
     const isActive = estado === 'ACTIVO';

@@ -204,8 +204,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 error={null}
                                 placeholder="Buscar proveedor..."
                             />
-                            <InputPro autocomplete="off" label="Serie" name="serie" value={header.serie} onChange={(e) => setHeader({ ...header, serie: e.target.value })} isLabel />
-                            <InputPro autocomplete="off" label="Número" name="numero" value={header.numero} onChange={(e) => setHeader({ ...header, numero: e.target.value })} isLabel />
+                            <InputPro autocomplete="new-password" label="Serie" name="doc_serie_compra" id="doc_serie_compra" value={header.serie} onChange={(e) => setHeader({ ...header, serie: e.target.value })} isLabel />
+                            <InputPro autocomplete="new-password" label="Número" name="doc_nro_compra" id="doc_nro_compra" value={header.numero} onChange={(e) => setHeader({ ...header, numero: e.target.value })} isLabel />
                             <Calendar
                                 text="Fecha Emisión"
                                 name="fechaEmision"

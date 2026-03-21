@@ -1,0 +1,411 @@
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import moment from "moment";
+import QRCode from 'qrcode';
+import { useReactToPrint } from "react-to-print";
+
+import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
+import { IInvoices } from "@/interfaces/invoices";
+import useAlertStore from "@/zustand/alert";
+import { useAuthStore } from "@/zustand/auth";
+import { usePaymentFlow, PaymentType } from "@/hooks/usePaymentFlow";
+import { useDebounce } from "@/hooks/useDebounce";
+
+import { IComprobanteWhatsApp, IEstadoInvoiceOption, IPrintFormatOption, PrintFormatSize } from "./CotizacionesModel";
+
+export function useCotizacionesViewModel() {
+    const navigate = useNavigate();
+    const { auth } = useAuthStore();
+    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
+    const { success } = useAlertStore();
+
+    const [currentPage, setcurrentPage] = useState(1);
+    const [itemsPerPage, setitemsPerPage] = useState(50);
+    const [searchClient, setSearchClient] = useState<string>("");
+    const [formValues, setFormValues] = useState<any>({});
+
+    // Modals
+    const [isOpenModal, setIsOpenModal] = useState(false);
+    const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
+    const [isOpenModalConfirmPayment, setIsOpenModalConfirmPayment] = useState(false);
+    const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
+    const [isOpenModalPagoParcial, setIsOpenModalPagoParcial] = useState(false);
+    const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
+
+    // States
+    const [comprobante, setComprobante] = useState<string>("");
+    const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
+    const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
+    const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
+    const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
+    const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<IComprobanteWhatsApp | null>(null);
+    const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [pdfUrl, setPdfUrl] = useState<string>("");
+    const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
+    const [shouldPrint, setShouldPrint] = useState(false);
+
+    // Print Size & Dimensions
+    const [printSize, setPrintSize] = useState<string>('A4');
+    const [dimensions, setDimensions] = useState(() => ({ width: 210, height: 297 }));
+
+    const paymentFlow = usePaymentFlow();
+    const debounce = useDebounce(searchClient, 1000);
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const pages = [];
+    for (let i = 1; i <= Math.ceil(totalInvoices / itemsPerPage); i++) {
+        pages.push(i);
+    }
+
+    // Effect for Alert store
+    useEffect(() => {
+        if (success) {
+            setIsOpenModal(false);
+        }
+    }, [success]);
+
+    // Limpiar el comprobante cargado al entrar/salir de esta página
+    useEffect(() => {
+        resetInvoice();
+        return () => {
+            resetInvoice();
+        };
+    }, []);
+
+    // Cerrar menú de acciones al hacer click fuera
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (openAccionesId !== null) {
+                setOpenAccionesId(null);
+                setAnchorEl(null);
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [openAccionesId]);
+
+    // Dimensions setup based on printSize
+    useEffect(() => {
+        setDimensions(() => {
+            switch (printSize) {
+                case 'TICKET': return { width: 80, height: 330 };
+                case 'A5': return { width: 148, height: 210 };
+                case 'A4': return { width: 210, height: 297 };
+                default: return { width: 210, height: 297 };
+            }
+        });
+    }, [printSize]);
+
+    // Fetch invoices on change
+    useEffect(() => {
+        getAllInvoices({
+            tipoComprobante: "COTIZACION",
+            page: currentPage,
+            limit: itemsPerPage,
+            search: debounce,
+            fechaInicio,
+            fechaFin,
+            estado: stateInvoice === "TODOS" ? "" : stateInvoice
+        });
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice]);
+
+    // Generate QR Code
+    const ruc = "204812192919";
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+    useEffect(() => {
+        const generateQR = async () => {
+            try {
+                const dataUrl = await QRCode.toDataURL(ruc, {
+                    width: 90,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff',
+                    },
+                    errorCorrectionLevel: 'H',
+                });
+                setQrCodeDataUrl(dataUrl);
+            } catch (err) {
+                console.error("Error al generar el QR:", err);
+            }
+        };
+        generateQR();
+    }, []);
+
+    // Print feature setup
+    const componentRef = useRef(null);
+    const printFn = useReactToPrint({
+        // @ts-ignore
+        contentRef: componentRef,
+        pageStyle: `@media print {
+                @page {
+                  size: ${dimensions.width}mm ${dimensions.height}mm;
+                  margin: 0;
+                  background-color: #fff;
+                }
+                body {
+                  width: ${dimensions.width}mm;
+                  height: ${dimensions.height}mm;
+                  overflow: hidden;
+                  background-color: #fff;
+                }
+                .p-5 {
+                  width: 100%;
+                  height: 100%;
+                  box-sizing: border-box;
+                  background-color: #fff;
+                }
+              }`,
+    });
+
+    useEffect(() => {
+        if (!shouldPrint || !invoice || !invoice.detalles) return;
+
+        const timer = setTimeout(() => {
+            if (componentRef?.current) {
+                printFn();
+            } else {
+                console.error("No se encontró contenido imprimible");
+            }
+            setShouldPrint(false);
+            resetInvoice();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [invoice, shouldPrint, printFn, resetInvoice]);
+
+    // Action Handlers
+    const handleGetReceipt = async (data: any) => {
+        setComprobante(data.comprobante);
+        setShouldPrint(true);
+        await getInvoice(data.id);
+    };
+
+    const handleEnviarWhatsApp = (data: any) => {
+        const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (comprobanteData) {
+            setComprobanteWhatsApp({
+                id: comprobanteData.id as number,
+                serie: comprobanteData.serie as string,
+                correlativo: Number(comprobanteData.correlativo),
+                comprobante: comprobanteData.comprobante as string,
+                total: comprobanteData.mtoImpVenta as number,
+                clienteNombre: comprobanteData.cliente?.nombre || 'Cliente',
+                clienteCelular: (comprobanteData as any).cliente?.telefono || '',
+                pdfUrl: comprobanteData.s3PdfUrl || undefined,
+            });
+            setIsOpenModalWhatsApp(true);
+        }
+    };
+
+    const handleConvertirAFactura = (data: any) => {
+        const cotizacion = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (!cotizacion) return;
+
+        navigate('/administrador/facturacion/nuevo', {
+            state: {
+                fromQuotation: true,
+                quotationData: {
+                    cliente: cotizacion.cliente,
+                    productos: cotizacion.detalles,
+                    observaciones: cotizacion.observaciones,
+                }
+            }
+        });
+    };
+
+    const handlePartialPayment = async (data: any) => {
+        setFormValues(data);
+        const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (!comprobanteData) return;
+        const totalComprobante = comprobanteData.mtoImpVenta || 0;
+        const saldoPendiente = (comprobanteData as any).saldo ?? totalComprobante;
+
+        await paymentFlow.initiatePayment('PAGO_PARCIAL', {
+            id: comprobanteData.id,
+            serie: comprobanteData.serie,
+            correlativo: comprobanteData.correlativo,
+            cliente: { nombre: comprobanteData.cliente?.nombre || 'Cliente' },
+            mtoImpVenta: totalComprobante,
+            saldo: saldoPendiente,
+        }, saldoPendiente);
+        setIsOpenModalPagoParcial(true);
+    };
+
+    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string) => {
+        const payment = {
+            tipo: 'PAGO_PARCIAL' as PaymentType,
+            monto,
+            medioPago: medioPago as any,
+            observacion,
+            referencia,
+        };
+
+        const pagoData: any = {
+            id: formValues.id,
+            serie: formValues.serie,
+            correlativo: formValues.correlativo,
+            client: formValues.client,
+        };
+
+        const result = await paymentFlow.processPayment(
+            payment,
+            {
+                id: formValues.id,
+                serie: formValues.serie,
+                correlativo: formValues.correlativo,
+                cliente: { nombre: formValues.client },
+                mtoImpVenta: parseFloat((formValues?.total || '').toString().replace('S/ ', '') || '0'),
+                saldo: parseFloat((formValues?.saldo || '').toString().replace('S/ ', '') || '0') || undefined,
+            },
+            async (_comprobante: any, _medioPago: string, _monto: number, _observacion?: string, _referencia?: string) => {
+                return await completePay(pagoData, medioPago, monto);
+            }
+        );
+
+        if (result.success) {
+            setIsOpenModalPagoParcial(false);
+            setTimeout(() => {
+                getAllInvoices({
+                    tipoComprobante: "COTIZACION",
+                    page: currentPage,
+                    limit: itemsPerPage,
+                    search: debounce,
+                    fechaInicio,
+                    fechaFin,
+                    estado: stateInvoice === "TODOS" ? "" : stateInvoice
+                });
+            }, 300);
+        }
+    };
+
+    const handleCloseReceipt = () => {
+        paymentFlow.closeReceipt();
+    };
+
+    const handleDate = (date: string, name: string) => {
+        if (!moment(date, 'DD/MM/YYYY', true).isValid()) {
+            return;
+        }
+        if (name === "fechaInicio") {
+            setFechaInicio(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
+        } else if (name === "fechaFin") {
+            setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
+        }
+    };
+
+    const handleSelectState = (_id: string, value: string) => {
+        setStateInvoice(value);
+    };
+
+    const confirmCancelInvoice = () => {
+        cancelInvoice(formValues?.id);
+        setIsOpenModalConfirm(false);
+    };
+
+    const confirmCompleteInvoice = () => {
+        setIsOpenModalConfirmPayment(false);
+        completePay(formValues, paymentMethod);
+    };
+
+    const handleChangeSearch = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | any>) => {
+        setSearchClient(e.target.value);
+    };
+
+    const handleSelectPrint = (value: any) => {
+        setPrintSize(value);
+    };
+
+    // Filter Select Options
+    const estadosInvoice: IEstadoInvoiceOption[] = [
+        { id: 1, value: "TODOS" },
+        { id: 2, value: "EMITIDO" },
+        { id: 3, value: "PENDIENTE" },
+        { id: 4, value: "ANULADO" },
+        { id: 5, value: "RECHAZADO" }
+    ];
+
+    const printOptions: IPrintFormatOption[] = [
+        { id: 'TICKET', value: 'TICKET' },
+        { id: 'A4', value: 'A4' },
+        { id: 'A5', value: 'A5' },
+    ];
+
+    return {
+        // Data & Store
+        auth,
+        invoices,
+        invoice,
+        totalInvoices,
+
+        // Pagination
+        currentPage,
+        setcurrentPage,
+        itemsPerPage,
+        setitemsPerPage,
+        pages,
+        indexOfFirstItem,
+        indexOfLastItem,
+
+        // Filters
+        fechaInicio,
+        fechaFin,
+        printSize,
+        estadosInvoice,
+        printOptions,
+
+        // Action Menu state
+        openAccionesId,
+        setOpenAccionesId,
+        anchorEl,
+        setAnchorEl,
+
+        // Modals state
+        isOpenModalConfirm,
+        setIsOpenModalConfirm,
+        isOpenModalConfirmPayment,
+        setIsOpenModalConfirmPayment,
+        isOpenModalWhatsApp,
+        setIsOpenModalWhatsApp,
+        isOpenModalPagoParcial,
+        setIsOpenModalPagoParcial,
+        isOpenModalPdf,
+        setIsOpenModalPdf,
+
+        // Print and Files state
+        pdfUrl,
+        setPdfUrl,
+        pdfName,
+        setPdfName,
+        componentRef,
+        qrCodeDataUrl,
+        comprobante,
+        comprobanteWhatsApp,
+
+        // Payment state
+        paymentMethod,
+        setPaymentMethod,
+        paymentFlow,
+        formValues,
+
+        // Handlers
+        handleDate,
+        handleSelectState,
+        handleSelectPrint,
+        handleChangeSearch,
+
+        handleGetReceipt,
+        handleConvertirAFactura,
+        handleEnviarWhatsApp,
+        handlePartialPayment,
+        handleConfirmPago,
+        handleCloseReceipt,
+        confirmCancelInvoice,
+        confirmCompleteInvoice,
+    };
+}

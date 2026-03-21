@@ -1,0 +1,259 @@
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { useClientsStore } from '@/zustand/clients';
+import { useAuthStore } from '@/zustand/auth';
+import useAlertStore from '@/zustand/alert';
+import { useDebounce } from '@/hooks/useDebounce';
+import apiClient from '@/utils/apiClient';
+import { IClient } from '@/interfaces/clients';
+import {
+    ALL_COLUMNS,
+    INITIAL_ERRORS,
+    INITIAL_FORM,
+    IClientsViewModelState,
+} from './ClientsModel';
+
+export const useClientsViewModel = () => {
+    const { getAllClients, clients, totalClients, toggleStateClient, exportClients, importClients } = useClientsStore();
+    const { success } = useAlertStore();
+    const { auth } = useAuthStore();
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [state, setState] = useState<IClientsViewModelState>({
+        currentPage: 1,
+        itemsPerPage: 50,
+        isOpenModal: false,
+        isOpenModalConfirm: false,
+        searchClient: '',
+        formValues: INITIAL_FORM,
+        isEdit: false,
+        errors: INITIAL_ERRORS,
+        openAccionesId: null,
+        anchorEl: null,
+        visibleColumns: ALL_COLUMNS,
+        showColumnFilter: false,
+        isHoveredExp: false,
+        isHoveredImp: false,
+    });
+
+    const debounce = useDebounce(state.searchClient, 600);
+
+    // Pagination helpers
+    const indexOfLastItem = state.currentPage * state.itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - state.itemsPerPage;
+    const pages = Array.from({ length: Math.ceil(totalClients / state.itemsPerPage) }, (_, i) => i + 1);
+
+    const columnsStorageKey = `datatable:${auth?.empresaId || 'default'}:clientes:visibleColumns`;
+
+    // --- Effects ---
+
+    // Load column preferences (server first, then localStorage)
+    useEffect(() => {
+        const loadColumns = async () => {
+            if (!auth?.empresaId) return;
+            try {
+                const res = await apiClient.get(`/preferencias/tabla`, {
+                    params: { tabla: 'clientes', empresaId: auth.empresaId },
+                });
+                const serverCols = res?.data?.visibleColumns;
+                if (Array.isArray(serverCols) && serverCols.length) {
+                    let restored = ALL_COLUMNS.filter((c) => serverCols.includes(c));
+                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                    setState(prev => ({ ...prev, visibleColumns: restored }));
+                    return;
+                }
+            } catch (_e) { /* fallthrough */ }
+
+            try {
+                const defaultKey = columnsStorageKey.replace(`${auth.empresaId}`, 'default');
+                let parsed: any = null;
+                for (const k of [columnsStorageKey, defaultKey]) {
+                    const raw = localStorage.getItem(k);
+                    if (raw) { try { parsed = JSON.parse(raw); } catch { parsed = null; } }
+                    if (Array.isArray(parsed)) break;
+                }
+                if (Array.isArray(parsed)) {
+                    let restored = ALL_COLUMNS.filter((c) => parsed.includes(c));
+                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                    setState(prev => ({ ...prev, visibleColumns: restored }));
+                }
+            } catch (_e) { /* noop */ }
+        };
+        loadColumns();
+    }, [auth?.empresaId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Persist column preferences
+    useEffect(() => {
+        try {
+            const toSave = state.visibleColumns.includes('Acciones')
+                ? state.visibleColumns
+                : [...state.visibleColumns, 'Acciones'];
+            localStorage.setItem(columnsStorageKey, JSON.stringify(toSave));
+        } catch (_e) { /* noop */ }
+
+        const persist = async () => {
+            try {
+                const toSave = state.visibleColumns.includes('Acciones')
+                    ? state.visibleColumns
+                    : [...state.visibleColumns, 'Acciones'];
+                await apiClient.put(`/preferencias/tabla`, { visibleColumns: toSave }, {
+                    params: { tabla: 'clientes', empresaId: auth?.empresaId },
+                });
+            } catch (_e) { /* noop */ }
+        };
+        if (auth?.empresaId) persist();
+    }, [state.visibleColumns]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Close dropdown on document click
+    useEffect(() => {
+        const handleDocClick = () => {
+            if (state.openAccionesId !== null) setState(prev => ({ ...prev, openAccionesId: null }));
+            if (state.showColumnFilter) setState(prev => ({ ...prev, showColumnFilter: false }));
+        };
+        document.addEventListener('click', handleDocClick);
+        return () => document.removeEventListener('click', handleDocClick);
+    }, [state.openAccionesId, state.showColumnFilter]);
+
+    // Close modal on success
+    useEffect(() => {
+        if (success === true) {
+            setState(prev => ({ ...prev, isOpenModal: false, isEdit: false }));
+        }
+    }, [success]);
+
+    // Fetch clients on search/pagination changes
+    useEffect(() => {
+        getAllClients({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+    }, [debounce, state.currentPage, state.itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // --- Table data ---
+    const clientsTable = clients?.map((item: IClient) => {
+        const allData: any = {
+            id: item?.id,
+            'Nombre o Razon social': item?.nombre,
+            'Documento': item?.nroDoc.length === 8 ? 'DNI' : item?.nroDoc.length === 11 ? 'RUC' : '',
+            'Num. doc': item?.nroDoc,
+            'Direccion': item?.direccion,
+            'Correo principal': item.email,
+            'Persona': item.persona === 'CLIENTE' ? 'CLIENTE' : item?.persona === 'PROVEEDOR' ? 'PROVEEDOR' : 'CLIENTE-PROVEEDOR',
+            'Celular': item?.telefono,
+            'Estado': item.estado,
+        };
+
+        const rowBase: any = {};
+        ALL_COLUMNS.forEach(col => {
+            if (state.visibleColumns.includes(col) && Object.prototype.hasOwnProperty.call(allData, col)) {
+                rowBase[col] = allData[col];
+            }
+        });
+        rowBase.id = item?.id;
+        return rowBase;
+    });
+
+    // --- Actions ---
+    const actions = {
+        openNewModal: () => {
+            setState(prev => ({
+                ...prev,
+                formValues: INITIAL_FORM,
+                errors: INITIAL_ERRORS,
+                isOpenModal: true,
+                isEdit: false,
+            }));
+        },
+        openEditModal: (data: IClient) => {
+            setState(prev => ({
+                ...prev,
+                formValues: data as any,
+                isOpenModal: true,
+                isEdit: true,
+                openAccionesId: null,
+                anchorEl: null,
+            }));
+        },
+        closeModal: () => {
+            setState(prev => ({ ...prev, isOpenModal: false, isEdit: false }));
+        },
+        setFormValues: (values: any) => {
+            setState(prev => ({ ...prev, formValues: values }));
+        },
+        setErrors: (errors: any) => {
+            setState(prev => ({ ...prev, errors }));
+        },
+        openConfirmToggle: (data: IClient) => {
+            setState(prev => ({
+                ...prev,
+                formValues: data as any,
+                isOpenModalConfirm: true,
+                openAccionesId: null,
+                anchorEl: null,
+            }));
+        },
+        confirmToggleState: () => {
+            toggleStateClient(Number(state.formValues?.id));
+            setState(prev => ({ ...prev, isOpenModalConfirm: false }));
+        },
+        setIsOpenModalConfirm: (v: boolean) => {
+            setState(prev => ({ ...prev, isOpenModalConfirm: v }));
+        },
+        setcurrentPage: (page: number) => setState(prev => ({ ...prev, currentPage: page })),
+        setitemsPerPage: (items: number) => setState(prev => ({ ...prev, itemsPerPage: items })),
+        handleSearchChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            setState(prev => ({ ...prev, searchClient: e.target.value }));
+        },
+        toggleColumn: (column: string) => {
+            if (column === 'Acciones') return;
+            setState(prev => {
+                const prev_cols = prev.visibleColumns;
+                if (prev_cols.includes(column)) {
+                    return { ...prev, visibleColumns: prev_cols.filter(c => c !== column) };
+                } else {
+                    const newVisible = ALL_COLUMNS.filter(col => prev_cols.includes(col) || col === column);
+                    return { ...prev, visibleColumns: newVisible };
+                }
+            });
+        },
+        setShowColumnFilter: (v: boolean) => setState(prev => ({ ...prev, showColumnFilter: v })),
+        setOpenAccionesId: (id: number | null) => setState(prev => ({ ...prev, openAccionesId: id })),
+        setAnchorEl: (el: HTMLElement | null) => setState(prev => ({ ...prev, anchorEl: el })),
+        setIsHoveredExp: (v: boolean) => setState(prev => ({ ...prev, isHoveredExp: v })),
+        setIsHoveredImp: (v: boolean) => setState(prev => ({ ...prev, isHoveredImp: v })),
+        handleImportExcel: async (event: ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const allowedTypes = [
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ];
+            if (!allowedTypes.includes(file.type)) {
+                useAlertStore.getState().alert('Por favor, selecciona un archivo Excel válido (.xlsx o .xls)', 'error');
+                return;
+            }
+
+            await importClients(file);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            await getAllClients({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+        },
+        exportClients: () => exportClients(auth?.empresaId, debounce),
+    };
+
+    return {
+        // State
+        ...state,
+        // Store data
+        clients,
+        totalClients,
+        clientsTable,
+        // Refs
+        fileInputRef,
+        // Pagination
+        indexOfLastItem,
+        indexOfFirstItem,
+        pages,
+        // Constants
+        ALL_COLUMNS,
+        // Actions
+        actions,
+    };
+};

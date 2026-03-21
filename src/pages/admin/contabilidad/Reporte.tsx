@@ -1,159 +1,59 @@
 "use client";
+import { useReporteViewModel } from '@/features/admin/contabilidad/useContabilidadReporteViewModel';
 import Button from "@/components/Button";
 import DataTable from "@/components/Datatable";
-import { Calendar } from "@/components/Date"
-import TableSkeleton from "@/components/Skeletons/table";
-import { useAccountingStore } from "@/zustand/accounting";
-import { useAuthStore } from "@/zustand/auth";
+import { Calendar } from "@/components/Date";
 import { Icon } from "@iconify/react";
-import moment from "moment";
-import { useEffect, useState } from "react";
 
 const ReportesComprobantes = () => {
-
-    const { reportInvoices, getAllReportInvoice, resumenReporte, exportExcelReport } = useAccountingStore();
-    const { auth } = useAuthStore();
-
-    const [isHoveredExp, setIsHoveredExp] = useState(false);
-    const [isHoveredImp, setIsHoveredImp] = useState(false);
-    const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
-    const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
-
-    const handleDate = (date: string, name: string) => {
-        if (!moment(date, 'DD/MM/YYYY', true).isValid()) {
-            console.error(`Fecha inválida: ${date} para ${name}`);
-            return;
-        }
-        if (name === "fechaInicio") {
-            setFechaInicio(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
-        } else if (name === "fechaFin") {
-            setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
-        }
-    };
-
-    console.log(auth)
-
-    useEffect(() => {
-        getAllReportInvoice({
-            fechaInicio: fechaInicio,
-            fechaFin: fechaFin,
-            empresaId: auth?.empresaId
-        })
-    }, [fechaFin, fechaInicio, auth])
-
-    console.log(reportInvoices)
-
-    const reports = reportInvoices?.map((item: any) => ({
-        comprobante: item?.comprobante,
-        serie: item?.serie,
-        correlativo: item?.correlativo,
-        ruc: item?.cliente?.nroDoc,
-        cliente: item?.cliente?.nombre,
-        fecha: moment(item?.fechaEmision).format('DD/MM/YYYY'),
-        estado: item?.estadoEnvioSunat,
-        montoGravadas: item?.mtoOperGravadas.toFixed(2),
-        montoIGV: item?.mtoIGV.toFixed(2),
-        total: `S/ ${item?.mtoImpVenta.toFixed(2)}`
-    }))
-
-    console.log(resumenReporte)
+    const vm = useReporteViewModel();
 
     return (
         <div className="min-h-screen px-2 pb-4">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Reporte Contable</h1>
                     <p className="text-sm text-gray-500 mt-1">Resumen de comprobantes electrónicos por período</p>
                 </div>
-                <Button
-                    color="success"
-                    onMouseEnter={() => setIsHoveredExp(true)}
-                    onMouseLeave={() => setIsHoveredExp(false)}
-                    onClick={() => {
-                        exportExcelReport({
-                            empresaId: auth?.empresaId,
-                            fechaInicio: fechaInicio,
-                            fechaFin: fechaFin
-                        });
-                    }}
-                >
-                    <Icon icon="solar:export-bold" className="mr-2" />
-                    Exportar Excel
+                <Button color="success" onMouseEnter={() => vm.setIsHoveredExp(true)} onMouseLeave={() => vm.setIsHoveredExp(false)} onClick={vm.handleExport}>
+                    <Icon icon="solar:export-bold" className="mr-2" />Exportar Excel
                 </Button>
             </div>
-
-            {/* Main Content Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                {/* Filters Section */}
                 <div className="p-5 border-b border-gray-100">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800">Filtros</h3>
-                    </div>
+                    <div className="flex items-center gap-2 mb-4"><Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" /><h3 className="font-semibold text-gray-800">Filtros</h3></div>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
-                        <Calendar name="fechaFin" onChange={handleDate} text="Fecha Fin" />
+                        <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" />
+                        <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" />
                     </div>
                 </div>
-
-                {/* Table Content */}
                 <div className="p-4">
-                    {reports?.length > 0 ? (
+                    {vm.reports?.length > 0 ? (
                         <>
                             <div className="overflow-x-auto">
-                                <DataTable actions={[]} bodyData={reports}
-                                    headerColumns={[
-                                        'Comprobante',
-                                        'Serie',
-                                        'Correlativo',
-                                        'Nro. Documento',
-                                        'Cliente',
-                                        'Fecha',
-                                        'Estado',
-                                        'Oper. Gravada',
-                                        'IGV',
-                                        'Total'
-                                    ]} />
+                                <DataTable actions={[]} bodyData={vm.reports} headerColumns={['Comprobante', 'Serie', 'Correlativo', 'Nro. Documento', 'Cliente', 'Fecha', 'Estado', 'Oper. Gravada', 'IGV', 'Total']} />
                             </div>
-                            {resumenReporte !== null && (
+                            {vm.resumenReporte !== null && (
                                 <div className="mt-6 p-5 bg-gray-50 rounded-xl border border-gray-100">
-                                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Icon icon="solar:chart-2-bold-duotone" className="text-blue-600" />
-                                        Resumen del Período
-                                    </h4>
+                                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Icon icon="solar:chart-2-bold-duotone" className="text-blue-600" />Resumen del Período</h4>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Boletas</p>
-                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalBoletas.toFixed(2)}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Facturas</p>
-                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalFacturas.toFixed(2)}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Nota de Crédito</p>
-                                            <p className="text-lg font-bold text-red-500">S/ {resumenReporte.totalNotasCredito.toFixed(2)}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Nota de Débito</p>
-                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalNotasDebito.toFixed(2)}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Total Descuentos</p>
-                                            <p className="text-lg font-bold text-orange-500">S/ {resumenReporte.totalDescuentos.toFixed(2)}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Total Oper. Gravadas</p>
-                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalGravadas.toFixed(2)}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                            <p className="text-xs text-gray-500">Total IGV</p>
-                                            <p className="text-lg font-bold text-gray-900">S/ {resumenReporte.totalIGV.toFixed(2)}</p>
-                                        </div>
+                                        {[
+                                            ['Boletas', vm.resumenReporte.totalBoletas, 'text-gray-900'],
+                                            ['Facturas', vm.resumenReporte.totalFacturas, 'text-gray-900'],
+                                            ['Nota de Crédito', vm.resumenReporte.totalNotasCredito, 'text-red-500'],
+                                            ['Nota de Débito', vm.resumenReporte.totalNotasDebito, 'text-gray-900'],
+                                            ['Total Descuentos', vm.resumenReporte.totalDescuentos, 'text-orange-500'],
+                                            ['Total Oper. Gravadas', vm.resumenReporte.totalGravadas, 'text-gray-900'],
+                                            ['Total IGV', vm.resumenReporte.totalIGV, 'text-gray-900'],
+                                        ].map(([label, val]) => (
+                                            <div key={label as string} className="bg-white rounded-lg p-3 border border-gray-100">
+                                                <p className="text-xs text-gray-500">{label as string}</p>
+                                                <p className={`text-lg font-bold ${val}`}>S/ {(vm.resumenReporte as any)[label as string]?.toFixed ? (vm.resumenReporte as any)[label as string].toFixed(2) : '0.00'}</p>
+                                            </div>
+                                        ))}
                                         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white">
                                             <p className="text-xs text-blue-100">Total Ventas</p>
-                                            <p className="text-xl font-bold">S/ {resumenReporte.totalVenta.toFixed(2)}</p>
+                                            <p className="text-xl font-bold">S/ {vm.resumenReporte.totalVenta.toFixed(2)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -169,8 +69,7 @@ const ReportesComprobantes = () => {
                 </div>
             </div>
         </div>
-    )
-
-}
+    );
+};
 
 export default ReportesComprobantes;

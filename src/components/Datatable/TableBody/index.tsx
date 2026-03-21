@@ -137,7 +137,7 @@ const TableBody: FC<ITableBodyProps> = ({
                         key={index}
                         className={`
                             group transition-colors duration-200
-                            ${isCanceled ? 'bg-gray-50' : 'bg-white'}
+                            ${isCanceled ? '    ' : ''}
                         `}
                     >
                         {columns.map((col, cellIndex) => {
@@ -186,10 +186,9 @@ const TableBody: FC<ITableBodyProps> = ({
                                 <td
                                     key={cellIndex}
                                     style={{
-                                        color: isCanceled ? '#5b6982ff' : "#000000", // Dim text if canceled
-                                        textAlign: (key === 'estado' || key === 'tipo' || key === 'status') ? 'center' : 'left'
+                                        color: isCanceled ? '#B8B2A7' : undefined, // Dim text if canceled (warm gray)
+                                        textAlign: (key === 'estado' || key === 'tipo' || key === 'status' || key === 'acciones') ? 'center' : 'left'
                                     }}
-                                    className="py-2 bg-[#fff] px-6 text-sm text-gray-600 border-b border-[#E6E7EB]"
                                 >
                                     {isEditable ? (
                                         <EditableCell
@@ -222,14 +221,18 @@ const TableBody: FC<ITableBodyProps> = ({
                                                 // cuando está vacío no le ponemos clase
                                                 <p className=''>{cell}</p>
                                             )
-                                        ) : key === 'estado' || key === 'tipo' ? (
+                                        ) : key.toString().toLowerCase() === 'stock' || key.toString().toLowerCase() === 'cantidad' ? (
+                                            <span className={`font-semibold ${Number(cell) > 10 ? 'text-emerald-500' : Number(cell) > 0 ? 'text-amber-500' : 'text-red-500'}`}>
+                                                {cell?.toString()}
+                                            </span>
+                                        ) : key === 'estado' || key === 'tipo' || key === 'status' ? (
                                             <div
-                                                className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium
-                                                    ${cell === 'EMITIDO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' ? 'bg-emerald-100 text-emerald-700' :
-                                                        cell === 'PENDIENTE' || cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'ACTIVO' || cell === 'COMPLETADO' || cell === 'AJUSTE' || cell === 'ENVIANDO' ? 'bg-amber-100 text-amber-700' :
-                                                            cell === 'PARTIAL' ? 'bg-blue-100 text-blue-700' :
-                                                                cell === 'RECHAZADO' || cell === 'ANULADO' || cell === 'SALIDA' || cell === 'FALLIDO_ENVIO' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-gray-100 text-gray-700'
+                                                className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-medium
+                                                    ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present' ? 'bg-[#EAF6ED] text-[#4EAA64]' :
+                                                        cell === 'PENDIENTE' || cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'COMPLETADO' || cell === 'AJUSTE' || cell === 'ENVIANDO' ? 'bg-amber-50 text-amber-600' :
+                                                            cell === 'PARTIAL' ? 'bg-blue-50 text-blue-600' :
+                                                                cell === 'RECHAZADO' || cell === 'ANULADO' || cell === 'SALIDA' || cell === 'FALLIDO_ENVIO' || cell === 'INACTIVO' || cell === 'Leave' ? 'bg-[#FCEAE9] text-[#D84B4B]' :
+                                                                    'bg-[#F3F4F6] text-[#6B7280]'
                                                     }`}
                                             >
                                                 <span className="capitalize">
@@ -268,14 +271,14 @@ const TableBody: FC<ITableBodyProps> = ({
                                             </div>
                                         ) : (
                                             isTruncatable ? (
-                                                <span className={`${styles.truncate} font-medium capitalize`} title={cellValue}>
+                                                <span className={`${styles.truncate} capitalize`} title={cellValue}>
                                                     {cellValue.toLowerCase()}
                                                 </span>
                                             ) : (
-                                                <div className="flex font-medium">
+                                                <div className="flex">
                                                     {(() => {
                                                         const keyLower = key.toString().toLowerCase();
-                                                        const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria');
+                                                        const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria') || keyLower.includes('doc');
                                                         const isString = typeof cell === 'string';
 
                                                         if (isString && !isCode) {
@@ -290,9 +293,7 @@ const TableBody: FC<ITableBodyProps> = ({
                             );
                         })}
                         {actions && actions.length > 0 && (
-                            <td
-                                className={`py-4 px-6 border-b border-[#E6E7EB] sticky right-0 z-10 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)] ${isCanceled ? 'bg-[#fff]' : 'bg-white'}`}
-                            >
+                            <td className="text-center">
                                 {actions.map((action: any, actionIndex: number) => {
                                     // Check condition (legacy)
                                     if (action.condition && !action.condition(row)) {

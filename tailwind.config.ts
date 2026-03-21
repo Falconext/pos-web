@@ -10,21 +10,40 @@ export default {
     ],
     theme: {
         extend: {
-            fontFamily: {
-                sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                mona: ['"Mona Sans"', 'system-ui', 'sans-serif'],
-                inter: ['Inter', 'system-ui', 'sans-serif'],
-                roboto: ['Roboto', 'system-ui', 'sans-serif'],
-                poppins: ['Poppins', 'system-ui', 'sans-serif'],
-                opensans: ['"Open Sans"', 'system-ui', 'sans-serif'],
-                lato: ['Lato', 'system-ui', 'sans-serif'],
-                montserrat: ['Montserrat', 'system-ui', 'sans-serif'],
-                raleway: ['Raleway', 'system-ui', 'sans-serif'],
-                ubuntu: ['Ubuntu', 'system-ui', 'sans-serif'],
-                manrope: ['Manrope', 'system-ui', 'sans-serif'],
-                rubik: ['Rubik', 'system-ui', 'sans-serif'],
-            },
             colors: {
+                border: "hsl(var(--border))",
+                input: "hsl(var(--input))",
+                ring: "hsl(var(--ring))",
+                background: "hsl(var(--background))",
+                foreground: "hsl(var(--foreground))",
+                primary: {
+                    DEFAULT: "hsl(var(--primary))",
+                    foreground: "hsl(var(--primary-foreground))",
+                },
+                secondary: {
+                    DEFAULT: "hsl(var(--secondary))",
+                    foreground: "hsl(var(--secondary-foreground))",
+                },
+                destructive: {
+                    DEFAULT: "hsl(var(--destructive))",
+                    foreground: "hsl(var(--destructive-foreground))",
+                },
+                muted: {
+                    DEFAULT: "hsl(var(--muted))",
+                    foreground: "hsl(var(--muted-foreground))",
+                },
+                accent: {
+                    DEFAULT: "hsl(var(--accent))",
+                    foreground: "hsl(var(--accent-foreground))",
+                },
+                popover: {
+                    DEFAULT: "hsl(var(--popover))",
+                    foreground: "hsl(var(--popover-foreground))",
+                },
+                card: {
+                    DEFAULT: "hsl(var(--card))",
+                    foreground: "hsl(var(--card-foreground))",
+                },
                 tremor: {
                     brand: {
                         faint: "#eff6ff",
@@ -77,15 +96,32 @@ export default {
                     },
                 },
             },
+            borderRadius: {
+                lg: "var(--radius)",
+                md: "calc(var(--radius) - 2px)",
+                sm: "calc(var(--radius) - 4px)",
+                "tremor-small": "0.375rem",
+                "tremor-default": "0.5rem",
+                "tremor-full": "9999px",
+            },
+            fontFamily: {
+                sans: ['Urbanist', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                mona: ['"Mona Sans"', 'system-ui', 'sans-serif'],
+                inter: ['Inter', 'system-ui', 'sans-serif'],
+                roboto: ['Roboto', 'system-ui', 'sans-serif'],
+                poppins: ['Poppins', 'system-ui', 'sans-serif'],
+                opensans: ['"Open Sans"', 'system-ui', 'sans-serif'],
+                lato: ['Lato', 'system-ui', 'sans-serif'],
+                montserrat: ['Montserrat', 'system-ui', 'sans-serif'],
+                raleway: ['Raleway', 'system-ui', 'sans-serif'],
+                ubuntu: ['Ubuntu', 'system-ui', 'sans-serif'],
+                manrope: ['Manrope', 'system-ui', 'sans-serif'],
+                rubik: ['Rubik', 'system-ui', 'sans-serif'],
+            },
             boxShadow: {
                 "tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
                 "tremor-card":
                     "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-            },
-            borderRadius: {
-                "tremor-small": "0.375rem",
-                "tremor-default": "0.5rem",
-                "tremor-full": "9999px",
             },
             fontSize: {
                 "tremor-label": ["0.75rem", { lineHeight: "1rem" }],
@@ -94,6 +130,14 @@ export default {
                 "tremor-metric": ["1.875rem", { lineHeight: "2.25rem" }],
             },
             keyframes: {
+                "accordion-down": {
+                    from: { height: "0" },
+                    to: { height: "var(--radix-accordion-content-height)" },
+                },
+                "accordion-up": {
+                    from: { height: "var(--radix-accordion-content-height)" },
+                    to: { height: "0" },
+                },
                 hide: {
                     from: { opacity: "1" },
                     to: { opacity: "0" },
@@ -116,6 +160,8 @@ export default {
                 },
             },
             animation: {
+                "accordion-down": "accordion-down 0.2s ease-out",
+                "accordion-up": "accordion-up 0.2s ease-out",
                 hide: "hide 150ms cubic-bezier(0.16, 1, 0.3, 1)",
                 slideDownAndFade: "slideDownAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)",
                 slideLeftAndFade: "slideLeftAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -131,5 +177,5 @@ export default {
                 /^(bg|text|border|ring|stroke|fill)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|200|300|400|500|600|700|800|900|950)$/,
         },
     ],
-    plugins: [forms],
+    plugins: [forms, require("tailwindcss-animate")],
 }

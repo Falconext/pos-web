@@ -106,7 +106,7 @@ const Comprobantes = () => {
             serie: item.serie,
             correlativo: item.correlativo,
             comprobante: item.comprobante,
-            documentoAfiliado: item?.numDocAfectado,
+            documentoAfiliado: item?.numDocAfectado ? String(item?.numDocAfectado).toUpperCase() : "",
             document: item?.cliente?.nroDoc,
             s3PdfUrl: item?.s3PdfUrl,
             client: item?.cliente?.nombre,
@@ -370,17 +370,25 @@ const Comprobantes = () => {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print {
+        pageStyle: `
+              @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap');
+              @media print {
                 @page {
                   size: ${dimensions.width}mm ${dimensions.height}mm;
                   margin: 0;
                   background-color: #fff;
+                }
+                * {
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                  font-family: ${dimensions.width <= 80 ? "'VT323', Menlo, Monaco, Consolas, \"Courier New\", monospace" : "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"} !important;
                 }
                 body {
                   width: ${dimensions.width}mm;
                   height: ${dimensions.height}mm;
                   overflow: hidden;
                   background-color: #fff;
+                  font-family: ${dimensions.width <= 80 ? "'VT323', Menlo, Monaco, Consolas, \"Courier New\", monospace" : "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"} !important;
                 }
                 .p-5 {
                   width: 100%;
@@ -388,7 +396,8 @@ const Comprobantes = () => {
                   box-sizing: border-box;
                   background-color: #fff;
                 }
-              }`,
+              }
+            `,
     });
 
     useEffect(() => {
@@ -532,7 +541,7 @@ const Comprobantes = () => {
                 </div>
             </div>
 
-            {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
+            {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information={`¿Estás seguro que deseas anular este comprobante del cliente ${formValues?.client || 'Desconocido'} por un importe de ${formValues?.total || 'S/ 0.00'}?`} isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
             {isOpenModalConfirmPayment && <ModalConfirm confirmSubmit={confirmCompleteInvoice} information="¿Cuál de estos metodos de pago se completo el pago?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirmPayment(false)} title="Completar pago">
                 <div className="grid grid-cols-3 gap-10 col-start-1 col-end-2 mb-5 mt-5">
                     {[
@@ -647,8 +656,7 @@ const Comprobantes = () => {
                                     handleGetReceipt(rowBase);
                                     handleCloseMenu();
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100"
                             >
                                 <Icon icon="mingcute:print-line" width={16} height={16} />
                                 <span>Imprimir</span>
@@ -666,8 +674,7 @@ const Comprobantes = () => {
                                     }
                                     handleCloseMenu();
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.s3PdfUrl ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.s3PdfUrl ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="mdi:file-pdf-box" width={16} height={16} />
                                 <span>Ver PDF</span>
@@ -682,8 +689,7 @@ const Comprobantes = () => {
                                     }
                                     handleCloseMenu();
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.xmlSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.xmlSunat ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="hugeicons:xml-02" width={16} height={16} />
                                 <span>Descargar XML</span>
@@ -698,8 +704,7 @@ const Comprobantes = () => {
                                     }
                                     handleCloseMenu();
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.cdrSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.cdrSunat ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="mdi:zip-box-outline" width={16} height={16} />
                                 <span>Descargar CDR</span>
@@ -714,8 +719,7 @@ const Comprobantes = () => {
                                     }
                                     handleCloseMenu();
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${(rowBase.estado === 'EMITIDO' || !canEmitirSunat) ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                                style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${(rowBase.estado === 'EMITIDO' || !canEmitirSunat) ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span>Enviar WhatsApp</span>
@@ -729,12 +733,55 @@ const Comprobantes = () => {
                                         handleCloseMenu();
                                     }}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-green-50 text-green-700 border-t border-gray-100"
-                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
                                 >
                                     <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
                                     <span className="font-medium">Convertir a Factura</span>
                                 </button>
                             )}
+
+                            {/* Anular Directo - Solo aplica para Facturas, no Boletas */}
+                            {rowBase.comprobante !== 'BOLETA' && (
+                                <button
+                                    type="button"
+                                    disabled={rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO'}
+                                    onClick={() => {
+                                        if (rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO') {
+                                            setFormValues(rowBase);
+                                            setIsOpenModalConfirm(true);
+                                        }
+                                        handleCloseMenu();
+                                    }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-50 border-t border-gray-100 ${rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' ? 'text-red-600' : 'text-gray-400 cursor-not-allowed'}`}
+                                >
+                                    <Icon icon="solar:close-circle-bold-duotone" width={16} height={16} />
+                                    <span className="font-medium">Dar de Baja</span>
+                                </button>
+                            )}
+
+                            {/* Emitir Nota de Crédito */}
+                            <button
+                                type="button"
+                                disabled={!['FACTURA', 'BOLETA'].includes(rowBase.comprobante) || rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO'}
+                                onClick={() => {
+                                    if (['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO') {
+                                        navigate('/administrador/facturacion/nuevo', {
+                                            state: {
+                                                fromCreditNote: true,
+                                                creditNoteData: {
+                                                    comprobanteReemplazar: rowBase.comprobante,
+                                                    serieReemplazar: rowBase.serie,
+                                                    correlativoReemplazar: rowBase.correlativo
+                                                }
+                                            }
+                                        });
+                                    }
+                                    handleCloseMenu();
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-orange-50 border-t border-gray-100 ${['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' ? 'text-orange-600' : 'text-gray-400 cursor-not-allowed'}`}
+                            >
+                                <Icon icon="solar:document-medicine-bold-duotone" width={16} height={16} />
+                                <span className="font-medium">Generar NC (Anular)</span>
+                            </button>
                         </>
                     );
                 })()}
