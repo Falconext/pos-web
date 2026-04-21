@@ -3,19 +3,19 @@ import { get } from '../utils/fetch';
 import useAlertStore from './alert';
 import { devtools } from 'zustand/middleware';
 
-interface IResumenReporte {
-    totalVenta: 0,
-    totalIGV: 0,
-    totalGravadas: 0,
-    totalInafectas: 0,
-    totalDescuentos: 0,
-    totalBoletas: 0,
-    totalFacturas: 0,
-    totalNotasCredito: 0,
-    totalNotasDebito: 0
+export interface IResumenReporte {
+    totalVenta: number,
+    totalIGV: number,
+    totalGravadas: number,
+    totalInafectas: number,
+    totalDescuentos: number,
+    totalBoletas: number,
+    totalFacturas: number,
+    totalNotasCredito: number,
+    totalNotasDebito: number
 }
 
-interface IResumenReporteInformales {
+export interface IResumenReporteInformales {
     totalVenta: number,
     totalTickets: number,
     totalNotasVenta: number,

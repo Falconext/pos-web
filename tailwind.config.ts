@@ -105,7 +105,7 @@ export default {
                 "tremor-full": "9999px",
             },
             fontFamily: {
-                sans: ['Urbanist', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                 mona: ['"Mona Sans"', 'system-ui', 'sans-serif'],
                 inter: ['Inter', 'system-ui', 'sans-serif'],
                 roboto: ['Roboto', 'system-ui', 'sans-serif'],

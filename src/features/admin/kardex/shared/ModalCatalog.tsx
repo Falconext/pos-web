@@ -1,5 +1,6 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Button from "@/components/Button";
 import { useAuthStore } from "@/zustand/auth";
 import apiClient from "@/utils/apiClient";
@@ -10,6 +11,7 @@ import InputPro from "@/components/InputPro";
 import Pagination from "@/components/Pagination";
 import ModalConfirm from "@/components/ModalConfirm";
 import GeneradorProductos from "./GeneradorProductos";
+import useEscapeKey from "@/hooks/useEscapeKey";
 
 interface Props {
     isOpen: boolean;
@@ -195,8 +197,16 @@ export default function ModalCatalog({ isOpen, onClose, onSuccess }: Props) {
     // Image Preview State
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    const handleClose = useCallback(() => {
+        if (isOpen) {
+            onClose();
+        }
+    }, [isOpen, onClose]);
+
+    useEscapeKey(() => handleClose(), isOpen);
+
+    const modalContent = (
+        <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-none md:rounded-lg shadow-xl w-full h-full md:max-w-7xl md:h-[90vh] flex flex-col overflow-hidden relative">
                 {/* Header with Tabs */}
                 <div className="bg-gray-50 border-b">
@@ -393,4 +403,6 @@ export default function ModalCatalog({ isOpen, onClose, onSuccess }: Props) {
             )}
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

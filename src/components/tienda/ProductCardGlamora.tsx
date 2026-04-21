@@ -53,7 +53,7 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
                 {/* Content - Centered */}
                 <div className="flex flex-col items-center px-4 pb-2 text-center flex-1 w-full">
                     {/* Title */}
-                    <h3 className="text-[#045659] font-bold text-base leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
+                    <h3 className="text-[#1E1B4B] font-bold text-base leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                         {producto.descripcion}
                     </h3>
 
@@ -70,7 +70,7 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
                     )}
 
                     {/* Price - Large & Centered */}
-                    <div className="flex items-start text-[#045659] leading-none mb-4">
+                    <div className="flex items-start text-[#1E1B4B] leading-none mb-4">
                         <span className="text-3xl font-extrabold tracking-tight">
                             {priceInt}.
                         </span>

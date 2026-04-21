@@ -3,6 +3,7 @@ import Alert from './components/Alert'
 import LoginPage from './pages/Login'
 // import DashboardPage from './pages/Dashboard' 
 import { ProtectedRoute } from './app/ProtectedRoute'
+import { RoleRoute } from './app/RoleRoute'
 import AdminIndex from './pages/admin/Index'
 import AdminLayout from './layouts/AdminLayout'
 import ClientesPage from './pages/admin/Clientes'
@@ -21,6 +22,7 @@ import PerfilIndex from './pages/admin/perfil/Index'
 import KardexIndex from './pages/admin/kardex/Index'
 import InventarioDashboard from './pages/admin/kardex/Dashboard'
 import KardexProductos from './pages/admin/kardex/Productos'
+import KardexTraslados from './pages/admin/kardex/Traslados'
 import Lotes from './pages/admin/kardex/Lotes'
 import UsuariosIndex from './pages/admin/usuarios/Index'
 import SedesIndex from './pages/admin/sedes/Index'
@@ -32,6 +34,7 @@ import ModificadoresTienda from './pages/admin/tienda/Modificadores'
 import TiendaPublica from './pages/tienda/[slug]'
 import ProductoDetalle from './pages/tienda/ProductoDetalle'
 import Checkout from './pages/tienda/Checkout'
+import Catalogo from './pages/tienda/Catalogo'
 import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
 import TiendaLogin from './pages/TiendaLogin'
 import TiendaHome from './pages/TiendaHome'
@@ -49,7 +52,7 @@ import ResellerLayout from './layouts/ResellerLayout'
 import ResellerDashboard from './pages/reseller/Dashboard'
 import ResellerClientes from './pages/reseller/Clientes'
 import ResellerRecargas from './pages/reseller/Recargas'
-
+import SedeSelectionScreen from './features/auth/sede-selection/SedeSelectionScreen'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -58,6 +61,7 @@ function App() {
       <Alert />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/sede-seleccion" element={<SedeSelectionScreen />} />
         {/* Login específico para tienda (mismo backend, layout invertido) */}
         <Route path="/tienda/login" element={<TiendaLogin />} />
         {/* <Route
@@ -102,6 +106,7 @@ function App() {
           <Route path="finanzas/dashboard" element={<FinanceDashboard />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
+          <Route path="kardex/traslados" element={<KardexTraslados />} />
           <Route path="kardex/lotes" element={<Lotes />} />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
@@ -117,7 +122,14 @@ function App() {
           <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
           <Route path="sistema/planes" element={<Planes />} />
           <Route path="sistema/modulos" element={<ModulosPage />} />
-          <Route path="sistema/resellers" element={<AdminResellers />} />
+          <Route
+            path="sistema/resellers"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <AdminResellers />
+              </RoleRoute>
+            }
+          />
         </Route>
 
         {/* Rutas de Reseller (Distribuidor) */}
@@ -125,7 +137,9 @@ function App() {
           path="/reseller"
           element={
             <ProtectedRoute>
-              <ResellerLayout />
+              <RoleRoute allowedRoles={["RESELLER"]} fallbackPath="/administrador">
+                <ResellerLayout />
+              </RoleRoute>
             </ProtectedRoute>
           }
         >
@@ -138,6 +152,7 @@ function App() {
         <Route path="/tienda/home" element={<TiendaHome />} />
         {/* Rutas públicas de tienda para clientes finales */}
         <Route path="/tienda/:slug" element={<TiendaPublica />} />
+        <Route path="/tienda/:slug/catalogo" element={<Catalogo />} />
         <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalle />} />
         <Route path="/tienda/:slug/checkout" element={<Checkout />} />
         <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />

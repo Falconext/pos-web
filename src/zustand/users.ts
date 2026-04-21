@@ -44,6 +44,7 @@ export interface IUsuario {
   empresaId: number;
   estado: 'ACTIVO' | 'INACTIVO';
   permisos?: string[];
+  sedes?: { id: number; nombre: string; codigo: string | null; esPrincipal: boolean }[];
 }
 
 export interface IFormUsuario {
@@ -54,6 +55,7 @@ export interface IFormUsuario {
   celular: string;
   password?: string;
   permisos: string[];
+  sedeIds?: number[];
 }
 
 export interface IUsersState {

@@ -4,6 +4,9 @@ import { Icon } from '@iconify/react';
 import { useInvoiceStore } from '@/zustand/invoices';
 import useAlertStore from '@/zustand/alert';
 
+const DOCUMENT_TOKEN_CAPTURE_REGEX = /([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g;
+const DOCUMENT_TOKEN_REGEX = /^[a-zA-Z0-9]+-[a-zA-Z0-9]+$/;
+
 // Componente optimizado para edición local
 const EditableCell = ({ value, type, onChange, disabled, className }: any) => {
     const [localValue, setLocalValue] = useState(value);
@@ -144,6 +147,7 @@ const TableBody: FC<ITableBodyProps> = ({
                             // Handle logic for column key extraction (similar to TableHeader)
                             const isObject = typeof col === 'object';
                             const key = isObject ? col.key : (col as string);
+                            const keyLower = key.toString().toLowerCase();
 
                             // Access row[key] to get the cell value.
                             const cell = row[key];
@@ -181,6 +185,7 @@ const TableBody: FC<ITableBodyProps> = ({
                             const cellValue =
                                 cell === null || cell === undefined ? '' : cell.toString();
                             const isTruncatable = key === 'direccion' || key === 'nombre' || key === 'razonSocial';
+                            const isConceptoColumn = keyLower === 'concepto';
 
                             return (
                                 <td
@@ -229,7 +234,8 @@ const TableBody: FC<ITableBodyProps> = ({
                                             <div
                                                 className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-medium
                                                     ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present' ? 'bg-[#EAF6ED] text-[#4EAA64]' :
-                                                        cell === 'PENDIENTE' || cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'COMPLETADO' || cell === 'AJUSTE' || cell === 'ENVIANDO' ? 'bg-amber-50 text-amber-600' :
+                                                        cell === 'PENDIENTE' ? 'bg-blue-50 text-blue-600' :
+                                                        cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'COMPLETADO' || cell === 'AJUSTE' || cell === 'ENVIANDO' ? 'bg-amber-50 text-amber-600' :
                                                             cell === 'PARTIAL' ? 'bg-blue-50 text-blue-600' :
                                                                 cell === 'RECHAZADO' || cell === 'ANULADO' || cell === 'SALIDA' || cell === 'FALLIDO_ENVIO' || cell === 'INACTIVO' || cell === 'Leave' ? 'bg-[#FCEAE9] text-[#D84B4B]' :
                                                                     'bg-[#F3F4F6] text-[#6B7280]'
@@ -237,7 +243,7 @@ const TableBody: FC<ITableBodyProps> = ({
                                             >
                                                 <span className="capitalize">
                                                     {cell === 'PENDIENTE'
-                                                        ? 'Pendiente'
+                                                        ? 'En procesamiento'
                                                         : cell === 'INGRESO'
                                                             ? 'Ingreso'
                                                             : cell === 'SALIDA'
@@ -277,9 +283,31 @@ const TableBody: FC<ITableBodyProps> = ({
                                             ) : (
                                                 <div className="flex">
                                                     {(() => {
-                                                        const keyLower = key.toString().toLowerCase();
-                                                        const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria') || keyLower.includes('doc');
+                                                        const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria') || keyLower.includes('doc') || keyLower === 'referencia' || keyLower === 'comprobante';
                                                         const isString = typeof cell === 'string';
+
+                                                        if (isConceptoColumn && isString) {
+                                                            const segments = cellValue.split(DOCUMENT_TOKEN_CAPTURE_REGEX);
+                                                            return (
+                                                                <span className="capitalize">
+                                                                    {segments.map((segment: string, segmentIdx: number) => {
+                                                                        if (!segment) return null;
+                                                                        const isDocToken = DOCUMENT_TOKEN_REGEX.test(segment);
+                                                                        return isDocToken ? (
+                                                                            <span
+                                                                                key={`concepto-doc-${segmentIdx}`}
+                                                                                className="uppercase tracking-wide"
+                                                                                style={{ textTransform: 'uppercase' }}
+                                                                            >
+                                                                                {segment.toUpperCase()}
+                                                                            </span>
+                                                                        ) : (
+                                                                            segment.toLowerCase()
+                                                                        );
+                                                                    })}
+                                                                </span>
+                                                            );
+                                                        }
 
                                                         if (isString && !isCode) {
                                                             return <span className="capitalize">{cell.toString().toLowerCase()}</span>;
@@ -310,6 +338,7 @@ const TableBody: FC<ITableBodyProps> = ({
                                     return (
                                         <div key={actionIndex} className={styles.tooltipContainer} style={{ marginRight: '8px' }}>
                                             <button
+                                                type="button"
                                                 className="p-2 rounded-lg text-gray-500 transition-colors"
                                                 onClick={() => action.onClick(row)}
                                             >

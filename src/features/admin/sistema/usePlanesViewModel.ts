@@ -5,7 +5,8 @@ import { useModulosStore } from '@/zustand/modulos';
 
 export interface Plan {
     id: number; nombre: string; descripcion?: string; costo: number;
-    duracionDias: number; limiteUsuarios: number; maxImagenesProducto: number;
+    duracionDias: number; limiteUsuarios: number; maxSedes: number;
+    maxImagenesProducto: number;
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
     tieneTienda: boolean; tieneBanners: boolean; tieneGaleria: boolean;
     tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
@@ -15,7 +16,7 @@ export interface Plan {
 
 const initialForm: Partial<Plan> & { moduloIds?: number[] } = {
     nombre: '', descripcion: '', costo: 0, duracionDias: 30,
-    limiteUsuarios: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
+    limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
     tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false, moduloIds: [],
 };
@@ -58,7 +59,7 @@ export const usePlanesViewModel = () => {
         if (!form.nombre || form.costo === undefined) { alert('Nombre y costo son obligatorios', 'warning'); return; }
         try {
             setLoading(true);
-            const payload = { ...form, costo: Number(form.costo), duracionDias: Number(form.duracionDias), limiteUsuarios: Number(form.limiteUsuarios), maxImagenesProducto: Number(form.maxImagenesProducto), maxBanners: Number(form.maxBanners) };
+            const payload = { ...form, costo: Number(form.costo), duracionDias: Number(form.duracionDias), limiteUsuarios: Number(form.limiteUsuarios), maxSedes: Number(form.maxSedes ?? 1), maxImagenesProducto: Number(form.maxImagenesProducto), maxBanners: Number(form.maxBanners) };
             if (isEdit && currentId) { await apiClient.put(`/plan/${currentId}`, payload); alert('Plan actualizado', 'success'); }
             else { await apiClient.post('/plan', payload); alert('Plan creado', 'success'); }
             setIsModalOpen(false);

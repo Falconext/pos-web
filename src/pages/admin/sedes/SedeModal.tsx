@@ -4,7 +4,7 @@ import Modal from '@/components/Modal';
 import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import { useSedesStore } from '@/zustand/sedes';
-import { useCompaniesStore } from '@/zustand/companies';
+import { useAuthStore } from '@/zustand/auth';
 import { Sede } from '@/interfaces/Sede';
 
 interface Props {
@@ -16,11 +16,12 @@ interface Props {
 
 const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
     const { crearSede, actualizarSede, loading, sedes } = useSedesStore();
-    const { compania } = useCompaniesStore();
+    const { auth } = useAuthStore();
 
-    // Check limit
-    const maxSedes = compania?.plan?.maxSedes || 1;
-    const currentSedes = sedes.filter(s => s.activo).length;
+    // Leer maxSedes desde el plan del usuario autenticado
+    // Aseguramos fallback a 1 por seguridad, pero si tiene plan (MEGA-ANUAL) debería tomarlo
+    const maxSedes = (auth as any)?.empresa?.plan?.maxSedes || 1;
+    const currentSedes = sedes.filter(s => (s as any).activo !== false).length;
     const canCreate = isEdit || currentSedes < maxSedes;
 
     const [formData, setFormData] = useState({

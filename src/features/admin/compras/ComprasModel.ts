@@ -8,6 +8,7 @@ export interface IComprasFilters {
     fechaInicio: string;
     fechaFin: string;
     estadoPago: string;
+    sedeId?: number | null;
 }
 
 export interface IComprasViewModelState {
@@ -31,6 +32,7 @@ export const INITIAL_COMPRAS_STATE: IComprasViewModelState = {
         fechaInicio: '',
         fechaFin: '',
         estadoPago: 'TODOS',
+        sedeId: null,
     },
     isOpenDetalle: false,
     selectedCompraId: null,

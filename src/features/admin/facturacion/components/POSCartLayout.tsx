@@ -37,8 +37,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                 <button
                                     onClick={() => {
                                         if (item.cantidad > 1) {
-                                            const indexToUpdate = vm.productsInvoice.indexOf(item);
-                                            vm.updateProductInvoice(indexToUpdate, vm.calculateLineItem(item, Number(item.cantidad) - 1));
+                                            vm.updateProductInvoice(index, vm.calculateLineItem(item, Number(item.cantidad) - 1));
                                         } else {
                                             vm.handleDeleteProduct(item)
                                         }
@@ -50,17 +49,11 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                 <span className="w-10 md:w-8 text-center font-bold text-sm">{item.cantidad}</span>
                                 <button
                                     onClick={() => {
-                                        const indexToUpdate = vm.productsInvoice.indexOf(item);
                                         const newQty = Number(item.cantidad) + 1;
-                                        if (item.stock < newQty) {
-                                            // Handle alert via Zustand or VM
-                                            // For simplicity, we just won't update if it exceeds. 
-                                            // The VM handleProductClick handles this, but since we are manipulating here directly:
-                                            if (window as any) {
-                                                // We bypass the alert display logic for brevity, ideally handled via VM or alert store.
-                                            }
+                                        if (item.stock !== undefined && item.stock < newQty) {
+                                            return;
                                         }
-                                        vm.updateProductInvoice(indexToUpdate, vm.calculateLineItem(item, newQty));
+                                        vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
                                     }}
                                     className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-gray-900 active:scale-95 transition-transform"
                                 >

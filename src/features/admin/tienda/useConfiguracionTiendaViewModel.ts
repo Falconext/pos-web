@@ -19,6 +19,11 @@ export const useConfiguracionTiendaViewModel = (): any => {
     const [formData, setFormData] = useState({ ...defaultForm });
     const { alert } = useAlertStore();
 
+    // Logo state
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoUploading, setLogoUploading] = useState(false);
+    const [previewLogoUrl, setPreviewLogoUrl] = useState('');
+
     // QR state
     const [yapeFile, setYapeFile] = useState<File | null>(null);
     const [plinFile, setPlinFile] = useState<File | null>(null);
@@ -99,6 +104,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
             });
             setPreviewYapeUrl(data.data.yapeQrSignedUrl || data.data.yapeQrUrl || '');
             setPreviewPlinUrl(data.data.plinQrSignedUrl || data.data.plinQrUrl || '');
+            setPreviewLogoUrl(data.data.logoSignedUrl || data.data.logo || '');
         } catch (error: any) { alert(error.response?.data?.message || 'Error al cargar configuración', 'error'); }
         finally { setLoading(false); }
     };
@@ -128,6 +134,30 @@ export const useConfiguracionTiendaViewModel = (): any => {
             cargarConfiguracion();
         } catch (error: any) { alert(error.response?.data?.message || 'Error al guardar configuración', 'error'); }
         finally { setSaving(false); }
+    };
+
+    const subirLogo = async () => {
+        if (!logoFile) { alert('Selecciona una imagen primero', 'warning'); return; }
+        if (logoFile.size > 2.5 * 1024 * 1024) { alert('El archivo es demasiado grande. Máximo 2.5MB', 'error'); return; }
+        setLogoUploading(true);
+        try {
+            const fd = new FormData(); fd.append('file', logoFile);
+            const { data } = await apiClient.post('/tienda/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            const signed = data?.data?.signedUrl || data?.data?.url || data?.signedUrl || data?.url;
+            setPreviewLogoUrl(signed);
+            setLogoFile(null);
+            alert('Logo subido correctamente', 'success');
+        } catch (error: any) { alert(error.response?.data?.message || 'Error al subir logo', 'error'); }
+        finally { setLogoUploading(false); }
+    };
+
+    const eliminarLogo = async () => {
+        try {
+            await apiClient.patch('/tienda/config', { logo: null });
+            setPreviewLogoUrl('');
+            setLogoFile(null);
+            alert('Logo eliminado correctamente', 'success');
+        } catch (error: any) { alert(error.response?.data?.message || 'Error al eliminar logo', 'error'); }
     };
 
     const subirQr = async (tipo: 'yape' | 'plin') => {
@@ -220,6 +250,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
 
     return {
         config, loading, saving, formData, handleChange, handleSubmit, abrirTienda, slugify,
+        logoFile, setLogoFile, logoUploading, previewLogoUrl, subirLogo, eliminarLogo,
         yapeFile, setYapeFile, plinFile, setPlinFile, yapeUploading, plinUploading, previewYapeUrl, previewPlinUrl, subirQr, eliminarQr, showConfirmDelete, setShowConfirmDelete, confirmarEliminarQr, deleteQrType,
         banners, loadingBanners, uploadingBanner, newBannerTitle, setNewBannerTitle, newBannerSubtitle, setNewBannerSubtitle, newBannerLink, setNewBannerLink, newBannerOrden, setNewBannerOrden,
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,

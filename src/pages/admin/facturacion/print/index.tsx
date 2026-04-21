@@ -56,7 +56,7 @@ const PrintPDF = ({
             textTransform: "uppercase"
         },
         page: {
-            fontFamily: '',
+            fontFamily: 'Inter',
             fontSize: size === "A5" ? 8 : 10,
             position: 'relative',
         },

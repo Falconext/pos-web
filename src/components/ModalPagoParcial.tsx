@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import InputPro from "./InputPro";
 import Button from "./Button";
 import { Icon } from "@iconify/react";
+import useEscapeKey from "@/hooks/useEscapeKey";
 
 interface ModalPagoParcialProps {
     isOpen: boolean;
@@ -67,6 +68,14 @@ const ModalPagoParcial = ({
         }
         onConfirm(monto, medioPago);
     };
+
+    const handleClose = useCallback(() => {
+        if (isOpen) {
+            onCancel();
+        }
+    }, [isOpen, onCancel]);
+
+    useEscapeKey(() => handleClose(), isOpen);
 
     if (!isOpen) return null;
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useResellerStore } from '@/zustand/resellers';
 
 export const useResellersViewModel = () => {
-    const { resellers, getAllResellers, createReseller, recargarSaldo } = useResellerStore();
+    const { resellers, rentabilidad, getAllResellers, getRentabilidad, createReseller, recargarSaldo, toggleEstadoReseller } = useResellerStore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
     const [selectedReseller, setSelectedReseller] = useState<any>(null);
@@ -12,7 +12,10 @@ export const useResellersViewModel = () => {
     const [formData, setFormData] = useState({ nombre: '', codigo: '', representante: '', telefono: '', email: '' });
     const [rechargeData, setRechargeData] = useState({ monto: '', referencia: '' });
 
-    useEffect(() => { getAllResellers(); }, []);
+    useEffect(() => {
+        getAllResellers();
+        getRentabilidad();
+    }, []);
 
     const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -59,5 +62,19 @@ export const useResellersViewModel = () => {
         if (result.success) setIsRechargeModalOpen(false);
     };
 
-    return { resellers, isCreateModalOpen, setIsCreateModalOpen, isRechargeModalOpen, setIsRechargeModalOpen, selectedReseller, isEditMode, formData, rechargeData, handleCreateChange, handleRechargeChange, openCreateModal, openEditModal, handleCreateSubmit, openRechargeModal, handleRechargeSubmit };
+    const handleToggleEstado = async (reseller: any) => {
+        const nuevoEstado = !reseller.activo;
+        const ok = window.confirm(`¿Deseas ${nuevoEstado ? 'activar' : 'desactivar'} a ${reseller.nombre}?`);
+        if (!ok) return;
+        const result = await toggleEstadoReseller(reseller.id, nuevoEstado);
+        if (result.success) {
+            await getRentabilidad();
+        }
+    };
+
+    const getRentabilidadByReseller = (resellerId: number) => {
+        return rentabilidad.find((item) => item.resellerId === resellerId);
+    };
+
+    return { resellers, rentabilidad, isCreateModalOpen, setIsCreateModalOpen, isRechargeModalOpen, setIsRechargeModalOpen, selectedReseller, isEditMode, formData, rechargeData, handleCreateChange, handleRechargeChange, openCreateModal, openEditModal, handleCreateSubmit, openRechargeModal, handleRechargeSubmit, handleToggleEstado, getRentabilidadByReseller };
 };

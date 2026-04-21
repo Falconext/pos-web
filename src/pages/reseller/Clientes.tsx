@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useAuthStore } from '@/zustand/auth';
 import { useResellerPanelStore } from '@/zustand/reseller-panel';
 import Select from '@/components/Select';
 import ClienteDetalleModal from '@/components/reseller/ClienteDetalleModal';
+import DataTable from '@/components/Datatable';
 
 export default function ResellerClientes() {
     const { auth } = useAuthStore();
@@ -11,6 +12,7 @@ export default function ResellerClientes() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState<number>(0);
+    const [search, setSearch] = useState('');
 
     // Form State
     const [formData, setFormData] = useState({
@@ -82,6 +84,41 @@ export default function ResellerClientes() {
         }
     };
 
+    const formatCurrency = (value: number) => `S/ ${value.toFixed(2)}`;
+
+    const clientsTable = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        const filtered = !term
+            ? clientes
+            : clientes.filter((cliente: any) => {
+                const razon = String(cliente.razonSocial || '').toLowerCase();
+                const ruc = String(cliente.ruc || '').toLowerCase();
+                return razon.includes(term) || ruc.includes(term);
+            });
+
+        return filtered.map((cliente: any) => ({
+            id: cliente.id,
+            empresa: cliente.razonSocial,
+            ruc: cliente.ruc,
+            plan: cliente?.plan?.nombre
+                ? `${cliente.plan.nombre}${cliente?.plan?.maxComprobantes ? ` · ${cliente.plan.maxComprobantes} comprob.` : ''}`
+                : `Plan ID: ${cliente.planId}`,
+            costo: formatCurrency(Number(cliente.costoActivacionReseller ?? cliente.plan?.costo ?? 0)),
+            estado: cliente.estado,
+        }));
+    }, [clientes, search]);
+
+    const actions = [
+        {
+            icon: <Icon icon="solar:eye-bold" width="18" />,
+            tooltip: 'Ver Detalles',
+            onClick: (row: any) => {
+                setSelectedClientId(row.id);
+                setIsDetailsOpen(true);
+            },
+        },
+    ];
+
     return (
         <div className="space-y-6 animate-in fade-in zoom-in duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -98,82 +135,38 @@ export default function ResellerClientes() {
                 </button>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                {/* Filters / Search to be added here */}
-                <div className="p-4 border-b border-gray-100 flex gap-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
+                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                    </div>
                     <div className="relative flex-1">
                         <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="20" />
                         <input
                             type="text"
                             placeholder="Buscar cliente..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-100 text-sm"
                         />
                     </div>
                 </div>
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-semibold">
-                            <tr>
-                                <th className="px-6 py-4">Empresa / RUC</th>
-                                <th className="px-6 py-4">Plan (ID)</th>
-                                <th className="px-6 py-4">Contacto</th>
-                                <th className="px-6 py-4">Estado</th>
-                                <th className="px-6 py-4 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 text-sm">
-                            {clientes.length === 0 ? (
-                                <tr>
-                                    <td className="px-6 py-12" colSpan={5}>
-                                        <div className="flex flex-col items-center justify-center text-gray-400">
-                                            <Icon icon="solar:users-group-rounded-linear" width="48" className="mb-2 opacity-50" />
-                                            <p>No tienes clientes registrados aún</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                clientes.map((cliente: any) => (
-                                    <tr key={cliente.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <p className="font-bold text-gray-800">{cliente.razonSocial}</p>
-                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200 font-mono">
-                                                {cliente.ruc}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {cliente.planId === 1 ? 'Plan Emprendedor (75)' :
-                                                cliente.planId === 4 ? 'Plan Negocio (100)' :
-                                                    `Plan ID: ${cliente.planId}`}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600">
-                                            {/* Contacto info lookup if available */}
-                                            -
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cliente.estado === 'ACTIVO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${cliente.estado === 'ACTIVO' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                                                {cliente.estado}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedClientId(cliente.id);
-                                                    setIsDetailsOpen(true);
-                                                }}
-                                                title="Ver Detalles"
-                                                className="text-gray-400 hover:text-indigo-600 p-1.5 hover:bg-indigo-50 rounded-lg transition-colors"
-                                            >
-                                                <Icon icon="solar:eye-bold" width="18" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                <div className="p-4 relative z-0">
+                    <div className="overflow-x-auto font-inter">
+                        <DataTable
+                            headerColumns={[
+                                { label: 'ID', key: 'id' },
+                                { label: 'Empresa', key: 'empresa' },
+                                { label: 'RUC', key: 'ruc' },
+                                { label: 'Plan', key: 'plan' },
+                                { label: 'Costo Reseller', key: 'costo' },
+                                { label: 'Estado', key: 'estado' },
+                            ]}
+                            bodyData={clientsTable}
+                            actions={actions}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -187,7 +180,7 @@ export default function ResellerClientes() {
 
             {/* Create Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
                     <div className="bg-white rounded-3xl p-8 w-full max-w-lg z-10 shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-start mb-6">

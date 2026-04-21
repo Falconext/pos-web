@@ -2,6 +2,7 @@ import { AreaChart } from '@tremor/react';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { Calendar } from '@/components/Date';
+import Select from '@/components/Select';
 import { useFinanceDashboardViewModel } from './useFinanceDashboardViewModel';
 
 export default function FinanceDashboardView() {
@@ -25,7 +26,17 @@ export default function FinanceDashboardView() {
                 </div>
 
                 {/* Filters / Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {vm.isAdmin && vm.esPrincipal && (
+                        <Select
+                            onChange={vm.handleSelectSede}
+                            label="Sede"
+                            name="sedeId"
+                            options={vm.sedesOptions}
+                            error=""
+                            defaultValue="Todas las sedes"
+                        />
+                    )}
                     <Calendar
                         text="Fecha Inicio"
                         name="fechaInicio"
@@ -44,10 +55,24 @@ export default function FinanceDashboardView() {
                     >
                         <Icon icon="solar:refresh-bold" />
                     </button>
+                    <button
+                        onClick={vm.handleExportPDF}
+                        disabled={vm.isGeneratingPDF || !vm.kpis}
+                        className="flex items-center gap-2 bg-rose-600 top-2 relative hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl transition-colors shadow-lg shadow-rose-200 text-sm font-medium"
+                    >
+                        <Icon icon={vm.isGeneratingPDF ? 'line-md:loading-twotone-loop' : 'solar:file-download-bold-duotone'} className="text-lg" />
+                        {vm.isGeneratingPDF ? 'Generando...' : 'PDF'}
+                    </button>
                 </div>
             </div>
 
             {/* Main Content Grid */}
+            {vm.isLoading ? (
+                <div className="flex justify-center items-center py-32">
+                    <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-indigo-500" />
+                    <span className="ml-3 text-gray-500 font-medium">Actualizando resumen financiero...</span>
+                </div>
+            ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Left Col: Chart & Stats */}
@@ -176,22 +201,26 @@ export default function FinanceDashboardView() {
                             </div>
                         </div>
 
-                        <button className="w-full mt-6 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                            <span>Ver Reporte Detallado</span>
-                            <Icon icon="solar:arrow-right-linear" />
+                        <button
+                            onClick={vm.handleExportPDF}
+                            disabled={vm.isGeneratingPDF}
+                            className="w-full mt-6 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {vm.isGeneratingPDF ? (
+                                <>
+                                    <Icon icon="solar:loading-bold" className="animate-spin" />
+                                    <span>Generando PDF...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Ver Reporte Detallado</span>
+                                    <Icon icon="solar:arrow-right-linear" />
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
-
             </div>
-
-            {vm.isLoading && (
-                <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-3xl shadow-xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-200">
-                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-100 border-t-indigo-600"></div>
-                        <span className="font-medium text-gray-600">Actualizando dashboard...</span>
-                    </div>
-                </div>
             )}
         </div>
     );

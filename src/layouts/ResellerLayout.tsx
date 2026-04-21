@@ -18,10 +18,8 @@ export default function ResellerLayout() {
     const userMenuRef = useRef<HTMLDivElement | null>(null)
 
     const theme = {
-        sidebarBg: sidebarType === 'dark' ? 'bg-[#1C1C24]' : 'bg-white shadow-xl shadow-gray-200/50 border-r border-gray-100',
-        sidebarText: sidebarType === 'white' ? 'text-gray-600' : 'text-gray-400',
-        activeLink: `flex items-center w-full px-4 py-3.5 text-sm font-semibold text-white bg-indigo-600 shadow-lg shadow-indigo-500/20 rounded-2xl transition-all duration-200 group`,
-        inactiveLink: `flex items-center w-full px-4 py-3.5 text-sm font-medium ${sidebarType === 'white' ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-gray-400 hover:text-white hover:bg-white/5'} rounded-2xl transition-all duration-200 group`
+        activeLink: 'flex items-center w-full px-3.5 py-2.5 rounded-xl text-[13px] font-semibold text-white bg-[#4F6EF7] shadow-[0_4px_12px_rgba(79,110,247,0.35)] transition-all duration-200',
+        inactiveLink: 'flex items-center w-full px-3.5 py-2.5 rounded-xl text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-150'
     }
 
     const logout = () => {
@@ -31,17 +29,24 @@ export default function ResellerLayout() {
     }
 
     return (
-        <div className="flex overflow-hidden bg-[#F4F5FA] font-sans transition-all duration-300" style={{ height: '100vh' }}>
+        <div
+            className="flex overflow-hidden bg-[#F0F2FA] transition-all duration-300"
+            style={{
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                zoom: isCompact ? '0.9' : '1',
+                height: isCompact ? '110vh' : '100vh'
+            }}
+        >
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 ${theme.sidebarBg} p-4 space-y-6 h-full overflow-y-auto w-[280px] transition-transform duration-300 z-50 md:static ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+            <aside className={`fixed inset-y-0 left-0 bg-white shadow-[2px_0_20px_rgba(0,0,0,0.06)] p-4 space-y-6 h-full overflow-y-auto w-[260px] transition-transform duration-300 z-50 md:static ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
                 <div className="flex items-center gap-3 px-2 mb-8 mt-2">
-                    <div className="flex items-center justify-center p-2 bg-indigo-600 rounded-xl text-white">
-                        <Icon icon="solar:shop-bold-duotone" width="24" />
+                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#4F6EF7] shadow-md shadow-indigo-200">
+                        <img src="/fnlogo.png" alt="Falconext" className="w-5 h-5 object-contain brightness-0 invert" />
                     </div>
                     <div>
-                        <h2 className={`text-xl font-bold tracking-tight leading-none ${sidebarType === 'white' ? 'text-gray-800' : 'text-white'}`}>RESELLER</h2>
-                        <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PANEL DISTRIBUIDOR</p>
+                        <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900">FALCONEXT</h2>
+                        <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Distribuidor</p>
                     </div>
                 </div>
 
@@ -61,7 +66,7 @@ export default function ResellerLayout() {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto relative">
                 {/* Header */}
-                <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md">
+                <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100">
                     <button className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
                         <Icon icon="solar:hamburger-menu-linear" width="24" />
                     </button>
@@ -71,7 +76,7 @@ export default function ResellerLayout() {
                             className="flex items-center gap-3 rounded-full hover:bg-gray-100 p-1 pr-3 transition-all"
                             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                         >
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                            <div className="w-10 h-10 rounded-full bg-[#4F6EF7]/10 flex items-center justify-center text-[#4F6EF7] font-bold">
                                 {auth?.nombre?.charAt(0)}
                             </div>
                             <div className="hidden md:flex flex-col items-start">

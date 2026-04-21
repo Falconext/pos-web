@@ -32,7 +32,7 @@ import {
 export const useFacturacionViewModel = () => {
     const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt }: IInvoicesState = useInvoiceStore();
     const { isCompact } = useThemeStore();
-    const { auth } = useAuthStore();
+    const { auth, sedeActiva } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
     const { getAllClients, clients }: IClientsState = useClientsStore();
     const { getAllProducts, products, totalProducts }: IProductsState = useProductsStore();
@@ -182,9 +182,10 @@ export const useFacturacionViewModel = () => {
         const params: any = { page, limit };
         if (debouncedSearchTerm) params.search = debouncedSearchTerm;
         if (selectedCategoryId !== 0) params.categoriaId = selectedCategoryId;
+        if (sedeActiva?.id) params.sedeId = sedeActiva.id;
 
         getAllProducts(params, () => { }, true);
-    }, [page, limit, debouncedSearchTerm, selectedCategoryId]);
+    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id]);
 
     // Initial Data Fetching for POS
     useEffect(() => {
@@ -199,6 +200,23 @@ export const useFacturacionViewModel = () => {
     }, [])
 
     useEffect(() => {
+        const state = location.state as any;
+        const defaultType = state?.defaultType as string | undefined;
+
+        if (defaultType && !isQuotationRoute) {
+            const tipoDocMap: Record<string, string> = {
+                'FACTURA': '01', 'BOLETA': '03',
+                'TICKET': 'TICKET', 'NP': 'NP', 'OT': 'OT',
+                'NV': 'NV', 'RH': 'RH', 'CP': 'CP',
+            };
+            setFormValues(prev => ({
+                ...prev,
+                comprobante: defaultType,
+                tipoDoc: tipoDocMap[defaultType] ?? '01',
+            }));
+            return;
+        }
+
         const newComprobante = isQuotationRoute
             ? "COTIZACIÓN"
             : (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA");
@@ -652,10 +670,11 @@ export const useFacturacionViewModel = () => {
         setIsOpenModalProduct(false)
     }
 
-    const ruc = "204812192919";
+    const ruc = auth?.empresa?.ruc || auth?.empresa?.nroDoc || "";
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
     useEffect(() => {
+        if (!ruc) return;
         const generateQR = async () => {
             try {
                 const dataUrl = await QRCode.toDataURL(ruc);
@@ -663,7 +682,7 @@ export const useFacturacionViewModel = () => {
             } catch (e) { }
         };
         generateQR();
-    }, []);
+    }, [ruc]);
 
     const [dimensions, setDimensions] = useState({ width: 80, height: 297 });
 
@@ -726,6 +745,10 @@ export const useFacturacionViewModel = () => {
         setMontoDetraccion(0);
         setCuotas([]);
         setTimeout(() => getSerieAndCorrelativeByReceipt(auth?.empresa?.id, formValues?.tipoDoc), 1000);
+        // Re-fetch products so the POS catalog reflects the updated stock after the sale
+        const refreshParams: any = { page, limit };
+        if (sedeActiva?.id) refreshParams.sedeId = sedeActiva.id;
+        getAllProducts(refreshParams, () => {}, true);
     };
 
     const componentRef = null; // Will be bound at view layer by useReactToPrint
@@ -767,6 +790,7 @@ export const useFacturacionViewModel = () => {
         handleProductClick,
         handleDeleteProduct,
         handleSaveEdit,
+        updateProductInvoice,
         handleChangeSelect,
         handleGetDataClient,
         addInvoiceReceipt,

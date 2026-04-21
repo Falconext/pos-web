@@ -13,8 +13,20 @@ export default function ClientsView() {
     const vm = useClientsViewModel();
     const { actions, clients, clientsTable, totalClients } = vm;
 
+    const [showOptionsDropdown, setShowOptionsDropdown] = React.useState(false);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowOptionsDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     return (
-        <div className="min-h-screen px-2 pb-4">
+        <div className="min-h-screen px-2 pb-4 relative z-1">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
@@ -28,9 +40,9 @@ export default function ClientsView() {
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white relative z-0 rounded-2xl shadow-sm border border-gray-100">
                 {/* Search and Actions Toolbar */}
-                <div className="p-5 border-b border-gray-100">
+                <div className="p-5 border-b border-gray-100 relative z-50 overflow-visible">
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <InputPro
@@ -42,34 +54,57 @@ export default function ClientsView() {
                             />
                         </div>
                         <div className="flex flex-wrap gap-2 items-end">
-                            <Button
-                                color="success"
-                                outline
-                                onMouseEnter={() => actions.setIsHoveredExp(true)}
-                                onMouseLeave={() => actions.setIsHoveredExp(false)}
-                                onClick={actions.exportClients}
-                            >
-                                <Icon icon="solar:export-bold" className="mr-1.5" />
-                                Exportar
-                            </Button>
-                            <div className="relative">
-                                <input
-                                    type="file"
-                                    accept=".xlsx, .xls"
-                                    ref={vm.fileInputRef}
-                                    onChange={actions.handleImportExcel}
-                                    className="hidden"
-                                />
+                            <div className="relative inline-block" ref={dropdownRef}>
                                 <Button
                                     color="success"
                                     outline
-                                    onMouseEnter={() => actions.setIsHoveredImp(true)}
-                                    onMouseLeave={() => actions.setIsHoveredImp(false)}
-                                    onClick={() => vm.fileInputRef.current?.click()}
+                                    onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
+                                    className="text-sm flex items-center gap-1"
                                 >
-                                    <Icon icon="solar:import-bold" className="mr-1.5" />
-                                    Importar
+                                    <Icon icon="solar:file-bold-duotone" className="mr-1" width={16} />
+                                    Excel / CSV
+                                    <Icon icon={showOptionsDropdown ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"} className="ml-1" width={14} />
                                 </Button>
+
+                                {showOptionsDropdown && (
+                                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
+                                        <input
+                                            type="file"
+                                            accept=".xlsx, .xls"
+                                            ref={vm.fileInputRef}
+                                            onChange={(e) => {
+                                                actions.handleImportExcel(e);
+                                                setShowOptionsDropdown(false);
+                                            }}
+                                            className="hidden"
+                                        />
+                                        <button
+                                            onClick={() => { actions.exportClients(); setShowOptionsDropdown(false); }}
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                                        >
+                                            <Icon icon="solar:export-bold" className="mr-2 text-green-500" width={18} />
+                                            Exportar Clientes
+                                        </button>
+                                        <button
+                                            onClick={() => { vm.fileInputRef.current?.click(); }}
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                        >
+                                            <Icon icon="solar:import-bold" className="mr-2 text-blue-500" width={18} />
+                                            Importar desde Excel
+                                        </button>
+                                        <div className="mx-4 my-1 border-t border-gray-100"></div>
+                                        <a
+                                            href="/formatos/plantilla_clientes.xlsx"
+                                            target="_blank"
+                                            download
+                                            onClick={() => setShowOptionsDropdown(false)}
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                                        >
+                                            <Icon icon="solar:file-download-bold" className="mr-2 text-amber-500" width={18} />
+                                            Descargar Modelo (Guía)
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

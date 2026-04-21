@@ -16,7 +16,7 @@ export default function ProductCardGromuse({ producto, diseno, onAddToCart, onCl
     const priceStr = Number(producto.precioUnitario || 0).toFixed(2);
     const [intPart, decPart] = priceStr.split('.');
 
-    const colorPrimario = diseno?.colorPrimario || '#045659';
+    const colorPrimario = diseno?.colorPrimario || '#1E1B4B';
 
     return (
         <div

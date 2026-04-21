@@ -11,6 +11,7 @@ import Select from "@/components/Select";
 import Button from "@/components/Button";
 import SelectUbigeo from "@/components/Select/SelectUbigeo";
 import TrasladoTypeSelect from "@/components/Select/TrasladoTypeSelect";
+import DataTable from "@/components/Datatable";
 import { useGuiaRemisionStore, IGuiaRemision, IDetalleGuiaRemision } from "@/zustand/guia-remision";
 import { useExtentionsStore } from "@/zustand/extentions";
 import { useAuthStore } from "@/zustand/auth";
@@ -47,6 +48,42 @@ const TIPO_GUIA_OPTIONS = [
     { id: "TRANSPORTISTA", value: "GUÍA DE REMISIÓN TRANSPORTISTA" },
 ];
 
+const MOTIVO_HELP: Record<string, { title: string; description: string; tip: string }> = {
+    "01": {
+        title: "Venta",
+        description: "Usa este motivo cuando entregas bienes por una venta realizada.",
+        tip: "Verifica que el destinatario y la dirección de llegada correspondan al cliente receptor.",
+    },
+    "02": {
+        title: "Compra",
+        description: "Usa este motivo cuando trasladas bienes comprados a un proveedor.",
+        tip: "Registra al proveedor en destinatario y recuerda que SUNAT considera destinatario final a tu empresa.",
+    },
+    "04": {
+        title: "Traslado entre establecimientos",
+        description: "Usa este motivo para mover stock entre sedes de la misma empresa.",
+        tip: "Completa códigos de establecimiento en partida y llegada para evitar observaciones.",
+    },
+    "13": {
+        title: "Otros",
+        description: "Usa este motivo cuando no aplica una causal específica del catálogo.",
+        tip: "Detalla claramente la razón del traslado en observaciones.",
+    },
+};
+
+const MODO_HELP: Record<string, { title: string; required: string[]; tip: string }> = {
+    "01": {
+        title: "Transporte público",
+        required: ["RUC transportista", "Razón social transportista"],
+        tip: "Si la guía es tipo TRANSPORTISTA también debes registrar el número MTC.",
+    },
+    "02": {
+        title: "Transporte privado",
+        required: ["Placa de vehículo", "Documento del conductor"],
+        tip: "Completa también nombre y licencia del conductor para reducir rechazos.",
+    },
+};
+
 const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuiaRemisionProps) => {
     const { auth } = useAuthStore();
     const { createGuiaRemision, updateGuiaRemision, getSiguienteCorrelativo, siguienteCorrelativo } = useGuiaRemisionStore();
@@ -55,9 +92,9 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
     const { getAllProducts, products, resetProducts } = useProductsStore();
 
     const [productOptions, setProductOptions] = useState<any[]>([]);
-    const [tipoGuia, setTipoGuia] = useState<string>("REMITENTE");
 
     const [formValues, setFormValues] = useState<IGuiaRemision>({
+        tipoGuia: "REMITENTE",
         serie: "T001",
         correlativo: 0,
         fechaEmision: format(new Date(), "yyyy-MM-dd"),
@@ -75,8 +112,10 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         unidadPeso: "KGM",
         partidaUbigeo: auth?.empresa?.ubicacion?.codigo || "",
         partidaDireccion: auth?.empresa?.direccion || "",
+        partidaCodigoEstablecimiento: "0000",
         llegadaUbigeo: "",
         llegadaDireccion: "",
+        llegadaCodigoEstablecimiento: "0000",
         fechaInicioTraslado: format(new Date(), "yyyy-MM-dd"),
         retornoVehiculoVacio: false,
         retornoEnvasesVacios: false,
@@ -87,10 +126,33 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         detalles: []
     });
 
+    const isGuiaTransportista = formValues.tipoGuia === "TRANSPORTISTA";
+    const isCompra = formValues.tipoTraslado === "02";
+    const selectedMotivoHelp = MOTIVO_HELP[formValues.tipoTraslado] || {
+        title: "Motivo seleccionado",
+        description: "Completa los datos del traslado según el motivo elegido.",
+        tip: "Revisa destinatario, puntos de partida/llegada y transporte antes de guardar.",
+    };
+    const selectedModoHelp = MODO_HELP[formValues.modoTransporte] || {
+        title: "Modo de transporte",
+        required: [],
+        tip: "Completa todos los datos del traslado según corresponda.",
+    };
+    const destinatarioDocHint =
+        formValues.destinatarioTipoDoc === "6"
+            ? "RUC: 11 dígitos"
+            : formValues.destinatarioTipoDoc === "1"
+                ? "DNI: 8 dígitos"
+                : "Documento válido según tipo seleccionado";
+
     const [newItem, setNewItem] = useState<Partial<IDetalleGuiaRemision>>({
         cantidad: 1,
         unidadMedida: "NIU"
     });
+    const [selectedProductValue, setSelectedProductValue] = useState<string>("");
+    const [isEditQtyModalOpen, setIsEditQtyModalOpen] = useState(false);
+    const [editingQtyIndex, setEditingQtyIndex] = useState<number | null>(null);
+    const [editingQtyValue, setEditingQtyValue] = useState<number>(1);
 
     // Cargar datos al abrir modal
     useEffect(() => {
@@ -104,10 +166,10 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             } else {
                 // Modo Creación
                 const initialSerie = "T001";
-                setTipoGuia("REMITENTE");
                 getSiguienteCorrelativo(initialSerie);
 
                 setFormValues({
+                    tipoGuia: "REMITENTE",
                     serie: initialSerie,
                     correlativo: 0,
                     fechaEmision: format(new Date(), "yyyy-MM-dd"),
@@ -131,13 +193,17 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                     conductorTipoDoc: "",
                     conductorNumDoc: "",
                     conductorNombre: "",
+                    conductorApellidos: "",
                     conductorLicencia: "",
                     vehiculoPlaca: "",
+                    vehiculoAutorizacion: "",
                     // Ubicaciones
                     partidaUbigeo: auth?.empresa?.ubigeo || "",
                     partidaDireccion: auth?.empresa?.direccion || "",
+                    partidaCodigoEstablecimiento: "0000",
                     llegadaUbigeo: "",
                     llegadaDireccion: "",
+                    llegadaCodigoEstablecimiento: "0000",
                     // Fechas
                     fechaInicioTraslado: format(new Date(), "yyyy-MM-dd"),
                     // Indicadores
@@ -153,6 +219,10 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                     cantidad: 1,
                     unidadMedida: "NIU"
                 });
+                setSelectedProductValue("");
+                setIsEditQtyModalOpen(false);
+                setEditingQtyIndex(null);
+                setEditingQtyValue(1);
             }
         }
     }, [isOpen, guiaToEdit]);
@@ -166,8 +236,6 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         // Unwrap data if nested
         const fullGuia = fullGuiaResponse.data || fullGuiaResponse;
 
-        setTipoGuia(fullGuia.serie?.startsWith('V') ? "TRANSPORTISTA" : "REMITENTE");
-
         // Mapeo seguro de datos
         setFormValues(prev => ({
             ...prev, // Mantener defaults
@@ -180,6 +248,8 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             // Asegurar fechas con UTC
             fechaEmision: fullGuia.fechaEmision ? moment.utc(fullGuia.fechaEmision).format("YYYY-MM-DD") : prev.fechaEmision,
             fechaInicioTraslado: fullGuia.fechaInicioTraslado ? moment.utc(fullGuia.fechaInicioTraslado).format("YYYY-MM-DD") : prev.fechaInicioTraslado,
+            partidaCodigoEstablecimiento: fullGuia.partidaCodigoEstablecimiento || prev.partidaCodigoEstablecimiento || "0000",
+            llegadaCodigoEstablecimiento: fullGuia.llegadaCodigoEstablecimiento || prev.llegadaCodigoEstablecimiento || "0000",
             detalles: (fullGuia.detalles || []).map((d: any) => ({
                 ...d,
                 cantidad: Number(d.cantidad)
@@ -235,8 +305,8 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 setFormValues(prev => ({
                     ...prev,
                     destinatarioRazonSocial: result.nombre_completo || result.nombre_o_razon_social || "",
-                    llegadaDireccion: result.direccion || prev.llegadaDireccion,
-                    llegadaUbigeo: result.ubigeo_sunat || prev.llegadaUbigeo,
+                    llegadaDireccion: isCompra ? prev.llegadaDireccion : (result.direccion || prev.llegadaDireccion),
+                    llegadaUbigeo: isCompra ? prev.llegadaUbigeo : (result.ubigeo_sunat || prev.llegadaUbigeo),
                     destinatarioTipoDoc: doc.length === 8 ? "1" : "6"
                 }));
             } else {
@@ -257,9 +327,14 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
     };
 
     const handleTipoGuiaChange = (id: any, value: string) => {
-        setTipoGuia(String(id));
-        const nuevaSerie = id === "REMITENTE" ? "T001" : "V001";
-        setFormValues(prev => ({ ...prev, serie: nuevaSerie }));
+        const tipoGuia = String(id) as "REMITENTE" | "TRANSPORTISTA";
+        const nuevaSerie = tipoGuia === "REMITENTE" ? "T001" : "V001";
+        setFormValues(prev => ({ 
+            ...prev, 
+            tipoGuia,
+            serie: nuevaSerie,
+            tipoDocumento: tipoGuia === "TRANSPORTISTA" ? "31" : "09",
+        }));
         // Obtener nuevo correlativo para la nueva serie
         getSiguienteCorrelativo(nuevaSerie);
     };
@@ -281,6 +356,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
     };
 
     const handleProductChange = (id: any, value: string) => {
+        setSelectedProductValue(value || "");
         const prod = products.find(p => p.id === Number(id));
         if (prod) {
             setNewItem({
@@ -305,6 +381,37 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         }));
 
         setNewItem({ cantidad: 1, unidadMedida: "NIU" });
+        setSelectedProductValue("");
+    };
+
+    const updateItemQuantity = (index: number, cantidad: number) => {
+        if (!Number.isFinite(cantidad) || cantidad <= 0) {
+            useAlertStore.getState().alert("La cantidad debe ser mayor a 0", "warning");
+            return;
+        }
+
+        setFormValues(prev => ({
+            ...prev,
+            detalles: prev.detalles.map((detalle, i) =>
+                i === index ? { ...detalle, cantidad } : detalle
+            )
+        }));
+    };
+
+    const handleEditCantidad = (row: any) => {
+        const index = Number(row.__index);
+        if (index < 0 || Number.isNaN(index)) return;
+        const currentQty = Number(row.cantidad) || 1;
+        setEditingQtyIndex(index);
+        setEditingQtyValue(currentQty);
+        setIsEditQtyModalOpen(true);
+    };
+
+    const handleSaveEditCantidad = () => {
+        if (editingQtyIndex === null) return;
+        updateItemQuantity(editingQtyIndex, Number(editingQtyValue));
+        setIsEditQtyModalOpen(false);
+        setEditingQtyIndex(null);
     };
 
     const removeItem = (index: number) => {
@@ -313,6 +420,36 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             detalles: prev.detalles.filter((_, i) => i !== index)
         }));
     };
+
+    const detallesTableData = (formValues.detalles || []).map((item: any, index: number) => ({
+        nro: index + 1,
+        codigo: item.codigoProducto,
+        descripcion: item.descripcion,
+        unidad: item.unidadMedida,
+        cantidad: item.cantidad,
+        __index: index,
+    }));
+
+    const detallesTableColumns = [
+        { label: '#', key: 'nro' },
+        { label: 'Código', key: 'codigo' },
+        { label: 'Descripción', key: 'descripcion' },
+        { label: 'Unidad', key: 'unidad' },
+        { label: 'Cantidad', key: 'cantidad' },
+    ];
+
+    const detallesTableActions = [
+        {
+            tooltip: 'Editar cantidad',
+            icon: <Icon icon="solar:pen-bold" className="text-blue-500" />,
+            onClick: (row: any) => handleEditCantidad(row),
+        },
+        {
+            tooltip: 'Eliminar',
+            icon: <Icon icon="solar:trash-bin-trash-bold" className="text-red-500" />,
+            onClick: (row: any) => removeItem(Number(row.__index)),
+        },
+    ];
 
     const getUbigeoText = (code: string) => {
         if (!code || !ubigeos) return "";
@@ -331,11 +468,67 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             return;
         }
 
+        const destinatarioLabel = isCompra ? "proveedor" : "destinatario";
         if (!formValues.destinatarioNumDoc || !formValues.destinatarioRazonSocial) {
-            useAlertStore.getState().alert("Datos del destinatario incompletos", "warning");
+            useAlertStore.getState().alert(`Datos del ${destinatarioLabel} incompletos`, "warning");
             return;
         }
 
+        const docNum = String(formValues.destinatarioNumDoc || "").trim();
+        const docTipo = String(formValues.destinatarioTipoDoc || "").trim();
+        const expectedLength = docTipo === "6" ? 11 : docTipo === "1" ? 8 : null;
+        if (expectedLength && docNum.length !== expectedLength) {
+            useAlertStore.getState().alert(`El ${destinatarioLabel} debe tener un documento válido (${docTipo === "6" ? "RUC 11 dígitos" : "DNI 8 dígitos"})`, "warning");
+            return;
+        }
+
+        if (isCompra && String(formValues.destinatarioTipoDoc) === "6" && String(formValues.destinatarioNumDoc) === String(formValues.remitenteRuc)) {
+            useAlertStore.getState().alert("En COMPRA, el RUC del proveedor no puede ser igual al RUC de tu empresa", "warning");
+            return;
+        }
+
+        // Validaciones específicas según tipo de guía
+        if (formValues.tipoGuia === 'TRANSPORTISTA') {
+            if (!formValues.transportistaRuc || !formValues.transportistaRazonSocial) {
+                useAlertStore.getState().alert("Para GRE-T se requieren RUC y Razón Social del transportista", "warning");
+                return;
+            }
+            if (!formValues.transportistaMTC) {
+                useAlertStore.getState().alert("Para GRE-T se requiere Registro MTC del transportista", "warning");
+                return;
+            }
+            if (!formValues.conductorNumDoc || !formValues.conductorNombre || !formValues.conductorApellidos || !formValues.conductorLicencia || !formValues.vehiculoPlaca) {
+                useAlertStore.getState().alert("Para GRE-T complete conductor (doc, nombre, apellidos, licencia) y vehículo (placa)", "warning");
+                return;
+            }
+
+            const licenciaNormalizada = (formValues.conductorLicencia || '').trim().toUpperCase();
+            const licenciaRegex = /^[A-Z0-9]{9}$/;
+            if (!licenciaRegex.test(licenciaNormalizada)) {
+                useAlertStore.getState().alert("La licencia del conductor debe tener exactamente 9 caracteres alfanuméricos.", "warning");
+                return;
+            }
+
+            const placaNormalizada = (formValues.vehiculoPlaca || '').trim();
+            if (placaNormalizada.length < 6) {
+                useAlertStore.getState().alert("La placa del vehículo debe tener al menos 6 caracteres.", "warning");
+                return;
+            }
+
+            const numeroTuc = (formValues.vehiculoAutorizacion || '').trim();
+            const tucRegex = /^[A-Za-z0-9]{11,13}$/;
+            if (!numeroTuc) {
+                useAlertStore.getState().alert("Ingrese el número correlativo de la TUC (11 a 13 caracteres alfanuméricos).", "warning");
+                return;
+            }
+
+            if (!tucRegex.test(numeroTuc)) {
+                useAlertStore.getState().alert("La TUC debe tener entre 11 y 13 caracteres alfanuméricos.", "warning");
+                return;
+            }
+        }
+
+        // Validaciones específicas según modo de transporte
         if (formValues.modoTransporte === "01") {
             if (!formValues.transportistaRuc || !formValues.transportistaRazonSocial) {
                 useAlertStore.getState().alert("Datos del transportista público requeridos", "warning");
@@ -350,19 +543,33 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             }
         }
 
+        if (!formValues.partidaUbigeo || !formValues.partidaDireccion || !formValues.llegadaUbigeo || !formValues.llegadaDireccion) {
+            useAlertStore.getState().alert("Complete los datos de partida y llegada (ubigeo y dirección)", "warning");
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             // Validation/Default for PesoTotal
             const peso = Number(formValues.pesoTotal);
             const finalPesoTotal = peso > 0 ? peso : 1;
 
+            const placaNormalizada = (formValues.vehiculoPlaca || '').trim().toUpperCase();
+            const numeroTucNormalizado = (formValues.vehiculoAutorizacion || '').trim().toUpperCase();
+            const licenciaNormalizada = (formValues.conductorLicencia || '').trim().toUpperCase();
+
             // Sanitize payload before sending
             const payload = {
                 ...formValues,
-                correlativo: typeof formValues.correlativo === 'object'
-                    ? (formValues.correlativo as any).data || (formValues.correlativo as any).correlativo || 0
-                    : Number(formValues.correlativo),
-                pesoTotal: finalPesoTotal
+                tipoDocumento: formValues.tipoGuia === 'TRANSPORTISTA' ? '31' : '09',
+                correlativo:
+                    typeof formValues.correlativo === 'object'
+                        ? (formValues.correlativo as any).data || (formValues.correlativo as any).correlativo || 0
+                        : Number(formValues.correlativo),
+                pesoTotal: finalPesoTotal,
+                conductorLicencia: licenciaNormalizada || formValues.conductorLicencia,
+                vehiculoPlaca: placaNormalizada || formValues.vehiculoPlaca,
+                vehiculoAutorizacion: numeroTucNormalizado || formValues.vehiculoAutorizacion,
             };
 
             let res;
@@ -396,16 +603,19 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 <form autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                     <div className="px-4 pb-4 space-y-5">
                         {/* Cabecera */}
-                        <div className="p-4 rounded-xl border border-gray-200 mt-5">
+                        <div className="p-4 rounded-xl border border-gray-200">
                             <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos Generales</h3>
+                            <p className="text-xs text-gray-500 mb-4">
+                                Completa primero tipo de guía, fechas y luego motivo/modo para que el formulario te indique qué datos son obligatorios.
+                            </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Select
                                     label="Tipo de Guía"
                                     options={TIPO_GUIA_OPTIONS}
                                     name="tipoGuia"
                                     id="tipoGuia"
-                                    value={TIPO_GUIA_OPTIONS.find(o => o.id === tipoGuia)?.value || ""}
-                                    defaultValue={tipoGuia}
+                                    value={TIPO_GUIA_OPTIONS.find(o => o.id === formValues.tipoGuia)?.value || ""}
+                                    defaultValue={formValues.tipoGuia}
                                     onChange={handleTipoGuiaChange}
                                     withLabel
                                     error={null}
@@ -435,12 +645,49 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </div>
                         </div>
 
+                        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/70">
+                            <h3 className="text-sm font-bold text-emerald-900 mb-2 uppercase tracking-wide">¿Quién es quién en la guía?</h3>
+                            <ul className="text-xs text-emerald-900 space-y-2 list-disc pl-5">
+                                <li><strong>Remitente:</strong> es tu empresa y se llena automáticamente (se usa también para el nombre del archivo SUNAT).</li>
+                                <li><strong>Destinatario:</strong> cliente/proveedor que recibe los bienes; completa documento, razón social y direcciones.</li>
+                                <li><strong>Transportista:</strong> solo aplica si el traslado lo realiza un tercero o emites una GRE-T; debes registrar RUC, MTC, vehículo y conductor.</li>
+                            </ul>
+                        </div>
+
+                        {isGuiaTransportista && (
+                            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60">
+                                <h3 className="text-sm font-bold text-blue-900 mb-2 uppercase tracking-wide">Campos obligatorios solo para Guía Transportista (GRE-T)</h3>
+                                <p className="text-xs text-blue-800 mb-3">
+                                    Para evitar rechazos, en tipo de guía <strong>TRANSPORTISTA</strong> completa estos bloques además de los datos generales e ítems.
+                                </p>
+                                <ul className="text-xs text-blue-800 space-y-1 list-disc pl-5">
+                                    <li><strong>Datos del transportista:</strong> RUC, razón social y registro MTC.</li>
+                                    <li><strong>Vehículos y conductores:</strong> placa, documento del conductor, nombres y licencia.</li>
+                                    <li><strong>Recomendado:</strong> apellidos del conductor y TUC/CHV o autorización especial.</li>
+                                </ul>
+                            </div>
+                        )}
+
                         {/* Datos del Destinatario */}
                         <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos del Destinatario</h3>
+                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">{isCompra ? "Datos del Proveedor" : "Datos del Destinatario"}</h3>
+                            <p className="text-xs text-gray-500 mb-4">
+                                {isCompra
+                                    ? "En motivo COMPRA, aquí registras al proveedor origen de los bienes."
+                                    : "Registra el receptor final de los bienes con documento y razón social válidos."}
+                            </p>
+
+                            {isCompra && (
+                                <div className="mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-900">
+                                    <div className="font-semibold">Destinatario (SUNAT)</div>
+                                    <div>{auth?.empresa?.razonSocial || formValues.remitenteRazonSocial}</div>
+                                    <div>{auth?.empresa?.ruc || formValues.remitenteRuc}</div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Select
-                                    label="Tipo Doc."
+                                    label={isCompra ? "Tipo Doc. Proveedor" : "Tipo Doc."}
                                     options={TIPO_DOC_OPTIONS}
                                     name="destinatarioTipoDoc"
                                     id="destinatarioTipoDoc"
@@ -450,14 +697,29 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     withLabel
                                     error={null}
                                 />
-                                <InputPro autocomplete="off" label="Número Documento" name="destinatarioNumDoc" value={formValues.destinatarioNumDoc} onChange={handleChange} isLabel placeholder="Ingrese DNI o RUC" />
-                                <InputPro autocomplete="off" label="Razón Social / Nombre" name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel />
+                                <InputPro autocomplete="off" label={isCompra ? "RUC/DNI Proveedor" : "Número Documento"} name="destinatarioNumDoc" value={formValues.destinatarioNumDoc} onChange={handleChange} isLabel placeholder={isCompra ? "Ingrese documento del proveedor" : "Ingrese DNI o RUC"} />
+                                <InputPro autocomplete="off" label={isCompra ? "Razón Social / Nombre Proveedor" : "Razón Social / Nombre"} name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel />
                             </div>
+                            <p className="text-xs text-gray-500 mt-3">Formato recomendado de documento: {destinatarioDocHint}.</p>
                         </div>
 
                         {/* Datos de Traslado */}
                         <div className="p-4 rounded-xl border border-gray-200">
                             <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos del Traslado</h3>
+                            <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+                                    <p className="text-xs font-semibold text-blue-800">Motivo: {selectedMotivoHelp.title}</p>
+                                    <p className="text-xs text-blue-700 mt-1">{selectedMotivoHelp.description}</p>
+                                    <p className="text-xs text-blue-700 mt-1">Tip: {selectedMotivoHelp.tip}</p>
+                                </div>
+                                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                                    <p className="text-xs font-semibold text-emerald-800">Modo: {selectedModoHelp.title}</p>
+                                    {selectedModoHelp.required.length > 0 && (
+                                        <p className="text-xs text-emerald-700 mt-1">Campos clave: {selectedModoHelp.required.join(", ")}.</p>
+                                    )}
+                                    <p className="text-xs text-emerald-700 mt-1">Tip: {selectedModoHelp.tip}</p>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <TrasladoTypeSelect
                                     value={formValues.tipoTraslado}
@@ -515,25 +777,33 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                         </div>
 
                         {/* Datos del Transporte (Condicional) */}
-                        {formValues.modoTransporte === "01" && (
+                        {(formValues.modoTransporte === "01" || formValues.tipoGuia === "TRANSPORTISTA") && (
                             <div className="p-4 rounded-xl border border-gray-200 bg-blue-50/30">
-                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Transporte Público</h3>
+                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos del Transportista</h3>
+                                <p className="text-xs text-gray-600 mb-3">
+                                    Bloque obligatorio para transporte público y para guías tipo TRANSPORTISTA.
+                                </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputPro autocomplete="off" label="RUC Transportista" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Razón Social Transportista" name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Registro MTC" name="transportistaMTC" value={formValues.transportistaMTC || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="RUC Transportista (obligatorio)" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Razón Social Transportista (obligatorio)" name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Registro MTC (obligatorio GRE-T)" name="transportistaMTC" value={formValues.transportistaMTC || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                         )}
 
-                        {formValues.modoTransporte === "02" && (
+                        {(formValues.modoTransporte === "02" || formValues.tipoGuia === "TRANSPORTISTA") && (
                             <div className="p-4 rounded-xl border border-gray-200 bg-green-50/30">
-                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Transporte Privado</h3>
+                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Vehículos y Conductores</h3>
+                                <p className="text-xs text-gray-600 mb-3">
+                                    Para guía transportista y/o transporte privado, completa datos del conductor y la unidad.
+                                </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputPro autocomplete="off" label="Placa Vehículo" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="DNI Conductor" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Nombre Conductor" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Licencia" name="conductorLicencia" value={formValues.conductorLicencia || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Placa Vehículo (mínimo 6 caracteres)" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="TUC/CHV o # Autorización (11-13 caract.)" name="vehiculoAutorizacion" value={formValues.vehiculoAutorizacion || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Documento Conductor (obligatorio)" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Nombre Conductor (obligatorio)" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Apellidos Conductor (obligatorio)" name="conductorApellidos" value={formValues.conductorApellidos || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Licencia (9 caract. alfanuméricos)" name="conductorLicencia" value={(formValues.conductorLicencia || "").toUpperCase()} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                         )}
@@ -542,6 +812,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="p-4 rounded-xl border border-gray-200">
                                 <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Punto de Partida</h3>
+                                <p className="text-xs text-gray-500 mb-3">Dirección y ubigeo desde donde salen los bienes.</p>
                                 <div className="space-y-3">
                                     <SelectUbigeo
                                         label="Ubigeo Partida"
@@ -554,10 +825,12 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                         isSearch
                                     />
                                     <InputPro autocomplete="off" label="Dirección Partida" name="partidaDireccion" value={formValues.partidaDireccion} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Código Establecimiento Partida" name="partidaCodigoEstablecimiento" value={formValues.partidaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                             <div className="p-4 rounded-xl border border-gray-200">
                                 <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Punto de Llegada</h3>
+                                <p className="text-xs text-gray-500 mb-3">Dirección y ubigeo donde se entregarán los bienes.</p>
                                 <div className="space-y-3">
                                     <SelectUbigeo
                                         label="Ubigeo Llegada"
@@ -570,6 +843,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                         isSearch
                                     />
                                     <InputPro autocomplete="off" label="Dirección Llegada" name="llegadaDireccion" value={formValues.llegadaDireccion} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Código Establecimiento Llegada" name="llegadaCodigoEstablecimiento" value={formValues.llegadaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                         </div>
@@ -577,6 +851,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                         {/* Ítems */}
                         <div className="p-4 rounded-xl border border-gray-200">
                             <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Bienes a Trasladar</h3>
+                            <p className="text-xs text-gray-500 mb-3">Agrega al menos un producto. La cantidad debe ser mayor a 0.</p>
 
                             {/* Formulario Agregar Ítem */}
                             <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100">
@@ -584,6 +859,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     <Select
                                         label="Producto"
                                         name="producto"
+                                        value={selectedProductValue}
                                         options={productOptions}
                                         onChange={handleProductChange}
                                         isSearch
@@ -608,41 +884,13 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </div>
 
                             {/* Tabla de Ítems */}
-                            <div className="overflow-x-auto border border-gray-100 rounded-xl">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-white text-gray-600 font-medium border-b border-gray-200">
-                                        <tr>
-                                            <th className="px-3 py-2">#</th>
-                                            <th className="px-3 py-2">Código</th>
-                                            <th className="px-3 py-2">Descripción</th>
-                                            <th className="px-3 py-2 text-center">Unidad</th>
-                                            <th className="px-3 py-2 text-right">Cantidad</th>
-                                            <th className="px-3 py-2 text-center"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {formValues.detalles.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={6} className="px-3 py-8 text-center text-gray-400">No hay ítems agregados</td>
-                                            </tr>
-                                        ) : (
-                                            formValues.detalles.map((item, index) => (
-                                                <tr key={index} className="hover:bg-gray-50/50">
-                                                    <td className="px-3 py-3">{index + 1}</td>
-                                                    <td className="px-3 py-3 font-medium text-gray-800">{item.codigoProducto}</td>
-                                                    <td className="px-3 py-3 capitalize">{item.descripcion.toLowerCase()}</td>
-                                                    <td className="px-3 py-3 text-center">{item.unidadMedida}</td>
-                                                    <td className="px-3 py-3 text-right">{item.cantidad}</td>
-                                                    <td className="px-3 py-3 text-center">
-                                                        <button onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700 p-1">
-                                                            <Icon icon="solar:trash-bin-trash-bold" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
+                            <div className="w-full overflow-x-auto border border-gray-100 rounded-xl">
+                                <DataTable
+                                    headerColumns={detallesTableColumns}
+                                    bodyData={detallesTableData}
+                                    actions={detallesTableActions}
+                                    isCompact={false}
+                                />
                             </div>
                         </div>
 
@@ -662,13 +910,49 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                 ) : (
                                     <>
                                         <Icon icon="solar:diskette-bold" className="mr-2" />
-                                        Generar Guía
+                                        {guiaToEdit ? "Actualizar Guía" : "Generar Guía"}
                                     </>
                                 )}
                             </Button>
                         </div>
                     </div>
                 </form>
+            </Modal>
+
+            <Modal
+                isOpenModal={isEditQtyModalOpen}
+                closeModal={() => {
+                    setIsEditQtyModalOpen(false);
+                    setEditingQtyIndex(null);
+                }}
+                title="Editar cantidad"
+                width="420px"
+                position="center"
+                icon="solar:pen-2-bold"
+            >
+                <div className="p-5 space-y-4">
+                    <p className="text-sm text-gray-600">Ajusta la cantidad del producto seleccionado. Este cambio solo actualiza la tabla y no guarda aún la guía.</p>
+                    <InputPro
+                        autocomplete="off"
+                        label="Cantidad"
+                        name="editingQtyValue"
+                        type="number"
+                        value={editingQtyValue}
+                        onChange={(e) => setEditingQtyValue(Number(e.target.value))}
+                        isLabel
+                    />
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button color="gray" onClick={() => {
+                            setIsEditQtyModalOpen(false);
+                            setEditingQtyIndex(null);
+                        }}>
+                            Cancelar
+                        </Button>
+                        <Button color="primary" onClick={handleSaveEditCantidad}>
+                            Guardar cantidad
+                        </Button>
+                    </div>
+                </div>
             </Modal>
         </>
     );

@@ -12,15 +12,25 @@ export interface RubroFeatures {
     controlStock: boolean;           // Todos (siempre true)
 }
 
+type FeatureOverrides = {
+    usaCodigoBarrasManual?: boolean | null;
+};
+
 /**
  * Detecta automáticamente las funcionalidades según el nombre del rubro
  */
-export function detectarFuncionesRubro(nombreRubro: string | null | undefined): RubroFeatures {
+export function detectarFuncionesRubro(
+    nombreRubro: string | null | undefined,
+    overrides?: FeatureOverrides,
+): RubroFeatures {
     if (!nombreRubro) {
         return {
             gestionLotes: false,
             requiereVencimientos: false,
-            usaCodigoBarras: false,
+            usaCodigoBarras:
+                typeof overrides?.usaCodigoBarrasManual === 'boolean'
+                    ? overrides.usaCodigoBarrasManual
+                    : false,
             permiteFraccionamiento: false,
             gestionOfertas: false,
             controlStock: true,
@@ -48,6 +58,11 @@ export function detectarFuncionesRubro(nombreRubro: string | null | undefined): 
         nombre.includes('pastelería') ||
         nombre.includes('pasteleria');
 
+    const usaCodigoBarras =
+        typeof overrides?.usaCodigoBarrasManual === 'boolean'
+            ? overrides.usaCodigoBarrasManual
+            : esBodega;
+
     return {
         // Lotes: Farmacia principalmente
         gestionLotes: esFarmacia,
@@ -56,7 +71,7 @@ export function detectarFuncionesRubro(nombreRubro: string | null | undefined): 
         requiereVencimientos: esFarmacia || esAlimentos,
 
         // Código de barras: Bodega/Supermarket
-        usaCodigoBarras: esBodega,
+        usaCodigoBarras,
 
         // Fraccionamiento (venta por unidad de caja): Farmacia
         permiteFraccionamiento: esFarmacia,
@@ -72,8 +87,11 @@ export function detectarFuncionesRubro(nombreRubro: string | null | undefined): 
 /**
  * Hook para usar en componentes de React
  */
-export function useRubroFeatures(nombreRubro: string | null | undefined): RubroFeatures {
-    return detectarFuncionesRubro(nombreRubro);
+export function useRubroFeatures(
+    nombreRubro: string | null | undefined,
+    overrides?: FeatureOverrides,
+): RubroFeatures {
+    return detectarFuncionesRubro(nombreRubro, overrides);
 }
 
 /**

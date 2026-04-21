@@ -44,22 +44,23 @@ export default function ModalClient({
 
     const handleChange = async (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormValues({ ...formValues, [name]: value });
+        const updatedFormValues = { ...formValues, [name]: value };
+        setFormValues(updatedFormValues);
 
         if (name === 'nroDoc') {
             const cleanValue = value.trim();
             if (cleanValue.length === 8 || cleanValue.length === 11) {
                 const result = await getClientFromDoc(cleanValue);
                 if (result) {
-                    setFormValues((prev: IFormClient) => ({
-                        ...prev,
+                    setFormValues({
+                        ...updatedFormValues,
                         departamento: result.departamento || '',
                         distrito: result.distrito || '',
                         provincia: result.provincia || '',
                         ubigeo: result.ubigeo_sunat || '',
                         nombre: result.nombre_completo || result.nombre_o_razon_social || '',
-                        direccion: result.direccion || '',
-                    }));
+                        direccion: result.direccion || result.direccion_completa || '',
+                    });
                 }
             }
         }

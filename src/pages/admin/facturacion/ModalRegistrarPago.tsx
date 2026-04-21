@@ -21,6 +21,7 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
     const [showReceipt, setShowReceipt] = useState(false);
     const [pagoRegistrado, setPagoRegistrado] = useState<any>(null);
     const [nuevoSaldoFinal, setNuevoSaldoFinal] = useState<number>(0);
+    const [error, setError] = useState<string>('');
 
     // Recalcular saldo si es crédito y tiene saldo 0 (mal guardado en BD)
     const calcularSaldoReal = () => {
@@ -41,8 +42,9 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
     const nuevoSaldo = Math.max(0, saldoActual - montoNum);
 
     const handleSubmit = async () => {
-        if (montoNum <= 0) return;
-        if (montoNum > saldoActual) return;
+        if (montoNum <= 0) { setError('El monto debe ser mayor a 0'); return; }
+        if (montoNum > saldoActual) { setError(`El monto no puede exceder el saldo (S/ ${saldoActual.toFixed(2)})`); return; }
+        setError('');
 
         const result = await registrarPagoComprobante(comprobante.id, {
             monto: montoNum,
@@ -51,6 +53,10 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
             referencia: referencia || undefined,
         });
 
+        if (!result.success) {
+            setError(result.error || 'Error al registrar el pago');
+            return;
+        }
         if (result.success) {
             setPagoRegistrado({
                 ...result.pago,
@@ -104,23 +110,21 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
                 {/* Header */}
-                <div className="bg-[#111] p-5 text-white">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                <Icon icon="solar:hand-money-bold-duotone" className="text-2xl" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-lg">Registrar Pago</h3>
-                                <p className="text-sm text-white/80">
-                                    {comprobante?.serie}-{String(comprobante?.correlativo).padStart(8, '0')}
-                                </p>
-                            </div>
+                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
+                            <Icon icon="solar:hand-money-bold-duotone" className="text-2xl" />
                         </div>
-                        <button onClick={onClose} className="text-white/80 hover:text-white">
-                            <Icon icon="mdi:close" className="text-2xl" />
-                        </button>
+                        <div>
+                            <h3 className="font-bold text-lg text-gray-900">Registrar Pago</h3>
+                            <p className="text-sm text-gray-500">
+                                {comprobante?.serie}-{String(comprobante?.correlativo).padStart(8, '0')}
+                            </p>
+                        </div>
                     </div>
+                    <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                        <Icon icon="mdi:close" className="text-xl" />
+                    </button>
                 </div>
 
                 {/* Info del Comprobante */}
@@ -155,7 +159,7 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
                                 <input
                                     type="number"
                                     value={monto}
-                                    onChange={(e) => setMonto(e.target.value)}
+                                    onChange={(e) => { setMonto(e.target.value); setError(''); }}
                                     placeholder="0.00"
                                     step="0.01"
                                     max={saldoActual}
@@ -210,14 +214,16 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
                         />
                     </div>
 
-                    {montoNum > 0 && (
-                        <div className="bg-blue-50 rounded-lg p-4">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Nuevo saldo después del pago:</span>
-                                <span className={`font-bold ${nuevoSaldo > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                                    S/ {nuevoSaldo.toFixed(2)}
-                                </span>
-                            </div>
+                    {error && (
+                        <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+                    )}
+
+                    {montoNum > 0 && !error && (
+                        <div className="flex justify-between text-sm px-1">
+                            <span className="text-gray-400">Saldo después del pago</span>
+                            <span className={`font-bold ${nuevoSaldo > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                S/ {nuevoSaldo.toFixed(2)}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -233,7 +239,7 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
                     <button
                         onClick={handleSubmit}
                         disabled={loading || montoNum <= 0 || montoNum > saldoActual}
-                        className="px-5 py-2.5 bg-[#111] text-white rounded-lg hover:bg-[#333] transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <>

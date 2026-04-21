@@ -16,9 +16,17 @@ export interface IResellerPanelState {
     clientes: any[];
     planes: any[];
     recargas: any[];
+    renovaciones: any[];
+    renovacionesResumen: {
+        aplicados: number;
+        pendientes: number;
+        rechazados: number;
+        total: number;
+    };
     getDashboard: (resellerId: number) => Promise<void>;
     getClientes: (resellerId: number) => Promise<void>;
     getRecargas: (resellerId: number) => Promise<void>;
+    getRenovaciones: (resellerId: number, estado?: 'APLICADO' | 'PENDIENTE' | 'RECHAZADO' | '') => Promise<void>;
     getPlanes: () => Promise<void>;
     createCliente: (resellerId: number, data: any) => Promise<{ success: boolean; error?: string }>;
     toggleEstadoCliente: (resellerId: number, clienteId: number, nuevoEstado: 'ACTIVO' | 'INACTIVO') => Promise<{ success: boolean; error?: string }>;
@@ -36,6 +44,13 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
     clientes: [],
     planes: [],
     recargas: [],
+    renovaciones: [],
+    renovacionesResumen: {
+        aplicados: 0,
+        pendientes: 0,
+        rechazados: 0,
+        total: 0,
+    },
 
     getDashboard: async (resellerId: number) => {
         console.log('[Store] getDashboard called for:', resellerId);
@@ -85,6 +100,27 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
             const resp: any = await httpGet(`resellers/${resellerId}`);
             if (resp.code === 1) {
                 set({ recargas: resp.data.recargas || [] });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    },
+
+    getRenovaciones: async (resellerId: number, estado = '') => {
+        try {
+            const query = estado ? `?estado=${estado}` : '';
+            const resp: any = await httpGet(`resellers/${resellerId}/renovaciones${query}`);
+
+            if (resp.code === 1) {
+                set({
+                    renovaciones: resp.data.movimientos || [],
+                    renovacionesResumen: resp.data.resumen || {
+                        aplicados: 0,
+                        pendientes: 0,
+                        rechazados: 0,
+                        total: 0,
+                    },
+                });
             }
         } catch (error) {
             console.error(error);

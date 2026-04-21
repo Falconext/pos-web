@@ -280,8 +280,8 @@ export default function SeguimientoPedido() {
                                 {/* Botón Volver */}
                                 <button
                                     onClick={() => navigate(`/tienda/${slug}`)}
-                                    className={`w-full text-[#EA570C] mt-3 py-3 ${btnRadius} font-semibold`}
-                                    style={{ backgroundColor: diseno.colorPrimario || '#FFF7EC' }}
+                                    className={`w-full text-[#1E1B4B] mt-3 py-3 ${btnRadius} font-semibold`}
+                                    style={{ backgroundColor: diseno.colorPrimario || '#F3E8FF' }}
                                 >
                                     Volver a la Tienda
                                 </button>

@@ -4,6 +4,14 @@ export interface Auth {
     user: IUser
 }
 
+export interface ISede {
+    id: number
+    nombre: string
+    codigo: string | null
+    esPrincipal: boolean
+    activo: boolean
+}
+
 export interface IUser {
     id: number
     nombre: string
@@ -13,7 +21,9 @@ export interface IUser {
     resellerId?: number
     estado: string
     empresa: any
+    usuario: any
     permisos?: string[]
+    sedes?: ISede[]
 }
 
 export interface IResponse {

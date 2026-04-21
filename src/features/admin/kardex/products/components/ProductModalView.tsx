@@ -45,10 +45,10 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
 
                 {/* Submit Actions */}
                 <div className="flex gap-4 px-6 justify-end mt-8 pt-6 mb-5 md:pr-5 border-t border-dashed border-gray-200">
-                    <Button className="border border-gray-300 !text-gray-700 hover:bg-gray-50 px-6" onClick={() => vm.setIsOpenModal(false)}>
+                    <Button color="danger" outline className="" onClick={() => vm.setIsOpenModal(false)}>
                         Cancelar
                     </Button>
-                    <Button color="black" className="px-6" onClick={vm.handleSubmitProduct} disabled={vm.loading}>
+                    <Button color="primary" className="px-6" onClick={vm.handleSubmitProduct} disabled={vm.loading}>
                         {vm.loading ? (
                             <div className="flex items-center gap-2">
                                 <Icon icon="svg-spinners:180-ring-with-bg" />

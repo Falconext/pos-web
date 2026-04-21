@@ -7,6 +7,8 @@ import Pagination from '@/components/Pagination';
 import Select from '@/components/Select';
 import { Calendar } from '@/components/Date';
 import { useComprasViewModel } from './useComprasViewModel';
+import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 import ModalDetalleCompra from '@/pages/admin/compras/ModalDetalleCompra';
 import ModalRegistrarPagoCompra from '@/pages/admin/compras/ModalRegistrarPagoCompra';
 import ModalHistorialPagosCompra from '@/pages/admin/compras/ModalHistorialPagosCompra';
@@ -15,11 +17,24 @@ import ModalNuevaCompra from '@/pages/admin/compras/ModalNuevaCompra';
 export default function ComprasView() {
     const vm = useComprasViewModel();
     const { actions, tableData, totalCompras, totalPorPagar, totalVencidos } = vm;
+    const { auth } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
+
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+
+    const sedesOptions = [
+        { id: 0, value: "Todas las sedes" },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+    ];
+
+    useEffect(() => {
+        if (isAdmin) listarSedes();
+    }, [isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Fetch on mount and filter changes
     useEffect(() => {
         vm.actions.refresh();
-    }, [vm.currentPage, vm.itemsPerPage, vm.debounce, vm.filters.estadoPago, vm.filters.fechaInicio, vm.filters.fechaFin]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [vm.currentPage, vm.itemsPerPage, vm.debounce, vm.filters.estadoPago, vm.filters.fechaInicio, vm.filters.fechaFin, vm.filters.sedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tableActions = [
         {
@@ -122,6 +137,18 @@ export default function ComprasView() {
                                 options={vm.ESTADO_PAGO_OPTIONS}
                             />
                         </div>
+                        {isAdmin && (
+                            <div>
+                                <Select
+                                    error=""
+                                    label="Sede"
+                                    name="sedeId"
+                                    defaultValue="Todas las sedes"
+                                    onChange={(id: any, _value: string) => actions.setSedeId(id === 0 ? null : Number(id))}
+                                    options={sedesOptions}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 

@@ -9,21 +9,21 @@ export interface IDashboardState {
     totalAmount: number;
     newClientsByDate: [],
     topSells: [],
-    getTopSells: (fechaInicio: string, fechaFin: string) => void,
+    getTopSells: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void,
     amountByDate: [];
     totalPaymentToday: number;
-    getTotalHeaderDashboard: (fechaInicio: string, fechaFin: string) => void;
+    getTotalHeaderDashboard: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void;
     getTotalAttendancePatients: () => void;
     getTotalPaymentsMonth: () => void;
     getTotalPaymentToday: () => void;
     totalAttendancePatientsByToday: [];
-    getTotalAmountByDate: (fechaInicio: string, fechaFin: string) => void;
+    getTotalAmountByDate: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void;
     getPatientPackagesByState: () => void;
     dataPatientPackagesByState: []
     getPaymentMethods: () => void;
     dataPaymentMethods: []
-    getTotalAmountByDatePayment: (fechaInicio: string, fechaFin: string) => void
-    getNewClientsByDate: (fechaInicio: string, fechaFin: string) => void
+    getTotalAmountByDatePayment: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void
+    getNewClientsByDate: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void
 }
 
 export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) => ({
@@ -34,42 +34,37 @@ export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) 
     totalAmount: 0,
     totalAttendancePatients: 0,
     totalPaymentsMonth: 0,
-    getNewClientsByDate: async (fechaInicio: string, fechaFin: string) => {
+    getNewClientsByDate: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
-            const resp: any = await get(`dashboard/nuevos-clientes-por-fecha?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
-            console.log(resp);
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`dashboard/nuevos-clientes-por-fecha?${params}`);
             if (resp.code === 1) {
-                set({
-                    newClientsByDate: resp.data
-                }, false, "GET_NEW_CLIENTS");
+                set({ newClientsByDate: resp.data }, false, "GET_NEW_CLIENTS");
             } else {
-                set({
-                    newClientsByDate: []
-                });
+                set({ newClientsByDate: [] });
             }
         } catch (error) {
         }
     },
-    getTopSells: async (fechaInicio: string, fechaFin: string) => {
+    getTopSells: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
-            const resp: any = await get(`dashboard/top-productos?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
-            console.log(resp);
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`dashboard/top-productos?${params}`);
             if (resp.code === 1) {
-                set({
-                    topSells: resp.data
-                }, false, "GET_TOP_SELLS");
+                set({ topSells: resp.data }, false, "GET_TOP_SELLS");
             } else {
-                set({
-                    totalCLients: 0
-                });
+                set({ totalCLients: 0 });
             }
         } catch (error) {
         }
     },
-    getTotalHeaderDashboard: async (fechaInicio: string, fechaFin: string) => {
+    getTotalHeaderDashboard: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
-            const resp: any = await get(`dashboard/dashboard?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
-            console.log(resp);
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`dashboard/dashboard?${params}`);
             if (resp.code === 1) {
                 set({
                     totalCLients: resp.data.totalClientes,
@@ -78,41 +73,33 @@ export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) 
                     totalAmount: resp.data.totalIngresos
                 }, false, "GET_TOTALS_HEADER_DASHBOARD");
             } else {
-                set({
-                    totalCLients: 0
-                });
+                set({ totalCLients: 0 });
             }
         } catch (error) {
         }
     },
-    getTotalAmountByDate: async (fechaInicio: string, fechaFin: string) => {
+    getTotalAmountByDate: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
-            const resp: any = await get(`dashboard/ingresos-por-fecha-comprobante?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
-            console.log(resp);
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`dashboard/ingresos-por-fecha-comprobante?${params}`);
             if (resp.code === 1) {
-                set({
-                    amountByDate: resp.data
-                }, false, "GET_AMOUNT_BY_TOTAL");
+                set({ amountByDate: resp.data }, false, "GET_AMOUNT_BY_TOTAL");
             } else {
-                set({
-                    amountByDate: []
-                });
+                set({ amountByDate: [] });
             }
         } catch (error) {
         }
     },
-    getTotalAmountByDatePayment: async (fechaInicio: string, fechaFin: string) => {
+    getTotalAmountByDatePayment: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
-            const resp: any = await get(`dashboard/ingresos-por-fecha-medio-pago?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
-            console.log(resp);
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`dashboard/ingresos-por-fecha-medio-pago?${params}`);
             if (resp.code === 1) {
-                set({
-                    dataPaymentMethods: resp.data
-                }, false, "GET_AMOUNT_BY_PAYMENTS");
+                set({ dataPaymentMethods: resp.data }, false, "GET_AMOUNT_BY_PAYMENTS");
             } else {
-                set({
-                    dataPaymentMethods: []
-                });
+                set({ dataPaymentMethods: [] });
             }
         } catch (error) {
         }

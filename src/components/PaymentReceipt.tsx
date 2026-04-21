@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { PaymentType } from '@/hooks/usePaymentFlow';
-import Button from './Button';
 import { Icon } from '@iconify/react';
 
 interface IPaymentReceiptProps {
@@ -28,7 +27,6 @@ interface IPaymentReceiptProps {
 
 const PaymentReceipt = ({
   comprobante,
-  saldo,
   payment,
   numeroRecibo,
   nuevoSaldo,
@@ -40,18 +38,16 @@ const PaymentReceipt = ({
 }: IPaymentReceiptProps) => {
   const componentRef = useRef(null);
 
-  // Manejar diferentes formatos de logo
   const logoRaw = company?.empresa?.logo;
   const logoDataUrl = logoRaw
     ? (logoRaw.startsWith('data:image') ? logoRaw : `data:image/png;base64,${logoRaw}`)
     : '';
 
-  // Obtener RUC de diferentes propiedades posibles
   const empresaRuc = company?.empresa?.ruc || company?.empresa?.nroDoc || '';
 
   const fechaActual = new Date();
-  const horaActual = fechaActual.toLocaleTimeString();
-  const fechaFormato = fechaActual.toLocaleDateString();
+  const horaActual = fechaActual.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+  const fechaFormato = fechaActual.toLocaleDateString('es-PE');
 
   const printFn = useReactToPrint({
     // @ts-ignore
@@ -59,50 +55,32 @@ const PaymentReceipt = ({
     pageStyle: `
       @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
       @media print {
-        @page {
-          size: 80mm 297mm;
-          margin: 0;
-        }
+        @page { size: 80mm 297mm; margin: 0; }
         * {
           font-family: 'VT323', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
-        body {
-          width: 80mm;
-          height: 297mm;
-          overflow: hidden;
-          font-family: 'VT323', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-        }
-        .p-5 {
-          width: 100%;
-          height: 100%;
-          box-sizing: border-box;
-        }
+        body { width: 80mm; height: 297mm; overflow: hidden; }
+        .p-5 { width: 100%; height: 100%; box-sizing: border-box; }
       }
     `,
   });
 
   const getTitleByType = () => {
     switch (payment.tipo) {
-      case 'ADELANTO':
-        return 'RECIBO DE ADELANTO';
-      case 'PAGO_PARCIAL':
-        return 'RECIBO DE PAGO PARCIAL';
-      case 'PAGO_TOTAL':
-        return 'RECIBO DE PAGO TOTAL';
-      default:
-        return 'RECIBO DE PAGO';
+      case 'ADELANTO': return 'RECIBO DE ADELANTO';
+      case 'PAGO_PARCIAL': return 'RECIBO DE PAGO PARCIAL';
+      case 'PAGO_TOTAL': return 'RECIBO DE PAGO TOTAL';
+      default: return 'RECIBO DE PAGO';
     }
   };
 
-  const getStatusMessage = () => {
-    if (payment.tipo === 'ADELANTO') {
-      return `Se ha registrado un adelanto de S/ ${payment.monto.toFixed(2)}`;
-    } else if (payment.tipo === 'PAGO_TOTAL') {
-      return 'Comprobante pagado en su totalidad';
-    } else {
-      return `Pago parcial registrado. ${nuevoSaldo > 0 ? `Saldo pendiente: S/ ${nuevoSaldo.toFixed(2)}` : 'Comprobante pagado en su totalidad'}`;
+  const getIconByType = () => {
+    switch (payment.tipo) {
+      case 'ADELANTO': return 'solar:wallet-money-bold-duotone';
+      case 'PAGO_TOTAL': return 'solar:check-circle-bold-duotone';
+      default: return 'solar:card-bold-duotone';
     }
   };
 
@@ -111,27 +89,18 @@ const PaymentReceipt = ({
     onPrint?.();
   };
 
+  const serieCorrelativo = `${comprobante?.serie || comprobante?.data?.serie || ''}-${comprobante?.correlativo || comprobante?.data?.correlativo || ''}`;
+  const clienteNombre = (cliente || comprobante?.cliente || comprobante?.data?.cliente)?.nombre || '';
+  const totalComprobante = Number(comprobante?.data?.mtoImpVenta || comprobante?.mtoImpVenta || 0);
 
-  console.log("ESTE ES EL COMPROBANTE", comprobante)
-
-  console.log("EL SALDO", saldo)
-
-  console.log(comprobante?.data?.serie)
-  console.log(company)
-  console.log(comprobante?.data?.correlativo)
-  console.log(detalles)
-  console.log("nuevoSaldo", nuevoSaldo)
   return (
     <>
+      {/* Zona de impresión — oculta en pantalla */}
       <div className="hidden">
         <div
           ref={componentRef}
           className="print-area p-5 text-sm"
-          style={{
-            fontFamily: 'VT323, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            lineHeight: 1.2,
-            letterSpacing: '0.2px'
-          }}
+          style={{ fontFamily: 'VT323, Menlo, Monaco, Consolas, "Courier New", monospace', lineHeight: 1.2, letterSpacing: '0.2px' }}
         >
           <div>
             {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-16 h-16" style={{ filter: 'grayscale(100%)' }} />}
@@ -142,25 +111,20 @@ const PaymentReceipt = ({
               RUC: {empresaRuc}
             </p>
             <hr className="my-1 border-dashed border-[#222]" />
-
             <h2 className="text-center text-[18px]">{getTitleByType()}</h2>
             <hr className="my-1 border-dashed border-[#222]" />
-
             <div className="text-center text-[18px] mb-2">
-              <p><span className="">Recibo Nro:</span> {numeroRecibo}</p>
-              <p><span className="">Fecha:</span> {fechaFormato} {horaActual}</p>
+              <p>Recibo Nro: {numeroRecibo}</p>
+              <p>Fecha: {fechaFormato} {horaActual}</p>
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
-
             <div className="text-[18px] mb-2">
-              <p><span className="">Comprobante Original:</span></p>
-              <p className="">Serie - Nro: {comprobante?.serie || comprobante?.data?.serie}-{comprobante?.correlativo || comprobante?.data?.correlativo}</p>
-              <p className="capitalize">Cliente: {(cliente || comprobante?.cliente?.toLowerCase() || comprobante?.data?.cliente)?.nombre?.toLowerCase()}</p>
-              <p className="">RUC/DNI: {(comprobante?.data?.cliente)?.nroDoc}</p>
+              <p>Comprobante Original:</p>
+              <p>Serie - Nro: {serieCorrelativo}</p>
+              <p className="capitalize">Cliente: {clienteNombre?.toLowerCase()}</p>
+              <p>RUC/DNI: {(comprobante?.data?.cliente)?.nroDoc}</p>
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
-
-            {/* Productos/Servicios */}
             <div className="">
               <div className="flex text-center">
                 <span className="w-1/5 text-[18px]">Cant.</span>
@@ -176,180 +140,129 @@ const PaymentReceipt = ({
                     <span className="w-1/5 text-[18px] text-left">{Number(item?.mtoPrecioUnitario || item?.mtoValorUnitario || 0).toFixed(2)}</span>
                     <span className="w-1/5 text-[18px] text-right">{Number((item?.mtoPrecioUnitario || 0) * (item?.cantidad || 1)).toFixed(2)}</span>
                   </div>
-                  {/* Mostrar Lote y Vencimiento si existen */}
-                  {(item?.lotes && Array.isArray(item.lotes) && item.lotes.length > 0) ? (
-                    item.lotes.map((lote: any, lIdx: number) => (
-                      <div key={lIdx} className="text-left w-full pl-8 text-[16px]">
-                        LOTE: {lote.lote} | VENC: {new Date(lote.fechaVencimiento).toLocaleDateString('es-PE')}
-                      </div>
-                    ))
-                  ) : item?.lote ? (
-                    <div className="text-left w-full pl-8 text-[16px]">
-                      LOTE: {item.lote} {item.fechaVencimiento ? `| VENC: ${new Date(item.fechaVencimiento).toLocaleDateString('es-PE')}` : ''}
-                    </div>
+                  {item?.lotes?.length > 0 ? item.lotes.map((lote: any, li: number) => (
+                    <div key={li} className="text-left w-full pl-8 text-[16px]">LOTE: {lote.lote} | VENC: {new Date(lote.fechaVencimiento).toLocaleDateString('es-PE')}</div>
+                  )) : item?.lote ? (
+                    <div className="text-left w-full pl-8 text-[16px]">LOTE: {item.lote} {item.fechaVencimiento ? `| VENC: ${new Date(item.fechaVencimiento).toLocaleDateString('es-PE')}` : ''}</div>
                   ) : null}
                 </div>
               ))}
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
             <div className="text-[18px] mb-2">
-              <p className="flex justify-between">
-                <span className="">Total Comprobante:</span>
-                <span className="">S/ {Number(comprobante?.mtoImpVenta > 0 ? comprobante?.mtoImpVenta : comprobante?.data?.mtoImpVenta || 0).toFixed(2)}</span>
-              </p>
-              {/* {totalPagado !== undefined && (
-                <p className="flex justify-between">
-                  <span className="">Total Pagado Anteriormente:</span>
-                  <span>S/ {Number(totalPagado - payment.monto).toFixed(2)}</span>
-                </p>
-              )} */}
-              <p className="flex justify-between">
-                <span className="">
-                  {payment.tipo === 'ADELANTO' ? 'Saldo Antes de Adelanto:' : 'Saldo Anterior:'}
-                </span>
-                <span>S/ {Number(nuevoSaldo + payment.monto).toFixed(2)}</span>
-              </p>
+              <p className="flex justify-between"><span>Total Comprobante:</span><span>S/ {totalComprobante.toFixed(2)}</span></p>
+              <p className="flex justify-between"><span>{payment.tipo === 'ADELANTO' ? 'Saldo Antes de Adelanto:' : 'Saldo Anterior:'}</span><span>S/ {Number(nuevoSaldo + payment.monto).toFixed(2)}</span></p>
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
-
             <div className="text-[18px] mb-2">
-              <p className="flex justify-between  text-sm bg-gray-100">
-                <span className="text-[18px]">{payment.tipo === 'ADELANTO' ? 'Adelanto:' : 'Monto Pagado:'}</span>
-                <span className="text-[18px]">S/ {Number(payment.monto).toFixed(2)}</span>
-              </p>
-              <p className="flex justify-between mt-1">
-                <span className="">Método de Pago:</span>
-                <span>{payment.medioPago?.toUpperCase()}</span>
-              </p>
-              {payment.referencia && (
-                <p className="flex justify-between mt-1">
-                  <span className="">{payment.medioPago === 'Tarjeta' ? 'N° Operación:' : 'Referencia:'}:</span>
-                  <span>{payment.referencia}</span>
-                </p>
-              )}
-              {payment.observacion && (
-                <div className="mt-1">
-                  <p className="">Observación:</p>
-                  <p className="text-[18px]">{payment.observacion}</p>
-                </div>
-              )}
+              <p className="flex justify-between bg-gray-100"><span>{payment.tipo === 'ADELANTO' ? 'Adelanto:' : 'Monto Pagado:'}</span><span>S/ {Number(payment.monto).toFixed(2)}</span></p>
+              <p className="flex justify-between mt-1"><span>Método de Pago:</span><span>{payment.medioPago?.toUpperCase()}</span></p>
+              {payment.referencia && <p className="flex justify-between mt-1"><span>Referencia:</span><span>{payment.referencia}</span></p>}
+              {payment.observacion && <div className="mt-1"><p>Observación:</p><p>{payment.observacion}</p></div>}
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
-
-            <div className="text-[18px]">
-              <p className="text-center ">
-                {payment.tipo === 'ADELANTO' ? 'Nuevo Saldo a Pagar:' : 'Nuevo Saldo Pendiente:'}
-              </p>
-              <p className="text-center text-md ">
-                S/ {Number(nuevoSaldo ?? 0).toFixed(2)}
-              </p>
+            <div className="text-[18px] text-center">
+              <p>{payment.tipo === 'ADELANTO' ? 'Nuevo Saldo a Pagar:' : 'Nuevo Saldo Pendiente:'}</p>
+              <p>S/ {Number(nuevoSaldo ?? 0).toFixed(2)}</p>
             </div>
-
             <hr className="my-1 border-dashed border-[#222]" />
-            <p className="text-[18px] text-center mt-4">
-              Sistema punto de venta - FalcoNext.<br />
-              Desarrollado por FalcoNext.<br />
-              www.falconext.pe.
-            </p>
+            <p className="text-[18px] text-center mt-4">Sistema punto de venta - FalcoNext.<br />www.falconext.pe.</p>
             <hr className="my-1 border-dashed border-[#222]" />
-            <p className="text-[18px] text-center">
-              GRACIAS POR SU COMPRA, VUELVA PRONTO !
-            </p>
+            <p className="text-[18px] text-center">GRACIAS POR SU COMPRA, VUELVA PRONTO!</p>
           </div>
         </div>
       </div>
 
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-          {/* Header del Modal */}
-          <div className="bg-[#111] p-4 text-white flex items-center justify-between">
+      {/* Modal visual en pantalla */}
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden">
+
+          {/* Header */}
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <Icon icon="solar:check-circle-bold" className="text-2xl text-green-400" width="24" height="24" />
+              <div className="p-2.5 rounded-xl bg-gray-100 text-gray-600">
+                <Icon icon={getIconByType()} className="text-xl" />
               </div>
               <div>
-                <h3 className="font-bold">Pago Registrado</h3>
-                <p className="text-[18px] text-white/70">{getTitleByType()}</p>
+                <h3 className="font-bold text-gray-900">Pago Registrado</h3>
+                <p className="text-xs text-gray-400">{getTitleByType()}</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-white/70 hover:text-white">
-              <Icon icon="mdi:close" width="20" height="20" />
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <Icon icon="mdi:close" className="text-xl" />
             </button>
           </div>
 
-          {/* Contenido del Recibo */}
-          <div className="p-5">
-            {/* Logo de empresa */}
+          {/* Contenido */}
+          <div className="px-5 py-4 space-y-2.5">
             {logoDataUrl && (
-              <div className="text-center mb-4">
-                <img src={logoDataUrl} alt="logo" className="mx-auto w-14 h-14 object-contain" />
+              <div className="flex justify-center pb-1">
+                <img src={logoDataUrl} alt="logo" className="w-10 h-10 object-contain rounded-lg" />
               </div>
             )}
+            <Row label="Comprobante" value={serieCorrelativo} />
+            {clienteNombre && <Row label="Cliente" value={clienteNombre} />}
+            <Row label="Total comprobante" value={`S/ ${totalComprobante.toFixed(2)}`} />
 
-            <div className="bg-gray-50 rounded-xl p-4 mb-4">
-              <div className="text-sm space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Comprobante:</span>
-                  <span className="font-bold">{comprobante?.serie || comprobante?.data?.serie}-{comprobante?.correlativo || comprobante?.data?.correlativo}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Cliente:</span>
-                  <span className="font-medium">{(cliente || comprobante?.cliente || comprobante?.data?.cliente)?.nombre}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Total Comprobante:</span>
-                  <span className="font-medium">S/ {(comprobante?.data?.mtoImpVenta || comprobante?.mtoImpVenta)?.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Monto Pagado */}
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+            <div className="border-t border-gray-100 pt-2.5 space-y-2.5">
               <div className="flex justify-between items-center">
-                <span className="text-green-800 font-medium">Monto Pagado:</span>
-                <span className="text-green-800 font-bold text-xl">S/ {payment.monto?.toFixed(2)}</span>
+                <span className="text-sm text-gray-400">
+                  {payment.tipo === 'ADELANTO' ? 'Adelanto' : 'Monto pagado'}
+                </span>
+                <span className="text-xl font-black text-gray-900">S/ {payment.monto?.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm mt-2">
-                <span className="text-green-700">Método:</span>
-                <span className="text-green-800 font-medium">{payment.medioPago?.toUpperCase()}</span>
-              </div>
+              <Row label="Método de pago" value={payment.medioPago?.toUpperCase()} />
+              {payment.referencia && <Row label="Referencia" value={payment.referencia.toUpperCase()} />}
+              {payment.observacion && <Row label="Observación" value={payment.observacion} />}
             </div>
 
-            {/* Nuevo Saldo */}
-            <div className={`text-center p-4 rounded-xl ${nuevoSaldo > 0 ? 'bg-orange-50 border border-orange-200' : 'bg-emerald-50 border border-emerald-200'}`}>
-              <p className="text-[18px] text-gray-500 mb-1">Nuevo Saldo Pendiente</p>
-              <p className={`text-2xl font-black ${nuevoSaldo > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+            <div className="border-t border-gray-100 pt-2.5 flex justify-between items-center">
+              <span className="text-sm text-gray-400">
+                {payment.tipo === 'ADELANTO' ? 'Nuevo saldo a pagar' : 'Saldo pendiente'}
+              </span>
+              <span className={`text-xl font-black`}>
                 S/ {Number(nuevoSaldo ?? 0).toFixed(2)}
-              </p>
-              {nuevoSaldo === 0 && (
-                <p className="text-[18px] text-emerald-600 mt-1 flex items-center justify-center gap-1">
-                  <Icon icon="solar:check-circle-bold" width="14" height="14" />
-                  Comprobante pagado en su totalidad
-                </p>
-              )}
+              </span>
             </div>
+            {nuevoSaldo === 0 && (
+              <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+                <Icon icon="solar:check-circle-bold" width="13" height="13" />
+                Comprobante pagado en su totalidad
+              </p>
+            )}
           </div>
 
-          {/* Botones de Acción */}
-          <div className="p-4 border-t border-gray-100 flex gap-3">
+          {/* Acciones */}
+          <div className="p-4 border-t border-gray-100 flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm"
             >
               Cerrar
             </button>
             <button
               onClick={handlePrint}
-              className="flex-1 px-4 py-2.5 bg-[#111] text-white rounded-lg hover:bg-[#333] transition-colors font-medium flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
             >
-              <Icon icon="solar:printer-bold" width="18" height="18" />
-              Imprimir Ticket
+              <Icon icon="solar:printer-bold" width="15" height="15" />
+              Imprimir
             </button>
           </div>
+
         </div>
       </div>
     </>
   );
 };
+
+const Row = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex justify-between items-center text-sm">
+    <span className="text-gray-400">{label}</span>
+    <span className="font-medium text-gray-700 text-right max-w-[60%]">{value}</span>
+  </div>
+);
 
 export default PaymentReceipt;

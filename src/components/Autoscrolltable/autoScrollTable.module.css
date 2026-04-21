@@ -36,7 +36,7 @@
     overflow-y: visible;
     border-radius: 4px;
     white-space: nowrap;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
 }
 
 /* Custom Scrollbar */

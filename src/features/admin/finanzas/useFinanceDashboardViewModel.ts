@@ -1,7 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import moment from 'moment';
 import { useFinanzasStore } from '@/zustand/finanzas';
+import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 import { IChartDataFormatted } from './FinanceDashboardModel';
+import { pdf } from '@react-pdf/renderer';
+import React from 'react';
+import { FinanceReportPDF } from './FinanceReportPDF';
 
 export const valueFormatter = (number: number) =>
     `S/ ${Number(number || 0).toLocaleString('es-PE', {
@@ -11,6 +16,18 @@ export const valueFormatter = (number: number) =>
 
 export function useFinanceDashboardViewModel() {
     const { kpis, chartData, getResumenFinanciero, isLoading } = useFinanzasStore();
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
+
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true;
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null);
+
+    const sedesOptions = [
+        { id: 0, value: 'Todas las sedes' },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+    ];
 
     const [fechaInicio, setFechaInicio] = useState<string>(
         moment(new Date(new Date().getFullYear(), new Date().getMonth(), 1)).format('YYYY-MM-DD')
@@ -20,10 +37,14 @@ export function useFinanceDashboardViewModel() {
     );
 
     useEffect(() => {
+        if (isAdmin && esPrincipal) listarSedes();
+    }, [isAdmin, esPrincipal]);
+
+    useEffect(() => {
         if (fechaInicio && fechaFin) {
-            getResumenFinanciero(fechaInicio, fechaFin);
+            getResumenFinanciero(fechaInicio, fechaFin, effectiveSedeId);
         }
-    }, [fechaInicio, fechaFin]);
+    }, [fechaInicio, fechaFin, effectiveSedeId]);
 
     const formattedChartData: IChartDataFormatted[] = useMemo(() => {
         return (chartData ?? []).map((row: any) => {
@@ -52,7 +73,41 @@ export function useFinanceDashboardViewModel() {
 
     const refreshData = () => {
         if (fechaInicio && fechaFin) {
-            getResumenFinanciero(fechaInicio, fechaFin);
+            getResumenFinanciero(fechaInicio, fechaFin, effectiveSedeId);
+        }
+    };
+
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+    const handleExportPDF = async () => {
+        setIsGeneratingPDF(true);
+        try {
+            const sedeName = sedeActiva?.nombre ?? (esPrincipal ? 'Todas las sedes' : undefined);
+            const empresa = auth?.empresa
+                ? { nombre: auth.empresa.razonSocial || auth.empresa.nombre, ruc: auth.empresa.ruc, direccion: auth.empresa.direccion }
+                : null;
+
+            const blob = await pdf(
+                React.createElement(FinanceReportPDF, {
+                    kpis,
+                    chartData: chartData ?? [],
+                    fechaInicio,
+                    fechaFin,
+                    empresa,
+                    sedeName,
+                })
+            ).toBlob();
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `reporte-financiero-${fechaInicio}-${fechaFin}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('Error generando PDF:', e);
+        } finally {
+            setIsGeneratingPDF(false);
         }
     };
 
@@ -64,9 +119,17 @@ export function useFinanceDashboardViewModel() {
         kpis,
         formattedChartData,
 
+        // Sede filtering
+        isAdmin,
+        esPrincipal,
+        sedesOptions,
+        handleSelectSede: (id: any) => setSelectedSedeId(id === 0 ? null : Number(id)),
+
         // Handlers
         handleDateChange,
         refreshData,
+        handleExportPDF,
+        isGeneratingPDF,
 
         // Utils
         valueFormatter

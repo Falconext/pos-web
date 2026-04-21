@@ -13,15 +13,16 @@ const SedesIndex = () => {
         id: sede.id,
         nombre: sede.nombre,
         direccion: sede.direccion || '-',
-        codigo: sede.codigoSunat || '-',
-        principal: sede.esPrincipal ? <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-semibold">Principal</span> : <span className="text-gray-500">Secundaria</span>,
-        estado: sede.estado === 'ACTIVO' ? <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Activo</span> : <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Inactivo</span>,
+        codigo: (sede as any).codigo || '-',
+        tipo: sede.esPrincipal ? 'Principal' : 'Secundaria',
+        estado: (sede as any).activo !== false ? 'ACTIVO' : 'INACTIVO',
         _original: sede
     }));
 
     const actions = [
         { onClick: (data: any) => vm.handleEdit(data._original), className: 'edit', icon: <Icon color="#66AD78" icon="material-symbols:edit" />, tooltip: 'Editar' },
-        { onClick: (data: any) => vm.handleDelete(data._original), className: 'delete', icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />, tooltip: 'Eliminar' }
+        { onClick: (data: any) => vm.handleToggleActivo(data._original), className: 'toggle', icon: <Icon icon="mdi:power" color="#6366f1" />, tooltip: 'Activar / Desactivar' },
+        { onClick: (data: any) => vm.handleDelete(data._original), className: 'delete', icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />, tooltip: 'Desactivar', condition: (data: any) => !data._original?.esPrincipal && (data._original?.activo !== false) }
     ];
 
     if (vm.loading && vm.sedes.length === 0) return <Loading />;
@@ -39,13 +40,13 @@ const SedesIndex = () => {
             </div>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4">
                 {tableData.length > 0 ? (
-                    <DataTable actions={actions} bodyData={tableData} headerColumns={['Nombre', 'Dirección', 'Código SUNAT', 'Tipo', 'Estado']} />
+                    <DataTable actions={actions} bodyData={tableData} headerColumns={[{ label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' }, { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'tipo' }, { label: 'Estado', key: 'estado' }]} />
                 ) : <div className="text-center py-12 text-gray-500">No hay sedes registradas.</div>}
             </div>
             {vm.showModal && <SedeModal isOpen={vm.showModal} onClose={() => vm.setShowModal(false)} sede={vm.selectedSede} isEdit={vm.isEdit} />}
             {vm.showConfirm && vm.selectedSede && (
-                <ModalConfirm isOpenModal={vm.showConfirm} setIsOpenModal={vm.setShowConfirm} title="Eliminar Sede"
-                    information={`¿Estás seguro de eliminar la sede ${vm.selectedSede.nombre}? Esto no se puede deshacer.`}
+                <ModalConfirm isOpenModal={vm.showConfirm} setIsOpenModal={vm.setShowConfirm} title="Desactivar Sede"
+                    information={`¿Desactivar la sede "${vm.selectedSede.nombre}"? El historial y datos se conservan. Puedes reactivarla desde el botón de encendido en cualquier momento. El cupo de tu plan quedará libre.`}
                     confirmSubmit={vm.confirmDelete} />
             )}
         </div>

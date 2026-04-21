@@ -5,18 +5,24 @@ import DataTable from "@/components/Datatable";
 import { Calendar } from "@/components/Date";
 import TableSkeleton from "@/components/Skeletons/table";
 import { Icon } from "@iconify/react";
+import Select from "@/components/Select";
 
 const ArqueoCaja = () => {
     const vm = useArqueoViewModel();
-    const { resumen } = vm;
+    const { resumen, isAdmin, esPrincipal, sedesOptions, handleSelectSede } = vm;
 
     return (
         <div>
             <div className="md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
                 <div className="mb-6 flex justify-between items-center">
-                    <div className="flex justify-start gap-3 mb-0">
+                    <div className="flex justify-start gap-3 mb-0 flex-wrap">
                         <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" />
                         <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" />
+                        {isAdmin && esPrincipal && (
+                            <div className="min-w-[180px]">
+                                <Select error="" label="Sede" name="sedeId" defaultValue="Todas las sedes" onChange={handleSelectSede} options={sedesOptions} />
+                            </div>
+                        )}
                     </div>
                     <div className="top-3 relative">
                         <Button color="success" onMouseEnter={() => vm.setIsHoveredExp(true)} onMouseLeave={() => vm.setIsHoveredExp(false)} onClick={vm.handleExport}>
@@ -53,7 +59,13 @@ const ArqueoCaja = () => {
                         <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
                             <DataTable actions={[]} bodyData={vm.movimientos} headerColumns={['Tipo', 'Documento', 'Cliente', 'Fecha', 'Concepto', 'Medio Pago', 'Monto', 'Referencia']} />
                         </div>
-                    ) : <TableSkeleton />}
+                    ) : (
+                        <div className="py-12 text-center">
+                            <Icon icon="solar:wallet-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500">No hay movimientos de caja</p>
+                            <p className="text-sm text-gray-400 mt-1">Selecciona un rango de fechas diferente</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

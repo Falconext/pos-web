@@ -9,30 +9,6 @@ export default function DashboardView() {
     const vm = useDashboardViewModel();
     const { dashboardData, loading, error, charts, helpers, actions } = vm;
 
-    if (loading) return <Loading />;
-
-    if (error || !dashboardData) {
-        return (
-            <div className="p-6">
-                <div className="text-center py-12">
-                    <Icon icon="mingcute:exclamation-triangle-fill" width={48} height={48} className="text-red-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {error || 'Error al cargar dashboard'}
-                    </h3>
-                    <p className="text-gray-500">
-                        No se pudo cargar la información del inventario.
-                    </p>
-                    <button
-                        onClick={actions.fetchDashboardData}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Reintentar
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen px-2 pb-4">
             {/* Header */}
@@ -49,6 +25,33 @@ export default function DashboardView() {
                     Actualizar
                 </button>
             </div>
+
+            {loading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-indigo-500" />
+                    <span className="ml-3 text-gray-500 font-medium">Cargando métricas...</span>
+                </div>
+            ) : error || !dashboardData ? (
+                <div className="p-6">
+                    <div className="text-center py-12">
+                        <Icon icon="mingcute:exclamation-triangle-fill" width={48} height={48} className="text-red-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {error || 'Error al cargar dashboard'}
+                        </h3>
+                        <p className="text-gray-500">
+                            No se pudo cargar la información del inventario.
+                        </p>
+                        <button
+                            onClick={actions.fetchDashboardData}
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <>
+
 
             {/* Métricas principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -246,6 +249,8 @@ export default function DashboardView() {
                     )}
                 </div>
             </div>
+            </>
+            )}
         </div>
     );
 }

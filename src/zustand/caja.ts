@@ -117,6 +117,7 @@ interface CajaState {
   filters: {
     fechaInicio: string;
     fechaFin: string;
+    sedeId?: number | null;
   };
 
   // Acciones
@@ -152,6 +153,7 @@ export const useCajaStore = create<CajaState>()(
       filters: {
         fechaInicio: new Date().toISOString().split('T')[0],
         fechaFin: new Date().toISOString().split('T')[0],
+        sedeId: null,
       },
 
       // Acciones
@@ -226,8 +228,8 @@ export const useCajaStore = create<CajaState>()(
       obtenerHistorialCaja: async (page = 1, limit = 50) => {
         set({ loading: true, error: null });
         try {
-          const { fechaInicio, fechaFin } = get().filters;
-          
+          const { fechaInicio, fechaFin, sedeId } = get().filters;
+
           const params = new URLSearchParams({
             page: page.toString(),
             limit: limit.toString(),
@@ -235,6 +237,7 @@ export const useCajaStore = create<CajaState>()(
 
           if (fechaInicio) params.append('fechaInicio', fechaInicio);
           if (fechaFin) params.append('fechaFin', fechaFin);
+          if (sedeId) params.append('sedeId', sedeId.toString());
 
           const response = await apiClient.get(
             `caja/historial?${params}`
@@ -257,7 +260,7 @@ export const useCajaStore = create<CajaState>()(
         set({ loading: true, error: null });
         try {
           const filters = get().filters;
-          
+
           const params = new URLSearchParams();
           if (fechaInicio || filters.fechaInicio) {
             params.append('fechaInicio', fechaInicio || filters.fechaInicio);
@@ -265,6 +268,7 @@ export const useCajaStore = create<CajaState>()(
           if (fechaFin || filters.fechaFin) {
             params.append('fechaFin', fechaFin || filters.fechaFin);
           }
+          if (filters.sedeId) params.append('sedeId', filters.sedeId.toString());
 
           const response = await apiClient.get(
             `caja/arqueo?${params}`
@@ -340,6 +344,7 @@ export const useCajaStore = create<CajaState>()(
           filters: {
             fechaInicio: today,
             fechaFin: today,
+            sedeId: null,
           },
         });
       },

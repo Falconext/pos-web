@@ -4,7 +4,7 @@ import Loading from '@/components/Loading';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
-    const { perfil, loading, usageStats } = vm;
+    const { perfil, loading, usageStats, savingBarcodeConfig } = vm;
 
     if (loading) return <div className="flex justify-center items-center h-96"><Loading /></div>;
     if (!perfil) return <div className="text-center text-gray-500 py-8">No se pudo cargar la información del perfil</div>;
@@ -53,7 +53,7 @@ export default function PerfilIndex() {
                 {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
                     <div className={`bg-white rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200' : usageStats.alerta80 ? 'border-orange-200' : 'border-gray-100'} p-5`}>
                         <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><div className={`p-2 rounded-lg ${usageStats.limiteAlcanzado ? 'bg-red-100 text-red-600' : usageStats.alerta80 ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}><Icon icon="solar:document-bold-duotone" width="20" /></div>Uso de Comprobantes SUNAT</h2><span className="text-sm text-gray-500">{usageStats.mesActual}</span></div>
-                        <div className="mb-4"><div className="flex justify-between mb-2"><span className="text-sm font-medium text-gray-700">{usageStats.comprobantesEmitidos} / {usageStats.limiteMaximo} comprobantes</span><span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600' : usageStats.alerta80 ? 'text-orange-600' : 'text-blue-600'}`}>{usageStats.porcentajeUso}%</span></div><div className="w-full bg-gray-200 rounded-full h-3"><div className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}></div></div></div>
+                        <div className="mb-4"><div className="flex justify-between mb-2"><span className="text-sm font-medium text-gray-700">{usageStats.comprobantesEmitidos} / {usageStats.limiteMaximo} comprobantes</span><span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600' : usageStats.alerta80 ? 'text-orange-600' : 'text-blue-600'}`}>{usageStats.porcentajeUso}%</span></div><div className="w-full bg-gray-200 rounded-full h-3"><div className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}></div></div>{(usageStats.facturasYBoletas !== undefined || usageStats.guiasRemision !== undefined) && (<div className="flex gap-4 mt-2"><span className="text-xs text-gray-500">Facturas/Boletas: <span className="font-semibold text-gray-700">{usageStats.facturasYBoletas ?? 0}</span></span><span className="text-xs text-gray-500">Guías de Remisión: <span className="font-semibold text-gray-700">{usageStats.guiasRemision ?? 0}</span></span></div>)}</div>
                         {usageStats.limiteAlcanzado && (<div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3"><Icon icon="solar:danger-triangle-bold" className="text-red-500 text-xl flex-shrink-0 mt-0.5" /><div><p className="text-sm font-bold text-red-700">Límite de comprobantes alcanzado</p><p className="text-sm text-red-600 mt-1">Has alcanzado el máximo de {usageStats.limiteMaximo} comprobantes de tu plan "{usageStats.plan}". Para continuar emitiendo, contacta a soporte.</p></div></div>)}
                         {usageStats.alerta80 && !usageStats.limiteAlcanzado && (<div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3"><Icon icon="solar:bell-bold" className="text-orange-500 text-xl flex-shrink-0 mt-0.5" /><div><p className="text-sm font-bold text-orange-700">Atención: 80% del límite utilizado</p><p className="text-sm text-orange-600 mt-1">Te quedan {usageStats.restantes} comprobantes disponibles este mes.</p></div></div>)}
                         {!usageStats.alerta80 && !usageStats.limiteAlcanzado && (<p className="text-sm text-gray-500">Te quedan <span className="font-bold text-blue-600">{usageStats.restantes}</span> comprobantes disponibles este mes.</p>)}
@@ -80,6 +80,22 @@ export default function PerfilIndex() {
                             <Field label="Tipo de Empresa"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.empresa.tipoEmpresa === 'FORMAL' ? 'bg-sky-50 text-sky-700' : 'bg-gray-100 text-gray-700'}`}>{perfil.empresa.tipoEmpresa === 'FORMAL' ? 'Formal' : 'Informal'}</span></Field>
                             <Field label="Rubro"><p className="text-gray-700 font-medium text-sm">{perfil.empresa.rubro.nombre}</p></Field>
                             {perfil.empresa.ubicacion && <Field label="Ubicación"><p className="text-gray-700 font-medium text-sm">{perfil.empresa.ubicacion.distrito}, {perfil.empresa.ubicacion.provincia}, {perfil.empresa.ubicacion.departamento}</p></Field>}
+                            <div className="pt-2 border-t border-gray-100">
+                                <label className="flex items-start gap-3 p-3 rounded-lg border border-blue-100 bg-blue-50/40 cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(perfil.empresa.usaCodigoBarrasManual)}
+                                        disabled={savingBarcodeConfig}
+                                        onChange={(e) => vm.handleBarcodeToggle(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">Habilitar código de barras en productos</p>
+                                        <p className="text-xs text-gray-600 mt-1">Muestra el campo "Código de Barras" en el formulario de productos, incluso si el rubro no lo activa automáticamente.</p>
+                                        {savingBarcodeConfig && <p className="text-xs text-blue-600 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-4">

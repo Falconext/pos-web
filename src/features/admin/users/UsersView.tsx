@@ -68,8 +68,7 @@ export default function UsersView() {
         celular: usuario.celular,
         rol: getRolBadge(usuario.rol),
         permisos: getPermisosSummary(usuario.permisos),
-        estado: usuario.estado === 'ACTIVO' ? 'Activo' : 'Inactivo', // Modified for display
-        statusComponent: getEstadoBadge(usuario.estado), // Custom component if needed by DataTable
+        estado: usuario.estado, // Modified for display by Datatable directly
         // Para las acciones
         _original: usuario,
     }));
@@ -156,7 +155,7 @@ export default function UsersView() {
                             <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
                                 <DataTable
                                     actions={actions}
-                                    bodyData={usuariosTableData.map(u => ({ ...u, estado: u.statusComponent }))} // Passing component as state
+                                    bodyData={usuariosTableData}
                                     headerColumns={[
                                         'Nombre',
                                         'Email',

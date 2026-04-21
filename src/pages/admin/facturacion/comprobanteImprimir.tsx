@@ -318,7 +318,7 @@ const ComprobantePrintPage = ({
                                 </div>
 
                                 {/* Total in Words & Footer Section */}
-                                <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center italic text-lg bg-gray-50">
+                                <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center text-lg bg-gray-50">
                                     SON: {totalInWords}
                                 </div>
 
@@ -365,7 +365,7 @@ const ComprobantePrintPage = ({
                                             </div>
                                             <div className="flex justify-between font-bold">
                                                 <span>SUB TOTAL:</span>
-                                                <span>S/ {Number(formValues?.subTotal ?? totalReceipt).toFixed(2)}</span>
+                                                <span>S/ {Number(formValues?.mtoOperGravadas ?? formValues?.subTotal ?? (totalReceipt / 1.18)).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>DESCUENTOS TOTAL:</span>

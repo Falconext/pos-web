@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef, ChangeEvent } from 'react';
+import { useState, useEffect, useRef, ChangeEvent, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useProductsStore } from '@/zustand/products';
 import { useBrandsStore } from '@/zustand/brands';
 import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 import useAlertStore from '@/zustand/alert';
 import apiClient from '@/utils/apiClient';
+import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
 
 export const useProductsViewModel = () => {
@@ -15,14 +17,44 @@ export const useProductsViewModel = () => {
         deleteProduct, deleteAllProducts, setProductImage
     } = useProductsStore();
     const { success, loading } = useAlertStore();
-    const { auth } = useAuthStore();
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
     const { brands, getAllBrands } = useBrandsStore();
+
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true;
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null);
+
+    const sedesOptions = [
+        { id: 0, value: 'Todas las sedes' },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+    ];
+
+    const handleSelectSede = (id: any) => {
+        setSelectedSedeId(id === 0 ? null : Number(id));
+    };
 
     // Derived State
     const isRestaurante = (() => {
         const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
         return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento');
     })();
+
+    const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
+        usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
+    });
+    const isCodigoBarrasEnabled = features.usaCodigoBarras;
+
+    const allColumns = useMemo(() => [
+        'Img', 'Código', ...(isCodigoBarrasEnabled ? ['Código de Barras'] : []), 'Producto', 'Categoria', 'Marca',
+        'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
+    ], [isCodigoBarrasEnabled]);
+
+    const initialVisibleColumns = useMemo(() => [
+        'Img', 'Código', ...(isCodigoBarrasEnabled ? ['Código de Barras'] : []), 'Producto', 'Categoria', 'Marca',
+        'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
+    ], [isCodigoBarrasEnabled]);
 
     // Labels
     const labels = {
@@ -69,20 +101,13 @@ export const useProductsViewModel = () => {
         anchorEl: null,
         uploadTarget: null,
         uploading: false,
-        visibleColumns: [
-            'Img', 'Código', 'Producto', 'Categoria', 'Marca',
-            'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
-        ],
+        visibleColumns: initialVisibleColumns,
         showColumnFilter: false,
         vistaActual: isRestaurante ? 'cards' : 'tabla',
         marcaIdFilter: undefined
     });
 
     const debounce = useDebounce(state.searchClient, 600);
-    const allColumns = [
-        'Img', 'Código', 'Producto', 'Categoria', 'Marca',
-        'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
-    ];
     const columnsStorageKey = `datatable:${auth?.empresaId || 'default'}:productos:visibleColumns`;
     const vistaStorageKey = `productos:vista:${auth?.empresaId || 'default'}`;
 
@@ -127,13 +152,19 @@ export const useProductsViewModel = () => {
                     if (Array.isArray(parsed)) {
                         let restored = allColumns.filter(c => parsed.includes(c));
                         if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                        if (isCodigoBarrasEnabled && !restored.includes('Código de Barras')) {
+                            const codigoIndex = restored.indexOf('Código');
+                            restored = codigoIndex >= 0
+                                ? [...restored.slice(0, codigoIndex + 1), 'Código de Barras', ...restored.slice(codigoIndex + 1)]
+                                : ['Código de Barras', ...restored];
+                        }
                         setState(prev => ({ ...prev, visibleColumns: restored }));
                     }
                 }
             } catch (_e) { }
         };
         loadColumns();
-    }, [auth?.empresaId, columnsStorageKey]);
+    }, [auth?.empresaId, columnsStorageKey, allColumns, isCodigoBarrasEnabled]);
 
     // Save Columns
     useEffect(() => {
@@ -145,6 +176,11 @@ export const useProductsViewModel = () => {
         } catch (_) { }
     }, [state.visibleColumns, columnsStorageKey]);
 
+    // Cargar sedes solo en sede principal
+    useEffect(() => {
+        if (isAdmin && esPrincipal) listarSedes();
+    }, [isAdmin, esPrincipal]);
+
     // Fetch Products
     useEffect(() => {
         getAllProducts({
@@ -152,8 +188,9 @@ export const useProductsViewModel = () => {
             limit: state.itemsPerPage,
             search: debounce,
             marcaId: state.marcaIdFilter,
+            ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {}),
         });
-    }, [debounce, state.currentPage, state.itemsPerPage, state.marcaIdFilter, getAllProducts]);
+    }, [debounce, state.currentPage, state.itemsPerPage, state.marcaIdFilter, effectiveSedeId, getAllProducts]);
 
     // Close Modals on Success
     useEffect(() => {
@@ -172,10 +209,13 @@ export const useProductsViewModel = () => {
         return () => document.removeEventListener('click', handleDocClick);
     }, [state.openAccionesId, state.showColumnFilter]);
 
+    const hasFetchedBrands = useRef(false);
+
     // Load Brands
     useEffect(() => {
-        if (!brands || brands.length === 0) {
+        if (!hasFetchedBrands.current && (!brands || brands.length === 0)) {
             getAllBrands();
+            hasFetchedBrands.current = true;
         }
     }, [brands, getAllBrands]);
 
@@ -340,7 +380,13 @@ export const useProductsViewModel = () => {
         fileInputRef,
         uploadImageRef,
         isRestaurante,
+        isCodigoBarrasEnabled,
         actions,
+        // Sede filtering
+        isAdmin,
+        esPrincipal,
+        sedesOptions,
+        handleSelectSede,
         // Computed
         indexOfFirstItem: (state.currentPage - 1) * state.itemsPerPage,
         indexOfLastItem: state.currentPage * state.itemsPerPage,

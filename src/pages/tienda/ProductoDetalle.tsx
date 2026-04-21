@@ -387,7 +387,7 @@ export default function ProductoDetalle() {
         recommendedProducts={relatedProducts} // Usar productos relacionados para búsqueda
       />
 
-      <main className="max-w-7xl mx-auto px-6 py-8 bg-[#fff]">
+      <main className="max-w-7xl mx-auto px-6 pt-28 md:pt-36 pb-8 bg-[#fff]">
         {/* Carrito Lateral (Drawer) - Professional Design */}
         <ShoppingCartModal
           isOpen={mostrarCarrito}
@@ -402,7 +402,7 @@ export default function ProductoDetalle() {
 
         {/* Breadcrumb - Style: "All category / Category Name" */}
         <div className="mb-8">
-          <h2 className="text-[12px] font-bold text-[#045659]">
+          <h2 className="text-[12px] font-bold text-[#1E1B4B]">
             Todas las categorías / <span className="text-gray-600 font-normal">{typeof producto.categoria === 'object' && producto.categoria !== null ? (producto.categoria.nombre || producto.categoria.codigo || 'General') : (producto.categoria || 'General')}</span>
           </h2>
         </div>
@@ -412,7 +412,7 @@ export default function ProductoDetalle() {
           <div className="relative">
             <div className="bg-[#F8F9FA] rounded-3xl aspect-[4/5] flex items-center justify-center p-8 relative overflow-hidden">
               {/* Badge: Free Delivery */}
-              <div className="absolute top-6 left-6 bg-[#045659] text-white px-4 py-1.5 rounded-full text-sm font-medium z-10 shadow-sm">
+              <div className="absolute top-6 left-6 bg-[#1E1B4B] text-white px-4 py-1.5 rounded-full text-sm font-medium z-10 shadow-sm">
                 Envío Gratis
               </div>
 
@@ -444,7 +444,7 @@ export default function ProductoDetalle() {
             <p className="text-gray-500 text-sm mb-2 font-medium">{'Mi Tienda'}</p>
 
             {/* Title */}
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-[#045659] mb-3 leading-tight">
+            <h1 className="text-3xl lg:text-4xl font-extrabold text-[#1E1B4B] mb-3 leading-tight">
               {producto.descripcion}
             </h1>
 
@@ -458,7 +458,7 @@ export default function ProductoDetalle() {
             </div>
 
             {/* Price - Style: Large integer with superscript decimal */}
-            <div className="flex items-start text-[#045659] leading-none mb-8">
+            <div className="flex items-start text-[#1E1B4B] leading-none mb-8">
               <span className="text-5xl font-extrabold tracking-tight">
                 {Math.floor(precioFinal)}
               </span>
@@ -502,7 +502,7 @@ export default function ProductoDetalle() {
 
                 <button
                   onClick={irACheckout}
-                  className="flex-1 md:flex-[2] bg-[#BCE766] hover:bg-[#aed859] text-[#045659] py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
+                  className="flex-1 md:flex-[2] bg-[#BCE766] hover:bg-[#aed859] text-[#1E1B4B] py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
                 >
                   Comprar ahora
                 </button>
@@ -510,7 +510,7 @@ export default function ProductoDetalle() {
             </div>
 
             {/* Links: Wishlist & Compare */}
-            <div className="flex items-center gap-6 mb-8 text-sm font-bold text-[#045659]">
+            <div className="flex items-center gap-6 mb-8 text-sm font-bold text-[#1E1B4B]">
               {/* <button className="flex items-center gap-2 hover:underline decoration-2 underline-offset-4">
                 <Icon icon="solar:heart-linear" width={18} />
                 AÑADIR A FAVORITOS
@@ -526,7 +526,7 @@ export default function ProductoDetalle() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex gap-2">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-[#045659] flex items-center justify-center text-white text-xs">
+                    <div key={i} className="w-8 h-8 rounded-full bg-[#1E1B4B] flex items-center justify-center text-white text-xs">
                       <Icon icon="solar:leaf-bold" />
                     </div>
                   ))}

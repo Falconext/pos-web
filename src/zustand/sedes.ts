@@ -13,6 +13,7 @@ interface ISedesState {
     crearSede: (data: CreateSedeDto) => Promise<void>;
     actualizarSede: (id: number, data: UpdateSedeDto) => Promise<void>;
     eliminarSede: (id: number) => Promise<void>;
+    toggleActivoSede: (id: number, activo: boolean) => Promise<void>;
     resetSedes: () => void;
 }
 
@@ -48,7 +49,8 @@ export const useSedesStore = create<ISedesState>()(
                     useAlertStore.getState().alert('Sede creada exitosamente', 'success');
                 } catch (error: any) {
                     console.error('Error al crear sede:', error);
-                    useAlertStore.getState().alert(error.message || 'Error al crear sede', 'error');
+                    const msg = error?.response?.data?.message || error.message || 'Error al crear sede';
+                    useAlertStore.getState().alert(msg, 'error');
                     throw error;
                 } finally {
                     set({ loading: false });
@@ -75,11 +77,26 @@ export const useSedesStore = create<ISedesState>()(
                     set({ loading: true });
                     await sedeService.eliminar(id);
                     await get().listarSedes();
-                    useAlertStore.getState().alert('Sede eliminada correctamente', 'success');
+                    useAlertStore.getState().alert('Sede desactivada. Puedes reactivarla desde el ícono de encendido.', 'success');
                 } catch (error: any) {
                     console.error('Error al eliminar sede:', error);
                     useAlertStore.getState().alert(error.message || 'Error al eliminar sede', 'error');
                     throw error;
+                } finally {
+                    set({ loading: false });
+                }
+            },
+
+            toggleActivoSede: async (id, activo) => {
+                try {
+                    set({ loading: true });
+                    await sedeService.toggleActivo(id, activo);
+                    await get().listarSedes();
+                    useAlertStore.getState().alert(`Sede ${activo ? 'activada' : 'desactivada'} correctamente`, 'success');
+                } catch (error: any) {
+                    console.error('Error al cambiar estado de sede:', error);
+                    const msg = error?.response?.data?.message || error.message || 'Error al cambiar estado';
+                    useAlertStore.getState().alert(msg, 'error');
                 } finally {
                     set({ loading: false });
                 }

@@ -28,7 +28,7 @@ export const FacturacionNuevoView = () => {
     const handleOpenNewTab = (vista: string) => { printFn(); };
 
     return (
-        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden gap-4 md:gap-6 font-sans text-gray-800 transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
+        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden gap-4 md:gap-6 font-inter text-gray-800 transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
             style={{ height: !vm.isMobile ? (vm.isCompact ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
         >
             {/* Hidden Print Component */}

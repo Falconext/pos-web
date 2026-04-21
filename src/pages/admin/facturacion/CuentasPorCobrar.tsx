@@ -75,7 +75,7 @@ const CuentasPorCobrar = () => {
         return {
             id: inv.id,
             fecha: moment(inv.fechaEmision).format('DD/MM/YYYY'),
-            comprobante: `${inv.serie}-${String(inv.correlativo).padStart(8, '0')}`,
+            comprobante: `${inv.serie}-${String(inv.correlativo).padStart(8, '0')}`.toUpperCase(),
             tipoDocumento: tipoLabel,
             cliente: inv.cliente?.nombre || 'Sin cliente',
             rucDni: inv.cliente?.nroDoc || '-',
@@ -95,11 +95,13 @@ const CuentasPorCobrar = () => {
     const handlePaymentSuccess = () => {
         setShowPaymentModal(false);
         setSelectedComprobante(null);
-        // Recargar lista usando el store
         getCuentasPorCobrar({
             page: currentPage,
             limit: itemsPerPage,
+            search: debounce || undefined,
             estadoPago: estadoPago || undefined,
+            fechaInicio: fechaInicio || undefined,
+            fechaFin: fechaFin || undefined,
         });
     };
 

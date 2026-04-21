@@ -40,7 +40,9 @@ const NotificacionesCampana: React.FC = () => {
   } = useNotificacionesStore();
 
   const { auth } = useAuthStore();
-  const features = useRubroFeatures(auth?.empresa?.rubro?.nombre);
+  const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
+    usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
+  });
 
   const panelRef = useRef<HTMLDivElement>(null);
   const [mostrarConfig, setMostrarConfig] = useState(false);
@@ -176,7 +178,7 @@ const NotificacionesCampana: React.FC = () => {
       </button>
 
       {mostrarPanel && (
-        <div className="absolute right-0 mt-3 w-[400px] bg-[#F8F9FA] rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden font-sans">
+        <div className="absolute z-[999999] right-0 mt-3 w-[400px] bg-[#F8F9FA] rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden font-sans">
           {/* Header Limpio */}
           <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 sticky top-0 z-10">
             <div className="flex items-center gap-3">
@@ -336,9 +338,9 @@ const NotificacionesCampana: React.FC = () => {
 
           {notificaciones?.length > 5 && (
             <div className="bg-white border-t border-gray-100 p-3 text-center">
-              <button className="text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors">
+              <Link to="/administrador/notificaciones" onClick={cerrarPanel} className="text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors">
                 Ver historial completo
-              </button>
+              </Link>
             </div>
           )}
 

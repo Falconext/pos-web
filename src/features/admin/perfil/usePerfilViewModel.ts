@@ -7,12 +7,13 @@ import React from 'react';
 interface PerfilData {
     id: number; nombre: string; email: string; rol: string; celular?: string; telefono?: string;
     empresaId: number; estado: string; fechaCreacion: string; fechaActualizacion: string;
-    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
+    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
 }
 
 export const usePerfilViewModel = () => {
     const [perfil, setPerfil] = useState<PerfilData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [savingBarcodeConfig, setSavingBarcodeConfig] = useState(false);
     const [usageStats, setUsageStats] = useState<any>(null);
     const { alert } = useAlertStore();
 
@@ -26,6 +27,28 @@ export const usePerfilViewModel = () => {
             else alert('Error al cargar el perfil', 'error');
         } catch { alert('Error al cargar el perfil', 'error'); }
         finally { setLoading(false); }
+    };
+
+    const handleBarcodeToggle = async (enabled: boolean) => {
+        try {
+            setSavingBarcodeConfig(true);
+            await useEmpresasStore.getState().actualizarMiEmpresa({ usaCodigoBarrasManual: enabled });
+            setPerfil(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    empresa: {
+                        ...prev.empresa,
+                        usaCodigoBarrasManual: enabled,
+                    },
+                };
+            });
+            useAlertStore.getState().alert('Configuración de código de barras actualizada', 'success');
+        } catch {
+            useAlertStore.getState().alert('No se pudo actualizar la configuración', 'error');
+        } finally {
+            setSavingBarcodeConfig(false);
+        }
     };
 
     const cargarUsageStats = async () => {
@@ -65,5 +88,5 @@ export const usePerfilViewModel = () => {
         return 'text-green-600 bg-green-100';
     };
 
-    return { perfil, loading, usageStats, formatearFecha, formatearFechaSolo, handleLogoChange, obtenerEstadoSuscripcion, obtenerColorEstado };
+    return { perfil, loading, usageStats, savingBarcodeConfig, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, obtenerEstadoSuscripcion, obtenerColorEstado };
 };

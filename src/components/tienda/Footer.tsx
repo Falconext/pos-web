@@ -7,138 +7,144 @@ interface FooterProps {
 
 export default function Footer({ tienda, diseno }: FooterProps) {
     const year = new Date().getFullYear();
-    const primaryColor = diseno.colorPrimario || '#045659';
-    const accentColor = '#ff9900'; // Naranja para botón de suscribir y hovers
+
+    const socialLinks = [
+        { key: 'instagramUrl', icon: 'mdi:instagram' },
+        { key: 'facebookUrl', icon: 'ic:baseline-facebook' },
+        { key: 'tiktokUrl', icon: 'ic:baseline-tiktok' },
+        { key: 'linkedinUrl', icon: 'mdi:linkedin' },
+        { key: 'youtubeUrl', icon: 'mdi:youtube' },
+    ];
 
     return (
-        <footer className="bg-[#002626] text-gray-300 font-sans mt-auto border-t border-[#045659]/30">
-            {/* Main Footer Content */}
-            <div className="max-w-screen-xl mx-auto px-6 py-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+        <footer className="bg-white border-t border-gray-100 font-sans">
+            <div className="max-w-screen-xl mx-auto px-6 md:px-8 pt-12 pb-6">
 
-                    {/* Column 1: Brand & Subscribe */}
-                    <div className="space-y-6">
-                        {/* Brand */}
-                        <div className="mb-4">
+                {/* Main Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+
+                    {/* Col 1: Brand + Social */}
+                    <div className="col-span-2 md:col-span-1">
+                        {/* Logo */}
+                        <div className="flex items-center gap-2 mb-4">
                             {tienda.logo ? (
-                                <img src={tienda.logo} alt={tienda.nombreComercial} className="h-16 w-auto object-contain bg-white/10 p-2 rounded-lg backdrop-blur-sm" />
+                                <img src={tienda.logo} alt={tienda.nombreComercial} className="h-10 w-auto object-contain" />
                             ) : (
-                                <h2 className="text-3xl font-bold text-white tracking-tight">{tienda.nombreComercial || 'FalconStore'}</h2>
+                                <>
+                                    <div className="w-9 h-9 rounded-full bg-[#FF9500] flex items-center justify-center">
+                                        <Icon icon="solar:shop-bold" className="text-white" width={18} />
+                                    </div>
+                                    <span className="text-xl font-black text-[#1A1A1A]">
+                                        {tienda.nombreComercial || 'Mi Tienda'}
+                                    </span>
+                                </>
                             )}
                         </div>
 
-                        <p className="text-sm leading-relaxed text-gray-400">
-                            {tienda.descripcionTienda || 'Construimos experiencias de comercio electrónico escalables y de alto rendimiento.'}
-                        </p>
-
-                        {/* Social Media */}
-                        <div className="pt-4 space-y-3">
-                            <h4 className="text-white font-bold text-sm">Redes Sociales</h4>
-                            <div className="flex gap-3">
-                                {tienda.facebookUrl && (
-                                    <a href={tienda.facebookUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
-                                        <Icon icon="ic:baseline-facebook" width={20} className="text-white group-hover:scale-110 transition-transform" />
+                        {/* Social Icons */}
+                        <div className="flex gap-3 mt-5">
+                            {socialLinks.map(({ key, icon }) =>
+                                tienda[key] ? (
+                                    <a
+                                        key={key}
+                                        href={tienda[key]}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="w-9 h-9 rounded-full bg-[#FFF3E0] flex items-center justify-center hover:bg-[#FF9500] transition-colors group"
+                                    >
+                                        <Icon icon={icon} width={18} className="text-[#FF9500] group-hover:text-white transition-colors" />
                                     </a>
-                                )}
-                                {tienda.instagramUrl && (
-                                    <a href={tienda.instagramUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
-                                        <Icon icon="mdi:instagram" width={20} className="text-white group-hover:scale-110 transition-transform" />
-                                    </a>
-                                )}
-                                {tienda.tiktokUrl && (
-                                    <a href={tienda.tiktokUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
-                                        <Icon icon="ic:baseline-tiktok" width={20} className="text-white group-hover:scale-110 transition-transform" />
-                                    </a>
-                                )}
-                                {tienda.linkedinUrl && (
-                                    <a href={tienda.linkedinUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#043d3d] flex items-center justify-center hover:bg-[#064e4e] transition-colors group">
-                                        <Icon icon="mdi:linkedin" width={20} className="text-white group-hover:scale-110 transition-transform" />
-                                    </a>
-                                )}
-                            </div>
+                                ) : null
+                            )}
+                            {/* Show at least 3 social placeholders if none */}
+                            {!socialLinks.some(s => tienda[s.key]) && (
+                                <>
+                                    {['mdi:instagram', 'ic:baseline-facebook', 'mdi:youtube'].map(icon => (
+                                        <div key={icon} className="w-9 h-9 rounded-full bg-[#FFF3E0] flex items-center justify-center">
+                                            <Icon icon={icon} width={18} className="text-[#FF9500]" />
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </div>
 
-                    {/* Column 2: Information */}
+                    {/* Col 2: Empresa */}
                     <div>
-                        <h3 className="text-white font-bold text-lg mb-6">Información</h3>
-                        <ul className="space-y-4 text-sm">
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Sobre Nosotros</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Información de Delivery</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Políticas de Privacidad</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Términos y Condiciones</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Política de Devoluciones</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Ser Vendedor</a></li>
+                        <h4 className="text-xs font-bold text-[#999] uppercase tracking-widest mb-4">Empresa</h4>
+                        <ul className="space-y-3">
+                            {['Sobre Nosotros', 'Contacto', 'Delivery y Pagos'].map(link => (
+                                <li key={link}>
+                                    <a href="#" className="text-sm text-[#333] hover:text-[#FF9500] transition-colors">{link}</a>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Column 3: Quick Links */}
+                    {/* Col 3: Atención al Cliente */}
                     <div>
-                        <h3 className="text-white font-bold text-lg mb-6">Enlaces Rápidos</h3>
-                        <ul className="space-y-4 text-sm">
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Mi Cuenta</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Carrito de Compras</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Lista de Deseos</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Historial de Pedidos</a></li>
-                            <li><a href="#" className="hover:text-[#ff9900] transition-colors">Pedidos Internacionales</a></li>
+                        <h4 className="text-xs font-bold text-[#999] uppercase tracking-widest mb-4">Atención</h4>
+                        <ul className="space-y-3">
+                            {['Devoluciones', 'Preguntas Frecuentes', 'Privacidad', 'Términos'].map(link => (
+                                <li key={link}>
+                                    <a href="#" className="text-sm text-[#333] hover:text-[#FF9500] transition-colors">{link}</a>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Column 4: My Accounts (Adapted to Store Info) */}
+                    {/* Col 4: Categorías */}
                     <div>
-                        <h3 className="text-white font-bold text-lg mb-6">Contacto & Ayuda</h3>
-                        <ul className="space-y-4 text-sm">
+                        <h4 className="text-xs font-bold text-[#999] uppercase tracking-widest mb-4">Productos</h4>
+                        <ul className="space-y-3">
+                            {['Nuevos Ingresos', 'Más Vendidos', 'Ofertas', 'Kits & Combos', 'Por Mayor'].map(link => (
+                                <li key={link}>
+                                    <a href="#" className="text-sm text-[#333] hover:text-[#FF9500] transition-colors">{link}</a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Col 5: Contacto */}
+                    <div>
+                        <h4 className="text-xs font-bold text-[#999] uppercase tracking-widest mb-4">Contacto</h4>
+                        <ul className="space-y-3">
                             {tienda.whatsappTienda && (
-                                <li className="flex items-start gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[#043d3d] flex items-center justify-center flex-shrink-0">
-                                        <Icon icon="mdi:whatsapp" className="text-[#ff9900]" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs text-gray-500">Whatsapp</div>
-                                        <div className="text-white font-medium">{tienda.whatsappTienda}</div>
-                                    </div>
+                                <li>
+                                    <a
+                                        href={`https://wa.me/${tienda.whatsappTienda.replace(/\D/g, '')}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-sm text-[#333] hover:text-[#FF9500] transition-colors"
+                                    >
+                                        {tienda.whatsappTienda}
+                                    </a>
                                 </li>
                             )}
-                            <li className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#043d3d] flex items-center justify-center flex-shrink-0">
-                                    <Icon icon="mdi:email-outline" className="text-[#ff9900]" />
-                                </div>
-                                <div>
-                                    <div className="text-xs text-gray-500">Email</div>
-                                    <div className="text-white font-medium">{tienda.correo || tienda.email || 'soporte@falconext.com'}</div>
-                                </div>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#043d3d] flex items-center justify-center flex-shrink-0">
-                                    <Icon icon="mdi:map-marker-outline" className="text-[#ff9900]" />
-                                </div>
-                                <div>
-                                    <div className="text-xs text-gray-500">Ubicación</div>
-                                    <div className="text-white font-medium">{tienda.direccion || 'Lima, Perú'}</div>
-                                </div>
-                            </li>
+                            {tienda.correo || tienda.email ? (
+                                <li>
+                                    <a href={`mailto:${tienda.correo || tienda.email}`} className="text-sm text-[#333] hover:text-[#FF9500] transition-colors break-all">
+                                        {tienda.correo || tienda.email}
+                                    </a>
+                                </li>
+                            ) : (
+                                <li><span className="text-sm text-[#333]">contacto@tienda.com</span></li>
+                            )}
+                            {tienda.direccion && (
+                                <li><span className="text-sm text-[#333]">{tienda.direccion}</span></li>
+                            )}
                         </ul>
                     </div>
-
                 </div>
-            </div>
 
-            {/* Bottom Bar */}
-            <div className="border-t border-[#045659]/30 bg-[#001f1f]">
-                <div className="max-w-screen-xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-sm text-gray-400">
-                        &copy; {year} <span className="text-[#ff9900] font-bold">Falconext</span>. Todos los derechos reservados.
+                {/* Bottom Bar */}
+                <div className="border-t border-gray-100 pt-5 flex flex-col md:flex-row items-center justify-between gap-3">
+                    <p className="text-xs text-[#999]">
+                        &copy; {tienda.nombreComercial || 'Mi Tienda'} {year} — porque tus clientes merecen lo mejor 🐾
                     </p>
-
-                    {/* Payment Icons */}
-                    <div className="flex items-center gap-3">
-                        <div className="bg-white px-3 py-1 rounded h-8 min-w-[50px] flex items-center justify-center overflow-hidden shadow-sm">
-                            <span className="text-xs font-black text-[#7D00FF]">Yape</span>
-                        </div>
-                        <div className="bg-white px-3 py-1 rounded h-8 min-w-[50px] flex items-center justify-center overflow-hidden shadow-sm">
-                            <span className="text-xs font-black text-[#00C8FF]">Plin</span>
-                        </div>
-                    </div>
+                    <p className="text-xs text-[#BBB]">
+                        Powered by <span className="font-bold text-[#FF9500]">Falconext</span>
+                    </p>
                 </div>
             </div>
         </footer>

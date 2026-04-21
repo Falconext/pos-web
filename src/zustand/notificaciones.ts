@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4001');
 
 export interface Notificacion {
   id: number;

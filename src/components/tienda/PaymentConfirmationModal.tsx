@@ -150,7 +150,7 @@ export default function PaymentConfirmationModal({
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-600">Total a Pagar</span>
-                            <span className="text-2xl font-black text-[#045659] tracking-tight">S/ {Number(orderData?.total || 0).toFixed(2)}</span>
+                            <span className="text-2xl font-black text-[#1E1B4B] tracking-tight">S/ {Number(orderData?.total || 0).toFixed(2)}</span>
                         </div>
                     </div>
 

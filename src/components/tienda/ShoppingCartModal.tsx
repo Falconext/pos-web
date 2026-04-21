@@ -55,7 +55,7 @@ export default function ShoppingCartModal({
                             <p className="text-gray-500 text-sm">Tu carrito está vacío</p>
                             <button
                                 onClick={onClose}
-                                className="text-[#045659] underline text-sm font-semibold hover:text-[#034548] transition-colors"
+                                className="text-[#1E1B4B] underline text-sm font-semibold hover:text-[#034548] transition-colors"
                             >
                                 Continuar comprando
                             </button>
@@ -125,7 +125,7 @@ export default function ShoppingCartModal({
                                                     <Icon icon="mdi:plus" width={14} />
                                                 </button>
                                             </div>
-                                            <div className="text-sm font-bold text-[#045659]">
+                                            <div className="text-sm font-bold text-[#1E1B4B]">
                                                 S/ {(Number(item.precioUnitario) * (item.cantidad || 1)).toFixed(2)}
                                             </div>
                                         </div>

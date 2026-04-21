@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { get, post, patch } from '../utils/fetch';
+import { get, post, del } from '../utils/fetch';
 import { IPago, IPagosFilters, IRegistroPago } from '../interfaces/pagos';
 import { devtools } from 'zustand/middleware';
 import useAlertStore from './alert';
@@ -61,7 +61,6 @@ export const usePagosStore = create<IPagosState>()(
 
           const query = new URLSearchParams(filteredParams as any).toString();
           const resp: any = await get(`pago/listar?${query}`);
-          console.log(resp)
           if (resp.code === 1) {
             set({
               pagos: resp.data,
@@ -131,7 +130,7 @@ export const usePagosStore = create<IPagosState>()(
       eliminarPago: async (pagoId: number) => {
         try {
           set({ loading: true });
-          const resp: any = await patch(`/pago/${pagoId}/eliminar`, {});
+          const resp: any = await del(`pago/${pagoId}/reversar`);
 
           if (resp.code === 1) {
             set((state) => ({
@@ -172,11 +171,12 @@ export const usePagosStore = create<IPagosState>()(
           if (resp.code === 1) {
             const comprobantes = resp.data?.comprobantes || resp.data || [];
 
-            // Filtrar solo los que tienen saldo > 0
+            // Filtrar solo los que tienen saldo > 0 y no están anulados
             const pendientes = comprobantes.filter((c: any) =>
               (c.saldo ?? 0) > 0 &&
               c.estadoPago !== 'COMPLETADO' &&
-              c.estadoPago !== 'ANULADO'
+              c.estadoPago !== 'ANULADO' &&
+              c.estadoEnvioSunat !== 'ANULADO'
             );
             set({
               cuentasPorCobrar: pendientes,

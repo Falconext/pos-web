@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import InputPro from './InputPro';
 import Button from './Button';
 import { Icon } from '@iconify/react';
 import { PaymentType, PaymentMethod } from '@/hooks/usePaymentFlow';
+import useEscapeKey from '@/hooks/useEscapeKey';
 
 interface ModalPaymentUnifiedProps {
   isOpen: boolean;
@@ -127,6 +128,14 @@ const ModalPaymentUnified = ({
     }
     onConfirm(monto, medioPago, observacion, referencia);
   };
+
+  const handleClose = useCallback(() => {
+    if (isOpen) {
+      onCancel();
+    }
+  }, [isOpen, onCancel]);
+
+  useEscapeKey(() => handleClose(), isOpen);
 
   if (!isOpen) return null;
 

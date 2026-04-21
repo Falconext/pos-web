@@ -13,8 +13,11 @@ export interface IDetalleGuiaRemision {
     unidadMedida: string;
 }
 
+export type TipoGuiaRemision = 'REMITENTE' | 'TRANSPORTISTA';
+
 export interface IGuiaRemision {
     id?: number;
+    tipoGuia?: TipoGuiaRemision;
     serie: string;
     correlativo: number;
     fechaEmision: string;
@@ -47,14 +50,18 @@ export interface IGuiaRemision {
     conductorTipoDoc?: string;
     conductorNumDoc?: string;
     conductorNombre?: string;
+    conductorApellidos?: string;
     conductorLicencia?: string;
     vehiculoPlaca?: string;
+    vehiculoAutorizacion?: string;
 
     // Ubicaciones
     partidaUbigeo: string;
     partidaDireccion: string;
+    partidaCodigoEstablecimiento?: string;
     llegadaUbigeo: string;
     llegadaDireccion: string;
+    llegadaCodigoEstablecimiento?: string;
 
     // Fecha de traslado
     fechaInicioTraslado: string;
@@ -112,8 +119,6 @@ export const useGuiaRemisionStore = create<IGuiaRemisionState>()(devtools((set, 
 
     getAllGuiasRemision: async (params: any) => {
         try {
-            useAlertStore.setState({ loading: true });
-
             const filteredParams = Object.entries(params)
                 .filter(([_, value]) => value !== undefined && value !== '')
                 .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});

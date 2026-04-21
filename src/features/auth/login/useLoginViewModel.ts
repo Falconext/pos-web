@@ -7,7 +7,7 @@ import { ILoginForm, initialLoginForm } from "./LoginModel";
 export const useLoginViewModel = () => {
     const navigate = useNavigate();
     const [formValues, setFormValues] = useState<ILoginForm>(initialLoginForm);
-    const { login, auth, me, isLoading } = useAuthStore();
+    const { login, auth, me, isLoading, pendingSedes, success } = useAuthStore();
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -20,8 +20,15 @@ export const useLoginViewModel = () => {
         fetchUser();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Redirigir según estado post-login
     useEffect(() => {
-        if (auth && typeof auth === "object" && auth.rol) {
+        // Multi-sede: ir a pantalla de selección
+        if (pendingSedes && pendingSedes.length > 0) {
+            navigate("/sede-seleccion", { replace: true });
+            return;
+        }
+        // Login completo: redirigir al panel
+        if (auth && success && typeof auth === "object" && auth.rol) {
             const token = localStorage.getItem("ACCESS_TOKEN");
             if (token) {
                 if (auth.rol === "ADMIN_SISTEMA") {
@@ -33,7 +40,7 @@ export const useLoginViewModel = () => {
                 }
             }
         }
-    }, [auth, navigate]);
+    }, [auth, success, pendingSedes, navigate]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
@@ -65,6 +72,6 @@ export const useLoginViewModel = () => {
         handleChange,
         handleLogin,
         handleKeyDown,
-        navigate, // Exposing navigate in case View needs generic navigation, though usually VM handles it
+        navigate,
     };
 };

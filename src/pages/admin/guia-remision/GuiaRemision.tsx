@@ -14,7 +14,10 @@ import { useReactToPrint } from "react-to-print";
 import { useRef } from "react";
 import GuiaRemisionPrint from "./print/GuiaRemisionPrint";
 import { useAuthStore } from "@/zustand/auth";
+import { useSedesStore } from "@/zustand/sedes";
+import Select from "@/components/Select";
 import apiClient from "@/utils/apiClient";
+import ModalConfirm from "@/components/ModalConfirm";
 
 const MOTIVOS_TRASLADO: Record<string, string> = {
     "01": "VENTA",
@@ -42,6 +45,10 @@ const GuiaRemision = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [guiaToEdit, setGuiaToEdit] = useState<any>(null);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
+    const [isProcessingSend, setIsProcessingSend] = useState(false);
+    const [isProcessingDelete, setIsProcessingDelete] = useState(false);
 
     // Print State
     const [guiaToPrint, setGuiaToPrint] = useState<any>(null);
@@ -63,17 +70,31 @@ const GuiaRemision = () => {
         }, 100);
     };
 
+    const { sedes, listarSedes } = useSedesStore();
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+
+    const sedesOptions = [
+        { id: 0, value: "Todas las sedes" },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+    ];
+
     // Filtros
     const [fechaInicio, setFechaInicio] = useState(moment().format('YYYY-MM-DD'));
     const [fechaFin, setFechaFin] = useState(moment().format('YYYY-MM-DD'));
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (isAdmin) listarSedes();
+    }, [isAdmin]);
 
     useEffect(() => {
         getAllGuiasRemision({
             search: debouncedSearchTerm,
             fechaInicio,
-            fechaFin
+            fechaFin,
+            ...(isAdmin && selectedSedeId ? { sedeId: selectedSedeId } : {}),
         });
-    }, [debouncedSearchTerm, fechaInicio, fechaFin]);
+    }, [debouncedSearchTerm, fechaInicio, fechaFin, selectedSedeId]);
 
     const handleSearch = (e: any) => {
         setSearchTerm(e.target.value);
@@ -86,33 +107,45 @@ const GuiaRemision = () => {
         setMenuOpen(true);
     };
 
-    const handleCloseMenu = () => {
+    const handleCloseMenu = (clearSelection = true) => {
         setMenuOpen(false);
         setAnchorEl(null);
-        setSelectedRow(null);
+        if (clearSelection) {
+            setSelectedRow(null);
+        }
     };
 
     const handleEnviarSunat = async () => {
         if (!selectedRow) return;
-        handleCloseMenu();
-        // TODO: Obtener personaId y token real. Aquí usamos valores placeholder o del auth
-        await enviarSunat(selectedRow.id);
-    };
-
-    const handleAnular = async () => {
-        if (!selectedRow) return;
-        handleCloseMenu();
-        if (confirm("¿Está seguro de anular esta guía?")) {
-            // Anulación lógica o llamar a endpoint de baja
-            useAlertStore.getState().alert("Funcionalidad de anulación pendiente", "info");
-        }
+        handleCloseMenu(false);
+        setIsSendConfirmOpen(true);
     };
 
     const handleEliminar = async () => {
         if (!selectedRow) return;
-        handleCloseMenu();
-        if (confirm("¿Está seguro de eliminar este borrador?")) {
+        handleCloseMenu(false);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const confirmEnviarSunat = async () => {
+        if (!selectedRow) return;
+        setIsSendConfirmOpen(false);
+        try {
+            setIsProcessingSend(true);
+            await enviarSunat(selectedRow.id);
+        } finally {
+            setIsProcessingSend(false);
+        }
+    };
+
+    const confirmEliminar = async () => {
+        if (!selectedRow) return;
+        setIsDeleteConfirmOpen(false);
+        try {
+            setIsProcessingDelete(true);
             await deleteGuiaRemision(selectedRow.id);
+        } finally {
+            setIsProcessingDelete(false);
         }
     };
 
@@ -132,6 +165,12 @@ const GuiaRemision = () => {
         { label: "Acciones", key: "acciones", width: "100px" }
     ];
 
+    const selectedEstadoSunat = selectedRow?.estadoSunat || 'PENDIENTE';
+    const canEditGuia = ['PENDIENTE', 'FALLIDO_ENVIO', 'RECHAZADO'].includes(selectedEstadoSunat);
+    const canDeleteGuia = ['PENDIENTE', 'FALLIDO_ENVIO', 'RECHAZADO'].includes(selectedEstadoSunat);
+    const canSendGuia = ['PENDIENTE', 'FALLIDO_ENVIO'].includes(selectedEstadoSunat);
+    const isRetryGuia = selectedEstadoSunat === 'FALLIDO_ENVIO';
+
     const bodyData = guiasRemision.map((guia: any) => ({
         ...guia,
         fechaEmision: `${moment.utc(guia.fechaEmision).format("DD/MM/YYYY")} ${guia.horaEmision || ''}`,
@@ -150,15 +189,15 @@ const GuiaRemision = () => {
         acciones: (
             <button
                 onClick={(e) => handleOpenMenu(e, guia)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             >
-                <Icon icon="mdi:dots-vertical" className="text-gray-600 text-xl" />
+                <Icon icon="mdi:dots-vertical" width={20} height={20} />
             </button>
         )
     }));
 
     return (
-        <div className="p-4">
+        <div className="">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Guías de Remisión</h1>
                 <Button color="primary" onClick={() => setIsModalOpen(true)}>
@@ -168,7 +207,7 @@ const GuiaRemision = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-                <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex px-4 flex-col md:flex-row gap-4 items-end">
                     <div className="w-full md:w-1/3">
                         <InputPro
                             label="Buscar..."
@@ -195,130 +234,172 @@ const GuiaRemision = () => {
                             onChange={(date: any) => setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
                         />
                     </div>
-                </div>
-            </div>
-
-            <DataTable
-                headerColumns={headerColumns}
-                bodyData={bodyData}
-                isCompact={false}
-            />
-
-            <TableActionMenu
-                isOpen={menuOpen}
-                onClose={handleCloseMenu}
-                anchorEl={anchorEl}
-            >
-                <div className="py-1">
-                    <button
-                        onClick={async () => {
-                            handleCloseMenu();
-                            if (selectedRow) {
-                                await downloadPdf(selectedRow.id);
-                            }
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    >
-                        <Icon icon="heroicons:arrow-down-tray" className="mr-2" /> Descargar PDF
-                    </button>
-
-                    <button
-                        onClick={() => {
-                            handleCloseMenu();
-                            // Open PDF in new tab for printing
-
-                            // Strategy: Fetch blob, create ObjectURL, open in new tab.
-                            apiClient.get(`guia-remision/${selectedRow.id}/pdf`, { responseType: 'blob' })
-                                .then(response => {
-                                    const file = new Blob([response.data], { type: 'application/pdf' });
-                                    const fileURL = URL.createObjectURL(file);
-                                    window.open(fileURL, '_blank');
-                                })
-                                .catch(err => {
-                                    useAlertStore.getState().alert('Error al abrir PDF para imprimir', 'error');
-                                });
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    >
-                        <Icon icon="solar:printer-bold" className="mr-2" /> Imprimir Formato
-                    </button>
-
-                    <button
-                        onClick={async () => {
-                            handleCloseMenu();
-                            // TODO: Call backend WhatsApp logic
-                            // For now just alert or mock
-                            const phoneNumber = selectedRow.cliente?.telefono || selectedRow.destinatarioNumDoc; // fallback?
-                            // We need a prompt or just send to default number? 
-                            // Usually we might want to confirm number.
-                            // Let's just implement the button to call a store function (to be created)
-                            // or verify functionality later.
-
-                            // For this step, I will just put the UI and a placeholder action.
-                            // Ideally, open a modal to confirm number? Or just send. 
-                            // The backend controller takes "numeroDestino".
-
-                            // Quick inputs prompt
-                            const numero = prompt("Ingrese número de WhatsApp (51xxxxxxxxx):", selectedRow.cliente?.telefono || "");
-                            if (numero) {
-                                await useGuiaRemisionStore.getState().enviarWhatsApp(selectedRow.id, numero);
-                            }
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
-                    >
-                        <Icon icon="logos:whatsapp-icon" className="mr-2" /> Enviar a WhatsApp
-                    </button>
-
-                    {selectedRow?.estadoSunat === 'PENDIENTE' && (
-                        <>
-                            <button
-                                onClick={handleEditar}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                            >
-                                <Icon icon="heroicons:pencil" className="mr-2" /> Editar
-                            </button>
-                            <button
-                                onClick={handleEnviarSunat}
-                                className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
-                            >
-                                <Icon icon="heroicons:paper-airplane" className="mr-2" /> Enviar a SUNAT
-                            </button>
-                            <button
-                                onClick={handleEliminar}
-                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
-                            >
-                                <Icon icon="heroicons:trash" className="mr-2" /> Eliminar
-                            </button>
-                        </>
+                    {isAdmin && (
+                        <div className="w-full md:w-auto">
+                            <Select
+                                error=""
+                                label="Sede"
+                                name="sedeId"
+                                defaultValue="Todas las sedes"
+                                onChange={(id: any, _value: string) => setSelectedSedeId(id === 0 ? null : Number(id))}
+                                options={sedesOptions}
+                            />
+                        </div>
                     )}
                 </div>
-            </TableActionMenu>
 
-            {/* Modal de Nueva Guía */}
-            {/* Modal de Nueva Guía */}
-            <ModalGuiaRemision
-                isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setGuiaToEdit(null);
-                }}
-                onSuccess={() => {
-                    getAllGuiasRemision({
-                        search: debouncedSearchTerm,
-                        fechaInicio,
-                        fechaFin
-                    });
-                    setGuiaToEdit(null);
-                }}
-                guiaToEdit={guiaToEdit}
-            />
-            {/* Componente oculto para impresión */}
-            <div style={{ display: "none" }}>
-                <GuiaRemisionPrint
-                    ref={componentRef}
-                    guia={guiaToPrint}
-                    company={auth?.empresa}
+
+                <div className="mt-6">
+                    <DataTable
+                        headerColumns={headerColumns}
+                        bodyData={bodyData}
+                        isCompact={false}
+                    />
+                </div>
+
+                <TableActionMenu
+                    isOpen={menuOpen}
+                    onClose={() => handleCloseMenu(true)}
+                    anchorEl={anchorEl}
+                >
+                    <div className="py-1">
+                        <button
+                            onClick={async () => {
+                                handleCloseMenu();
+                                if (selectedRow) {
+                                    await downloadPdf(selectedRow.id);
+                                }
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                        >
+                            <Icon icon="heroicons:arrow-down-tray" width={16} height={16} /> <span>Descargar PDF</span>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                handleCloseMenu();
+                                // Open PDF in new tab for printing
+
+                                // Strategy: Fetch blob, create ObjectURL, open in new tab.
+                                apiClient.get(`guia-remision/${selectedRow.id}/pdf`, { responseType: 'blob' })
+                                    .then(response => {
+                                        const file = new Blob([response.data], { type: 'application/pdf' });
+                                        const fileURL = URL.createObjectURL(file);
+                                        window.open(fileURL, '_blank');
+                                    })
+                                    .catch(err => {
+                                        useAlertStore.getState().alert('Error al abrir PDF para imprimir', 'error');
+                                    });
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                        >
+                            <Icon icon="solar:printer-bold" width={16} height={16} /> <span>Imprimir Formato</span>
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                handleCloseMenu();
+                                // TODO: Call backend WhatsApp logic
+                                // For now just alert or mock
+                                const phoneNumber = selectedRow.cliente?.telefono || selectedRow.destinatarioNumDoc; // fallback?
+                                // We need a prompt or just send to default number? 
+                                // Usually we might want to confirm number.
+                                // Let's just implement the button to call a store function (to be created)
+                                // or verify functionality later.
+
+                                // For this step, I will just put the UI and a placeholder action.
+                                // Ideally, open a modal to confirm number? Or just send. 
+                                // The backend controller takes "numeroDestino".
+
+                                // Quick inputs prompt
+                                const numero = prompt("Ingrese número de WhatsApp (51xxxxxxxxx):", selectedRow.cliente?.telefono || "");
+                                if (numero) {
+                                    await useGuiaRemisionStore.getState().enviarWhatsApp(selectedRow.id, numero);
+                                }
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 hover:bg-green-50"
+                        >
+                            <Icon icon="logos:whatsapp-icon" width={16} height={16} /> <span>Enviar a WhatsApp</span>
+                        </button>
+
+                        {canEditGuia && (
+                            <>
+                                <button
+                                    onClick={handleEditar}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                >
+                                    <Icon icon="material-symbols:edit" width={16} height={16} /> <span>Editar</span>
+                                </button>
+                                {canSendGuia && (
+                                    <button
+                                        onClick={handleEnviarSunat}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 hover:bg-green-50"
+                                    >
+                                        <Icon icon="heroicons:paper-airplane" width={16} height={16} /> <span>{isRetryGuia ? 'Reintentar envío a SUNAT' : 'Enviar a SUNAT'}</span>
+                                    </button>
+                                )}
+                            </>
+                        )}
+
+                        {canDeleteGuia && (
+                            <button
+                                onClick={handleEliminar}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                            >
+                                <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
+                            </button>
+                        )}
+                    </div>
+                </TableActionMenu>
+
+                {/* Modal de Nueva Guía */}
+                {/* Modal de Nueva Guía */}
+                <ModalGuiaRemision
+                    isOpen={isModalOpen}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setGuiaToEdit(null);
+                    }}
+                    onSuccess={() => {
+                        getAllGuiasRemision({
+                            search: debouncedSearchTerm,
+                            fechaInicio,
+                            fechaFin
+                        });
+                        setGuiaToEdit(null);
+                    }}
+                    guiaToEdit={guiaToEdit}
                 />
+                <ModalConfirm
+                    isOpenModal={isSendConfirmOpen}
+                    setIsOpenModal={setIsSendConfirmOpen}
+                    confirmSubmit={confirmEnviarSunat}
+                    title={isRetryGuia ? "Reintentar envío a SUNAT" : "Enviar a SUNAT"}
+                    information={isRetryGuia
+                        ? "¿Desea reintentar el envío de esta guía a SUNAT?"
+                        : "¿Desea enviar esta guía a SUNAT?"}
+                    confirmText={isRetryGuia ? "Reintentar" : "Enviar"}
+                    confirmLoading={isProcessingSend}
+                    confirmDisabled={isProcessingDelete}
+                />
+                <ModalConfirm
+                    isOpenModal={isDeleteConfirmOpen}
+                    setIsOpenModal={setIsDeleteConfirmOpen}
+                    confirmSubmit={confirmEliminar}
+                    title="Eliminar guía de remisión"
+                    information="¿Está seguro de eliminar esta guía? Esta acción no se puede deshacer."
+                    confirmText="Eliminar"
+                    confirmLoading={isProcessingDelete}
+                    confirmDisabled={isProcessingSend}
+                />
+                {/* Componente oculto para impresión */}
+                <div style={{ display: "none" }}>
+                    <GuiaRemisionPrint
+                        ref={componentRef}
+                        guia={guiaToPrint}
+                        company={auth?.empresa}
+                    />
+                </div>
             </div>
         </div>
     );

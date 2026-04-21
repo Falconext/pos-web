@@ -52,12 +52,9 @@ const Pagos = () => {
       fechaInicio,
       fechaFin,
     };
-    console.log(medioPago)
     if (medioPago) params.medioPago = medioPago;
     getAllPagos(params);
   }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, medioPago]);
-
-  console.log(pagos)
 
   const pagosTable = pagos?.map((pago) => ({
     id: pago.id,
@@ -69,7 +66,7 @@ const Pagos = () => {
     monto: `S/ ${pago.monto.toFixed(2)}`,
     medioPago: pago.medioPago,
     observacion: pago.observacion || '-',
-    referencia: pago.referencia || '-',
+    referencia: pago.referencia ? pago.referencia.toUpperCase() : '-',
   }));
 
   const handleDeletePago = (row: any) => {
@@ -79,7 +76,6 @@ const Pagos = () => {
   };
 
   const handleImprimirRecibo = async (row: any) => {
-    console.log(row)
     const original = pagos?.find((p: any) => p.id === row.id);
     if (!original) return;
 
@@ -127,13 +123,9 @@ const Pagos = () => {
     }
   };
 
-  const handleSelect = (idValue: any, value: string) => {
-    console.log(idValue)
-    console.log(value)
+  const handleSelect = (_idValue: any, value: string) => {
     setMedioPago(value === "TODOS" ? "" : value);
   };
-
-  console.log(selectedPago?.comprobante)
 
 
   return (
@@ -254,17 +246,17 @@ const Pagos = () => {
 
       {showReceipt && selectedPago && (
         <PaymentReceipt
-          saldo={selectedPago.comprobante?.saldo}
+          saldo={comprobanteDetalles?.saldo ?? selectedPago.comprobante?.saldo ?? 0}
           comprobante={comprobanteDetalles || selectedPago.comprobante}
           payment={{
-            tipo: 'PAGO_PARCIAL',
+            tipo: (comprobanteDetalles?.saldo ?? selectedPago.comprobante?.saldo ?? 0) <= 0 ? 'PAGO_TOTAL' : 'PAGO_PARCIAL',
             monto: selectedPago.monto,
             medioPago: selectedPago.medioPago,
             observacion: selectedPago.observacion,
             referencia: selectedPago.referencia,
           }}
           numeroRecibo={`REC-${selectedPago.id}`}
-          nuevoSaldo={0}
+          nuevoSaldo={comprobanteDetalles?.saldo ?? selectedPago.comprobante?.saldo ?? 0}
           detalles={comprobanteDetalles?.detalles || []}
           cliente={comprobanteDetalles?.cliente || selectedPago.comprobante?.cliente}
           company={auth}

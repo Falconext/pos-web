@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import moment from 'moment';
 import { useAccountingStore } from '@/zustand/accounting';
 import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 
 const useDateFilter = () => {
     const { auth } = useAuthStore();
@@ -18,46 +19,120 @@ const useDateFilter = () => {
     return { auth, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate };
 };
 
-export const useReporteViewModel = (): { reports: any[]; resumenReporte: any; isHoveredExp: boolean; setIsHoveredExp: (v: boolean) => void; handleDate: (date: string, name: string) => void; handleExport: () => void; } => {
+export const useReporteViewModel = () => {
     const { reportInvoices, getAllReportInvoice, resumenReporte, exportExcelReport } = useAccountingStore();
     const { auth, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate } = useDateFilter();
+    const { sedes, listarSedes } = useSedesStore();
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const canFilterSede = isAdmin || auth?.rol === 'USUARIO_EMPRESA';
+
+    const sedesOptions = [
+        { id: 0, value: "Todas las sedes" },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre} (Principal)` : s.nombre }))
+    ];
+
+    const handleSelectSede = (id: any, _value: string) => {
+        setSelectedSedeId(id === 0 ? null : Number(id));
+    };
 
     useEffect(() => {
-        getAllReportInvoice({ fechaInicio, fechaFin, empresaId: auth?.empresaId });
-    }, [fechaFin, fechaInicio, auth]);
+        if (canFilterSede) listarSedes();
+    }, [canFilterSede]);
 
-    const reports = reportInvoices?.map((item: any) => ({
-        comprobante: item?.comprobante, serie: item?.serie, correlativo: item?.correlativo,
-        ruc: item?.cliente?.nroDoc, cliente: item?.cliente?.nombre,
-        fecha: moment(item?.fechaEmision).format('DD/MM/YYYY'), estado: item?.estadoEnvioSunat,
-        montoGravadas: item?.mtoOperGravadas.toFixed(2), montoIGV: item?.mtoIGV.toFixed(2),
-        total: `S/ ${item?.mtoImpVenta.toFixed(2)}`
-    }));
+    useEffect(() => {
+        const params: any = { fechaInicio, fechaFin };
+        if (selectedSedeId) params.sedeId = selectedSedeId;
+        getAllReportInvoice(params);
+    }, [fechaFin, fechaInicio, auth, selectedSedeId]);
 
-    const handleExport = () => exportExcelReport({ empresaId: auth?.empresaId, fechaInicio, fechaFin });
+    const estadoPagoLabel: Record<string, string> = {
+        COMPLETADO: 'Pagado',
+        PENDIENTE_PAGO: 'Pendiente',
+        PAGO_PARCIAL: 'Parcial',
+        ANULADO: 'Anulado',
+    };
 
-    return { reports, resumenReporte, isHoveredExp, setIsHoveredExp, handleDate, handleExport };
+    const reports = reportInvoices?.map((item: any) => {
+        const moneda = item?.tipoMoneda || 'PEN';
+        const simbol = moneda === 'USD' ? '$' : 'S/';
+        const fmt = (v: any) => v != null ? Number(v).toFixed(2) : '0.00';
+        const formaPago = (item?.formaPagoTipo || '').toUpperCase() === 'CREDITO' ? 'Crédito' : 'Contado';
+        return {
+            sede: item?.sede?.nombre || '-',
+            comprobante: item?.comprobante,
+            serie: item?.serie,
+            correlativo: item?.correlativo,
+            ruc: item?.cliente?.nroDoc || '-',
+            cliente: item?.cliente?.nombre || '-',
+            fecha: moment(item?.fechaEmision).utcOffset(-5 * 60).format('DD/MM/YYYY'),
+            moneda,
+            formaPago,
+            medioPago: item?.medioPago || '-',
+            estadoSunat: item?.estadoEnvioSunat,
+            estadoPago: estadoPagoLabel[item?.estadoPago] || item?.estadoPago || '-',
+            gravadas: fmt(item?.mtoOperGravadas),
+            inafectas: fmt(item?.mtoOperInafectas),
+            igv: fmt(item?.mtoIGV),
+            total: `${simbol} ${fmt(item?.mtoImpVenta)}`,
+            saldo: item?.saldo != null && Number(item.saldo) > 0 ? `${simbol} ${fmt(item.saldo)}` : '-',
+            motivo: item?.motivo?.descripcion || '-',
+        };
+    });
+
+    const handleExport = () => {
+        const params: any = { fechaInicio, fechaFin };
+        if (selectedSedeId) params.sedeId = selectedSedeId;
+        exportExcelReport(params);
+    };
+
+    return { reports, resumenReporte, isHoveredExp, setIsHoveredExp, handleDate, handleExport, canFilterSede, sedesOptions, handleSelectSede };
 };
 
-export const useReporteInformalesViewModel = (): { reports: any[]; resumenReporteInformal: any; isHoveredExp: boolean; setIsHoveredExp: (v: boolean) => void; handleDate: (date: string, name: string) => void; handleExport: () => void; } => {
+export const useReporteInformalesViewModel = () => {
     const { reportInvoicesInformal, getAllReportInvoiceInformal, resumenReporteInformal, exportExcelReportInformal } = useAccountingStore();
     const { auth, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate } = useDateFilter();
+    const { sedes, listarSedes } = useSedesStore();
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+
+    const canFilterSede = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'USUARIO_EMPRESA';
+
+    const sedesOptions = [
+        { id: 0, value: "Todas las sedes" },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre} (Principal)` : s.nombre }))
+    ];
+
+    const handleSelectSede = (id: any, _value: string) => {
+        setSelectedSedeId(id === 0 ? null : Number(id));
+    };
 
     useEffect(() => {
-        getAllReportInvoiceInformal({ fechaInicio, fechaFin, empresaId: auth?.empresaId });
-    }, [fechaFin, fechaInicio, auth]);
+        if (canFilterSede) listarSedes();
+    }, [canFilterSede]);
+
+    useEffect(() => {
+        const params: any = { fechaInicio, fechaFin };
+        if (selectedSedeId) params.sedeId = selectedSedeId;
+        getAllReportInvoiceInformal(params);
+    }, [fechaFin, fechaInicio, auth, selectedSedeId]);
 
     const reports = reportInvoicesInformal?.map((item: any) => ({
+        sede: item?.sede?.nombre || '-',
         comprobante: item?.comprobante, serie: item?.serie, correlativo: item?.correlativo,
         ruc: item?.cliente?.nroDoc, cliente: item?.cliente?.nombre,
         fecha: moment(item?.fechaEmision).format('DD/MM/YYYY'), estadoPago: item?.estadoPago,
-        saldo: item?.saldo ? `S/ ${item.saldo.toFixed(2)}` : 'S/ 0.00',
+        saldo: item?.saldo != null ? `S/ ${Number(item.saldo).toFixed(2)}` : 'S/ 0.00',
         medioPago: item?.medioPago || '-', estadoOT: item?.estadoOT || '-',
-        adelanto: item?.adelanto ? `S/ ${item.adelanto.toFixed(2)}` : 'S/ 0.00',
-        total: `S/ ${item?.mtoImpVenta.toFixed(2)}`
+        adelanto: item?.adelanto != null ? `S/ ${Number(item.adelanto).toFixed(2)}` : 'S/ 0.00',
+        total: `S/ ${item?.mtoImpVenta != null ? Number(item.mtoImpVenta).toFixed(2) : '0.00'}`
     }));
 
-    const handleExport = () => exportExcelReportInformal({ empresaId: auth?.empresaId, fechaInicio, fechaFin });
+    const handleExport = () => {
+        const params: any = { fechaInicio, fechaFin };
+        if (selectedSedeId) params.sedeId = selectedSedeId;
+        exportExcelReportInformal(params);
+    };
 
-    return { reports, resumenReporteInformal, isHoveredExp, setIsHoveredExp, handleDate, handleExport };
+    return { reports, resumenReporteInformal, isHoveredExp, setIsHoveredExp, handleDate, handleExport, canFilterSede, sedesOptions, handleSelectSede };
 };

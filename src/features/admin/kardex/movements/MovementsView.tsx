@@ -28,10 +28,6 @@ export default function MovementsView() {
         TIPOS_MOVIMIENTO
     } = vm;
 
-    if (loading && !kardex) {
-        return <Loading />;
-    }
-
     const tableActions = [
         {
             onClick: (item: any) => actions.openModal(item._original),
@@ -127,7 +123,14 @@ export default function MovementsView() {
                 </div>
             </div>
 
-            {/* Tabla de movimientos */}
+            {loading && !kardex ? (
+                <div className="flex justify-center items-center py-20">
+                    <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-blue-500" />
+                    <span className="ml-3 text-gray-500 font-medium">Cargando movimientos...</span>
+                </div>
+            ) : (
+                <>
+                    {/* Tabla de movimientos */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -183,6 +186,8 @@ export default function MovementsView() {
                     )}
                 </div>
             </div>
+            </>
+            )}
 
             {/* Modal de Detalle */}
             <Modal

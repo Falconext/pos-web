@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useDashboardStore, type IDashboardState } from '@/zustand/dashboard'
+import { useAuthStore } from '@/zustand/auth'
+import { useSedesStore } from '@/zustand/sedes'
 import { Icon } from '@iconify/react'
 import DataTable from '@/components/Datatable'
 import moment from 'moment'
 import { Calendar } from '@/components/Date'
+import Select from '@/components/Select'
 import { AreaChart, BarChart, Card, Flex, Grid, Metric, Text, Title } from '@tremor/react'
 
 export default function AdminIndex() {
@@ -23,21 +26,38 @@ export default function AdminIndex() {
     dataPaymentMethods,
   }: IDashboardState = useDashboardStore()
 
+  const { auth, sedeActiva } = useAuthStore()
+  const { sedes, listarSedes } = useSedesStore()
+  const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA'
+  const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true
+
   const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format('YYYY-MM-DD'))
   const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format('YYYY-MM-DD'))
+  const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null)
+
+  const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null)
 
   useEffect(() => {
-    getTotalAmountByDate(fechaInicio, fechaFin)
-    getTotalAmountByDatePayment(fechaInicio, fechaFin)
-    getNewClientsByDate(fechaInicio, fechaFin)
-    getTopSells(fechaInicio, fechaFin)
-  }, [fechaInicio, fechaFin])
+    if (isAdmin && esPrincipal) listarSedes()
+  }, [isAdmin, esPrincipal])
+
+  useEffect(() => {
+    getTotalAmountByDate(fechaInicio, fechaFin, effectiveSedeId)
+    getTotalAmountByDatePayment(fechaInicio, fechaFin, effectiveSedeId)
+    getNewClientsByDate(fechaInicio, fechaFin, effectiveSedeId)
+    getTopSells(fechaInicio, fechaFin, effectiveSedeId)
+  }, [fechaInicio, fechaFin, effectiveSedeId])
 
   useEffect(() => {
     if (fechaInicio && fechaFin) {
-      getTotalHeaderDashboard(fechaInicio, fechaFin)
+      getTotalHeaderDashboard(fechaInicio, fechaFin, effectiveSedeId)
     }
-  }, [fechaInicio, fechaFin])
+  }, [fechaInicio, fechaFin, effectiveSedeId])
+
+  const sedesOptions = [
+    { id: 0, value: 'Todas las sedes' },
+    ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+  ]
 
   const handleDate = (date: string, name: string) => {
     // Calendar component returns DD/MM/YYYY
@@ -61,6 +81,7 @@ export default function AdminIndex() {
         Boletas: row?.boletas ?? 0,
         NotasCredito: row?.notasCredito ?? 0,
         NotasDebito: row?.notasDebito ?? 0,
+        Informales: row?.informales ?? 0,
       }
     })
   }, [amountByDate])
@@ -108,13 +129,25 @@ export default function AdminIndex() {
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard General</h1>
-        <div className="flex items-center gap-3">
+        <div className={`${isAdmin && esPrincipal ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} grid grid-cols-1  gap-4 items-center relative z-1`}>
+
+          {isAdmin && esPrincipal && (
+            <Select
+              onChange={(id: any) => setSelectedSedeId(id === 0 ? null : Number(id))}
+              label="Sede"
+              name="sedeId"
+              options={sedesOptions}
+              error=""
+              defaultValue="Todas las sedes"
+            />
+          )}
           <div className="flex items-center gap-2 py-2 rounded-xl">
             <Calendar name="fechaInicio" onChange={handleDate} text="Fecha inicio" />
           </div>
           <div className="flex items-center gap-2 py-2 rounded-xl">
             <Calendar left name="fechaFin" onChange={handleDate} text="Fecha Fin" />
           </div>
+
         </div>
       </div>
 
@@ -172,8 +205,8 @@ export default function AdminIndex() {
             className="mt-4 h-64 md:h-72"
             data={chartData}
             index="date"
-            categories={["Boletas", "Facturas", "NotasCredito", "NotasDebito"]}
-            colors={["blue", "cyan", "rose", "slate"]}
+            categories={["Boletas", "Facturas", "NotasCredito", "NotasDebito", "Informales"]}
+            colors={["blue", "cyan", "rose", "slate", "amber"]}
             curveType="monotone"
             showLegend
             showGridLines={false}

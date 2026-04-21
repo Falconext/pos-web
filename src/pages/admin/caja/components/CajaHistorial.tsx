@@ -5,7 +5,10 @@ import DataTable from '@/components/Datatable'; // Assuming this component exist
 import Pagination from '@/components/Pagination'; // Assuming exists
 import { Calendar } from '@/components/Date'; // Assuming exists
 import Button from '@/components/Button';
+import Select from '@/components/Select';
 import moment from 'moment';
+import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 
 const CajaHistorial: React.FC = () => {
     const {
@@ -19,10 +22,32 @@ const CajaHistorial: React.FC = () => {
         clearFilters,
     } = useCajaStore();
 
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
+
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true;
+
+    const sedesOptions = [
+        { id: 0, value: "Todas las sedes" },
+        ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+    ];
+
     const [localFilters, setLocalFilters] = useState(filters);
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50);
     const [exporting, setExporting] = useState(false);
+
+    useEffect(() => {
+        if (isAdmin && esPrincipal) listarSedes();
+    }, [isAdmin, esPrincipal]);
+
+    // Cuando la sede activa cambia y no es principal, aplicar filtro automáticamente
+    useEffect(() => {
+        if (!esPrincipal && sedeActiva?.id) {
+            setFilters({ ...filters, sedeId: sedeActiva.id });
+        }
+    }, [sedeActiva, esPrincipal]);
 
     useEffect(() => {
         obtenerHistorialCaja(page, limit);
@@ -58,7 +83,7 @@ const CajaHistorial: React.FC = () => {
     const resetFilters = () => {
         clearFilters();
         const today = moment().format('YYYY-MM-DD');
-        setLocalFilters({ fechaInicio: today, fechaFin: today });
+        setLocalFilters({ fechaInicio: today, fechaFin: today, sedeId: null });
         setPage(1);
     };
 
@@ -89,7 +114,7 @@ const CajaHistorial: React.FC = () => {
             ),
             'Fecha Apertura': new Date(turno.fecha).toLocaleDateString('es-PE') + ' ' + new Date(turno.fecha).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
             'Fecha Cierre': '-', // Movements are single points in time
-            'Cajero': turno.usuario?.username || 'Sistema',
+            'Cajero': turno.usuario?.nombre || turno.usuario?.email || 'Sistema',
             'Monto Inicial': turno.tipoMovimiento === 'APERTURA' ? formatCurrency(turno.montoInicial) : '-',
             'Ventas (Efectivo)': '-',
             'Total Cierre': turno.tipoMovimiento === 'CIERRE' ? formatCurrency(turno.montoEfectivo) : '-', // Assuming structure
@@ -118,8 +143,8 @@ const CajaHistorial: React.FC = () => {
             </span>
         ),
         'Fecha': new Date(mov.fecha).toLocaleString('es-PE'),
-        'Usuario': mov.usuario?.username || 'Sistema',
-        'Monto': <span className="font-mono font-medium">{formatCurrency(mov.monto ?? mov.montoInicial ?? mov.montoFinal ?? 0)}</span>,
+        'Usuario': mov.usuario?.nombre || mov.usuario?.email || 'Sistema',
+        'Monto': <span className="font-medium text-gray-900">{formatCurrency(mov.monto ?? mov.montoInicial ?? mov.montoFinal ?? 0)}</span>,
         'Observaciones': mov.observaciones || '-'
     })) || [];
 
@@ -149,6 +174,20 @@ const CajaHistorial: React.FC = () => {
                                 value={localFilters.fechaFin ? moment(localFilters.fechaFin).format('DD/MM/YYYY') : ''}
                             />
                         </div>
+                        {isAdmin && esPrincipal && (
+                            <div>
+                                <Select
+                                    error=""
+                                    label="Sede"
+                                    name="sedeId"
+                                    defaultValue="Todas las sedes"
+                                    onChange={(id: any, _value: string) =>
+                                        setLocalFilters(prev => ({ ...prev, sedeId: id === 0 ? null : Number(id) }))
+                                    }
+                                    options={sedesOptions}
+                                />
+                            </div>
+                        )}
                         <div className="flex gap-3 relative ">
                             <Button onClick={applyFilters} color="primary" className="flex-1">
                                 <Icon icon="solar:filter-bold-duotone" className="mr-2 text-lg" />

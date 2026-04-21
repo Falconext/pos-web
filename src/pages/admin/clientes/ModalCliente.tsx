@@ -27,25 +27,26 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
     const persons = [{ id: "CLIENTE", value: "CLIENTE" }, { id: "PROVEEDOR", value: "PROVEEDOR" }, { id: "CLIENTE_PROVEEDOR", value: "CLIENTE-PROVEEDOR" }]
     const handleChange = async (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormValues({
+        const updatedFormValues = {
             ...formValues,
             [name]: value
-        });
+        };
+        setFormValues(updatedFormValues);
         if (name === "nroDoc") {
             const cleanValue = value.trim();
             if (cleanValue.length === 8 || cleanValue.length === 11) {
                 const result = await getClientFromDoc(cleanValue);
                 console.log(result)
                 if (result) {
-                    setFormValues((prev: IFormClient) => ({
-                        ...prev,
+                    setFormValues({
+                        ...updatedFormValues,
                         departamento: result.departamento || "",
                         distrito: result.distrito || "",
                         provincia: result.provincia || "",
                         ubigeo: result.ubigeo_sunat || "",
                         nombre: result.nombre_completo || result.nombre_o_razon_social || "",
-                        direccion: result.direccion || "",
-                    }));
+                        direccion: result.direccion || result.direccion_completa || "",
+                    });
                 }
             }
         }

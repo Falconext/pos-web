@@ -42,6 +42,7 @@ const FormGuiaRemision = () => {
 
     // Initial state matching IGuiaRemision
     const [formValues, setFormValues] = useState<IGuiaRemision>({
+        tipoGuia: "REMITENTE",
         serie: "T001",
         correlativo: 0,
         fechaEmision: format(new Date(), "yyyy-MM-dd"),

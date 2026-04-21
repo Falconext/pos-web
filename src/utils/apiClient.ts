@@ -1,7 +1,25 @@
 import axios from 'axios'
 import { useAuthStore } from '@/zustand/auth'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.falconext.pe/api'
+const inferDefaultBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:4001/api'
+    }
+    if (/^192\.168\./.test(hostname) || /^10\./.test(hostname)) {
+      return `http://${hostname}:4001/api`
+    }
+  }
+
+  return 'https://api.falconext.pe/api'
+}
+
+const BASE_URL = inferDefaultBaseUrl()
 
 let isRefreshing = false
 let failedQueue: Array<{

@@ -60,24 +60,23 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
         try {
             const resp: any = await post(`cliente/crear`, data);
             console.log(resp);
-            if (resp.code === 1) {
-                useAlertStore.setState({ success: true });
+            if (resp.code === 1 || resp.success === true) {
+                useAlertStore.setState({ success: true, loading: false });
                 set((state) => ({
                     clients: [{
                         ...data,
-                        id: resp.data?.id,
+                        id: resp.data?.id || resp.id,
                     }, ...state.clients]
                 }), false, "ADD_CLIENTS");
-                useAlertStore.setState({ loading: false });
-                useAlertStore.getState().alert("Se agrego el cliente correctamente", "success")
-            }
-            if (resp.success === false) {
-                useAlertStore.setState({ success: false });
-                useAlertStore.getState().alert(`Este dni ya ha sido registrado en un cliente`, "error")
+                useAlertStore.getState().alert("Se agregó el cliente correctamente", "success");
+            } else {
+                useAlertStore.setState({ success: false, loading: false });
+                useAlertStore.getState().alert(resp.message || `Este documento ya ha sido registrado en un cliente`, "error");
             }
         } catch (error: any) {
-            useAlertStore.setState({ success: false });
-            return useAlertStore.getState().alert(`${error}, el dni ya ha sido registrado en un cliente`, "error")
+            useAlertStore.setState({ success: false, loading: false });
+            const errMsg = error?.response?.data?.message || error?.message || "Error al guardar el cliente";
+            useAlertStore.getState().alert(errMsg, "error");
         }
     },
     editClients: async (data: any) => {

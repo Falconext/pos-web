@@ -17,6 +17,7 @@ interface Empresa {
   ubigeo?: string;
   nombreComercial?: string;
   esAgenteRetencion?: boolean;
+  usaCodigoBarrasManual?: boolean | null;
   plan: {
     id: number;
     nombre: string;
@@ -99,6 +100,7 @@ interface UpdateEmpresaDto {
   providerToken?: string;
   providerId?: string;
   esAgenteRetencion?: boolean;
+  usaCodigoBarrasManual?: boolean;
 }
 
 interface ListEmpresaDto {

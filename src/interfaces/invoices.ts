@@ -15,6 +15,9 @@ export type IInvoices = {
   sunatCdrZip: string
   sunatXml: string,
   saldo: number
+  sede: {
+    nombre: string
+  },
   numeroOrdenTrabajo: string
   mtoDescuentoGlobal: number
   mtoOperGravadas: number

@@ -108,6 +108,7 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             width={16} />
                         {isGeneratingImage ? 'Buscando...' : 'Auto-Generar Imagen'}
                     </button>
+                    <p className="text-[10px] text-gray-400 mt-2 text-center leading-tight">Nota: La imagen generada puede no ser exacta y sirve solo como apoyo referencial.</p>
                 </div>
             </div>
         </div>

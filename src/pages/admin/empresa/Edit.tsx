@@ -32,6 +32,7 @@ interface FormData {
   numeroCuenta?: string;
   cci?: string;
   monedaCuenta?: string;
+  usaCodigoBarrasManual?: boolean;
 }
 
 interface FormErrors {
@@ -77,7 +78,8 @@ const EditEmpresa = () => {
     fechaActivacion: '',
     fechaExpiracion: '',
     providerToken: '',
-    providerId: ''
+    providerId: '',
+    usaCodigoBarrasManual: false,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -132,7 +134,8 @@ const EditEmpresa = () => {
         bancoNombre: (empresa as any).bancoNombre || '',
         numeroCuenta: (empresa as any).numeroCuenta || '',
         cci: (empresa as any).cci || '',
-        monedaCuenta: (empresa as any).monedaCuenta || 'SOLES'
+        monedaCuenta: (empresa as any).monedaCuenta || 'SOLES',
+        usaCodigoBarrasManual: Boolean((empresa as any).usaCodigoBarrasManual),
       });
 
       // Mostrar logo actual si existe
@@ -249,6 +252,14 @@ const EditEmpresa = () => {
     setFormData(prev => ({
       ...prev,
       tipoEmpresa: id as 'FORMAL' | 'INFORMAL'
+    }));
+  };
+
+  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked
     }));
   };
 
@@ -412,6 +423,24 @@ const EditEmpresa = () => {
                   error={errors.razonSocial}
                   isLabel
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/40 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    name="usaCodigoBarrasManual"
+                    checked={Boolean(formData.usaCodigoBarrasManual)}
+                    onChange={handleCheckboxChange}
+                    className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900">Habilitar código de barras en productos</span>
+                    <span className="text-sm text-gray-600 mt-0.5">
+                      Fuerza la visualización del campo "Código de Barras" en el formulario de productos, sin depender del rubro.
+                    </span>
+                  </div>
+                </label>
               </div>
 
               <div>

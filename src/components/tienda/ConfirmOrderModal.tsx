@@ -16,7 +16,7 @@ export default function ConfirmOrderModal({
     onConfirm,
     total,
     loading = false,
-    tiendaColor = '#045659'
+    tiendaColor = '#1E1B4B'
 }: ConfirmOrderModalProps) {
     if (!isOpen) return null;
 

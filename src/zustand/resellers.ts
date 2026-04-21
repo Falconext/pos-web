@@ -18,20 +18,37 @@ export interface Reseller {
     };
 }
 
+export interface ResellerProfitability {
+    resellerId: number;
+    clientesActivos: number;
+    mrrBruto: number;
+    mrrNeto: number;
+    margenMensual: number;
+    margenPct: number;
+    churn30dPct: number;
+    clientesPerdidos30d: number;
+    renovacionesAplicadas30d: number;
+    cobradoRenovaciones30d: number;
+}
+
 export interface IResellerState {
     resellers: Reseller[];
     reseller: Reseller | null;
+    rentabilidad: ResellerProfitability[];
     getAllResellers: () => Promise<{ success: boolean; error?: string }>;
+    getRentabilidad: (days?: number) => Promise<{ success: boolean; error?: string }>;
     createReseller: (data: any) => Promise<{ success: boolean; error?: string }>;
     getResellerById: (id: number) => Promise<{ success: boolean; error?: string }>;
     recargarSaldo: (id: number, monto: number, referencia?: string) => Promise<{ success: boolean; error?: string }>;
     updateReseller: (id: number, data: any) => Promise<{ success: boolean; error?: string }>;
+    toggleEstadoReseller: (id: number, activo: boolean) => Promise<{ success: boolean; error?: string }>;
     resetReseller: () => void;
 }
 
 export const useResellerStore = create<IResellerState>()(devtools((set) => ({
     resellers: [],
     reseller: null,
+    rentabilidad: [],
 
     getAllResellers: async () => {
         try {
@@ -53,6 +70,23 @@ export const useResellerStore = create<IResellerState>()(devtools((set) => ({
         } catch (error: any) {
             useAlertStore.setState({ loading: false });
             useAlertStore.getState().alert(error.message || 'Error al obtener distribuidores', 'error');
+            return { success: false, error: error.message };
+        }
+    },
+
+    getRentabilidad: async (days = 30) => {
+        try {
+            const resp: any = await get(`resellers/rentabilidad?days=${days}`);
+
+            if (resp.code === 1) {
+                set({ rentabilidad: Array.isArray(resp.data) ? resp.data : [] }, false, 'GET_RENTABILIDAD_RESELLERS');
+                return { success: true };
+            }
+
+            useAlertStore.getState().alert(resp.error || 'Error al obtener rentabilidad de distribuidores', 'error');
+            return { success: false, error: resp.error };
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.message || 'Error al obtener rentabilidad de distribuidores', 'error');
             return { success: false, error: error.message };
         }
     },
@@ -169,8 +203,35 @@ export const useResellerStore = create<IResellerState>()(devtools((set) => ({
         }
     },
 
+    toggleEstadoReseller: async (id: number, activo: boolean) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await patch(`resellers/${id}/estado`, { activo });
+
+            if (resp.code === 1) {
+                useAlertStore.setState({ loading: false });
+                useAlertStore.getState().alert(`Distribuidor ${activo ? 'activado' : 'desactivado'} correctamente`, 'success');
+
+                const currentResellers = await get('resellers');
+                if (currentResellers.code === 1) {
+                    set({ resellers: Array.isArray(currentResellers.data) ? currentResellers.data : [] }, false, 'REFRESH_RESELLERS_STATUS');
+                }
+
+                return { success: true };
+            }
+
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(resp.error || 'Error al cambiar estado del distribuidor', 'error');
+            return { success: false, error: resp.error };
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al cambiar estado del distribuidor', 'error');
+            return { success: false, error: error.message };
+        }
+    },
+
     resetReseller: () => {
-        set({ reseller: null }, false, 'RESET_RESELLER');
+        set({ reseller: null, rentabilidad: [] }, false, 'RESET_RESELLER');
     }
 
 })));

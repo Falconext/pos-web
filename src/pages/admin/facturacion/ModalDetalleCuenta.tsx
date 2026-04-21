@@ -6,6 +6,14 @@ interface ModalDetalleCuentaProps {
     onClose: () => void;
 }
 
+const estadoLabel = (estado: string) => {
+    if (estado === 'PENDIENTE_PAGO') return 'Pendiente';
+    if (estado === 'PAGO_PARCIAL') return 'Pago Parcial';
+    if (estado === 'COMPLETADO') return 'Pagado';
+    if (estado === 'ANULADO') return 'Anulado';
+    return estado || '-';
+};
+
 const ModalDetalleCuenta = ({ comprobante, onClose }: ModalDetalleCuentaProps) => {
     if (!comprobante) return null;
 
@@ -13,182 +21,114 @@ const ModalDetalleCuenta = ({ comprobante, onClose }: ModalDetalleCuentaProps) =
     const tieneDetraccion = comprobante.montoDetraccion > 0 && comprobante.porcentajeDetraccion !== 3;
     const cuotas = comprobante.cuotas || [];
     const totalComprobante = Number(comprobante.mtoImpVenta || 0);
-    const montoRetencionDetraccion = Number(comprobante.montoDetraccion || 0);
-    const saldoNeto = totalComprobante - montoRetencionDetraccion;
+    const montoDescuento = Number(comprobante.montoDetraccion || 0);
+    const saldoNeto = totalComprobante - montoDescuento;
+    const saldoPendiente = Number(comprobante.saldo || 0);
+    const estado = comprobante.estadoPago;
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden max-h-[90vh] flex flex-col">
+
                 {/* Header */}
-                <div className="bg-[#111] p-5 text-white">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                <Icon icon="solar:document-text-bold-duotone" className="text-2xl" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-lg">Detalle de Crédito</h3>
-                                <p className="text-sm text-white/80">
-                                    {comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}
-                                </p>
-                            </div>
-                        </div>
-                        <button onClick={onClose} className="text-white/80 hover:text-white">
-                            <Icon icon="mdi:close" className="text-2xl" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Información General */}
-                <div className="p-5 border-b border-gray-100">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Icon icon="solar:info-circle-bold-duotone" className="text-blue-500" />
-                        Información General
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <p className="text-gray-500">Cliente</p>
-                            <p className="font-medium text-gray-900">{comprobante.cliente?.nombre || 'Sin cliente'}</p>
+                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-gray-100 text-gray-600">
+                            <Icon icon="solar:document-text-bold-duotone" className="text-xl" />
                         </div>
                         <div>
-                            <p className="text-gray-500">RUC/DNI</p>
-                            <p className="font-medium text-gray-900">{comprobante.cliente?.nroDoc || '-'}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-500">Fecha Emisión</p>
-                            <p className="font-medium text-gray-900">{moment(comprobante.fechaEmision).format('DD/MM/YYYY')}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-500">Forma de Pago</p>
-                            <p className="font-medium text-gray-900">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                                    {comprobante.formaPagoTipo}
-                                </span>
+                            <h3 className="font-bold text-gray-900">Detalle de Cuenta</h3>
+                            <p className="text-xs text-gray-400">
+                                {comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}
                             </p>
                         </div>
                     </div>
+                    <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                        <Icon icon="mdi:close" className="text-xl" />
+                    </button>
                 </div>
 
-                {/* Montos */}
-                <div className="p-5 border-b border-gray-100 bg-gray-50">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Icon icon="solar:calculator-bold-duotone" className="text-green-500" />
-                        Desglose de Montos
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Total Comprobante:</span>
-                            <span className="font-semibold text-gray-900">S/ {totalComprobante.toFixed(2)}</span>
-                        </div>
+                <div className="overflow-y-auto flex-1">
+                    {/* Info del cliente */}
+                    <div className="p-5 space-y-3 border-b border-gray-100">
+                        <Row label="Cliente" value={comprobante.cliente?.nombre || 'Sin cliente'} />
+                        <Row label="RUC / DNI" value={comprobante.cliente?.nroDoc || '-'} />
+                        <Row label="Fecha emisión" value={moment(comprobante.fechaEmision).format('DD/MM/YYYY')} />
+                        <Row label="Forma de pago" value={comprobante.formaPagoTipo || '-'} />
+                    </div>
 
+                    {/* Montos */}
+                    <div className="p-5 space-y-3 border-b border-gray-100">
+                        <Row label="Total comprobante" value={`S/ ${totalComprobante.toFixed(2)}`} />
                         {(tieneRetencion || tieneDetraccion) && (
-                            <>
-                                <div className="flex justify-between text-orange-600">
-                                    <span className="flex items-center gap-1">
-                                        <Icon icon="solar:minus-circle-bold-duotone" className="text-sm" />
-                                        {tieneRetencion ? 'Retención 3% IGV:' : `Detracción ${comprobante.porcentajeDetraccion}%:`}
-                                    </span>
-                                    <span className="font-semibold">- S/ {montoRetencionDetraccion.toFixed(2)}</span>
-                                </div>
-                                <hr className="border-dashed" />
-                                <div className="flex justify-between text-lg font-bold text-green-600">
-                                    <span>Saldo Neto a Cobrar:</span>
-                                    <span>S/ {saldoNeto.toFixed(2)}</span>
-                                </div>
-                            </>
+                            <Row
+                                label={tieneRetencion ? 'Retención 3% IGV' : `Detracción ${comprobante.porcentajeDetraccion}%`}
+                                value={`- S/ ${montoDescuento.toFixed(2)}`}
+                            />
                         )}
-
-                        {!tieneRetencion && !tieneDetraccion && (
-                            <div className="flex justify-between text-lg font-bold text-green-600">
-                                <span>Total a Cobrar:</span>
-                                <span>S/ {totalComprobante.toFixed(2)}</span>
-                            </div>
+                        {(tieneRetencion || tieneDetraccion) && (
+                            <Row label="Neto a cobrar" value={`S/ ${saldoNeto.toFixed(2)}`} bold />
                         )}
                     </div>
-                </div>
 
-                {/* Cuotas */}
-                {cuotas.length > 0 && (
+                    {/* Estado actual */}
                     <div className="p-5 border-b border-gray-100">
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <Icon icon="solar:calendar-bold-duotone" className="text-purple-500" />
-                            Plan de Cuotas ({cuotas.length})
-                        </h4>
-                        <div className="space-y-2">
-                            {cuotas.map((cuota: any, index: number) => {
-                                const fechaVenc = moment(cuota.fechaVencimiento);
-                                const vencida = fechaVenc.isBefore(moment(), 'day');
-                                const hoy = fechaVenc.isSame(moment(), 'day');
-
-                                return (
-                                    <div
-                                        key={index}
-                                        className={`flex items-center justify-between p-3 rounded-lg border ${vencida ? 'bg-red-50 border-red-200' :
-                                                hoy ? 'bg-yellow-50 border-yellow-200' :
-                                                    'bg-gray-50 border-gray-200'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${vencida ? 'bg-red-200 text-red-700' :
-                                                    hoy ? 'bg-yellow-200 text-yellow-700' :
-                                                        'bg-gray-200 text-gray-700'
-                                                }`}>
-                                                {index + 1}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Cuota {String(index + 1).padStart(3, '0')}</p>
-                                                <p className={`text-xs ${vencida ? 'text-red-600' : 'text-gray-500'}`}>
-                                                    Vence: {fechaVenc.format('DD/MM/YYYY')}
-                                                    {vencida && ' (Vencida)'}
-                                                    {hoy && ' (Hoy)'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className="font-bold text-gray-900">
-                                            S/ {Number(cuota.monto).toFixed(2)}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* Estado Actual */}
-                <div className="p-5 bg-blue-50">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Icon icon="solar:chart-bold-duotone" className="text-blue-500" />
-                        Estado Actual
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white rounded-xl p-4 text-center border border-blue-200">
-                            <p className="text-sm text-gray-500 mb-1">Saldo Pendiente</p>
-                            <p className="text-2xl font-black text-blue-600">
-                                S/ {Number(comprobante.saldo || 0).toFixed(2)}
-                            </p>
-                        </div>
-                        <div className={`rounded-xl p-4 text-center border ${comprobante.estadoPago === 'COMPLETADO'
-                                ? 'bg-green-50 border-green-200'
-                                : 'bg-orange-50 border-orange-200'
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-gray-400 mb-0.5">Saldo pendiente</p>
+                                <p className="text-2xl font-black text-gray-900">S/ {saldoPendiente.toFixed(2)}</p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                estado === 'COMPLETADO' ? 'bg-emerald-100 text-emerald-700' :
+                                estado === 'PAGO_PARCIAL' ? 'bg-blue-100 text-blue-700' :
+                                estado === 'ANULADO' ? 'bg-red-100 text-red-700' :
+                                'bg-amber-100 text-amber-700'
                             }`}>
-                            <p className="text-sm text-gray-500 mb-1">Estado</p>
-                            <p className={`text-lg font-bold ${comprobante.estadoPago === 'COMPLETADO'
-                                    ? 'text-green-600'
-                                    : 'text-orange-600'
-                                }`}>
-                                {comprobante.estadoPago === 'PENDIENTE_PAGO' ? 'PENDIENTE' :
-                                    comprobante.estadoPago === 'PAGO_PARCIAL' ? 'PAGO PARCIAL' :
-                                        comprobante.estadoPago}
-                            </p>
+                                {estadoLabel(estado)}
+                            </span>
                         </div>
                     </div>
+
+                    {/* Cuotas */}
+                    {cuotas.length > 0 && (
+                        <div className="p-5">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                                Plan de cuotas ({cuotas.length})
+                            </p>
+                            <div className="space-y-2">
+                                {cuotas.map((cuota: any, index: number) => {
+                                    const fechaVenc = moment(cuota.fechaVencimiento);
+                                    const vencida = fechaVenc.isBefore(moment(), 'day');
+                                    const hoy = fechaVenc.isSame(moment(), 'day');
+                                    return (
+                                        <div key={index} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+                                            <div className="flex items-center gap-3">
+                                                <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 text-xs font-bold flex items-center justify-center">
+                                                    {index + 1}
+                                                </span>
+                                                <div>
+                                                    <p className="text-sm text-gray-700">Cuota {String(index + 1).padStart(2, '0')}</p>
+                                                    <p className={`text-xs ${vencida ? 'text-red-500' : hoy ? 'text-amber-500' : 'text-gray-400'}`}>
+                                                        {fechaVenc.format('DD/MM/YYYY')}
+                                                        {vencida && ' · Vencida'}
+                                                        {hoy && ' · Hoy'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm font-semibold text-gray-800">S/ {Number(cuota.monto).toFixed(2)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-100 flex justify-end">
+                <div className="p-4 border-t border-gray-100">
                     <button
                         onClick={onClose}
-                        className="px-5 py-2.5 bg-[#111] text-white rounded-lg hover:bg-[#333] transition-colors font-medium"
+                        className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm"
                     >
                         Cerrar
                     </button>
@@ -197,5 +137,12 @@ const ModalDetalleCuenta = ({ comprobante, onClose }: ModalDetalleCuentaProps) =
         </div>
     );
 };
+
+const Row = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
+    <div className="flex justify-between items-center text-sm">
+        <span className="text-gray-400">{label}</span>
+        <span className={`${bold ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{value}</span>
+    </div>
+);
 
 export default ModalDetalleCuenta;

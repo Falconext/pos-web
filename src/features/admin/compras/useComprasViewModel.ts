@@ -39,6 +39,7 @@ export const useComprasViewModel = () => {
         };
         if (filters.fechaInicio) params.fechaInicio = filters.fechaInicio;
         if (filters.fechaFin) params.fechaFin = filters.fechaFin;
+        if (filters.sedeId) params.sedeId = filters.sedeId;
         return params;
     };
 
@@ -79,6 +80,8 @@ export const useComprasViewModel = () => {
             setState(prev => ({ ...prev, currentPage: 1, filters: { ...prev.filters, search: value } })),
         setEstadoPago: (value: string) =>
             setState(prev => ({ ...prev, currentPage: 1, filters: { ...prev.filters, estadoPago: value } })),
+        setSedeId: (id: number | null) =>
+            setState(prev => ({ ...prev, currentPage: 1, filters: { ...prev.filters, sedeId: id } })),
         handleDate: (date: string, name: string) => {
             if (!moment(date, 'DD/MM/YYYY', true).isValid()) return;
             const formatted = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');

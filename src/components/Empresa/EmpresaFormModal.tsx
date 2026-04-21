@@ -38,6 +38,7 @@ interface CreateFormData {
   fechaExpiracion?: string;
   providerToken?: string;
   providerId?: string;
+  usaCodigoBarrasManual?: boolean;
   usuario: {
     nombre: string;
     email: string;
@@ -66,6 +67,7 @@ interface EditFormData {
   providerToken?: string;
   providerId?: string;
   esAgenteRetencion?: boolean;
+  usaCodigoBarrasManual?: boolean;
   usuario?: {
     nombre?: string;
     email?: string;
@@ -105,6 +107,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     nombreComercial: '',
     fechaActivacion: new Date().toISOString().split('T')[0],
     fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    usaCodigoBarrasManual: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -126,6 +129,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     providerToken: '',
     providerId: '',
     esAgenteRetencion: false,
+    usaCodigoBarrasManual: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -176,6 +180,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         fechaExpiracion: empresa.fechaExpiracion.split('T')[0],
         providerToken: (empresa as any).providerToken || '',
         providerId: (empresa as any).providerId || '',
+        usaCodigoBarrasManual: Boolean((empresa as any).usaCodigoBarrasManual),
         usuario: {
           nombre: adminUser.nombre || '',
           email: adminUser.email || '',
@@ -364,35 +369,49 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     }
   };
 
-  const width = '1100px';
+  const width = '1200px';
 
   return (
-    <Modal isOpenModal={open} closeModal={onClose} title={isEdit ? 'Editar empresa' : 'Nueva empresa'} width={width}>
-      <div className="grid grid-cols-1 md:grid-cols-12">
+    <Modal isOpenModal={open} closeModal={onClose} title={isEdit ? 'Editar Empresa' : 'Nueva Empresa'} width={width}>
+      <div className="grid grid-cols-1 md:grid-cols-12 min-h-[600px]">
         {/* Sidebar */}
-        <aside className="md:col-span-3 border-r border-gray-100 p-5 bg-gray-50">
-          <div className="flex flex-col items-center text-center">
-            <div className="h-20 w-20 rounded-full bg-gray-200 overflow-hidden mb-3 border">
-              {logoPreview ? <img src={logoPreview} className="h-full w-full object-cover" /> : null}
+        <aside className="md:col-span-3 border-r border-gray-100 p-6 bg-slate-50/50 flex flex-col">
+          <div className="flex flex-col items-center text-center pb-6 border-b border-gray-100 mb-6">
+            <div className="h-24 w-24 rounded-full bg-white shadow-sm overflow-hidden mb-4 border border-gray-200 flex items-center justify-center">
+              {logoPreview ? (
+                <img src={logoPreview} className="h-full w-full object-cover" alt="Logo de la empresa" />
+              ) : (
+                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              )}
             </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {isEdit ? (empresa?.razonSocial || '-') : 'Nueva empresa'}
+            <p className="text-base font-bold text-gray-900 leading-tight">
+              {isEdit ? (empresa?.razonSocial || '-') : 'Nueva Empresa'}
             </p>
-            <p className="text-xs text-gray-500">{isEdit ? empresa?.ruc : 'RUC por registrar'}</p>
+            <p className="text-xs text-gray-500 mt-1 font-medium bg-gray-100 px-2 py-1 rounded-md">{isEdit ? empresa?.ruc : 'RUC por registrar'}</p>
           </div>
-          <nav className="mt-6 space-y-1">
+          
+          <nav className="space-y-1.5 flex-1">
             {[
-              { id: 'datos', label: 'Datos de empresa' },
-              { id: 'suscripcion', label: 'Plan y vigencia' },
-              { id: 'sunat', label: 'SUNAT' },
-              { id: 'admin', label: 'Administrador' },
+              { id: 'datos', label: 'Datos de Empresa', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+              { id: 'suscripcion', label: 'Plan y Vigencia', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+              { id: 'sunat', label: 'Integración SUNAT', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+              { id: 'admin', label: 'Administrador Principal', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
             ].map((t: any) => (
               <button
                 key={t.id}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${activeTab === t.id ? 'bg-white shadow border border-gray-200 font-semibold' : 'hover:bg-white'
-                  }`}
+                type="button"
+                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm transition-all duration-200 ${
+                  activeTab === t.id 
+                    ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/20' 
+                    : 'text-gray-600 hover:bg-white hover:text-gray-900 border border-transparent hover:border-gray-200 hover:shadow-sm'
+                }`}
                 onClick={() => setActiveTab(t.id)}
               >
+                <svg className={`w-5 h-5 mr-3 ${activeTab === t.id ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={activeTab === t.id ? "2" : "1.5"} d={t.icon} />
+                </svg>
                 {t.label}
               </button>
             ))}
@@ -400,182 +419,288 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         </aside>
 
         {/* Content */}
-        <section className="md:col-span-9 p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {activeTab === 'datos' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
-                  <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
-                  <InputPro name="nombreComercial" label="Nombre Comercial" isLabel value={isEdit ? editData.nombreComercial : createData.nombreComercial} onChange={handleChange} error={errors.nombreComercial} />
-                  {/* @ts-ignore */}
-                  <Select name="rubroId" label="Rubro" options={rubrosOptions} value={isEdit ? rubrosOptions.find((r: any) => r.id === editData.rubroId)?.value : rubrosOptions.find((r: any) => r.id === createData.rubroId)?.value} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
-                  <Select error={() => { }} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
-                  <div className="md:col-span-2">
-                    <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
-                  </div>
-                  {isEdit && (
-                    <div className="md:col-span-2">
-                      <label className="flex items-center space-x-2 p-4 border rounded-lg bg-purple-50 border-purple-100 cursor-pointer hover:bg-purple-100 transition-colors">
-                        <input
-                          type="checkbox"
-                          name="esAgenteRetencion"
-                          checked={editData.esAgenteRetencion || false}
-                          onChange={(e) => setEditData(prev => ({ ...prev, esAgenteRetencion: e.target.checked }))}
-                          className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-gray-800">Soy Agente de Retención (SUNAT)</span>
-                          <span className="text-xs text-gray-500">
-                            Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT (Régimen de Retenciones del IGV).
-                          </span>
-                        </div>
-                      </label>
+        <section className="md:col-span-9 p-8 bg-white overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-6 h-full flex flex-col">
+            
+            <div className="flex-1">
+              {activeTab === 'datos' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Información General</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
+                    <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
+                    <InputPro name="nombreComercial" label="Nombre Comercial" isLabel value={isEdit ? editData.nombreComercial : createData.nombreComercial} onChange={handleChange} error={errors.nombreComercial} />
+                    {/* @ts-ignore */}
+                    <div className="relative">
+                      <Select name="rubroId" label="Rubro" options={rubrosOptions} value={isEdit ? (rubrosOptions as any[]).find((r: any) => r.id === editData.rubroId)?.value : (rubrosOptions as any[]).find((r: any) => r.id === createData.rubroId)?.value} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
                     </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
-                    <input type="file" accept="image/*" onChange={handleLogoChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                    {logoPreview && <img src={logoPreview} alt="preview" className="h-16 w-16 mt-2 rounded object-cover" />}
+                    <Select error={() => { }} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
+                    
+                    <div className="md:col-span-2">
+                      <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                       <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Logo de la Empresa</label>
+                      <div className="flex items-center space-x-4">
+                        {logoPreview && (
+                          <div className="h-16 w-16 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                            <img src={logoPreview} alt="preview" className="h-full w-full object-cover" />
+                          </div>
+                        )}
+                        <label className="flex flex-col items-center justify-center w-full max-w-sm h-16 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-300 transition-colors">
+                            <div className="flex flex-row items-center justify-center space-x-2">
+                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                <p className="text-sm text-gray-500 font-medium">Click para subir un logo</p>
+                            </div>
+                            <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                        </label>
+                      </div>
+                    </div>
+
+                    {isEdit && (
+                      <div className="md:col-span-2 mt-2">
+                        <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors mb-3">
+                          <input
+                            type="checkbox"
+                            name="usaCodigoBarrasManual"
+                            checked={Boolean(editData.usaCodigoBarrasManual)}
+                            onChange={(e) => setEditData(prev => ({ ...prev, usaCodigoBarrasManual: e.target.checked }))}
+                            className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-900">Habilitar código de barras en productos</span>
+                            <span className="text-sm text-gray-600 mt-0.5">
+                              Fuerza la visualización del campo "Código de Barras" en productos, sin depender del rubro.
+                            </span>
+                          </div>
+                        </label>
+
+                        <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                          <input
+                            type="checkbox"
+                            name="esAgenteRetencion"
+                            checked={editData.esAgenteRetencion || false}
+                            onChange={(e) => setEditData(prev => ({ ...prev, esAgenteRetencion: e.target.checked }))}
+                            className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-900">Agente de Retención (SUNAT)</span>
+                            <span className="text-sm text-gray-600 mt-0.5">
+                              Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT (Régimen de Retenciones del IGV).
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+
+                    {!isEdit && (
+                      <div className="md:col-span-2 mt-2">
+                        <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                          <input
+                            type="checkbox"
+                            name="usaCodigoBarrasManual"
+                            checked={Boolean(createData.usaCodigoBarrasManual)}
+                            onChange={(e) => setCreateData(prev => ({ ...prev, usaCodigoBarrasManual: e.target.checked }))}
+                            className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-900">Habilitar código de barras en productos</span>
+                            <span className="text-sm text-gray-600 mt-0.5">
+                              Activa el campo "Código de Barras" en productos para esta empresa desde el inicio.
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'suscripcion' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputPro name="fechaActivacion" label="Fecha de Activación" type="date" isLabel value={isEdit ? editData.fechaActivacion : createData.fechaActivacion} onChange={handleChange} />
-                  <InputPro name="fechaExpiracion" label="Fecha de Expiración" type="date" isLabel value={isEdit ? editData.fechaExpiracion : (createData.fechaExpiracion || '')} onChange={handleChange} />
-                </div>
-                {/* Planes como tarjetas */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  {planes && Array.isArray(planes) && planes.map((plan: any) => {
-                    const selectedPlanId = Number(isEdit ? editData.planId : createData.planId);
-                    const selected = selectedPlanId === Number(plan.id);
-                    return (
-                      <div key={plan.id} onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))} className={`p-4 border rounded-lg cursor-pointer transition ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}>
-                        <div className="font-semibold text-gray-800">{plan.nombre}</div>
-                        <div className="text-sm text-gray-600">{plan.descripcion || ''}</div>
-                        <div className="text-lg font-bold text-blue-600 mt-2">S/ {plan.costo?.toString()} {plan.tipoFacturacion && (<span className="text-xs text-gray-500 ml-1">/ {plan.tipoFacturacion.toLowerCase()}</span>)}</div>
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">{plan.limiteUsuarios && <span>Usuarios: {plan.limiteUsuarios}</span>}{plan.duracionDias && <span>{plan.duracionDias} días</span>}</div>
-                      </div>
-                    );
-                  })}
-                </div>
+              {activeTab === 'suscripcion' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Planes Disponibles</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {planes && Array.isArray(planes) && planes.map((plan: any) => {
+                      const selectedPlanId = Number(isEdit ? editData.planId : createData.planId);
+                      const selected = selectedPlanId === Number(plan.id);
+                      return (
+                        <div key={plan.id} onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))} className={`relative p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col h-full ${selected ? 'border-blue-600 bg-blue-50/40 shadow-lg ring-1 ring-blue-600' : 'border-gray-200 hover:border-blue-300 hover:shadow-md bg-white'}`}>
+                          {selected && (
+                            <div className="absolute top-3 right-3 text-blue-600">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="font-extrabold text-gray-900 mb-1 text-lg pr-6">{plan.nombre}</div>
+                          <div className="text-xs text-gray-500 mb-4 line-clamp-2 min-h-[32px]">{plan.descripcion || 'Plan estándar para uso general'}</div>
+                          <div className="mt-auto">
+                            <div className="text-2xl font-black text-blue-700 tracking-tight">
+                              <span className="text-lg text-blue-600 font-bold mr-1">S/</span>
+                              {Number(plan.costo || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {plan.tipoFacturacion && (<span className="text-xs font-medium text-gray-500 ml-1">/{plan.tipoFacturacion.toLowerCase()}</span>)}
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-medium text-gray-600 mt-4 pt-3 border-t border-gray-100">
+                              {plan.limiteUsuarios ? <span className="flex items-center"><svg className="w-3.5 h-3.5 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>{plan.limiteUsuarios} Usu.</span> : <span />}
+                              {plan.duracionDias ? <span className="flex items-center"><svg className="w-3.5 h-3.5 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>{plan.duracionDias} días</span> : <span />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                {/* Info de tienda virtual según plan seleccionado */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4 mt-8">Fechas de Vigencia</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <InputPro name="fechaActivacion" label="Fecha de Activación" type="date" isLabel value={isEdit ? editData.fechaActivacion : createData.fechaActivacion} onChange={handleChange} />
+                    <InputPro name="fechaExpiracion" label="Fecha de Expiración" type="date" isLabel value={isEdit ? editData.fechaExpiracion : (createData.fechaExpiracion || '')} onChange={handleChange} />
+                  </div>
+
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-5 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <p className="text-gray-700">
-                        <span className="font-medium">Tienda virtual del plan:</span>{' '}
+                      <h4 className="font-bold text-gray-900">Módulo de Tienda Virtual</h4>
+                      <p className="text-sm text-gray-600 mt-1">
                         {selectedPlan?.tieneTienda ? (
-                          <span className="text-emerald-600 font-semibold">Incluida</span>
+                          <span>Este plan <strong className="text-emerald-600 font-semibold">incluye tienda virtual</strong>.</span>
                         ) : (
-                          <span className="text-gray-500">No incluida</span>
+                          <span>Este plan no incluye módulo de tienda virtual.</span>
                         )}
                       </p>
                       {selectedPlan?.tieneTienda && isEdit && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Estado: {(empresa as any)?.slugTienda ? 'Activa' : 'Pendiente de configurar'}
+                        <div className="mt-2 text-xs text-gray-600 flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${(empresa as any)?.slugTienda ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                          <span>Estado: <strong className="font-medium">{(empresa as any)?.slugTienda ? 'Activa' : 'Pendiente de configurar'}</strong></span>
                           {(empresa as any)?.slugTienda && (
                             <>
-                              {' '}• URL:{' '}
-                              <span className="underline break-all">{window.location.origin}/tienda/{(empresa as any).slugTienda}</span>
+                              <span className="text-gray-300">|</span>
+                              <a href={`${window.location.origin}/tienda/{(empresa as any).slugTienda}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
+                                Ver Tienda
+                              </a>
                             </>
                           )}
-                        </p>
+                        </div>
                       )}
                     </div>
                     {selectedPlan?.tieneTienda ? (
-                      // Si el plan cambió y aún no se ha guardado, deshabilitar navegación
                       isAdminSistema ? (
-                        <Button type="button" color="secondary" disabled>
-                          Disponible solo para el administrador de la empresa
-                        </Button>
+                        <div className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 text-center">Solo administradores<br/>de la empresa</div>
                       ) : (
                         <Button
                           type="button"
                           color="secondary"
+                          className="shrink-0 font-medium whitespace-nowrap shadow-sm"
                           disabled={isEdit ? initialEditPlanId !== undefined && initialEditPlanId !== editData.planId : true}
                           onClick={() => navigate('/administrador/tienda/configuracion')}
                         >
                           {isEdit
                             ? (initialEditPlanId !== undefined && initialEditPlanId !== editData.planId
-                              ? 'Guardar cambios para configurar'
-                              : ((empresa as any)?.slugTienda ? 'Gestionar tienda' : 'Configurar tienda'))
-                            : 'Guardar y configurar'}
+                              ? 'Guardar para configurar'
+                              : ((empresa as any)?.slugTienda ? 'Gestionar Tienda' : 'Configurar Tienda'))
+                            : 'Guardar y Configurar'}
                         </Button>
                       )
                     ) : (
-                      <Button type="button" color="secondary" onClick={selectFirstStorePlan}>
-                        Incluir tienda virtual
+                      <Button type="button" color="white" outline onClick={selectFirstStorePlan} className="shrink-0 border-gray-300 shadow-sm font-medium">
+                        Ver planes con tienda
                       </Button>
                     )}
                   </div>
+                  
+                  {!isEdit && (
+                    <label className="flex items-center mt-4 w-max group cursor-pointer">
+                      <div className="relative flex items-center">
+                        <input type="checkbox" checked={createData.esPrueba} onChange={handleEsPrueba} className="w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer peer focus:ring-blue-500 focus:ring-2" />
+                      </div>
+                      <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">Activar versión de prueba gratuita</span>
+                    </label>
+                  )}
                 </div>
-                {!isEdit && (
-                  <label className="flex items-center mt-2">
-                    <input type="checkbox" checked={createData.esPrueba} onChange={handleEsPrueba} className="w-4 h-4 text-blue-600 rounded border-gray-300" />
-                    <span className="ml-2 text-sm text-gray-700">Esto es una versión de prueba (sin costo)</span>
-                  </label>
+              )}
+
+              {activeTab === 'sunat' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Credenciales SUNAT / PSE</h3>
+                  <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-5 mb-6">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-amber-500 mt-0.5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-amber-800 leading-relaxed">
+                        Estas credenciales son proporcionadas por el Proveedor de Servicios Electrónicos (PSE) o en el portal SOL de SUNAT. Son necesarias para la emisión de comprobantes electrónicos válidos.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <InputPro name="providerToken" label="Token de Integración" isLabel value={isEdit ? (editData.providerToken || '') : (createData.providerToken || '')} onChange={handleChange} placeholder="Ej. eyJhbGciOiJIUzI1NiIsIn..." />
+                    <InputPro name="providerId" label="ID del Proveedor" isLabel value={isEdit ? (editData.providerId || '') : (createData.providerId || '')} onChange={handleChange} placeholder="Ej. PRV-20512345678" />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'admin' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Superusuario de la Empresa</h3>
+                  
+                  {isEdit && (
+                    <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-4 mb-6">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-blue-800 leading-relaxed">
+                          Aquí puedes actualizar los datos del administrador principal de esta empresa. <strong>Si dejas la contraseña en blanco, se mantendrá la actual.</strong>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <InputPro name="usuario.nombre" label="Nombre Completo" isLabel value={isEdit ? editData.usuario?.nombre || '' : createData.usuario.nombre} onChange={handleChange} error={isEdit ? '' : errors['usuario.nombre']} />
+                    <InputPro name="usuario.dni" label="DNI" isLabel value={isEdit ? editData.usuario?.dni || '' : createData.usuario.dni} onChange={handleChange} error={isEdit ? '' : errors['usuario.dni']} maxLength={8} />
+                    <InputPro name="usuario.email" label="Correo Electrónico" type="email" isLabel value={isEdit ? editData.usuario?.email || '' : createData.usuario.email} onChange={handleChange} error={isEdit ? '' : errors['usuario.email']} />
+                    <InputPro name="usuario.celular" label="Número de Celular" isLabel value={isEdit ? editData.usuario?.celular || '' : createData.usuario.celular} onChange={handleChange} error={isEdit ? '' : errors['usuario.celular']} />
+                    <div className="md:col-span-2">
+                       <InputPro name="usuario.password" label={isEdit ? "Nueva Contraseña (Opcional)" : "Contraseña de Acceso"} type="password" isLabel value={isEdit ? editData.usuario?.password || '' : createData.usuario.password} onChange={handleChange} error={isEdit ? '' : errors['usuario.password']} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions Footer */}
+            <div className="pt-6 border-t border-gray-100 flex items-center justify-between mt-auto">
+              <div>
+                {Object.keys(errors).length > 0 && (
+                  <span className="text-sm text-red-500 font-medium flex items-center">
+                    <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Por favor, completa los campos requeridos
+                  </span>
                 )}
               </div>
-            )}
-
-            {activeTab === 'sunat' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputPro name="providerToken" label="Token del Proveedor" isLabel value={isEdit ? (editData.providerToken || '') : (createData.providerToken || '')} onChange={handleChange} placeholder="Token para integración SUNAT" />
-                  <InputPro name="providerId" label="ID del Proveedor" isLabel value={isEdit ? (editData.providerId || '') : (createData.providerId || '')} onChange={handleChange} placeholder="ID asignado por el proveedor" />
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'admin' && !isEdit && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputPro name="usuario.nombre" label="Nombre Completo" isLabel value={createData.usuario.nombre} onChange={handleChange} error={errors['usuario.nombre']} />
-                  <InputPro name="usuario.dni" label="DNI" isLabel value={createData.usuario.dni} onChange={handleChange} error={errors['usuario.dni']} maxLength={8} />
-                  <InputPro name="usuario.email" label="Email" type="email" isLabel value={createData.usuario.email} onChange={handleChange} error={errors['usuario.email']} />
-                  <InputPro name="usuario.celular" label="Celular" isLabel value={createData.usuario.celular} onChange={handleChange} error={errors['usuario.celular']} />
-                  <div className="md:col-span-2">
-                    <InputPro name="usuario.password" label="Contraseña" type="password" isLabel value={createData.usuario.password} onChange={handleChange} error={errors['usuario.password']} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'admin' && isEdit && (
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-semibold">Nota:</span> Aquí puedes actualizar los datos del administrador principal de la empresa.
-                    Si dejas la contraseña en blanco, se mantendrá la actual.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputPro name="usuario.nombre" label="Nombre Completo" isLabel value={editData.usuario?.nombre || ''} onChange={handleChange} />
-                  <InputPro name="usuario.dni" label="DNI" isLabel value={editData.usuario?.dni || ''} onChange={handleChange} maxLength={8} />
-                  <InputPro name="usuario.email" label="Email" type="email" isLabel value={editData.usuario?.email || ''} onChange={handleChange} />
-                  <InputPro name="usuario.celular" label="Celular" isLabel value={editData.usuario?.celular || ''} onChange={handleChange} />
-                  <div className="md:col-span-2">
-                    <InputPro name="usuario.password" label="Nueva Contraseña (dejar en blanco para mantener)" type="password" isLabel value={editData.usuario?.password || ''} onChange={handleChange} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-2">
               <div className="flex gap-3">
-                <Button type="button" color="tertiary" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" color="secondary" disabled={isSubmitting}>{isSubmitting ? (isEdit ? 'Actualizando...' : 'Creando...') : (isEdit ? 'Actualizar' : 'Crear')}</Button>
+                <Button type="button" color="white" outline onClick={onClose} className="px-6 font-medium bg-white hover:bg-gray-50 border-gray-200">
+                  Cancelar
+                </Button>
+                <Button type="submit" color="secondary" disabled={isSubmitting} className="px-8 shadow-sm">
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {isEdit ? 'Guardando...' : 'Creando...'}
+                    </span>
+                  ) : (isEdit ? 'Guardar Cambios' : 'Crear Empresa')}
+                </Button>
               </div>
             </div>
+            
           </form>
         </section>
       </div>

@@ -27,5 +27,10 @@ export const sedeService = {
     obtener: async (id: number) => {
         const response = await api.get<Sede>(`/sede/${id}`);
         return extractData(response);
+    },
+
+    toggleActivo: async (id: number, activo: boolean) => {
+        const response = await api.patch<Sede>(`/sede/${id}`, { activo });
+        return extractData(response);
     }
 };

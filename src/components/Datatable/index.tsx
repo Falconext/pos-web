@@ -91,7 +91,7 @@ const DataTable: FC<IDataTableProps> = ({ formValues, headerColumns, bodyData, c
 
     return (
         <AutoScrollTable>
-            <div>
+            <div className="px-4 w-max min-w-full">
                 {
                     data?.length > 0 ?
                         <table className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`} id={idTable}>

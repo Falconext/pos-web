@@ -56,26 +56,26 @@ export default function ProductModifiersSelector({ modifiers, selections, onChan
                                     key={op.id}
                                     onClick={() => toggleOpcion(grupo.id, op.id, grupo.seleccionMax)}
                                     className={`relative flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 ${isSelected
-                                            ? 'border-[#045659] bg-[#045659]/5'
+                                            ? 'border-[#1E1B4B] bg-[#1E1B4B]/5'
                                             : 'border-gray-100 hover:border-gray-200'
                                         }`}
                                 >
                                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 transition-colors ${isSelected
-                                            ? 'border-[#045659] bg-[#045659]'
+                                            ? 'border-[#1E1B4B] bg-[#1E1B4B]'
                                             : 'border-gray-300'
                                         }`}>
                                         {isSelected && <Icon icon="mdi:check" className="text-white w-3 h-3" />}
                                     </div>
 
                                     <div className="flex-1">
-                                        <span className={`block text-sm font-bold ${isSelected ? 'text-[#045659]' : 'text-gray-700'}`}>
+                                        <span className={`block text-sm font-bold ${isSelected ? 'text-[#1E1B4B]' : 'text-gray-700'}`}>
                                             {op.nombre}
                                         </span>
                                     </div>
 
                                     {Number(op.precioExtra) > 0 && (
                                         <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isSelected
-                                                ? 'bg-[#045659] text-white'
+                                                ? 'bg-[#1E1B4B] text-white'
                                                 : 'bg-gray-100 text-gray-600'
                                             }`}>
                                             + S/ {Number(op.precioExtra).toFixed(2)}

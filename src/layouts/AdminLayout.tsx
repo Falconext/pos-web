@@ -10,7 +10,7 @@ import Configurator from '@/components/ui/Configurator'
 export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { auth }: IAuthState = useAuthStore()
+  const { auth, sedeActiva, selectSede }: IAuthState = useAuthStore()
   const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact } = useThemeStore()
 
   // Detectar si el rubro es restaurante para cambiar nombres del menú
@@ -39,7 +39,9 @@ export default function AdminLayout() {
   const [isComprasSubmenuOpen, setIsComprasSubmenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // NUEVO ESTADO PARA DESKTOP
+  const [isSedeMenuOpen, setIsSedeMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
+  const sedeMenuRef = useRef<HTMLDivElement | null>(null)
   const scrollYRef = useRef(0)
 
   // Cerrar todos los acordeones
@@ -60,9 +62,10 @@ export default function AdminLayout() {
     const onClickOutside = (e: MouseEvent) => {
       if (!userMenuRef.current) return
       if (!userMenuRef.current.contains(e.target as Node)) setIsUserMenuOpen(false)
+      if (sedeMenuRef.current && !sedeMenuRef.current.contains(e.target as Node)) setIsSedeMenuOpen(false)
     }
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsUserMenuOpen(false)
+      if (e.key === 'Escape') { setIsUserMenuOpen(false); setIsSedeMenuOpen(false) }
     }
     document.addEventListener('mousedown', onClickOutside)
     document.addEventListener('keydown', onEsc)
@@ -186,76 +189,73 @@ export default function AdminLayout() {
     }
   };
 
-  // Theme adaptado al diseño provisto por el usuario
+  // Theme adaptado al diseño de referencia (sidebar blanco + ítem activo azul sólido)
   const theme = {
-    mainPadding: 'p-4 pt-4',
-    // Fondo general dinámico del sidebar basado en la configuración guardada
-    sidebarBg: getSidebarBackground(sidebarColor),
+    mainPadding: 'p-5',
+    sidebarBg: 'bg-white',
     sidebarBorder: 'border-none',
 
-    // Links activos (como "Holidays" en el mockup)
-    // Fondo blanco, texto negro (#090909), sombra muy suave.
+    // Item activo: pill azul-índigo sólido, texto blanco
     get activeLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'w-full px-4 py-3 rounded-2xl'} text-sm font-semibold text-[#090909] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all duration-200 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-[#4F6EF7] shadow-[0_4px_12px_rgba(79,110,247,0.35)] transition-all duration-200 group`;
     },
-    // Links inactivos (texto e icono #8D887F)
+    // Item inactivo: texto gris oscuro, hover sutil
     get inactiveLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'w-full px-4 py-3 rounded-2xl'} text-sm font-medium text-[#8D887F] hover:text-[#090909] hover:bg-white/60 transition-all duration-200 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-150 group`;
     },
     // Accordion activo e inactivo
     get accordionActive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'justify-between w-full px-4 py-3 rounded-2xl'} text-sm font-semibold text-[#090909] bg-white transition-all text-left shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-[#4F6EF7] shadow-[0_4px_12px_rgba(79,110,247,0.35)] transition-all text-left`;
     },
     get accordionInactive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-[14px]' : 'justify-between w-full px-4 py-3 rounded-2xl'} text-sm font-medium text-[#8D887F] hover:text-[#090909] hover:bg-white/60 transition-all text-left`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all text-left`;
     },
     // Submenu links
-    submenuBorder: 'border-[#DBD1C7]',
+    submenuBorder: 'border-gray-200',
     get submenuActiveLink() {
-      return `flex items-center px-4 py-2.5 text-sm font-bold text-[#090909] bg-white/60 rounded-xl transition-all`;
+      return `flex items-center px-3.5 py-2 text-[13px] font-semibold text-[#4F6EF7] bg-indigo-50 rounded-lg transition-all`;
     },
     get submenuInactiveLink() {
-      return `flex items-center px-4 py-2.5 text-sm font-medium text-[#8D887F] hover:text-[#090909] hover:bg-white/40 rounded-xl transition-all`;
+      return `flex items-center px-3.5 py-2 text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all`;
     },
-
-    // Legacy support para bordes si quedó alguno
-    primaryBorder: 'border-[#DBD1C7]',
+    primaryBorder: 'border-gray-200',
   }
 
   return (
     <div
-      className="flex overflow-hidden bg-[#fff] font-sans transition-all duration-300"
+      className="flex overflow-hidden bg-[#F0F2FA] transition-all duration-300"
       style={{
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         zoom: isCompact ? '0.9' : '1',
         height: isCompact ? '110vh' : '100vh'
       }}
     >
 
       {/* Sidebar/Drawer */}
-      <aside className={`fixed inset-y-0 left-0 ${theme.sidebarBg} ${theme.sidebarBorder} flex flex-col p-4 w-[85%] max-w-[280px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[88px] items-center' : 'md:w-[280px]'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
-        <div className={`flex items-center px-2 mb-8 mt-2 ${isSidebarCollapsed ? 'justify-center flex-col gap-4' : 'justify-between'}`}>
-          <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-            <div className="flex items-center justify-center">
-              <img src="/fnlogo.png" alt="Falconext" className="w-8 h-8 object-contain" />
+      <aside className={`fixed inset-y-0 left-0 bg-white shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
+        {/* Logo area */}
+        <div className={`flex items-center mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
+          <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#4F6EF7] shadow-md shadow-indigo-200">
+              <img src="/fnlogo.png" alt="Falconext" className="w-5 h-5 object-contain brightness-0 invert" />
             </div>
             {!isSidebarCollapsed && (
               <div>
-                <h2 className={`text-xl font-bold tracking-tight leading-none text-[#090909]`}>Falconext</h2>
-                <p className="text-[9px] text-[#8D887F] font-bold tracking-wide mt-1 uppercase">Panel Administrativo</p>
+                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900">FALCONEXT</h2>
+                <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Administrativo</p>
               </div>
             )}
           </div>
-          {/* Botón `<` inspirado en el mockup */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex items-center justify-center w-8 h-8 bg-[#EAE8E4] text-[#8D887F] hover:bg-white hover:text-black rounded-lg transition-colors cursor-pointer border border-[#E0DED9]"
+            className="hidden md:flex items-center justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
           >
-            <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="16" />
+            <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
           </button>
         </div>
 
-        <div className={`flex-1 overflow-y-auto overflow-x-hidden space-y-1.5 ${isSidebarCollapsed ? 'px-0 w-full scrollbar-none [&::-webkit-scrollbar]:hidden' : 'pr-1 custom-scrollbar'}`}>
-          <nav className="space-y-1.5 w-full">
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full scrollbar-none [&::-webkit-scrollbar]:hidden' : 'pr-1 custom-scrollbar'}`}>
+          <nav className="space-y-0.5 w-full">
             {auth?.rol === 'ADMIN_SISTEMA' && (
               <>
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/empresas" className={({ isActive }) => isActive || location.pathname.startsWith('/administrador/empresas') ? theme.activeLink : theme.inactiveLink} title="Empresas">
@@ -297,8 +297,8 @@ export default function AdminLayout() {
 
                 {/* TÍTULO: INVENTARIO / CATÁLOGO */}
                 {!isSidebarCollapsed && (
-                  <div className="px-4 mt-6 mb-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Inventario</span>
+                  <div className="px-2 mt-5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Inventario</span>
                   </div>
                 )}
                 {isSidebarCollapsed && <div className="h-4"></div>}
@@ -322,6 +322,9 @@ export default function AdminLayout() {
                         <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/productos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                           {menuLabels.productosLabel}
                         </NavLink>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/kardex/traslados" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Traslado entre sedes
+                        </NavLink>
                         {/* Combos */}
                         {(() => {
                           const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
@@ -342,8 +345,8 @@ export default function AdminLayout() {
 
                 {/* TÍTULO: VENTAS */}
                 {!isSidebarCollapsed && (
-                  <div className="px-4 mt-6 mb-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ventas</span>
+                  <div className="px-2 mt-5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Ventas</span>
                   </div>
                 )}
                 {isSidebarCollapsed && <div className="h-4"></div>}
@@ -440,8 +443,8 @@ export default function AdminLayout() {
 
                 {/* TÍTULO: COMPRAS */}
                 {!isSidebarCollapsed && (
-                  <div className="px-4 mt-6 mb-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Compras</span>
+                  <div className="px-2 mt-5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Compras</span>
                   </div>
                 )}
                 {isSidebarCollapsed && <div className="h-4"></div>}
@@ -472,8 +475,8 @@ export default function AdminLayout() {
 
                 {/* TÍTULO: FINANZAS / TESORERÍA */}
                 {!isSidebarCollapsed && (
-                  <div className="px-4 mt-6 mb-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Finanzas / Tesorería</span>
+                  <div className="px-2 mt-5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Finanzas / Tesorería</span>
                   </div>
                 )}
                 {isSidebarCollapsed && <div className="h-4"></div>}
@@ -542,8 +545,8 @@ export default function AdminLayout() {
                 {auth?.empresa?.plan?.tieneTienda && (auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
                   <>
                     {!isSidebarCollapsed && (
-                      <div className="px-4 mt-6 mb-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Canales Digitales</span>
+                      <div className="px-2 mt-5 mb-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Canales Digitales</span>
                       </div>
                     )}
                     {isSidebarCollapsed && <div className="h-4"></div>}
@@ -575,8 +578,8 @@ export default function AdminLayout() {
 
                 {/* TÍTULO: SISTEMA */}
                 {!isSidebarCollapsed && (
-                  <div className="px-4 mt-6 mb-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sistema</span>
+                  <div className="px-2 mt-5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Sistema</span>
                   </div>
                 )}
                 {isSidebarCollapsed && <div className="h-4"></div>}
@@ -611,14 +614,14 @@ export default function AdminLayout() {
         </div>
 
         {/* Divider y configuración abajo */}
-        <div className="mt-4 pt-4 border-t border-[#DFDFD9] space-y-1.5 w-full">
+        <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">
           <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración Settings') }} to="/administrador/perfil" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Settings">
-            <Icon icon="solar:settings-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+            <Icon icon="solar:settings-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
             {!isSidebarCollapsed && <span>Settings</span>}
           </NavLink>
           <button onClick={() => { setIsSidebarOpen(false); logout() }} className={theme.inactiveLink} title="Logout">
-            <Icon icon="solar:logout-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-            {!isSidebarCollapsed && <span>Logout</span>}
+            <Icon icon="solar:logout-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px] text-red-400'}`} />
+            {!isSidebarCollapsed && <span className="text-red-500">Cerrar sesión</span>}
           </button>
         </div>
       </aside>
@@ -632,63 +635,115 @@ export default function AdminLayout() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <header className={`z-30 flex items-center justify-between px-6 py-4 bg-[#fff] border-b transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'} ${sidebarType === 'white' ? 'bg-white' : ''}`}>
+      <main className="flex-1 overflow-y-auto bg-[#F0F2FA]">
+        <header className={`z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
           <div className="flex items-center gap-4">
             <button
-              className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors focus:ring-2 focus:ring-indigo-100"
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Abrir menú"
             >
-              <Icon icon="solar:hamburger-menu-linear" width="24" className="text-gray-700" />
+              <Icon icon="solar:hamburger-menu-linear" width="22" className="text-gray-600" />
             </button>
-            <div>
-              <div className="flex items-center gap-2 text-sm text-gray-400 font-medium">
-                <span>Administrador</span>
-                <Icon icon="solar:alt-arrow-right-linear" width="14" />
-                <span className="text-indigo-600">{nameNavbar}</span>
-              </div>
+            <div className="flex items-center gap-1.5 text-[13px] font-medium">
+              <span className="text-gray-400">Administrador</span>
+              <Icon icon="solar:alt-arrow-right-linear" width="13" className="text-gray-300" />
+              <span className="text-[#4F6EF7] font-semibold">{nameNavbar}</span>
             </div>
+            {/* Sede activa badge / switcher */}
+            {sedeActiva && (() => {
+              const todasSedes = auth?.sedes || []
+              const otrasSedesActivas = todasSedes.filter(s => s.activo && s.id !== sedeActiva.id)
+              const puedesCambiar = otrasSedesActivas.length > 0
+
+              return puedesCambiar ? (
+                <div className="relative hidden md:block" ref={sedeMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsSedeMenuOpen(p => !p)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    <Icon icon="solar:city-bold-duotone" className="text-[#4F6EF7]" width={14} />
+                    <span className="text-[12px] font-semibold text-[#4F6EF7] truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                    <Icon icon="solar:alt-arrow-down-linear" className="text-[#4F6EF7]" width={12} />
+                  </button>
+                  {isSedeMenuOpen && (
+                    <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 px-3 py-1 tracking-wider">Cambiar sede</p>
+                      {todasSedes.filter(s => s.activo).map(sede => (
+                        <button
+                          key={sede.id}
+                          type="button"
+                          onClick={() => {
+                            selectSede(sede.id)
+                            setIsSedeMenuOpen(false)
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${sede.id === sedeActiva.id ? 'bg-indigo-50 text-[#4F6EF7] font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-50'}`}
+                        >
+                          <Icon icon={sede.id === sedeActiva.id ? 'solar:check-circle-bold' : 'solar:city-linear'} width={14} />
+                          {sede.nombre}
+                          {sede.esPrincipal && <span className="ml-auto text-[10px] text-gray-400 font-normal">Principal</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg">
+                  <Icon icon="solar:city-bold-duotone" className="text-[#4F6EF7]" width={14} />
+                  <span className="text-[12px] font-semibold text-[#4F6EF7] truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                </div>
+              )
+            })()}
           </div>
-          <div className="flex items-center">
+
+          <div className="flex items-center gap-1">
+            {/* Compact toggle */}
             <div className="hidden md:block">
               <button
                 onClick={toggleCompact}
-                className={`p-2 rounded-full transition-colors ${isCompact ? 'text-indigo-600 bg-indigo-50' : 'text-gray-500 hover:bg-gray-100'}`}
-                title={isCompact ? "Desactivar Vista Compacta" : "Activar Vista Compacta (Zoom)"}
+                className={`p-2 rounded-lg transition-colors ${isCompact ? 'text-[#4F6EF7] bg-indigo-50' : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                title={isCompact ? 'Desactivar Vista Compacta' : 'Activar Vista Compacta'}
               >
-                <Icon icon={isCompact ? "solar:minimize-square-3-bold" : "solar:maximize-square-3-linear"} width="24" />
+                <Icon icon={isCompact ? 'solar:minimize-square-3-bold' : 'solar:maximize-square-3-linear'} width="20" />
               </button>
             </div>
 
+            {/* Configurator */}
             <div className="hidden md:block">
               <button
                 onClick={toggleConfigurator}
-                className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-full transition-colors"
+                className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors"
                 title="Configuración de UI"
               >
-                <Icon icon="solar:settings-linear" width="24" />
+                <Icon icon="solar:settings-linear" width="20" />
               </button>
             </div>
 
+            {/* Notificaciones */}
             {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
               <div className="hidden md:block">
                 <NotificacionesCampana />
               </div>
             )}
 
+            {/* Divider */}
+            <div className="hidden md:block w-px h-6 bg-gray-200 mx-2" />
+
+            {/* User profile */}
             <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
-                className="flex items-center gap-3 rounded-full outline-none focus:outline-none hover:bg-white p-1 md:pr-3 transition-all border border-transparent hover:border-gray-200 hover:shadow-sm"
+                className="flex items-center gap-2.5 rounded-full outline-none focus:outline-none hover:bg-gray-50 px-2 py-1.5 transition-all border border-transparent hover:border-gray-200"
                 onClick={() => setIsUserMenuOpen((p) => !p)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
               >
                 <img
-                  width={45}
-                  height={45}
-                  className="rounded-full object-cover"
+                  width={34}
+                  height={34}
+                  className="rounded-full object-cover ring-2 ring-indigo-100"
                   src={
                     auth?.empresa?.logo
                       ? auth.empresa.logo.startsWith('data:image')
@@ -698,49 +753,49 @@ export default function AdminLayout() {
                   }
                   alt=""
                 />
-                <div className="hidden md:flex flex-col items-start gap-0.5">
-                  <span className="text-sm font-semibold text-gray-700 leading-none">{auth?.nombre?.split(' ')[0]}</span>
-                  <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider leading-none">{auth?.rol?.replace('ADMIN_', '')?.replace('USUARIO_', '')}</span>
+                <div className="hidden md:flex flex-col items-start gap-0">
+                  <span className="text-[13px] font-semibold text-gray-800 leading-tight">{auth?.nombre?.split(' ')[0]}</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider leading-tight">{auth?.empresa?.nombreComercial?.split(' ')[0] ?? auth?.rol?.replace('ADMIN_', '')?.replace('USUARIO_', '')}</span>
                 </div>
-                <Icon icon="solar:alt-arrow-down-bold" className="hidden md:block text-gray-400" width="16" />
+                <Icon icon="solar:alt-arrow-down-bold" className="hidden md:block text-gray-400" width="14" />
               </button>
 
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-3 w-60 rounded-3xl border border-gray-100 bg-white shadow-xl shadow-gray-200/50 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100">
-                    <p className="text-sm font-bold text-gray-900 truncate">{auth?.nombre}</p>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{auth?.empresa?.nombreComercial}</p>
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 z-[999999] overflow-hidden">
+                  <div className="px-4 py-3.5 bg-gray-50 border-b border-gray-100">
+                    <p className="text-[13px] font-bold text-gray-900 truncate">{auth?.nombre}</p>
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">{auth?.empresa?.nombreComercial}</p>
                   </div>
-                  <ul className="py-2" role="menu">
+                  <ul className="py-1.5" role="menu">
                     <li>
                       <button
-                        className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors`}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-indigo-50 hover:text-[#4F6EF7] transition-colors"
                         onClick={() => { setIsUserMenuOpen(false); navigate('/administrador/perfil') }}
                         role="menuitem"
                       >
-                        <Icon icon="solar:user-circle-broken" width="20" />
+                        <Icon icon="solar:user-circle-bold-duotone" width="18" />
                         Perfil
                       </button>
                     </li>
                     {(auth?.empresa?.slugTienda || auth?.empresa?.plan?.tieneTienda) && (
                       <li>
                         <button
-                          className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors`}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-indigo-50 hover:text-[#4F6EF7] transition-colors"
                           onClick={() => { setIsUserMenuOpen(false); if (auth?.empresa?.slugTienda) navigate(`/tienda/${auth.empresa.slugTienda}`); else navigate('/administrador/tienda/configuracion'); }}
                           role="menuitem"
                         >
-                          <Icon icon="solar:shop-linear" width="20" />
+                          <Icon icon="solar:shop-bold-duotone" width="18" />
                           Ir a tienda virtual
                         </button>
                       </li>
                     )}
-                    <li>
+                    <li className="border-t border-gray-100 mt-1 pt-1">
                       <button
-                        className="w-full flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors"
                         onClick={() => { setIsUserMenuOpen(false); logout() }}
                         role="menuitem"
                       >
-                        <Icon icon="solar:logout-broken" width="20" />
+                        <Icon icon="solar:logout-bold-duotone" width="18" />
                         Cerrar sesión
                       </button>
                     </li>
@@ -751,7 +806,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <div className={`${theme.mainPadding} mx-auto transition-all duration-300`}>
+        <div className={`${theme.mainPadding} transition-all duration-300`}>
           <Outlet />
         </div>
       </main>

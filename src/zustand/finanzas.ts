@@ -19,7 +19,7 @@ export interface ChartData {
 export interface IFinanzasState {
     kpis: KPI | null;
     chartData: ChartData[];
-    getResumenFinanciero: (fechaInicio: string, fechaFin: string) => void;
+    getResumenFinanciero: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void;
     isLoading: boolean;
 }
 
@@ -27,10 +27,12 @@ export const useFinanzasStore = create<IFinanzasState>()(devtools((set) => ({
     kpis: null,
     chartData: [],
     isLoading: false,
-    getResumenFinanciero: async (fechaInicio: string, fechaFin: string) => {
+    getResumenFinanciero: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
             set({ isLoading: true });
-            const resp: any = await get(`finanzas/resumen?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`finanzas/resumen?${params}`);
             console.log("Respuesta Resumen Financiero:", resp);
             if (resp.code === 1 || resp.success) { // Handle potential different response structure
                 // Assuming resp.data contains { kpis: ..., chartData: ... }

@@ -173,11 +173,13 @@ export const useMovementsViewModel = () => {
     };
 
     // Table Data Preparation
-    const movimientosTable = kardex?.movimientos?.map((item: MovimientoKardex) => ({
+    const movimientosTable = kardex?.movimientos?.map((item: MovimientoKardex) => {
+        const conceptoFormatted = item.concepto.replace(/([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g, match => match.toUpperCase());
+        return {
         fecha: formatDate(item.fecha),
         producto: item.producto.descripcion,
         tipo: item.tipoMovimiento,
-        concepto: item.concepto.toUpperCase(),
+        concepto: conceptoFormatted,
         cantidad: item.cantidad,
         stockAnterior: item.stockAnterior,
         stockActual: item.stockActual < 0 ? 0 : item.stockActual,
@@ -185,7 +187,7 @@ export const useMovementsViewModel = () => {
         precioUnitario: formatCurrency(item.costoUnitario + (item.gananciaUnidad || 0)),
         gananciaUnidad: formatCurrency(item.gananciaUnidad),
         _original: item
-    })) || [];
+    }}) || [];
 
     const actions = {
         setcurrentPage: (page: number) => setState(prev => ({ ...prev, currentPage: page })),

@@ -1,8 +1,18 @@
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 
 const Loading = () => {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-300">
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[1000001] flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-300">
             <div className="flex flex-col items-center gap-4">
                 {/* Logo Animado */}
                 <div className="relative">
@@ -19,7 +29,8 @@ const Loading = () => {
                     <p className="text-sm text-indigo-500 font-medium animate-pulse">Cargando...</p>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
