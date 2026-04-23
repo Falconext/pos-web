@@ -175,17 +175,31 @@ export const useMovementsViewModel = () => {
     // Table Data Preparation
     const movimientosTable = kardex?.movimientos?.map((item: MovimientoKardex) => {
         const conceptoFormatted = item.concepto.replace(/([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g, match => match.toUpperCase());
+        const costoUnitarioNumber = Number(item.costoUnitario ?? 0);
+        const gananciaUnidadNumber = Number(item.gananciaUnidad ?? 0);
+        const precioUnitarioNumber = Number(item.precioUnitario ?? (costoUnitarioNumber + gananciaUnidadNumber));
+
+        let cantidadDisplay = item.cantidad;
+        if (item.tipoMovimiento === 'INGRESO') {
+            cantidadDisplay = Math.abs(item.cantidad);
+        } else if (item.tipoMovimiento === 'SALIDA' || item.tipoMovimiento === 'TRANSFERENCIA') {
+            cantidadDisplay = -Math.abs(item.cantidad);
+        } else if (item.tipoMovimiento === 'AJUSTE') {
+            cantidadDisplay = item.stockActual - item.stockAnterior;
+        }
+
         return {
         fecha: formatDate(item.fecha),
         producto: item.producto.descripcion,
+        sede: item.sede?.nombre ?? '-',
         tipo: item.tipoMovimiento,
         concepto: conceptoFormatted,
-        cantidad: item.cantidad,
+        cantidad: cantidadDisplay,
         stockAnterior: item.stockAnterior,
-        stockActual: item.stockActual < 0 ? 0 : item.stockActual,
-        costoUnitario: formatCurrency(item.costoUnitario),
-        precioUnitario: formatCurrency(item.costoUnitario + (item.gananciaUnidad || 0)),
-        gananciaUnidad: formatCurrency(item.gananciaUnidad),
+        stockActual: item.stockActual,
+        costoUnitario: formatCurrency(costoUnitarioNumber),
+        precioUnitario: formatCurrency(precioUnitarioNumber),
+        gananciaUnidad: formatCurrency(gananciaUnidadNumber),
         _original: item
     }}) || [];
 

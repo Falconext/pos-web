@@ -24,7 +24,14 @@ export const useProductsViewModel = () => {
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
     const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true;
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
-    const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null);
+    // Track whether the admin has explicitly chosen "Todas las sedes" (id=0 → null)
+    // so we don't override that choice with the sedeActiva fallback.
+    const userChoseSede = useRef(false);
+    // For principal-sede admins: default to the current sede's stock instead of the
+    // global total (sum of all sedes), which doesn't change on inter-sede transfers.
+    const effectiveSedeId = esPrincipal
+        ? (userChoseSede.current ? selectedSedeId : (selectedSedeId ?? sedeActiva?.id ?? null))
+        : (sedeActiva?.id ?? null);
 
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
@@ -32,6 +39,7 @@ export const useProductsViewModel = () => {
     ];
 
     const handleSelectSede = (id: any) => {
+        userChoseSede.current = true;
         setSelectedSedeId(id === 0 ? null : Number(id));
     };
 
@@ -320,7 +328,7 @@ export const useProductsViewModel = () => {
     };
 
     const confirmDeleteAllProducts = async () => {
-        await deleteAllProducts();
+        await deleteAllProducts(effectiveSedeId ?? undefined);
         setState(prev => ({ ...prev, isOpenModalDeleteAll: false }));
         await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
     };
@@ -370,6 +378,10 @@ export const useProductsViewModel = () => {
         }
     };
 
+    const selectedSedeName = effectiveSedeId
+        ? (sedes.find(s => s.id === effectiveSedeId)?.nombre ?? null)
+        : null;
+
     return {
         ...state,
         auth,
@@ -385,6 +397,8 @@ export const useProductsViewModel = () => {
         // Sede filtering
         isAdmin,
         esPrincipal,
+        effectiveSedeId,
+        selectedSedeName,
         sedesOptions,
         handleSelectSede,
         // Computed

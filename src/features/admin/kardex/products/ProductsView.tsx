@@ -207,14 +207,6 @@ export default function ProductsView() {
                 </div>
                 <div className="flex gap-3">
                     <Button
-                        outline
-                        className="bg-red-50 text-red-600 border-red-200"
-                        onClick={() => actions.setIsOpenModalDeleteAll(true)}
-                    >
-                        <Icon icon="solar:trash-bin-trash-bold" className="text-lg mr-2" />
-                        Eliminar todo
-                    </Button>
-                    <Button
                         color="secondary"
                         onClick={() => {
                             // Reset form logic is handled in VM or could be here calling VM action
@@ -405,13 +397,6 @@ export default function ProductsView() {
                 information={vm.labels.eliminarInfo}
             />
 
-            <ModalConfirm
-                isOpenModal={vm.isOpenModalDeleteAll}
-                setIsOpenModal={actions.setIsOpenModalDeleteAll}
-                confirmSubmit={actions.confirmDeleteAllProducts}
-                title="Eliminar todos los productos"
-                information={`¿Estás seguro que deseas eliminar TODOS los productos? Esta acción no se puede deshacer.`}
-            />
         </div>
     );
 }

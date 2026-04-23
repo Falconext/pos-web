@@ -5,6 +5,7 @@ import useAlertStore from './alert';
 import { devtools } from 'zustand/middleware';
 import { useClientsStore } from './clients';
 import { useProductsStore } from './products';
+import { useAuthStore } from './auth';
 
 export interface IInvoicesState {
     invoices: IInvoices[];
@@ -182,7 +183,9 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
 
     addInvoice: async (data: any) => {
         try {
-            const resp: any = await post(`comprobante/${data.tipoDoc === "01" ? "factura" : data.tipoDoc === "03" ? "boleta" : data.tipoDoc === "07" ? "nota-credito" : "nota-debito"}`, data);
+            const sedeActivaId = useAuthStore.getState().sedeActiva?.id;
+            const payload = data?.sedeId ? data : { ...data, ...(sedeActivaId ? { sedeId: sedeActivaId } : {}) };
+            const resp: any = await post(`comprobante/${data.tipoDoc === "01" ? "factura" : data.tipoDoc === "03" ? "boleta" : data.tipoDoc === "07" ? "nota-credito" : "nota-debito"}`, payload);
             console.log(resp);
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
@@ -203,7 +206,9 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
     addInformalInvoice: async (data) => {
         console.log(data);
         try {
-            const resp: any = await post('/comprobante/informal', data);
+            const sedeActivaId = useAuthStore.getState().sedeActiva?.id;
+            const payload = data?.sedeId ? data : { ...data, ...(sedeActivaId ? { sedeId: sedeActivaId } : {}) };
+            const resp: any = await post('/comprobante/informal', payload);
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
                 useAlertStore.setState({ loading: false });

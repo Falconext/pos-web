@@ -118,7 +118,7 @@ export default function DashboardView() {
                     <Title className="text-gray-900 font-bold">Estado del stock</Title>
                     <TremorBarChart
                         className="mt-4 h-64"
-                        data={gameCharts(charts.stockChartData)} // Wait, charts.stockChartData is already the data
+                        data={charts.stockChartData}
                         index="estado"
                         categories={["Stock normal", "Stock crítico", "Sin stock"]}
                         colors={["emerald", "amber", "rose"]}
@@ -231,15 +231,15 @@ export default function DashboardView() {
                     {dashboardData.movimientosRecientes.length > 0 ? (
                         <DataTable actions={[]} bodyData={dashboardData.movimientosRecientes.map((movimiento) => ({
                             fecha: helpers.formatDate(movimiento.fecha),
-                            producto: `${movimiento.producto?.codigo || ''} - ${movimiento.producto?.descripcion || 'Sin descripción'}`,
+                            producto: `${movimiento.producto?.codigo || ''} - ${movimiento.producto?.descripcion || 'Sin descripción'}`.toUpperCase(),
                             concepto: movimiento.concepto,
                             cantidad: movimiento.cantidad,
                         }))}
                             headerColumns={[
-                                'Fecha',
-                                'Producto',
-                                'Concepto',
-                                'Cantidad',
+                                { label: 'Fecha', key: 'fecha' },
+                                { label: 'Producto', key: 'producto' },
+                                { label: 'Concepto', key: 'concepto' },
+                                { label: 'Cantidad', key: 'cantidad' },
                             ]} />
                     ) : (
                         <div className="text-center py-8">
@@ -253,8 +253,4 @@ export default function DashboardView() {
             )}
         </div>
     );
-}
-
-function gameCharts(data: any) {
-    return data;
 }

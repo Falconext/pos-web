@@ -1,11 +1,70 @@
 import { Icon } from '@iconify/react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface MembershipBannerProps {
     tienda?: any;
 }
 
 export default function MembershipBanner({ tienda }: MembershipBannerProps) {
+    const navigate = useNavigate();
+    const { slug } = useParams();
     const storeName = tienda?.nombreComercial || 'Nuestra Tienda';
+    const membershipBanner = tienda?.banners?.find((b: any) => b.orden === 5);
+
+    const handleBannerClick = (url?: string) => {
+        if (!url) return;
+        if (url.startsWith('http') || url.startsWith('//')) { window.location.href = url; return; }
+        if (url.startsWith('/tienda') || url.startsWith('tienda')) {
+            navigate(url.startsWith('/') ? url : `/${url}`); return;
+        }
+        navigate(`/tienda/${slug}/${url.startsWith('/') ? url.substring(1) : url}`);
+    };
+
+    if (membershipBanner?.imagenUrl) {
+        const titulo = typeof membershipBanner?.titulo === 'string' ? membershipBanner.titulo.trim() : '';
+        const subtitulo = typeof membershipBanner?.subtitulo === 'string' ? membershipBanner.subtitulo.trim() : '';
+        const boton = typeof membershipBanner?.boton === 'string' ? membershipBanner.boton.trim() : '';
+        const hasTextContent = Boolean(titulo || subtitulo || boton);
+
+        return (
+            <div className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">
+                <div
+                    className={`relative rounded-3xl overflow-hidden h-[170px] md:h-[210px] bg-[#F5EEE6] ${membershipBanner.linkUrl ? 'cursor-pointer group' : ''}`}
+                    onClick={() => handleBannerClick(membershipBanner.linkUrl)}
+                >
+                    <img
+                        src={membershipBanner.imagenUrl}
+                        alt={titulo || 'Banner membresía'}
+                        className="w-full h-full object-cover object-center"
+                    />
+
+                    {hasTextContent && (
+                        <>
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-transparent" />
+
+                            <div className="absolute left-0 top-0 bottom-0 w-full md:w-[55%] p-5 md:p-7 flex flex-col justify-center z-10">
+                                <h2 className="text-xl md:text-3xl font-black text-white leading-[1.2] mb-2 drop-shadow-sm">
+                                    {titulo || `Únete a la familia ${storeName}`}
+                                </h2>
+                                {subtitulo && (
+                                    <p className="text-xs md:text-sm text-white/95 mb-4 md:mb-5 max-w-md">{subtitulo}</p>
+                                )}
+                                {boton && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleBannerClick(membershipBanner.linkUrl); }}
+                                        className="w-fit flex items-center gap-2 bg-[#FF9500] hover:bg-[#E08500] text-white text-sm font-bold px-5 py-2 rounded-full transition-colors shadow-md"
+                                    >
+                                        {boton}
+                                        <Icon icon="solar:alt-arrow-right-bold" width={14} />
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">

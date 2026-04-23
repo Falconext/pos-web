@@ -20,9 +20,14 @@ const GuiaRemisionPrint = forwardRef<HTMLDivElement, GuiaRemisionPrintProps>(({ 
         }
     }, [guia, company]);
 
-    const logoUrl = company?.logo
-        ? (company.logo.startsWith('data:') ? company.logo : `data:image/png;base64,${company.logo}`)
-        : null;
+    const logoUrl = (() => {
+        const raw = company?.logo;
+        if (!raw) return null;
+        const t = raw.trim();
+        if (t.startsWith('data:')) return t;
+        if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
+        return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
+    })();
 
     // Helper para formatear fechas
     const fmtDate = (date: string) => date ? moment.utc(date).format('DD/MM/YYYY') : '-';

@@ -3,6 +3,10 @@ import { Icon } from '@iconify/react';
 
 const NotificacionesPage = () => {
   const vm = useNotificacionesViewModel();
+  const visibles = vm.notificaciones?.length || 0;
+  const sinLeer = Math.max(0, vm.noLeidas || 0);
+  const totalNotificaciones = Math.max(visibles, sinLeer);
+  const leidas = Math.max(0, totalNotificaciones - sinLeer);
 
   if (vm.loading && vm.notificaciones.length === 0) {
     return (
@@ -22,7 +26,7 @@ const NotificacionesPage = () => {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Notificaciones</h1>
           <p className="text-sm text-gray-500 mt-1">Centro de alertas y mensajes del sistema</p>
         </div>
-        {vm.noLeidas > 0 && (
+        {sinLeer > 0 && (
           <button onClick={vm.marcarTodasComoLeidas} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md font-medium text-sm">
             <Icon icon="solar:check-read-bold" className="text-lg" />Marcar todas como leídas
           </button>
@@ -31,19 +35,19 @@ const NotificacionesPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between">
-            <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</p><p className="text-3xl font-bold text-gray-900 mt-1">{vm.notificaciones?.length || 0}</p></div>
+            <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</p><p className="text-3xl font-bold text-gray-900 mt-1">{totalNotificaciones}</p></div>
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20"><Icon icon="solar:bell-bold" className="text-xl text-white" /></div>
           </div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between">
-            <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sin Leer</p><p className="text-3xl font-bold text-red-600 mt-1">{vm.noLeidas || 0}</p></div>
+            <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sin Leer</p><p className="text-3xl font-bold text-red-600 mt-1">{sinLeer}</p></div>
             <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20"><Icon icon="solar:letter-unread-bold" className="text-xl text-white" /></div>
           </div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
-            <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Leídas</p><p className="text-3xl font-bold text-emerald-600 mt-1">{(vm.notificaciones?.length - vm.noLeidas) || 0}</p></div>
+            <div><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Leídas</p><p className="text-3xl font-bold text-emerald-600 mt-1">{leidas}</p></div>
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20"><Icon icon="solar:letter-opened-bold" className="text-xl text-white" /></div>
           </div>
         </div>

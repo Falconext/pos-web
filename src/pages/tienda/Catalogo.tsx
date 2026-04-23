@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -13,7 +13,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 export default function Catalogo() {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [tienda, setTienda] = useState<any>(null);
     const [productos, setProductos] = useState<any[]>([]);
@@ -43,6 +43,7 @@ export default function Catalogo() {
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
     const [minPrice, setMinPrice] = useState(0);
     const [maxPrice, setMaxPrice] = useState(1000);
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'relevance');
     const [brandSearch, setBrandSearch] = useState('');
     const [openSections, setOpenSections] = useState({ categories: true, price: true, brands: true });
     const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -78,6 +79,20 @@ export default function Catalogo() {
         }, 350);
         return () => clearTimeout(t);
     }, [search, selectedBrands, selectedCategories, priceRange]);
+
+    useEffect(() => {
+        const params = new URLSearchParams();
+        const normalizedSearch = search.trim();
+
+        if (normalizedSearch) params.set('search', normalizedSearch);
+        if (selectedBrands.length > 0) params.set('brand', selectedBrands.join(','));
+        if (selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
+        if (priceRange[0] !== minPrice) params.set('minPrice', String(priceRange[0]));
+        if (priceRange[1] !== maxPrice) params.set('maxPrice', String(priceRange[1]));
+        if (sortBy !== 'relevance') params.set('sort', sortBy);
+
+        setSearchParams(params, { replace: true });
+    }, [search, selectedBrands, selectedCategories, priceRange, minPrice, maxPrice, sortBy, setSearchParams]);
 
     const cargarTienda = async () => {
         try {
@@ -172,6 +187,24 @@ export default function Catalogo() {
         const name = typeof b === 'string' ? b : b.nombre;
         return !brandSearch || name.toLowerCase().includes(brandSearch.toLowerCase());
     });
+
+    const sortedProductos = useMemo(() => {
+        const list = [...productos];
+
+        if (sortBy === 'price-asc') {
+            return list.sort((a, b) => Number(a.precioUnitario || 0) - Number(b.precioUnitario || 0));
+        }
+
+        if (sortBy === 'price-desc') {
+            return list.sort((a, b) => Number(b.precioUnitario || 0) - Number(a.precioUnitario || 0));
+        }
+
+        if (sortBy === 'name-asc') {
+            return list.sort((a, b) => String(a.descripcion || '').localeCompare(String(b.descripcion || '')));
+        }
+
+        return list;
+    }, [productos, sortBy]);
 
     const hasActiveFilters = selectedBrands.length > 0 || selectedCategories.length > 0 || priceRange[0] !== minPrice || priceRange[1] !== maxPrice;
     const pageTitle = selectedCategories[0] || selectedBrands[0] || 'Todos los productos';
@@ -307,10 +340,10 @@ export default function Catalogo() {
                 adminMenuRef={adminMenuRef}
                 search={search}
                 setSearch={setSearch}
-                categories={allBrands}
+                categories={allCategories}
                 onSelectCategory={(cat) => {
-                    if (cat === '') setSelectedBrands([]);
-                    else setSelectedBrands([cat]);
+                    if (cat === '') setSelectedCategories([]);
+                    else setSelectedCategories([cat]);
                 }}
                 recommendedProducts={productos.slice(0, 10)}
                 onSearch={() => { }}
@@ -341,15 +374,47 @@ export default function Catalogo() {
 
                     <div className="flex items-center justify-between mb-5">
                         <h1 className="text-2xl md:text-3xl font-black text-[#1A1A1A]">{pageTitle}</h1>
-                        {/* Mobile filter toggle */}
-                        <button
-                            onClick={() => setShowMobileFilters(!showMobileFilters)}
-                            className="md:hidden flex items-center gap-2 bg-white rounded-full px-4 py-2 text-sm font-bold border border-gray-200"
-                        >
-                            <Icon icon="solar:filter-bold" width={16} className="text-[#FF9500]" />
-                            Filtros
-                            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#FF9500]" />}
-                        </button>
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <div className="hidden md:flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-2">
+                                <Icon icon="solar:sort-bold" width={15} className="text-[#FF9500]" />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="bg-transparent text-sm font-medium text-[#1A1A1A] border-none focus:outline-none"
+                                >
+                                    <option value="relevance">Más relevantes</option>
+                                    <option value="price-asc">Precio: menor a mayor</option>
+                                    <option value="price-desc">Precio: mayor a menor</option>
+                                    <option value="name-asc">Nombre A-Z</option>
+                                </select>
+                            </div>
+
+                            {/* Mobile filter toggle */}
+                            <button
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className="md:hidden flex items-center gap-2 bg-white rounded-full px-4 py-2 text-sm font-bold border border-gray-200"
+                            >
+                                <Icon icon="solar:filter-bold" width={16} className="text-[#FF9500]" />
+                                Filtros
+                                {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#FF9500]" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="md:hidden mb-4">
+                        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
+                            <Icon icon="solar:sort-bold" width={15} className="text-[#FF9500]" />
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="w-full bg-transparent text-sm font-medium text-[#1A1A1A] border-none focus:outline-none"
+                            >
+                                <option value="relevance">Más relevantes</option>
+                                <option value="price-asc">Precio: menor a mayor</option>
+                                <option value="price-desc">Precio: mayor a menor</option>
+                                <option value="name-asc">Nombre A-Z</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Mobile filters drawer */}
@@ -405,7 +470,7 @@ export default function Catalogo() {
                             ) : (
                                 <>
                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                                        {productos.map((producto) => (
+                                        {sortedProductos.map((producto) => (
                                             <ProductCardPio
                                                 key={producto.id}
                                                 producto={producto}

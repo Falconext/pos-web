@@ -3,9 +3,11 @@
 export interface IUserPermissions {
   permisos?: string[];
   rol?: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA' | 'RESELLER';
+  subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[];
   empresa?: {
     plan?: {
-      modulosAsignados?: { modulo: { codigo: string } }[]
+      modulosAsignados?: { modulo: { codigo: string } }[];
+      subModulosAsignados?: { subModulo: { id: number; codigo: string; moduloId: number } }[];
     }
   }
 }
@@ -24,34 +26,55 @@ const normalizePerms = (perms: string[] = []): string[] => {
  * Verifica si un usuario tiene permiso para acceder a un módulo específico
  */
 export const hasPermission = (user: IUserPermissions | null, modulo: string): boolean => {
-  // Si no hay usuario, no tiene acceso
   if (!user) return false;
-
-  // Si es admin del sistema, tiene acceso total siempre
   if (user.rol === 'ADMIN_SISTEMA') return true;
 
   // 1. Validar restricción del Plan
   const planModulos = user.empresa?.plan?.modulosAsignados?.map((m) => m.modulo.codigo);
-
-  // Si el plan tiene módulos asignados, verificar que el módulo solicitado esté incluido
   if (planModulos && planModulos.length > 0) {
-    if (!planModulos.includes(modulo)) {
-      return false; // El plan no permite este módulo
-    }
+    if (!planModulos.includes(modulo)) return false;
   }
 
-  // Si es admin de empresa, tiene acceso a todo lo que permite su plan
   if (user.rol === 'ADMIN_EMPRESA') return true;
 
   // 2. Validar permisos individuales de usuario
   if (!user.permisos || user.permisos.length === 0) return false;
-
-  // Si tiene acceso completo (*)
   if (user.permisos.includes('*')) return true;
 
-  // Si tiene permiso específico al módulo
   const normalized = normalizePerms(user.permisos);
   return normalized.includes(modulo);
+};
+
+/**
+ * Verifica si un usuario tiene acceso a un submódulo específico.
+ *
+ * Lógica de dos capas:
+ * 1. Capa Plan: si el plan tiene subModulosAsignados, solo los incluidos están disponibles.
+ *    Si el plan NO tiene ningún submodulo configurado, no se restringe (backward compat).
+ * 2. Capa Usuario: si el usuario tiene subModulos propios, debe incluir el solicitado.
+ *    Si el usuario no tiene subModulos (lista vacía o ausente), y es ADMIN_EMPRESA, accede a todos los del plan.
+ */
+export const hasSubPermission = (user: IUserPermissions | null, subModuloCodigo: string): boolean => {
+  if (!user) return false;
+  if (user.rol === 'ADMIN_SISTEMA') return true;
+
+  // Capa 1: restricción del Plan
+  const planSubModulos = user.empresa?.plan?.subModulosAsignados?.map((s) => s.subModulo.codigo);
+  if (planSubModulos && planSubModulos.length > 0) {
+    if (!planSubModulos.includes(subModuloCodigo)) return false;
+  }
+  // Si el plan no tiene subModulosAsignados configurados, no se restringe a nivel plan
+
+  if (user.rol === 'ADMIN_EMPRESA') return true;
+
+  // Capa 2: restricción del Usuario
+  const userSubModulos = user.subModulos?.map((s) => s.codigo);
+  if (!userSubModulos || userSubModulos.length === 0) {
+    // Usuario sin submodulos configurados: accede a todos los que el plan permita
+    return true;
+  }
+
+  return userSubModulos.includes(subModuloCodigo);
 };
 
 /**
@@ -60,22 +83,17 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
 export const getAvailableModules = (user: IUserPermissions | null): string[] => {
   if (!user) return [];
 
-  // Módulos base del sistema
   let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones', 'guias-remision', 'compras'];
 
-  // Si es admin del sistema, tiene todo
   if (user.rol === 'ADMIN_SISTEMA') return allModules;
 
-  // 1. Filtrar por Plan
   const planModulos = user.empresa?.plan?.modulosAsignados?.map((m) => m.modulo.codigo);
   if (planModulos && planModulos.length > 0) {
     allModules = allModules.filter(m => planModulos.includes(m));
   }
 
-  // Si es admin de empresa, devolver los permitidos por el plan
   if (user.rol === 'ADMIN_EMPRESA') return allModules;
 
-  // 2. Filtrar por permisos individuales
   if (user.permisos?.includes('*')) return allModules;
 
   const userPerms = normalizePerms(user.permisos || []);
@@ -87,12 +105,8 @@ export const getAvailableModules = (user: IUserPermissions | null): string[] => 
  */
 export const filterSidebarItems = (items: any[], user: IUserPermissions | null) => {
   if (!user) return [];
-
   return items.filter(item => {
-    // Si no tiene módulo definido, mostrar siempre (ej: items de separación)
     if (!item.module) return true;
-
-    // Verificar permiso
     return hasPermission(user, item.module);
   });
 };
@@ -105,12 +119,8 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
 
   const availableModules = getAvailableModules(user);
 
-  // Si tiene acceso al dashboard, enviarlo ahí
-  if (availableModules.includes('dashboard')) {
-    return '/administrador';
-  }
+  if (availableModules.includes('dashboard')) return '/administrador';
 
-  // Si no, enviarlo al primer módulo disponible
   if (availableModules.length > 0) {
     const firstModule = availableModules[0];
     const moduleRoutes: Record<string, string> = {
@@ -127,10 +137,8 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       compras: '/administrador/compras',
       dashboard: '/administrador'
     };
-
     return moduleRoutes[firstModule] || '/administrador';
   }
 
-  // Si no tiene ningún permiso, cerrar sesión
   return '/login';
 };

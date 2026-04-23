@@ -46,6 +46,11 @@ export interface IGuiaRemision {
     transportistaRazonSocial?: string;
     transportistaMTC?: string;
 
+    // Solo para GRE-T: RUC/Razón Social del remitente real de los bienes
+    // (la empresa que envía la carga, puede ser diferente al transportista)
+    greTRemitenteNumDoc?: string;
+    greTRemitenteRazonSocial?: string;
+
     // Conductor/Vehículo (opcional)
     conductorTipoDoc?: string;
     conductorNumDoc?: string;

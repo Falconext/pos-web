@@ -63,15 +63,15 @@ export default function TrasladoSedesView() {
             }
             try {
                 setLoadingProducts(true);
-                const { data } = await apiClient.get('/producto', {
+                const { data } = await apiClient.get('/producto/listar', {
                     params: {
-                        search: searchTerm,
+                        search: searchTerm.trim(),
                         limit: 10,
                         sedeId: sedeActiva?.id
                     }
                 });
 
-                const payload = data?.data ?? data;
+                const payload = data?.data?.data ?? data?.data ?? data;
                 const items = Array.isArray(payload)
                     ? payload
                     : Array.isArray(payload?.productos)

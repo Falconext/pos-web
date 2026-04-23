@@ -29,10 +29,12 @@ import ModalPaymentUnified from "@/components/ModalPaymentUnified";
 import PaymentReceipt from "@/components/PaymentReceipt";
 import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
+import { useSedesStore } from "@/zustand/sedes";
 
 const Comprobantes = () => {
     const navigate = useNavigate();
-    const { auth } = useAuthStore();
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
     const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
 
@@ -47,6 +49,7 @@ const Comprobantes = () => {
     const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
     const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
@@ -78,6 +81,8 @@ const Comprobantes = () => {
 
     const debounce = useDebounce(searchClient, 1000);
 
+    const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
+
 
     useEffect(() => {
         if (success === true) {
@@ -85,6 +90,18 @@ const Comprobantes = () => {
             // setIsEdit(false);
         }
     }, [success]);
+
+    useEffect(() => {
+        if (canFilterBySede) {
+            listarSedes();
+        }
+    }, [canFilterBySede, listarSedes]);
+
+    useEffect(() => {
+        if (auth?.rol === 'ADMIN_SISTEMA' && sedeActiva?.esPrincipal && sedeActiva?.id) {
+            setSelectedSedeId(sedeActiva.id);
+        }
+    }, [auth?.rol, sedeActiva?.id, sedeActiva?.esPrincipal]);
 
     // Limpiar el comprobante cargado al entrar/salir de esta página
     useEffect(() => {
@@ -103,6 +120,7 @@ const Comprobantes = () => {
         const rowBase: any = {
             id: item?.id,
             fechaEmisión: moment(item?.fechaEmision).format('DD/MM/YYYY HH:mm:ss'),
+            sede: item?.sede?.nombre || '-',
             serie: item.serie,
             correlativo: item.correlativo,
             comprobante: item.comprobante,
@@ -261,7 +279,8 @@ const Comprobantes = () => {
                     search: debounce,
                     fechaInicio: fechaInicio,
                     fechaFin: fechaFin,
-                    estado: stateInvoice === "TODOS" ? "" : stateInvoice
+                    estado: stateInvoice === "TODOS" ? "" : stateInvoice,
+                    ...(selectedSedeId ? { sedeId: selectedSedeId } : {})
                 });
             }, 300);
         }
@@ -282,9 +301,10 @@ const Comprobantes = () => {
             search: debounce,
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
-            estado: stateInvoice === "TODOS" ? "" : stateInvoice
+            estado: stateInvoice === "TODOS" ? "" : stateInvoice,
+            ...(selectedSedeId ? { sedeId: selectedSedeId } : {})
         });
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice]);
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, selectedSedeId]);
 
     const ruc = "204812192919";
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
@@ -325,7 +345,19 @@ const Comprobantes = () => {
         setStateInvoice(value)
     }
 
+    const handleSelectSede = (idValue: any) => {
+        if (idValue === 0 || idValue === '0' || idValue === '' || idValue == null) {
+            setSelectedSedeId(null);
+            return;
+        }
+        setSelectedSedeId(Number(idValue));
+    }
+
     const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "ANULADO" }, { id: 5, value: "RECHAZADO" }]
+    const sedesOptions = [
+        { id: 0, value: 'Todas las sedes' },
+        ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
+    ]
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id)
@@ -470,6 +502,14 @@ const Comprobantes = () => {
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Comprobantes Electrónicos</h1>
                     <p className="text-sm text-gray-500 mt-1">Historial de boletas, facturas y notas de crédito</p>
                 </div>
+                <button
+                    type="button"
+                    onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA' } })}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                >
+                    <Icon icon="solar:add-circle-bold" className="text-lg" />
+                    Nuevo comprobante
+                </button>
             </div>
 
             {/* Main Content Card */}
@@ -491,6 +531,23 @@ const Comprobantes = () => {
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
                         </div>
+                        {canFilterBySede && (
+                            <div>
+                                <Select
+                                    onChange={handleSelectSede}
+                                    label="Sede"
+                                    name="sede"
+                                    options={sedesOptions}
+                                    defaultValue={selectedSedeId
+                                        ? (sedes.find((s: any) => s.id === selectedSedeId)?.nombre || '')
+                                        : 'Todas las sedes'}
+                                    value={selectedSedeId
+                                        ? (sedes.find((s: any) => s.id === selectedSedeId)?.nombre || '')
+                                        : 'Todas las sedes'}
+                                    error=""
+                                />
+                            </div>
+                        )}
                         <div className="flex justify-end">
                             <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
                         </div>
@@ -506,6 +563,7 @@ const Comprobantes = () => {
                                 <DataTable bodyData={productsTable}
                                     headerColumns={[
                                         'Fecha',
+                                        'Sede',
                                         'Serie',
                                         'Nro.',
                                         'Comprobante',

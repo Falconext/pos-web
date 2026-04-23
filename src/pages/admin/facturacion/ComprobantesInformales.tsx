@@ -26,9 +26,13 @@ import ModalPaymentUnified from "@/components/ModalPaymentUnified";
 import PaymentReceipt from "@/components/PaymentReceipt";
 import ModalEnviarWhatsApp from "./ModalEnviarWhatsApp";
 import Modal from "@/components/Modal";
+import { useSedesStore } from "@/zustand/sedes";
+import { useNavigate } from "react-router-dom";
 
 const ComprobantesInformales = () => {
-    const { auth } = useAuthStore();
+    const navigate = useNavigate();
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
     const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
     const paymentFlow = usePaymentFlow();
@@ -43,6 +47,7 @@ const ComprobantesInformales = () => {
     const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
     const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
     const [comprobante, setComprobante] = useState<string>("");
@@ -59,6 +64,9 @@ const ComprobantesInformales = () => {
 
     const debounce = useDebounce(searchClient, 1000);
 
+    const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
+    const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
+
 
     useEffect(() => {
         if (success === true) {
@@ -67,6 +75,24 @@ const ComprobantesInformales = () => {
         }
     }, [success]);
 
+    useEffect(() => {
+        if (canFilterBySede) {
+            listarSedes();
+        }
+    }, [canFilterBySede, listarSedes]);
+
+    useEffect(() => {
+        if (auth?.rol === 'ADMIN_SISTEMA' && sedeActiva?.esPrincipal && sedeActiva?.id) {
+            setSelectedSedeId(sedeActiva.id);
+        }
+    }, [auth?.rol, sedeActiva?.id, sedeActiva?.esPrincipal]);
+
+    useEffect(() => {
+        if (!canFilterBySede) {
+            setSelectedSedeId(null);
+        }
+    }, [canFilterBySede]);
+
     console.log(invoices)
 
 
@@ -74,6 +100,7 @@ const ComprobantesInformales = () => {
         const rowBase: any = {
             id: item?.id,
             fechaEmisión: moment(item?.fechaEmision).format('DD/MM/YYYY HH:mm:ss'),
+            sede: item?.sede?.nombre || '-',
             serie: item.serie,
             correlativo: item.correlativo,
             comprobante: item.comprobante,
@@ -265,7 +292,8 @@ const ComprobantesInformales = () => {
                 search: debounce,
                 fechaInicio: fechaInicio,
                 fechaFin: fechaFin,
-                estadoPago: stateInvoice !== "TODOS" ? stateInvoice : ""
+                estadoPago: stateInvoice !== "TODOS" ? stateInvoice : "",
+                ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {})
             });
         }, 300);
     }
@@ -280,12 +308,13 @@ const ComprobantesInformales = () => {
             search: debounce,
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
+            ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {}),
         };
         if (stateInvoice !== "TODOS") {
             params.estadoPago = stateInvoice;
         }
         getAllInvoices(params);
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice]);
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, effectiveSedeId]);
 
     const ruc = "204812192919";
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
@@ -400,7 +429,19 @@ const ComprobantesInformales = () => {
         setStateInvoice(value)
     }
 
+    const handleSelectSede = (idValue: any) => {
+        if (idValue === 0 || idValue === '0' || idValue === '' || idValue == null) {
+            setSelectedSedeId(null);
+            return;
+        }
+        setSelectedSedeId(Number(idValue));
+    }
+
     const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "COMPLETADO" }, { id: 3, value: "PENDIENTE_PAGO" }, { id: 4, value: "ANULADO" }]
+    const sedesOptions = [
+        { id: 0, value: 'Todas las sedes' },
+        ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
+    ]
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id)
@@ -437,9 +478,17 @@ const ComprobantesInformales = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Comprobantes Informales</h1>
-                    <p className="text-sm text-gray-500 mt-1">Notas de venta, proformas y otros comprobantes</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Notas de venta</h1>
+                    <p className="text-sm text-gray-500 mt-1">Historial de notas de pedido</p>
                 </div>
+                <button
+                    type="button"
+                    onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NP', defaultClient: 'CLIENTES_VARIOS' } })}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                >
+                    <Icon icon="solar:add-circle-bold" className="text-lg" />
+                    Nuevo comprobante
+                </button>
             </div>
 
             {/* Main Content Card */}
@@ -450,7 +499,7 @@ const ComprobantesInformales = () => {
                         <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                         <h3 className="font-semibold text-gray-800">Filtros</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                         <div className="">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
@@ -463,6 +512,23 @@ const ComprobantesInformales = () => {
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
                         </div>
+                        {canFilterBySede && (
+                            <div>
+                                <Select
+                                    onChange={handleSelectSede}
+                                    label="Sede"
+                                    name="sede"
+                                    options={sedesOptions}
+                                    defaultValue={selectedSedeId
+                                        ? (sedes.find((s: any) => s.id === selectedSedeId)?.nombre || '')
+                                        : 'Todas las sedes'}
+                                    value={selectedSedeId
+                                        ? (sedes.find((s: any) => s.id === selectedSedeId)?.nombre || '')
+                                        : 'Todas las sedes'}
+                                    error=""
+                                />
+                            </div>
+                        )}
                         <div className="">
                             <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
                         </div>
@@ -478,6 +544,7 @@ const ComprobantesInformales = () => {
                                 <DataTable bodyData={productsTable}
                                     headerColumns={[
                                         'Fecha',
+                                        'Sede',
                                         'Serie',
                                         'Nro.',
                                         'Comprobante',

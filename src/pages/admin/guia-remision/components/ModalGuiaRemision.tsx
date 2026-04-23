@@ -128,6 +128,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
 
     const isGuiaTransportista = formValues.tipoGuia === "TRANSPORTISTA";
     const isCompra = formValues.tipoTraslado === "02";
+    const isTrasladoMismaEmpresa = formValues.tipoTraslado === "04";
     const selectedMotivoHelp = MOTIVO_HELP[formValues.tipoTraslado] || {
         title: "Motivo seleccionado",
         description: "Completa los datos del traslado según el motivo elegido.",
@@ -189,6 +190,9 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                     transportistaRuc: "",
                     transportistaRazonSocial: "",
                     transportistaMTC: "",
+                    // Remitente de bienes (solo GRE-T)
+                    greTRemitenteNumDoc: "",
+                    greTRemitenteRazonSocial: "",
                     // Conductor
                     conductorTipoDoc: "",
                     conductorNumDoc: "",
@@ -237,14 +241,18 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         const fullGuia = fullGuiaResponse.data || fullGuiaResponse;
 
         // Mapeo seguro de datos
+        const esTrasladoMismaEmpresa = fullGuia.tipoTraslado === '04';
+        const empresa = auth?.empresa;
+
         setFormValues(prev => ({
             ...prev, // Mantener defaults
             ...fullGuia,
             // Ensure booleans and other specific fields are correctly mapped if they are missing/null in fullGuia
             pesoTotal: Number(fullGuia.pesoTotal) || 0,
-            destinatarioTipoDoc: fullGuia.destinatarioTipoDoc || prev.destinatarioTipoDoc,
-            destinatarioNumDoc: fullGuia.destinatarioNumDoc || "",
-            destinatarioRazonSocial: fullGuia.destinatarioRazonSocial || "",
+            // Si es traslado entre establecimientos, forzar destinatario = empresa propia
+            destinatarioTipoDoc: esTrasladoMismaEmpresa ? '6' : (fullGuia.destinatarioTipoDoc || prev.destinatarioTipoDoc),
+            destinatarioNumDoc: esTrasladoMismaEmpresa ? (empresa?.ruc || '') : (fullGuia.destinatarioNumDoc || ''),
+            destinatarioRazonSocial: esTrasladoMismaEmpresa ? (empresa?.razonSocial || '') : (fullGuia.destinatarioRazonSocial || ''),
             // Asegurar fechas con UTC
             fechaEmision: fullGuia.fechaEmision ? moment.utc(fullGuia.fechaEmision).format("YYYY-MM-DD") : prev.fechaEmision,
             fechaInicioTraslado: fullGuia.fechaInicioTraslado ? moment.utc(fullGuia.fechaInicioTraslado).format("YYYY-MM-DD") : prev.fechaInicioTraslado,
@@ -296,9 +304,17 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 handleReniecLookup(cleanValue, 'transportista');
             }
         }
+
+        // Auto-lookup RUC del remitente de bienes para GRE-T
+        if (name === "greTRemitenteNumDoc") {
+            const cleanValue = value.trim();
+            if (cleanValue.length === 11) {
+                handleReniecLookup(cleanValue, 'greTRemitente');
+            }
+        }
     };
 
-    const handleReniecLookup = async (doc: string, tipo: 'destinatario' | 'transportista') => {
+    const handleReniecLookup = async (doc: string, tipo: 'destinatario' | 'transportista' | 'greTRemitente') => {
         const result = await getClientFromDoc(doc);
         if (result) {
             if (tipo === 'destinatario') {
@@ -309,21 +325,35 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                     llegadaUbigeo: isCompra ? prev.llegadaUbigeo : (result.ubigeo_sunat || prev.llegadaUbigeo),
                     destinatarioTipoDoc: doc.length === 8 ? "1" : "6"
                 }));
-            } else {
+            } else if (tipo === 'transportista') {
                 setFormValues(prev => ({
                     ...prev,
                     transportistaRazonSocial: result.nombre_completo || result.nombre_o_razon_social || ""
+                }));
+            } else if (tipo === 'greTRemitente') {
+                setFormValues(prev => ({
+                    ...prev,
+                    greTRemitenteRazonSocial: result.nombre_completo || result.nombre_o_razon_social || ""
                 }));
             }
         }
     };
 
     const handleSelectChange = (_idValue: any, value: any, name: any, id: any) => {
-        if (name === 'partidaUbigeo' || name === 'llegadaUbigeo') {
-            setFormValues(prev => ({ ...prev, [name]: _idValue }));
-        } else {
-            setFormValues(prev => ({ ...prev, [name]: _idValue }));
+        if (name === 'tipoTraslado') {
+            const updates: any = { tipoTraslado: _idValue };
+            if (_idValue === '04') {
+                updates.destinatarioTipoDoc = '6';
+                updates.destinatarioNumDoc = auth?.empresa?.ruc || '';
+                updates.destinatarioRazonSocial = auth?.empresa?.razonSocial || '';
+            } else if (formValues.tipoTraslado === '04') {
+                updates.destinatarioNumDoc = '';
+                updates.destinatarioRazonSocial = '';
+            }
+            setFormValues(prev => ({ ...prev, ...updates }));
+            return;
         }
+        setFormValues(prev => ({ ...prev, [name]: _idValue }));
     };
 
     const handleTipoGuiaChange = (id: any, value: string) => {
@@ -487,6 +517,14 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             return;
         }
 
+        if (isTrasladoMismaEmpresa) {
+            const empresaRuc = String(auth?.empresa?.ruc || formValues.remitenteRuc || '').trim();
+            if (String(formValues.destinatarioNumDoc || '').trim() !== empresaRuc) {
+                useAlertStore.getState().alert("En TRASLADO ENTRE ESTABLECIMIENTOS, el destinatario debe ser tu propia empresa (mismo RUC).", "warning");
+                return;
+            }
+        }
+
         // Validaciones específicas según tipo de guía
         if (formValues.tipoGuia === 'TRANSPORTISTA') {
             if (!formValues.transportistaRuc || !formValues.transportistaRazonSocial) {
@@ -524,6 +562,13 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
 
             if (!tucRegex.test(numeroTuc)) {
                 useAlertStore.getState().alert("La TUC debe tener entre 11 y 13 caracteres alfanuméricos.", "warning");
+                return;
+            }
+
+            // Validar remitente de bienes si fue ingresado (campo opcional)
+            const greTRuc = (formValues.greTRemitenteNumDoc || '').trim();
+            if (greTRuc && greTRuc.length !== 11) {
+                useAlertStore.getState().alert("El RUC del remitente de bienes debe tener 11 dígitos.", "warning");
                 return;
             }
         }
@@ -670,11 +715,15 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
 
                         {/* Datos del Destinatario */}
                         <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">{isCompra ? "Datos del Proveedor" : "Datos del Destinatario"}</h3>
+                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">
+                                {isCompra ? "Datos del Proveedor" : "Datos del Destinatario"}
+                            </h3>
                             <p className="text-xs text-gray-500 mb-4">
                                 {isCompra
                                     ? "En motivo COMPRA, aquí registras al proveedor origen de los bienes."
-                                    : "Registra el receptor final de los bienes con documento y razón social válidos."}
+                                    : isTrasladoMismaEmpresa
+                                        ? "En traslado entre establecimientos, el destinatario es siempre tu propia empresa."
+                                        : "Registra el receptor final de los bienes con documento y razón social válidos."}
                             </p>
 
                             {isCompra && (
@@ -682,6 +731,17 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     <div className="font-semibold">Destinatario (SUNAT)</div>
                                     <div>{auth?.empresa?.razonSocial || formValues.remitenteRazonSocial}</div>
                                     <div>{auth?.empresa?.ruc || formValues.remitenteRuc}</div>
+                                </div>
+                            )}
+
+                            {isTrasladoMismaEmpresa && (
+                                <div className="mb-4 p-3 rounded-lg border border-blue-200 bg-blue-50 text-sm text-blue-900 flex items-start gap-2">
+                                    <Icon icon="solar:lock-bold-duotone" className="text-blue-600 text-lg mt-0.5 shrink-0" />
+                                    <div>
+                                        <div className="font-semibold">Destinatario bloqueado — misma empresa</div>
+                                        <div className="mt-0.5">{auth?.empresa?.razonSocial} — RUC: {auth?.empresa?.ruc}</div>
+                                        <div className="mt-0.5 text-blue-700 text-xs">Para este motivo SUNAT exige que el destinatario sea la misma empresa remitente.</div>
+                                    </div>
                                 </div>
                             )}
 
@@ -693,15 +753,55 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     id="destinatarioTipoDoc"
                                     value={TIPO_DOC_OPTIONS.find(o => o.id === formValues.destinatarioTipoDoc)?.value || ""}
                                     defaultValue={formValues.destinatarioTipoDoc}
-                                    onChange={handleSelectChange}
+                                    onChange={isTrasladoMismaEmpresa ? () => {} : handleSelectChange}
                                     withLabel
                                     error={null}
+                                    disabled={isTrasladoMismaEmpresa}
                                 />
-                                <InputPro autocomplete="off" label={isCompra ? "RUC/DNI Proveedor" : "Número Documento"} name="destinatarioNumDoc" value={formValues.destinatarioNumDoc} onChange={handleChange} isLabel placeholder={isCompra ? "Ingrese documento del proveedor" : "Ingrese DNI o RUC"} />
-                                <InputPro autocomplete="off" label={isCompra ? "Razón Social / Nombre Proveedor" : "Razón Social / Nombre"} name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel />
+                                <InputPro autocomplete="off" label={isCompra ? "RUC/DNI Proveedor" : "Número Documento"} name="destinatarioNumDoc" value={formValues.destinatarioNumDoc} onChange={handleChange} isLabel placeholder={isCompra ? "Ingrese documento del proveedor" : "Ingrese DNI o RUC"} disabled={isTrasladoMismaEmpresa} />
+                                <InputPro autocomplete="off" label={isCompra ? "Razón Social / Nombre Proveedor" : "Razón Social / Nombre"} name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel disabled={isTrasladoMismaEmpresa} />
                             </div>
-                            <p className="text-xs text-gray-500 mt-3">Formato recomendado de documento: {destinatarioDocHint}.</p>
+                            {!isTrasladoMismaEmpresa && (
+                                <p className="text-xs text-gray-500 mt-3">Formato recomendado de documento: {destinatarioDocHint}.</p>
+                            )}
                         </div>
+
+                        {/* Remitente de los bienes — SOLO GRE-T */}
+                        {isGuiaTransportista && (
+                            <div className="p-4 rounded-xl border border-orange-200 bg-orange-50/40">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Icon icon="solar:box-bold-duotone" className="text-orange-600 text-xl" />
+                                    <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">
+                                        Remitente de los bienes (GRE-T)
+                                    </h3>
+                                </div>
+                                <p className="text-xs text-orange-800 mb-4">
+                                    En una GRE-T, el <strong>remitente de los bienes</strong> es la empresa o persona que
+                                    <strong> envía la carga</strong> (puede ser diferente al transportista).
+                                    Ingresa el RUC y la razón social se completará automáticamente.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputPro
+                                        autocomplete="off"
+                                        label="RUC del remitente de bienes"
+                                        name="greTRemitenteNumDoc"
+                                        value={formValues.greTRemitenteNumDoc || ""}
+                                        onChange={handleChange}
+                                        isLabel
+                                        placeholder="Ej: 20524076307"
+                                    />
+                                    <InputPro
+                                        autocomplete="off"
+                                        label="Razón social del remitente de bienes"
+                                        name="greTRemitenteRazonSocial"
+                                        value={formValues.greTRemitenteRazonSocial || ""}
+                                        onChange={handleChange}
+                                        isLabel
+                                        placeholder="Se completa al ingresar el RUC"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Datos de Traslado */}
                         <div className="p-4 rounded-xl border border-gray-200">

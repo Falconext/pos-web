@@ -52,10 +52,10 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                         {vm.loading ? (
                             <div className="flex items-center gap-2">
                                 <Icon icon="svg-spinners:180-ring-with-bg" />
-                                {vm.isEdit ? "Editando..." : "Guardando..."}
+                                {vm.isEdit ? "Editando cambios..." : "Guardando..."}
                             </div>
                         ) : (
-                            vm.isEdit ? "Guardar Cambios" : "Crear Producto"
+                            vm.isEdit ? "Editar cambios" : "Crear Producto"
                         )}
                     </Button>
                 </div>

@@ -13,6 +13,8 @@ export interface MovimientoKardex {
     observacion?: string;
     lote?: string;
     fechaVencimiento?: string | Date;
+    sedeId?: number;
+    sede?: { id: number; nombre: string };
     usuario?: {
         id: number;
         nombre: string;

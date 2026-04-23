@@ -39,9 +39,13 @@ const PaymentReceipt = ({
   const componentRef = useRef(null);
 
   const logoRaw = company?.empresa?.logo;
-  const logoDataUrl = logoRaw
-    ? (logoRaw.startsWith('data:image') ? logoRaw : `data:image/png;base64,${logoRaw}`)
-    : '';
+  const logoDataUrl = (() => {
+    if (!logoRaw) return '';
+    const t = logoRaw.trim();
+    if (t.startsWith('data:')) return t;
+    if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
+    return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
+  })();
 
   const empresaRuc = company?.empresa?.ruc || company?.empresa?.nroDoc || '';
 

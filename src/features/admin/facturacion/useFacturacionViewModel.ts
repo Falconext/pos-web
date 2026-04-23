@@ -202,18 +202,46 @@ export const useFacturacionViewModel = () => {
     useEffect(() => {
         const state = location.state as any;
         const defaultType = state?.defaultType as string | undefined;
+        const defaultClient = state?.defaultClient as string | undefined;
 
         if (defaultType && !isQuotationRoute) {
             const tipoDocMap: Record<string, string> = {
                 'FACTURA': '01', 'BOLETA': '03',
                 'TICKET': 'TICKET', 'NP': 'NP', 'OT': 'OT',
                 'NV': 'NV', 'RH': 'RH', 'CP': 'CP',
+                'NOTA DE PEDIDO': 'NP',
             };
+
+            const comprobanteLabelMap: Record<string, string> = {
+                NP: 'NOTA DE PEDIDO',
+            };
+
+            const resolvedComprobante = comprobanteLabelMap[defaultType] ?? defaultType;
+
             setFormValues(prev => ({
                 ...prev,
-                comprobante: defaultType,
+                comprobante: resolvedComprobante,
                 tipoDoc: tipoDocMap[defaultType] ?? '01',
             }));
+
+            if (defaultClient === 'CLIENTES_VARIOS') {
+                const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
+                if (clientSelect) {
+                    setSelectedClient(clientSelect);
+                    setFormValues(prev => ({
+                        ...prev,
+                        clienteId: Number(clientSelect.id) || 0,
+                        clienteNombre: "CLIENTES VARIOS"
+                    }));
+                } else {
+                    setSelectedClient({ nroDoc: "10000000", nombre: "CLIENTES VARIOS" });
+                    setFormValues(prev => ({
+                        ...prev,
+                        clienteId: 0,
+                        clienteNombre: "CLIENTES VARIOS"
+                    }));
+                }
+            }
             return;
         }
 
@@ -314,17 +342,17 @@ export const useFacturacionViewModel = () => {
             setCorrelative("");
             getSerieAndCorrelativeByReceipt(auth?.empresa?.id, formValues?.tipoDoc);
 
-            if (formValues?.comprobante === "BOLETA") {
+            if (formValues?.comprobante === "BOLETA" || formValues?.comprobante === "NOTA DE PEDIDO") {
                 const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
                 if (clientSelect) {
                     setSelectedClient(clientSelect)
-                    setFormValues(prev => ({ ...prev, clienteNombre: "CLIENTES VARIOS" }))
+                    setFormValues(prev => ({ ...prev, clienteId: Number(clientSelect.id) || 0, clienteNombre: "CLIENTES VARIOS" }))
                 } else {
                     setSelectedClient({ nroDoc: "10000000", nombre: "CLIENTES VARIOS" })
-                    setFormValues(prev => ({ ...prev, clienteNombre: "CLIENTES VARIOS" }))
+                    setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "CLIENTES VARIOS" }))
                 }
             } else if (formValues?.comprobante === "FACTURA") {
-                setFormValues(prev => ({ ...prev, clienteNombre: "" }))
+                setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "" }))
                 setSelectedClient(null);
             }
         }

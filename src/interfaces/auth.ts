@@ -24,6 +24,7 @@ export interface IUser {
     usuario: any
     permisos?: string[]
     sedes?: ISede[]
+    subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[]
 }
 
 export interface IResponse {

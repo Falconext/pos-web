@@ -5,12 +5,6 @@ export interface DashboardData {
         productosStockCritico: number;
         productosStockCero: number;
     };
-    estadisticas: {
-        totalProductos: number;
-        valorTotalInventario: number;
-        productosStockCritico: number;
-        productosStockCero: number;
-    };
     movimientosRecientes: Array<{
         id: number;
         fecha: Date;

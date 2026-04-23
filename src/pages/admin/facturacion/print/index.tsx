@@ -233,21 +233,13 @@ const PrintPDF = ({
     console.log(company)
 
     const rawBase64 = company?.empresa?.logo;
-    // Detecta MIME si no viene con prefijo
-    const detectMime = (b64?: string) => {
-        if (!b64) return undefined;
-        if (b64.startsWith('data:')) return undefined; // ya viene completo
-        if (b64.startsWith('/9j/')) return 'image/jpeg'; // JPEG
-        if (b64.startsWith('iVBOR')) return 'image/png'; // PNG
-        return 'image/png';
-    };
-
-    const mime = detectMime(rawBase64);
-    const logoDataUrl = rawBase64
-        ? (rawBase64.startsWith('data:')
-            ? rawBase64
-            : `data:${mime};base64,${rawBase64}`)
-        : undefined;
+    const logoDataUrl = (() => {
+        if (!rawBase64) return undefined;
+        const t = rawBase64.trim();
+        if (t.startsWith('data:')) return t;
+        if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
+        return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
+    })();
 
     return (
         <Document>

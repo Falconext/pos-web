@@ -5,9 +5,6 @@ import axios from 'axios';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
 import Footer from '@/components/tienda/Footer';
 import StoreHeader from '@/components/tienda/StoreHeader';
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
@@ -25,7 +22,6 @@ export default function ProductoDetalle() {
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [mostrarCarrito, setMostrarCarrito] = useState(false);
   const [search, setSearch] = useState('');
-  const dragging = useRef(false);
 
   // Estados para personalización
   const [modificadoresProducto, setModificadoresProducto] = useState<any[]>([]);
@@ -34,22 +30,6 @@ export default function ProductoDetalle() {
   // Admin Menu Logic
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement | null>(null);
-  const isLoggedIn = !!localStorage.getItem('ACCESS_TOKEN');
-
-  // Countdown Logic (Realistic simulation)
-  const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 25, seconds: 43 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -300,52 +280,6 @@ export default function ProductoDetalle() {
   const diseno = tienda?.diseno || {};
   const fontFamily = diseno.tipografia || 'Inter, sans-serif';
 
-  function NextArrow(props: any) {
-    const { className, style, onClick } = props;
-    return (
-      <div
-        className={`${className} !flex items-center justify-center !w-12 !h-12 !bg-white hover:!bg-black shadow-lg rounded-full z-10 before:!content-none transition-all duration-300 group/arrow`}
-        style={{ ...style, right: "-20px" }}
-        onClick={onClick}
-      >
-        <Icon icon="mdi:chevron-right" className="text-black group-hover/arrow:text-white w-6 h-6" />
-      </div>
-    );
-  }
-
-  function PrevArrow(props: any) {
-    const { className, style, onClick } = props;
-    return (
-      <div
-        className={`${className} !flex items-center justify-center !w-12 !h-12 !bg-white hover:!bg-black shadow-lg rounded-full z-10 before:!content-none transition-all duration-300 group/arrow`}
-        style={{ ...style, left: "-20px" }}
-        onClick={onClick}
-      >
-        <Icon icon="mdi:chevron-left" className="text-black group-hover/arrow:text-white w-6 h-6" />
-      </div>
-    );
-  }
-
-  const settings = {
-    dots: true,
-    infinite: relatedProducts.length > 4,
-    speed: 500,
-    slidesToShow: 5,
-    slidesToScroll: 5,
-    autoplay: true,
-    autoplaySpeed: 3000,
-    nextArrow: <NextArrow />,
-    prevArrow: <PrevArrow />,
-    beforeChange: () => { dragging.current = true; },
-    afterChange: () => { dragging.current = false; },
-    responsive: [
-      { breakpoint: 1280, settings: { slidesToShow: 4, slidesToScroll: 1 } },
-      { breakpoint: 1024, settings: { slidesToShow: 3, slidesToScroll: 1, arrows: false } },
-      { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 1, arrows: false } },
-      { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false } }
-    ]
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -366,11 +300,8 @@ export default function ProductoDetalle() {
     );
   }
 
-  const extras: string[] = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
-  const allImages = [producto.imagenUrl, ...extras].filter(Boolean);
-
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden" style={{ fontFamily: '"Mona Sans", ' + fontFamily }}>
+    <div className="min-h-screen bg-[#F6F6F6] overflow-x-hidden" style={{ fontFamily: '"Mona Sans", ' + fontFamily }}>
       {/* Header Unificado */}
       <StoreHeader
         tienda={tienda}
@@ -387,7 +318,7 @@ export default function ProductoDetalle() {
         recommendedProducts={relatedProducts} // Usar productos relacionados para búsqueda
       />
 
-      <main className="max-w-7xl mx-auto px-6 pt-28 md:pt-36 pb-8 bg-[#fff]">
+      <main className="max-w-7xl mx-auto px-5 md:px-8 pt-28 md:pt-36 pb-10">
         {/* Carrito Lateral (Drawer) - Professional Design */}
         <ShoppingCartModal
           isOpen={mostrarCarrito}
@@ -400,21 +331,24 @@ export default function ProductoDetalle() {
           setCarrito={setCarrito}
         />
 
-        {/* Breadcrumb - Style: "All category / Category Name" */}
-        <div className="mb-8">
-          <h2 className="text-[12px] font-bold text-[#1E1B4B]">
-            Todas las categorías / <span className="text-gray-600 font-normal">{typeof producto.categoria === 'object' && producto.categoria !== null ? (producto.categoria.nombre || producto.categoria.codigo || 'General') : (producto.categoria || 'General')}</span>
-          </h2>
-        </div>
+        <nav className="mb-6 flex items-center gap-2 text-xs md:text-sm text-gray-500">
+          <button onClick={() => navigate(`/tienda/${slug}`)} className="hover:text-[#FF9500] font-medium transition-colors">
+            Inicio
+          </button>
+          <Icon icon="solar:alt-arrow-right-linear" width={14} className="text-gray-300" />
+          <button onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="hover:text-[#FF9500] font-medium transition-colors">
+            Catálogo
+          </button>
+          <Icon icon="solar:alt-arrow-right-linear" width={14} className="text-gray-300" />
+          <span className="font-semibold text-[#1A1A1A] truncate max-w-[50vw]">
+            {typeof producto.categoria === 'object' && producto.categoria !== null ? (producto.categoria.nombre || producto.categoria.codigo || 'General') : (producto.categoria || 'General')}
+          </span>
+        </nav>
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
-          {/* Main Image Column - Single Image as requested */}
+          {/* Main Image Column */}
           <div className="relative">
-            <div className="bg-[#F8F9FA] rounded-3xl aspect-[4/5] flex items-center justify-center p-8 relative overflow-hidden">
-              {/* Badge: Free Delivery */}
-              <div className="absolute top-6 left-6 bg-[#1E1B4B] text-white px-4 py-1.5 rounded-full text-sm font-medium z-10 shadow-sm">
-                Envío Gratis
-              </div>
+            <div className="bg-white border border-gray-100 rounded-3xl aspect-[4/5] flex items-center justify-center p-8 relative overflow-hidden shadow-sm">
 
               {selectedImage || producto.imagenUrl ? (
                 <img src={selectedImage || producto.imagenUrl} alt={producto.descripcion} className="w-full h-full object-contain mix-blend-multiply hover:scale-105 transition-transform duration-500" />
@@ -428,43 +362,26 @@ export default function ProductoDetalle() {
           </div>
 
           {/* Details Column */}
-          <div className="flex flex-col pt-2">
-            {/* Timer */}
-            <div className="flex items-center gap-4 text-[#F05542] font-semibold mb-3">
-              <Icon icon="solar:clock-circle-bold" className="w-5 h-5" />
-              <div className="flex gap-1 font-mono text-lg items-center">
-                <span className="bg-gray-100 rounded px-1">{String(timeLeft.hours).padStart(2, '0')}</span> :
-                <span className="bg-gray-100 rounded px-1">{String(timeLeft.minutes).padStart(2, '0')}</span> :
-                <span className="bg-gray-100 rounded px-1">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                <span className="text-xs text-gray-400 font-sans ml-2">Expira pronto</span>
-              </div>
+          <div className="flex flex-col pt-1 bg-white border border-gray-100 rounded-3xl p-5 md:p-7 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#FFF3E0] text-[#FF9500] font-bold">Disponible</span>
+              <span className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-bold">Stock: {producto.stock ?? 0}</span>
             </div>
 
-            {/* Vendor / Subtitle */}
-            <p className="text-gray-500 text-sm mb-2 font-medium">{'Mi Tienda'}</p>
+            <p className="text-gray-500 text-sm mb-1 font-medium">{tienda?.nombreComercial || 'Mi Tienda'}</p>
 
             {/* Title */}
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-[#1E1B4B] mb-3 leading-tight">
+            <h1 className="text-3xl lg:text-4xl font-black text-[#1A1A1A] mb-3 leading-tight">
               {producto.descripcion}
             </h1>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex text-[#F4C542]">
-                {[1, 2, 3, 4, 5].map(i => <Icon key={i} icon="solar:star-bold" width={16} />)}
-              </div>
-              {/* <span className="text-sm font-bold text-gray-700">4.5 Rating</span> */}
-              {/* <span className="text-sm text-gray-400 underline decoration-gray-300">(15 reseñas)</span> */}
-            </div>
+            <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+              {producto.descripcionLarga || producto.descripcion || 'Sin descripción disponible para este producto.'}
+            </p>
 
-            {/* Price - Style: Large integer with superscript decimal */}
-            <div className="flex items-start text-[#1E1B4B] leading-none mb-8">
-              <span className="text-5xl font-extrabold tracking-tight">
-                {Math.floor(precioFinal)}
-              </span>
-              <span className="text-2xl font-bold mt-1">
-                .{precioFinal.toFixed(2).split('.')[1]} <span className="text-xl pl-1">S/</span>
-              </span>
+            <div className="flex items-end gap-2 text-[#1A1A1A] mb-6">
+              <span className="text-sm font-semibold text-gray-500 pb-1">S/</span>
+              <span className="text-5xl font-black tracking-tight leading-none">{precioFinal.toFixed(2)}</span>
             </div>
 
             {/* Klarna / Installments Box */}
@@ -481,89 +398,56 @@ export default function ProductoDetalle() {
               onChange={setSelecciones}
             />
 
-            {/* Action Buttons */}
-            {/* Action Buttons */}
             <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6">
-              <div className="w-full md:flex-1 flex items-center justify-between bg-[#F3F4F6] rounded-full px-6 py-3 order-1 md:order-none">
-                <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-full w-8 h-8 flex items-center justify-center transition-colors font-bold pb-1">-</button>
-                <span className="font-bold text-gray-900">{cantidad}</span>
-                <button onClick={() => setCantidad(Math.min(producto.stock || 99, cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-full w-8 h-8 flex items-center justify-center transition-colors font-bold pb-1">+</button>
+              <div className="w-full md:flex-1 flex items-center justify-between bg-[#F3F4F6] rounded-xl px-4 py-2.5 order-1 md:order-none">
+                <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">-</button>
+                <span className="font-bold text-sm text-gray-900">{cantidad}</span>
+                <button onClick={() => setCantidad(Math.min(producto.stock || 99, cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">+</button>
               </div>
 
               <div className="flex gap-3 md:contents w-full order-2 md:order-none">
                 <button
                   onClick={handleAgregarProducto}
-                  className="flex-1 md:flex-[2] bg-[#F3F4F6] hover:bg-[#e5e7eb] text-gray-900 py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors w-full md:w-auto"
+                  className="flex-1 bg-[#1A1A1A] hover:bg-black text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors w-full md:w-auto"
                 >
                   <Icon icon="solar:cart-large-minimalistic-linear" width={20} />
-                  <span className="hidden sm:inline">Agregar al carrito</span>
+                  <span className="hidden sm:inline">Agregar</span>
                   <span className="sm:hidden">Agregar</span>
                 </button>
 
                 <button
                   onClick={irACheckout}
-                  className="flex-1 md:flex-[2] bg-[#BCE766] hover:bg-[#aed859] text-[#1E1B4B] py-3 rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
+                  className="flex-1 bg-[#FF9500] hover:bg-[#E08500] text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
                 >
                   Comprar ahora
                 </button>
               </div>
             </div>
 
-            {/* Links: Wishlist & Compare */}
-            <div className="flex items-center gap-6 mb-8 text-sm font-bold text-[#1E1B4B]">
-              {/* <button className="flex items-center gap-2 hover:underline decoration-2 underline-offset-4">
-                <Icon icon="solar:heart-linear" width={18} />
-                AÑADIR A FAVORITOS
-              </button> */}
-              {/* <button className="flex items-center gap-2 hover:underline decoration-2 underline-offset-4">
-                <Icon icon="solar:restart-square-linear" width={18} />
-                COMPARAR
-              </button> */}
-            </div>
-
-            {/* Badges Layout */}
             <div className="border-t border-gray-100 pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex gap-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-[#1E1B4B] flex items-center justify-center text-white text-xs">
-                      <Icon icon="solar:leaf-bold" />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 text-[#C62828] font-bold text-sm bg-red-50 px-3 py-1 rounded-full">
-                  <Icon icon="solar:fire-bold" />
-                  100 vendidos en las últimas 35 horas
-                </div>
-              </div>
-
               <p className="text-sm text-gray-500 mb-1"><span className="font-bold text-gray-900">SKU:</span> {producto.codigo || 'N/A'}</p>
               <p className="text-sm text-gray-500 mb-1">
                 <span className="font-bold text-gray-900">Categoría:</span> {typeof producto.categoria === 'object' && producto.categoria !== null ? (producto.categoria.nombre || 'General') : (producto.categoria || 'General')}
               </p>
-              <p className="text-sm text-gray-500 mb-4 line-clamp-3">
-                {producto.descripcionLarga || producto.descripcion || 'Sin descripción disponible para este producto.'}
-              </p>
             </div>
 
-            {/* Bottom Cards: Free Delivery & Great Deal */}
-            <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-auto">
-              <div className="flex-1 bg-pink-50 rounded-xl p-4 flex items-center gap-4 border border-pink-100">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-pink-500 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-5">
+              <div className="flex-1 bg-[#FAFBFC] rounded-xl p-4 flex items-center gap-4 border border-gray-100">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#FF9500] shadow-sm border border-gray-100">
                   <Icon icon="solar:truck-bold-duotone" width={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-900 text-sm">Envío Gratis</h4>
-                  <p className="text-xs text-gray-500">En pedidos desde S/ 100</p>
+                  <h4 className="font-bold text-gray-900 text-sm">Entrega rápida</h4>
+                  <p className="text-xs text-gray-500">Despacho coordinado con la tienda</p>
                 </div>
               </div>
-              <div className="flex-1 bg-green-50 rounded-xl p-4 flex items-center gap-4 border border-green-100">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-green-500 shadow-sm">
+              <div className="flex-1 bg-[#FAFBFC] rounded-xl p-4 flex items-center gap-4 border border-gray-100">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#22C55E] shadow-sm border border-gray-100">
                   <Icon icon="solar:hand-shake-bold-duotone" width={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-900 text-sm">Mejor oferta del día</h4>
-                  <p className="text-xs text-gray-500">Productos orgánicos</p>
+                  <h4 className="font-bold text-gray-900 text-sm">Compra segura</h4>
+                  <p className="text-xs text-gray-500">Atención directa por WhatsApp</p>
                 </div>
               </div>
             </div>
@@ -573,37 +457,27 @@ export default function ProductoDetalle() {
 
       </main>
 
-      {/* Footer */}
-      {/* Related Products Slider */}
-      <div className='max-w-7xl mx-auto'>
+      {/* Related Products */}
+      <div className='max-w-7xl mx-auto px-5 md:px-8'>
         {relatedProducts.length > 0 && (
-          <div className="border-t border-gray-100 pt-16 rounded-xl mb-14 px-6">
-            <h3 className="text-2xl font-bold mb-8 text-left tracking-wide">Producto similares</h3>
-            <div className="px-0"> {/* Padding for slider arrows */}
-              <Slider {...settings}>
-                {relatedProducts.map((rp) => (
-                  <div key={rp.id} className="rounded-xl p-2" onClickCapture={(e) => {
-                    if (dragging.current) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
-                  }}>
-                    <ProductCardPio
-                      producto={rp}
-                      slug={slug || ''}
-                      diseno={diseno}
-                      onAddToCart={(p) => {
-                        agregarAlCarritoDirecto(p, 1);
-                      }}
-                      onClick={() => {
-                        if (dragging.current) return;
-                        navigate(`/tienda/${slug}/producto/${rp.id}`);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                    />
-                  </div>
-                ))}
-              </Slider>
+          <div className="border-t border-gray-200 pt-12 rounded-xl mb-14">
+            <h3 className="text-2xl font-black mb-6 text-left text-[#1A1A1A] tracking-tight">Productos similares</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+              {relatedProducts.slice(0, 10).map((rp) => (
+                <ProductCardPio
+                  key={rp.id}
+                  producto={rp}
+                  slug={slug || ''}
+                  diseno={diseno}
+                  onAddToCart={(p) => {
+                    agregarAlCarritoDirecto(p, 1);
+                  }}
+                  onClick={() => {
+                    navigate(`/tienda/${slug}/producto/${rp.id}`);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
+              ))}
             </div>
           </div>
         )}

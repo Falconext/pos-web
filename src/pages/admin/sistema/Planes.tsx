@@ -50,7 +50,7 @@ const Planes = () => {
     }));
 
     return (
-        <div className="p-6">
+        <div className="p-0 md:p-6">
             <div className="flex justify-between items-center mb-6">
                 <div><h1 className="text-2xl font-bold text-gray-800">Planes de Suscripción</h1><p className="text-gray-500 text-sm">Gestiona los planes disponibles para las empresas</p></div>
                 <Button onClick={vm.handleOpenCreate} color="primary"><Icon icon="mdi:plus" className="mr-2" />Nuevo Plan</Button>
@@ -149,8 +149,12 @@ const Planes = () => {
                             <Icon icon="solar:alt-arrow-right-linear" className="text-gray-400 group-hover:text-gray-600" width={20} />
                         </button>
                         <button type="button" onClick={() => vm.setShowModulesModal(true)} className="w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors group">
-                            <div className="flex items-center gap-3"><div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><Icon icon="solar:widget-bold-duotone" width={24} /></div><div className="text-left"><div className="font-semibold text-gray-800">Módulos del Sistema</div><div className="text-xs text-gray-500">Acceso a secciones del layout</div></div></div>
-                            <div className="flex items-center gap-2">{(vm.form.moduloIds?.length || 0) > 0 && <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{vm.form.moduloIds?.length}</span>}<Icon icon="solar:alt-arrow-right-linear" className="text-gray-400" width={20} /></div>
+                            <div className="flex items-center gap-3"><div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><Icon icon="solar:widget-bold-duotone" width={24} /></div><div className="text-left"><div className="font-semibold text-gray-800">Módulos y Submódulos</div><div className="text-xs text-gray-500">Acceso a secciones del sistema</div></div></div>
+                            <div className="flex items-center gap-2">
+                                {(vm.form.moduloIds?.length || 0) > 0 && <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{vm.form.moduloIds?.length} mód.</span>}
+                                {(vm.form.subModuloIds?.length || 0) > 0 && <span className="bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{vm.form.subModuloIds?.length} sub.</span>}
+                                <Icon icon="solar:alt-arrow-right-linear" className="text-gray-400" width={20} />
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -180,11 +184,21 @@ const Planes = () => {
                     <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end"><Button onClick={() => vm.setShowFeaturesModal(false)} color="black">Listo</Button></div>
                 </div>
             </Modal>
-            <Modal isOpenModal={vm.showModulesModal} closeModal={() => vm.setShowModulesModal(false)} title="Módulos del Sistema" position="right" width="900px" backdropClassName="bg-black/20">
+            <Modal isOpenModal={vm.showModulesModal} closeModal={() => vm.setShowModulesModal(false)} title="Módulos y Submódulos del Plan" position="right" width="900px" backdropClassName="bg-black/20">
                 <div className="p-6">
-                    <div className="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-100"><h4 className="text-sm font-bold text-purple-800 mb-1">Control de Acceso</h4><p className="text-sm text-purple-700">Selecciona los módulos principales a los que tendrá acceso la empresa. Si un módulo no está seleccionado aquí, la empresa <strong>no podrá verlo ni acceder a él</strong>.</p></div>
-                    <ModuloSelector selectedModulos={vm.form.moduloIds || []} onModulosChange={(modulos) => vm.setForm({ ...vm.form, moduloIds: modulos })} />
-                    <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end"><Button onClick={() => vm.setShowModulesModal(false)} color="black">Guardar Selección</Button></div>
+                    <div className="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-100">
+                        <h4 className="text-sm font-bold text-purple-800 mb-1">Control de Acceso por Plan</h4>
+                        <p className="text-sm text-purple-700">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
+                    </div>
+                    <ModuloSelector
+                        selectedModulos={vm.form.moduloIds || []}
+                        onModulosChange={(modulos) => vm.setForm(prev => ({ ...prev, moduloIds: modulos }))}
+                        selectedSubModulos={vm.form.subModuloIds || []}
+                        onSubModulosChange={(subs) => vm.setForm(prev => ({ ...prev, subModuloIds: subs }))}
+                    />
+                    <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end">
+                        <Button onClick={() => vm.setShowModulesModal(false)} color="black">Guardar Selección</Button>
+                    </div>
                 </div>
             </Modal>
             <ModalConfirm isOpenModal={vm.modalConfirmOpen} setIsOpenModal={vm.setModalConfirmOpen} confirmSubmit={vm.handleDelete} title="¿Eliminar Plan?" information="Esta acción eliminará el plan permanentemente. No se puede deshacer.">

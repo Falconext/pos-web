@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import LineaTiempoEstados from '@/components/LineaTiempoEstados';
+import Footer from '@/components/tienda/Footer';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -133,164 +134,179 @@ export default function SeguimientoPedido() {
     };
 
     return (
-        <div className={`min-h-screen bg-gray-50 py-8 ${fontFamily}`} style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'sans-serif') }}>
-            <div className="max-w-3xl mx-auto px-4">
-                {/* Encabezado */}
-                <div className="flex items-center gap-3 mb-6">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="p-2 rounded-full bg-white shadow hover:bg-gray-50"
-                        aria-label="Volver"
-                    >
-                        <Icon icon="mdi:chevron-left" className="w-6 h-6" />
-                    </button>
-                    <h1 className="text-2xl md:text-3xl font-bold">Estado del pedido</h1>
-                </div>
+        <div className={`min-h-screen bg-gradient-to-b from-[#F9FBFD] via-[#F6F7F9] to-[#F2F4F7] ${fontFamily}`} style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'sans-serif') }}>
+            <main className="relative overflow-hidden">
+                <div className="absolute -top-20 -left-12 w-64 h-64 rounded-full blur-3xl opacity-25" style={{ background: diseno.colorPrimario || '#FF9500' }} />
+                <div className="absolute top-20 right-0 w-56 h-56 rounded-full bg-sky-200 blur-3xl opacity-30" />
 
-                {/* Formulario de búsqueda */}
-                <div className={`bg-white ${borderRadius} shadow p-4 md:p-6 mb-6`}>
-                    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3">
-                        <input
-                            type="text"
-                            value={codigo}
-                            onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                            placeholder="Ej: PED-ABC123-XYZ"
-                            className={`flex-1 border ${borderRadius} px-4 py-3 text-base md:text-lg w-full`}
-                        />
+                <div className="max-w-5xl mx-auto px-4 md:px-6 pt-8 pb-14 relative z-10">
+                    <div className="mb-6 flex items-center gap-3">
                         <button
-                            type="submit"
-                            disabled={loading}
-                            className={`bg-blue-600 text-white px-6 md:px-8 py-3 ${btnRadius} font-semibold hover:bg-blue-700 disabled:bg-gray-400 w-full md:w-auto`}
-                            style={{ backgroundColor: diseno.colorPrimario || '#2563eb' }}
+                            onClick={() => navigate(`/tienda/${slug}`)}
+                            className="h-11 w-11 rounded-full bg-white/90 shadow-sm border border-gray-200 flex items-center justify-center hover:bg-white transition-colors"
+                            aria-label="Volver"
                         >
-                            {loading ? 'Buscando...' : 'Buscar'}
+                            <Icon icon="mdi:chevron-left" className="w-6 h-6 text-[#1A1A1A]" />
                         </button>
-                    </form>
-                    {error && (
-                        <div className={`mt-4 p-3 bg-red-50 text-red-600 ${borderRadius} flex items-center gap-2`}>
-                            <Icon icon="mdi:alert-circle" className="w-5 h-5 flex-shrink-0" />
-                            <span className="text-sm">{error}</span>
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-widest text-[#8A8F98]">Seguimiento en tiempo real</p>
+                            <h1 className="text-2xl md:text-3xl font-black text-[#1A1A1A]">Estado de tu pedido</h1>
+                        </div>
+                    </div>
+
+                    <div className={`bg-white/95 backdrop-blur-sm ${borderRadius} border border-white shadow-xl p-4 md:p-6 mb-6`}>
+                        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3 md:items-center">
+                            <div className={`flex-1 flex items-center gap-2 bg-[#F4F6F8] border border-gray-200 ${borderRadius} px-3 py-3`}>
+                                <Icon icon="solar:delivery-linear" className="text-[#FF9500]" width={20} />
+                                <input
+                                    type="text"
+                                    value={codigo}
+                                    onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                                    placeholder="Ingresa tu código (ej: PED-ABC123-XYZ)"
+                                    className="w-full bg-transparent text-sm md:text-base border-none focus:outline-none text-[#1A1A1A] placeholder:text-[#9CA3AF]"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className={`w-full md:w-auto px-7 py-3 text-white font-bold ${btnRadius} transition-colors disabled:bg-gray-400`}
+                                style={{ backgroundColor: diseno.colorPrimario || '#FF9500' }}
+                            >
+                                {loading ? 'Buscando...' : 'Buscar pedido'}
+                            </button>
+                        </form>
+
+                        {error && (
+                            <div className={`mt-4 p-3 bg-red-50 text-red-700 border border-red-100 ${borderRadius} flex items-center gap-2`}>
+                                <Icon icon="mdi:alert-circle" className="w-5 h-5 flex-shrink-0" />
+                                <span className="text-sm font-medium">{error}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {!pedido && !loading && !error && (
+                        <div className={`bg-white ${borderRadius} border border-gray-100 shadow-sm p-6 text-center`}>
+                            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FFF3E0] flex items-center justify-center mb-3">
+                                <Icon icon="solar:box-bold-duotone" className="text-[#FF9500]" width={26} />
+                            </div>
+                            <h3 className="text-lg font-black text-[#1A1A1A] mb-1">Consulta tu pedido</h3>
+                            <p className="text-sm text-gray-500">Ingresa el código de seguimiento que recibiste por WhatsApp para ver el avance.</p>
                         </div>
                     )}
-                </div>
 
-                {/* Resultado */}
-                {pedido && (() => {
-                    const tiempoBase = (pedido?.empresa as any)?.tiempoPreparacionMin ?? 20;
-                    const estimada = new Date(new Date(pedido.creadoEn).getTime() + tiempoBase * 60000);
-                    const horaEstimada = estimada.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' });
-                    const fechaEstimada = estimada.toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
-                    return (
-                        <div className="space-y-6">
-                            {/* Tarjeta: Estimated delivery */}
-                            <div className={`bg-white ${borderRadius} shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-gray-100`}>
-                                <div className="flex items-center gap-3">
-                                    <span className={`p-2 ${borderRadius} bg-orange-50 text-orange-600`} style={{ backgroundColor: `${diseno.colorPrimario}10`, color: diseno.colorPrimario }}>
-                                        <Icon icon="mdi:alarm" className="w-5 h-5" />
-                                    </span>
-                                    <div>
-                                        <p className="text-[13px] text-orange-600 font-semibold" style={{ color: diseno.colorPrimario }}>Tiempo estimado</p>
-                                        <p className="text-xs text-gray-500">{fechaEstimada}</p>
-                                    </div>
-                                </div>
-                                <div className="text-left md:text-right pl-12 md:pl-0">
-                                    <p className="text-lg font-semibold">{horaEstimada}</p>
-                                    <p className="text-xs text-gray-500">{tiempoBase}-{tiempoBase + 10} min</p>
-                                </div>
-                            </div>
+                    {pedido && (() => {
+                        const tiempoBase = (pedido?.empresa as any)?.tiempoPreparacionMin ?? 20;
+                        const estimada = new Date(new Date(pedido.creadoEn).getTime() + tiempoBase * 60000);
+                        const horaEstimada = estimada.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' });
+                        const fechaEstimada = estimada.toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
 
-                            {/* Tarjeta: Order tracking */}
-                            <div className={`bg-white ${borderRadius} shadow-sm p-4 md:p-6 border border-gray-100`}>
-                                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
-                                    <h2 className="text-lg font-semibold">Estado del pedido</h2>
-                                    <span className="text-orange-600 font-semibold text-sm break-all" style={{ color: diseno.colorPrimario }}>№{pedido.codigoSeguimiento}</span>
-                                </div>
-                                {/* Estado actual */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className={`px-3 py-1 ${borderRadius} text-xs font-medium ${getEstadoColor(pedido.estado)}`}>{getEstadoLabel(pedido.estado)}</span>
-                                    <div className="text-sm text-gray-600">
-                                        {new Date(pedido.creadoEn).toLocaleString('es-PE')}
-                                    </div>
-                                </div>
-                                {/* Timeline */}
-                                {pedido.historialEstados && pedido.historialEstados.length > 0 ? (
-                                    <LineaTiempoEstados historial={pedido.historialEstados} estadoActual={pedido.estado} />
-                                ) : (
-                                    <p className="text-gray-600">No hay historial disponible</p>
-                                )}
-                            </div>
-
-                            {/* Detalle de orden */}
-                            <div className={`bg-white ${borderRadius} shadow-sm p-6 border border-gray-100`}>
-                                <h3 className="text-lg font-semibold mb-4">Orden №{pedido.codigoSeguimiento}</h3>
-                                <div className="space-y-3 mb-4">
-                                    {pedido.items.map((item: any) => (
-                                        <div key={item.id} className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                {item.producto?.imagenUrl ? (
-                                                    <img src={item.producto.imagenUrl} alt={item.producto.descripcion} className="w-12 h-12 rounded object-cover" />
-                                                ) : (
-                                                    <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-gray-400">
-                                                        <Icon icon="mdi:image-off" />
-                                                    </div>
-                                                )}
-                                                <div className="min-w-0">
-                                                    <p className="truncate font-medium text-sm">{item.producto.descripcion}</p>
-                                                    <p className="text-xs text-gray-500">{item.cantidad} item{item.cantidad > 1 ? 's' : ''}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-sm font-semibold">S/ {item.subtotal.toFixed(2)}</div>
+                        return (
+                            <div className="space-y-5">
+                                <div className={`bg-white ${borderRadius} shadow-sm border border-gray-100 p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4`}>
+                                    <div className="flex items-center gap-3">
+                                        <span className={`h-11 w-11 ${borderRadius} flex items-center justify-center`} style={{ backgroundColor: `${diseno.colorPrimario || '#FF9500'}1A`, color: diseno.colorPrimario || '#FF9500' }}>
+                                            <Icon icon="mdi:clock-fast" className="w-5 h-5" />
+                                        </span>
+                                        <div>
+                                            <p className="text-xs font-black uppercase tracking-wider text-gray-500">Entrega estimada</p>
+                                            <p className="text-sm font-semibold text-[#1A1A1A]">{fechaEstimada}</p>
                                         </div>
-                                    ))}
-                                </div>
-
-                                <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between text-gray-600">
-                                        <span>Subtotal</span>
-                                        <span>S/ {Number(pedido.subtotal).toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between text-gray-600">
-                                        <span>Delivery</span>
-                                        <span>{pedido.costoEnvio > 0 ? `S/ ${pedido.costoEnvio.toFixed(2)}` : 'Gratis'}</span>
-                                    </div>
-                                    <div className="flex justify-between text-gray-600">
-                                        <span>Tiempo entrega</span>
-                                        <span>{tiempoBase}-{tiempoBase + 10} min</span>
-                                    </div>
-                                    <div className="flex justify-between font-bold pt-2 border-t">
-                                        <span>Total</span>
-                                        <span>S/ {(Number(pedido.subtotal) + Number(pedido.costoEnvio)).toFixed(2)}</span>
+                                    <div className="text-left md:text-right">
+                                        <p className="text-xl font-black text-[#1A1A1A]">{horaEstimada}</p>
+                                        <p className="text-xs text-gray-500">{tiempoBase}-{tiempoBase + 10} minutos</p>
                                     </div>
                                 </div>
 
-                                {/* Contacto */}
-                                {pedido.empresa?.whatsappTienda && (
-                                    <a
-                                        href={`https://wa.me/${pedido.empresa.whatsappTienda.replace(/\D/g, '')}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`mt-6 flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 ${btnRadius} font-semibold hover:bg-green-700`}
-                                    >
-                                        <Icon icon="mdi:whatsapp" className="w-5 h-5" />
-                                        Contactar al negocio
-                                    </a>
-                                )}
+                                <div className={`bg-white ${borderRadius} shadow-sm border border-gray-100 p-4 md:p-6`}>
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                                        <h2 className="text-lg font-black text-[#1A1A1A]">Seguimiento del pedido</h2>
+                                        <span className="text-sm font-bold break-all" style={{ color: diseno.colorPrimario || '#FF9500' }}>#{pedido.codigoSeguimiento}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between mb-5 gap-3">
+                                        <span className={`px-3 py-1.5 ${borderRadius} text-xs font-bold ${getEstadoColor(pedido.estado)}`}>{getEstadoLabel(pedido.estado)}</span>
+                                        <div className="text-xs md:text-sm text-gray-500">{new Date(pedido.creadoEn).toLocaleString('es-PE')}</div>
+                                    </div>
 
+                                    {pedido.historialEstados && pedido.historialEstados.length > 0 ? (
+                                        <LineaTiempoEstados historial={pedido.historialEstados} estadoActual={pedido.estado} />
+                                    ) : (
+                                        <p className="text-sm text-gray-500">No hay historial disponible.</p>
+                                    )}
+                                </div>
 
-                                {/* Botón Volver */}
-                                <button
-                                    onClick={() => navigate(`/tienda/${slug}`)}
-                                    className={`w-full text-[#1E1B4B] mt-3 py-3 ${btnRadius} font-semibold`}
-                                    style={{ backgroundColor: diseno.colorPrimario || '#F3E8FF' }}
-                                >
-                                    Volver a la Tienda
-                                </button>
+                                <div className={`bg-white ${borderRadius} shadow-sm border border-gray-100 p-4 md:p-6`}>
+                                    <h3 className="text-lg font-black text-[#1A1A1A] mb-4">Detalle de la orden #{pedido.codigoSeguimiento}</h3>
+
+                                    <div className="space-y-2.5 mb-5">
+                                        {pedido.items.map((item: any) => (
+                                            <div key={item.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-100 bg-[#FAFBFC]">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    {item.producto?.imagenUrl ? (
+                                                        <img src={item.producto.imagenUrl} alt={item.producto.descripcion} className="w-12 h-12 rounded-lg object-cover border border-gray-100" />
+                                                    ) : (
+                                                        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                                                            <Icon icon="mdi:image-off" />
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0">
+                                                        <p className="truncate font-semibold text-sm text-[#1A1A1A]">{item.producto.descripcion}</p>
+                                                        <p className="text-xs text-gray-500">{item.cantidad} item{item.cantidad > 1 ? 's' : ''}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-sm font-black text-[#1A1A1A]">S/ {item.subtotal.toFixed(2)}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="rounded-xl border border-gray-100 bg-[#FAFBFC] p-4 space-y-2 text-sm">
+                                        <div className="flex justify-between text-gray-600">
+                                            <span>Subtotal</span>
+                                            <span>S/ {Number(pedido.subtotal).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-gray-600">
+                                            <span>Delivery</span>
+                                            <span>{pedido.costoEnvio > 0 ? `S/ ${pedido.costoEnvio.toFixed(2)}` : 'Gratis'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-gray-600">
+                                            <span>Tiempo entrega</span>
+                                            <span>{tiempoBase}-{tiempoBase + 10} min</span>
+                                        </div>
+                                        <div className="flex justify-between font-black text-[#1A1A1A] pt-2 border-t border-gray-200">
+                                            <span>Total</span>
+                                            <span>S/ {(Number(pedido.subtotal) + Number(pedido.costoEnvio)).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {pedido.empresa?.whatsappTienda && (
+                                            <a
+                                                href={`https://wa.me/${pedido.empresa.whatsappTienda.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 ${btnRadius} font-bold hover:bg-green-700 transition-colors`}
+                                            >
+                                                <Icon icon="mdi:whatsapp" className="w-5 h-5" />
+                                                Contactar al negocio
+                                            </a>
+                                        )}
+
+                                        <button
+                                            onClick={() => navigate(`/tienda/${slug}`)}
+                                            className={`w-full py-3 ${btnRadius} font-bold text-white transition-opacity hover:opacity-90`}
+                                            style={{ backgroundColor: diseno.colorPrimario || '#FF9500' }}
+                                        >
+                                            Volver a la tienda
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                        );
+                    })()}
+                </div>
+            </main>
 
-                        </div>
-                    );
-                })()}
-            </div>
+            <Footer tienda={tienda || {}} diseno={diseno} />
         </div>
     );
 }

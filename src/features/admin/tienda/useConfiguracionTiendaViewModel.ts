@@ -54,6 +54,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
     const [editSearch, setEditSearch] = useState('');
     const [editResults, setEditResults] = useState<any[]>([]);
     const [searchingEdit, setSearchingEdit] = useState(false);
+    const [storeCategories, setStoreCategories] = useState<any[]>([]);
 
     useEffect(() => { cargarConfiguracion(); cargarBanners(); }, []);
 
@@ -84,6 +85,24 @@ export const useConfiguracionTiendaViewModel = (): any => {
         }, 500);
         return () => clearTimeout(t);
     }, [editSearch]);
+
+    useEffect(() => {
+        const cargarCategoriasTienda = async () => {
+            if (!formData.slugTienda) {
+                setStoreCategories([]);
+                return;
+            }
+
+            try {
+                const { data } = await apiClient.get(`/public/store/${formData.slugTienda}/categories`);
+                setStoreCategories(Array.isArray(data?.data) ? data.data : []);
+            } catch {
+                setStoreCategories([]);
+            }
+        };
+
+        cargarCategoriasTienda();
+    }, [formData.slugTienda]);
 
     const cargarConfiguracion = async () => {
         try {
@@ -208,7 +227,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
         if (!allowed.includes(file.type)) { alert('Tipo de archivo no permitido. Solo JPG, PNG o WebP', 'error'); return; }
         setUploadingBanner(true);
         try {
-            const fd = new FormData(); fd.append('file', file); fd.append('titulo', newBannerTitle || 'Banner');
+            const fd = new FormData(); fd.append('file', file); fd.append('titulo', newBannerTitle || '');
             fd.append('subtitulo', newBannerSubtitle || ''); fd.append('linkUrl', newBannerLink || '');
             fd.append('orden', String(newBannerOrden !== '' ? newBannerOrden : banners.length));
             await apiClient.post('/banners/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -233,9 +252,9 @@ export const useConfiguracionTiendaViewModel = (): any => {
         setSaving(true);
         try {
             const fd = new FormData();
-            if (editBannerTitle) fd.append('titulo', editBannerTitle);
-            if (editBannerSubtitle) fd.append('subtitulo', editBannerSubtitle);
-            if (editBannerLink) fd.append('linkUrl', editBannerLink);
+            fd.append('titulo', editBannerTitle || '');
+            fd.append('subtitulo', editBannerSubtitle || '');
+            fd.append('linkUrl', editBannerLink || '');
             if (editBannerFile) fd.append('file', editBannerFile);
             if (editBannerOrden !== '' && editBannerOrden !== undefined) fd.append('orden', String(editBannerOrden));
             await apiClient.patch(`/banners/${editingBanner.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -248,6 +267,16 @@ export const useConfiguracionTiendaViewModel = (): any => {
 
     const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) subirBanner(file); };
 
+    const getCategoryLabel = (category: any) => {
+        if (typeof category === 'string') return category;
+        return category?.nombre || category?.name || '';
+    };
+
+    const generarLinkCatalogoCategoria = (categoryName: string) => {
+        if (!formData.slugTienda || !categoryName) return '';
+        return `/tienda/${formData.slugTienda}/catalogo?category=${encodeURIComponent(categoryName)}`;
+    };
+
     return {
         config, loading, saving, formData, handleChange, handleSubmit, abrirTienda, slugify,
         logoFile, setLogoFile, logoUploading, previewLogoUrl, subirLogo, eliminarLogo,
@@ -256,5 +285,6 @@ export const useConfiguracionTiendaViewModel = (): any => {
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,
         editingBanner, setEditingBanner, editBannerTitle, setEditBannerTitle, editBannerSubtitle, setEditBannerSubtitle, editBannerLink, setEditBannerLink, editBannerOrden, setEditBannerOrden,
         editBannerFile, setEditBannerFile, editSearch, setEditSearch, editResults, searchingEdit, openEditModal, handleUpdateBanner,
+        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria,
     };
 };

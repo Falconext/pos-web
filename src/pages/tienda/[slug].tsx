@@ -31,12 +31,11 @@ export default function TiendaPublica() {
   const [mostrarCarrito, setMostrarCarrito] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement | null>(null);
   const [combos, setCombos] = useState<any[]>([]);
   const [wholesaleProducts, setWholesaleProducts] = useState<any[]>([]);
-  const [allBrands, setAllBrands] = useState<any[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(1000);
@@ -53,7 +52,7 @@ export default function TiendaPublica() {
     cargarTienda();
     cargarCombos();
     cargarProductosMayoristas();
-    cargarMarcas(); // Fetch brands instead of categories
+    cargarCategorias(); // Fetch categories
     cargarRangoPrecios(); // Fetch price bounds
     // reset de productos al cambiar slug
     setProductos([]);
@@ -199,14 +198,16 @@ export default function TiendaPublica() {
     }
   };
 
-  const cargarMarcas = async () => {
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+
+  const cargarCategorias = async () => {
     try {
-      const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/brands`);
-      const brands = data?.data || [];
-      setAllBrands(Array.isArray(brands) ? brands : []);
+      const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
+      const cats = data?.data || [];
+      setAllCategories(Array.isArray(cats) ? cats : []);
     } catch (error) {
-      console.error('Error al cargar marcas:', error);
-      setAllBrands([]);
+      console.error('Error al cargar categorias:', error);
+      setAllCategories([]);
     }
   };
 
@@ -235,7 +236,7 @@ export default function TiendaPublica() {
           page: p,
           limit,
           search: search.trim() || undefined,
-          brand: selectedBrands.length > 0 ? selectedBrands.join(',') : undefined,
+          category: selectedCategories.length > 0 ? selectedCategories.join(',') : undefined,
           minPrice: priceRange[0] !== minPrice ? priceRange[0] : undefined,
           maxPrice: priceRange[1] !== maxPrice ? priceRange[1] : undefined,
         },
@@ -282,7 +283,7 @@ export default function TiendaPublica() {
       cargarProductos(1, true);
     }, 350);
     return () => clearTimeout(t);
-  }, [search, selectedBrands, priceRange]);
+  }, [search, selectedCategories, priceRange]);
 
   // Cargar productos cuando cambia la página
   useEffect(() => {
@@ -434,22 +435,22 @@ export default function TiendaPublica() {
         {/* Filter pills */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => setSelectedBrands([])}
-            className={`flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${selectedBrands.length === 0 ? 'bg-[#FF9500] text-white' : 'border border-[#2D2D2D] text-[#2D2D2D] hover:bg-[#2D2D2D] hover:text-white'}`}
+            onClick={() => setSelectedCategories([])}
+            className={`flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${selectedCategories.length === 0 ? 'bg-[#FF9500] text-white' : 'border border-[#2D2D2D] text-[#2D2D2D] hover:bg-[#2D2D2D] hover:text-white'}`}
           >
             <Icon icon="solar:widget-bold" width={12} />
             Todos
           </button>
-          {allBrands.slice(0, 5).map((brand: any) => {
-            const name = typeof brand === 'string' ? brand : brand.nombre;
+          {allCategories.slice(0, 5).map((category: any) => {
+            const name = typeof category === 'string' ? category : category.nombre;
             return (
               <button
                 key={name}
                 onClick={() => {
-                  if (selectedBrands.includes(name)) setSelectedBrands(selectedBrands.filter(b => b !== name));
-                  else setSelectedBrands([name]);
+                  if (selectedCategories.includes(name)) setSelectedCategories(selectedCategories.filter(b => b !== name));
+                  else setSelectedCategories([name]);
                 }}
-                className={`flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${selectedBrands.includes(name) ? 'bg-[#FF9500] text-white' : 'border border-[#2D2D2D] text-[#2D2D2D] hover:bg-[#2D2D2D] hover:text-white'}`}
+                className={`flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${selectedCategories.includes(name) ? 'bg-[#FF9500] text-white' : 'border border-[#2D2D2D] text-[#2D2D2D] hover:bg-[#2D2D2D] hover:text-white'}`}
               >
                 <Icon icon="solar:tag-bold" width={12} />
                 {name}
@@ -521,13 +522,13 @@ export default function TiendaPublica() {
         adminMenuRef={adminMenuRef}
         search={search}
         setSearch={setSearch}
-        categories={allBrands}
+        categories={allCategories}
         onSelectCategory={(cat) => {
           if (cat === '') {
-            setSelectedBrands([]);
+            setSelectedCategories([]);
             setTimeout(() => document.getElementById('productos-populares')?.scrollIntoView({ behavior: 'smooth' }), 100);
           } else {
-            navigate(`/tienda/${slug}/catalogo?brand=${encodeURIComponent(cat)}`);
+            navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`);
           }
         }}
         recommendedProducts={productos.slice(0, 10)}
@@ -552,7 +553,7 @@ export default function TiendaPublica() {
               <h3 className="font-black text-[#1A1A1A] mb-2">Sin resultados</h3>
               <p className="text-sm text-gray-500 mb-4">Intenta ajustar tus filtros.</p>
               <button
-                onClick={() => { setSearch(''); setSelectedBrands([]); }}
+                onClick={() => { setSearch(''); setSelectedCategories([]); }}
                 className="text-sm font-bold text-[#FF9500] border border-[#FF9500] px-5 py-2 rounded-full hover:bg-[#FF9500] hover:text-white transition-all"
               >
                 Limpiar Filtros
@@ -589,14 +590,14 @@ export default function TiendaPublica() {
         <PromoBanners tienda={tienda} />
 
         {/* ── Categories Bento ── */}
-        <CategoryCircles
-          categories={allBrands}
-          selectedCats={selectedBrands}
+        {/* <CategoryCircles
+          categories={allCategories}
+          selectedCats={selectedCategories}
           onSelectCategory={(cat) => {
-            if (selectedBrands.includes(cat)) setSelectedBrands(selectedBrands.filter(c => c !== cat));
-            else setSelectedBrands([cat]);
+            if (selectedCategories.includes(cat)) setSelectedCategories(selectedCategories.filter(c => c !== cat));
+            else setSelectedCategories([cat]);
           }}
-        />
+        /> */}
 
         {/* ── Special Deals (Combos) ── */}
         {combos.length > 0 && (
@@ -657,9 +658,9 @@ export default function TiendaPublica() {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <StoreSidebar
-                categories={allBrands}
-                selectedCats={selectedBrands}
-                setSelectedCats={setSelectedBrands}
+                categories={allCategories}
+                selectedCats={selectedCategories}
+                setSelectedCats={setSelectedCategories}
                 search={search}
                 setSearch={setSearch}
                 diseno={diseno}

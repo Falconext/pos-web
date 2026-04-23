@@ -152,6 +152,7 @@ export default function MovementsView() {
                                     headerColumns={[
                                         'Fecha',
                                         'Producto',
+                                        'Sede',
                                         'Tipo',
                                         'Concepto',
                                         'Cantidad',

@@ -228,35 +228,39 @@ export default function StoreHeader({
             {isCatDropdownOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsCatDropdownOpen(false)} />
-                    <div className="fixed left-5 md:left-8 top-[130px] w-60 bg-white border border-gray-100 shadow-2xl z-50 py-2 rounded-2xl animate-in slide-in-from-top-2">
-                        <div className="px-4 py-2 border-b border-gray-100">
-                            <span className="text-[10px] font-black text-[#999] uppercase tracking-widest">Todas las Categorías</span>
-                        </div>
-                        <ul className="max-h-64 overflow-y-auto py-1">
-                            <li>
-                                <button
-                                    onClick={() => { onSelectCategory(''); setIsCatDropdownOpen(false); }}
-                                    className="w-full text-left px-4 py-2.5 hover:bg-[#FAF6F1] flex items-center gap-2.5 text-sm text-[#1A1A1A] font-medium"
-                                >
-                                    <Icon icon="solar:widget-bold" width={16} className="text-[#FF9500]" />
-                                    Todos los productos
-                                </button>
-                            </li>
-                            {categories.map((cat, idx) => {
-                                const name = typeof cat === 'string' ? cat : cat.nombre;
-                                return (
-                                    <li key={idx}>
+                    <div className="fixed top-[125px] left-0 right-0 z-50 pointer-events-none flex justify-center">
+                        <div className="w-full max-w-screen-xl px-5 md:px-8 relative pointer-events-none">
+                            <div className="absolute left-5 md:left-8 top-0 w-64 bg-white border border-gray-100 shadow-2xl py-2 rounded-2xl animate-in slide-in-from-top-2 pointer-events-auto">
+                                <div className="px-4 py-2 border-b border-gray-100">
+                                    <span className="text-[10px] font-black text-[#999] uppercase tracking-widest">Todas las Categorías</span>
+                                </div>
+                                <ul className="max-h-64 overflow-y-auto py-1">
+                                    <li>
                                         <button
-                                            onClick={() => { onSelectCategory(name); setIsCatDropdownOpen(false); }}
+                                            onClick={() => { onSelectCategory(''); setIsCatDropdownOpen(false); }}
                                             className="w-full text-left px-4 py-2.5 hover:bg-[#FAF6F1] flex items-center gap-2.5 text-sm text-[#1A1A1A] font-medium"
                                         >
-                                            <Icon icon="solar:tag-bold" width={16} className="text-[#FF9500]" />
-                                            {name}
+                                            <Icon icon="solar:widget-bold" width={16} className="text-[#FF9500]" />
+                                            Todos los productos
                                         </button>
                                     </li>
-                                );
-                            })}
-                        </ul>
+                                    {categories.map((cat, idx) => {
+                                        const name = typeof cat === 'string' ? cat : cat.nombre;
+                                        return (
+                                            <li key={idx}>
+                                                <button
+                                                    onClick={() => { onSelectCategory(name); setIsCatDropdownOpen(false); }}
+                                                    className="w-full text-left px-4 py-2.5 hover:bg-[#FAF6F1] flex items-center gap-2.5 text-sm text-[#1A1A1A] font-medium"
+                                                >
+                                                    <Icon icon="solar:tag-bold" width={16} className="text-[#FF9500]" />
+                                                    {name}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </>
             )}

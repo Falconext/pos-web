@@ -21,7 +21,7 @@ export interface IProductsState {
     exportProducts: (empresaId: number, search?: string) => void;
     importProducts: (file: File) => Promise<void>;
     deleteProduct: (productoId: number) => Promise<void>;
-    deleteAllProducts: () => Promise<void>;
+    deleteAllProducts: (sedeId?: number) => Promise<void>;
     setProductImage: (productoId: number, imagenUrl: string) => void;
     upsertProductLocal: (product: any) => void;
 }
@@ -77,10 +77,11 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             useAlertStore.setState({ loading: false });
         }
     },
-    deleteAllProducts: async () => {
+    deleteAllProducts: async (sedeId?: number) => {
         try {
             useAlertStore.setState({ loading: true });
-            const resp: any = await del(`producto/empresa/eliminar-todo`);
+            const url = sedeId ? `producto/empresa/eliminar-todo?sedeId=${sedeId}` : `producto/empresa/eliminar-todo`;
+            const resp: any = await del(url);
             if (resp.code === 1) {
                 set({
                     products: [],

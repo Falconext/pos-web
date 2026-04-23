@@ -75,6 +75,7 @@ export type IInvoices = {
 
 
 export interface IFormInvoice {
+  sedeId?: number
   comprobante: string
   tipoDoc: string
   relatedInvoiceId: string

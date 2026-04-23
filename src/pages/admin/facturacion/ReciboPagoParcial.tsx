@@ -31,7 +31,14 @@ const ReciboPagoParcial = ({
           }`,
     });
 
-    const logoDataUrl = company?.empresa?.logo ? `data:image/png;base64,${company.empresa.logo}` : '';
+    const logoDataUrl = (() => {
+        const raw = company?.empresa?.logo;
+        if (!raw) return '';
+        const t = raw.trim();
+        if (t.startsWith('data:')) return t;
+        if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
+        return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
+    })();
     const fechaActual = new Date();
     const horaActual = fechaActual.toLocaleTimeString();
     const fechaFormato = fechaActual.toLocaleDateString();

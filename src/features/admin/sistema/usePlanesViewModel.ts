@@ -12,13 +12,15 @@ export interface Plan {
     tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
     _count?: { empresas: number };
     modulosAsignados?: { modulo: { id: number; codigo: string; nombre: string; descripcion: string; icono: string; } }[];
+    subModulosAsignados?: { subModulo: { id: number; codigo: string; nombre: string; moduloId: number } }[];
 }
 
-const initialForm: Partial<Plan> & { moduloIds?: number[] } = {
+const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number[] } = {
     nombre: '', descripcion: '', costo: 0, duracionDias: 30,
     limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
-    tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false, moduloIds: [],
+    tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false,
+    moduloIds: [], subModuloIds: [],
 };
 
 export const usePlanesViewModel = () => {
@@ -29,13 +31,13 @@ export const usePlanesViewModel = () => {
     const [currentId, setCurrentId] = useState<number | null>(null);
     const [showFeaturesModal, setShowFeaturesModal] = useState(false);
     const [showModulesModal, setShowModulesModal] = useState(false);
-    const [form, setForm] = useState(initialForm);
+    const [form, setForm] = useState<Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number[] }>(initialForm);
     const [modalConfirmOpen, setModalConfirmOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const { alert } = useAlertStore();
     const { getAllModulos } = useModulosStore();
 
-    useEffect(() => { loadPlanes(); getAllModulos(); }, []);
+    useEffect(() => { loadPlanes(); getAllModulos(true); }, []);
 
     const loadPlanes = async () => {
         try {
@@ -51,7 +53,11 @@ export const usePlanesViewModel = () => {
     const handleOpenEdit = (plan: Plan) => {
         setIsEdit(true);
         setCurrentId(plan.id);
-        setForm({ ...plan, moduloIds: plan.modulosAsignados?.map(m => m.modulo.id) || [] });
+        setForm({
+            ...plan,
+            moduloIds: plan.modulosAsignados?.map(m => m.modulo.id) || [],
+            subModuloIds: plan.subModulosAsignados?.map(s => s.subModulo.id) || [],
+        });
         setIsModalOpen(true);
     };
 
@@ -59,11 +65,24 @@ export const usePlanesViewModel = () => {
         if (!form.nombre || form.costo === undefined) { alert('Nombre y costo son obligatorios', 'warning'); return; }
         try {
             setLoading(true);
-            const payload = { ...form, costo: Number(form.costo), duracionDias: Number(form.duracionDias), limiteUsuarios: Number(form.limiteUsuarios), maxSedes: Number(form.maxSedes ?? 1), maxImagenesProducto: Number(form.maxImagenesProducto), maxBanners: Number(form.maxBanners) };
-            if (isEdit && currentId) { await apiClient.put(`/plan/${currentId}`, payload); alert('Plan actualizado', 'success'); }
-            else { await apiClient.post('/plan', payload); alert('Plan creado', 'success'); }
+            const payload = {
+                ...form,
+                costo: Number(form.costo),
+                duracionDias: Number(form.duracionDias),
+                limiteUsuarios: Number(form.limiteUsuarios),
+                maxSedes: Number(form.maxSedes ?? 1),
+                maxImagenesProducto: Number(form.maxImagenesProducto),
+                maxBanners: Number(form.maxBanners),
+            };
+            if (isEdit && currentId) {
+                await apiClient.put(`/plan/${currentId}`, payload);
+                alert('Plan actualizado', 'success');
+            } else {
+                await apiClient.post('/plan', payload);
+                alert('Plan creado', 'success');
+            }
             setIsModalOpen(false);
-            loadPlanes();
+            await loadPlanes();
         } catch (error: any) { alert(error.response?.data?.message || 'Error al guardar', 'error'); }
         finally { setLoading(false); }
     };
@@ -72,9 +91,20 @@ export const usePlanesViewModel = () => {
 
     const handleDelete = async () => {
         if (!deleteId) return;
-        try { await apiClient.delete(`/plan/${deleteId}`); alert('Plan eliminado', 'success'); setModalConfirmOpen(false); loadPlanes(); }
-        catch (error: any) { alert(error.response?.data?.message || 'Error al eliminar', 'error'); }
+        try {
+            await apiClient.delete(`/plan/${deleteId}`);
+            alert('Plan eliminado', 'success');
+            setModalConfirmOpen(false);
+            loadPlanes();
+        } catch (error: any) { alert(error.response?.data?.message || 'Error al eliminar', 'error'); }
     };
 
-    return { planes, loading, isModalOpen, setIsModalOpen, isEdit, form, setForm, showFeaturesModal, setShowFeaturesModal, showModulesModal, setShowModulesModal, modalConfirmOpen, setModalConfirmOpen, handleOpenCreate, handleOpenEdit, handleSubmit, confirmDelete, handleDelete };
+    return {
+        planes, loading,
+        isModalOpen, setIsModalOpen, isEdit, form, setForm,
+        showFeaturesModal, setShowFeaturesModal,
+        showModulesModal, setShowModulesModal,
+        modalConfirmOpen, setModalConfirmOpen,
+        handleOpenCreate, handleOpenEdit, handleSubmit, confirmDelete, handleDelete,
+    };
 };

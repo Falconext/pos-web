@@ -34,38 +34,43 @@ export default function ShoppingCartModal({
 
     return (
         <div className="fixed inset-0 z-[999999] flex justify-end">
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={onClose} />
-            <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 animate-in slide-in-from-right">
+            <div className="absolute inset-0 bg-black/35 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 animate-in slide-in-from-right border-l border-gray-100">
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900">TU BOLSA ({carrito.length})</h2>
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-b from-white to-[#FBFBFB]">
+                    <div>
+                        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">Tu bolsa</h2>
+                        <p className="text-base font-bold text-[#1A1A1A] mt-0.5">{carrito.length} producto{carrito.length === 1 ? '' : 's'}</p>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="w-8 h-8 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
                     >
                         <Icon icon="mdi:close" className="w-5 h-5 text-gray-600" />
                     </button>
                 </div>
 
                 {/* Products List */}
-                <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="flex-1 overflow-y-auto px-4 py-4">
                     {carrito.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-                            <Icon icon="solar:bag-linear" className="w-20 h-20 text-gray-300" />
-                            <p className="text-gray-500 text-sm">Tu carrito está vacío</p>
+                            <div className="w-20 h-20 rounded-2xl bg-[#FFF3E0] flex items-center justify-center">
+                                <Icon icon="solar:bag-linear" className="w-10 h-10 text-[#FF9500]" />
+                            </div>
+                            <p className="text-gray-500 text-sm">Tu bolsa está vacía</p>
                             <button
                                 onClick={onClose}
-                                className="text-[#1E1B4B] underline text-sm font-semibold hover:text-[#034548] transition-colors"
+                                className="text-[#FF9500] underline text-sm font-semibold hover:text-[#E08500] transition-colors"
                             >
                                 Continuar comprando
                             </button>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-2.5">
                             {carrito.map((item) => (
-                                <div key={item.id} className="flex gap-4 pb-4 border-b border-gray-100 last:border-b-0">
+                                <div key={item.id} className="flex gap-3 p-3 rounded-2xl border border-gray-100 bg-white">
                                     {/* Product Image */}
-                                    <div className="relative w-20 h-20 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                                    <div className="relative w-[68px] h-[68px] bg-[#FAFBFC] rounded-xl flex-shrink-0 overflow-hidden border border-gray-100">
                                         <button
                                             onClick={() => {
                                                 if (setCarrito) {
@@ -74,7 +79,7 @@ export default function ShoppingCartModal({
                                                     actualizarCantidad(item.id, 0);
                                                 }
                                             }}
-                                            className="absolute -top-2 -left-2 bg-white rounded-full p-0.5 shadow-md border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-600 z-10 transition-all"
+                                            className="absolute -top-1.5 -left-1.5 bg-white rounded-full p-0.5 shadow-sm border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-600 z-10 transition-all"
                                         >
                                             <Icon icon="mdi:close" width={12} />
                                         </button>
@@ -90,7 +95,7 @@ export default function ShoppingCartModal({
                                     {/* Product Info */}
                                     <div className="flex-1 flex flex-col justify-between min-w-0">
                                         <div className="mb-2">
-                                            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-0.5">
+                                            <h3 className="text-[13px] font-bold text-[#1A1A1A] line-clamp-2 leading-tight mb-0.5 uppercase">
                                                 {item.descripcion}
                                             </h3>
                                             {/* Display modifiers if any */}
@@ -110,22 +115,22 @@ export default function ShoppingCartModal({
 
                                         {/* Quantity Controls & Price */}
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5 bg-[#F5F6F8] rounded-lg px-1.5 py-1">
                                                 <button
                                                     onClick={() => actualizarCantidad(item.id!, (item.cantidad || 1) - 1)}
-                                                    className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900"
+                                                    className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900"
                                                 >
-                                                    <Icon icon="mdi:minus" width={14} />
+                                                    <Icon icon="mdi:minus" width={12} />
                                                 </button>
-                                                <span className="text-xs w-6 text-center font-semibold text-gray-900">{item.cantidad || 1}</span>
+                                                <span className="text-xs w-5 text-center font-bold text-gray-900">{item.cantidad || 1}</span>
                                                 <button
                                                     onClick={() => actualizarCantidad(item.id!, (item.cantidad || 1) + 1)}
-                                                    className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900"
+                                                    className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600 hover:text-gray-900"
                                                 >
-                                                    <Icon icon="mdi:plus" width={14} />
+                                                    <Icon icon="mdi:plus" width={12} />
                                                 </button>
                                             </div>
-                                            <div className="text-sm font-bold text-[#1E1B4B]">
+                                            <div className="text-sm font-black text-[#1A1A1A]">
                                                 S/ {(Number(item.precioUnitario) * (item.cantidad || 1)).toFixed(2)}
                                             </div>
                                         </div>
@@ -138,19 +143,21 @@ export default function ShoppingCartModal({
 
                 {/* Footer */}
                 {carrito.length > 0 && (
-                    <div className="p-6 border-t border-gray-100 bg-gray-50">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-gray-600 font-medium">Subtotal</span>
-                            <span className="font-bold text-xl text-gray-900">S/ {calcularSubtotal().toFixed(2)}</span>
+                    <div className="p-4 border-t border-gray-100 bg-white">
+                        <div className="rounded-2xl border border-gray-100 bg-[#FAFBFC] p-4 mb-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-600 font-medium text-sm">Subtotal</span>
+                                <span className="font-black text-2xl text-[#1A1A1A] leading-none">S/ {calcularSubtotal().toFixed(2)}</span>
+                            </div>
                         </div>
                         <button
                             onClick={onCheckout}
-                            className="w-full bg-[#FF9903] text-white py-4 font-bold uppercase tracking-widest text-sm hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl rounded-xl flex items-center justify-center gap-2 group"
+                            className="w-full bg-[#FF9903] text-white py-3 font-bold text-sm hover:bg-[#E08500] transition-all shadow-sm hover:shadow-md rounded-xl flex items-center justify-center gap-2 group"
                         >
                             <span>Ir a Pagar</span>
                             <Icon icon="solar:arrow-right-linear" className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
-                        <p className="text-center text-xs text-gray-500 mt-3">
+                        <p className="text-center text-[11px] text-gray-500 mt-2.5">
                             Impuestos y envío calculados al finalizar
                         </p>
                     </div>

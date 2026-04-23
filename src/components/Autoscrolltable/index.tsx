@@ -40,7 +40,7 @@ const AutoScrollTable = ({
     return (
         <div className={styles.autoScrollTable}>
             {hasOverflow && (
-                <div className="flex justify-end items-center gap-2 px-4 py-0 pb-2 rounded-t-xl">
+                <div className="flex justify-end items-center gap-2 px-4 py-0 pb-2 rounded-t-xl mt-3">
                     <span className="text-xs text-gray-400 font-[400] mr-2">Desplazamiento rápido</span>
                     <button
                         onClick={jumpToStart}

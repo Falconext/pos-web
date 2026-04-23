@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { useModulosStore, IModulo } from '@/zustand/modulos';
+import { useModulosStore, IModulo, ISubModulo } from '@/zustand/modulos';
 
 interface ModuloSelectorProps {
     selectedModulos: number[];
     onModulosChange: (modulos: number[]) => void;
+    selectedSubModulos?: number[];
+    onSubModulosChange?: (subModulos: number[]) => void;
     disabled?: boolean;
 }
 
@@ -26,34 +28,70 @@ const getModuleIcon = (codigo: string): string => {
 export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
     selectedModulos,
     onModulosChange,
-    disabled = false
+    selectedSubModulos = [],
+    onSubModulosChange,
+    disabled = false,
 }) => {
     const { modulos, loading, getAllModulos } = useModulosStore();
+    const [expandedModulos, setExpandedModulos] = useState<Set<number>>(new Set());
 
     useEffect(() => {
-        if (modulos.length === 0) {
-            getAllModulos();
-        }
+        if (modulos.length === 0) getAllModulos(true);
     }, []);
 
-    const handleToggle = (moduloId: number) => {
+    const handleToggleModulo = (moduloId: number) => {
         if (disabled) return;
-
         const isSelected = selectedModulos.includes(moduloId);
-        if (isSelected) {
-            onModulosChange(selectedModulos.filter(id => id !== moduloId));
-        } else {
-            onModulosChange([...selectedModulos, moduloId]);
+        const updated = isSelected
+            ? selectedModulos.filter(id => id !== moduloId)
+            : [...selectedModulos, moduloId];
+        onModulosChange(updated);
+
+        // Al desmarcar un módulo, quitar también sus submódulos
+        if (isSelected && onSubModulosChange) {
+            const modulo = modulos.find(m => m.id === moduloId);
+            const subIds = (modulo?.subModulos || []).map(s => s.id);
+            onSubModulosChange(selectedSubModulos.filter(id => !subIds.includes(id)));
         }
+    };
+
+    const handleToggleSubModulo = (subModuloId: number) => {
+        if (disabled || !onSubModulosChange) return;
+        const isSelected = selectedSubModulos.includes(subModuloId);
+        onSubModulosChange(
+            isSelected
+                ? selectedSubModulos.filter(id => id !== subModuloId)
+                : [...selectedSubModulos, subModuloId]
+        );
+    };
+
+    const handleSelectAllSubs = (modulo: IModulo) => {
+        if (disabled || !onSubModulosChange) return;
+        const subIds = modulo.subModulos.filter(s => s.activo).map(s => s.id);
+        const allSel = subIds.every(id => selectedSubModulos.includes(id));
+        onSubModulosChange(
+            allSel
+                ? selectedSubModulos.filter(id => !subIds.includes(id))
+                : [...new Set([...selectedSubModulos, ...subIds])]
+        );
     };
 
     const handleSelectAll = () => {
         if (disabled) return;
         if (selectedModulos.length === modulos.length) {
             onModulosChange([]);
+            onSubModulosChange?.([]);
         } else {
             onModulosChange(modulos.map(m => m.id));
         }
+    };
+
+    const toggleExpanded = (moduloId: number) => {
+        setExpandedModulos(prev => {
+            const next = new Set(prev);
+            next.has(moduloId) ? next.delete(moduloId) : next.add(moduloId);
+            return next;
+        });
     };
 
     if (loading) {
@@ -66,13 +104,21 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
     }
 
     const allSelected = selectedModulos.length === modulos.length && modulos.length > 0;
+    const totalSubsDisponibles = modulos.filter(m => selectedModulos.includes(m.id)).reduce((acc, m) => acc + (m.subModulos?.filter(s => s.activo).length || 0), 0);
 
     return (
         <div>
             <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-gray-600">
-                    Seleccionados: <strong>{selectedModulos.length}</strong> de {modulos.length}
-                </p>
+                <div>
+                    <p className="text-sm text-gray-600">
+                        Módulos: <strong>{selectedModulos.length}</strong> de {modulos.length}
+                        {onSubModulosChange && totalSubsDisponibles > 0 && (
+                            <span className="ml-3 text-indigo-600">
+                                · Submódulos: <strong>{selectedSubModulos.length}</strong> de {totalSubsDisponibles}
+                            </span>
+                        )}
+                    </p>
+                </div>
                 <button
                     type="button"
                     onClick={handleSelectAll}
@@ -83,56 +129,95 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="space-y-2">
                 {modulos.map((modulo: IModulo) => {
                     const isSelected = selectedModulos.includes(modulo.id);
+                    const isExpanded = expandedModulos.has(modulo.id);
+                    const subActivos = (modulo.subModulos || []).filter((s: ISubModulo) => s.activo);
+                    const subSelCount = subActivos.filter(s => selectedSubModulos.includes(s.id)).length;
+                    const allSubsSel = subActivos.length > 0 && subActivos.every(s => selectedSubModulos.includes(s.id));
 
                     return (
-                        <button
-                            key={modulo.id}
-                            type="button"
-                            onClick={() => handleToggle(modulo.id)}
-                            disabled={disabled}
-                            className={`
-                relative p-4 rounded-lg border-2 transition-all text-left
-                ${isSelected
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                                }
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              `}
-                        >
-                            <div className="flex items-start gap-3">
-                                <div className={`
-                  flex-shrink-0 p-2 rounded-lg
-                  ${isSelected ? 'bg-blue-100' : 'bg-gray-100'}
-                `}>
+                        <div key={modulo.id} className={`border-2 rounded-xl overflow-hidden transition-all ${isSelected ? 'border-blue-400' : 'border-gray-200'}`}>
+                            {/* Fila del módulo */}
+                            <div
+                                className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                onClick={() => handleToggleModulo(modulo.id)}
+                            >
+                                <div className={`flex-shrink-0 p-2 rounded-lg ${isSelected ? 'bg-blue-100' : 'bg-gray-100'}`}>
                                     <Icon
                                         icon={modulo.icono || getModuleIcon(modulo.codigo)}
                                         className={isSelected ? 'text-blue-600' : 'text-gray-600'}
-                                        width={24}
+                                        width={22}
                                     />
                                 </div>
-
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex items-center gap-2">
                                         <h4 className={`font-semibold text-sm ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
                                             {modulo.nombre}
                                         </h4>
-                                        {isSelected && (
-                                            <Icon
-                                                icon="mdi:check-circle"
-                                                className="text-blue-600 flex-shrink-0"
-                                                width={18}
-                                            />
-                                        )}
+                                        {isSelected && <Icon icon="mdi:check-circle" className="text-blue-600 flex-shrink-0" width={16} />}
                                     </div>
-                                    <p className="text-xs text-gray-600 line-clamp-2">
-                                        {modulo.descripcion}
-                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">{modulo.descripcion}</p>
+                                    {isSelected && subActivos.length > 0 && onSubModulosChange && (
+                                        <p className="text-xs text-indigo-600 mt-0.5">
+                                            {subSelCount} de {subActivos.length} submódulos configurados
+                                        </p>
+                                    )}
                                 </div>
+                                {/* Botón expandir submódulos */}
+                                {isSelected && subActivos.length > 0 && onSubModulosChange && (
+                                    <button
+                                        type="button"
+                                        onClick={e => { e.stopPropagation(); toggleExpanded(modulo.id); }}
+                                        className="p-1.5 text-indigo-500 hover:bg-indigo-100 rounded-lg transition-colors flex-shrink-0"
+                                        title="Configurar submódulos"
+                                    >
+                                        <Icon icon={isExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'} width={18} />
+                                    </button>
+                                )}
                             </div>
-                        </button>
+
+                            {/* Submódulos expandibles */}
+                            {isSelected && isExpanded && subActivos.length > 0 && onSubModulosChange && (
+                                <div className="border-t border-blue-100 bg-indigo-50/40 px-4 py-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-semibold text-indigo-700 flex items-center gap-1.5">
+                                            <Icon icon="mdi:sitemap" width={14} />
+                                            Submódulos de {modulo.nombre}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSelectAllSubs(modulo)}
+                                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                                        >
+                                            {allSubsSel ? 'Quitar todos' : 'Seleccionar todos'}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {subActivos.map((sub: ISubModulo) => {
+                                            const isSubSel = selectedSubModulos.includes(sub.id);
+                                            return (
+                                                <label
+                                                    key={sub.id}
+                                                    className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSubSel ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:border-indigo-200'}`}
+                                                    onClick={() => handleToggleSubModulo(sub.id)}
+                                                >
+                                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSubSel ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`}>
+                                                        {isSubSel && <Icon icon="mdi:check" className="text-white" width={10} />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-medium text-gray-800">{sub.nombre}</p>
+                                                        {sub.descripcion && <p className="text-[10px] text-gray-500 truncate">{sub.descripcion}</p>}
+                                                        <p className="text-[10px] font-mono text-gray-400">{sub.codigo}</p>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>

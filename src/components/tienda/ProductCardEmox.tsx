@@ -12,10 +12,6 @@ interface ProductCardProps {
 export default function ProductCardEmox({ producto, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    // Mock rating for visual consistency with reference (or use real if available)
-    const rating = 5;
-    const reviewCount = Math.floor(Math.random() * 200) + 50;
-
     return (
         <div
             className="group flex flex-col h-full bg-white rounded-xl p-4 transition-all duration-300 hover:shadow-lg cursor-pointer border border-transparent hover:border-gray-100"
@@ -50,15 +46,7 @@ export default function ProductCardEmox({ producto, diseno, onAddToCart, onClick
                     {producto.descripcion}
                 </h3>
 
-                {/* Rating */}
-                <div className="flex items-center gap-1 mt-1">
-                    <div className="flex text-blue-600 text-xs">
-                        {[...Array(5)].map((_, i) => (
-                            <Icon key={i} icon="solar:star-bold" />
-                        ))}
-                    </div>
-                    <span className="text-xs text-gray-400">({reviewCount})</span>
-                </div>
+                <div className="mt-1" />
 
                 {/* Price & Add Button */}
                 <div className="mt-3 flex items-end justify-between">

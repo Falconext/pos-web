@@ -296,7 +296,7 @@ export default function ConfiguracionTienda() {
               <Icon icon="solar:gallery-bold-duotone" className="text-xl text-[#FF9500]" />
               Banners de Tienda Virtual
             </h3>
-            <span className="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-1 rounded-full">{vm.banners.length} / 5</span>
+            <span className="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-1 rounded-full">{vm.banners.length} / 6</span>
           </div>
 
           {/* Visual guide */}
@@ -349,15 +349,24 @@ export default function ConfiguracionTienda() {
                 </div>
                 <p className="text-[9px] text-gray-400 mt-2">Aparecen 2 veces en la página</p>
               </div>
+
+              <div className="bg-white rounded-xl border border-gray-200 p-3 md:col-span-3">
+                <p className="font-bold text-gray-700 mb-2 text-[11px] uppercase tracking-wider">Banner Membresía (antes de "También te podría interesar")</p>
+                <div className="bg-[#FFF8F0] rounded-lg border border-[#FF9500]/20 p-2 flex items-center gap-2">
+                  <span className="text-[9px] font-black text-[#FF9500] bg-[#FF9500]/15 px-1.5 py-0.5 rounded-full whitespace-nowrap">Orden 5</span>
+                  <p className="text-[9px] text-gray-500">Banner ancho horizontal (alto corto), ideal para campaña o membresía</p>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-2 text-[10px] text-gray-600">
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-6 gap-2 text-[10px] text-gray-600">
               {[
                 { orden: 0, recomendado: '1200×500px', desc: 'Hero naranja — título grande + imagen producto' },
                 { orden: 1, recomendado: '600×250px', desc: 'Tarjeta superior derecha — categoría/producto' },
                 { orden: 2, recomendado: '600×250px', desc: 'Tarjeta inferior derecha — categoría/producto' },
                 { orden: 3, recomendado: '700×280px', desc: 'Promo banner izquierdo (fondo verde)' },
                 { orden: 4, recomendado: '700×280px', desc: 'Promo banner derecho (fondo naranja)' },
+                { orden: 5, recomendado: '1400×360px', desc: 'Banner membresía ancho (encima de También te podría interesar)' },
               ].map(({ orden, recomendado, desc }) => (
                 <div key={orden} className="bg-white rounded-lg border border-gray-100 p-2">
                   <p className="font-black text-gray-800">Orden {orden}</p>
@@ -376,7 +385,7 @@ export default function ConfiguracionTienda() {
             <div className="space-y-4">
               {/* Banner Grid */}
               {vm.banners.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   {[...vm.banners].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map((banner, index) => {
                     const ordenLabels: Record<number, { label: string; color: string }> = {
                       0: { label: 'Hero principal', color: 'bg-[#FF9500]' },
@@ -384,6 +393,7 @@ export default function ConfiguracionTienda() {
                       2: { label: 'Tarjeta inf.', color: 'bg-amber-600' },
                       3: { label: 'Promo izq.', color: 'bg-green-600' },
                       4: { label: 'Promo der.', color: 'bg-orange-600' },
+                      5: { label: 'Membresía', color: 'bg-indigo-600' },
                     };
                     const meta = ordenLabels[banner.orden] || { label: `Banner ${index + 1}`, color: 'bg-gray-500' };
                     return (
@@ -412,7 +422,7 @@ export default function ConfiguracionTienda() {
 
               {/* Edit Banner Modal */}
               {vm.editingBanner && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="fixed inset-0 z-50 top-[-30px] flex items-center justify-center bg-black/50 p-4">
                   <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="text-lg font-bold">Editar Banner</h3>
@@ -430,6 +440,7 @@ export default function ConfiguracionTienda() {
                       {vm.editingBanner.orden === 2 && 'Es la tarjeta inferior derecha (600×250px recomendado).'}
                       {vm.editingBanner.orden === 3 && 'Es el promo banner izquierdo (700×280px recomendado).'}
                       {vm.editingBanner.orden === 4 && 'Es el promo banner derecho (700×280px recomendado).'}
+                      {vm.editingBanner.orden === 5 && 'Es el banner de membresía, ubicado encima de "También te podría interesar" (1400×360px recomendado).'}
                     </div>
 
                     <div className="space-y-4">
@@ -451,11 +462,30 @@ export default function ConfiguracionTienda() {
                         {vm.editBannerFile && <p className="text-xs text-green-600 mt-1">✓ Nueva imagen: {vm.editBannerFile.name}</p>}
                       </div>
 
-                      <InputPro label="Título" name="titulo" value={vm.editBannerTitle} onChange={(e: any) => vm.setEditBannerTitle(e.target.value)} placeholder="Ej: Gran Liquidación" />
-                      <InputPro label="Subtítulo" name="subtitulo" value={vm.editBannerSubtitle} onChange={(e: any) => vm.setEditBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% de descuento" />
+                      <InputPro label="Título (Opcional)" name="titulo" value={vm.editBannerTitle} onChange={(e: any) => vm.setEditBannerTitle(e.target.value)} placeholder="Ej: Gran Liquidación" />
+                      <InputPro label="Subtítulo (Opcional)" name="subtitulo" value={vm.editBannerSubtitle} onChange={(e: any) => vm.setEditBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% de descuento" />
+                      <p className="text-xs text-gray-500 mb-2">💡 <span className="font-semibold text-gray-700">Tip:</span> Si dejas el título y subtítulo en blanco (o habilitas "Solo Imagen"), la imagen ocupará todo el ancho del hero banner sin el bloque de texto naranja.</p>
 
                       <div className="relative">
                         <InputPro label="Enlace (URL o ruta)" name="link" value={vm.editBannerLink} onChange={(e: any) => vm.setEditBannerLink(e.target.value)} placeholder="/tienda/producto/xyz" />
+                        <label className="block text-xs font-medium text-gray-500 mt-2 mb-1">O vincula al catálogo por categoría:</label>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            const selected = e.target.value;
+                            if (!selected) return;
+                            vm.setEditBannerLink(vm.generarLinkCatalogoCategoria(selected));
+                            e.currentTarget.value = '';
+                          }}
+                          className="w-full text-sm rounded-lg border-gray-300 focus:ring-[#FF9500] focus:border-[#FF9500]"
+                        >
+                          <option value="">Seleccionar categoría...</option>
+                          {vm.storeCategories.map((cat: any, idx: number) => {
+                            const name = vm.getCategoryLabel(cat);
+                            if (!name) return null;
+                            return <option key={`${name}-${idx}`} value={name}>{name}</option>;
+                          })}
+                        </select>
                         <label className="block text-xs font-medium text-gray-500 mt-2 mb-1">O busca un producto:</label>
                         <input
                           type="text"
@@ -502,6 +532,7 @@ export default function ConfiguracionTienda() {
                           <option value="2">2 — Tarjeta derecha inferior</option>
                           <option value="3">3 — Promo izquierdo</option>
                           <option value="4">4 — Promo derecho</option>
+                          <option value="5">5 — Banner membresía (ancho)</option>
                         </select>
                       </div>
                     </div>
@@ -517,13 +548,14 @@ export default function ConfiguracionTienda() {
               )}
 
               {/* Subir nuevo banner */}
-              {vm.banners.length < 5 && (
+              {vm.banners.length < 6 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
                   <h4 className="text-sm font-bold text-gray-800 mb-1">Subir Nuevo Banner</h4>
                   <p className="text-xs text-gray-500 mb-4">Elige el orden según la posición que quieres en la tienda (ver guía arriba)</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <InputPro label="Título" name="tituloNew" value={vm.newBannerTitle} onChange={(e: any) => vm.setNewBannerTitle(e.target.value)} placeholder="Ej: Ofertas Especiales" />
+                    <InputPro label="Título (Opcional)" name="tituloNew" value={vm.newBannerTitle} onChange={(e: any) => vm.setNewBannerTitle(e.target.value)} placeholder="Ej: Ofertas Especiales" />
                     <InputPro label="Subtítulo (Opcional)" name="subtituloNew" value={vm.newBannerSubtitle} onChange={(e: any) => vm.setNewBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% off" />
+                    <p className="text-xs text-gray-500 col-span-1 md:col-span-2 -mt-2 mb-2">💡 <span className="font-semibold text-gray-700">Tip:</span> Si dejas el título y subtítulo en blanco (o habilitas "Solo Imagen"), la imagen ocupará todo el ancho del hero banner sin el bloque de texto naranja.</p>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Orden / Posición</label>
                       <select
@@ -537,6 +569,7 @@ export default function ConfiguracionTienda() {
                         <option value="2">2 — Tarjeta derecha inferior (título + foto)</option>
                         <option value="3">3 — Promo izquierdo (fondo verde)</option>
                         <option value="4">4 — Promo derecho (fondo naranja)</option>
+                        <option value="5">5 — Banner membresía (ancho, encima de También te podría interesar)</option>
                       </select>
                     </div>
                     <div className="relative">
@@ -548,6 +581,24 @@ export default function ConfiguracionTienda() {
                         placeholder="/tienda/mi-tienda/producto/123"
                         className="w-full text-sm rounded-lg border-gray-300 focus:ring-[#FF9500] focus:border-[#FF9500]"
                       />
+                      <label className="block text-xs font-medium text-gray-500 mt-2 mb-1">O vincula al catálogo por categoría:</label>
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const selected = e.target.value;
+                          if (!selected) return;
+                          vm.setNewBannerLink(vm.generarLinkCatalogoCategoria(selected));
+                          e.currentTarget.value = '';
+                        }}
+                        className="w-full text-sm rounded-lg border-gray-300 focus:ring-[#FF9500] focus:border-[#FF9500]"
+                      >
+                        <option value="">Seleccionar categoría...</option>
+                        {vm.storeCategories.map((cat: any, idx: number) => {
+                          const name = vm.getCategoryLabel(cat);
+                          if (!name) return null;
+                          return <option key={`${name}-${idx}`} value={name}>{name}</option>;
+                        })}
+                      </select>
                     </div>
                   </div>
 

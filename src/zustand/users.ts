@@ -45,6 +45,7 @@ export interface IUsuario {
   estado: 'ACTIVO' | 'INACTIVO';
   permisos?: string[];
   sedes?: { id: number; nombre: string; codigo: string | null; esPrincipal: boolean }[];
+  subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[];
 }
 
 export interface IFormUsuario {
@@ -56,6 +57,7 @@ export interface IFormUsuario {
   password?: string;
   permisos: string[];
   sedeIds?: number[];
+  subModuloIds?: number[];
 }
 
 export interface IUsersState {
@@ -97,6 +99,7 @@ export const useUsersStore = create<IUsersState>()(
             const usuariosConPermisos = (response.data.items || []).map((user: any) => ({
               ...user,
               permisos: safeParsePermisos(user.permisos),
+              subModulos: user.subModulos || [],
             }));
 
             set({

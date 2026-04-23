@@ -22,8 +22,6 @@ export default function ProductCardPio({ producto, diseno, onAddToCart, onClick 
     // Mock deterministic flags based on product id
     const isVetApproved = (producto.id % 3 === 0);
     const isSpecialDeal = hasDiscount && (producto.id % 2 === 0);
-    const rating = 4.5;
-    const reviews = 57 + ((producto.id || 0) % 100);
 
     const handleAdd = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -131,12 +129,7 @@ export default function ProductCardPio({ producto, diseno, onAddToCart, onClick 
                     {producto.descripcion}
                 </h3>
 
-                {/* Stars */}
-                <div className="flex items-center gap-1.5 mb-3">
-                    <Icon icon="solar:star-bold" width={13} className="text-[#FF9500]" />
-                    <span className="text-xs font-bold text-[#FF9500]">{rating}</span>
-                    <span className="text-xs text-[#999]">{reviews} reseñas</span>
-                </div>
+                <div className="mb-3" />
             </div>
 
             {/* Buy Button - Full Width Bottom */}

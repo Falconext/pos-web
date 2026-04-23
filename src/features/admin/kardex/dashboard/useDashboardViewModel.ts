@@ -57,9 +57,9 @@ export const useDashboardViewModel = () => {
         if (!state.dashboardData) return { barData: [], pieData: [] };
 
         const { resumenGeneral } = state.dashboardData;
-        const stockNormal = resumenGeneral.totalProductos -
+        const stockNormal = Math.max(0, resumenGeneral.totalProductos -
             resumenGeneral.productosStockCritico -
-            resumenGeneral.productosStockCero;
+            resumenGeneral.productosStockCero);
 
         const barData = [
             {
