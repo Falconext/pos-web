@@ -66,44 +66,61 @@ export default function ComprasView() {
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cuentas por Pagar / Compras</h1>
                     <p className="text-sm text-gray-500 mt-1">Gestión de compras y pagos a proveedores</p>
                 </div>
-                <Button color="secondary" className="flex items-center gap-2" onClick={actions.openNuevaCompra}>
+                <Button color="secondary" className="flex items-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none hover:opacity-90" onClick={actions.openNuevaCompra}>
                     <Icon icon="solar:cart-plus-bold" className="text-lg" />
                     Nueva Compra
                 </Button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 {/* Stats */}
-                <div className="p-5 border-b border-gray-100">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                                <Icon icon="solar:bill-list-bold-duotone" className="text-blue-600 text-2xl" />
+                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                        {/* KPI 1 */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-violet-600 text-[13px] font-bold tracking-wide uppercase">Facturas (Vista)</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 group-hover:-translate-y-1 transition-transform">
+                                    <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Facturas (Vista)</p>
-                                <p className="text-xl font-bold text-gray-900">{totalCompras || 0}</p>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{totalCompras || 0}</h2>
+                                <div className="flex items-center gap-1.5 opacity-0">
+                                    <span className="text-gray-400 text-xs font-medium">.</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
-                                <Icon icon="solar:money-bag-bold-duotone" className="text-red-600 text-2xl" />
+
+                        {/* KPI 2 */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-rose-500 text-[13px] font-bold tracking-wide uppercase">Saldo por Pagar</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 group-hover:-translate-y-1 transition-transform">
+                                    <Icon icon="solar:money-bag-bold-duotone" className="text-xl" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Saldo por Pagar</p>
-                                <p className="text-xl font-bold text-gray-900">
-                                    S/ {totalPorPagar.toFixed(2)}
-                                    <span className="text-xs font-normal text-gray-500 block">(Página actual)</span>
-                                </p>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">S/ {totalPorPagar.toFixed(2)}</h2>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-400 text-xs font-medium">(Página actual)</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-                                <Icon icon="solar:calendar-bold-duotone" className="text-yellow-600 text-2xl" />
+
+                        {/* KPI 3 */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-amber-500 text-[13px] font-bold tracking-wide uppercase">Vencidos (+1 día)</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 group-hover:-translate-y-1 transition-transform">
+                                    <Icon icon="solar:calendar-bold-duotone" className="text-xl" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Vencidos (+1 día)</p>
-                                <p className="text-xl font-bold text-gray-900">{totalVencidos}</p>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{totalVencidos}</h2>
+                                <div className="flex items-center gap-1.5 opacity-0">
+                                    <span className="text-gray-400 text-xs font-medium">.</span>
+                                </div>
                             </div>
                         </div>
                     </div>

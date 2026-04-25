@@ -1,17 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, type IAuthState } from '@/zustand/auth'
 import NotificacionesCampana from '@/components/NotificacionesCampana'
 import { hasPermission, hasSubPermission, getRedirectPath } from '@/utils/permissions'
 import { useThemeStore } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
+const logo = '/assets/logofalconwhite.png'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { auth, sedeActiva, selectSede }: IAuthState = useAuthStore()
-  const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact } = useThemeStore()
+  const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact, isDarkMode, toggleDarkMode, initTheme } = useThemeStore()
 
   // Detectar si el rubro es restaurante para cambiar nombres del menú
   const isRestaurante = useMemo(() => {
@@ -76,6 +77,7 @@ export default function AdminLayout() {
     }
     document.addEventListener('mousedown', onClickOutside)
     document.addEventListener('keydown', onEsc)
+    initTheme()
     return () => {
       document.removeEventListener('mousedown', onClickOutside)
       document.removeEventListener('keydown', onEsc)
@@ -141,6 +143,11 @@ export default function AdminLayout() {
   // Robust scroll lock for mobile drawer using position:fixed and restoring scroll
   useEffect(() => {
     const body = document.body
+
+    // Prevent body scroll in admin layout to avoid double scrollbars
+    const originalOverflow = body.style.overflow;
+    body.style.overflow = 'hidden';
+
     const lock = () => {
       scrollYRef.current = window.scrollY
       body.style.position = 'fixed'
@@ -158,9 +165,14 @@ export default function AdminLayout() {
       body.style.width = ''
       if (y) window.scrollTo(0, y)
     }
+
     if (isSidebarOpen && window.innerWidth < 768) lock()
     else unlock()
-    return () => unlock()
+
+    return () => {
+      unlock()
+      body.style.overflow = originalOverflow;
+    }
   }, [isSidebarOpen])
 
   const logout = () => {
@@ -195,38 +207,38 @@ export default function AdminLayout() {
   // Theme adaptado al diseño de referencia (sidebar blanco + ítem activo azul sólido)
   const theme = {
     mainPadding: 'p-5',
-    sidebarBg: 'bg-white',
+    sidebarBg: 'bg-white dark:bg-[#0A0D14]',
     sidebarBorder: 'border-none',
 
-    // Item activo: pill azul-índigo sólido, texto blanco
+    // Item activo: pill violeta sólido, texto blanco
     get activeLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-[#4F6EF7] shadow-[0_4px_12px_rgba(79,110,247,0.35)] transition-all duration-200 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.35)] transition-all duration-200 group`;
     },
     // Item inactivo: texto gris oscuro, hover sutil
     get inactiveLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-150 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all duration-150 group`;
     },
     // Accordion activo e inactivo
     get accordionActive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-[#4F6EF7] shadow-[0_4px_12px_rgba(79,110,247,0.35)] transition-all text-left`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.35)] transition-all text-left`;
     },
     get accordionInactive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all text-left`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all text-left`;
     },
     // Submenu links
-    submenuBorder: 'border-gray-200',
+    submenuBorder: 'border-gray-200 dark:border-slate-800',
     get submenuActiveLink() {
-      return `flex items-center px-3.5 py-2 text-[13px] font-semibold text-[#4F6EF7] bg-indigo-50 rounded-lg transition-all`;
+      return `flex items-center px-3.5 py-2 text-[13px] font-semibold text-violet-600 bg-violet-50 dark:bg-violet-900/30 rounded-lg transition-all`;
     },
     get submenuInactiveLink() {
-      return `flex items-center px-3.5 py-2 text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all`;
+      return `flex items-center px-3.5 py-2 text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg transition-all`;
     },
-    primaryBorder: 'border-gray-200',
+    primaryBorder: 'border-gray-200 dark:border-slate-800',
   }
 
   return (
     <div
-      className="flex overflow-hidden bg-[#F0F2FA] transition-all duration-300"
+      className="flex overflow-hidden bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300"
       style={{
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         zoom: isCompact ? '0.9' : '1',
@@ -235,16 +247,16 @@ export default function AdminLayout() {
     >
 
       {/* Sidebar/Drawer */}
-      <aside className={`fixed inset-y-0 left-0 bg-white shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
+      <aside className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0D14] dark:border-r dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
         {/* Logo area */}
         <div className={`flex items-center mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
           <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#4F6EF7] shadow-md shadow-indigo-200">
-              <img src="/fnlogo.png" alt="Falconext" className="w-5 h-5 object-contain brightness-0 invert" />
+            <div className="flex items-center justify-center w-10 h-10">
+              <img src={logo} alt="Falconext" className="w-10 h-10 object-contain rounded-full" />
             </div>
             {!isSidebarCollapsed && (
               <div>
-                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900">FALCONEXT</h2>
+                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900 dark:text-white">FALCONEXT</h2>
                 <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Administrativo</p>
               </div>
             )}
@@ -506,18 +518,12 @@ export default function AdminLayout() {
                   </NavLink>
                 )}
 
-                {/* Cuentas por Pagar */}
-                {hasPermission(auth, 'compras') && (
-                  <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Cuentas por Pagar') }} to="/administrador/compras?tab=por_pagar" className={({ isActive }) => location.search.includes('por_pagar') ? theme.activeLink : theme.inactiveLink} title="Cuentas por Pagar">
-                    <Icon icon="solar:bill-check-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                    {!isSidebarCollapsed && <span>Cuentas por Pagar</span>}
-                  </NavLink>
-                )}
+
 
                 {/* Reportes/Contabilidad */}
                 {hasPermission(auth, 'reportes') && (
                   <div className="relative group/submenu">
-                    <button onClick={() => { if (isSidebarCollapsed) { navigate(auth?.empresa?.tipoEmpresa === 'INFORMAL' ? '/administrador/contabilidad/reporte-informales' : '/administrador/contabilidad/reporte'); } else { toggleAccordion('cont'); } setNameNavbar('Contabilidad') }} className={location.pathname.includes('/administrador/contabilidad') ? theme.accordionActive : theme.accordionInactive} title="Contabilidad">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate(auth?.empresa?.tipoEmpresa === 'INFORMAL' ? '/administrador/contabilidad/reporte-informales' : '/administrador/contabilidad/reporte'); } else { toggleAccordion('cont'); } setNameNavbar('Contabilidad') }} className={(location.pathname.includes('/administrador/contabilidad') || location.pathname.includes('/administrador/sire')) ? theme.accordionActive : theme.accordionInactive} title="Contabilidad">
                       <div className="flex items-center justify-center">
                         <Icon icon="solar:calculator-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                         {!isSidebarCollapsed && <span>Contabilidad</span>}
@@ -536,6 +542,16 @@ export default function AdminLayout() {
                           <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/contabilidad/reporte-informales" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                             Reporte Informales
                           </NavLink>
+                        )}
+                        {auth?.empresa?.tipoEmpresa === 'FORMAL' && (
+                          <>
+                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sire/ventas" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                              SIRE — Libro Ventas
+                            </NavLink>
+                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sire/compras" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                              SIRE — Libro Compras
+                            </NavLink>
+                          </>
                         )}
                       </div>
                     )}
@@ -642,8 +658,8 @@ export default function AdminLayout() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-[#F0F2FA]">
-        <header className={`z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
+      <main className="flex-1 overflow-y-auto bg-[#F9FAFC] dark:bg-[#0A0D14]">
+        <header className={`z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
           <div className="flex items-center gap-4">
             <button
               className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -655,7 +671,7 @@ export default function AdminLayout() {
             <div className="flex items-center gap-1.5 text-[13px] font-medium">
               <span className="text-gray-400">Administrador</span>
               <Icon icon="solar:alt-arrow-right-linear" width="13" className="text-gray-300" />
-              <span className="text-[#4F6EF7] font-semibold">{nameNavbar}</span>
+              <span className="text-violet-600 font-semibold">{nameNavbar}</span>
             </div>
             {/* Sede activa badge / switcher */}
             {sedeActiva && (() => {
@@ -668,11 +684,11 @@ export default function AdminLayout() {
                   <button
                     type="button"
                     onClick={() => setIsSedeMenuOpen(p => !p)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
                   >
-                    <Icon icon="solar:city-bold-duotone" className="text-[#4F6EF7]" width={14} />
-                    <span className="text-[12px] font-semibold text-[#4F6EF7] truncate max-w-[140px]">{sedeActiva.nombre}</span>
-                    <Icon icon="solar:alt-arrow-down-linear" className="text-[#4F6EF7]" width={12} />
+                    <Icon icon="solar:city-bold-duotone" className="text-violet-600" width={14} />
+                    <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                    <Icon icon="solar:alt-arrow-down-linear" className="text-violet-600" width={12} />
                   </button>
                   {isSedeMenuOpen && (
                     <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]">
@@ -685,7 +701,7 @@ export default function AdminLayout() {
                             selectSede(sede.id)
                             setIsSedeMenuOpen(false)
                           }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${sede.id === sedeActiva.id ? 'bg-indigo-50 text-[#4F6EF7] font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-50'}`}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${sede.id === sedeActiva.id ? 'bg-violet-50 text-violet-600 font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
                           <Icon icon={sede.id === sedeActiva.id ? 'solar:check-circle-bold' : 'solar:city-linear'} width={14} />
                           {sede.nombre}
@@ -696,20 +712,31 @@ export default function AdminLayout() {
                   )}
                 </div>
               ) : (
-                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg">
-                  <Icon icon="solar:city-bold-duotone" className="text-[#4F6EF7]" width={14} />
-                  <span className="text-[12px] font-semibold text-[#4F6EF7] truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg">
+                  <Icon icon="solar:city-bold-duotone" className="text-violet-600" width={14} />
+                  <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
                 </div>
               )
             })()}
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Dark mode toggle */}
+            <div>
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'text-amber-400 hover:bg-slate-800' : 'text-gray-500 hover:bg-gray-100'}`}
+                title={isDarkMode ? 'Desactivar Modo Oscuro' : 'Activar Modo Oscuro'}
+              >
+                <Icon icon={isDarkMode ? 'solar:sun-bold-duotone' : 'solar:moon-bold-duotone'} width="20" />
+              </button>
+            </div>
+
             {/* Compact toggle */}
             <div className="hidden md:block">
               <button
                 onClick={toggleCompact}
-                className={`p-2 rounded-lg transition-colors ${isCompact ? 'text-[#4F6EF7] bg-indigo-50' : 'text-gray-500 hover:bg-gray-100'
+                className={`p-2 rounded-lg transition-colors ${isCompact ? 'text-violet-600 bg-violet-50 dark:bg-violet-900/20' : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800'
                   }`}
                 title={isCompact ? 'Desactivar Vista Compacta' : 'Activar Vista Compacta'}
               >
@@ -774,7 +801,7 @@ export default function AdminLayout() {
                   <ul className="py-1.5" role="menu">
                     <li>
                       <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-indigo-50 hover:text-[#4F6EF7] transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
                         onClick={() => { setIsUserMenuOpen(false); navigate('/administrador/perfil') }}
                         role="menuitem"
                       >
@@ -785,7 +812,7 @@ export default function AdminLayout() {
                     {(auth?.empresa?.slugTienda || auth?.empresa?.plan?.tieneTienda) && (
                       <li>
                         <button
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-indigo-50 hover:text-[#4F6EF7] transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
                           onClick={() => { setIsUserMenuOpen(false); if (auth?.empresa?.slugTienda) navigate(`/tienda/${auth.empresa.slugTienda}`); else navigate('/administrador/tienda/configuracion'); }}
                           role="menuitem"
                         >

@@ -53,6 +53,7 @@ const Comprobantes = () => {
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
+    const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
 
@@ -162,24 +163,17 @@ const Comprobantes = () => {
         await getInvoice(data.id);
     };
 
-    const handleEnviarWhatsApp = async (data: any) => {
+    const handleAbrirModal = async (data: any, tab: 'whatsapp' | 'email') => {
         try {
-            // Hacer fetch usando apiClient para obtener datos frescos con todas las relaciones
-            console.log("Fetching comprobante data for ID:", data.id);
             const response: any = await get(`comprobante/${data.id}`);
-            console.log("Comprobante response:", response);
-
-            // Verificar si la respuesta viene envuelta en { code: 1, data: ... } o es directa
             const freshComprobante = response.data || response;
 
             if (!freshComprobante || !freshComprobante.id) {
-                console.error("Invalid comprobante data:", freshComprobante);
                 throw new Error("Datos de comprobante inválidos");
             }
 
-            // Mapear al formato que espera el modal
             const tipoDocMap: Record<string, string> = { '01': 'FACTURA', '03': 'BOLETA', '07': 'NOTA DE CREDITO', '08': 'NOTA DE DEBITO' };
-            const mappedData = {
+            setComprobanteWhatsApp({
                 id: freshComprobante.id,
                 serie: freshComprobante.serie,
                 correlativo: freshComprobante.correlativo,
@@ -187,11 +181,10 @@ const Comprobantes = () => {
                 total: Number(freshComprobante.mtoImpVenta || 0),
                 clienteNombre: freshComprobante.cliente?.nombre || 'Cliente',
                 clienteCelular: freshComprobante.cliente?.telefono || '',
+                clienteEmail: freshComprobante.cliente?.email || '',
                 pdfUrl: freshComprobante.s3PdfUrl,
-            };
-
-            console.log("Mapped data for WhatsApp:", mappedData);
-            setComprobanteWhatsApp(mappedData);
+            });
+            setModalDefaultTab(tab);
             setIsOpenModalWhatsApp(true);
         } catch (error) {
             console.error('Error al cargar datos del comprobante:', error);
@@ -625,6 +618,7 @@ const Comprobantes = () => {
             {isOpenModalWhatsApp && comprobanteWhatsApp && (
                 <ModalEnviarWhatsApp
                     isOpen={isOpenModalWhatsApp}
+                    defaultTab={modalDefaultTab}
                     onClose={() => {
                         setIsOpenModalWhatsApp(false);
                         setComprobanteWhatsApp(null);
@@ -770,17 +764,26 @@ const Comprobantes = () => {
 
                             <button
                                 type="button"
-                                disabled={!(rowBase.estado === 'EMITIDO' || !canEmitirSunat)}
                                 onClick={() => {
-                                    if (rowBase.estado === 'EMITIDO' || !canEmitirSunat) {
-                                        handleEnviarWhatsApp(rowBase);
-                                    }
+                                    handleAbrirModal(rowBase, 'whatsapp');
                                     handleCloseMenu();
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${(rowBase.estado === 'EMITIDO' || !canEmitirSunat) ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100"
                             >
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span>Enviar WhatsApp</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleAbrirModal(rowBase, 'email');
+                                    handleCloseMenu();
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100"
+                            >
+                                <Icon icon="solar:letter-bold" width={16} height={16} />
+                                <span>Enviar Email</span>
                             </button>
 
                             {(rowBase.comprobante?.includes('COTIZACI') || rowBase.tipoDoc === 'COT') && (

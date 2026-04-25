@@ -55,14 +55,14 @@ export const useProductsViewModel = () => {
     const isCodigoBarrasEnabled = features.usaCodigoBarras;
 
     const allColumns = useMemo(() => [
-        'Img', 'Código', ...(isCodigoBarrasEnabled ? ['Código de Barras'] : []), 'Producto', 'Categoria', 'Marca',
+        'Img', 'Producto', 'Categoria', 'Marca',
         'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
-    ], [isCodigoBarrasEnabled]);
+    ], []);
 
     const initialVisibleColumns = useMemo(() => [
-        'Img', 'Código', ...(isCodigoBarrasEnabled ? ['Código de Barras'] : []), 'Producto', 'Categoria', 'Marca',
+        'Img', 'Producto', 'Categoria', 'Marca',
         'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
-    ], [isCodigoBarrasEnabled]);
+    ], []);
 
     // Labels
     const labels = {
@@ -160,19 +160,13 @@ export const useProductsViewModel = () => {
                     if (Array.isArray(parsed)) {
                         let restored = allColumns.filter(c => parsed.includes(c));
                         if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
-                        if (isCodigoBarrasEnabled && !restored.includes('Código de Barras')) {
-                            const codigoIndex = restored.indexOf('Código');
-                            restored = codigoIndex >= 0
-                                ? [...restored.slice(0, codigoIndex + 1), 'Código de Barras', ...restored.slice(codigoIndex + 1)]
-                                : ['Código de Barras', ...restored];
-                        }
                         setState(prev => ({ ...prev, visibleColumns: restored }));
                     }
                 }
             } catch (_e) { }
         };
         loadColumns();
-    }, [auth?.empresaId, columnsStorageKey, allColumns, isCodigoBarrasEnabled]);
+    }, [auth?.empresaId, columnsStorageKey, allColumns]);
 
     // Save Columns
     useEffect(() => {

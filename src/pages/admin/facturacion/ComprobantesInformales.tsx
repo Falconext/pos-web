@@ -50,6 +50,7 @@ const ComprobantesInformales = () => {
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
+    const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
     const [comprobante, setComprobante] = useState<string>("");
     const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
@@ -117,7 +118,7 @@ const ComprobantesInformales = () => {
 
         const isOpen = openAccionesId === rowBase.id;
 
-        const handleEnviarWhatsApp = (data: any) => {
+        const handleAbrirModal = (data: any, tab: 'whatsapp' | 'email') => {
             const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
             if (comprobanteData) {
                 setComprobanteWhatsApp({
@@ -128,7 +129,10 @@ const ComprobantesInformales = () => {
                     total: comprobanteData.mtoImpVenta,
                     clienteNombre: comprobanteData.cliente?.nombre || 'Cliente',
                     clienteCelular: (comprobanteData as any).cliente?.telefono || '',
+                    clienteEmail: (comprobanteData as any).cliente?.email || '',
+                    pdfUrl: comprobanteData.s3PdfUrl || undefined,
                 });
+                setModalDefaultTab(tab);
                 setIsOpenModalWhatsApp(true);
             }
         };
@@ -180,17 +184,25 @@ const ComprobantesInformales = () => {
                         </button>
                         <button
                             type="button"
-                            disabled={!(rowBase.estado === 'COMPLETADO')}
                             onClick={() => {
-                                if (rowBase.estado === 'COMPLETADO') {
-                                    handleEnviarWhatsApp(rowBase);
-                                }
+                                handleAbrirModal(rowBase, 'whatsapp');
                                 setOpenAccionesId(null);
                             }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.estado === 'COMPLETADO' ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
                         >
                             <Icon icon="mdi:whatsapp" width={16} height={16} />
                             <span>Enviar WhatsApp</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                handleAbrirModal(rowBase, 'email');
+                                setOpenAccionesId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                        >
+                            <Icon icon="solar:letter-bold" width={16} height={16} />
+                            <span>Enviar Email</span>
                         </button>
                     </div>
                 )}
@@ -608,6 +620,7 @@ const ComprobantesInformales = () => {
             {isOpenModalWhatsApp && comprobanteWhatsApp && (
                 <ModalEnviarWhatsApp
                     isOpen={isOpenModalWhatsApp}
+                    defaultTab={modalDefaultTab}
                     onClose={() => {
                         setIsOpenModalWhatsApp(false);
                         setComprobanteWhatsApp(null);

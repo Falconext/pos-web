@@ -183,7 +183,7 @@ const Select = ({
                             </div>
                             :
                             <div className="absolute z-1 right-3 top-10">
-                                <Icon icon="ep:arrow-down-bold" onClick={() => setIsOpen(!isOpen)} />
+                                <Icon icon="ep:arrow-down-bold" className="text-gray-400 dark:text-gray-500" onClick={() => setIsOpen(!isOpen)} />
                             </div>
                     }
 

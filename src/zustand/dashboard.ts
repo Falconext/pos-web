@@ -24,6 +24,8 @@ export interface IDashboardState {
     dataPaymentMethods: []
     getTotalAmountByDatePayment: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void
     getNewClientsByDate: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void
+    overviewData: any;
+    getOverview: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void
 }
 
 export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) => ({
@@ -34,6 +36,21 @@ export const useDashboardStore = create<IDashboardState>()(devtools((set, _get) 
     totalAmount: 0,
     totalAttendancePatients: 0,
     totalPaymentsMonth: 0,
+    overviewData: null,
+    getOverview: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
+        try {
+            const params = new URLSearchParams({ fechaInicio, fechaFin });
+            if (sedeId) params.append('sedeId', String(sedeId));
+            const resp: any = await get(`dashboard/overview?${params}`);
+            if (resp.code === 1) {
+                set({ overviewData: resp.data }, false, "GET_OVERVIEW");
+            } else {
+                set({ overviewData: null });
+            }
+        } catch (error) {
+            set({ overviewData: null });
+        }
+    },
     getNewClientsByDate: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
             const params = new URLSearchParams({ fechaInicio, fechaFin });

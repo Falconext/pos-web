@@ -10,6 +10,7 @@ interface ThemeState {
     sidebarType: SidebarType;
     navbarFixed: boolean;
     isCompact: boolean;
+    isDarkMode: boolean;
 
     // Actions
     toggleConfigurator: () => void;
@@ -18,16 +19,19 @@ interface ThemeState {
     setNavbarFixed: (fixed: boolean) => void;
     closeConfigurator: () => void;
     toggleCompact: () => void;
+    toggleDarkMode: () => void;
+    initTheme: () => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             isOpen: false,
             sidebarColor: 'info', // Default Blue
             sidebarType: 'dark', // Default Dark
             navbarFixed: true,
             isCompact: true,
+            isDarkMode: false,
 
             toggleConfigurator: () => set((state) => ({ isOpen: !state.isOpen })),
             closeConfigurator: () => set({ isOpen: false }),
@@ -35,6 +39,24 @@ export const useThemeStore = create<ThemeState>()(
             setSidebarType: (type) => set({ sidebarType: type }),
             setNavbarFixed: (fixed) => set({ navbarFixed: fixed }),
             toggleCompact: () => set((state) => ({ isCompact: !state.isCompact })),
+            toggleDarkMode: () => {
+                const { isDarkMode } = get();
+                const newMode = !isDarkMode;
+                if (newMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                set({ isDarkMode: newMode });
+            },
+            initTheme: () => {
+                const { isDarkMode } = get();
+                if (isDarkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
         }),
         {
             name: 'theme-storage-v2',

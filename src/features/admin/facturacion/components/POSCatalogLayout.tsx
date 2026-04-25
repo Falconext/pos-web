@@ -20,7 +20,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
                     <button
                         onClick={() => vm.setIsOpenModalProduct(true)}
-                        className="flex items-center gap-2 px-4 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold transition-all"
+                        className="flex items-center gap-2 px-4 py-3 !bg-violet-600 hover:!bg-violet-700 text-white rounded-xl font-semibold shadow-md shadow-violet-200/50 transition-all"
                         title="Crear producto nuevo"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-xl" />
@@ -31,10 +31,10 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                 <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
                     <button
                         onClick={() => vm.setSelectedCategoryId(0)}
-                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === 0 ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === 0 ? '!bg-blue-500 text-white shadow-md shadow-blue-200/50 border-none' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
                     >
                         <span>TODOS</span>
-                        <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === 0 ? 'bg-white text-gray-900' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
+                        <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === 0 ? 'bg-white text-blue-600' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
                             {vm.totalProducts || 0}
                         </span>
                     </button>
@@ -42,10 +42,10 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                         <button
                             key={cat.id}
                             onClick={() => vm.setSelectedCategoryId(cat.id)}
-                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === cat.id ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === cat.id ? '!bg-blue-500 text-white shadow-md shadow-blue-200/50 border-none' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
                         >
                             <span>{cat.nombre.toUpperCase()}</span>
-                            <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === cat.id ? 'bg-white text-gray-900' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
+                            <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === cat.id ? 'bg-white text-blue-600' : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'}`}>
                                 {cat._count?.productos || 0}
                             </span>
                         </button>
@@ -89,7 +89,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                     </div>
                                     <button
                                         onClick={() => vm.handleProductClick(item)}
-                                        className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all active:scale-95 flex items-center justify-center"
+                                        className="p-2 !bg-violet-600 hover:!bg-violet-700 text-white rounded-lg shadow-md shadow-violet-200/50 transition-all active:scale-95 flex items-center justify-center"
                                     >
                                         <Icon icon="solar:add-circle-bold" className="text-lg" />
                                     </button>

@@ -47,6 +47,8 @@ import ComprasIndex from './pages/admin/compras/Index'
 import NuevaCompra from './pages/admin/compras/Nuevo'
 import ProveedoresPage from './pages/admin/compras/Proveedores'
 import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
+import LibroVentas from './pages/admin/sire/LibroVentas'
+import LibroCompras from './pages/admin/sire/LibroCompras'
 import AdminResellers from './pages/admin/sistema/Resellers'
 import ResellerLayout from './layouts/ResellerLayout'
 import ResellerDashboard from './pages/reseller/Dashboard'
@@ -95,6 +97,8 @@ function App() {
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
           <Route path="contabilidad/reporte-informales" element={<ReporteInformales />} />
           <Route path="contabilidad/arqueo" element={<ArqueoCaja />} />
+          <Route path="sire/ventas" element={<LibroVentas />} />
+          <Route path="sire/compras" element={<LibroCompras />} />
           <Route path="caja" element={<CajaIndex />} />
           <Route path="facturacion/comprobantes" element={<ComprobantesPage />} />
           <Route path="facturacion/comprobantes-informales" element={<ComprobantesInformales />} />

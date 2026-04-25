@@ -198,37 +198,53 @@ const CuentasPorCobrar = () => {
             {/* Main Content Card */}
             <div className="bg-white relative z-0 rounded-2xl shadow-sm border border-gray-100">
                 {/* Stats Row */}
-                <div className="p-5 relative border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-50">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                                <Icon icon="solar:bill-list-bold-duotone" className="text-blue-600 text-2xl" />
+                <div className="p-5 relative border-b border-gray-100 bg-gray-50/50">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                        {/* KPI 1 */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-violet-600 text-[13px] font-bold tracking-wide uppercase">Comprobantes Pendientes</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 group-hover:-translate-y-1 transition-transform">
+                                    <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Comprobantes Pendientes</p>
-                                <p className="text-xl font-bold text-gray-900">{pendientes?.length || 0}</p>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{pendientes?.length || 0}</h2>
+                                <div className="flex items-center gap-1.5 opacity-0">
+                                    <span className="text-gray-400 text-xs font-medium">.</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
-                                <Icon icon="solar:money-bag-bold-duotone" className="text-red-600 text-2xl" />
+
+                        {/* KPI 2 */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-blue-500 text-[13px] font-bold tracking-wide uppercase">Total por Cobrar</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:-translate-y-1 transition-transform">
+                                    <Icon icon="solar:money-bag-bold-duotone" className="text-xl" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Total por Cobrar</p>
-                                <p className="text-xl font-bold text-gray-900">
-                                    S/ {pendientes?.reduce((sum: number, inv: any) => sum + (inv.saldo || 0), 0).toFixed(2) || '0.00'}
-                                </p>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">S/ {pendientes?.reduce((sum: number, inv: any) => sum + (inv.saldo || 0), 0).toFixed(2) || '0.00'}</h2>
+                                <div className="flex items-center gap-1.5 opacity-0">
+                                    <span className="text-gray-400 text-xs font-medium">.</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-                                <Icon icon="solar:calendar-bold-duotone" className="text-yellow-600 text-2xl" />
+
+                        {/* KPI 3 */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-amber-500 text-[13px] font-bold tracking-wide uppercase">Vencidos (+30 días)</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 group-hover:-translate-y-1 transition-transform">
+                                    <Icon icon="solar:calendar-bold-duotone" className="text-xl" />
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Vencidos (+30 días)</p>
-                                <p className="text-xl font-bold text-gray-900">
-                                    {pendientes?.filter((inv: any) => calcularDiasVencidos(inv.fechaEmision) > 30).length || 0}
-                                </p>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{pendientes?.filter((inv: any) => calcularDiasVencidos(inv.fechaEmision) > 30).length || 0}</h2>
+                                <div className="flex items-center gap-1.5 opacity-0">
+                                    <span className="text-gray-400 text-xs font-medium">.</span>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -204,8 +204,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 error={null}
                                 placeholder="Buscar proveedor..."
                             />
-                            <InputPro autocomplete="new-password" label="Serie" name="doc_serie_compra" id="doc_serie_compra" value={header.serie} onChange={(e) => setHeader({ ...header, serie: e.target.value })} isLabel />
-                            <InputPro autocomplete="new-password" label="Número" name="doc_nro_compra" id="doc_nro_compra" value={header.numero} onChange={(e) => setHeader({ ...header, numero: e.target.value })} isLabel />
+                            <InputPro autocomplete="off" label="Serie" name="doc_serie_compra" id="doc_serie_compra" value={header.serie} onChange={(e) => setHeader({ ...header, serie: e.target.value })} isLabel />
+                            <InputPro autocomplete="off" label="Nro. Comprobante" name="doc_correlativo" id="doc_correlativo" value={header.numero} onChange={(e) => setHeader({ ...header, numero: e.target.value })} isLabel />
                             <Calendar
                                 text="Fecha Emisión"
                                 name="fechaEmision"
@@ -259,7 +259,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 <InputPro autocomplete="off" label="Lote (Opcional)" name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
                             </div>
                             <div className="col-span-2">
-                                <Button outline color="black" onClick={addItem} className="w-full justify-center">
+                                <Button outline color="black" onClick={addItem} className="w-full justify-center !bg-violet-600 !text-white !border-none shadow-md shadow-violet-200 hover:opacity-90">
                                     Agregar
                                     <Icon width={25} icon="solar:add-circle-bold" className="ml-2" />
                                 </Button>
@@ -444,7 +444,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     {/* Actions */}
                     <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
                         <Button color="gray" onClick={onClose}>Cancelar</Button>
-                        <Button outline color="black" onClick={handleSubmit}>Guardar Compra</Button>
+                        <Button outline color="black" onClick={handleSubmit} className="!bg-emerald-500 !text-white !border-none shadow-md shadow-emerald-200 hover:opacity-90">Guardar Compra</Button>
                     </div>
                 </div>
             </form>

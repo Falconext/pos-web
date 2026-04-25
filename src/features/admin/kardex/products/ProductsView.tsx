@@ -49,6 +49,25 @@ export default function ProductsView() {
 
         if (!vm.products || vm.products.length === 0) return <TableSkeleton />;
 
+        // Palette for category badges — picked deterministically from the category name
+        const CAT_PALETTE = [
+            { bg: '#EEF2FF', text: '#6366F1' },
+            { bg: '#F0FDF4', text: '#16A34A' },
+            { bg: '#FFF7ED', text: '#EA580C' },
+            { bg: '#FDF4FF', text: '#A855F7' },
+            { bg: '#F0F9FF', text: '#0284C7' },
+            { bg: '#FFF1F2', text: '#E11D48' },
+            { bg: '#FEFCE8', text: '#CA8A04' },
+            { bg: '#F0FDFA', text: '#0D9488' },
+            { bg: '#F5F3FF', text: '#7C3AED' },
+            { bg: '#FFF8F1', text: '#C2410C' },
+        ];
+        const getCatColor = (name: string) => {
+            let h = 0;
+            for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+            return CAT_PALETTE[Math.abs(h) % CAT_PALETTE.length];
+        };
+
         // Prepare table data for TablaFerreteria
         const productsTable = vm.products.map((item) => {
             const costo = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
@@ -76,11 +95,26 @@ export default function ProductsView() {
                     </div>
                 ),
                 'Código': item?.codigo,
-                ...(vm.isCodigoBarrasEnabled
-                    ? { 'Código de Barras': item?.codigoBarras || '-' }
-                    : {}),
-                'Producto': item?.descripcion,
-                'Categoria': item?.categoria?.nombre || 'Sin categoría',
+                'Producto': (
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-gray-900 text-[13px] leading-tight">{item?.descripcion}</span>
+                        <span className="text-[11px] text-gray-400 mt-0.5">
+                            SKU:{vm.isCodigoBarrasEnabled && item?.codigoBarras ? ` ${item.codigoBarras} -` : ''} {item?.codigo}
+                        </span>
+                    </div>
+                ),
+                'Categoria': (() => {
+                    const nombre = item?.categoria?.nombre || 'Sin categoría';
+                    const c = getCatColor(nombre);
+                    return (
+                        <span
+                            style={{ backgroundColor: c.bg, color: c.text }}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap"
+                        >
+                            {nombre}
+                        </span>
+                    );
+                })(),
                 'Marca': (item as any)?.marca?.nombre || 'Sin marca',
                 categoriaId: item?.categoriaId !== null ? "" : item?.categoria?.id,
                 unidadMedidaId: item?.unidadMedida?.id || item?.unidadMedidaId,
@@ -91,12 +125,13 @@ export default function ProductsView() {
                 'Margen': margen > 0 ? `${margen.toFixed(1)}%` : '-',
                 'Ganancia/Unidad': gananciaUnidad > 0 ? `S/ ${gananciaUnidad.toFixed(2)}` : '-',
                 'Stock': (
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${item?.stock <= 5
-                        ? 'bg-red-100 text-red-700'
-                        : item?.stock <= 10
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-emerald-100 text-emerald-700'
-                        }`}>
+                    <span
+                        style={{
+                            backgroundColor: item?.stock <= 0 ? '#F43F5F' : item?.stock <= 10 ? '#F49D0D' : '#0BB980',
+                            color: '#ffffff',
+                        }}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                    >
                         {item?.stock}
                     </span>
                 ),
@@ -209,11 +244,10 @@ export default function ProductsView() {
                     <Button
                         color="secondary"
                         onClick={() => {
-                            // Reset form logic is handled in VM or could be here calling VM action
-                            actions.setFormValues({ ...vm.formValues, productoId: 0 }); // Simplification
+                            actions.setFormValues({ ...vm.formValues, productoId: 0 });
                             actions.setIsOpenModal(true);
                         }}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-lg" />
                         {vm.labels.nuevoBtn}
@@ -248,20 +282,19 @@ export default function ProductsView() {
                         )}
                         <div className="w-full flex md:top-3 relative z-50 lg:w-auto overflow-visible pb-2 lg:pb-0">
                             <div className="flex flex-wrap gap-2 px-1 items-center">
-                                <Button color="lila" outline onClick={() => actions.setIsOpenModalCategory(true)} className="text-sm">
-                                    <Icon icon="solar:tag-bold-duotone" className="mr-1.5" /> Categorías
+                                <Button color="default" onClick={() => actions.setIsOpenModalCategory(true)} className="text-sm !bg-blue-500 !text-white border-none shadow-sm shadow-blue-200/50">
+                                    <Icon icon="solar:tag-bold-duotone" className="mr-1.5 !text-white" /> Categorías
                                 </Button>
-                                <Button color="lila" outline onClick={() => actions.setIsOpenModalBrands(true)} className="text-sm">
-                                    <Icon icon="solar:star-bold-duotone" className="mr-1.5" /> Marcas
+                                <Button color="default" onClick={() => actions.setIsOpenModalBrands(true)} className="text-sm !bg-emerald-500 !text-white border-none shadow-sm shadow-emerald-200/50">
+                                    <Icon icon="solar:star-bold-duotone" className="mr-1.5 !text-white" /> Marcas
                                 </Button>
                                 <div className="relative inline-block" ref={dropdownRef}>
                                     <Button
-                                        color="success"
-                                        outline
+                                        color="default"
                                         onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
-                                        className="text-sm flex items-center gap-1"
+                                        className="text-sm flex items-center gap-1 !bg-amber-500 !text-white border-none shadow-sm shadow-amber-200/50"
                                     >
-                                        <Icon icon="solar:file-bold-duotone" className="mr-1" width={16} />
+                                        <Icon icon="solar:file-bold-duotone" className="mr-1 !text-white" width={16} />
                                         Excel / CSV
                                         <Icon icon={showOptionsDropdown ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"} className="ml-1" width={14} />
                                     </Button>
@@ -306,8 +339,8 @@ export default function ProductsView() {
                                         </div>
                                     )}
                                 </div>
-                                <Button color="primary" onClick={() => actions.setIsOpenModalCatalog(true)} className="text-sm">
-                                    <Icon icon="solar:cloud-download-bold" className="mr-1.5" /> Catálogo
+                                <Button color="default" onClick={() => actions.setIsOpenModalCatalog(true)} className="text-sm !bg-slate-500 !text-white border-none shadow-sm shadow-slate-200/50">
+                                    <Icon icon="solar:cloud-download-bold" className="mr-1.5 !text-white" /> Catálogo
                                 </Button>
                             </div>
                         </div>

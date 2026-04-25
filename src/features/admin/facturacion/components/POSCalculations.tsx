@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 
 export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, printFn: any, handleOpenNewTab: any }) => {
     return (
-        <div className="p-3 pt-2 md:p-5 bg-gray-50 border-t border-gray-100">
+        <div className="p-3 pt-2 md:p-5 md:pb-8 bg-gray-50 border-t border-gray-100">
             <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
                 <div className="flex justify-between text-sm text-gray-500">
                     <span>Op. Gravada</span>
@@ -78,7 +78,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         <button
                             key={m}
                             onClick={() => vm.setPaymentMethod(m)}
-                            className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'}`}
+                            className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'}`}
                         >
                             {m}
                         </button>
@@ -98,12 +98,12 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 )}
                 <button
                     onClick={() => handleOpenNewTab("vista previa")}
-                    className="flex-1 py-2.5 md:py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-xs md:text-sm"
+                    className="flex-1 py-2.5 md:py-3 !bg-blue-500 text-white border-none rounded-xl font-bold shadow-md shadow-blue-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm"
                 >
                     <Icon icon="solar:eye-linear" className="text-lg" />
                     PREVIA
                 </button>
-                <button onClick={vm.addInvoiceReceipt} className="flex-1 py-2.5 md:py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 text-xs md:text-sm">
+                <button onClick={vm.addInvoiceReceipt} className="flex-1 py-2.5 md:py-3 !bg-violet-600 text-white border-none rounded-xl font-bold shadow-md shadow-violet-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm">
                     <Icon icon="solar:printer-minimalistic-bold" className="text-lg" />
                     {vm.isMobile ? "EMITIR" : "EMITIR"}
                 </button>

@@ -131,6 +131,7 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
                     mode={mode}
                     disabled={disabled}
                     name={name}
+                    onClick={() => setIsOpen(true)}
                     isLabel
                     label={text}
                     type="text"
