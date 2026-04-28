@@ -30,8 +30,10 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
   if (user.rol === 'ADMIN_SISTEMA') return true;
 
   // 1. Validar restricción del Plan
-  const planModulos = user.empresa?.plan?.modulosAsignados?.map((m) => m.modulo.codigo);
-  if (planModulos && planModulos.length > 0) {
+  // Array.isArray distingue undefined (plan sin configurar → no restringir) de [] (plan con 0 módulos → bloquear todo)
+  const planModulosRaw = user.empresa?.plan?.modulosAsignados;
+  if (Array.isArray(planModulosRaw)) {
+    const planModulos = planModulosRaw.map((m) => m.modulo.codigo);
     if (!planModulos.includes(modulo)) return false;
   }
 
@@ -49,28 +51,28 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
  * Verifica si un usuario tiene acceso a un submódulo específico.
  *
  * Lógica de dos capas:
- * 1. Capa Plan: si el plan tiene subModulosAsignados, solo los incluidos están disponibles.
- *    Si el plan NO tiene ningún submodulo configurado, no se restringe (backward compat).
+ * 1. Capa Plan: si subModulosAsignados es un array (incluso vacío), se aplica la restricción.
+ *    Si es undefined (plan antiguo sin configuración), no se restringe (backward compat).
  * 2. Capa Usuario: si el usuario tiene subModulos propios, debe incluir el solicitado.
- *    Si el usuario no tiene subModulos (lista vacía o ausente), y es ADMIN_EMPRESA, accede a todos los del plan.
+ *    Si el usuario no tiene subModulos configurados y es ADMIN_EMPRESA, accede a todos los del plan.
  */
 export const hasSubPermission = (user: IUserPermissions | null, subModuloCodigo: string): boolean => {
   if (!user) return false;
   if (user.rol === 'ADMIN_SISTEMA') return true;
 
   // Capa 1: restricción del Plan
-  const planSubModulos = user.empresa?.plan?.subModulosAsignados?.map((s) => s.subModulo.codigo);
-  if (planSubModulos && planSubModulos.length > 0) {
+  // Array.isArray distingue undefined (plan sin configurar → no restringir) de [] (0 submódulos configurados → bloquear todo)
+  const planSubModulosRaw = user.empresa?.plan?.subModulosAsignados;
+  if (Array.isArray(planSubModulosRaw)) {
+    const planSubModulos = planSubModulosRaw.map((s) => s.subModulo.codigo);
     if (!planSubModulos.includes(subModuloCodigo)) return false;
   }
-  // Si el plan no tiene subModulosAsignados configurados, no se restringe a nivel plan
 
   if (user.rol === 'ADMIN_EMPRESA') return true;
 
   // Capa 2: restricción del Usuario
   const userSubModulos = user.subModulos?.map((s) => s.codigo);
   if (!userSubModulos || userSubModulos.length === 0) {
-    // Usuario sin submodulos configurados: accede a todos los que el plan permita
     return true;
   }
 
@@ -87,8 +89,9 @@ export const getAvailableModules = (user: IUserPermissions | null): string[] => 
 
   if (user.rol === 'ADMIN_SISTEMA') return allModules;
 
-  const planModulos = user.empresa?.plan?.modulosAsignados?.map((m) => m.modulo.codigo);
-  if (planModulos && planModulos.length > 0) {
+  const planModulosRaw = user.empresa?.plan?.modulosAsignados;
+  if (Array.isArray(planModulosRaw)) {
+    const planModulos = planModulosRaw.map((m) => m.modulo.codigo);
     allModules = allModules.filter(m => planModulos.includes(m));
   }
 

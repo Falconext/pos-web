@@ -28,7 +28,7 @@ export const FacturacionNuevoView = () => {
     const handleOpenNewTab = (vista: string) => { printFn(); };
 
     return (
-        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
+        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 dark:text-gray-200 bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
             style={{ height: !vm.isMobile ? (vm.isCompact ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
         >
             {/* Hidden Print Component */}
@@ -79,10 +79,10 @@ export const FacturacionNuevoView = () => {
 
             {/* Floating Mobile Cart Toggle */}
             {vm.isMobile && !vm.showMobileCart && vm.productsInvoice.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-[50] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center justify-between pb-8">
+                <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111827] border-t border-gray-200 dark:border-slate-800 p-4 z-[50] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center justify-between pb-8">
                     <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs font-semibold">{vm.productsInvoice.length} Items</span>
-                        <span className="text-xl font-bold text-gray-900">S/ {vm.totalAdjusted.toFixed(2)}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs font-semibold">{vm.productsInvoice.length} Items</span>
+                        <span className="text-xl font-bold text-gray-900 dark:text-white">S/ {vm.totalAdjusted.toFixed(2)}</span>
                     </div>
                     <button
                         onClick={() => vm.setShowMobileCart(true)}
@@ -95,7 +95,7 @@ export const FacturacionNuevoView = () => {
             )}
 
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full md:overflow-y-auto bg-white rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 overflow-hidden border border-white ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
+            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full md:overflow-y-auto bg-white dark:bg-[#111827] rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-white dark:border-slate-800 ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
                 <POSOptionsForm vm={vm} />
                 <POSCartLayout vm={vm} />
                 <POSCalculations vm={vm} printFn={printFn} handleOpenNewTab={handleOpenNewTab} />

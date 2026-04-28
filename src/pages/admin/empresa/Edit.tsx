@@ -348,17 +348,21 @@ const EditEmpresa = () => {
 
 
   if (isLoading) {
-    return <Loading />;
+    return (
+      <div className="px-0 py-0 md:px-0 md:py-4 bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
+        <Loading />
+      </div>
+    );
   }
 
   if (!empresa) {
     return (
-      <div className="px-0 py-0 md:px-0 md:py-4">
-        <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
+      <div className="px-0 py-0 md:px-0 md:py-4 bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
+        <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
           <div className="text-center py-10">
             <Icon icon="mdi:alert-circle-outline" className="mx-auto text-6xl text-red-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600">Empresa no encontrada</h3>
-            <p className="text-gray-500 mb-4">La empresa que intentas editar no existe.</p>
+            <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">Empresa no encontrada</h3>
+            <p className="text-gray-500 dark:text-gray-500 mb-4">La empresa que intentas editar no existe.</p>
             <Button color="secondary" onClick={() => navigate('/administrador/empresas')}>
               Volver a Empresas
             </Button>
@@ -371,8 +375,8 @@ const EditEmpresa = () => {
   console.log("EL FORMDATA DEL FORMULARIO", formData)
 
   return (
-    <div className="px-0 py-0 md:px-0 md:py-4">
-      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
+    <div className="px-0 py-0 md:px-0 md:py-4 bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
+      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
         {/* Header */}
         <div className="flex items-center mb-6 pt-5 md:pt-0">
           <Button
@@ -383,8 +387,8 @@ const EditEmpresa = () => {
             <Icon icon="material-symbols:arrow-back" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2 ml-4">Editar Empresa</h1>
-            <p className="text-gray-600 ml-4">Modifica los datos de la empresa: {empresa.razonSocial}</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 ml-4">Editar Empresa</h1>
+            <p className="text-gray-600 dark:text-gray-400 ml-4">Modifica los datos de la empresa: {empresa.razonSocial}</p>
           </div>
         </div>
 
@@ -397,8 +401,8 @@ const EditEmpresa = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Datos de la Empresa */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos de la Empresa</h2>
+          <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Datos de la Empresa</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -426,17 +430,17 @@ const EditEmpresa = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/40 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/40 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                   <input
                     type="checkbox"
                     name="usaCodigoBarrasManual"
                     checked={Boolean(formData.usaCodigoBarrasManual)}
                     onChange={handleCheckboxChange}
-                    className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    className="mt-1 w-5 h-5 text-blue-600 dark:text-blue-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-blue-500"
                   />
                   <div className="flex flex-col">
-                    <span className="font-bold text-gray-900">Habilitar código de barras en productos</span>
-                    <span className="text-sm text-gray-600 mt-0.5">
+                    <span className="font-bold text-gray-900 dark:text-white">Habilitar código de barras en productos</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                       Fuerza la visualización del campo "Código de Barras" en el formulario de productos, sin depender del rubro.
                     </span>
                   </div>
@@ -506,22 +510,22 @@ const EditEmpresa = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Logo
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleLogoChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                 />
                 {errors.logo && (
                   <p className="text-red-500 text-sm mt-1">{errors.logo}</p>
                 )}
                 {logoPreview && (
                   <div className="mt-2">
-                    <p className="text-sm text-gray-600 mb-1">Logo actual:</p>
-                    <img src={logoPreview} alt="Logo" className="h-20 w-20 object-cover rounded" />
+                    <p className="text-sm text-gray-600 dark:text-gray-500 mb-1">Logo actual:</p>
+                    <img src={logoPreview} alt="Logo" className="h-20 w-20 object-cover rounded-xl border border-gray-200 dark:border-slate-700" />
                   </div>
                 )}
               </div>
@@ -565,8 +569,8 @@ const EditEmpresa = () => {
           </div>
 
           {/* Información Bancaria */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Información Bancaria (Para Cotizaciones)</h2>
+          <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Información Bancaria (Para Cotizaciones)</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <InputPro
@@ -617,9 +621,9 @@ const EditEmpresa = () => {
 
           {/* Integración SUNAT - Solo para empresas FORMALES */}
           {formData.tipoEmpresa === 'FORMAL' && (
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Integración SUNAT</h2>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Integración SUNAT</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Datos proporcionados por el proveedor SUNAT para facturación electrónica.
               </p>
 
@@ -652,9 +656,9 @@ const EditEmpresa = () => {
           )}
 
           {/* Información adicional */}
-          <div className="bg-blue-50 p-6 rounded-lg">
-            <h3 className="text-md font-semibold text-blue-800 mb-2">Información del Plan</h3>
-            <div className="text-sm text-blue-700">
+          <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+            <h3 className="text-md font-semibold text-blue-800 dark:text-blue-400 mb-2">Información del Plan</h3>
+            <div className="text-sm text-blue-700 dark:text-blue-300">
               <p><strong>Plan actual:</strong> {empresa?.plan?.nombre}</p>
               {empresa?.plan?.descripcion && (
                 <p><strong>Descripción:</strong> {empresa?.plan?.descripcion}</p>
@@ -663,9 +667,9 @@ const EditEmpresa = () => {
                 <p><strong>Límite de usuarios:</strong> {empresa?.plan?.limiteUsuarios}</p>
               )}
               <p><strong>Estado:</strong>
-                <span className={`ml-2 px-2 py-1 rounded text-xs ${empresa?.estado === 'ACTIVO'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${empresa?.estado === 'ACTIVO'
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-900/50'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/50'
                   }`}>
                   {empresa.estado}
                 </span>
@@ -676,51 +680,51 @@ const EditEmpresa = () => {
           {/* Tarjetas de planes (solo precios) */}
           {planes && planes.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-md font-semibold text-[#0F172A] mb-3">Planes disponibles</h3>
+              <h3 className="text-md font-semibold text-[#0F172A] dark:text-white mb-3">Planes disponibles</h3>
               <div className="grid gap-4 md:grid-cols-3">
                 {planes.map((plan: any) => {
                   const isCurrent = plan.id === formData.planId;
                   return (
                     <div
                       key={plan.id}
-                      className={`flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 ${isCurrent
-                        ? 'border-[#4F46E5] shadow-[0_0_0_1px_rgba(79,70,229,0.4)]'
-                        : 'border-gray-200 hover:shadow-md'
+                      className={`flex flex-col justify-between rounded-2xl border bg-white dark:bg-[#0A0D14] p-5 shadow-sm transition-all duration-200 ${isCurrent
+                        ? 'border-[#4F46E5] dark:border-indigo-500 shadow-[0_0_0_1px_rgba(79,70,229,0.4)] dark:shadow-indigo-500/20'
+                        : 'border-gray-200 dark:border-slate-800 hover:shadow-md'
                         }`}
                     >
                       <div>
-                        <p className="text-xs uppercase tracking-[0.14em] text-[#9CA3AF] mb-1">
+                        <p className="text-xs uppercase tracking-[0.14em] text-[#9CA3AF] dark:text-gray-500 mb-1">
                           {plan.nombre}
                         </p>
-                        <p className="text-2xl font-semibold text-[#111827] mb-1">
+                        <p className="text-2xl font-semibold text-[#111827] dark:text-white mb-1">
                           S/ {plan.costo}
-                          <span className="text-sm font-normal text-[#6B7280] ml-1">
+                          <span className="text-sm font-normal text-[#6B7280] dark:text-gray-500 ml-1">
                             / {plan.tipoFacturacion ? plan.tipoFacturacion.toLowerCase() : 'mensual'}
                           </span>
                         </p>
                         <div className="mt-2 space-y-1">
                           {plan.tieneTienda && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Tienda Virtual
                             </div>
                           )}
                           {plan.tieneCulqi && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Pagos con Culqi
                             </div>
                           )}
                           {plan.tieneDeliveryGPS && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Delivery con GPS
                             </div>
                           )}
                           {plan.tieneGaleria && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Galería de Imágenes
                             </div>
                           )}
                           {plan.tieneBanners && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Banners Promocionales
                             </div>
                           )}

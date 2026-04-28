@@ -10,19 +10,27 @@ const ReportesComprobantes = () => {
     const vm = useReporteViewModel();
 
     return (
-        <div className="min-h-screen px-2 pb-4">
-            <div className="flex relative flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Reporte Contable</h1>
-                    <p className="text-sm text-gray-500 mt-1">Resumen de comprobantes electrónicos por período</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <Icon icon="solar:chart-2-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                        Reporte Contable
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Resumen de comprobantes electrónicos por período</p>
                 </div>
-                <Button color="success" onMouseEnter={() => vm.setIsHoveredExp(true)} onMouseLeave={() => vm.setIsHoveredExp(false)} onClick={vm.handleExport}>
-                    <Icon icon="solar:export-bold" className="mr-2" />Exportar Excel
-                </Button>
+                <button
+                    type="button"
+                    onClick={vm.handleExport}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                >
+                    <Icon icon="solar:export-bold" className="text-lg" />
+                    Exportar Excel
+                </button>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="p-5 border-b border-gray-100">
-                    <div className="flex items-center gap-2 mb-4"><Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" /><h3 className="font-semibold text-gray-800">Filtros</h3></div>
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-4"><Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" /><h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3></div>
                     <div className="flex flex-col relative z-[999] sm:flex-row gap-4 flex-wrap">
                         <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" />
                         <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" />
@@ -59,25 +67,25 @@ const ReportesComprobantes = () => {
                                 ]} />
                             </div>
                             {vm.resumenReporte !== null && (
-                                <div className="mt-6 p-5 bg-gray-50 rounded-xl border border-gray-100">
-                                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Icon icon="solar:chart-2-bold-duotone" className="text-blue-600" />Resumen del Período</h4>
+                                <div className="mt-6 p-5 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-800">
+                                    <h4 className="font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><Icon icon="solar:chart-2-bold-duotone" className="text-blue-600" />Resumen del Período</h4>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         {[
-                                            ['Boletas', vm.resumenReporte.totalBoletas, 'text-gray-900'],
-                                            ['Facturas', vm.resumenReporte.totalFacturas, 'text-gray-900'],
-                                            ['Nota de Crédito', vm.resumenReporte.totalNotasCredito, 'text-red-500'],
-                                            ['Nota de Débito', vm.resumenReporte.totalNotasDebito, 'text-gray-900'],
-                                            ['Total Descuentos', vm.resumenReporte.totalDescuentos, 'text-orange-500'],
-                                            ['Op. Gravadas', vm.resumenReporte.totalGravadas, 'text-gray-900'],
-                                            ['Op. Inafectas', vm.resumenReporte.totalInafectas, 'text-gray-900'],
-                                            ['Total IGV (18%)', vm.resumenReporte.totalIGV, 'text-gray-900'],
+                                            ['Boletas', vm.resumenReporte.totalBoletas, 'text-gray-900 dark:text-white'],
+                                            ['Facturas', vm.resumenReporte.totalFacturas, 'text-gray-900 dark:text-white'],
+                                            ['Nota de Crédito', vm.resumenReporte.totalNotasCredito, 'text-red-500 dark:text-red-400'],
+                                            ['Nota de Débito', vm.resumenReporte.totalNotasDebito, 'text-gray-900 dark:text-white'],
+                                            ['Total Descuentos', vm.resumenReporte.totalDescuentos, 'text-orange-500 dark:text-orange-400'],
+                                            ['Op. Gravadas', vm.resumenReporte.totalGravadas, 'text-gray-900 dark:text-white'],
+                                            ['Op. Inafectas', vm.resumenReporte.totalInafectas, 'text-gray-900 dark:text-white'],
+                                            ['Total IGV (18%)', vm.resumenReporte.totalIGV, 'text-gray-900 dark:text-white'],
                                         ].map(([label, val, colorClass]) => (
-                                            <div key={label as string} className="bg-white rounded-lg p-3 border border-gray-100">
-                                                <p className="text-xs text-gray-500">{label as string}</p>
+                                            <div key={label as string} className="bg-white dark:bg-[#111827] rounded-lg p-3 border border-gray-100 dark:border-slate-800">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{label as string}</p>
                                                 <p className={`text-lg font-bold ${colorClass as string}`}>S/ {typeof val === 'number' ? (val as number).toFixed(2) : '0.00'}</p>
                                             </div>
                                         ))}
-                                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white">
+                                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white shadow-lg shadow-blue-500/20">
                                             <p className="text-xs text-blue-100">Total Ventas Neto</p>
                                             <p className="text-xl font-bold">S/ {vm.resumenReporte.totalVenta.toFixed(2)}</p>
                                         </div>

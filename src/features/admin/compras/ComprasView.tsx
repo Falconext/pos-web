@@ -59,12 +59,12 @@ export default function ComprasView() {
     ];
 
     return (
-        <div className="min-h-screen px-2 pb-4">
+        <div className="min-h-screen px-2 pb-4 dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cuentas por Pagar / Compras</h1>
-                    <p className="text-sm text-gray-500 mt-1">Gestión de compras y pagos a proveedores</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Cuentas por Pagar / Compras</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestión de compras y pagos a proveedores</p>
                 </div>
                 <Button color="secondary" className="flex items-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none hover:opacity-90" onClick={actions.openNuevaCompra}>
                     <Icon icon="solar:cart-plus-bold" className="text-lg" />
@@ -72,20 +72,20 @@ export default function ComprasView() {
                 </Button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Stats */}
-                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/20">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         {/* KPI 1 */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-violet-600 text-[13px] font-bold tracking-wide uppercase">Facturas (Vista)</h3>
-                                <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 group-hover:-translate-y-1 transition-transform">
+                                <h3 className="text-violet-600 dark:text-violet-400 text-[13px] font-bold tracking-wide uppercase">Facturas (Vista)</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 dark:shadow-violet-900/20 group-hover:-translate-y-1 transition-transform">
                                     <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{totalCompras || 0}</h2>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{totalCompras || 0}</h2>
                                 <div className="flex items-center gap-1.5 opacity-0">
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
@@ -93,15 +93,15 @@ export default function ComprasView() {
                         </div>
 
                         {/* KPI 2 */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-rose-500 text-[13px] font-bold tracking-wide uppercase">Saldo por Pagar</h3>
-                                <div className="w-10 h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 group-hover:-translate-y-1 transition-transform">
+                                <h3 className="text-rose-500 dark:text-rose-400 text-[13px] font-bold tracking-wide uppercase">Saldo por Pagar</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 group-hover:-translate-y-1 transition-transform">
                                     <Icon icon="solar:money-bag-bold-duotone" className="text-xl" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">S/ {totalPorPagar.toFixed(2)}</h2>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">S/ {totalPorPagar.toFixed(2)}</h2>
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-gray-400 text-xs font-medium">(Página actual)</span>
                                 </div>
@@ -109,15 +109,15 @@ export default function ComprasView() {
                         </div>
 
                         {/* KPI 3 */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-amber-500 text-[13px] font-bold tracking-wide uppercase">Vencidos (+1 día)</h3>
-                                <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 group-hover:-translate-y-1 transition-transform">
+                                <h3 className="text-amber-500 dark:text-amber-400 text-[13px] font-bold tracking-wide uppercase">Vencidos (+1 día)</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/20 group-hover:-translate-y-1 transition-transform">
                                     <Icon icon="solar:calendar-bold-duotone" className="text-xl" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{totalVencidos}</h2>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{totalVencidos}</h2>
                                 <div className="flex items-center gap-1.5 opacity-0">
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
@@ -127,7 +127,7 @@ export default function ComprasView() {
                 </div>
 
                 {/* Filters */}
-                <div className="p-5 border-b border-gray-100">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="lg:col-span-1">
                             <InputPro
@@ -180,7 +180,7 @@ export default function ComprasView() {
                                     actions={tableActions}
                                 />
                             </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100">
+                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
                                     data={tableData}
                                     optionSelect

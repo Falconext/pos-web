@@ -184,8 +184,11 @@ const FormGuiaRemision = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Nueva Guía de Remisión</h2>
+        <div className="bg-white dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                <Icon icon="solar:delivery-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                Nueva Guía de Remisión
+            </h2>
 
             {/* Cabecera */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -195,11 +198,13 @@ const FormGuiaRemision = () => {
                 <InputPro type="date" label="Fecha Inicio Traslado" name="fechaInicioTraslado" value={formValues.fechaInicioTraslado} onChange={handleChange} isLabel />
             </div>
 
-            {/* Datos del Destinatario */}
-            <div className="mb-6 border p-4 rounded-lg relative">
-                <h3 className="font-semibold text-gray-700 mb-3 block">Datos del Destinatario</h3>
+            <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl relative bg-gray-50/30 dark:bg-slate-900/10">
+                <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
+                    <Icon icon="solar:user-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                    Datos del Destinatario
+                </h3>
                 <div className="absolute top-4 right-4">
-                    <Button size="sm" onClick={() => setIsClientModalOpen(true)} color="secondary">Buscar Cliente</Button>
+                    <Button size="sm" onClick={() => setIsClientModalOpen(true)} outline color="black">Buscar Cliente</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Select
@@ -217,9 +222,11 @@ const FormGuiaRemision = () => {
                 </div>
             </div>
 
-            {/* Datos de Traslado */}
-            <div className="mb-6 border p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-700 mb-3">Datos del Traslado</h3>
+            <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl bg-gray-50/30 dark:bg-slate-900/10">
+                <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
+                    <Icon icon="solar:route-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                    Datos del Traslado
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <TrasladoTypeSelect
                         value={formValues.tipoTraslado}
@@ -255,31 +262,33 @@ const FormGuiaRemision = () => {
                     </div>
                 </div>
 
-                {/* Flags Checkboxes */}
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <label className="flex items-center space-x-2 text-sm">
-                        <input type="checkbox" name="retornoVehiculoVacio" checked={formValues.retornoVehiculoVacio} onChange={handleChange} />
-                        <span>Retorno Vehículo Vacío</span>
+                <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white dark:bg-slate-900/30 rounded-xl border border-gray-100 dark:border-slate-800">
+                    <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                        <input type="checkbox" name="retornoVehiculoVacio" checked={formValues.retornoVehiculoVacio} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Retorno Vehículo Vacío</span>
                     </label>
-                    <label className="flex items-center space-x-2 text-sm">
-                        <input type="checkbox" name="transbordoProgramado" checked={formValues.transbordoProgramado} onChange={handleChange} />
-                        <span>Transbordo Programado</span>
+                    <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                        <input type="checkbox" name="transbordoProgramado" checked={formValues.transbordoProgramado} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Transbordo Programado</span>
                     </label>
-                    <label className="flex items-center space-x-2 text-sm">
-                        <input type="checkbox" name="retornoEnvasesVacios" checked={formValues.retornoEnvasesVacios} onChange={handleChange} />
-                        <span>Retorno Envases Vacíos</span>
+                    <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                        <input type="checkbox" name="retornoEnvasesVacios" checked={formValues.retornoEnvasesVacios} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Retorno Envases Vacíos</span>
                     </label>
-                    <label className="flex items-center space-x-2 text-sm">
-                        <input type="checkbox" name="trasladoTotal" checked={formValues.trasladoTotal} onChange={handleChange} />
-                        <span>Traslado Total (DAM/DS)</span>
+                    <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                        <input type="checkbox" name="trasladoTotal" checked={formValues.trasladoTotal} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Traslado Total (DAM/DS)</span>
                     </label>
                 </div>
             </div>
 
             {/* Datos del Transporte (Condicional) */}
             {formValues.modoTransporte === "01" && (
-                <div className="mb-6 border p-4 rounded-lg bg-gray-50">
-                    <h3 className="font-semibold text-gray-700 mb-3">Transporte Público</h3>
+                <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl bg-blue-50/30 dark:bg-blue-900/10">
+                    <h3 className="font-bold text-blue-900 dark:text-blue-400 mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
+                        <Icon icon="solar:delivery-bold-duotone" />
+                        Transporte Público
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <InputPro label="RUC Transportista" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
                         <InputPro label="Razón Social Transp." name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
@@ -289,8 +298,11 @@ const FormGuiaRemision = () => {
             )}
 
             {formValues.modoTransporte === "02" && (
-                <div className="mb-6 border p-4 rounded-lg bg-gray-50">
-                    <h3 className="font-semibold text-gray-700 mb-3">Transporte Privado</h3>
+                <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl bg-emerald-50/30 dark:bg-emerald-900/10">
+                    <h3 className="font-bold text-emerald-900 dark:text-emerald-400 mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
+                        <Icon icon="solar:bus-bold-duotone" />
+                        Transporte Privado
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <InputPro label="Placa Vehículo" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
                         <InputPro label="DNI/Licencia Conductor" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
@@ -304,8 +316,8 @@ const FormGuiaRemision = () => {
 
             {/* Puntos de Partida y Llegada */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-3">Punto de Partida</h3>
+                <div className="border dark:border-slate-800 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">Punto de Partida</h3>
                     <div className="mb-3">
                         <SelectUbigeo
                             label="Ubigeo Partida"
@@ -320,8 +332,8 @@ const FormGuiaRemision = () => {
                     </div>
                     <InputPro label="Dirección Partida" name="partidaDireccion" value={formValues.partidaDireccion} onChange={handleChange} isLabel />
                 </div>
-                <div className="border p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-3">Punto de Llegada</h3>
+                <div className="border dark:border-slate-800 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">Punto de Llegada</h3>
                     <div className="mb-3">
                         <SelectUbigeo
                             label="Ubigeo Llegada"
@@ -339,11 +351,10 @@ const FormGuiaRemision = () => {
             </div>
 
             {/* Ítems */}
-            <div className="mb-6 border p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-700 mb-3">Bienes a Trasladar</h3>
-
+            <div className="mb-6 border dark:border-slate-800 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">Bienes a Trasladar</h3>
                 {/* Formulario Agregar Ítem */}
-                <div className="flex flex-wrap gap-4 items-end mb-4 bg-gray-50 p-3 rounded">
+                <div className="flex flex-wrap gap-4 items-end mb-4 bg-gray-50 dark:bg-slate-800/50 p-3 rounded">
                     <Button size="sm" onClick={() => setIsProductModalOpen(true)} color="secondary">Buscar Producto</Button>
                     <div className="w-32">
                         <InputPro label="Código" name="newItem.codigoProducto" value={newItem.codigoProducto || ""} onChange={(e) => setNewItem({ ...newItem, codigoProducto: e.target.value })} isLabel />
@@ -364,8 +375,8 @@ const FormGuiaRemision = () => {
 
                 {/* Tabla de Ítems */}
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left border rounded-lg">
-                        <thead className="bg-gray-100 text-gray-700">
+                    <table className="w-full text-sm text-left border dark:border-slate-800 rounded-lg">
+                        <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200">
                             <tr>
                                 <th className="p-3">#</th>
                                 <th className="p-3">Código</th>
@@ -378,11 +389,11 @@ const FormGuiaRemision = () => {
                         <tbody>
                             {formValues.detalles.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="p-4 text-center text-gray-500">No hay ítems agregados</td>
+                                    <td colSpan={6} className="p-4 text-center text-gray-500 dark:text-gray-400">No hay ítems agregados</td>
                                 </tr>
                             ) : (
                                 formValues.detalles.map((item, index) => (
-                                    <tr key={index} className="border-b hover:bg-gray-50">
+                                    <tr key={index} className="border-b dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-gray-900 dark:text-gray-200">
                                         <td className="p-3">{index + 1}</td>
                                         <td className="p-3">{item.codigoProducto}</td>
                                         <td className="p-3">{item.descripcion}</td>

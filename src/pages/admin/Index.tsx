@@ -381,8 +381,8 @@ export default function AdminIndex() {
           </div>
 
           <div className="mt-auto pt-6 flex items-center justify-center gap-6">
-            <ProgressCircle value={financiero.margen} size="lg" color="violet" strokeWidth={8} showAnimation>
-              <span className="text-lg font-bold text-gray-900 dark:text-white">{financiero.margen.toFixed(0)}%</span>
+            <ProgressCircle value={Math.max(0, Math.min(100, financiero.margen))} size="lg" color={financiero.margen >= 0 ? 'violet' : 'rose'} strokeWidth={8} showAnimation>
+              <span className={`text-lg font-bold ${financiero.margen >= 0 ? 'text-gray-900 dark:text-white' : 'text-rose-500'}`}>{financiero.margen.toFixed(0)}%</span>
             </ProgressCircle>
             <div>
               <p className="text-sm font-bold text-gray-900 dark:text-white">Margen de Ganancia</p>

@@ -2,13 +2,13 @@ import { Icon } from "@iconify/react";
 
 export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, printFn: any, handleOpenNewTab: any }) => {
     return (
-        <div className="p-3 pt-2 md:p-5 md:pb-8 bg-gray-50 border-t border-gray-100">
+        <div className="p-3 pt-2 md:p-5 md:pb-8 bg-gray-50 dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
             <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Op. Gravada</span>
                     <span>S/ {vm.opGravadaAdjusted.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>IGV (18%)</span>
                     <span>S/ {vm.igvAdjusted.toFixed(2)}</span>
                 </div>
@@ -18,15 +18,15 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         <span>- S/ {vm.finalDiscount.toFixed(2)}</span>
                     </div>
                 )}
-                <div className="flex justify-between text-xl font-black text-gray-800 pt-2 border-t border-gray-200">
+                <div className="flex justify-between text-xl font-black text-gray-800 dark:text-white pt-2 border-t border-gray-200 dark:border-slate-800">
                     <span>TOTAL</span>
                     <span>S/ {vm.totalAdjusted.toFixed(2)}</span>
                 </div>
 
                 {/* Adelanto field for NP and OT */}
                 {(vm.formValues.tipoDoc === 'NP' || vm.formValues.tipoDoc === 'OT') && !vm.isQuotationRoute && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                        <label className="text-xs font-medium text-gray-700 block mb-1">
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-800">
+                        <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">
                             Adelanto (opcional)
                         </label>
                         <div className="relative">
@@ -38,14 +38,14 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                 placeholder="0.00"
                                 step="0.01"
                                 max={vm.totalAdjusted}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                             />
                         </div>
                         {vm.adelanto > 0 && (
-                            <div className="mt-2 p-2 bg-gray-100 rounded-lg">
+                            <div className="mt-2 p-2 bg-gray-100 dark:bg-slate-800 rounded-lg">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Saldo pendiente:</span>
-                                    <span className="font-bold text-orange-600">
+                                    <span className="text-gray-600 dark:text-gray-400">Saldo pendiente:</span>
+                                    <span className="font-bold text-orange-600 dark:text-orange-400">
                                         S/ {Math.max(0, vm.totalAdjusted - vm.adelanto).toFixed(2)}
                                     </span>
                                 </div>
@@ -60,9 +60,9 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 <div className="border-t">
                     <button
                         onClick={() => vm.setIsQuotationConfigModalOpen(true)}
-                        className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                        <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
                             <Icon icon="solar:settings-bold-duotone" className="text-gray-900" />
                             Configuración Cotización
                         </span>
@@ -78,7 +78,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         <button
                             key={m}
                             onClick={() => vm.setPaymentMethod(m)}
-                            className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'}`}
+                            className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600'}`}
                         >
                             {m}
                         </button>

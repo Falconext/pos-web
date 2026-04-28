@@ -3,6 +3,26 @@ import { devtools } from 'zustand/middleware';
 import axios, { AxiosError } from 'axios';
 import apiClient from '@/utils/apiClient';
 
+export const CATEGORIAS_GASTO = [
+  'Alquiler',
+  'Servicios básicos',
+  'Planilla',
+  'Transporte',
+  'Mantenimiento',
+  'Material de oficina',
+  'Publicidad',
+  'Otros',
+] as const;
+
+export type CategoriaGasto = typeof CATEGORIAS_GASTO[number];
+
+export interface RegistrarEgresoData {
+  monto: number;
+  categoriaGasto: string;
+  descripcionGasto?: string;
+  metodoPago?: string;
+}
+
 export interface AperturaCaja {
   montoInicial: number;
   observaciones?: string;
@@ -24,6 +44,10 @@ export interface MovimientoCaja {
   empresaId: number;
   tipoMovimiento: 'APERTURA' | 'CIERRE' | 'INGRESO' | 'EGRESO';
   fecha: string;
+  monto?: number;
+  categoriaGasto?: string;
+  descripcionGasto?: string;
+  metodoPago?: string;
   montoInicial?: number;
   montoFinal?: number;
   montoEfectivo?: number;
@@ -46,6 +70,7 @@ export interface MovimientoCaja {
 
 export interface EstadoCaja {
   estado: 'CERRADA' | 'ABIERTA' | 'PENDIENTE_CIERRE';
+  totalEgresos?: number;
   movimiento?: MovimientoCaja;
   ventasDelDia: {
     totalIngresos: number;
@@ -123,6 +148,9 @@ interface CajaState {
   // Acciones
   abrirCaja: (data: AperturaCaja) => Promise<{ success: boolean; message: string }>;
   cerrarCaja: (data: CierreCaja) => Promise<{ success: boolean; message: string }>;
+  registrarEgreso: (data: RegistrarEgresoData) => Promise<{ success: boolean; message: string }>;
+  editarEgreso: (id: number, data: Partial<RegistrarEgresoData>) => Promise<{ success: boolean; message: string }>;
+  eliminarEgreso: (id: number) => Promise<{ success: boolean; message: string }>;
   obtenerEstadoCaja: () => Promise<void>;
   obtenerHistorialCaja: (page?: number, limit?: number) => Promise<void>;
   obtenerArqueoCaja: (fechaInicio?: string, fechaFin?: string) => Promise<void>;
@@ -191,17 +219,76 @@ export const useCajaStore = create<CajaState>()(
           );
           const resp: any = response.data;
           if (resp?.code === 1) {
-            // Actualizar estado de caja después de cerrar
             await get().obtenerEstadoCaja();
             set({ loading: false });
             return { success: true, message: resp.message || 'Caja cerrada' };
           }
-          
+
           set({ loading: false, error: 'Error al cerrar caja' });
           return { success: false, message: 'Error al cerrar caja' };
         } catch (error) {
           const axiosError = error as AxiosError<any>;
           const errorMessage = axiosError.response?.data?.message || 'Error al cerrar caja';
+          set({ loading: false, error: errorMessage });
+          return { success: false, message: errorMessage };
+        }
+      },
+
+      registrarEgreso: async (data: RegistrarEgresoData) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await apiClient.post('caja/egreso', data);
+          const resp: any = response.data;
+          if (resp?.code === 1) {
+            await get().obtenerEstadoCaja();
+            set({ loading: false });
+            return { success: true, message: resp.message || 'Gasto registrado' };
+          }
+          set({ loading: false, error: 'Error al registrar gasto' });
+          return { success: false, message: resp?.message || 'Error al registrar gasto' };
+        } catch (error) {
+          const axiosError = error as AxiosError<any>;
+          const errorMessage = axiosError.response?.data?.message || 'Error al registrar gasto';
+          set({ loading: false, error: errorMessage });
+          return { success: false, message: errorMessage };
+        }
+      },
+
+      editarEgreso: async (id: number, data: Partial<RegistrarEgresoData>) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await apiClient.patch(`caja/egreso/${id}`, data);
+          const resp: any = response.data;
+          if (resp?.code === 1) {
+            await get().obtenerEstadoCaja();
+            set({ loading: false });
+            return { success: true, message: resp.message || 'Gasto actualizado' };
+          }
+          set({ loading: false, error: 'Error al actualizar gasto' });
+          return { success: false, message: resp?.message || 'Error al actualizar gasto' };
+        } catch (error) {
+          const axiosError = error as AxiosError<any>;
+          const errorMessage = axiosError.response?.data?.message || 'Error al actualizar gasto';
+          set({ loading: false, error: errorMessage });
+          return { success: false, message: errorMessage };
+        }
+      },
+
+      eliminarEgreso: async (id: number) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await apiClient.delete(`caja/egreso/${id}`);
+          const resp: any = response.data;
+          if (resp?.code === 1) {
+            await get().obtenerEstadoCaja();
+            set({ loading: false });
+            return { success: true, message: resp.message || 'Gasto eliminado' };
+          }
+          set({ loading: false, error: 'Error al eliminar gasto' });
+          return { success: false, message: resp?.message || 'Error al eliminar gasto' };
+        } catch (error) {
+          const axiosError = error as AxiosError<any>;
+          const errorMessage = axiosError.response?.data?.message || 'Error al eliminar gasto';
           set({ loading: false, error: errorMessage });
           return { success: false, message: errorMessage };
         }

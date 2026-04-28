@@ -53,12 +53,12 @@ const ProductSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                     />
                 </div>
 
-                <div className="overflow-y-auto max-h-[400px] border rounded-lg">
+                <div className="overflow-y-auto max-h-[400px] border dark:border-slate-800 rounded-lg">
                     {isLoading ? (
-                        <div className="p-4 text-center">Cargando...</div>
+                        <div className="p-4 text-center dark:text-gray-400">Cargando...</div>
                     ) : products && products.length > 0 ? (
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                            <thead className="text-xs text-gray-700 dark:text-gray-200 uppercase bg-gray-50 dark:bg-slate-800">
                                 <tr>
                                     <th className="px-4 py-3">Código</th>
                                     <th className="px-4 py-3">Descripción</th>
@@ -69,11 +69,11 @@ const ProductSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                             </thead>
                             <tbody>
                                 {products.map((product: any) => (
-                                    <tr key={product.id} className="bg-white border-b hover:bg-gray-50">
-                                        <td className="px-4 py-3 font-medium">{product.codigo}</td>
-                                        <td className="px-4 py-3">{product.descripcion}</td>
-                                        <td className="px-4 py-3">{product.stock}</td>
-                                        <td className="px-4 py-3">S/ {Number(product.precioUnitario).toFixed(2)}</td>
+                                    <tr key={product.id} className="bg-white dark:bg-[#111827] border-b dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                                        <td className="px-4 py-3 font-medium dark:text-white">{product.codigo}</td>
+                                        <td className="px-4 py-3 dark:text-gray-300">{product.descripcion}</td>
+                                        <td className="px-4 py-3 dark:text-gray-300">{product.stock}</td>
+                                        <td className="px-4 py-3 dark:text-gray-300">S/ {Number(product.precioUnitario).toFixed(2)}</td>
                                         <td className="px-4 py-3">
                                             <Button
                                                 size="sm"
@@ -91,7 +91,7 @@ const ProductSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="p-4 text-center text-gray-500">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron productos
                         </div>
                     )}

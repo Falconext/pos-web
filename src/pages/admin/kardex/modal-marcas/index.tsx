@@ -101,7 +101,7 @@ const BrandForm = ({ closeModal }: { closeModal: any }) => {
 
   return (
     <div className="px-6 mt-5">
-      <div className="flex flex-col md:flex-row gap-6 items-start border-b border-[#e5e7eb] pb-10">
+      <div className="flex flex-col md:flex-row gap-6 items-start border-b border-[#e5e7eb] dark:border-slate-800 pb-10">
         <div className="flex-shrink-0">
           <CircularImageUploader
             imageUrl={previewUrl}

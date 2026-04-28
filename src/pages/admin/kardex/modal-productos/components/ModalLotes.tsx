@@ -109,7 +109,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                 {isEdit && formValues.productoId ? (
                     <div className="space-y-4 px-4 pb-4">
                         <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-bold text-gray-800">Historial de Lotes</h4>
+                            <h4 className="font-bold text-gray-800 dark:text-white">Historial de Lotes</h4>
                             <Button
                                 color="black"
                                 onClick={() => setShowLoteForm(!showLoteForm)}
@@ -122,7 +122,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
 
                         {/* Formulario Agregar Lote */}
                         {showLoteForm && (
-                            <div className="bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 mb-4 animate-fade-in-down">
+                            <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 mb-4 animate-fade-in-down">
                                 <div className="grid grid-cols-2 gap-3 mb-3">
                                     <InputPro name="lote" value={loteForm.lote} onChange={handleLoteFormChange} error={loteErrors.lote} label="Código de Lote" placeholder="L2024-001" isLabel />
                                     <div className="relative">
@@ -152,11 +152,11 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                 const isPorVencer = diasRestantes >= 0 && diasRestantes <= 30;
 
                                 return (
-                                    <div key={lote.id} className="p-4 rounded-xl border border-gray-100 bg-white hover:border-gray-300 transition-colors shadow-sm">
+                                    <div key={lote.id} className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-gray-300 dark:hover:border-slate-600 transition-colors shadow-sm">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className="font-bold text-gray-800">{lote.lote}</span>
+                                                    <span className="font-bold text-gray-800 dark:text-gray-200">{lote.lote}</span>
                                                     {isVencido ? (
                                                         <span className="text-[10px] px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-bold">VENCIDO</span>
                                                     ) : isPorVencer ? (
@@ -170,8 +170,8 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <div className="font-bold text-lg text-gray-900">{lote.stockActual}</div>
-                                                <div className="text-[10px] text-gray-400 uppercase font-medium">Stock Actual</div>
+                                                <div className="font-bold text-lg text-gray-900 dark:text-white">{lote.stockActual}</div>
+                                                <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Stock Actual</div>
                                             </div>
                                         </div>
                                     </div>
@@ -186,9 +186,9 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                     </div>
                 ) : (
                     <div className='px-4 pt-2'>
-                        <div className="p-6 rounded-xl border border-dashed border-indigo-200 bg-[#FCFDFD]">
-                            <h5 className="font-bold text-gray-900 mb-2">Lote Inicial</h5>
-                            <p className="text-sm text-gray-500 mb-6">Registra el primer lote junto con la creación del producto.</p>
+                        <div className="p-6 rounded-xl border border-dashed border-indigo-200 dark:border-indigo-900/30 bg-[#FCFDFD] dark:bg-indigo-950/10">
+                            <h5 className="font-bold text-gray-900 dark:text-white mb-2">Lote Inicial</h5>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Registra el primer lote junto con la creación del producto.</p>
 
                             <div className="space-y-4">
                                 <InputPro

@@ -193,22 +193,22 @@ const ModalDetraccion = ({
     const tipoSeleccionado = tiposDetraccion.find(t => t.id === formData.tipoDetraccionId);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200 border dark:border-slate-800">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-500 rounded-lg">
                             <Icon icon="solar:calculator-bold" className="text-white" width={24} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800">{mode === 'RETENCION' ? 'Configurar Retención 3%' : 'Configurar Detracción'}</h2>
-                            <p className="text-sm text-gray-500">{mode === 'RETENCION' ? 'Régimen de Retenciones del IGV' : 'Sistema de Pago de Obligaciones Tributarias (SPOT)'}</p>
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-white">{mode === 'RETENCION' ? 'Configurar Retención 3%' : 'Configurar Detracción'}</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{mode === 'RETENCION' ? 'Régimen de Retenciones del IGV' : 'Sistema de Pago de Obligaciones Tributarias (SPOT)'}</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-white/50 rounded-full transition-colors"
+                        className="p-2 hover:bg-white/50 dark:hover:bg-slate-800 rounded-full transition-colors"
                     >
                         <Icon icon="solar:close-circle-bold" className="text-gray-400" width={24} />
                     </button>
@@ -271,43 +271,43 @@ const ModalDetraccion = ({
                                     label='Cta. Banco Nación *'
                                     isLabel
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Cuenta de detracciones del emisor</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cuenta de detracciones del emisor</p>
                             </div>
                         </div>
                     )}
 
                     {/* Resumen Visual */}
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800/50 dark:to-slate-900/50 rounded-xl p-4 border-2 border-blue-200 dark:border-blue-800/30">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-blue-500 rounded-lg">
                                     <Icon icon="solar:wallet-money-bold" className="text-white" width={20} />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-600">Monto a {mode === 'RETENCION' ? 'Retener' : 'Detraer'}</p>
-                                    <p className="text-2xl font-bold text-gray-800">
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">Monto a {mode === 'RETENCION' ? 'Retener' : 'Detraer'}</p>
+                                    <p className="text-2xl font-bold text-gray-800 dark:text-white">
                                         S/ {formData.montoDetraccion.toFixed(2)}
                                     </p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-gray-600">Total Factura</p>
-                                <p className="text-lg font-semibold text-gray-700">S/ {totalFacturaNumber.toFixed(2)}</p>
-                                <p className="text-xs text-blue-600 font-medium">{formData.porcentajeDetraccion}% {mode === 'RETENCION' ? 'retención' : 'detracción'}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">Total Factura</p>
+                                <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">S/ {totalFacturaNumber.toFixed(2)}</p>
+                                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{formData.porcentajeDetraccion}% {mode === 'RETENCION' ? 'retención' : 'detracción'}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Forma de Pago y Cuotas */}
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="bg-gray-50 dark:bg-slate-800/30 rounded-xl p-4 border border-gray-200 dark:border-slate-800">
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pago</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Forma de Pago</label>
                                     <select
                                         value={formData.formaPago || 'Contado'}
                                         onChange={handleFormaPagoChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                     >
                                         <option value="Contado">Contado</option>
                                         <option value="Credito">Crédito</option>
@@ -315,9 +315,9 @@ const ModalDetraccion = ({
                                 </div>
                                 {formData.formaPago === 'Credito' && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Monto a Crédito</label>
-                                        <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                                            <p className="font-bold text-green-700">S/ {(totalFacturaNumber - formData.montoDetraccion).toFixed(2)}</p>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Monto a Crédito</label>
+                                        <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-lg">
+                                            <p className="font-bold text-green-700 dark:text-green-400">S/ {(totalFacturaNumber - formData.montoDetraccion).toFixed(2)}</p>
                                         </div>
                                     </div>
                                 )}
@@ -326,7 +326,7 @@ const ModalDetraccion = ({
                             {formData.formaPago === 'Credito' && (
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium text-gray-700">Cuotas</label>
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Cuotas</label>
                                         <button
                                             type="button"
                                             onClick={agregarCuota}
@@ -339,19 +339,19 @@ const ModalDetraccion = ({
 
                                     <div className="space-y-2 max-h-40 overflow-y-auto">
                                         {(formData.cuotas || []).map((cuota, index) => (
-                                            <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center bg-white p-2 rounded-lg border border-gray-200">
+                                            <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-gray-200 dark:border-slate-700">
                                                 <input
                                                     type="number"
                                                     value={cuota.monto || ''}
                                                     onChange={(e) => actualizarCuota(index, 'monto', e.target.value)}
                                                     placeholder="Monto"
-                                                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="px-2 py-1.5 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                                 />
                                                 <input
                                                     type="date"
                                                     value={cuota.fechaVencimiento || ''}
                                                     onChange={(e) => actualizarCuota(index, 'fechaVencimiento', e.target.value)}
-                                                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="px-2 py-1.5 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                                 />
                                                 <button
                                                     type="button"
@@ -365,11 +365,11 @@ const ModalDetraccion = ({
                                     </div>
 
                                     {(formData.cuotas || []).length > 0 && (
-                                        <div className="flex justify-between items-center p-2 bg-blue-50 rounded-lg border border-blue-200">
-                                            <span className="text-sm font-medium text-gray-700">Suma de Cuotas:</span>
+                                        <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/30">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Suma de Cuotas:</span>
                                             <span className={`font-bold ${Math.abs((formData.cuotas || []).reduce((sum, c) => sum + (c.monto || 0), 0) - (totalFacturaNumber - formData.montoDetraccion)) < 0.01
-                                                ? 'text-green-600'
-                                                : 'text-red-600'
+                                                ? 'text-green-600 dark:text-green-400'
+                                                : 'text-red-600 dark:text-red-400'
                                                 }`}>
                                                 S/ {((formData.cuotas || []).reduce((sum, c) => sum + (c.monto || 0), 0)).toFixed(2)}
                                             </span>
@@ -381,12 +381,12 @@ const ModalDetraccion = ({
                     </div>
 
                     {/* Info importante */}
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3">
                         <div className="flex gap-2">
-                            <Icon icon="solar:danger-triangle-bold" className="text-amber-600 flex-shrink-0 mt-0.5" width={18} />
-                            <div className="text-xs text-amber-800">
-                                <p className="font-semibold mb-1">Recordatorio SUNAT:</p>
-                                <ul className="list-disc list-inside space-y-0.5 text-amber-700">
+                            <Icon icon="solar:danger-triangle-bold" className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" width={18} />
+                            <div className="text-xs text-amber-800 dark:text-amber-300">
+                                <p className="font-semibold mb-1 dark:text-amber-400">Recordatorio SUNAT:</p>
+                                <ul className="list-disc list-inside space-y-0.5 text-amber-700 dark:text-amber-300/80">
                                     {mode === 'RETENCION' ? (
                                         <>
                                             <li>El cliente retiene el 3% del total (Agente de Retención)</li>
@@ -405,7 +405,7 @@ const ModalDetraccion = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-100 flex gap-3 justify-end bg-gray-50">
+                <div className="p-6 border-t border-gray-100 dark:border-slate-800 flex gap-3 justify-end bg-gray-50 dark:bg-slate-800/30">
                     <Button
                         color="lila"
                         onClick={onClose}

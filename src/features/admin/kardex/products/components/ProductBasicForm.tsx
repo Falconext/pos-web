@@ -1,4 +1,5 @@
 import React from 'react';
+import { BarcodeScannerInput } from '@/components/BarcodeScannerInput';
 import { Icon } from '@iconify/react';
 import Select from '@/components/Select';
 import InputPro from '@/components/InputPro';
@@ -42,36 +43,36 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                 {/* Botones Selectores de Drawers */}
                 <div className="flex flex-col gap-4">
-                    <button type="button" onClick={() => setShowMedicamentoModal(true)} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-400 hover:shadow-md transition-all group text-left">
+                    <button type="button" onClick={() => setShowMedicamentoModal(true)} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1E2435] hover:border-blue-400 hover:shadow-md transition-all group text-left">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                 <Icon icon="solar:pill-bold-duotone" width={20} />
                             </div>
                             <div>
-                                <h4 className="text-sm font-bold text-gray-900">Detalles del Medicamento</h4>
-                                <p className="text-xs text-gray-500">Principio activo, concentración...</p>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white">Detalles del Medicamento</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Principio activo, concentración...</p>
                             </div>
                         </div>
-                        <Icon icon="solar:alt-arrow-right-linear" width={20} className="text-gray-400 group-hover:text-blue-600" />
+                        <Icon icon="solar:alt-arrow-right-linear" width={20} className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600" />
                     </button>
 
-                    <button type="button" onClick={() => setShowLotesModal(true)} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white hover:border-indigo-400 hover:shadow-md transition-all group text-left">
+                    <button type="button" onClick={() => setShowLotesModal(true)} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1E2435] hover:border-indigo-400 hover:shadow-md transition-all group text-left">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                 <Icon icon="solar:box-minimalistic-bold-duotone" width={20} />
                             </div>
                             <div>
-                                <h4 className="text-sm font-bold text-gray-900">Gestión de Lotes</h4>
-                                <p className="text-xs text-gray-500">{isEdit ? 'Historial y vencimientos' : 'Configurar lote inicial'}</p>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white">Gestión de Lotes</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{isEdit ? 'Historial y vencimientos' : 'Configurar lote inicial'}</p>
                             </div>
                         </div>
-                        <Icon icon="solar:alt-arrow-right-linear" width={20} className="text-gray-400 group-hover:text-indigo-600" />
+                        <Icon icon="solar:alt-arrow-right-linear" width={20} className="text-gray-400 dark:text-gray-500 group-hover:text-indigo-600" />
                     </button>
                 </div>
 
                 {/* Stock Global */}
-                <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50">
-                    <h5 className="text-sm font-bold text-gray-900 mb-3 ml-1">Inventario General</h5>
+                <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/30">
+                    <h5 className="text-sm font-bold text-gray-900 dark:text-white mb-3 ml-1">Inventario General</h5>
                     <div className="flex flex-col gap-4">
                         <InputPro autocomplete="off" type="number" value={formValues?.stock} error={errors.stock} name="stock" onChange={handleChange} isLabel label="Stock Total" placeholder="0" />
                         <div className="flex gap-2">
@@ -99,14 +100,14 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
             <div className="col-span-3 md:col-span-1 relative">
                 <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-700">{labels.nombre}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{labels.nombre}</label>
                     <button
                         type="button"
                         onClick={handleAutoCategorize}
                         disabled={isCategorizing || !formValues.descripcion}
                         className={`text-[10px] flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors ${!formValues.descripcion
-                            ? 'text-gray-300 bg-gray-50'
-                            : 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200'
+                            ? 'text-gray-300 dark:text-gray-600 bg-gray-50 dark:bg-slate-800'
+                            : 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800'
                             }`}
                         title="Auto-detectar categoría y marca basada en el nombre"
                     >
@@ -153,8 +154,8 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             )}
 
             {features.permiteFraccionamiento && (
-                <div className="col-span-3 border-t pt-4 mt-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <div className="col-span-3 border-t dark:border-slate-800 pt-4 mt-4">
+                    <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <Icon icon="solar:box-minimalistic-bold-duotone" width={16} />
                         Unidades de Compra/Venta
                     </h5>
@@ -168,13 +169,19 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
             {features.usaCodigoBarras && (
                 <div className="col-span-3 md:col-span-2">
-                    <InputPro autocomplete="off" value={(formValues as any)?.codigoBarras || ''} name="codigoBarras" onChange={handleChange} isLabel label="Código de Barras" placeholder="EAN-13 o UPC" />
+                    <BarcodeScannerInput
+                        name="codigoBarras"
+                        label="Código de Barras"
+                        value={(formValues as any)?.codigoBarras || ''}
+                        onChange={handleChange}
+                        placeholder="Escanea o escribe EAN-13 / UPC"
+                    />
                 </div>
             )}
 
             {features.gestionOfertas && (
-                <div className="col-span-3 border-t pt-4 mt-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <div className="col-span-3 border-t dark:border-slate-800 pt-4 mt-4">
+                    <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <Icon icon="solar:tag-price-bold-duotone" width={16} />
                         Ofertas y Promociones
                     </h5>
@@ -200,12 +207,12 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
             {isRestaurante && gruposModificadores && gruposModificadores.length > 0 && (
                 <div className="col-span-2 mt-4">
-                    <div className="p-4 rounded-lg border border-gray-200">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+                        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                             <Icon icon="mdi:food-variant" width={16} height={16} />
                             Personalización del Plato
                         </h5>
-                        <p className="text-xs text-gray-500 mb-3">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                             Selecciona los grupos de modificadores que los clientes podrán elegir al pedir este plato (ej: cremas, acompañamientos, extras)
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -214,18 +221,18 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                     key={grupo.id}
                                     type="button"
                                     onClick={() => toggleGrupoSeleccionado(grupo.id)}
-                                    className={`p-3 rounded-lg border-2 transition-all text-left ${gruposSeleccionados.includes(grupo.id) ? 'border-[#6A6CFF] bg-[#6A6CFF]/5' : 'border-gray-200 hover:border-gray-300'}`}
+                                    className={`p-3 rounded-lg border-2 transition-all text-left ${gruposSeleccionados.includes(grupo.id) ? 'border-[#6A6CFF] bg-[#6A6CFF]/5 dark:bg-[#6A6CFF]/10' : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'}`}
                                 >
                                     <div className="flex items-start gap-2">
-                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${gruposSeleccionados.includes(grupo.id) ? 'border-[#6A6CFF] bg-[#6A6CFF]' : 'border-gray-300'}`}>
+                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${gruposSeleccionados.includes(grupo.id) ? 'border-[#6A6CFF] bg-[#6A6CFF]' : 'border-gray-300 dark:border-slate-600'}`}>
                                             {gruposSeleccionados.includes(grupo.id) && <Icon icon="mdi:check" className="text-white" width={12} height={12} />}
                                         </div>
                                         <div className="flex-1">
-                                            <div className="font-medium text-sm text-gray-800">{grupo.nombre}</div>
-                                            {grupo.descripcion && <div className="text-xs text-gray-500 mt-0.5">{grupo.descripcion}</div>}
+                                            <div className="font-medium text-sm text-gray-800 dark:text-gray-200">{grupo.nombre}</div>
+                                            {grupo.descripcion && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{grupo.descripcion}</div>}
                                             <div className="flex items-center gap-2 mt-1">
-                                                {grupo.esObligatorio && <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded">Obligatorio</span>}
-                                                <span className="text-[10px] text-gray-400">{grupo.opciones?.length || 0} opciones</span>
+                                                {grupo.esObligatorio && <span className="text-[10px] px-1.5 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded">Obligatorio</span>}
+                                                <span className="text-[10px] text-gray-400 dark:text-gray-500">{grupo.opciones?.length || 0} opciones</span>
                                             </div>
                                         </div>
                                     </div>

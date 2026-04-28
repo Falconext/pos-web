@@ -53,12 +53,12 @@ const ClientSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                     />
                 </div>
 
-                <div className="overflow-y-auto max-h-[400px] border rounded-lg">
+                <div className="overflow-y-auto max-h-[400px] border dark:border-slate-800 rounded-lg">
                     {isLoading ? (
-                        <div className="p-4 text-center">Cargando...</div>
+                        <div className="p-4 text-center dark:text-gray-400">Cargando...</div>
                     ) : clients && clients.length > 0 ? (
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <thead className="text-xs text-gray-700 dark:text-gray-200 uppercase bg-gray-50 dark:bg-slate-800">
                                 <tr>
                                     <th className="px-4 py-3">Documento</th>
                                     <th className="px-4 py-3">Razón Social</th>
@@ -67,9 +67,9 @@ const ClientSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                             </thead>
                             <tbody>
                                 {clients.map((client: any) => (
-                                    <tr key={client.id} className="bg-white border-b hover:bg-gray-50">
-                                        <td className="px-4 py-3 font-medium">{client.nroDoc}</td>
-                                        <td className="px-4 py-3">{client.nombre || client.razonSocial}</td>
+                                    <tr key={client.id} className="bg-white dark:bg-[#111827] border-b dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                                        <td className="px-4 py-3 font-medium dark:text-white">{client.nroDoc}</td>
+                                        <td className="px-4 py-3 dark:text-gray-300">{client.nombre || client.razonSocial}</td>
                                         <td className="px-4 py-3">
                                             <Button
                                                 size="sm"
@@ -87,7 +87,7 @@ const ClientSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="p-4 text-center text-gray-500">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron clientes
                         </div>
                     )}

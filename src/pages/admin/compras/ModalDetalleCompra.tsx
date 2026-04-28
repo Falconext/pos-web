@@ -36,16 +36,16 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
             width="900px"
         >
             {isLoading ? (
-                <div className="flex items-center justify-center p-12">
+                <div className="flex items-center justify-center p-12 bg-white dark:bg-[#111827]">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
             ) : (
-                <div className="p-4 space-y-6">
+                <div className="p-4 space-y-6 bg-white dark:bg-[#111827]">
                     {/*Header Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-xl border border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-xl border border-gray-200 dark:border-slate-800">
                         <div>
-                            <label className="block text-xs text-gray-500 font-medium mb-1 mt-1">Proveedor</label>
-                            <div className="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 border border-gray-200">
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 mt-1">Proveedor</label>
+                            <div className="p-3 bg-white dark:bg-slate-800 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700">
                                 {compraDetalle?.proveedor?.nombre || compraDetalle?.proveedor?.nroDoc || '-'}
                             </div>
                         </div>
@@ -60,12 +60,12 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                             isLabel
                         />
                         <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                            <label className="block text-xs text-gray-500 font-medium mb-1">Estado</label>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Estado</label>
                             <div className="flex gap-2">
-                                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${compraDetalle?.estado === 'ACTIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${compraDetalle?.estado === 'ACTIVO' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
                                     {compraDetalle?.estado}
                                 </span>
-                                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${compraDetalle?.estadoPago === 'PAGADO' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${compraDetalle?.estadoPago === 'PAGADO' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'}`}>
                                     {compraDetalle?.estadoPago}
                                 </span>
                             </div>
@@ -74,10 +74,10 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
 
                     {/* Items Table */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Productos</h3>
-                        <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                        <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Productos</h3>
+                        <div className="overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-white text-gray-600 font-medium border-b border-gray-200">
+                                <thead className="bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-3 py-2">Producto</th>
                                         <th className="px-3 py-2 text-center">Cant.</th>
@@ -85,7 +85,7 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                                         <th className="px-3 py-2 text-right">Subtotal</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                                     {(!compraDetalle?.detalles || compraDetalle.detalles.length === 0) ? (
                                         <tr>
                                             <td colSpan={4} className="px-3 py-8 text-center text-gray-400">
@@ -93,19 +93,19 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                                             </td>
                                         </tr>
                                     ) : compraDetalle.detalles.map((item: any, idx: number) => (
-                                        <tr key={idx} className="hover:bg-gray-50/50">
+                                        <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50">
                                             <td className="px-3 py-3">
-                                                <div className="font-medium text-gray-800">{item.descripcion || item.producto?.descripcion}</div>
+                                                <div className="font-medium text-gray-800 dark:text-white">{item.descripcion || item.producto?.descripcion}</div>
                                                 {(item.lote || item.fechaVencimiento) && (
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                                         {item.lote && `Lote: ${item.lote} `}
                                                         {item.fechaVencimiento && `Vence: ${moment(item.fechaVencimiento).format('DD/MM/YYYY')}`}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-3 text-center">{item.cantidad}</td>
-                                            <td className="px-3 py-3 text-right">S/ {Number(item.precioUnitario).toFixed(2)}</td>
-                                            <td className="px-3 py-3 text-right font-medium text-gray-800">S/ {Number(item.total || (item.cantidad * item.precioUnitario)).toFixed(2)}</td>
+                                            <td className="px-3 py-3 text-center dark:text-gray-300">{item.cantidad}</td>
+                                            <td className="px-3 py-3 text-right dark:text-gray-300">S/ {Number(item.precioUnitario).toFixed(2)}</td>
+                                            <td className="px-3 py-3 text-right font-medium text-gray-800 dark:text-white">S/ {Number(item.total || (item.cantidad * item.precioUnitario)).toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -116,10 +116,10 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                     {/* Installments Table */}
                     {compraDetalle?.cuotas && (
                         <div>
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Cronograma de Pagos</h3>
-                            <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Cronograma de Pagos</h3>
+                            <div className="overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-white text-gray-600 font-medium border-b border-gray-200">
+                                    <thead className="bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-slate-700">
                                         <tr>
                                             <th className="px-3 py-2 text-center">Nro</th>
                                             <th className="px-3 py-2 text-center">Vencimiento</th>
@@ -127,7 +127,7 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                                             <th className="px-3 py-2 text-center">Estado</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                                         {(() => {
                                             let cuotasParsed: any[] = [];
                                             try {
@@ -144,12 +144,12 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                                             if (!Array.isArray(cuotasParsed)) cuotasParsed = [];
 
                                             return cuotasParsed.map((cuota: any, idx: number) => (
-                                                <tr key={idx} className="hover:bg-gray-50/50">
-                                                    <td className="px-3 py-3 text-center text-gray-500">{idx + 1}</td>
-                                                    <td className="px-3 py-3 text-center">{(cuota.fecha || cuota.fechaVencimiento) ? moment(cuota.fecha || cuota.fechaVencimiento).format('DD/MM/YYYY') : '-'}</td>
-                                                    <td className="px-3 py-3 text-right font-medium">S/ {Number(cuota.monto).toFixed(2)}</td>
+                                                <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50">
+                                                    <td className="px-3 py-3 text-center text-gray-500 dark:text-gray-400">{idx + 1}</td>
+                                                    <td className="px-3 py-3 text-center dark:text-gray-300">{(cuota.fecha || cuota.fechaVencimiento) ? moment(cuota.fecha || cuota.fechaVencimiento).format('DD/MM/YYYY') : '-'}</td>
+                                                    <td className="px-3 py-3 text-right font-medium dark:text-white">S/ {Number(cuota.monto).toFixed(2)}</td>
                                                     <td className="px-3 py-3 text-center">
-                                                        <span className={`px-2 py-0.5 rounded text-xs ${compraDetalle.estadoPago === 'COMPLETADO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                        <span className={`px-2 py-0.5 rounded text-xs ${compraDetalle.estadoPago === 'COMPLETADO' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'}`}>
                                                             {compraDetalle.estadoPago === 'COMPLETADO' ? 'PAGADO' : 'PENDIENTE'}
                                                         </span>
                                                     </td>
@@ -164,16 +164,16 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
 
                     {/* Footer Totals */}
                     <div className="flex justify-end">
-                        <div className="w-full md:w-1/3 space-y-2 p-4 rounded-xl border border-gray-200">
-                            <div className="flex justify-between text-sm text-gray-600">
+                        <div className="w-full md:w-1/3 space-y-2 p-4 rounded-xl border border-gray-200 dark:border-slate-800">
+                            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                                 <span>Op. Gravada</span>
                                 <span>S/ {subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between text-sm text-gray-600">
+                            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                                 <span>IGV (18%)</span>
                                 <span>S/ {igv.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-200 pt-2 mt-2">
+                            <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white border-t border-gray-200 dark:border-slate-700 pt-2 mt-2">
                                 <span>Total</span>
                                 <span>S/ {total.toFixed(2)}</span>
                             </div>

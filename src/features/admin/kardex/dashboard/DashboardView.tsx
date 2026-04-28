@@ -9,16 +9,16 @@ export default function DashboardView() {
     const { dashboardData, loading, error, charts, helpers, actions } = vm;
 
     return (
-        <div className="min-h-screen pb-8 max-w-8xl mx-auto px-4 pt-2 font-inter bg-[#f8fafc]">
+        <div className="min-h-screen pb-8 max-w-8xl mx-auto px-4 pt-2 font-inter bg-[#f8fafc] dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Dashboard de Inventario</h1>
-                    <p className="text-[15px] text-gray-500 font-medium mt-1">Resumen general del estado de tu inventario</p>
+                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Dashboard de Inventario</h1>
+                    <p className="text-[15px] text-gray-500 dark:text-gray-400 font-medium mt-1">Resumen general del estado de tu inventario</p>
                 </div>
                 <button
                     onClick={actions.fetchDashboardData}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
                 >
                     <Icon icon="solar:refresh-linear" className="text-lg text-blue-500" />
                     Actualizar
@@ -52,7 +52,7 @@ export default function DashboardView() {
                 <>
                 {/* Métricas principales */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="text-blue-500 text-[13px] font-bold tracking-wide">Total Productos</h3>
                             <div className="w-10 h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:-translate-y-1 transition-transform">
@@ -60,14 +60,14 @@ export default function DashboardView() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">
+                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
                                 {dashboardData.resumenGeneral.totalProductos.toLocaleString()}
                             </h2>
-                            <span className="text-xs text-gray-400 font-medium">productos registrados</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">productos registrados</span>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="text-emerald-500 text-[13px] font-bold tracking-wide">Valor Inventario</h3>
                             <div className="w-10 h-10 rounded-[14px] bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-200 group-hover:-translate-y-1 transition-transform">
@@ -75,14 +75,14 @@ export default function DashboardView() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">
+                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
                                 {helpers.formatCurrency(dashboardData.resumenGeneral.valorTotalInventario)}
                             </h2>
-                            <span className="text-xs text-gray-400 font-medium">valor total en stock</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">valor total en stock</span>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="text-amber-500 text-[13px] font-bold tracking-wide">Stock Crítico</h3>
                             <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 group-hover:-translate-y-1 transition-transform">
@@ -90,14 +90,14 @@ export default function DashboardView() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">
+                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
                                 {dashboardData.resumenGeneral.productosStockCritico}
                             </h2>
-                            <span className="text-xs text-gray-400 font-medium">productos bajo mínimo</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">productos bajo mínimo</span>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="text-rose-500 text-[13px] font-bold tracking-wide">Sin Stock</h3>
                             <div className="w-10 h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 group-hover:-translate-y-1 transition-transform">
@@ -105,18 +105,18 @@ export default function DashboardView() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">
+                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
                                 {dashboardData.resumenGeneral.productosStockCero}
                             </h2>
-                            <span className="text-xs text-gray-400 font-medium">productos agotados</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">productos agotados</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Gráficos con Tremor */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-gray-900 font-bold text-lg mb-1">Estado del stock</h3>
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                        <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1">Estado del stock</h3>
                         <TremorBarChart
                             className="mt-4 h-64"
                             data={charts.stockChartData}
@@ -133,8 +133,8 @@ export default function DashboardView() {
                         />
                     </div>
 
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-gray-900 font-bold text-lg mb-1">Distribución del inventario</h3>
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                        <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1">Distribución del inventario</h3>
                         <DonutChart
                             className="mt-4 h-64"
                             data={charts.pieData}
@@ -151,30 +151,30 @@ export default function DashboardView() {
                 {/* Alertas y productos críticos */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
                     {/* Productos con stock crítico */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
                         <div className="flex items-center gap-3 mb-5">
-                            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center shrink-0">
                                 <Icon icon="solar:danger-triangle-bold-duotone" className="text-lg" />
                             </div>
-                            <h3 className="font-bold text-gray-900 text-lg">Stock Crítico</h3>
+                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">Stock Crítico</h3>
                         </div>
                         {dashboardData.topProductos.stockCritico.length > 0 ? (
                             <div className="space-y-4">
                                 {dashboardData.topProductos.stockCritico.map((producto) => (
                                     <div key={producto.id} className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
+                                        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-800">
                                             <Icon icon="solar:box-bold" className="text-amber-500 text-xl" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-baseline mb-0.5">
-                                                <p className="text-[13px] font-bold text-gray-900 truncate pr-2">{producto.descripcion}</p>
-                                                <p className="text-[13px] font-bold text-gray-600 shrink-0">{helpers.formatCurrency(producto.valorTotal)}</p>
+                                                <p className="text-[13px] font-bold text-gray-900 dark:text-white truncate pr-2">{producto.descripcion}</p>
+                                                <p className="text-[13px] font-bold text-gray-600 dark:text-gray-300 shrink-0">{helpers.formatCurrency(producto.valorTotal)}</p>
                                             </div>
                                             <div className="flex items-center gap-1 mb-1.5">
-                                                <span className="text-xs text-gray-400">{producto.codigo}</span>
-                                                <span className="text-xs text-amber-600 font-medium">· Stock: {producto.stock} / Mín: {producto.stockMinimo}</span>
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">{producto.codigo}</span>
+                                                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">· Stock: {producto.stock} / Mín: {producto.stockMinimo}</span>
                                             </div>
-                                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                            <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
                                                 <div className="h-1.5 rounded-full bg-amber-400" style={{ width: `${Math.min((producto.stock / Math.max(producto.stockMinimo, 1)) * 100, 100)}%` }}></div>
                                             </div>
                                         </div>
@@ -190,29 +190,29 @@ export default function DashboardView() {
                     </div>
 
                     {/* Productos obsoletos */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-5">
-                            <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
-                                <Icon icon="solar:clock-circle-bold-duotone" className="text-lg" />
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3 mb-5">
+                                <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
+                                    <Icon icon="solar:clock-circle-bold-duotone" className="text-lg" />
+                                </div>
+                                <h3 className="font-bold text-gray-900 dark:text-white text-lg">Productos Obsoletos</h3>
                             </div>
-                            <h3 className="font-bold text-gray-900 text-lg">Productos Obsoletos</h3>
-                        </div>
                         {dashboardData.topProductos.obsoletos.length > 0 ? (
                             <div className="space-y-4">
                                 {dashboardData.topProductos.obsoletos.map((producto) => (
                                     <div key={producto.id} className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
-                                            <Icon icon="solar:box-bold" className="text-gray-400 text-xl" />
+                                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-700">
+                                            <Icon icon="solar:box-bold" className="text-gray-400 dark:text-slate-500 text-xl" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-baseline mb-0.5">
-                                                <p className="text-[13px] font-bold text-gray-900 truncate pr-2">{producto.descripcion}</p>
-                                                <p className="text-[13px] font-bold text-gray-600 shrink-0">{helpers.formatCurrency(producto.valorInmovilizado)}</p>
+                                                <p className="text-[13px] font-bold text-gray-900 dark:text-white truncate pr-2">{producto.descripcion}</p>
+                                                <p className="text-[13px] font-bold text-gray-600 dark:text-gray-300 shrink-0">{helpers.formatCurrency(producto.valorInmovilizado)}</p>
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                <span className="text-xs text-gray-400">{producto.codigo}</span>
-                                                <span className="text-xs text-gray-500">· {producto.diasSinMovimiento} días sin movimiento</span>
-                                                <span className="text-xs text-gray-400">· {producto.stock} uds</span>
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">{producto.codigo}</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">· {producto.diasSinMovimiento} días sin movimiento</span>
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">· {producto.stock} uds</span>
                                             </div>
                                         </div>
                                     </div>
@@ -228,10 +228,10 @@ export default function DashboardView() {
                 </div>
 
                 {/* Movimientos recientes */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+                <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2">
                         <Icon icon="solar:history-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800">Movimientos Recientes</h3>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Movimientos Recientes</h3>
                     </div>
                     <div className="p-4">
                         {dashboardData.movimientosRecientes.length > 0 ? (

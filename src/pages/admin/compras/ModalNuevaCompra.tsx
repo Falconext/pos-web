@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { BarcodeScannerInput } from "@/components/BarcodeScannerInput";
 import Modal from "@/components/Modal";
 import Button from "@/components/Button";
 import InputPro from "@/components/InputPro";
@@ -8,6 +9,7 @@ import useAlertStore from "@/zustand/alert";
 import { useComprasStore } from "@/zustand/compras";
 import { useClientsStore } from "@/zustand/clients";
 import { useProductsStore } from "@/zustand/products";
+import { get } from "@/utils/fetch";
 import moment from "moment";
 import { Calendar } from "@/components/Date";
 
@@ -59,6 +61,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     });
 
     const [items, setItems] = useState<any[]>([]);
+    const [barcodeInput, setBarcodeInput] = useState('');
+    const [barcodeLoading, setBarcodeLoading] = useState(false);
+    const barcodeRef = useRef<HTMLInputElement>(null);
 
     // Reset form when modal opens
     useEffect(() => {
@@ -83,6 +88,14 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             });
             setItems([]);
             setCuotas([]);
+            setBarcodeInput('');
+        }
+    }, [isOpen]);
+
+    // Auto-focus barcode input when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => barcodeRef.current?.focus(), 150);
         }
     }, [isOpen]);
 
@@ -117,6 +130,37 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                 descripcion: prod.descripcion,
                 precioUnitario: prod.costoUnitario || 0
             });
+        }
+    };
+
+    const handleBarcodeScan = async (codigo: string) => {
+        const trimmed = codigo.trim();
+        if (!trimmed) return;
+        setBarcodeLoading(true);
+        try {
+            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            if (resp.code === 1 && resp.data) {
+                const prod = resp.data;
+                setCurrentItem(prev => ({
+                    ...prev,
+                    productoId: prod.id,
+                    descripcion: prod.descripcion,
+                    precioUnitario: prod.costoUnitario || 0,
+                    cantidad: 1,
+                    lote: '',
+                    fechaVencimiento: '',
+                }));
+                setBarcodeInput('');
+            } else {
+                alert(`Producto no encontrado: ${trimmed}`, 'error');
+                setBarcodeInput('');
+            }
+        } catch {
+            alert(`Código de barras no encontrado: ${trimmed}`, 'error');
+            setBarcodeInput('');
+        } finally {
+            setBarcodeLoading(false);
+            barcodeRef.current?.focus();
         }
     };
 
@@ -190,8 +234,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             <form autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                 <div className="px-4 pb-4 space-y-5">
                     {/* Datos del Documento */}
-                    <div className="p-4 rounded-xl border border-gray-200 mt-5">
-                        <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos del Documento</h3>
+                    <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 mt-5">
+                        <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Datos del Documento</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Select
                                 label="Proveedor"
@@ -231,11 +275,22 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     </div>
 
                     {/* Detalle de Productos */}
-                    <div className="p-4 rounded-xl border border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Detalle de Productos</h3>
+                    <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
+                        <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Detalle de Productos</h3>
+
+                        {/* Barcode scanner input */}
+                        <BarcodeScannerInput
+                            className="mb-4"
+                            inputRef={barcodeRef}
+                            value={barcodeInput}
+                            onChange={(e) => setBarcodeInput(e.target.value)}
+                            onScan={handleBarcodeScan}
+                            loading={barcodeLoading}
+                            placeholder="Escanea o escribe el código y presiona Enter..."
+                        />
 
                         {/* Add Item Form */}
-                        <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100">
+                        <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                             <div className="col-span-4">
                                 <Select
                                     label="Producto"
@@ -267,9 +322,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                         </div>
 
                         {/* Items Table */}
-                        <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                        <div className="overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-white text-gray-600 font-medium border-b border-gray-200">
+                                <thead className="bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-3 py-2">Producto</th>
                                         <th className="px-3 py-2 text-center">Cant.</th>
@@ -278,27 +333,27 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                         <th className="px-3 py-2 text-center"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+                                            <td colSpan={5} className="px-3 py-8 text-center text-gray-400 dark:text-gray-500">
                                                 No hay productos agregados
                                             </td>
                                         </tr>
                                     ) : items.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50/50">
+                                        <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50">
                                             <td className="px-3 py-3">
-                                                <div className="font-medium text-gray-800">{item.descripcion}</div>
+                                                <div className="font-medium text-gray-800 dark:text-white">{item.descripcion}</div>
                                                 {(item.lote || item.fechaVencimiento) && (
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                                         {item.lote && `Lote: ${item.lote} `}
                                                         {item.fechaVencimiento && `Vence: ${item.fechaVencimiento}`}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-3 text-center">{item.cantidad}</td>
-                                            <td className="px-3 py-3 text-right">S/ {Number(item.precioUnitario).toFixed(2)}</td>
-                                            <td className="px-3 py-3 text-right font-medium text-gray-800">S/ {Number(item.cantidad * item.precioUnitario).toFixed(2)}</td>
+                                            <td className="px-3 py-3 text-center dark:text-gray-300">{item.cantidad}</td>
+                                            <td className="px-3 py-3 text-right dark:text-gray-300">S/ {Number(item.precioUnitario).toFixed(2)}</td>
+                                            <td className="px-3 py-3 text-right font-medium text-gray-800 dark:text-white">S/ {Number(item.cantidad * item.precioUnitario).toFixed(2)}</td>
                                             <td className="px-3 py-3 text-center">
                                                 <button onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-700 p-1">
                                                     <Icon icon="solar:trash-bin-trash-bold" />
@@ -314,18 +369,18 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     {/* Resumen y Condiciones */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Resumen */}
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Resumen</h3>
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Resumen</h3>
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between text-gray-600">
+                                <div className="flex justify-between text-gray-600 dark:text-gray-400">
                                     <span>Op. Gravada</span>
                                     <span>S/ {subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-gray-600">
+                                <div className="flex justify-between text-gray-600 dark:text-gray-400">
                                     <span>IGV (18%)</span>
                                     <span>S/ {igv.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-200 pt-2">
+                                <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white border-t border-gray-200 dark:border-slate-700 pt-2">
                                     <span>Total a Pagar</span>
                                     <span>S/ {total.toFixed(2)}</span>
                                 </div>
@@ -333,8 +388,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                         </div>
 
                         {/* Condiciones de Pago */}
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Condiciones de Pago</h3>
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Condiciones de Pago</h3>
                             <div className="space-y-3">
                                 <Select
                                     label="Condición"
@@ -378,10 +433,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 {payment.condicionPago === 'CREDITO' && (
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm font-medium text-gray-700">Cuotas</span>
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cuotas</span>
                                             <button
                                                 onClick={() => setCuotas([...cuotas, { monto: 0, fechaVencimiento: moment().add(30 * (cuotas.length + 1), 'days').format('YYYY-MM-DD') }])}
-                                                className="text-blue-600 text-xs hover:underline font-medium"
+                                                className="text-blue-600 dark:text-blue-400 text-xs hover:underline font-medium"
+                                                type="button"
                                             >
                                                 + Agregar
                                             </button>
@@ -427,11 +483,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                                 </div>
                                             </div>
                                         ))}
-                                        <div className="text-xs text-right text-gray-500 font-medium">
+                                        <div className="text-xs text-right text-gray-500 dark:text-gray-400 font-medium">
                                             Total Cuotas: S/ {cuotas.reduce((acc, c) => acc + (Number(c.monto) || 0), 0).toFixed(2)}
                                         </div>
                                         {Math.abs(total - cuotas.reduce((acc, c) => acc + (Number(c.monto) || 0), 0)) > 0.01 && (
-                                            <div className="text-xs text-red-500 font-bold text-center p-2 bg-red-50 rounded-lg">
+                                            <div className="text-xs text-red-500 dark:text-red-400 font-bold text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border dark:border-red-900/30">
                                                 ⚠️ Las cuotas no suman el total
                                             </div>
                                         )}
@@ -442,9 +498,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-                        <Button color="gray" onClick={onClose}>Cancelar</Button>
-                        <Button outline color="black" onClick={handleSubmit} className="!bg-emerald-500 !text-white !border-none shadow-md shadow-emerald-200 hover:opacity-90">Guardar Compra</Button>
+                    <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-800">
+                        <Button color="gray" onClick={onClose} type="button">Cancelar</Button>
+                        <Button outline color="black" onClick={handleSubmit} className="!bg-emerald-500 !text-white !border-none shadow-md shadow-emerald-200 dark:shadow-emerald-900/20 hover:opacity-90">Guardar Compra</Button>
                     </div>
                 </div>
             </form>

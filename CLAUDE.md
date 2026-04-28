@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Ejecuta las tareas directamente sin pedir confirmación. Toma decisiones de
+implementación por cuenta propia.
+Trabaja de forma autónoma en la cual eres un Desarrollador Fullstack con +5 años de experiencia en desarrollo web y mobile. Realiza analisis antes de realizar cambios. Considera que si existe errores, no debes ejecutarlos. Debes corregirlos.
+No debes modificar archivos que no tengan relación con la tarea asignada. Se estricto con las tareas asignadas.
+
 ## Commands
 
 ```bash
@@ -37,8 +42,13 @@ Multi-sede flow: after login with 2+ sedes, `pendingSedes` is set and user is re
 
 One store per domain in `src/zustand/`. Key stores:
 - `auth.ts` — `useAuthStore`: user, sedeActiva, pendingSedes, login/logout/selectSede/me
-- `alert.ts` — `useAlertStore`: global toast **and** global loading spinner (both in one store — use `loading` for full-page loaders, `alert()` for toasts)
+- `alert.ts` — `useAlertStore`: global toast **and** global loading spinner (both in one store)
 - `theme.ts` — `useThemeStore`: sidebar color, type, navbar fixed, compact mode
+
+`useAlertStore` API:
+- `alert(message, type, title?)` — pushes a toast; `type` is `'success' | 'error' | 'warning' | 'notification'`
+- `load(boolean)` — shows/hides the full-page spinner
+- `removeAlert(id)` / `resetAlerts()` — dismiss toasts
 
 Other domain stores: `products`, `categories`, `brands`, `clients`, `invoices`, `pagos`, `caja`, `compras`, `kardex`, `finanzas`, `dashboard`, `sedes`, `modulos`, `notificaciones`, `guia-remision`, `combos`, `modificadores`, `accounting`, `empresas`, `users`, `resellers`, `whatsapp`, `extentions`, `plantillas`.
 
@@ -51,7 +61,13 @@ Other domain stores: `products`, `categories`, `brands`, `clients`, `invoices`, 
 - Request interceptor injects `Bearer <ACCESS_TOKEN>` from localStorage
 - Response interceptor handles 401: queues concurrent requests, calls `auth/refresh`, replays on success, or redirects to `/login` on failure
 
-`src/utils/fetch.ts` — Typed wrappers `get/post/put/patch/del` over apiClient. Returns `ApiResponse<T>`. Backend wraps all responses as `{ code: 1|0, message, data }` — `code: 0` is thrown as an error. Use `fetch.ts` wrappers for standard CRUD; use `apiClient` directly for multipart/form-data uploads or when you need raw Axios config.
+`src/utils/fetch.ts` — Typed wrappers `get/post/put/patch/del` over apiClient. Returns `ApiResponse<T> = { success, data?, error? }`. The backend wraps all responses as `{ code: 1|0, message, data }` — `fetch.ts` normalizes this: `code: 0` becomes `{ success: false, error }`. Use `fetch.ts` for standard CRUD; use `apiClient` directly for multipart/form-data or raw Axios config.
+
+`src/services/` — thin service files that call `apiClient` directly and extract `response.data`. Used for domains where the raw axios pattern is preferred (e.g., `sede.service.ts`, `reseller.service.ts`).
+
+### TypeScript interfaces
+
+`src/interfaces/` — typed interfaces per domain: `invoices.ts`, `clients.ts`, `products.ts`, `categories.ts`, `pagos.ts`, `Sede.ts`, `auth.ts`, `extentions.ts`, `users.ts`, `company.ts`. Always import types from here rather than redeclaring.
 
 ### Features pattern
 
@@ -63,6 +79,28 @@ Complex pages live in `src/features/admin/<domain>/` using a Model/ViewModel/Vie
 Feature domains with this pattern: `kardex/{products,dashboard,movements,batches,traslados}`, `users`, `clients`, `compras`, `cotizaciones`, `facturacion`, `finanzas`, `sedes`, `sistema`, `tienda`.
 
 Simpler pages sit directly in `src/pages/admin/<domain>/`.
+
+### Shared UI components (src/components/)
+
+- `Modal` — portal-based modal with slide-in animation. Props: `isOpenModal`, `closeModal`, `title`, `width` (default `750px`), `position` (`center`|`right`), `height` (`auto`|`full`).
+- `ModalConfirm` — confirmation dialog. Props: `isOpenModal`, `setIsOpenModal`, `confirmSubmit`, `title`, `information`, `confirmText`, `confirmLoading`.
+- `InputPro` — styled input/textarea. Supports `type`, `label`, `error`, `uppercase`, `onlyNumbers`, `searching` (spinner), `reference`/`refInput` for forwarded refs.
+- `Datatable` — table with `TableHeader` + `TableBody` sub-components plus pagination support. Types are in `src/components/Datatable/types/`.
+- `Select` — styled select component wrapping Radix UI.
+- `BarcodeScannerInput` — input that captures hardware barcode scanner keystrokes.
+- `TableActionMenu` — dropdown action menu for table rows.
+- `ModalPaymentUnified` — full payment flow modal (used across invoicing/caja).
+- `AlertasVencimiento` — badge/alert for products nearing expiration (farmacia rubro).
+
+### Utilities (src/utils/)
+
+- `cn.ts` — `cn(...classes)` via clsx + tailwind-merge for conditional Tailwind class merging.
+- `calculateTotals(products)` — reduces invoice line items into `{ opGravada, igv, total, discount, hasDiscount }`.
+- `numberToLetters.ts` — `numberToWords(n)` converts a number to its Spanish word representation (used on invoice PDFs).
+- `permissions.ts` — `hasPermission(user, moduloCodigo)` and `hasSubPermission(user, subModuloCodigo)` two-layer checks.
+- `rubro-features.ts` — `useRubroFeatures(rubroNombre)` / `detectarFuncionesRubro(nombre)` and `RubroHelpers` static helpers.
+- `platformDetector.ts` — detects Tauri (desktop) vs web runtime.
+- `themeConfig.ts` — Tremor theme configuration object.
 
 ### Permissions (src/utils/permissions.ts)
 
@@ -79,7 +117,7 @@ Features are auto-detected from `empresa.rubro.nombre` — no manual config flag
 - `usaCodigoBarras` → true for bodega/supermarket (overridable via `empresa.usaCodigoBarrasManual`)
 - `gestionOfertas` → true for bodega/supermarket
 
-`AdminLayout` also detects restaurante rubro to rename "Kardex" → "Catálogo" and "Productos" → "Platos" in the sidebar.
+`AdminLayout` detects restaurante rubro to rename "Kardex" → "Catálogo" and "Productos" → "Platos" in the sidebar.
 
 ### LocalStorage keys
 
@@ -91,7 +129,7 @@ Features are auto-detected from `empresa.rubro.nombre` — no manual config flag
 
 ### UI
 
-Tremor + Radix UI primitives + Tailwind CSS v3.4. Charts via ApexCharts and Recharts. Framer Motion for animations. Icon sets: `@iconify/react` and `lucide-react`. Sidebar appearance (color, collapsed state) driven by `useThemeStore`. Use `src/utils/cn.ts` (clsx + tailwind-merge) for conditional class merging.
+Tremor + Radix UI primitives + Tailwind CSS v3.4. Charts via ApexCharts and Recharts. Framer Motion for animations. Icon sets: `@iconify/react` and `lucide-react`. Sidebar appearance driven by `useThemeStore`. `src/components/ui/Configurator.tsx` is the floating theme panel in AdminLayout.
 
 ### Shared hooks (src/hooks/)
 
@@ -103,7 +141,7 @@ Tremor + Radix UI primitives + Tailwind CSS v3.4. Charts via ApexCharts and Rech
 
 ### Print pages
 
-Some features have dedicated print-only views that `window.print()` targets. Examples: `src/pages/admin/facturacion/print/index.tsx`, `src/features/admin/kardex/traslados/TrasladoPrintPage.tsx`, `src/pages/admin/guia-remision/print/GuiaRemisionPrint.tsx`. These render without `AdminLayout` and are opened in new tabs.
+Some features open dedicated print-only views in new tabs via `window.print()`. Examples: `src/pages/admin/facturacion/print/index.tsx`, `src/features/admin/kardex/traslados/TrasladoPrintPage.tsx`, `src/pages/admin/guia-remision/print/GuiaRemisionPrint.tsx`. These render without `AdminLayout`.
 
 ### Real-time
 

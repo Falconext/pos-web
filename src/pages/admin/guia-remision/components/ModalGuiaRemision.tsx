@@ -648,9 +648,12 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 <form autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                     <div className="px-4 pb-4 space-y-5">
                         {/* Cabecera */}
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos Generales</h3>
-                            <p className="text-xs text-gray-500 mb-4">
+                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:document-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                                Datos Generales
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                                 Completa primero tipo de guía, fechas y luego motivo/modo para que el formulario te indique qué datos son obligatorios.
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -690,35 +693,37 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </div>
                         </div>
 
-                        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/70">
-                            <h3 className="text-sm font-bold text-emerald-900 mb-2 uppercase tracking-wide">¿Quién es quién en la guía?</h3>
-                            <ul className="text-xs text-emerald-900 space-y-2 list-disc pl-5">
-                                <li><strong>Remitente:</strong> es tu empresa y se llena automáticamente (se usa también para el nombre del archivo SUNAT).</li>
-                                <li><strong>Destinatario:</strong> cliente/proveedor que recibe los bienes; completa documento, razón social y direcciones.</li>
-                                <li><strong>Transportista:</strong> solo aplica si el traslado lo realiza un tercero o emites una GRE-T; debes registrar RUC, MTC, vehículo y conductor.</li>
+                        <div className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-900/10">
+                            <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-400 mb-2 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:info-circle-bold-duotone" />
+                                ¿Quién es quién en la guía?
+                            </h3>
+                            <ul className="text-xs text-emerald-900/80 dark:text-emerald-300/60 space-y-2 list-disc pl-5">
+                                <li><strong>Remitente:</strong> es tu empresa y se llena automáticamente.</li>
+                                <li><strong>Destinatario:</strong> cliente/proveedor que recibe los bienes.</li>
+                                <li><strong>Transportista:</strong> solo aplica si el traslado lo realiza un tercero o emites una GRE-T.</li>
                             </ul>
                         </div>
 
                         {isGuiaTransportista && (
-                            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60">
-                                <h3 className="text-sm font-bold text-blue-900 mb-2 uppercase tracking-wide">Campos obligatorios solo para Guía Transportista (GRE-T)</h3>
-                                <p className="text-xs text-blue-800 mb-3">
+                            <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-900/10">
+                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-400 mb-2 uppercase tracking-wide flex items-center gap-2">
+                                    <Icon icon="solar:shield-warning-bold-duotone" />
+                                    Campos obligatorios (GRE-T)
+                                </h3>
+                                <p className="text-xs text-blue-800/80 dark:text-blue-300/60 mb-3">
                                     Para evitar rechazos, en tipo de guía <strong>TRANSPORTISTA</strong> completa estos bloques además de los datos generales e ítems.
                                 </p>
-                                <ul className="text-xs text-blue-800 space-y-1 list-disc pl-5">
-                                    <li><strong>Datos del transportista:</strong> RUC, razón social y registro MTC.</li>
-                                    <li><strong>Vehículos y conductores:</strong> placa, documento del conductor, nombres y licencia.</li>
-                                    <li><strong>Recomendado:</strong> apellidos del conductor y TUC/CHV o autorización especial.</li>
-                                </ul>
                             </div>
                         )}
 
                         {/* Datos del Destinatario */}
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">
+                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:user-bold-duotone" className="text-blue-600 dark:text-blue-400" />
                                 {isCompra ? "Datos del Proveedor" : "Datos del Destinatario"}
                             </h3>
-                            <p className="text-xs text-gray-500 mb-4">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                                 {isCompra
                                     ? "En motivo COMPRA, aquí registras al proveedor origen de los bienes."
                                     : isTrasladoMismaEmpresa
@@ -727,20 +732,20 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </p>
 
                             {isCompra && (
-                                <div className="mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-900">
+                                <div className="mb-4 p-3 rounded-lg border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/10 text-sm text-amber-900 dark:text-amber-300">
                                     <div className="font-semibold">Destinatario (SUNAT)</div>
-                                    <div>{auth?.empresa?.razonSocial || formValues.remitenteRazonSocial}</div>
-                                    <div>{auth?.empresa?.ruc || formValues.remitenteRuc}</div>
+                                    <div className="dark:text-white">{auth?.empresa?.razonSocial || formValues.remitenteRazonSocial}</div>
+                                    <div className="dark:text-gray-400">{auth?.empresa?.ruc || formValues.remitenteRuc}</div>
                                 </div>
                             )}
 
                             {isTrasladoMismaEmpresa && (
-                                <div className="mb-4 p-3 rounded-lg border border-blue-200 bg-blue-50 text-sm text-blue-900 flex items-start gap-2">
-                                    <Icon icon="solar:lock-bold-duotone" className="text-blue-600 text-lg mt-0.5 shrink-0" />
+                                <div className="mb-4 p-3 rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/10 text-sm text-blue-900 dark:text-blue-300 flex items-start gap-2">
+                                    <Icon icon="solar:lock-bold-duotone" className="text-blue-600 dark:text-blue-400 text-lg mt-0.5 shrink-0" />
                                     <div>
                                         <div className="font-semibold">Destinatario bloqueado — misma empresa</div>
-                                        <div className="mt-0.5">{auth?.empresa?.razonSocial} — RUC: {auth?.empresa?.ruc}</div>
-                                        <div className="mt-0.5 text-blue-700 text-xs">Para este motivo SUNAT exige que el destinatario sea la misma empresa remitente.</div>
+                                        <div className="mt-0.5 dark:text-white">{auth?.empresa?.razonSocial} — RUC: {auth?.empresa?.ruc}</div>
+                                        <div className="mt-0.5 text-blue-700 dark:text-blue-400/80 text-xs">Para este motivo SUNAT exige que el destinatario sea la misma empresa remitente.</div>
                                     </div>
                                 </div>
                             )}
@@ -762,20 +767,20 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                 <InputPro autocomplete="off" label={isCompra ? "Razón Social / Nombre Proveedor" : "Razón Social / Nombre"} name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel disabled={isTrasladoMismaEmpresa} />
                             </div>
                             {!isTrasladoMismaEmpresa && (
-                                <p className="text-xs text-gray-500 mt-3">Formato recomendado de documento: {destinatarioDocHint}.</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">Formato recomendado de documento: {destinatarioDocHint}.</p>
                             )}
                         </div>
 
                         {/* Remitente de los bienes — SOLO GRE-T */}
                         {isGuiaTransportista && (
-                            <div className="p-4 rounded-xl border border-orange-200 bg-orange-50/40">
+                            <div className="p-4 rounded-xl border border-orange-200 dark:border-orange-800/30 bg-orange-50/40 dark:bg-orange-900/10">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Icon icon="solar:box-bold-duotone" className="text-orange-600 text-xl" />
-                                    <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">
+                                    <Icon icon="solar:box-bold-duotone" className="text-orange-600 dark:text-orange-400 text-xl" />
+                                    <h3 className="text-sm font-bold text-orange-900 dark:text-orange-400 uppercase tracking-wide">
                                         Remitente de los bienes (GRE-T)
                                     </h3>
                                 </div>
-                                <p className="text-xs text-orange-800 mb-4">
+                                <p className="text-xs text-orange-800 dark:text-orange-300 mb-4">
                                     En una GRE-T, el <strong>remitente de los bienes</strong> es la empresa o persona que
                                     <strong> envía la carga</strong> (puede ser diferente al transportista).
                                     Ingresa el RUC y la razón social se completará automáticamente.
@@ -804,20 +809,29 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                         )}
 
                         {/* Datos de Traslado */}
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos del Traslado</h3>
+                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:route-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                                Datos del Traslado
+                            </h3>
                             <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-                                    <p className="text-xs font-semibold text-blue-800">Motivo: {selectedMotivoHelp.title}</p>
-                                    <p className="text-xs text-blue-700 mt-1">{selectedMotivoHelp.description}</p>
-                                    <p className="text-xs text-blue-700 mt-1">Tip: {selectedMotivoHelp.tip}</p>
+                                <div className="rounded-lg border border-blue-100 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/10 p-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/20">
+                                    <p className="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-1">Motivo: {selectedMotivoHelp.title}</p>
+                                    <p className="text-xs text-blue-700/80 dark:text-blue-300/60 leading-relaxed">{selectedMotivoHelp.description}</p>
+                                    <div className="mt-2 pt-2 border-t border-blue-200/30 dark:border-blue-800/20">
+                                        <p className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase">Tip</p>
+                                        <p className="text-[11px] text-blue-700 dark:text-blue-300/80 italic">{selectedMotivoHelp.tip}</p>
+                                    </div>
                                 </div>
-                                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-                                    <p className="text-xs font-semibold text-emerald-800">Modo: {selectedModoHelp.title}</p>
+                                <div className="rounded-lg border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50 dark:bg-emerald-900/10 p-3 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/20">
+                                    <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1">Modo: {selectedModoHelp.title}</p>
                                     {selectedModoHelp.required.length > 0 && (
-                                        <p className="text-xs text-emerald-700 mt-1">Campos clave: {selectedModoHelp.required.join(", ")}.</p>
+                                        <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/60">Clave: {selectedModoHelp.required.join(", ")}.</p>
                                     )}
-                                    <p className="text-xs text-emerald-700 mt-1">Tip: {selectedModoHelp.tip}</p>
+                                    <div className="mt-2 pt-2 border-t border-emerald-200/30 dark:border-emerald-800/20">
+                                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase">Tip</p>
+                                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300/80 italic">{selectedModoHelp.tip}</p>
+                                    </div>
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -856,63 +870,71 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </div>
 
                             {/* Flags Checkboxes */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg">
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                                    <input type="checkbox" name="retornoVehiculoVacio" checked={formValues.retornoVehiculoVacio} onChange={handleChange} className="rounded border-gray-300" />
-                                    <span className="text-gray-700">Retorno Vehículo Vacío</span>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-800">
+                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                                    <input type="checkbox" name="retornoVehiculoVacio" checked={formValues.retornoVehiculoVacio} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Retorno Vehículo Vacío</span>
                                 </label>
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                                    <input type="checkbox" name="transbordoProgramado" checked={formValues.transbordoProgramado} onChange={handleChange} className="rounded border-gray-300" />
-                                    <span className="text-gray-700">Transbordo Programado</span>
+                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                                    <input type="checkbox" name="transbordoProgramado" checked={formValues.transbordoProgramado} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Transbordo Programado</span>
                                 </label>
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                                    <input type="checkbox" name="retornoEnvasesVacios" checked={formValues.retornoEnvasesVacios} onChange={handleChange} className="rounded border-gray-300" />
-                                    <span className="text-gray-700">Retorno Envases Vacíos</span>
+                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                                    <input type="checkbox" name="retornoEnvasesVacios" checked={formValues.retornoEnvasesVacios} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Retorno Envases Vacíos</span>
                                 </label>
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                                    <input type="checkbox" name="trasladoTotal" checked={formValues.trasladoTotal} onChange={handleChange} className="rounded border-gray-300" />
-                                    <span className="text-gray-700">Traslado Total (DAM/DS)</span>
+                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
+                                    <input type="checkbox" name="trasladoTotal" checked={formValues.trasladoTotal} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Traslado Total (DAM/DS)</span>
                                 </label>
                             </div>
                         </div>
 
                         {/* Datos del Transporte (Condicional) */}
                         {(formValues.modoTransporte === "01" || formValues.tipoGuia === "TRANSPORTISTA") && (
-                            <div className="p-4 rounded-xl border border-gray-200 bg-blue-50/30">
-                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Datos del Transportista</h3>
-                                <p className="text-xs text-gray-600 mb-3">
+                            <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-900/10">
+                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-400 mb-3 uppercase tracking-wide flex items-center gap-2">
+                                    <Icon icon="solar:delivery-bold-duotone" />
+                                    Datos del Transportista
+                                </h3>
+                                <p className="text-xs text-blue-800/70 dark:text-blue-300/50 mb-3">
                                     Bloque obligatorio para transporte público y para guías tipo TRANSPORTISTA.
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputPro autocomplete="off" label="RUC Transportista (obligatorio)" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Razón Social Transportista (obligatorio)" name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Registro MTC (obligatorio GRE-T)" name="transportistaMTC" value={formValues.transportistaMTC || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="RUC Transportista" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Razón Social Transportista" name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Registro MTC (GRE-T)" name="transportistaMTC" value={formValues.transportistaMTC || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                         )}
 
                         {(formValues.modoTransporte === "02" || formValues.tipoGuia === "TRANSPORTISTA") && (
-                            <div className="p-4 rounded-xl border border-gray-200 bg-green-50/30">
-                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Vehículos y Conductores</h3>
-                                <p className="text-xs text-gray-600 mb-3">
+                            <div className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50/30 dark:bg-emerald-900/10">
+                                <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-400 mb-3 uppercase tracking-wide flex items-center gap-2">
+                                    <Icon icon="solar:bus-bold-duotone" />
+                                    Vehículos y Conductores
+                                </h3>
+                                <p className="text-xs text-emerald-800/70 dark:text-emerald-300/50 mb-3">
                                     Para guía transportista y/o transporte privado, completa datos del conductor y la unidad.
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputPro autocomplete="off" label="Placa Vehículo (mínimo 6 caracteres)" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="TUC/CHV o # Autorización (11-13 caract.)" name="vehiculoAutorizacion" value={formValues.vehiculoAutorizacion || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Documento Conductor (obligatorio)" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Nombre Conductor (obligatorio)" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Apellidos Conductor (obligatorio)" name="conductorApellidos" value={formValues.conductorApellidos || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Licencia (9 caract. alfanuméricos)" name="conductorLicencia" value={(formValues.conductorLicencia || "").toUpperCase()} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Placa Vehículo" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="TUC/CHV # Autorización" name="vehiculoAutorizacion" value={formValues.vehiculoAutorizacion || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Documento Conductor" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Nombre Conductor" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Apellidos Conductor" name="conductorApellidos" value={formValues.conductorApellidos || ""} onChange={handleChange} isLabel />
+                                    <InputPro autocomplete="off" label="Licencia (9 caract.)" name="conductorLicencia" value={(formValues.conductorLicencia || "").toUpperCase()} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                         )}
 
                         {/* Puntos de Partida y Llegada */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="p-4 rounded-xl border border-gray-200">
-                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Punto de Partida</h3>
-                                <p className="text-xs text-gray-500 mb-3">Dirección y ubigeo desde donde salen los bienes.</p>
+                            <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                    <Icon icon="solar:map-point-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                                    Punto de Partida
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Dirección y ubigeo desde donde salen los bienes.</p>
                                 <div className="space-y-3">
                                     <SelectUbigeo
                                         label="Ubigeo Partida"
@@ -928,9 +950,12 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     <InputPro autocomplete="off" label="Código Establecimiento Partida" name="partidaCodigoEstablecimiento" value={formValues.partidaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
-                            <div className="p-4 rounded-xl border border-gray-200">
-                                <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Punto de Llegada</h3>
-                                <p className="text-xs text-gray-500 mb-3">Dirección y ubigeo donde se entregarán los bienes.</p>
+                            <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                    <Icon icon="solar:map-point-wave-bold-duotone" className="text-emerald-600 dark:text-emerald-400" />
+                                    Punto de Llegada
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Dirección y ubigeo donde se entregarán los bienes.</p>
                                 <div className="space-y-3">
                                     <SelectUbigeo
                                         label="Ubigeo Llegada"
@@ -946,15 +971,16 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     <InputPro autocomplete="off" label="Código Establecimiento Llegada" name="llegadaCodigoEstablecimiento" value={formValues.llegadaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
-                        </div>
-
                         {/* Ítems */}
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Bienes a Trasladar</h3>
-                            <p className="text-xs text-gray-500 mb-3">Agrega al menos un producto. La cantidad debe ser mayor a 0.</p>
+                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:box-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                                Bienes a Trasladar
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Agrega al menos un producto. La cantidad debe ser mayor a 0.</p>
 
                             {/* Formulario Agregar Ítem */}
-                            <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100">
+                            <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30">
                                 <div className="col-span-12 md:col-span-6">
                                     <Select
                                         label="Producto"
@@ -984,7 +1010,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </div>
 
                             {/* Tabla de Ítems */}
-                            <div className="w-full overflow-x-auto border border-gray-100 rounded-xl">
+                            <div className="w-full overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl bg-white dark:bg-[#111827]">
                                 <DataTable
                                     headerColumns={detallesTableColumns}
                                     bodyData={detallesTableData}
@@ -994,12 +1020,16 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                             </div>
                         </div>
 
-                        <div className="p-4 rounded-xl border border-gray-200">
-                            <InputPro autocomplete="off" label="Observaciones" name="observaciones" value={formValues.observaciones || ""} onChange={handleChange} isLabel />
+                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:notes-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                                Observaciones Adicionales
+                            </h3>
+                            <InputPro autocomplete="off" label="Notas" name="observaciones" value={formValues.observaciones || ""} onChange={handleChange} isLabel />
                         </div>
 
                         {/* Actions */}
-                        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
+                        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-800">
                             <Button color="gray" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
                             <Button outline color="black" type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? (
@@ -1030,8 +1060,8 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 position="center"
                 icon="solar:pen-2-bold"
             >
-                <div className="p-5 space-y-4">
-                    <p className="text-sm text-gray-600">Ajusta la cantidad del producto seleccionado. Este cambio solo actualiza la tabla y no guarda aún la guía.</p>
+                <div className="p-5 space-y-4 bg-white dark:bg-[#111827] rounded-b-2xl">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Ajusta la cantidad del producto seleccionado. Este cambio solo actualiza la tabla y no guarda aún la guía.</p>
                     <InputPro
                         autocomplete="off"
                         label="Cantidad"

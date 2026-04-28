@@ -28,20 +28,27 @@ const SedesIndex = () => {
     if (vm.loading && vm.sedes.length === 0) return <Loading />;
 
     return (
-        <div className="min-h-screen px-2 pb-4">
-            <div className="flex justify-between items-center mb-6">
+        <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Gestión de Sedes</h1>
-                    <p className="text-sm text-gray-500 mt-1">Administra las sucursales y almacenes</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <Icon icon="solar:city-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                        Gestión de Sedes
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra las sucursales y almacenes del sistema</p>
                 </div>
-                <Button color="secondary" onClick={vm.handleCreate} className="flex items-center gap-2">
-                    <Icon icon="solar:add-circle-bold" width={20} /> Nueva Sede
-                </Button>
+                <button
+                    onClick={vm.handleCreate}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                >
+                    <Icon icon="solar:add-circle-bold" className="text-lg" />
+                    Nueva Sede
+                </button>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden p-4">
                 {tableData.length > 0 ? (
                     <DataTable actions={actions} bodyData={tableData} headerColumns={[{ label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' }, { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'tipo' }, { label: 'Estado', key: 'estado' }]} />
-                ) : <div className="text-center py-12 text-gray-500">No hay sedes registradas.</div>}
+                ) : <div className="text-center py-12 text-gray-500 dark:text-gray-400">No hay sedes registradas.</div>}
             </div>
             {vm.showModal && <SedeModal isOpen={vm.showModal} onClose={() => vm.setShowModal(false)} sede={vm.selectedSede} isEdit={vm.isEdit} />}
             {vm.showConfirm && vm.selectedSede && (

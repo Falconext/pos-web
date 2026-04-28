@@ -105,15 +105,15 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     const monto = `S/ ${(comprobante.total ?? 0).toFixed(2)}`;
 
     return (
-        <div className="fixed inset-0 z-[999999999] flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div className="fixed inset-0 z-[999999999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden border dark:border-slate-800">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900">Enviar comprobante</h3>
+                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-slate-800">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Enviar comprobante</h3>
                     <button
                         onClick={handleClose}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     >
                         <Icon icon="mdi:close" className="text-xl" />
                     </button>
@@ -121,22 +121,22 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
 
                 <div className="px-6 pt-4 pb-6 space-y-4">
                     {/* Info del comprobante */}
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-1.5 text-sm">
+                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-1.5 text-sm border dark:border-slate-800">
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Tipo</span>
-                            <span className="font-semibold text-gray-900">{comprobante.comprobante}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Tipo</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{comprobante.comprobante}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Serie-Número</span>
-                            <span className="font-semibold text-gray-900">{serie}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Serie-Número</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{serie}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Cliente</span>
-                            <span className="font-semibold text-gray-900 truncate max-w-[60%] text-right">{comprobante.clienteNombre}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Cliente</span>
+                            <span className="font-semibold text-gray-900 dark:text-white truncate max-w-[60%] text-right">{comprobante.clienteNombre}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Monto</span>
-                            <span className="font-bold text-gray-900">{monto}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Monto</span>
+                            <span className="font-bold text-gray-900 dark:text-white">{monto}</span>
                         </div>
 
                         {/* Estado PDF */}
@@ -167,13 +167,13 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+                    <div className="flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
                         <button
                             onClick={() => setTab('whatsapp')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
                                 tab === 'whatsapp'
-                                    ? 'bg-white text-green-600 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white dark:bg-slate-700 text-green-600 dark:text-green-400 shadow-sm'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                             }`}
                         >
                             <Icon icon="mdi:whatsapp" className="text-lg" />
@@ -183,8 +183,8 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                             onClick={() => setTab('email')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
                                 tab === 'email'
-                                    ? 'bg-white text-violet-600 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                             }`}
                         >
                             <Icon icon="solar:letter-bold" className="text-lg" />
@@ -205,16 +205,16 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                 type="text"
                             />
 
-                            {/* Info */}
-                            <div className="bg-green-50 border border-green-100 rounded-xl p-3 flex items-start gap-2">
+                             {/* Info */}
+                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 rounded-xl p-3 flex items-start gap-2">
                                 <Icon icon="mdi:whatsapp" className="text-green-500 text-base mt-0.5 shrink-0" />
-                                <p className="text-xs text-gray-600 leading-relaxed">
+                                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
                                     El PDF del comprobante se enviará directamente al WhatsApp del cliente como documento adjunto.
                                 </p>
                             </div>
 
                             <div className="flex gap-3 pt-1">
-                                <Button onClick={handleClose} className="flex-1 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                <Button onClick={handleClose} className="flex-1 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700">
                                     Cancelar
                                 </Button>
                                 <Button
@@ -245,12 +245,12 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                 isLabel
                                 type="email"
                             />
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
                                 El PDF del comprobante se enviará como adjunto al correo indicado.
                             </p>
 
                             <div className="flex gap-3 pt-1">
-                                <Button onClick={handleClose} className="flex-1 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                <Button onClick={handleClose} className="flex-1 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700">
                                     Cancelar
                                 </Button>
                                 <Button

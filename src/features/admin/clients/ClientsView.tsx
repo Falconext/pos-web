@@ -26,23 +26,23 @@ export default function ClientsView() {
     }, []);
 
     return (
-        <div className="min-h-screen px-2 pb-4 relative z-1">
+        <div className="min-h-screen px-2 pb-4 relative z-1 dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Clientes</h1>
-                    <p className="text-sm text-gray-500 mt-1">Administra tu cartera de clientes y proveedores</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Clientes</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra tu cartera de clientes y proveedores</p>
                 </div>
-                <Button color="secondary" onClick={actions.openNewModal} className="flex items-center gap-2">
+                <Button color="secondary" onClick={actions.openNewModal} className="flex items-center gap-2 !bg-violet-600 border-none shadow-md shadow-violet-200/50">
                     <Icon icon="solar:add-circle-bold" className="text-lg" />
                     Nuevo cliente
                 </Button>
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white relative z-0 rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-[#111827] relative z-0 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Search and Actions Toolbar */}
-                <div className="p-5 border-b border-gray-100 relative z-50 overflow-visible">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800 relative z-50 overflow-visible">
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <InputPro
@@ -67,7 +67,7 @@ export default function ClientsView() {
                                 </Button>
 
                                 {showOptionsDropdown && (
-                                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
+                                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
                                         <input
                                             type="file"
                                             accept=".xlsx, .xls"
@@ -80,25 +80,25 @@ export default function ClientsView() {
                                         />
                                         <button
                                             onClick={() => { actions.exportClients(); setShowOptionsDropdown(false); }}
-                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 transition-colors"
                                         >
                                             <Icon icon="solar:export-bold" className="mr-2 text-green-500" width={18} />
                                             Exportar Clientes
                                         </button>
                                         <button
                                             onClick={() => { vm.fileInputRef.current?.click(); }}
-                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
                                         >
                                             <Icon icon="solar:import-bold" className="mr-2 text-blue-500" width={18} />
                                             Importar desde Excel
                                         </button>
-                                        <div className="mx-4 my-1 border-t border-gray-100"></div>
+                                        <div className="mx-4 my-1 border-t border-gray-100 dark:border-slate-800"></div>
                                         <a
                                             href="/formatos/plantilla_clientes.xlsx"
                                             target="_blank"
                                             download
                                             onClick={() => setShowOptionsDropdown(false)}
-                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
                                         >
                                             <Icon icon="solar:file-download-bold" className="mr-2 text-amber-500" width={18} />
                                             Descargar Modelo (Guía)
@@ -132,7 +132,7 @@ export default function ClientsView() {
                                                             actions.setAnchorEl(e.currentTarget);
                                                         }
                                                     }}
-                                                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
+                                                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center gap-1"
                                                 >
                                                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                                                 </button>
@@ -142,7 +142,7 @@ export default function ClientsView() {
                                     headerColumns={vm.visibleColumns}
                                 />
                             </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100">
+                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
                                     data={clientsTable}
                                     optionSelect

@@ -146,12 +146,12 @@ const ComprobantesInformales = () => {
                 <button
                     type="button"
                     onClick={() => setOpenAccionesId(isOpen ? null : rowBase.id)}
-                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
+                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                 >
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
                 {isOpen && (
-                    <div className="fixed flex-col right-10 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                    <div className="fixed flex-col right-10 mt-1 w-40 bg-white dark:bg-[#1E2435] border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
                         <button
                             type="button"
                             onClick={() => {
@@ -467,7 +467,7 @@ const ComprobantesInformales = () => {
     console.log(invoice)
 
     return (
-        <div className="min-h-screen px-2 pb-4">
+        <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
@@ -490,8 +490,8 @@ const ComprobantesInformales = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Notas de venta</h1>
-                    <p className="text-sm text-gray-500 mt-1">Historial de notas de pedido</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Notas de venta</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de notas de pedido</p>
                 </div>
                 <button
                     type="button"
@@ -504,12 +504,12 @@ const ComprobantesInformales = () => {
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
-                <div className="p-5 border-b border-gray-100">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
                     <div className="flex items-center gap-2 mb-4">
                         <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                         <div className="">
@@ -569,7 +569,7 @@ const ComprobantesInformales = () => {
                                         'Acciones'
                                     ]} />
                             </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
                                     data={productsTable}
                                     optionSelect
@@ -585,9 +585,9 @@ const ComprobantesInformales = () => {
                         </>
                     ) : (
                         <div className="py-12 text-center">
-                            <Icon icon="solar:document-text-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500">No se encontraron comprobantes</p>
-                            <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
+                            <Icon icon="solar:document-text-linear" className="text-5xl text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+                            <p className="text-gray-500 dark:text-gray-400">No se encontraron comprobantes</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
                         </div>
                     )}
                 </div>

@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../../../../falconext-web"
+		},
+		{
+			"path": "../../../../../falconext-mype-mobile"
 		}
 	]
 }

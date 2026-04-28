@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useCajaStore } from '../../../../zustand/caja';
+import { useCajaStore, MovimientoCaja } from '../../../../zustand/caja';
 import { Icon } from '@iconify/react';
+import ModalEditarGasto from './ModalEditarGasto';
+import ModalConfirm from '@/components/ModalConfirm';
 import DataTable from '@/components/Datatable'; // Assuming this component exists and works like in Arqueo
 import Pagination from '@/components/Pagination'; // Assuming exists
 import { Calendar } from '@/components/Date'; // Assuming exists
@@ -17,10 +19,15 @@ const CajaHistorial: React.FC = () => {
         pagination,
         filters,
         obtenerHistorialCaja,
-        exportarArqueo, // Added export action
+        exportarArqueo,
+        eliminarEgreso,
         setFilters,
         clearFilters,
     } = useCajaStore();
+
+    const [egresoEditar, setEgresoEditar] = useState<MovimientoCaja | null>(null);
+    const [egresoEliminarId, setEgresoEliminarId] = useState<number | null>(null);
+    const [loadingEliminar, setLoadingEliminar] = useState(false);
 
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
@@ -125,13 +132,13 @@ const CajaHistorial: React.FC = () => {
     }) || [];
 
     // Redefine columns for Movement view
-    const movementColumns = ['Tipo', 'Fecha', 'Usuario', 'Monto', 'Observaciones'];
+    const movementColumns = ['Tipo', 'Fecha', 'Usuario', 'Monto', 'Categoría', 'Detalle', 'Acciones'];
     const movementData = historialCaja?.map((mov: any) => ({
         'Tipo': (
-            <span className={`px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 ${mov.tipoMovimiento === 'APERTURA' ? 'bg-green-100 text-green-700' :
-                mov.tipoMovimiento === 'CIERRE' ? 'bg-red-100 text-red-700' :
-                    mov.tipoMovimiento === 'INGRESO' ? 'bg-blue-100 text-blue-700' :
-                        'bg-orange-100 text-orange-700'
+            <span className={`px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 ${mov.tipoMovimiento === 'APERTURA' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                mov.tipoMovimiento === 'CIERRE' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                    mov.tipoMovimiento === 'INGRESO' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                        'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
                 }`}>
                 <Icon icon={
                     mov.tipoMovimiento === 'APERTURA' ? "solar:play-circle-bold" :
@@ -144,20 +151,49 @@ const CajaHistorial: React.FC = () => {
         ),
         'Fecha': new Date(mov.fecha).toLocaleString('es-PE'),
         'Usuario': mov.usuario?.nombre || mov.usuario?.email || 'Sistema',
-        'Monto': <span className="font-medium text-gray-900">{formatCurrency(mov.monto ?? mov.montoInicial ?? mov.montoFinal ?? 0)}</span>,
-        'Observaciones': mov.observaciones || '-'
+        'Monto': <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(mov.monto ?? mov.montoInicial ?? mov.montoFinal ?? 0)}</span>,
+        'Categoría': mov.categoriaGasto
+            ? (
+                <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-100 dark:border-orange-800/30 whitespace-nowrap">
+                    {mov.categoriaGasto}
+                </span>
+            )
+            : <span className="text-gray-400 dark:text-gray-600">—</span>,
+        'Detalle': (
+            <span className="text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate block">
+                {mov.descripcionGasto || mov.observaciones || '—'}
+            </span>
+        ),
+        'Acciones': mov.tipoMovimiento === 'EGRESO' ? (
+            <div className="flex gap-2">
+                <button
+                    onClick={() => setEgresoEditar(mov)}
+                    className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                    title="Editar gasto"
+                >
+                    <Icon icon="solar:pen-bold" className="text-base" />
+                </button>
+                <button
+                    onClick={() => setEgresoEliminarId(mov.id)}
+                    className="p-1.5 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    title="Eliminar gasto"
+                >
+                    <Icon icon="solar:trash-bin-trash-bold" className="text-base" />
+                </button>
+            </div>
+        ) : <span className="text-gray-300 dark:text-gray-700">—</span>,
     })) || [];
 
     return (
         <div className="animate-in fade-in">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Filters Section */}
-                <div className="p-5 border-b border-gray-100">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-4 px-1">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
+                        <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                         <div>
                             <Calendar
                                 name="fechaInicio"
@@ -188,33 +224,28 @@ const CajaHistorial: React.FC = () => {
                                 />
                             </div>
                         )}
-                        <div className="flex gap-3 relative ">
-                            <Button onClick={applyFilters} color="primary" className="flex-1">
-                                <Icon icon="solar:filter-bold-duotone" className="mr-2 text-lg" />
-                                Filtrar
-                            </Button>
-                            <Button onClick={resetFilters} color="secondary" outline className="px-4">
-                                <Icon icon="solar:restart-bold-duotone" className="mr-2 text-lg" />
-                                Limpiar
-                            </Button>
-                            <div>
-                                <Button
-                                    onClick={handleExport}
-                                    className=""
-                                    fill
-                                    style={{
-                                        backgroundColor: '#079669',
-                                        color: '#ECFEF6',
-                                        paddingLeft: '40px',
-                                        paddingRight: '40px'
-                                    }}
-                                    disabled={exporting}
-                                >
-                                    {exporting ? <Icon icon="eos-icons:loading" className="mr-2" /> : <Icon icon="solar:file-download-bold-duotone" className="mr-2 text-xl" />}
-                                    {exporting ? 'Exportando...' : 'Exportar Excel'}
-                                </Button>
-                            </div>
-                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 mt-4 justify-end">
+                        <Button onClick={applyFilters} color="primary">
+                            <Icon icon="solar:filter-bold-duotone" className="mr-2 text-lg" />
+                            Filtrar
+                        </Button>
+                        <Button onClick={resetFilters} color="secondary" outline>
+                            <Icon icon="solar:restart-bold-duotone" className="mr-2 text-lg" />
+                            Limpiar
+                        </Button>
+                        <Button
+                            onClick={handleExport}
+                            fill
+                            style={{ backgroundColor: '#079669', color: '#ECFEF6' }}
+                            disabled={exporting}
+                        >
+                            {exporting
+                                ? <Icon icon="eos-icons:loading" className="mr-2" />
+                                : <Icon icon="solar:file-download-bold-duotone" className="mr-2 text-xl" />
+                            }
+                            {exporting ? 'Exportando...' : 'Exportar Excel'}
+                        </Button>
                     </div>
                 </div>
 
@@ -228,7 +259,7 @@ const CajaHistorial: React.FC = () => {
                     </div>
 
                     {pagination && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                             <Pagination
                                 data={historialCaja}
                                 total={pagination.total}
@@ -243,6 +274,30 @@ const CajaHistorial: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <ModalEditarGasto
+                egreso={egresoEditar}
+                isOpen={!!egresoEditar}
+                onClose={() => setEgresoEditar(null)}
+                onSuccess={() => obtenerHistorialCaja(page, limit)}
+            />
+
+            <ModalConfirm
+                isOpenModal={!!egresoEliminarId}
+                setIsOpenModal={(v) => { if (!v) setEgresoEliminarId(null); }}
+                title="Eliminar gasto"
+                information="¿Seguro que quieres eliminar este gasto? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                confirmLoading={loadingEliminar}
+                confirmSubmit={async () => {
+                    if (!egresoEliminarId) return;
+                    setLoadingEliminar(true);
+                    await eliminarEgreso(egresoEliminarId);
+                    setLoadingEliminar(false);
+                    setEgresoEliminarId(null);
+                    obtenerHistorialCaja(page, limit);
+                }}
+            />
         </div>
     );
 };

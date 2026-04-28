@@ -12,8 +12,8 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     } = vm;
 
     return (
-        <div className="p-4 rounded-lg border border-gray-200">
-            <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <div className="p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+            <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <Icon icon="mdi:image-outline" width={16} height={16} />
                 {labels.imagen}
             </h5>
@@ -21,22 +21,22 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 <button
                     type="button"
                     onClick={() => filePrincipalInputRef.current?.click()}
-                    className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#6A6CFF] transition-colors cursor-pointer overflow-hidden relative"
+                    className="w-full h-40 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-lg hover:border-[#6A6CFF] dark:hover:border-[#6A6CFF] transition-colors cursor-pointer overflow-hidden relative dark:bg-slate-800/50"
                     disabled={loadingImage}
                 >
                     {loadingImage ? (
                         <div className="flex flex-col items-center justify-center h-full">
                             <Icon icon="mdi:loading" width={32} height={32} className="animate-spin text-[#6A6CFF]" />
-                            <span className="text-xs text-gray-500 mt-2">Validando imagen...</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 mt-2">Validando imagen...</span>
                         </div>
                     ) : previewPrincipal ? (
                         <img src={previewPrincipal} alt="Preview" className="w-full h-full object-contain" />
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
                             <Icon icon="mdi:image-plus" width={32} height={32} className="mb-2" />
                             <div className="text-center px-4">
                                 <div className="text-sm">Click para subir imagen</div>
-                                <div className="text-xs text-gray-400 mt-1">Mín. 600x600px, máx. 2MB</div>
+                                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">Mín. 600x600px, máx. 2MB</div>
                             </div>
                         </div>
                     )}
@@ -91,16 +91,16 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         </button>
                     </div>
                 )}
-                <p className="text-[11px] text-gray-500 mt-2">Recomendación: 800x800px, JPG o PNG. Peso máximo 2MB.</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2">Recomendación: 800x800px, JPG o PNG. Peso máximo 2MB.</p>
 
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                     <button
                         type="button"
                         onClick={handleAutoImage}
                         disabled={isGeneratingImage || !formValues.descripcion}
                         className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${!formValues.descripcion
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
+                            ? 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                            : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800'
                             }`}
                     >
                         <Icon icon={isGeneratingImage ? "mdi:loading" : "mdi:magic-staff"}
@@ -108,7 +108,7 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             width={16} />
                         {isGeneratingImage ? 'Buscando...' : 'Auto-Generar Imagen'}
                     </button>
-                    <p className="text-[10px] text-gray-400 mt-2 text-center leading-tight">Nota: La imagen generada puede no ser exacta y sirve solo como apoyo referencial.</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center leading-tight">Nota: La imagen generada puede no ser exacta y sirve solo como apoyo referencial.</p>
                 </div>
             </div>
         </div>

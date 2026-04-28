@@ -89,23 +89,24 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
             width="600px"
         >
             <form onSubmit={handleSubmit} className="space-y-6 p-6">
-                <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                        <Icon icon="mdi:office-building" width={20} height={20} />
-                        Datos Generales
+                <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                        <Icon icon="solar:buildings-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                        Datos de la Sede
                     </h3>
 
                     {!isEdit && !canCreate && (
-                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-5 rounded-r-xl">
                             <div className="flex">
                                 <div className="flex-shrink-0">
                                     <Icon icon="mdi:alert-circle" className="h-5 w-5 text-red-500" />
                                 </div>
                                 <div className="ml-3">
-                                    <p className="text-sm text-red-700">
-                                        Has alcanzado el límite de sedes ({maxSedes}) permitido por tu plan.
-                                        <br />
-                                        Contacta a soporte para actualizar tu plan.
+                                    <p className="text-sm text-red-700 dark:text-red-400 font-bold">
+                                        Límite de sedes alcanzado ({maxSedes})
+                                    </p>
+                                    <p className="text-xs text-red-600 dark:text-red-400/80 mt-1">
+                                        Has alcanzado el límite permitido por tu plan. Contacta a soporte para actualizarlo.
                                     </p>
                                 </div>
                             </div>
@@ -145,19 +146,19 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
                             maxLength={4}
                         />
 
-                        <div className="flex items-center space-x-2 mt-4">
+                        <div className="flex items-center space-x-2 mt-4 bg-gray-50/50 dark:bg-slate-900/30 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                             <input
                                 type="checkbox"
                                 id="esPrincipal"
                                 checked={formData.esPrincipal}
                                 onChange={(e) => setFormData(prev => ({ ...prev, esPrincipal: e.target.checked }))}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                disabled={isEdit && sede?.esPrincipal} // No permitir desmarcar si ya es principal (debería requerir marcar otra como principal)
+                                className="h-5 w-5 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 rounded transition-colors"
+                                disabled={isEdit && sede?.esPrincipal}
                             />
-                            <label htmlFor="esPrincipal" className="text-sm text-gray-700">
+                            <label htmlFor="esPrincipal" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
                                 Es Sede Principal
                             </label>
-                            {isEdit && sede?.esPrincipal && <span className="text-xs text-yellow-600">(La sede principal no se puede desactivar directamente, asigne otra como principal)</span>}
+                            {isEdit && sede?.esPrincipal && <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold ml-2 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-full border border-emerald-200 dark:border-emerald-800/50 uppercase tracking-wider">Sede Principal</span>}
                         </div>
 
                     </div>

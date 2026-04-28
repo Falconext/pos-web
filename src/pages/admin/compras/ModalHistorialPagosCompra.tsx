@@ -47,43 +47,43 @@ const ModalHistorialPagosCompra = ({ compra, onClose }: ModalHistorialPagosCompr
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] flex flex-col border dark:border-slate-800">
                 {/* Header */}
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                            <Icon icon="solar:history-bold-duotone" className="text-2xl text-blue-600" />
+                        <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
+                            <Icon icon="solar:history-bold-duotone" className="text-2xl text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900">Historial de Pagos</h3>
-                            <p className="text-sm text-gray-500">
+                            <h3 className="font-bold text-gray-900 dark:text-white">Historial de Pagos</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {compra?.serie}-{compra?.numero}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                         <Icon icon="solar:close-circle-linear" className="text-2xl" />
                     </button>
                 </div>
 
                 {/* Info de la Compra */}
-                <div className="p-4 border-b border-gray-100">
+                <div className="p-4 border-b border-gray-100 dark:border-slate-800">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                            <p className="text-gray-500 text-xs mb-1">Proveedor</p>
-                            <p className="font-medium text-gray-900">{compra?.proveedor?.nombre || 'Sin nombre'}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">Proveedor</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{compra?.proveedor?.nombre || 'Sin nombre'}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500 text-xs mb-1">Fecha Emisión</p>
-                            <p className="font-medium text-gray-900">{moment(compra?.fechaEmision).format('DD/MM/YYYY')}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">Fecha Emisión</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{moment(compra?.fechaEmision).format('DD/MM/YYYY')}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500 text-xs mb-1">Total</p>
-                            <p className="font-medium text-gray-900">S/ {totalCompra.toFixed(2)}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">Total</p>
+                            <p className="font-medium text-gray-900 dark:text-white">S/ {totalCompra.toFixed(2)}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500 text-xs mb-1">Saldo</p>
-                            <p className={`font-bold ${saldoPendiente > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">Saldo</p>
+                            <p className={`font-bold ${saldoPendiente > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
                                 S/ {saldoPendiente.toFixed(2)}
                             </p>
                         </div>
@@ -91,19 +91,19 @@ const ModalHistorialPagosCompra = ({ compra, onClose }: ModalHistorialPagosCompr
                 </div>
 
                 {/* Resumen de Pagos */}
-                <div className="p-4 border-b border-gray-100">
+                <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/30">
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-white border border-blue-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-600 mb-1">Total Compra</p>
-                            <p className="text-lg font-bold text-gray-900">S/ {totalCompra.toFixed(2)}</p>
+                        <div className="bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Compra</p>
+                            <p className="text-lg font-bold text-gray-900 dark:text-white">S/ {totalCompra.toFixed(2)}</p>
                         </div>
-                        <div className="bg-white border border-green-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-600 mb-1">Total Pagado</p>
-                            <p className="text-lg font-bold text-gray-900">S/ {totalPagado.toFixed(2)}</p>
+                        <div className="bg-white dark:bg-slate-800 border border-green-200 dark:border-green-900/30 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Pagado</p>
+                            <p className="text-lg font-bold text-gray-900 dark:text-white">S/ {totalPagado.toFixed(2)}</p>
                         </div>
-                        <div className={`bg-white ${saldoPendiente > 0 ? 'border-orange-200' : 'border-emerald-200'} border rounded-xl p-3 text-center`}>
-                            <p className={`text-xs ${saldoPendiente > 0 ? 'text-gray-600' : 'text-gray-600'} mb-1`}>Saldo Pendiente</p>
-                            <p className={`text-lg font-bold ${saldoPendiente > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                        <div className={`bg-white dark:bg-slate-800 ${saldoPendiente > 0 ? 'border-orange-200 dark:border-orange-900/30' : 'border-emerald-200 dark:border-emerald-900/30'} border rounded-xl p-3 text-center`}>
+                            <p className={`text-xs ${saldoPendiente > 0 ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'} mb-1`}>Saldo Pendiente</p>
+                            <p className={`text-lg font-bold ${saldoPendiente > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 S/ {saldoPendiente.toFixed(2)}
                             </p>
                         </div>
@@ -127,37 +127,37 @@ const ModalHistorialPagosCompra = ({ compra, onClose }: ModalHistorialPagosCompr
                             {pagos.map((pago: any, index: number) => (
                                 <div
                                     key={pago.id || index}
-                                    className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow"
+                                    className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-sm transition-shadow"
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                                <Icon icon="solar:check-circle-bold" className="text-green-600 text-xl" />
+                                            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <Icon icon="solar:check-circle-bold" className="text-green-600 dark:text-green-400 text-xl" />
                                             </div>
                                             <div>
-                                                <p className="font-medium text-gray-900">Pago #{pagos.length - index}</p>
-                                                <p className="text-xs text-gray-500">
+                                                <p className="font-medium text-gray-900 dark:text-white">Pago #{pagos.length - index}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
                                                     {moment(pago.fecha).format('DD/MM/YYYY HH:mm')}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-lg font-bold text-green-600">S/ {Number(pago.monto).toFixed(2)}</p>
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                            <p className="text-lg font-bold text-green-600 dark:text-green-400">S/ {Number(pago.monto).toFixed(2)}</p>
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
                                                 {pago.medioPago}
                                             </span>
                                         </div>
                                     </div>
                                     {(pago.referencia || pago.observacion) && (
-                                        <div className="mt-3 pt-3 border-t border-gray-100 text-sm">
+                                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700 text-sm">
                                             {pago.referencia && (
-                                                <p className="text-gray-600">
-                                                    <span className="text-gray-400">Ref:</span> {pago.referencia}
+                                                <p className="text-gray-600 dark:text-gray-400">
+                                                    <span className="text-gray-400 dark:text-gray-500">Ref:</span> {pago.referencia}
                                                 </p>
                                             )}
                                             {pago.observacion && (
-                                                <p className="text-gray-600">
-                                                    <span className="text-gray-400">Obs:</span> {pago.observacion}
+                                                <p className="text-gray-600 dark:text-gray-400">
+                                                    <span className="text-gray-400 dark:text-gray-500">Obs:</span> {pago.observacion}
                                                 </p>
                                             )}
                                         </div>
@@ -169,10 +169,10 @@ const ModalHistorialPagosCompra = ({ compra, onClose }: ModalHistorialPagosCompr
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-100">
+                <div className="p-4 border-t border-gray-100 dark:border-slate-800">
                     <button
                         onClick={onClose}
-                        className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        className="w-full px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors font-medium"
                     >
                         Cerrar
                     </button>

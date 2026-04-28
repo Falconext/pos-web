@@ -55,7 +55,7 @@ export default function CotizacionesView() {
                             vm.setAnchorEl(e.currentTarget);
                         }
                     }}
-                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 bg-white flex items-center gap-1"
+                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1"
                 >
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
@@ -69,7 +69,8 @@ export default function CotizacionesView() {
     });
 
     return (
-        <div className="min-h-screen px-2 pb-4">
+        <>
+            <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             {vm.invoice && vm.invoice.detalles && (
                 <ComprobantePrintPage
                     company={vm.auth}
@@ -102,22 +103,27 @@ export default function CotizacionesView() {
                     quotationAdvance={vm.invoice?.cotizAdelanto || 0}
                 />
             )}
+            </div>
 
+            <div className="min-h-screen px-4 pb-6 bg-[#0A0D14]">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cotizaciones</h1>
-                    <p className="text-sm text-gray-500 mt-1">Gestiona tus cotizaciones</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <Icon icon="solar:document-text-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                        Cotizaciones
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona y convierte tus cotizaciones en facturas</p>
                 </div>
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Filters Section */}
-                <div className="p-5 border-b border-gray-100">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-4 px-1">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
+                        <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div className="lg:col-span-1">
@@ -157,7 +163,7 @@ export default function CotizacionesView() {
                                         'Acciones'
                                     ]} />
                             </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
                                     data={productsTable}
                                     optionSelect
@@ -173,9 +179,9 @@ export default function CotizacionesView() {
                         </>
                     ) : (
                         <div className="py-12 text-center">
-                            <Icon icon="solar:document-text-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500">No se encontraron comprobantes</p>
-                            <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
+                            <Icon icon="solar:document-text-linear" className="text-5xl text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+                            <p className="text-gray-500 dark:text-gray-400">No se encontraron comprobantes</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
                         </div>
                     )}
                 </div>
@@ -320,7 +326,7 @@ export default function CotizacionesView() {
                                     vm.setOpenAccionesId(null);
                                     vm.setAnchorEl(null);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="mingcute:print-line" width={16} height={16} />
                                 <span>Imprimir</span>
@@ -365,7 +371,7 @@ export default function CotizacionesView() {
                                     vm.setOpenAccionesId(null);
                                     vm.setAnchorEl(null);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-green-50 text-green-700 border-t border-gray-100"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-t border-gray-100 dark:border-slate-800"
                             >
                                 <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
                                 <span className="font-medium">Convertir a Factura</span>
@@ -374,6 +380,7 @@ export default function CotizacionesView() {
                     );
                 })()}
             </TableActionMenu>
-        </div>
+            </div>
+        </>
     );
 }

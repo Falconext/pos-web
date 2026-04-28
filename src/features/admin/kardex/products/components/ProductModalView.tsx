@@ -44,7 +44,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                 </div>
 
                 {/* Submit Actions */}
-                <div className="flex gap-4 px-6 justify-end mt-8 pt-6 mb-5 md:pr-5 border-t border-dashed border-gray-200">
+                <div className="flex gap-4 px-6 justify-end mt-8 pt-6 mb-5 md:pr-5 border-t border-dashed border-gray-200 dark:border-slate-800">
                     <Button color="danger" outline className="" onClick={() => vm.setIsOpenModal(false)}>
                         Cancelar
                     </Button>

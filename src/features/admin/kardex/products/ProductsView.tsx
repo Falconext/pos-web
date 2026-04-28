@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { BarcodeScannerInput } from '@/components/BarcodeScannerInput';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
@@ -15,13 +16,43 @@ import TablaFerreteria from '@/components/productos/TablaFerreteria';
 import TableActionMenu from '@/components/TableActionMenu';
 import TableSkeleton from '@/components/Skeletons/table';
 import { useProductsViewModel } from './useProductsViewModel';
+import { get } from '@/utils/fetch';
+import useAlertStore from '@/zustand/alert';
 
 export default function ProductsView() {
     const vm = useProductsViewModel();
     const { actions } = vm;
+    const { alert } = useAlertStore();
 
-    const [showOptionsDropdown, setShowOptionsDropdown] = React.useState(false);
-    const dropdownRef = React.useRef<HTMLDivElement>(null);
+    const [barcodeInput, setBarcodeInput] = useState('');
+    const [barcodeLoading, setBarcodeLoading] = useState(false);
+    const barcodeRef = useRef<HTMLInputElement>(null);
+
+    const handleBarcodeScan = async (codigo: string) => {
+        const trimmed = codigo.trim();
+        if (!trimmed) return;
+        setBarcodeLoading(true);
+        try {
+            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            if (resp.code === 1 && resp.data) {
+                // Vuelca la descripción en el buscador existente → el debounce filtra la lista
+                actions.setSearchClient({ target: { value: resp.data.descripcion } });
+                setBarcodeInput('');
+            } else {
+                alert(`Producto no encontrado: ${trimmed}`, 'error');
+                setBarcodeInput('');
+            }
+        } catch {
+            alert(`Código de barras no encontrado: ${trimmed}`, 'error');
+            setBarcodeInput('');
+        } finally {
+            setBarcodeLoading(false);
+            barcodeRef.current?.focus();
+        }
+    };
+
+    const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -78,7 +109,7 @@ export default function ProductsView() {
             const allData: any = {
                 productoId: item?.id,
                 'Img': (item as any)?.imagenUrl ? (
-                    <div className="h-[43px] w-[43px] bg-white border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center p-1">
+                    <div className="h-[43px] w-[43px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden flex items-center justify-center p-1">
                         <img
                             src={(item as any).imagenUrl}
                             alt={item?.descripcion}
@@ -90,15 +121,15 @@ export default function ProductsView() {
                         />
                     </div>
                 ) : (
-                    <div className="h-11 w-11 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                    <div className="h-11 w-11 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-slate-500">
                         <Icon icon="solar:gallery-linear" width={24} height={24} />
                     </div>
                 ),
                 'Código': item?.codigo,
                 'Producto': (
                     <div className="flex flex-col">
-                        <span className="font-semibold text-gray-900 text-[13px] leading-tight">{item?.descripcion}</span>
-                        <span className="text-[11px] text-gray-400 mt-0.5">
+                        <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight">{item?.descripcion}</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                             SKU:{vm.isCodigoBarrasEnabled && item?.codigoBarras ? ` ${item.codigoBarras} -` : ''} {item?.codigo}
                         </span>
                     </div>
@@ -155,7 +186,7 @@ export default function ProductsView() {
                                 actions.setAnchorEl(e.currentTarget);
                             }
                         }}
-                        className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
                         <Icon icon="mdi:dots-vertical" width={20} height={20} />
                     </button>
@@ -237,8 +268,8 @@ export default function ProductsView() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-[600] text-gray-900 tracking-tight">{vm.labels.titulo}</h1>
-                    <p className="text-sm text-gray-500 font-[400] mt-1">Gestiona tu inventario de {vm.labels.titulo.toLowerCase()}</p>
+                    <h1 className="text-2xl font-[600] text-gray-900 dark:text-white tracking-tight">{vm.labels.titulo}</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-[400] mt-1">Gestiona tu inventario de {vm.labels.titulo.toLowerCase()}</p>
                 </div>
                 <div className="flex gap-3">
                     <Button
@@ -256,8 +287,8 @@ export default function ProductsView() {
             </div>
 
             {/* Main Content */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 relative z-0 overflow-hidden">
-                <div className="p-5 border-b border-gray-100">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 relative z-0 overflow-hidden">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <InputPro
@@ -268,6 +299,16 @@ export default function ProductsView() {
                                 isLabel
                             />
                         </div>
+                        <BarcodeScannerInput
+                            className="min-w-[220px]"
+                            inputRef={barcodeRef}
+                            value={barcodeInput}
+                            onChange={(e) => setBarcodeInput(e.target.value)}
+                            onScan={handleBarcodeScan}
+                            loading={barcodeLoading}
+                            label='Escanear código de barras'
+                            placeholder=""
+                        />
                         {vm.isAdmin && vm.esPrincipal && (
                             <div className="w-48">
                                 <Select
@@ -300,7 +341,7 @@ export default function ProductsView() {
                                     </Button>
 
                                     {showOptionsDropdown && (
-                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
+                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1E2435] border border-gray-100 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls"
@@ -313,25 +354,25 @@ export default function ProductsView() {
                                             />
                                             <button
                                                 onClick={() => { actions.exportProducts(); setShowOptionsDropdown(false); }}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 transition-colors"
                                             >
                                                 <Icon icon="solar:export-bold" className="mr-2 text-green-500" width={18} />
                                                 Exportar Productos
                                             </button>
                                             <button
                                                 onClick={() => { vm.fileInputRef.current?.click(); }}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
                                             >
                                                 <Icon icon="solar:import-bold" className="mr-2 text-blue-500" width={18} />
                                                 Importar desde Excel
                                             </button>
-                                            <div className="mx-4 my-1 border-t border-gray-100"></div>
+                                            <div className="mx-4 my-1 border-t border-gray-100 dark:border-slate-700"></div>
                                             <a
                                                 href="/formatos/plantilla_productos.xlsx"
                                                 target="_blank"
                                                 download
                                                 onClick={() => setShowOptionsDropdown(false)}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
                                             >
                                                 <Icon icon="solar:file-download-bold" className="mr-2 text-amber-500" width={18} />
                                                 Descargar Modelo (Guía)

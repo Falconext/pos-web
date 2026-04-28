@@ -208,9 +208,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     >
       <form onSubmit={handleSubmit} className="space-y-6 p-6">
         {/* Información Personal */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:account" width={20} height={20} />
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+            <Icon icon="solar:user-bold-duotone" className="text-blue-600 dark:text-blue-400" />
             Información Personal
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -223,8 +223,8 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
 
         {/* Credenciales */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:key" width={20} height={20} />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Icon icon="mdi:key" width={20} height={20} className="text-gray-400" />
             Credenciales de Acceso
           </h3>
           <div className="relative">
@@ -246,10 +246,10 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
 
         {/* Sedes Asignadas */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-            <Icon icon="solar:city-bold-duotone" width={20} height={20} />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Icon icon="solar:city-bold-duotone" width={20} height={20} className="text-violet-500" />
             Sedes Asignadas
-            <span className="ml-1 text-xs font-normal text-gray-400">(el usuario solo podrá acceder a las sedes seleccionadas)</span>
+            <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">(el usuario solo podrá acceder a las sedes seleccionadas)</span>
           </h3>
 
           {errors.sedeIds && (
@@ -273,8 +273,8 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
                     onClick={() => handleSedeToggle(sede.id)}
                     className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-indigo-50/40'
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0A0D14] hover:border-indigo-200 dark:hover:border-indigo-800'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-gray-300'}`}>
@@ -282,10 +282,10 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Icon icon={sede.esPrincipal ? "solar:buildings-bold-duotone" : "solar:city-bold-duotone"} className={isSelected ? 'text-indigo-600' : 'text-gray-400'} width={16} />
-                        <span className="font-medium text-sm text-gray-900">{sede.nombre}</span>
+                        <Icon icon={sede.esPrincipal ? "solar:buildings-bold-duotone" : "solar:city-bold-duotone"} className={isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-600'} width={16} />
+                        <span className="font-medium text-sm text-gray-900 dark:text-white">{sede.nombre}</span>
                         {sede.esPrincipal && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full">Principal</span>
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full">Principal</span>
                         )}
                       </div>
                       {sede.codigo && <p className="text-xs text-gray-400 ml-6">Código: {sede.codigo}</p>}
@@ -299,8 +299,8 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
 
         {/* Permisos de Módulos */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:shield-account" width={20} height={20} />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Icon icon="mdi:shield-account" width={20} height={20} className="text-blue-500" />
             Permisos de Acceso
           </h3>
 
@@ -308,21 +308,21 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
 
           {/* Acceso completo */}
           <div className="mb-4">
-            <label className="flex items-center space-x-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg cursor-pointer hover:from-green-100 hover:to-emerald-100 transition-colors">
-              <input type="checkbox" checked={tieneAccesoCompleto} onChange={handleAccesoCompleto} className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2" />
+            <label className="flex items-center space-x-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-800/50 rounded-xl cursor-pointer hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-colors shadow-sm">
+              <input type="checkbox" checked={tieneAccesoCompleto} onChange={handleAccesoCompleto} className="w-5 h-5 text-green-600 bg-gray-100 dark:bg-slate-900 border-gray-300 dark:border-slate-700 rounded focus:ring-green-500 focus:ring-2" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Icon icon="mdi:key" width={20} height={20} className="text-green-600" />
-                  <span className="font-medium text-gray-900">Acceso Completo</span>
+                  <Icon icon="mdi:key" width={20} height={20} className="text-green-600 dark:text-green-400" />
+                  <span className="font-medium text-gray-900 dark:text-white">Acceso Completo</span>
                 </div>
-                <p className="text-sm text-gray-600">Otorga acceso a todos los módulos y submódulos del sistema</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Otorga acceso a todos los módulos y submódulos del sistema</p>
               </div>
             </label>
           </div>
 
           {/* Módulos específicos */}
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">O selecciona módulos y submódulos específicos:</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">O selecciona módulos y submódulos específicos:</h4>
             {modulosParaPermisos.map((modulo: any) => {
               const moduloCodigo = modulo.codigo;
               const tienePermiso = tieneAccesoCompleto || formData.permisos.includes(moduloCodigo);
@@ -332,20 +332,20 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
               const todosSubSel = subActivos.length > 0 && subActivos.every((s: any) => (formData.subModuloIds || []).includes(s.id));
 
               return (
-                <div key={moduloCodigo} className={`border rounded-lg overflow-hidden transition-all ${tieneAccesoCompleto ? 'opacity-50' : ''}`}>
+                <div key={moduloCodigo} className={`border dark:border-slate-800 rounded-xl overflow-hidden transition-all ${tieneAccesoCompleto ? 'opacity-50' : ''}`}>
                   {/* Fila del módulo */}
-                  <div className={`flex items-center gap-3 p-3 ${tienePermiso && !tieneAccesoCompleto ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
+                  <div className={`flex items-center gap-3 p-3 ${tienePermiso && !tieneAccesoCompleto ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50' : 'bg-white dark:bg-[#0A0D14]'}`}>
                     <input
                       type="checkbox"
                       checked={tienePermiso}
                       onChange={() => !tieneAccesoCompleto && handlePermisoToggle(moduloCodigo)}
                       disabled={tieneAccesoCompleto}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 flex-shrink-0"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-slate-900 border-gray-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2 flex-shrink-0"
                     />
-                    <Icon icon={modulo.icono || getModuleIcon(moduloCodigo)} width={18} className="text-gray-500 flex-shrink-0" />
+                    <Icon icon={modulo.icono || getModuleIcon(moduloCodigo)} width={18} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
                     <div className="flex-1">
-                      <span className="font-medium text-gray-900 text-sm">{modulo.nombre}</span>
-                      {modulo.descripcion && <p className="text-xs text-gray-500">{modulo.descripcion}</p>}
+                      <span className="font-medium text-gray-900 dark:text-white text-sm">{modulo.nombre}</span>
+                      {modulo.descripcion && <p className="text-xs text-gray-500 dark:text-gray-400">{modulo.descripcion}</p>}
                     </div>
                     {subActivos.length > 0 && (
                       <div className="flex items-center gap-2">
@@ -369,14 +369,14 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
 
                   {/* Submódulos expandibles */}
                   {isExpanded && tienePermiso && !tieneAccesoCompleto && subActivos.length > 0 && (
-                    <div className="border-t border-blue-100 bg-blue-50/40 px-4 py-3 space-y-2">
+                    <div className="border-t border-blue-100 dark:border-blue-900/50 bg-blue-50/40 dark:bg-blue-950/10 px-4 py-3 space-y-2">
                       {/* Seleccionar todos */}
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-600">Submódulos de {modulo.nombre}:</span>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Submódulos de {modulo.nombre}:</span>
                         <button
                           type="button"
                           onClick={() => handleSelectAllSubModulos(modulo as IModulo)}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                         >
                           {todosSubSel ? 'Deseleccionar todos' : 'Seleccionar todos'}
                         </button>
@@ -387,22 +387,22 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
                           return (
                             <label
                               key={sub.id}
-                              className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                              className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-colors ${
                                 isSubSelected
-                                  ? 'bg-indigo-50 border-indigo-200'
-                                  : 'bg-white border-gray-200 hover:bg-gray-50'
+                                  ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800/50'
+                                  : 'bg-white dark:bg-[#0A0D14] border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900'
                               }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={isSubSelected}
                                 onChange={() => handleSubModuloToggle(sub.id)}
-                                className="w-3.5 h-3.5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500"
+                                className="w-3.5 h-3.5 text-indigo-600 bg-gray-100 dark:bg-slate-900 border-gray-300 dark:border-slate-700 rounded focus:ring-indigo-500"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-800">{sub.nombre}</p>
-                                {sub.descripcion && <p className="text-xs text-gray-500 truncate">{sub.descripcion}</p>}
-                                <p className="text-[10px] font-mono text-gray-400">{sub.codigo}</p>
+                                <p className="text-sm font-medium text-gray-800 dark:text-white">{sub.nombre}</p>
+                                {sub.descripcion && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{sub.descripcion}</p>}
+                                <p className="text-[10px] font-mono text-gray-400 dark:text-gray-600">{sub.codigo}</p>
                               </div>
                             </label>
                           );

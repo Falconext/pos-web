@@ -14,8 +14,8 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
     return (
         <div className={isRestaurante ? 'col-span-2' : 'col-span-2'}>
-            <div className="p-4 rounded-lg border border-gray-200">
-                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <div className="p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                     <Icon icon="mdi:cube-outline" width={16} height={16} />
                     {isRestaurante ? 'Disponibilidad' : isFarmacia ? 'Stock' : 'Gestión de Inventario'}
                 </h5>
@@ -40,12 +40,12 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 ) : isEdit ? (
                     <>
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="bg-white p-3 rounded-lg border border-blue-100">
-                                <div className="text-lg font-bold text-blue-600">{stockOriginal}</div>
-                                <div className="text-xs text-gray-600">Stock Actual</div>
+                            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stockOriginal}</div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400">Stock Actual</div>
                             </div>
-                            <div className="bg-white p-3 rounded-lg border border-green-100">
-                                <div className="text-lg font-bold text-green-600">
+                            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-green-100 dark:border-green-900/30">
+                                <div className="text-lg font-bold text-green-600 dark:text-green-400">
                                     {tipoAjusteStock === 'ninguno' ? stockOriginal :
                                         tipoAjusteStock === 'reemplazar' ? cantidadAjuste :
                                             tipoAjusteStock === 'sumar' ? stockOriginal + cantidadAjuste :
@@ -61,18 +61,18 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                 <label className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Ajuste</label>
                                 <div className="flex flex-wrap gap-2">
                                     {[
-                                        { value: 'ninguno', label: 'Sin cambios', color: 'bg-gray-100 text-gray-700' },
-                                        { value: 'reemplazar', label: 'Reemplazar stock', color: 'bg-blue-100 text-blue-700' },
-                                        { value: 'sumar', label: 'Agregar inventario', color: 'bg-green-100 text-green-700' },
-                                        { value: 'restar', label: 'Quitar inventario', color: 'bg-red-100 text-red-700' }
+                                        { value: 'ninguno', label: 'Sin cambios', color: 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300' },
+                                        { value: 'reemplazar', label: 'Reemplazar stock', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
+                                        { value: 'sumar', label: 'Agregar inventario', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
+                                        { value: 'restar', label: 'Quitar inventario', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' }
                                     ].map((tipo) => (
                                         <button
                                             key={tipo.value}
                                             type="button"
                                             onClick={() => setTipoAjusteStock(tipo.value as any)}
                                             className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${tipoAjusteStock === tipo.value
-                                                ? tipo.color + ' ring-2 ring-offset-2 ring-blue-400'
-                                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                                ? tipo.color + ' ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400'
+                                                : 'bg-gray-50 dark:bg-slate-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'
                                                 }`}
                                         >
                                             {tipo.label}
@@ -100,7 +100,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             )}
 
                             {tipoAjusteStock !== 'ninguno' && (
-                                <div className="text-xs text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200">
+                                <div className="text-xs text-gray-600 dark:text-amber-400 bg-yellow-50 dark:bg-amber-900/20 p-2 rounded border border-yellow-200 dark:border-amber-800/50">
                                     <Icon icon="mdi:information" className="inline mr-1" width={14} height={14} />
                                     Este ajuste se registrará automáticamente en el kardex como movimiento de inventario.
                                 </div>

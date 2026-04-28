@@ -9,11 +9,11 @@ export default function FinanceDashboardView() {
     const vm = useFinanceDashboardViewModel();
 
     // Design tokens extracted from Velouré image
-    const cardClass = "bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50 transition-all hover:shadow-md";
+    const cardClass = "bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800 transition-all hover:shadow-md";
     const iconBgBase = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl mb-4";
 
     return (
-        <div className="min-h-screen bg-[#F8F9FB] p-6">
+        <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14] p-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
@@ -22,7 +22,7 @@ export default function FinanceDashboardView() {
                         <Icon icon="solar:alt-arrow-right-linear" />
                         <span className="text-indigo-600">Dashboard</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Resumen Financiero</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Resumen Financiero</h1>
                 </div>
 
                 {/* Filters / Actions */}
@@ -51,14 +51,14 @@ export default function FinanceDashboardView() {
                     />
                     <button
                         onClick={vm.refreshData}
-                        className="bg-indigo-600 top-2 relative hover:bg-indigo-700 text-white p-3 rounded-xl transition-colors shadow-lg shadow-indigo-200"
+                        className="bg-indigo-600 top-2 relative hover:bg-indigo-700 text-white p-3 rounded-xl transition-colors shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
                     >
                         <Icon icon="solar:refresh-bold" />
                     </button>
                     <button
                         onClick={vm.handleExportPDF}
                         disabled={vm.isGeneratingPDF || !vm.kpis}
-                        className="flex items-center gap-2 bg-rose-600 top-2 relative hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl transition-colors shadow-lg shadow-rose-200 text-sm font-medium"
+                        className="flex items-center gap-2 bg-rose-600 top-2 relative hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl transition-colors shadow-lg shadow-rose-200 dark:shadow-rose-900/20 text-sm font-medium"
                     >
                         <Icon icon={vm.isGeneratingPDF ? 'line-md:loading-twotone-loop' : 'solar:file-download-bold-duotone'} className="text-lg" />
                         {vm.isGeneratingPDF ? 'Generando...' : 'PDF'}
@@ -70,7 +70,7 @@ export default function FinanceDashboardView() {
             {vm.isLoading ? (
                 <div className="flex justify-center items-center py-32">
                     <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-indigo-500" />
-                    <span className="ml-3 text-gray-500 font-medium">Actualizando resumen financiero...</span>
+                    <span className="ml-3 text-gray-500 dark:text-gray-400 font-medium">Actualizando resumen financiero...</span>
                 </div>
             ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -81,15 +81,15 @@ export default function FinanceDashboardView() {
                     <div className={`${cardClass} min-h-[400px]`}>
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">Flujo de Caja Real</h2>
-                                <p className="text-sm text-gray-500 mt-1">Ingresos vs Egresos diarios</p>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Flujo de Caja Real</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ingresos vs Egresos diarios</p>
                             </div>
                             {/* Chart Legend/Actions if needed */}
                             <div className="flex gap-2">
-                                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
+                                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg">
                                     <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Ingresos
                                 </span>
-                                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
+                                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg">
                                     <span className="w-2 h-2 rounded-full bg-rose-500"></span> Egresos
                                 </span>
                             </div>
@@ -115,14 +115,14 @@ export default function FinanceDashboardView() {
                         <div className={cardClass}>
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-gray-500 font-medium mb-1">Total Por Cobrar</p>
-                                    <h3 className="text-2xl font-bold text-gray-900">{vm.valueFormatter(vm.kpis?.porCobrar || 0)}</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Total Por Cobrar</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{vm.valueFormatter(vm.kpis?.porCobrar || 0)}</h3>
                                 </div>
-                                <div className={`${iconBgBase} bg-emerald-50 text-emerald-600`}>
+                                <div className={`${iconBgBase} bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400`}>
                                     <Icon icon="solar:hand-money-bold-duotone" />
                                 </div>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-4">
+                            <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 mt-4">
                                 <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '65%' }}></div>
                             </div>
                             <p className="text-xs text-gray-400 mt-2">Pendiente de cobro a clientes</p>
@@ -131,14 +131,14 @@ export default function FinanceDashboardView() {
                         <div className={cardClass}>
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-gray-500 font-medium mb-1">Total Por Pagar</p>
-                                    <h3 className="text-2xl font-bold text-gray-900">{vm.valueFormatter(vm.kpis?.porPagar || 0)}</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Total Por Pagar</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{vm.valueFormatter(vm.kpis?.porPagar || 0)}</h3>
                                 </div>
-                                <div className={`${iconBgBase} bg-amber-50 text-amber-600`}>
+                                <div className={`${iconBgBase} bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400`}>
                                     <Icon icon="solar:bill-check-bold-duotone" />
                                 </div>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-4">
+                            <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 mt-4">
                                 <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '35%' }}></div>
                             </div>
                             <p className="text-xs text-gray-400 mt-2">Pendiente de pago a proveedores</p>
@@ -165,37 +165,37 @@ export default function FinanceDashboardView() {
 
                     <div className={cardClass}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-gray-900">Resumen Rápido</h3>
+                            <h3 className="font-bold text-gray-900 dark:text-white">Resumen Rápido</h3>
                             <button className="text-gray-400 hover:text-indigo-600">
                                 <Icon icon="solar:menu-dots-bold" />
                             </button>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 hover:bg-indigo-50 transition-colors group">
+                            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white text-indigo-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                                         <Icon icon="solar:card-send-bold-duotone" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-gray-900">Egresos</p>
-                                        <p className="text-xs text-gray-500">Gastos operativos</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">Egresos</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Gastos operativos</p>
                                     </div>
                                 </div>
-                                <span className="text-sm font-bold text-gray-900">{vm.valueFormatter(vm.kpis?.egresosPeriodo || 0)}</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-white">{vm.valueFormatter(vm.kpis?.egresosPeriodo || 0)}</span>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 hover:bg-emerald-50 transition-colors group">
+                            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors group">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white text-emerald-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                                         <Icon icon="solar:scale-bold-duotone" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-gray-900">Balance</p>
-                                        <p className="text-xs text-gray-500">Utilidad neta</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">Balance</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Utilidad neta</p>
                                     </div>
                                 </div>
-                                <span className={`text-sm font-bold ${(vm.kpis?.balancePeriodo || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                <span className={`text-sm font-bold ${(vm.kpis?.balancePeriodo || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                     {vm.valueFormatter(vm.kpis?.balancePeriodo || 0)}
                                 </span>
                             </div>

@@ -78,9 +78,14 @@ export default function AdminLayout() {
     document.addEventListener('mousedown', onClickOutside)
     document.addEventListener('keydown', onEsc)
     initTheme()
+
+    // Controlar el overflow de la etiqueta html solo para rutas de administrador
+    document.documentElement.classList.add('is-admin')
+
     return () => {
       document.removeEventListener('mousedown', onClickOutside)
       document.removeEventListener('keydown', onEsc)
+      document.documentElement.classList.remove('is-admin')
     }
   }, [])
 

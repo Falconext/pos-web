@@ -91,12 +91,12 @@ const ModalConfiguracionCotizacion = ({
             <div className="p-4">
                 {/* Custom Header with Icon inside body if desired, or simplified */}
                 <div className="mb-6 flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                        <Icon icon="solar:document-text-bold-duotone" className="text-2xl text-blue-600" />
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                        <Icon icon="solar:document-text-bold-duotone" className="text-2xl text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                        <h4 className="text-lg font-bold text-gray-900">Parámetros</h4>
-                        <p className="text-sm text-gray-500">Configure los detalles de la cotización</p>
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">Parámetros</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Configure los detalles de la cotización</p>
                     </div>
                 </div>
 
@@ -171,22 +171,22 @@ const ModalConfiguracionCotizacion = ({
                             id="includeImages"
                             checked={config.includeProductImages}
                             onChange={(e) => handleChange('includeProductImages', e.target.checked)}
-                            className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                            className="w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-gray-900 dark:bg-slate-800 focus:ring-gray-900"
                         />
-                        <label htmlFor="includeImages" className="text-sm text-gray-700 cursor-pointer">
+                        <label htmlFor="includeImages" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                             Incluir imágenes de productos en la cotización
                         </label>
                     </div>
 
                     {/* Términos y Condiciones */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                             Términos y Condiciones
                         </label>
                         <textarea
                             value={config.quotationTerms}
                             onChange={(e) => handleChange('quotationTerms', e.target.value)}
-                            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-900 focus:border-gray-900 resize-none text-sm text-gray-700"
+                            className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-gray-900 focus:border-gray-900 dark:focus:ring-blue-500 dark:focus:border-blue-500 bg-white dark:bg-slate-800 resize-none text-sm text-gray-700 dark:text-gray-200"
                             rows={3}
                             placeholder="Ej: El precio incluye instalación. Garantía de 1 año."
                         />
@@ -194,13 +194,13 @@ const ModalConfiguracionCotizacion = ({
 
                     {/* Observaciones */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                             Observaciones
                         </label>
                         <textarea
                             value={config.observaciones}
                             onChange={(e) => handleChange('observaciones', e.target.value)}
-                            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-900 focus:border-gray-900 resize-none text-sm text-gray-700"
+                            className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-gray-900 focus:border-gray-900 dark:focus:ring-blue-500 dark:focus:border-blue-500 bg-white dark:bg-slate-800 resize-none text-sm text-gray-700 dark:text-gray-200"
                             rows={3}
                             placeholder="Tiempo de entrega, condiciones especiales, etc."
                         />
@@ -213,7 +213,7 @@ const ModalConfiguracionCotizacion = ({
                 <div className="mt-2 flex justify-between items-center">
                     <button
                         onClick={handleReset}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                         Restablecer
                     </button>

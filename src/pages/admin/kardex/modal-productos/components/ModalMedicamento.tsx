@@ -27,10 +27,10 @@ const ModalMedicamento = ({ isOpen, onClose, formValues, handleChange, errors }:
         >
             <div className="space-y-6 pt-2 px-4 pt-4 pb-0">
                 {/* Información del Medicamento */}
-                <div className="p-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
-                    <h5 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <div className="p-1.5 bg-white rounded-lg shadow-sm">
-                            <Icon icon="solar:pill-bold-duotone" width={16} className="text-blue-600" />
+                <div className="p-4 rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/30">
+                    <h5 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <div className="p-1.5 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
+                            <Icon icon="solar:pill-bold-duotone" width={16} className="text-blue-600 dark:text-blue-400" />
                         </div>
                         Farmacología
                     </h5>
@@ -43,10 +43,10 @@ const ModalMedicamento = ({ isOpen, onClose, formValues, handleChange, errors }:
                 </div>
 
                 {/* Unidades de Compra/Venta */}
-                <div className="p-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
-                    <h5 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <div className="p-1.5 bg-white rounded-lg shadow-sm">
-                            <Icon icon="solar:box-minimalistic-bold-duotone" width={16} className="text-green-600" />
+                <div className="p-4 rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/30">
+                    <h5 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <div className="p-1.5 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
+                            <Icon icon="solar:box-minimalistic-bold-duotone" width={16} className="text-green-600 dark:text-green-400" />
                         </div>
                         Unidades y Conversión
                     </h5>
@@ -55,7 +55,7 @@ const ModalMedicamento = ({ isOpen, onClose, formValues, handleChange, errors }:
                         <InputPro autocomplete="off" value={(formValues as any)?.unidadVenta || ''} name="unidadVenta" onChange={handleChange} isLabel label="Unidad Venta" placeholder="Ej. BLISTER" />
                         <div>
                             <InputPro autocomplete="off" type="number" value={(formValues as any)?.factorConversion || 1} name="factorConversion" onChange={handleChange} isLabel label="Factor Conversión" placeholder="Ej. 10" />
-                            <p className="text-[10px] text-gray-500 mt-1.5 ml-1">
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1.5 ml-1">
                                 Ejemplo: 1 CAJA = 10 BLÍSTER (Factor = 10)
                             </p>
                         </div>

@@ -381,8 +381,8 @@ const CreateEmpresa = () => {
   console.log(ubigeoSelected)
 
   return (
-    <div className="px-0 py-0 md:px-0 md:py-4">
-      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-[#fff] rounded-lg">
+    <div className="px-0 py-0 md:px-0 md:py-4 bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
+      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
         {/* Header */}
         <div className="flex items-center mb-6 pt-5 md:pt-0">
           <Button
@@ -393,8 +393,8 @@ const CreateEmpresa = () => {
             <Icon icon="material-symbols:arrow-back" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2 ml-4">Nueva Empresa</h1>
-            <p className="text-gray-600 ml-4">Registra una nueva empresa en el sistema</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 ml-4">Nueva Empresa</h1>
+            <p className="text-gray-600 dark:text-gray-400 ml-4">Registra una nueva empresa en el sistema</p>
           </div>
         </div>
 
@@ -405,13 +405,13 @@ const CreateEmpresa = () => {
           </div>
         )}
 
-        <div className="max-w-8xl mx-auto bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Ingresa los datos de la empresa</h2>
+        <div className="max-w-8xl mx-auto bg-white dark:bg-[#0A0D14] rounded-3xl border border-gray-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Ingresa los datos de la empresa</h2>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Datos de la Empresa */}
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos de la Empresa</h2>
+            <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Datos de la Empresa</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -502,52 +502,52 @@ const CreateEmpresa = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-4">Plan</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Plan</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {planes && Array.isArray(planes) && planes.map((plan: any) => (
                       <div
                         key={plan.id}
                         onClick={() => handlePlanSelect(plan.id)}
-                        className={`p-4 border rounded-lg cursor-pointer transition ${formData.planId === plan.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-blue-400'
+                        className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${formData.planId === plan.id
+                          ? 'border-blue-500 dark:border-indigo-500 bg-blue-50 dark:bg-indigo-900/20 shadow-md shadow-indigo-500/10'
+                          : 'border-gray-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-slate-700 bg-white dark:bg-slate-900/50'
                           }`}
                       >
-                        <div className="font-semibold text-gray-800">{plan.nombre}</div>
-                        <div className="text-sm text-gray-600">{plan.descripcion || ''}</div>
-                        <div className="text-lg font-bold text-blue-600 mt-2">
+                        <div className="font-bold text-gray-800 dark:text-white">{plan.nombre}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{plan.descripcion || ''}</div>
+                        <div className="text-xl font-bold text-blue-600 dark:text-indigo-400 mt-3">
                           S/ {plan.costo?.toString()}
                           {plan.tipoFacturacion && (
-                            <span className="text-xs text-gray-500 ml-1">/ {plan.tipoFacturacion.toLowerCase()}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-500 ml-1 font-normal">/ {plan.tipoFacturacion.toLowerCase()}</span>
                           )}
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 mt-1 font-medium">
                           {plan.limiteUsuarios && <span>Usuarios: {plan.limiteUsuarios}</span>}
                           {plan.duracionDias && <span>{plan.duracionDias} días</span>}
                         </div>
-                        <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800 space-y-1">
                           {plan.tieneTienda && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Tienda Virtual
                             </div>
                           )}
                           {plan.tieneCulqi && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Pagos con Culqi
                             </div>
                           )}
                           {plan.tieneDeliveryGPS && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Delivery con GPS
                             </div>
                           )}
                           {plan.tieneGaleria && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Galería de Imágenes
                             </div>
                           )}
                           {plan.tieneBanners && (
-                            <div className="flex items-center text-xs text-gray-700">
+                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
                               <span className="text-green-500 mr-1">✓</span> Banners Promocionales
                             </div>
                           )}
@@ -559,29 +559,29 @@ const CreateEmpresa = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="flex items-center">
+                  <label className="flex items-center cursor-pointer group">
                     <input
                       type="checkbox"
                       checked={formData.esPrueba}
                       onChange={handleEsPruebaChange}
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                      className="w-5 h-5 text-blue-600 dark:text-indigo-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Esto es una versión de prueba (sin costo)</span>
+                    <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Esto es una versión de prueba (sin costo)</span>
                   </label>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Logo (Opcional)
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleLogoChange}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                   />
                   {logoPreview && (
-                    <img src={logoPreview} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded" />
+                    <img src={logoPreview} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded-xl border border-gray-200 dark:border-slate-700" />
                   )}
                 </div>
 
@@ -614,9 +614,9 @@ const CreateEmpresa = () => {
 
             {/* Integración SUNAT - Solo para empresas FORMALES */}
             {formData.tipoEmpresa === 'FORMAL' && !formData.esPrueba && (
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Integración SUNAT (Opcional)</h2>
-                <p className="text-sm text-gray-600 mb-4">
+              <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Integración SUNAT (Opcional)</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Estos datos se obtienen del proveedor SUNAT después del registro. Puedes agregarlos más tarde.
                 </p>
 
@@ -649,8 +649,8 @@ const CreateEmpresa = () => {
             )}
 
             {/* Datos del Administrador */}
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Administrador de la Empresa</h2>
+            <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Administrador de la Empresa</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

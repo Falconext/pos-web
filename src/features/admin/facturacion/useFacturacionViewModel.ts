@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState, useMemo } from "react";
+import { ChangeEvent, useEffect, useState, useMemo, useRef } from "react";
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
 import { IExtentionsState, useExtentionsStore } from "@/zustand/extentions";
 import { IClientsState, useClientsStore } from "@/zustand/clients";
@@ -48,6 +48,11 @@ export const useFacturacionViewModel = () => {
     // POS STATES
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState<string>("");
+
+    // Barcode scanner state
+    const [barcodeInput, setBarcodeInput] = useState('');
+    const [barcodeLoading, setBarcodeLoading] = useState(false);
+    const barcodeRef = useRef<HTMLInputElement>(null);
 
     const initialDocumentType = isQuotationRoute
         ? "COTIZACIÓN"
@@ -406,6 +411,28 @@ export const useFacturacionViewModel = () => {
             });
         }
     }
+
+    const handleBarcodeScan = async (codigo: string) => {
+        const trimmed = codigo.trim();
+        if (!trimmed) return;
+        setBarcodeLoading(true);
+        try {
+            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            if (resp.code === 1 && resp.data) {
+                handleProductClick(resp.data);
+                setBarcodeInput('');
+            } else {
+                useAlertStore.getState().alert(`Producto no encontrado: ${trimmed}`, 'error');
+                setBarcodeInput('');
+            }
+        } catch {
+            useAlertStore.getState().alert(`Código de barras no encontrado: ${trimmed}`, 'error');
+            setBarcodeInput('');
+        } finally {
+            setBarcodeLoading(false);
+            barcodeRef.current?.focus();
+        }
+    };
 
     const handleSaveEdit = (newItem: any) => {
         if (editingIndex === -1) return;
@@ -813,6 +840,11 @@ export const useFacturacionViewModel = () => {
         IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice,
         showMobileCart, setShowMobileCart,
         editingIndex, setEditingIndex,
+
+        // Barcode scanner
+        barcodeInput, setBarcodeInput,
+        barcodeLoading, barcodeRef,
+        handleBarcodeScan,
 
         // Handlers
         handleProductClick,

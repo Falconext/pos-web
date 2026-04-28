@@ -182,7 +182,7 @@ const InputPro: FC<IInput> = ({
     <div className="relative">
       <div className={mode === "flex" ? "flex items-center" : ""}>
         <div>
-          {isLabel && <label className="block text-sm font-[400] text-gray-900 dark:text-gray-300 mb-2">{label}</label>}
+          {isLabel && <label className="block text-sm font-[400] text-gray-900 dark:!text-gray-300 mb-2">{label}</label>}
         </div>
         {renderInput()}
       </div>

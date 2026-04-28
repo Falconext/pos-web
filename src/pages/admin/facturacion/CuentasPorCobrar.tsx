@@ -170,8 +170,8 @@ const CuentasPorCobrar = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Pagos</h1>
-                    <p className="text-sm text-gray-500 mt-1">Administra cobros y cuentas pendientes</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Gestión de Pagos</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra cobros y cuentas pendientes</p>
                 </div>
             </div>
 
@@ -185,7 +185,7 @@ const CuentasPorCobrar = () => {
                         className={({ isActive }) =>
                             `flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
                                 ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                : 'bg-white dark:bg-[#111827] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-800'
                             }`
                         }
                     >
@@ -196,20 +196,20 @@ const CuentasPorCobrar = () => {
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white relative z-0 rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-[#111827] relative z-0 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Stats Row */}
-                <div className="p-5 relative border-b border-gray-100 bg-gray-50/50">
+                <div className="p-5 relative border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         {/* KPI 1 */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-[#0A0D14] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-violet-600 text-[13px] font-bold tracking-wide uppercase">Comprobantes Pendientes</h3>
-                                <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 group-hover:-translate-y-1 transition-transform">
+                                <h3 className="text-violet-600 dark:text-violet-400 text-[13px] font-bold tracking-wide uppercase">Comprobantes Pendientes</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 dark:shadow-violet-900/20 group-hover:-translate-y-1 transition-transform">
                                     <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{pendientes?.length || 0}</h2>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{pendientes?.length || 0}</h2>
                                 <div className="flex items-center gap-1.5 opacity-0">
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
@@ -217,15 +217,15 @@ const CuentasPorCobrar = () => {
                         </div>
 
                         {/* KPI 2 */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-[#0A0D14] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-blue-500 text-[13px] font-bold tracking-wide uppercase">Total por Cobrar</h3>
-                                <div className="w-10 h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:-translate-y-1 transition-transform">
+                                <h3 className="text-blue-500 dark:text-blue-400 text-[13px] font-bold tracking-wide uppercase">Total por Cobrar</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 group-hover:-translate-y-1 transition-transform">
                                     <Icon icon="solar:money-bag-bold-duotone" className="text-xl" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">S/ {pendientes?.reduce((sum: number, inv: any) => sum + (inv.saldo || 0), 0).toFixed(2) || '0.00'}</h2>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">S/ {pendientes?.reduce((sum: number, inv: any) => sum + (inv.saldo || 0), 0).toFixed(2) || '0.00'}</h2>
                                 <div className="flex items-center gap-1.5 opacity-0">
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
@@ -233,15 +233,15 @@ const CuentasPorCobrar = () => {
                         </div>
 
                         {/* KPI 3 */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-[#0A0D14] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-amber-500 text-[13px] font-bold tracking-wide uppercase">Vencidos (+30 días)</h3>
-                                <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 group-hover:-translate-y-1 transition-transform">
+                                <h3 className="text-amber-500 dark:text-amber-400 text-[13px] font-bold tracking-wide uppercase">Vencidos (+30 días)</h3>
+                                <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/20 group-hover:-translate-y-1 transition-transform">
                                     <Icon icon="solar:calendar-bold-duotone" className="text-xl" />
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 mb-2">{pendientes?.filter((inv: any) => calcularDiasVencidos(inv.fechaEmision) > 30).length || 0}</h2>
+                                <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{pendientes?.filter((inv: any) => calcularDiasVencidos(inv.fechaEmision) > 30).length || 0}</h2>
                                 <div className="flex items-center gap-1.5 opacity-0">
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
@@ -251,10 +251,10 @@ const CuentasPorCobrar = () => {
                 </div>
 
                 {/* Filters Section */}
-                <div className="p-5 relative z-0 border-b border-gray-100">
+                <div className="p-5 relative z-0 border-b border-gray-100 dark:border-slate-800">
                     <div className="flex items-center gap-2 mb-4">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800">Filtros</h3>
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
+                        <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div className="lg:col-span-1">
@@ -317,7 +317,7 @@ const CuentasPorCobrar = () => {
                                     ]}
                                 />
                             </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
                                     data={tableData}
                                     optionSelect
@@ -333,9 +333,9 @@ const CuentasPorCobrar = () => {
                         </>
                     ) : (
                         <div className="py-12 text-center">
-                            <Icon icon="solar:check-circle-bold-duotone" className="text-5xl text-green-400 mx-auto mb-3" />
-                            <p className="text-gray-500 font-medium">¡No hay cuentas pendientes!</p>
-                            <p className="text-sm text-gray-400 mt-1">Todos los comprobantes están al día</p>
+                            <Icon icon="solar:check-circle-bold-duotone" className="text-5xl text-green-400 dark:text-green-500/50 mx-auto mb-3" />
+                            <p className="text-gray-500 dark:text-gray-300 font-medium">¡No hay cuentas pendientes!</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Todos los comprobantes están al día</p>
                         </div>
                     )}
                 </div>

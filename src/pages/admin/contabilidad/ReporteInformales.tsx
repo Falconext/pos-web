@@ -11,26 +11,26 @@ const ReportesComprobantesInformales = () => {
     const r = vm.resumenReporteInformal;
 
     return (
-        <div>
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0A0D14]">
             <div className="md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
-                <div className="mb-6 flex justify-between items-center">
-                    <div className="flex justify-start gap-3 mb-0 flex-wrap">
-                        <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" />
-                        <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" />
-                        {vm.canFilterSede && (
-                            <div className="min-w-[180px]">
-                                <Select error="" label="Sede" name="sedeId" defaultValue="Todas las sedes" onChange={vm.handleSelectSede} options={vm.sedesOptions} />
-                            </div>
-                        )}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4 px-4 md:px-0">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <Icon icon="solar:chart-square-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                            Reporte Interno
+                        </h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ventas internas y documentos informales</p>
                     </div>
-                    <div className="top-3 relative">
-                        <Button color="success" onMouseEnter={() => vm.setIsHoveredExp(true)} onMouseLeave={() => vm.setIsHoveredExp(false)} onClick={vm.handleExport}>
-                            <Icon className="mr-4" color={vm.isHoveredExp ? '#fff' : '#22C55D'} icon="icon-park-outline:excel" width="20" height="20" />
-                            Exportar Excel
-                        </Button>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={vm.handleExport}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                    >
+                        <Icon icon="solar:export-bold" className="text-lg" />
+                        Exportar Excel
+                    </button>
                 </div>
-                <div className='w-full bg-[#fff] p-4 rounded-md'>
+                <div className='w-full bg-white dark:bg-[#111827] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800'>
                     {vm.reports?.length > 0 ? (
                         <>
                             <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible">
@@ -50,12 +50,19 @@ const ReportesComprobantesInformales = () => {
                                     { label: 'Total', key: 'total' },
                                 ]} />
                             </div>
-                            {r !== null && (
-                                <div className="flex justify-end mt-5 mb-5 pr-[24px]">
-                                    <div>
-                                        {[['Tickets:', r.totalTickets], ['Notas de Venta:', r.totalNotasVenta], ['Recibos por Honorarios:', r.totalRecibosHonorarios], ['Comprobantes de Pago:', r.totalComprobantesPago], ['Notas de Pedido:', r.totalNotasPedido], ['Órdenes de Trabajo:', r.totalOrdenesTrabajo], ['Total:', r.totalVenta]].map(([label, val]) => (
-                                            <div key={label as string} className="flex"><label className="block w-[200px] text-[14px]">{label as string}</label><strong className="text-[13px]">S/ {(val as number).toFixed(2)}</strong></div>
+                             {r !== null && (
+                                <div className="flex justify-end mt-8 mb-5 pr-[24px]">
+                                    <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 min-w-[300px]">
+                                        {[['Tickets:', r.totalTickets], ['Notas de Venta:', r.totalNotasVenta], ['Recibos por Honorarios:', r.totalRecibosHonorarios], ['Comprobantes de Pago:', r.totalComprobantesPago], ['Notas de Pedido:', r.totalNotasPedido], ['Órdenes de Trabajo:', r.totalOrdenesTrabajo]].map(([label, val]) => (
+                                            <div key={label as string} className="flex justify-between py-1.5 border-b border-gray-200 dark:border-slate-800 last:border-0">
+                                                <label className="text-sm text-gray-500 dark:text-gray-400">{label as string}</label>
+                                                <span className="text-sm font-semibold dark:text-white">S/ {(val as number).toFixed(2)}</span>
+                                            </div>
                                         ))}
+                                        <div className="flex justify-between pt-4 mt-2 border-t-2 border-blue-500/30">
+                                            <label className="text-base font-bold dark:text-white">Total:</label>
+                                            <strong className="text-lg font-black text-blue-600 dark:text-blue-400">S/ {r.totalVenta.toFixed(2)}</strong>
+                                        </div>
                                     </div>
                                 </div>
                             )}

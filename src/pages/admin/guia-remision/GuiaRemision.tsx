@@ -178,18 +178,22 @@ const GuiaRemision = () => {
         destinatario: guia.destinatarioRazonSocial,
         motivo: MOTIVOS_TRASLADO[guia.tipoTraslado] || guia.tipoTraslado,
         estadoSunat: (
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${guia.estadoSunat === 'ACEPTADO' ? 'bg-green-100 text-green-800' :
-                guia.estadoSunat === 'RECHAZADO' ? 'bg-red-100 text-red-800' :
-                    guia.estadoSunat === 'ENVIADO' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                }`}>
+            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                guia.estadoSunat === 'ACEPTADO' 
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30' :
+                guia.estadoSunat === 'RECHAZADO' 
+                ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/30' :
+                guia.estadoSunat === 'ENVIADO' 
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/30' :
+                'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+            }`}>
                 {guia.estadoSunat || 'PENDIENTE'}
             </span>
         ),
         acciones: (
             <button
                 onClick={(e) => handleOpenMenu(e, guia)}
-                className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
                 <Icon icon="mdi:dots-vertical" width={20} height={20} />
             </button>
@@ -197,55 +201,67 @@ const GuiaRemision = () => {
     }));
 
     return (
-        <div className="">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Guías de Remisión</h1>
-                <Button color="primary" onClick={() => setIsModalOpen(true)}>
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0A0D14] p-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <Icon icon="solar:delivery-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                        Guías de Remisión
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestión y envío de guías de remitente y transportista</p>
+                </div>
+                <Button color="primary" onClick={() => setIsModalOpen(true)} className="w-full md:w-auto shadow-lg shadow-blue-500/20">
                     <Icon icon="heroicons:plus" className="mr-2" />
                     Nueva Guía
                 </Button>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4 mb-4">
-                <div className="flex px-4 flex-col md:flex-row gap-4 items-end">
-                    <div className="w-full md:w-1/3">
-                        <InputPro
-                            label="Buscar..."
-                            name="search"
-                            value={searchTerm}
-                            onChange={handleSearch}
-                            placeholder="Serie, Correlativo o Cliente..."
-                            isLabel={true}
-                        />
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-4 px-1">
+                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
+                        <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
                     </div>
-                    <div className="w-full md:w-auto">
-                        <Calendar
-                            text="Desde"
-                            name="fechaInicio"
-                            value={moment(fechaInicio).format('DD/MM/YYYY')}
-                            onChange={(date: any) => setFechaInicio(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
-                        />
-                    </div>
-                    <div className="w-full md:w-auto">
-                        <Calendar
-                            text="Hasta"
-                            name="fechaFin"
-                            value={moment(fechaFin).format('DD/MM/YYYY')}
-                            onChange={(date: any) => setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
-                        />
-                    </div>
-                    {isAdmin && (
-                        <div className="w-full md:w-auto">
-                            <Select
-                                error=""
-                                label="Sede"
-                                name="sedeId"
-                                defaultValue="Todas las sedes"
-                                onChange={(id: any, _value: string) => setSelectedSedeId(id === 0 ? null : Number(id))}
-                                options={sedesOptions}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <div className="lg:col-span-2">
+                            <InputPro
+                                label="Búsqueda rápida"
+                                name="search"
+                                value={searchTerm}
+                                onChange={handleSearch}
+                                placeholder="Serie, correlativo o destinatario..."
+                                isLabel={true}
                             />
                         </div>
-                    )}
+                        <div>
+                            <Calendar
+                                text="Desde"
+                                name="fechaInicio"
+                                value={moment(fechaInicio).format('DD/MM/YYYY')}
+                                onChange={(date: any) => setFechaInicio(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
+                            />
+                        </div>
+                        <div>
+                            <Calendar
+                                text="Hasta"
+                                name="fechaFin"
+                                value={moment(fechaFin).format('DD/MM/YYYY')}
+                                onChange={(date: any) => setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
+                            />
+                        </div>
+                        {isAdmin && (
+                            <div>
+                                <Select
+                                    error=""
+                                    label="Sede"
+                                    name="sedeId"
+                                    defaultValue="Todas las sedes"
+                                    onChange={(id: any, _value: string) => setSelectedSedeId(id === 0 ? null : Number(id))}
+                                    options={sedesOptions}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
 
@@ -352,7 +368,6 @@ const GuiaRemision = () => {
                     </div>
                 </TableActionMenu>
 
-                {/* Modal de Nueva Guía */}
                 {/* Modal de Nueva Guía */}
                 <ModalGuiaRemision
                     isOpen={isModalOpen}

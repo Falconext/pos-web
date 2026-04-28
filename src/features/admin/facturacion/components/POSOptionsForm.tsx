@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 
 export const POSOptionsForm = ({ vm }: { vm: any }) => {
     return (
-        <div className="p-4 md:p-5 border-b border-gray-100 bg-gray-50/30">
+        <div className="p-4 md:p-5 border-b border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-[#111827]">
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                     {/* Mobile Back Button */}
@@ -16,10 +16,10 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                             <Icon icon="solar:arrow-left-linear" className="text-2xl" />
                         </button>
                     )}
-                    <div className="p-2 bg-gray-100 text-gray-900 rounded-xl">
+                    <div className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-xl">
                         <Icon icon="solar:bill-list-bold-duotone" className="text-xl" />
                     </div>
-                    <h2 className="font-bold text-gray-800 text-lg">Detalle de Venta</h2>
+                    <h2 className="font-bold text-gray-800 dark:text-white text-lg">Detalle de Venta</h2>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -101,29 +101,29 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
 
                 {/* Botón Retención 3% */}
                 {(vm.tiposOperacion.find((op: any) => op.id === vm.formValues.motivoId)?.codigo !== "0112" && vm.totalAdjusted >= 700 && vm.auth?.empresa?.esAgenteRetencion) && (
-                    <div className="mt-0 col-span-2 mb-0 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div className="mt-0 col-span-2 mb-0 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-lg p-3">
                         <div className="space-y-2">
                             <button
                                 type="button"
                                 onClick={() => vm.setIsModalRetencionOpen(true)}
-                                className="w-full p-3 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl border-2 border-gray-300 flex items-center justify-between group transition-all"
+                                className="w-full p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 hover:from-gray-100 hover:to-gray-200 dark:hover:from-slate-700 dark:hover:to-slate-800 rounded-xl border-2 border-gray-300 dark:border-slate-700 flex items-center justify-between group transition-all"
                             >
                                 <div className="flex items-center gap-2">
-                                    <div className="p-1.5 bg-gray-900 rounded-lg group-hover:scale-110 transition-transform">
+                                    <div className="p-1.5 bg-gray-900 dark:bg-slate-800 rounded-lg group-hover:scale-110 transition-transform">
                                         <Icon icon="solar:percent-circle-bold" className="text-white" width={16} />
                                     </div>
-                                    <span className="text-sm font-semibold text-gray-900">Configurar Retención 3%</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Configurar Retención 3%</span>
                                 </div>
-                                <Icon icon="solar:alt-arrow-right-linear" className="text-gray-900 group-hover:translate-x-1 transition-transform" width={18} />
+                                <Icon icon="solar:alt-arrow-right-linear" className="text-gray-900 dark:text-white group-hover:translate-x-1 transition-transform" width={18} />
                             </button>
 
                             {vm.retencionData && (
-                                <div className="flex items-center justify-between bg-gray-100 p-2.5 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="flex items-center justify-between bg-gray-100 dark:bg-slate-800 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <div className="flex items-center gap-2">
-                                        <Icon icon="solar:check-circle-bold" className="text-gray-900" width={18} />
-                                        <span className="text-xs font-medium text-gray-900">Reg. Retenciones del IGV (3%)</span>
+                                        <Icon icon="solar:check-circle-bold" className="text-gray-900 dark:text-white" width={18} />
+                                        <span className="text-xs font-medium text-gray-900 dark:text-white">Reg. Retenciones del IGV (3%)</span>
                                     </div>
-                                    <span className="text-xs font-bold text-gray-900">Retención: S/ {vm.retencionData.montoDetraccion?.toFixed(2)}</span>
+                                    <span className="text-xs font-bold text-gray-900 dark:text-white">Retención: S/ {vm.retencionData.montoDetraccion?.toFixed(2)}</span>
                                 </div>
                             )}
                         </div>
@@ -137,11 +137,11 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                             id="includeImages"
                             checked={vm.includeProductImages}
                             onChange={(e) => vm.setIncludeProductImages(e.target.checked)}
-                            className="w-4 h-4 text-gray-900 bg-gray-100 border-gray-300 rounded focus:ring-gray-900"
+                            className="w-4 h-4 text-gray-900 dark:text-white bg-gray-100 dark:bg-slate-800 border-gray-300 dark:border-slate-700 rounded focus:ring-gray-900"
                             style={{ accentColor: '#1C1C24' }}
                         />
-                        <label htmlFor="includeImages" className="text-sm font-medium text-gray-700 cursor-pointer select-none flex items-center gap-1">
-                            <Icon icon="solar:gallery-bold-duotone" className="text-gray-900" />
+                        <label htmlFor="includeImages" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none flex items-center gap-1">
+                            <Icon icon="solar:gallery-bold-duotone" className="text-gray-900 dark:text-gray-100" />
                             Incluir imágenes del producto
                         </label>
                     </div>
@@ -162,7 +162,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                             label="Cliente" isIcon icon="solar:user-linear"
                         />
                     </div>
-                    <button onClick={() => vm.setIsOpenModalClient(true)} className="px-4 py-3 relative top-2 bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-200 border border-gray-300 transition-colors shadow-sm">
+                    <button onClick={() => vm.setIsOpenModalClient(true)} className="px-4 py-3 relative top-2 bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-2xl hover:bg-gray-200 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-700 transition-colors shadow-sm">
                         <Icon icon="solar:user-plus-bold" className="text-xl" />
                     </button>
                 </div>
@@ -170,12 +170,12 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
 
             {/* Sección para NOTA DE CRÉDITO / DÉBITO */}
             {(vm.formValues?.comprobante === "NOTA DE CREDITO" || vm.formValues?.comprobante === "NOTA DE DEBITO") && (
-                <div className="mt-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-50">
-                        <div className="p-1.5 bg-amber-100 rounded-lg">
-                            <Icon icon="solar:file-check-bold-duotone" className="text-amber-600" width={18} />
+                <div className="mt-4 p-4 bg-white dark:bg-[#1E2435] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-50 dark:border-slate-800">
+                        <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                            <Icon icon="solar:file-check-bold-duotone" className="text-amber-600 dark:text-amber-400" width={18} />
                         </div>
-                        <h4 className="font-bold text-gray-700 text-sm">Documento a Modificar</h4>
+                        <h4 className="font-bold text-gray-700 dark:text-white text-sm">Documento a Modificar</h4>
                     </div>
 
                     {/* Grid de campos */}

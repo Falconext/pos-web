@@ -313,11 +313,11 @@ const OrdenesDeTrabajoPage = () => {
         totalInWords={numberToWords(parseFloat(invoice?.mtoImpVenta)) + ' SOLES'}
         observation={invoice?.observaciones}
       />
-      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white rounded-lg">
+      <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white dark:bg-[#111827] rounded-lg border dark:border-slate-800">
         <div className="mb-5 pt-5 md:pt-0">
           <div className="grid grid-cols-12 gap-3 justify-between items-center">
             <div className="md:col-start-1 md:col-end-5 col-span-12">
-              <InputPro name="" onChange={(e: any) => handleChangeSearch(e.target.value)} isLabel label="Buscar OT, cliente, nro" />
+              <InputPro name="" onChange={(e: any) => handleChangeSearch(e)} isLabel label="Buscar OT, cliente, nro" />
             </div>
             <div className="md:col-start-5 md:col-end-13 col-span-12 grid gap-3">
               <div className="md:col-start-1 md:col-end-3 col-span-12">
