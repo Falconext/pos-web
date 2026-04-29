@@ -312,32 +312,6 @@ const GuiaRemision = () => {
                             <Icon icon="solar:printer-bold" width={16} height={16} /> <span>Imprimir Formato</span>
                         </button>
 
-                        <button
-                            onClick={async () => {
-                                handleCloseMenu();
-                                // TODO: Call backend WhatsApp logic
-                                // For now just alert or mock
-                                const phoneNumber = selectedRow.cliente?.telefono || selectedRow.destinatarioNumDoc; // fallback?
-                                // We need a prompt or just send to default number? 
-                                // Usually we might want to confirm number.
-                                // Let's just implement the button to call a store function (to be created)
-                                // or verify functionality later.
-
-                                // For this step, I will just put the UI and a placeholder action.
-                                // Ideally, open a modal to confirm number? Or just send. 
-                                // The backend controller takes "numeroDestino".
-
-                                // Quick inputs prompt
-                                const numero = prompt("Ingrese número de WhatsApp (51xxxxxxxxx):", selectedRow.cliente?.telefono || "");
-                                if (numero) {
-                                    await useGuiaRemisionStore.getState().enviarWhatsApp(selectedRow.id, numero);
-                                }
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 hover:bg-green-50"
-                        >
-                            <Icon icon="logos:whatsapp-icon" width={16} height={16} /> <span>Enviar a WhatsApp</span>
-                        </button>
-
                         {canEditGuia && (
                             <>
                                 <button

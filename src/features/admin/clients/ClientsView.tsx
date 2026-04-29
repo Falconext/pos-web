@@ -31,7 +31,7 @@ export default function ClientsView() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Clientes</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra tu cartera de clientes y proveedores</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra</p>
                 </div>
                 <Button color="secondary" onClick={actions.openNewModal} className="flex items-center gap-2 !bg-violet-600 border-none shadow-md shadow-violet-200/50">
                     <Icon icon="solar:add-circle-bold" className="text-lg" />
@@ -142,7 +142,7 @@ export default function ClientsView() {
                                     headerColumns={vm.visibleColumns}
                                 />
                             </div>
-                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
+                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
                                     data={clientsTable}
                                     optionSelect

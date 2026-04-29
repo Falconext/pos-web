@@ -550,12 +550,16 @@ export default function AdminLayout() {
                         )}
                         {auth?.empresa?.tipoEmpresa === 'FORMAL' && (
                           <>
-                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sire/ventas" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                              SIRE — Libro Ventas
-                            </NavLink>
-                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sire/compras" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                              SIRE — Libro Compras
-                            </NavLink>
+                            {hasSubPermission(auth, 'contabilidad:sire-ventas') && (
+                              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sire/ventas" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                                SIRE — Libro Ventas
+                              </NavLink>
+                            )}
+                            {hasSubPermission(auth, 'contabilidad:sire-compras') && (
+                              <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sire/compras" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                                SIRE — Libro Compras
+                              </NavLink>
+                            )}
                           </>
                         )}
                       </div>

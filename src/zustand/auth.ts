@@ -47,6 +47,23 @@ export const useAuthStore = create<IAuthState>()(
 
     initAuth();
 
+    if (typeof window !== 'undefined') {
+      let lastRefreshAt = 0;
+      const refreshOnVisibility = () => {
+        if (document.visibilityState !== 'visible') return;
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        if (!token) return;
+
+        const now = Date.now();
+        if (now - lastRefreshAt < 30_000) return;
+        lastRefreshAt = now;
+
+        void _get().me();
+      };
+
+      document.addEventListener('visibilitychange', refreshOnVisibility);
+    }
+
     return {
       success: false,
       auth: null,

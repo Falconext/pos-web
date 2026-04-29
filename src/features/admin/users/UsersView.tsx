@@ -93,7 +93,7 @@ export default function UsersView() {
     }
 
     return (
-        <div className="min-h-screen px-4 pb-6 bg-[#0A0D14]">
+        <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
                 <div>

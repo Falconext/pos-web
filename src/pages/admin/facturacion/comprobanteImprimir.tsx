@@ -39,6 +39,13 @@ const ComprobantePrintPage = ({
     const totalPrices = productsInvoice?.reduce((sum: any, p: any) => sum + (Number(p.precioUnitario || p.mtoPrecioUnitario || 0) * (p.cantidad || 0)), 0);
 
     const round2 = (n: any) => parseFloat(n?.toFixed(2)) || 0;
+    const parseAmount = (value: any, fallback = 0): number => {
+        if (value === null || value === undefined || value === '') return fallback;
+        if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+        const normalized = String(value).replace(/\s/g, '').replace(',', '.');
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    };
 
     console.log(formValues)
     console.log(company)
@@ -57,6 +64,19 @@ const ComprobantePrintPage = ({
 
     const displayRetencionMonto = retencionData ? Number(retencionData.montoDetraccion || 0) : calculatedRetention;
     const shouldShowRetention = retencionData || (hasRetentionText && calculatedRetention > 0);
+    const isDocumentoFiscal = ['01', '03', '07', '08'].includes(String(formValues?.tipoDoc || ''));
+    const totalDescuentos = parseAmount(
+        formValues?.totalDescuentos ??
+        formValues?.mtoDescuentos ??
+        (totalPrices > totalReceipt ? totalPrices - totalReceipt : 0)
+    );
+    const mtoOperGravadas = parseAmount(formValues?.mtoOperGravadas, totalReceipt / 1.18);
+    const mtoOperGratuitas = parseAmount(formValues?.mtoOperGratuitas, 0);
+    const mtoOperInafectas = parseAmount(formValues?.mtoOperInafectas, 0);
+    const mtoOperExoneradas = parseAmount(formValues?.mtoOperExoneradas, 0);
+    const mtoIcbper = parseAmount(formValues?.icbper ?? formValues?.mtoIcbper, 0);
+    const mtoIgv = parseAmount(formValues?.mtoIGV, totalReceipt - (totalReceipt / 1.18));
+    const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, totalReceipt);
 
     console.log(formValues)
 
@@ -414,33 +434,66 @@ const ComprobantePrintPage = ({
                                         <div>{formValues?.serie}-{formValues?.correlativo}</div>
                                     </div>
                                 </div>
-                                <div className="flex mt-4 justify-between mb-2">
-                                    <div>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">CLIENTE:</div> {selectedClient?.nombre?.toUpperCase() || ''}</label>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">DIRECCION:</div><p className='w-[450px]'> {selectedClient?.direccion?.toUpperCase() || '-'}</p></label>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">FORMA PAGO:</div> {formValues?.medioPago?.toUpperCase() || 'CONTADO'}</label>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[100px]">MEDIO PAGO:</div> {formValues?.medioPago?.toUpperCase()} S/ {round2(totalPrices).toFixed(2)}</label>
+                                <div className="mt-4 mb-4">
+                                    <div className="flex gap-4 mb-2 items-stretch">
+                                        <div className="w-1/2 flex flex-col">
+                                            <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DEL CLIENTE</div>
+                                            <div className="border border-black rounded-lg p-3 flex-1">
+                                                <div className="grid grid-cols-[80px_1fr] gap-y-1">
+                                                    <span className="font-bold text-xs">CLIENTE:</span>
+                                                    <span className="text-xs break-words">{selectedClient?.nombre?.toUpperCase() || '-'}</span>
 
-                                        {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
-                                            <div className="mt-2 border p-1 border-gray-300">
-                                                <div className="text-xs font-bold mb-1">Cronograma de Cuotas:</div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {formValues.cuotas.map((cuota: any, idx: number) => (
-                                                        <div key={idx} className="text-[10px] flex justify-between px-1">
-                                                            <span>Cuota {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}):</span>
-                                                            <span>S/ {Number(cuota.monto).toFixed(2)}</span>
-                                                        </div>
-                                                    ))}
+                                                    <span className="font-bold text-xs">RUC:</span>
+                                                    <span className="text-xs">{selectedClient?.nroDoc || '-'}</span>
+
+                                                    <span className="font-bold text-xs">EMAIL:</span>
+                                                    <span className="text-xs break-all">{selectedClient?.email || '-'}</span>
+
+                                                    <span className="font-bold text-xs">TELF:</span>
+                                                    <span className="text-xs">{selectedClient?.telefono || '-'}</span>
+
+                                                    <span className="font-bold text-xs">DIR:</span>
+                                                    <span className="text-xs break-words">{selectedClient?.direccion?.toUpperCase() || '-'}</span>
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
+
+                                        <div className="w-1/2 flex flex-col">
+                                            <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DEL COMPROBANTE</div>
+                                            <div className="border border-black rounded-lg p-3 flex-1">
+                                                <div className="grid grid-cols-[115px_1fr] gap-y-1">
+                                                    <span className="font-bold text-xs">FECHA:</span>
+                                                    <span className="text-xs">{moment(formValues?.fechaEmision || new Date()).format('DD/MM/YYYY')}</span>
+
+                                                    <span className="font-bold text-xs">HORA:</span>
+                                                    <span className="text-xs">{moment(formValues?.fechaEmision || new Date()).format('h:mm:ss a')}</span>
+
+                                                    <span className="font-bold text-xs">MONEDA:</span>
+                                                    <span className="text-xs">SOLES</span>
+
+                                                    <span className="font-bold text-xs">FORMA PAGO:</span>
+                                                    <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</span>
+
+                                                    <span className="font-bold text-xs">MEDIO PAGO:</span>
+                                                    <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(totalPrices).toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[110px]">RUC:</div> {selectedClient?.nroDoc || ''}</label>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[110px]">FECHA:</div> {new Date().toLocaleDateString()}</label>
-                                        <label className="text-xs mt-1 flex"><div className="font-bold w-[110px]">HORA:</div> {new Date().toLocaleTimeString()}</label>
-                                        <label className="text-xs mt-1 mb-2 flex"><div className="font-bold w-[110px]">MONEDA:</div> SOLES</label>
-                                    </div>
+
+                                    {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
+                                        <div className="mt-2 border p-2 border-gray-300 rounded-md">
+                                            <div className="text-xs font-bold mb-1">Cronograma de Cuotas:</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {formValues.cuotas.map((cuota: any, idx: number) => (
+                                                    <div key={idx} className="text-[10px] flex justify-between px-1">
+                                                        <span>Cuota {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}):</span>
+                                                        <span>S/ {Number(cuota.monto).toFixed(2)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 {/* Información de Detracción - ANTES de productos */}
                                 {formValues?.tipoDetraccion && (
@@ -468,58 +521,101 @@ const ComprobantePrintPage = ({
                                         </div>
                                     </div>
                                 )}
-                                <div className="border border-[#222] mt-2">
-                                    <div className="flex border-b border-gray-400 pb-1 mb-2">
-                                        <span className="w-[8%] text-xs font-bold text-center">CANT.</span>
-                                        <span className="w-[8%] text-xs font-bold text-center">U.M.</span>
-                                        <span className="w-[34%] text-xs font-bold text-left">DESCRIPCION</span>
-                                        <span className="w-[15%] text-xs font-bold text-center">LOTE</span>
-                                        <span className="w-[15%] text-xs font-bold text-center">VENC.</span>
-                                        <span className="w-[10%] text-xs font-bold text-right">P.U.</span>
-                                        <span className="w-[10%] text-xs font-bold text-right">IMPORTE</span>
+                                <div className="w-full mb-3">
+                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 text-xs py-1">
+                                        <div className="w-[8%] text-center border-r border-gray-400">N°</div>
+                                        <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
+                                        <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
+                                        {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
+                                        <div className="flex-1 text-center border-r border-gray-400 px-2">DESCRIPCIÓN</div>
+                                        <div className="w-[10%] text-center border-r border-gray-400">P.UNIT.</div>
+                                        <div className="w-[10%] text-center">TOTAL</div>
                                     </div>
-                                    {productsInvoice?.map((item: any, i: any) => (
-                                        <div key={i} className="flex items-start mb-1">
-                                            <span className="w-[8%] text-xs text-center">{item?.cantidad || 0}</span>
-                                            <span className="w-[8%] text-xs text-center">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || item?.producto?.unidadMedida?.codigo?.toUpperCase() || ''}</span>
-                                            <span className="w-[34%] text-xs text-left">{item?.descripcion?.toUpperCase() || ''}</span>
-                                            <span className="w-[15%] text-xs text-center flex flex-col">
-                                                {item?.lotes && item.lotes.length > 0 ? (
-                                                    item.lotes.map((l: any, idx: number) => (
-                                                        <span key={idx} className="text-[10px]">{l.lote}</span>
-                                                    ))
-                                                ) : <span className="text-[10px]">-</span>}
-                                            </span>
-                                            <span className="w-[15%] text-xs text-center flex flex-col">
-                                                {item?.lotes && item.lotes.length > 0 ? (
-                                                    item.lotes.map((l: any, idx: number) => (
-                                                        <span key={idx} className="text-[10px]">{moment(l.fechaVencimiento).format('DD/MM/YYYY')}</span>
-                                                    ))
-                                                ) : <span className="text-[10px]">-</span>}
-                                            </span>
-                                            <span className="w-[10%] text-xs text-right">{Number(item?.mtoPrecioUnitario || item?.precioUnitario || item?.producto?.precioUnitario || 0).toFixed(2)}</span>
-                                            <span className="w-[10%] text-xs text-right">{Number(item?.total || (Number(item?.mtoPrecioUnitario || item?.precioUnitario || item?.producto?.precioUnitario || 0) * item?.cantidad)).toFixed(2)}</span>
+
+                                    {productsInvoice?.map((item: any, i: number) => {
+                                        const pUnit = Number(item?.mtoPrecioUnitario || item?.precioUnitario || item?.producto?.precioUnitario || 0);
+                                        const cant = Number(item?.cantidad || 0);
+                                        const totalItem = Number(item?.total || (pUnit * cant));
+
+                                        return (
+                                            <div key={i} className="flex border-b border-l border-r border-gray-300 text-xs">
+                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
+                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{cant.toFixed(3)}</div>
+                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
+                                                {includeProductImages && (
+                                                    <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">
+                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover" alt="" /> : '-'}
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">{item?.descripcion?.toUpperCase()}</div>
+                                                <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
+                                                <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center text-lg bg-gray-50">
+                                    SON: {totalInWords || ''}
+                                </div>
+
+                                <div className="border border-black rounded-lg p-3 relative mb-10">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="w-2/3 pr-2">
+                                            <div className="font-bold mb-1">OBSERVACIONES:</div>
+                                            <div className="text-xs">{observation?.toUpperCase() || ''}</div>
+                                            <div className="text-xs mt-2">
+                                                Representación impresa del Comprobante de Pago Electrónico.
+                                                <br />
+                                                Autorizado mediante Resolución de Intendencia N° 080-005-000153/SUNAT.
+                                                <br />
+                                                Emite a través de APISPERU - Proveedor Autorizado por SUNAT.
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                                <div className="flex justify-between mt-2">
-                                    <p className="w-1/2 text-xs font-bold">SON: {totalInWords || ''}</p>
-                                    <div>
-                                        {quotationDiscount > 0 && (
-                                            <p className="text-xs text-green-600"><span className="font-bold">DESCUENTO ({quotationDiscount}%):</span> - S/ {round2(Number(total) * quotationDiscount / 100).toFixed(2)}</p>
-                                        )}
-                                        <p className="text-xs"><span className="font-bold">IMPORTE TOTAL:</span> S/ {quotationDiscount > 0 ? round2(Number(total) * (1 - quotationDiscount / 100)).toFixed(2) : round2(Number(total)).toFixed(2)}</p>
-                                        {shouldShowRetention && (
-                                            <>
-                                                <p className="text-xs"><span className="font-bold">RETENCIÓN (3%):</span> S/ {displayRetencionMonto.toFixed(2)}</p>
-                                                <p className="text-xs"><span className="font-bold">IMPORTE NETO:</span> S/ {Number(Number(total) - displayRetencionMonto).toFixed(2)}</p>
-                                            </>
-                                        )}
+
+                                        <div className="w-1/3 text-right space-y-0.5">
+                                            {isDocumentoFiscal && (
+                                                <>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. GRAVADAS:</span><span>S/ {round2(mtoOperGravadas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. EXONERADAS:</span><span>S/ {round2(mtoOperExoneradas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. INAFECTAS:</span><span>S/ {round2(mtoOperInafectas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. GRATUITAS:</span><span>S/ {round2(mtoOperGratuitas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">ICBPER:</span><span>S/ {round2(mtoIcbper).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">SUB TOTAL:</span><span>S/ {round2(mtoOperGravadas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span>DESCUENTOS TOTAL:</span><span>S/ {round2(totalDescuentos).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">IGV 18%:</span><span>S/ {round2(mtoIgv).toFixed(2)}</span></div>
+                                                </>
+                                            )}
+                                            <div className="flex justify-between text-md font-bold border-t border-black pt-1 mt-1">
+                                                <span>MONTO TOTAL:</span>
+                                                <span>S/ {round2(mtoImpVenta).toFixed(2)}</span>
+                                            </div>
+                                            {shouldShowRetention && (
+                                                <>
+                                                    <div className="flex justify-between"><span className="font-bold">RETENCIÓN (3%):</span><span>S/ {displayRetencionMonto.toFixed(2)}</span></div>
+                                                    <div className="flex justify-between font-bold"><span>IMPORTE NETO:</span><span>S/ {Number(mtoImpVenta - displayRetencionMonto).toFixed(2)}</span></div>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="border border-black p-2 mt-2 relative mb-10">
-                                    <p className="text-xs"><span className="font-bold">OBSERVACIONES:</span><br />{observation?.toUpperCase() || ''}<br />Representación impresa del Comprobante de Pago Electrónico.<br />Autorizado mediante Resolución de Intendencia N° 080-005-000153/SUNAT.<br />Emite a través de APISPERU - Proveedor Autorizado por SUNAT.</p>
-                                    {qrCodeDataUrl && !receipt?.includes("COTIZACIÓN") && <img src={qrCodeDataUrl} alt="QR" className="absolute bottom-2 right-2 w-12 h-12" />}
+
+                                <div className="mt-8 text-center text-xs">
+                                    <div className="font-bold mb-1">
+                                        GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS DE {company?.empresa?.rubro?.nombre?.toUpperCase() || 'SERVICIOS'}
+                                    </div>
+                                    <div className="font-bold mb-8">VUELVA PRONTO</div>
+
+                                    <div className="flex justify-between items-end border-t border-gray-400 pt-1">
+                                        <div className="text-left text-[10px] text-gray-500 font-mono">
+                                            USUARIO: {formValues?.vendedor || 'ADMIN'} {moment().format('DD/MM/YYYY HH:mm')}
+                                        </div>
+
+                                        <div className="text-right text-[10px] text-gray-500">
+                                            <div className="font-bold italic">FalcoNext ™</div>
+                                            <div>Comprobante emitido a través de www.falconext.pe</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

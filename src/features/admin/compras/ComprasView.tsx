@@ -59,7 +59,7 @@ export default function ComprasView() {
     ];
 
     return (
-        <div className="min-h-screen px-2 pb-4 dark:bg-[#0A0D14]">
+        <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>

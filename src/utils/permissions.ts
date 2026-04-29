@@ -17,6 +17,22 @@ const PERM_MAP: Record<string, string> = {
   productos: 'kardex',
 };
 
+const MODULE_ALIASES: Record<string, string[]> = {
+  reportes: ['reportes', 'contabilidad'],
+  contabilidad: ['contabilidad', 'reportes'],
+};
+
+const SUBMODULE_ALIASES: Record<string, string[]> = {
+  'reportes:formal': ['reportes:formal', 'contabilidad:reportes'],
+  'contabilidad:reportes': ['contabilidad:reportes', 'reportes:formal'],
+};
+
+const getModuleCandidates = (modulo: string): string[] =>
+  MODULE_ALIASES[modulo] ?? [modulo];
+
+const getSubModuleCandidates = (subModuloCodigo: string): string[] =>
+  SUBMODULE_ALIASES[subModuloCodigo] ?? [subModuloCodigo];
+
 const normalizePerms = (perms: string[] = []): string[] => {
   const mapped = perms.map((p) => PERM_MAP[p] ?? p);
   return Array.from(new Set(mapped));
@@ -29,12 +45,14 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
   if (!user) return false;
   if (user.rol === 'ADMIN_SISTEMA') return true;
 
+  const moduloCandidates = getModuleCandidates(modulo);
+
   // 1. Validar restricción del Plan
   // Array.isArray distingue undefined (plan sin configurar → no restringir) de [] (plan con 0 módulos → bloquear todo)
   const planModulosRaw = user.empresa?.plan?.modulosAsignados;
   if (Array.isArray(planModulosRaw)) {
     const planModulos = planModulosRaw.map((m) => m.modulo.codigo);
-    if (!planModulos.includes(modulo)) return false;
+    if (!moduloCandidates.some((candidate) => planModulos.includes(candidate))) return false;
   }
 
   if (user.rol === 'ADMIN_EMPRESA') return true;
@@ -44,7 +62,7 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
   if (user.permisos.includes('*')) return true;
 
   const normalized = normalizePerms(user.permisos);
-  return normalized.includes(modulo);
+  return moduloCandidates.some((candidate) => normalized.includes(candidate));
 };
 
 /**
@@ -60,12 +78,30 @@ export const hasSubPermission = (user: IUserPermissions | null, subModuloCodigo:
   if (!user) return false;
   if (user.rol === 'ADMIN_SISTEMA') return true;
 
+  const subModuloCandidates = getSubModuleCandidates(subModuloCodigo);
+  const targetModuleCodes = Array.from(
+    new Set(subModuloCandidates.map((code) => String(code).split(':')[0]))
+  );
+
   // Capa 1: restricción del Plan
   // Array.isArray distingue undefined (plan sin configurar → no restringir) de [] (0 submódulos configurados → bloquear todo)
   const planSubModulosRaw = user.empresa?.plan?.subModulosAsignados;
+  const planModulosRaw = user.empresa?.plan?.modulosAsignados;
+
+  // Si el plan define módulos pero no trajo lista de submódulos,
+  // evitar sobre-permisos: bloquear submódulos del módulo consultado.
+  if (!Array.isArray(planSubModulosRaw) && Array.isArray(planModulosRaw)) {
+    const planModulos = planModulosRaw.map((m) => m.modulo.codigo);
+    const moduleMatchesPlan = targetModuleCodes.some((target) => {
+      const candidates = getModuleCandidates(target);
+      return candidates.some((candidate) => planModulos.includes(candidate));
+    });
+    if (moduleMatchesPlan) return false;
+  }
+
   if (Array.isArray(planSubModulosRaw)) {
     const planSubModulos = planSubModulosRaw.map((s) => s.subModulo.codigo);
-    if (!planSubModulos.includes(subModuloCodigo)) return false;
+    if (!subModuloCandidates.some((candidate) => planSubModulos.includes(candidate))) return false;
   }
 
   if (user.rol === 'ADMIN_EMPRESA') return true;
@@ -76,7 +112,7 @@ export const hasSubPermission = (user: IUserPermissions | null, subModuloCodigo:
     return true;
   }
 
-  return userSubModulos.includes(subModuloCodigo);
+  return subModuloCandidates.some((candidate) => userSubModulos.includes(candidate));
 };
 
 /**
@@ -85,22 +121,27 @@ export const hasSubPermission = (user: IUserPermissions | null, subModuloCodigo:
 export const getAvailableModules = (user: IUserPermissions | null): string[] => {
   if (!user) return [];
 
-  let allModules = ['dashboard', 'comprobantes', 'clientes', 'kardex', 'reportes', 'configuracion', 'usuarios', 'caja', 'pagos', 'cotizaciones', 'guias-remision', 'compras'];
+  const allModules = [
+    'dashboard',
+    'comprobantes',
+    'clientes',
+    'kardex',
+    'reportes',
+    'configuracion',
+    'usuarios',
+    'caja',
+    'pagos',
+    'cotizaciones',
+    'guias-remision',
+    'compras',
+    'sedes',
+    'notificaciones',
+    'contabilidad',
+  ];
 
   if (user.rol === 'ADMIN_SISTEMA') return allModules;
 
-  const planModulosRaw = user.empresa?.plan?.modulosAsignados;
-  if (Array.isArray(planModulosRaw)) {
-    const planModulos = planModulosRaw.map((m) => m.modulo.codigo);
-    allModules = allModules.filter(m => planModulos.includes(m));
-  }
-
-  if (user.rol === 'ADMIN_EMPRESA') return allModules;
-
-  if (user.permisos?.includes('*')) return allModules;
-
-  const userPerms = normalizePerms(user.permisos || []);
-  return allModules.filter(m => userPerms.includes(m));
+  return allModules.filter((moduleCode) => hasPermission(user, moduleCode));
 };
 
 /**
@@ -131,6 +172,7 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       clientes: '/administrador/clientes',
       kardex: '/administrador/kardex',
       reportes: '/administrador/contabilidad/arqueo',
+      contabilidad: '/administrador/contabilidad/reporte',
       configuracion: '/administrador/configuracion',
       usuarios: '/administrador/usuarios',
       caja: '/administrador/caja',
@@ -138,6 +180,8 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       cotizaciones: '/administrador/cotizaciones',
       'guias-remision': '/administrador/guia-remision',
       compras: '/administrador/compras',
+      sedes: '/administrador/sedes',
+      notificaciones: '/administrador/notificaciones',
       dashboard: '/administrador'
     };
     return moduleRoutes[firstModule] || '/administrador';

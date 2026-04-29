@@ -226,6 +226,20 @@ const PrintPDF = ({
         return sum + (Number(producto.precioUnitario || producto.mtoPrecioUnitario || 0) * (producto.cantidad || 0));
     }, 0);
 
+    const isDocumentoFiscal = ['01', '03', '07', '08'].includes(String(formValues?.tipoDoc || ''));
+    const totalDescuentos = Number(
+        formValues?.totalDescuentos ??
+        formValues?.mtoDescuentos ??
+        (totalPrices > totalReceipt ? totalPrices - totalReceipt : 0)
+    );
+    const mtoOperGravadas = Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18));
+    const mtoOperGratuitas = Number(formValues?.mtoOperGratuitas ?? 0);
+    const mtoOperInafectas = Number(formValues?.mtoOperInafectas ?? 0);
+    const mtoOperExoneradas = Number(formValues?.mtoOperExoneradas ?? 0);
+    const mtoIcbper = Number(formValues?.icbper ?? formValues?.mtoIcbper ?? 0);
+    const mtoIgv = Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18)));
+    const mtoImpVenta = Number(formValues?.mtoImpVenta ?? totalReceipt);
+
     function round2(n: number): number {
         return parseFloat(n?.toFixed(2)) || 0;
     }
@@ -352,21 +366,41 @@ const PrintPDF = ({
                                         <Text style={styles.value}>S/ {(totalPrices - totalReceipt).toFixed(2)}</Text>
                                     </View>
                                 )}
-                                {!['ORDEN DE TRABAJO', 'NOTA DE VENTA', 'NOTA DE PEDIDO', 'TICKET', 'COMPROBANTE DE PAGO', 'RECIBO POR HONORARIOS', 'BOLETA'].includes(formValues?.comprobante) && (
+                                {isDocumentoFiscal && (
                                     <>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>OP. GRAVADA:</Text>
-                                            <Text style={styles.value}>S/ {round2(Number(total) / 1.18).toFixed(2)}</Text>
+                                            <Text style={styles.value}>S/ {round2(mtoOperGravadas).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.label}>IGV:</Text>
-                                            <Text style={styles.value}>S/ {round2(Number(total) - round2(Number(total) / 1.18)).toFixed(2)}</Text>
+                                            <Text style={styles.label}>OP. GRATUITA:</Text>
+                                            <Text style={styles.value}>S/ {round2(mtoOperGratuitas).toFixed(2)}</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>OP. INAFECTA:</Text>
+                                            <Text style={styles.value}>S/ {round2(mtoOperInafectas).toFixed(2)}</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>OP. EXONERADA:</Text>
+                                            <Text style={styles.value}>S/ {round2(mtoOperExoneradas).toFixed(2)}</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>ICBPER:</Text>
+                                            <Text style={styles.value}>S/ {round2(mtoIcbper).toFixed(2)}</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>IGV (18%):</Text>
+                                            <Text style={styles.value}>S/ {round2(mtoIgv).toFixed(2)}</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>DESCUENTOS:</Text>
+                                            <Text style={styles.value}>S/ {round2(totalDescuentos).toFixed(2)}</Text>
                                         </View>
                                     </>
                                 )}
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>IMPORTE TOTAL:</Text>
-                                    <Text style={styles.value}>S/ {round2(Number(total)).toFixed(2)}</Text>
+                                    <Text style={styles.value}>S/ {round2(mtoImpVenta).toFixed(2)}</Text>
                                 </View>
                             </View>
 

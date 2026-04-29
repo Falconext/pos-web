@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../../../../../falconext-mype-mobile"
+		},
+		{
+			"path": "../../../../../../../../Devs/salesfilter-ai"
 		}
 	]
 }

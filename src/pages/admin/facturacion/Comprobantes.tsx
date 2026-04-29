@@ -771,18 +771,6 @@ const Comprobantes = () => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    handleAbrirModal(rowBase, 'whatsapp');
-                                    handleCloseMenu();
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100"
-                            >
-                                <Icon icon="mdi:whatsapp" width={16} height={16} />
-                                <span>Enviar WhatsApp</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
                                     handleAbrirModal(rowBase, 'email');
                                     handleCloseMenu();
                                 }}

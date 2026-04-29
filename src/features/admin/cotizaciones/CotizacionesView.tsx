@@ -70,7 +70,7 @@ export default function CotizacionesView() {
 
     return (
         <>
-            <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
+            <div className="hidden">
             {vm.invoice && vm.invoice.detalles && (
                 <ComprobantePrintPage
                     company={vm.auth}
@@ -105,7 +105,7 @@ export default function CotizacionesView() {
             )}
             </div>
 
-            <div className="min-h-screen px-4 pb-6 bg-[#0A0D14]">
+            <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
                 <div>
@@ -344,25 +344,10 @@ export default function CotizacionesView() {
                                     vm.setOpenAccionesId(null);
                                     vm.setAnchorEl(null);
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowData.s3PdfUrl ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 ${rowData.s3PdfUrl ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="mdi:file-pdf-box" width={16} height={16} />
                                 <span>Ver PDF</span>
-                            </button>
-                            <button
-                                type="button"
-                                disabled={!(rowData.estado === 'EMITIDO' || !canEmitirSunat)}
-                                onClick={() => {
-                                    if (rowData.estado === 'EMITIDO' || !canEmitirSunat) {
-                                        vm.handleEnviarWhatsApp(rowData);
-                                    }
-                                    vm.setOpenAccionesId(null);
-                                    vm.setAnchorEl(null);
-                                }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowData.estado === 'EMITIDO' || !canEmitirSunat ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                            >
-                                <Icon icon="mdi:whatsapp" width={16} height={16} />
-                                <span>Enviar WhatsApp</span>
                             </button>
                             <button
                                 type="button"
@@ -371,7 +356,7 @@ export default function CotizacionesView() {
                                     vm.setOpenAccionesId(null);
                                     vm.setAnchorEl(null);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-t border-gray-100 dark:border-slate-800"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-t border-gray-100 dark:border-slate-800"
                             >
                                 <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
                                 <span className="font-medium">Convertir a Factura</span>
