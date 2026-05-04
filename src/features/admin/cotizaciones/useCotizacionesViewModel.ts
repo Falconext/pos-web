@@ -36,7 +36,6 @@ export function useCotizacionesViewModel() {
     const [comprobante, setComprobante] = useState<string>("");
     const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
     const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
-    const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<IComprobanteWhatsApp | null>(null);
     const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
@@ -110,9 +109,9 @@ export function useCotizacionesViewModel() {
             search: debounce,
             fechaInicio,
             fechaFin,
-            estado: stateInvoice === "TODOS" ? "" : stateInvoice
+            estado: ""
         });
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice]);
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin]);
 
     // Generate QR Code
     const ruc = "204812192919";
@@ -219,6 +218,32 @@ export function useCotizacionesViewModel() {
         });
     };
 
+    const handleEditCotizacion = (data: any) => {
+        const cotizacion = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (!cotizacion) return;
+
+        const c = cotizacion as any;
+        navigate('/administrador/cotizaciones/nuevo', {
+            state: {
+                fromQuotation: true,
+                isEdit: true,
+                quotationId: cotizacion.id,
+                quotationData: {
+                    cliente: cotizacion.cliente,
+                    productos: cotizacion.detalles,
+                    observaciones: cotizacion.observaciones,
+                    cotizIncluirImagenes: c.cotizIncluirImagenes,
+                    cotizDescuento: c.cotizDescuento,
+                    cotizVigencia: c.cotizVigencia,
+                    cotizFirmante: c.cotizFirmante,
+                    cotizTerminos: c.cotizTerminos,
+                    cotizTipoPago: c.cotizTipoPago,
+                    cotizAdelanto: c.cotizAdelanto,
+                }
+            }
+        });
+    };
+
     const handlePartialPayment = async (data: any) => {
         setFormValues(data);
         const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
@@ -278,7 +303,7 @@ export function useCotizacionesViewModel() {
                     search: debounce,
                     fechaInicio,
                     fechaFin,
-                    estado: stateInvoice === "TODOS" ? "" : stateInvoice
+                    estado: ""
                 });
             }, 300);
         }
@@ -299,9 +324,7 @@ export function useCotizacionesViewModel() {
         }
     };
 
-    const handleSelectState = (_id: string, value: string) => {
-        setStateInvoice(value);
-    };
+
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id);
@@ -320,15 +343,6 @@ export function useCotizacionesViewModel() {
     const handleSelectPrint = (value: any) => {
         setPrintSize(value);
     };
-
-    // Filter Select Options
-    const estadosInvoice: IEstadoInvoiceOption[] = [
-        { id: 1, value: "TODOS" },
-        { id: 2, value: "EMITIDO" },
-        { id: 3, value: "PENDIENTE" },
-        { id: 4, value: "ANULADO" },
-        { id: 5, value: "RECHAZADO" }
-    ];
 
     const printOptions: IPrintFormatOption[] = [
         { id: 'TICKET', value: 'TICKET' },
@@ -356,7 +370,6 @@ export function useCotizacionesViewModel() {
         fechaInicio,
         fechaFin,
         printSize,
-        estadosInvoice,
         printOptions,
 
         // Action Menu state
@@ -395,12 +408,12 @@ export function useCotizacionesViewModel() {
 
         // Handlers
         handleDate,
-        handleSelectState,
         handleSelectPrint,
         handleChangeSearch,
 
         handleGetReceipt,
         handleConvertirAFactura,
+        handleEditCotizacion,
         handleEnviarWhatsApp,
         handlePartialPayment,
         handleConfirmPago,

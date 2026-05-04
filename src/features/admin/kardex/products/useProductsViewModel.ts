@@ -132,11 +132,6 @@ export const useProductsViewModel = () => {
                 } else if (window.innerWidth < 768 && !isRestaurante) {
                     setState(prev => ({ ...prev, vistaActual: 'lista' }));
                 }
-                const { data } = await apiClient.get('/diseno-rubro/mi-empresa');
-                const payload = data?.data || data;
-                if (payload && !savedVista && payload.vistaProductos) {
-                    setState(prev => ({ ...prev, vistaActual: payload.vistaProductos }));
-                }
             } catch (error) {
                 console.error("Error cargando diseño:", error);
             }

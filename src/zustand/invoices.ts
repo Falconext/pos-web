@@ -29,6 +29,7 @@ export interface IInvoicesState {
     getInvoice: (id: number) => Promise<{ success: boolean, error?: string }>;
     completePay: (data: any, medioPago: string, montoPagado?: number) => Promise<{ success: boolean, error?: string }>;
     cancelInvoice: (id: number) => Promise<{ success: boolean, error?: string }>;
+    updateQuotation: (id: number, data: any) => Promise<{ success: boolean, error?: string }>;
     importReference: number
 }
 
@@ -413,6 +414,20 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
         } catch (error: any) {
             useAlertStore.getState().alert(`${error.message || 'Error al registrar el pago'}`, 'error');
             return { success: false, error: error.message || 'Error al registrar el pago' };
+        }
+    },
+    updateQuotation: async (id: number, data: any) => {
+        try {
+            const resp: any = await patch(`/comprobante/${id}`, data);
+            if (resp.code === 1) {
+                useAlertStore.getState().alert('Cotización actualizada exitosamente', 'success');
+                return { success: true };
+            }
+            useAlertStore.getState().alert(resp.error || 'Error al actualizar la cotización', 'error');
+            return { success: false, error: resp.error };
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.message || 'Error al actualizar la cotización', 'error');
+            return { success: false, error: error.message };
         }
     },
     cancelInvoice: async (id: number, motivo?: string) => {

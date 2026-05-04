@@ -38,7 +38,7 @@ import Catalogo from './pages/tienda/Catalogo'
 import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
 import TiendaLogin from './pages/TiendaLogin'
 import TiendaHome from './pages/TiendaHome'
-import DisenoRubros from './pages/admin/sistema/DisenoRubros'
+
 import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
 import Planes from './pages/admin/sistema/Planes'
 import ModulosPage from './pages/admin/sistema/Modulos'
@@ -50,6 +50,8 @@ import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
 import LibroVentas from './pages/admin/sire/LibroVentas'
 import LibroCompras from './pages/admin/sire/LibroCompras'
 import AdminResellers from './pages/admin/sistema/Resellers'
+import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
+import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
 import ResellerLayout from './layouts/ResellerLayout'
 import ResellerDashboard from './pages/reseller/Dashboard'
 import ResellerClientes from './pages/reseller/Clientes'
@@ -122,7 +124,7 @@ function App() {
           <Route path="tienda/combos" element={<CombosTienda />} />
           <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
           {/* Rutas de ADMIN_SISTEMA */}
-          <Route path="sistema/diseno-rubros" element={<DisenoRubros />} />
+
           <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
           <Route path="sistema/planes" element={<Planes />} />
           <Route path="sistema/modulos" element={<ModulosPage />} />
@@ -131,6 +133,22 @@ function App() {
             element={
               <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
                 <AdminResellers />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="sistema/catalogo-web"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <CatalogoWebPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="sistema/usuarios"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <SistemaUsuarios />
               </RoleRoute>
             }
           />

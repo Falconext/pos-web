@@ -136,9 +136,6 @@ export default function CotizacionesView() {
                             <Calendar text="Fecha Fin" name="fechaFin" onChange={vm.handleDate} />
                         </div>
                         <div>
-                            <Select onChange={vm.handleSelectState} label="Estado" name="stateInvoice" options={vm.estadosInvoice} error="" />
-                        </div>
-                        <div>
                             <Select onChange={vm.handleSelectPrint} label="Formato impresión" name="printSize" defaultValue={vm.printSize} options={vm.printOptions} error="" />
                         </div>
                     </div>
@@ -352,11 +349,23 @@ export default function CotizacionesView() {
                             <button
                                 type="button"
                                 onClick={() => {
+                                    vm.handleEditCotizacion(rowData);
+                                    vm.setOpenAccionesId(null);
+                                    vm.setAnchorEl(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-t border-gray-100 dark:border-slate-800"
+                            >
+                                <Icon icon="solar:pen-bold-duotone" width={16} height={16} />
+                                <span className="font-medium">Editar</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
                                     vm.handleConvertirAFactura(rowData);
                                     vm.setOpenAccionesId(null);
                                     vm.setAnchorEl(null);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-t border-gray-100 dark:border-slate-800"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
                             >
                                 <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
                                 <span className="font-medium">Convertir a Factura</span>

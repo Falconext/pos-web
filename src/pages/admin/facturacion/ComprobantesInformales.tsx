@@ -94,9 +94,6 @@ const ComprobantesInformales = () => {
         }
     }, [canFilterBySede]);
 
-    console.log(invoices)
-
-
     const productsTable = invoices?.map((item: IInvoices) => {
         const rowBase: any = {
             id: item?.id,
@@ -299,8 +296,6 @@ const ComprobantesInformales = () => {
         }, 300);
     }
 
-    console.log(productsTable)
-
     useEffect(() => {
         const params: any = {
             tipoComprobante: "INFORMAL",
@@ -452,8 +447,6 @@ const ComprobantesInformales = () => {
     const handleChangeSearch = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | any>) => {
         setSearchClient(e.target.value)
     }
-
-    console.log(invoice)
 
     return (
         <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">

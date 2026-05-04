@@ -104,8 +104,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                     PREVIA
                 </button>
                 <button onClick={vm.addInvoiceReceipt} className="flex-1 py-2.5 md:py-3 !bg-violet-600 text-white border-none rounded-xl font-bold shadow-md shadow-violet-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm">
-                    <Icon icon="solar:printer-minimalistic-bold" className="text-lg" />
-                    {vm.isMobile ? "EMITIR" : "EMITIR"}
+                    <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} className="text-lg" />
+                    {vm.isEditMode ? "ACTUALIZAR" : "EMITIR"}
                 </button>
             </div>
         </div>

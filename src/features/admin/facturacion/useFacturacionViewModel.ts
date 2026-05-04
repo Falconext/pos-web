@@ -30,7 +30,7 @@ import {
 } from "./FacturacionModel";
 
 export const useFacturacionViewModel = () => {
-    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt }: IInvoicesState = useInvoiceStore();
+    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation }: IInvoicesState = useInvoiceStore();
     const { isCompact } = useThemeStore();
     const { auth, sedeActiva } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
@@ -54,11 +54,22 @@ export const useFacturacionViewModel = () => {
     const [barcodeLoading, setBarcodeLoading] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
 
+    const _stateDefaultType = (location.state as any)?.defaultType as string | undefined;
+    const _tipoDocInitMap: Record<string, string> = {
+        'FACTURA': '01', 'BOLETA': '03',
+        'TICKET': 'TICKET', 'NP': 'NP', 'OT': 'OT',
+        'NV': 'NV', 'RH': 'RH', 'CP': 'CP',
+        'NOTA DE PEDIDO': 'NP',
+    };
+    const _comprobanteLabelInitMap: Record<string, string> = { NP: 'NOTA DE PEDIDO' };
+
     const initialDocumentType = isQuotationRoute
         ? "COTIZACIÓN"
-        : (receipt === ""
-            ? (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA")
-            : receipt.toUpperCase());
+        : (_stateDefaultType
+            ? (_comprobanteLabelInitMap[_stateDefaultType] ?? _stateDefaultType)
+            : (receipt === ""
+                ? (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA")
+                : receipt.toUpperCase()));
 
     const [paymentMethod, setPaymentMethod] = useState<string>('Efectivo');
     const [adelanto, setAdelanto] = useState<number>(0);
@@ -70,7 +81,7 @@ export const useFacturacionViewModel = () => {
         currencyCode: "PEN",
         clienteNombre: "",
         comprobante: initialDocumentType,
-        tipoDoc: isQuotationRoute ? "COT" : (tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01"),
+        tipoDoc: isQuotationRoute ? "COT" : (_stateDefaultType ? (_tipoDocInitMap[_stateDefaultType] ?? '01') : (tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01")),
         detalles: [],
         discount: 0,
         motivo: "",
@@ -145,6 +156,8 @@ export const useFacturacionViewModel = () => {
     const [quotationAdvance, setQuotationAdvance] = useState(0);
     const [isQuotationConfigModalOpen, setIsQuotationConfigModalOpen] = useState(false);
     const [hasOpenedConfigModal, setHasOpenedConfigModal] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editQuotationId, setEditQuotationId] = useState<number | null>(null);
 
     const debounceSerie = useDebounce(serie, 200);
     const debounceCorrelative = useDebounce(correlative, 200);
@@ -273,11 +286,11 @@ export const useFacturacionViewModel = () => {
         }
     }, [isQuotationRoute]);
 
-    // Loading from Quotation Convert
+    // Loading from Quotation Convert / Edit
     useEffect(() => {
         const state = location.state as any;
         if (state?.fromQuotation && state?.quotationData) {
-            const { cliente, productos, observaciones } = state.quotationData;
+            const { cliente, productos, observaciones, ...cotizConfig } = state.quotationData;
 
             if (cliente) {
                 setSelectedClient(cliente);
@@ -312,6 +325,20 @@ export const useFacturacionViewModel = () => {
             if (observaciones) {
                 setFormValues(prev => ({ ...prev, observaciones }));
             }
+
+            if (state.isEdit && state.quotationId) {
+                setIsEditMode(true);
+                setEditQuotationId(state.quotationId);
+                setHasOpenedConfigModal(true); // evita que el modal de config se abra automáticamente
+                if (cotizConfig.cotizIncluirImagenes !== undefined) setIncludeProductImages(cotizConfig.cotizIncluirImagenes);
+                if (cotizConfig.cotizDescuento !== undefined) setQuotationDiscount(cotizConfig.cotizDescuento);
+                if (cotizConfig.cotizVigencia !== undefined) setQuotationValidity(cotizConfig.cotizVigencia);
+                if (cotizConfig.cotizFirmante !== undefined) setQuotationSignature(cotizConfig.cotizFirmante);
+                if (cotizConfig.cotizTerminos !== undefined) setQuotationTerms(cotizConfig.cotizTerminos);
+                if (cotizConfig.cotizTipoPago !== undefined) setQuotationPaymentType(cotizConfig.cotizTipoPago);
+                if (cotizConfig.cotizAdelanto !== undefined) setQuotationAdvance(cotizConfig.cotizAdelanto);
+            }
+
             window.history.replaceState({}, document.title);
         } else if (state?.fromCreditNote && state?.creditNoteData) {
             const { comprobanteReemplazar, serieReemplazar, correlativoReemplazar } = state.creditNoteData;
@@ -685,12 +712,18 @@ export const useFacturacionViewModel = () => {
 
         setIsOpenModalSuccessInvoice(true);
         setIsLoading(true);
-        const result = tiposInformales.includes(formValues.tipoDoc)
-            ? await addInformalInvoice(finalData)
-            : await addInvoice(finalData);
+
+        let result: { success: boolean; error?: string };
+        if (isEditMode && editQuotationId) {
+            result = await updateQuotation(editQuotationId, finalData);
+        } else if (tiposInformales.includes(formValues.tipoDoc)) {
+            result = await addInformalInvoice(finalData);
+        } else {
+            result = await addInvoice(finalData);
+        }
 
         if (result.success === true) {
-            setIsLoading(false)
+            setIsLoading(false);
         } else {
             setIsOpenModalSuccessInvoice(false);
             setIsLoading(false);
@@ -903,6 +936,7 @@ export const useFacturacionViewModel = () => {
         formValuesProduct, setFormValuesProduct,
         formValuesClient, setFormValuesClient,
         initialFormProduct, initialFormClient,
-        isLoading
+        isLoading,
+        isEditMode,
     };
 };
