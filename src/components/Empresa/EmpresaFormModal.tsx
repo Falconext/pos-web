@@ -4,6 +4,7 @@ import Modal from '@/components/Modal';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
+import { Icon } from '@iconify/react';
 import { useEmpresasStore } from '@/zustand/empresas';
 import { useAuthStore } from '@/zustand/auth';
 import { useExtentionsStore } from '@/zustand/extentions';
@@ -36,9 +37,10 @@ interface CreateFormData {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion?: string;
-  providerToken?: string;
-  providerId?: string;
+  usuarioPse?: string;
+  contrasenaPse?: string;
   usaCodigoBarrasManual?: boolean;
+  brand?: string;
   usuario: {
     nombre: string;
     email: string;
@@ -64,8 +66,8 @@ interface EditFormData {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion: string;
-  providerToken?: string;
-  providerId?: string;
+  usuarioPse?: string;
+  contrasenaPse?: string;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   usuario?: {
@@ -86,6 +88,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const { getClientFromDoc } = useClientsStore();
   const { auth } = useAuthStore();
   const isAdminSistema = auth?.rol === 'ADMIN_SISTEMA';
+  const esSuperAdmin = isAdminSistema && !auth?.sistemaNegocio;
 
   const [activeTab, setActiveTab] = useState<'datos' | 'suscripcion' | 'sunat' | 'admin'>('datos');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,6 +111,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     fechaActivacion: new Date().toISOString().split('T')[0],
     fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     usaCodigoBarrasManual: false,
+    brand: '',
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -126,8 +130,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     nombreComercial: '',
     fechaActivacion: '',
     fechaExpiracion: '',
-    providerToken: '',
-    providerId: '',
+    usuarioPse: '',
+    contrasenaPse: '',
     esAgenteRetencion: false,
     usaCodigoBarrasManual: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
@@ -178,8 +182,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         nombreComercial: empresa.nombreComercial || '',
         fechaActivacion: empresa.fechaActivacion.split('T')[0],
         fechaExpiracion: empresa.fechaExpiracion.split('T')[0],
-        providerToken: (empresa as any).providerToken || '',
-        providerId: (empresa as any).providerId || '',
+        usuarioPse: (empresa as any).usuarioPse || '',
+        contrasenaPse: (empresa as any).contrasenaPse || '',
         usaCodigoBarrasManual: Boolean((empresa as any).usaCodigoBarrasManual),
         usuario: {
           nombre: adminUser.nombre || '',
@@ -344,6 +348,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (!isEdit && !createData.usuario?.password) e['usuario.password'] = 'Contraseña es requerida';
     if (!isEdit && !createData.usuario?.dni) e['usuario.dni'] = 'DNI es requerido';
     if (!isEdit && !createData.usuario?.celular) e['usuario.celular'] = 'Celular es requerido';
+    if (!isEdit && esSuperAdmin && !createData.brand) e.brand = 'Selecciona la plataforma de destino';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -426,6 +431,35 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
               {activeTab === 'datos' && (
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Información General</h3>
+
+                  {/* Selector de plataforma — solo supermegaadmin en modo creación */}
+                  {!isEdit && esSuperAdmin && (
+                    <div className="mb-2">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">Plataforma de destino <span className="text-red-500">*</span></p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {([
+                          { id: 'falconext', label: 'Falconext', icon: 'solar:rocket-bold-duotone', color: '#6366F1' },
+                          { id: 'krezka', label: 'Krezka', icon: 'solar:star-bold-duotone', color: '#10B981' },
+                        ] as const).map((p) => {
+                          const sel = createData.brand === p.id;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => { setCreateData(prev => ({ ...prev, brand: p.id })); if (errors.brand) setErrors(prev => ({ ...prev, brand: '' })); }}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}
+                            >
+                              <Icon icon={p.icon} width={22} style={{ color: sel ? p.color : '#9CA3AF' }} />
+                              <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
+                              {sel && <Icon icon="solar:check-circle-bold" width={18} className="ml-auto text-blue-500" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {errors.brand && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1"><Icon icon="solar:danger-circle-bold" width={13} />{errors.brand}</p>}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
                     <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
@@ -632,13 +666,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-sm text-amber-800 leading-relaxed">
-                        Estas credenciales son proporcionadas por el Proveedor de Servicios Electrónicos (PSE) o en el portal SOL de SUNAT. Son necesarias para la emisión de comprobantes electrónicos válidos.
+                        Credenciales QPSE asignadas por el Proveedor de Servicios Electrónicos. Son necesarias para la emisión de comprobantes electrónicos válidos. Si se dejan en blanco, se usarán las credenciales globales del sistema.
                       </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputPro name="providerToken" label="Token de Integración" isLabel value={isEdit ? (editData.providerToken || '') : (createData.providerToken || '')} onChange={handleChange} placeholder="Ej. eyJhbGciOiJIUzI1NiIsIn..." />
-                    <InputPro name="providerId" label="ID del Proveedor" isLabel value={isEdit ? (editData.providerId || '') : (createData.providerId || '')} onChange={handleChange} placeholder="Ej. PRV-20512345678" />
+                    <InputPro name="usuarioPse" label="Usuario PSE (QPSE)" isLabel value={isEdit ? (editData.usuarioPse || '') : (createData.usuarioPse || '')} onChange={handleChange} placeholder="Ej. 0HGRQ55B" />
+                    <InputPro name="contrasenaPse" label="Contraseña PSE (QPSE)" type="password" isLabel value={isEdit ? (editData.contrasenaPse || '') : (createData.contrasenaPse || '')} onChange={handleChange} placeholder="Ej. R8101ZBD" />
                   </div>
                 </div>
               )}

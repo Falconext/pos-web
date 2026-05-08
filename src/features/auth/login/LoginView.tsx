@@ -1,6 +1,7 @@
 import Alert from "@/components/Alert";
 import Loading from "@/components/Loading";
 import banner from '@/assets/fnlogin.png';
+import { BRAND } from '@/lib/branding';
 import { Icon } from "@iconify/react";
 import { useLoginViewModel } from "./useLoginViewModel";
 
@@ -119,7 +120,7 @@ export default function LoginView() {
                     </form>
 
                     <div className="pt-8 text-center text-xs text-gray-300">
-                        © 2025 Falconext. Todos los derechos reservados.
+                        © 2025 {BRAND.name}. Todos los derechos reservados.
                     </div>
                 </div>
             </div>
@@ -135,7 +136,7 @@ export default function LoginView() {
                     <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                         <Icon icon="solar:bolt-bold" className="text-white text-xl" />
                     </div>
-                    <span className="text-white font-bold text-xl tracking-tight">Falconext</span>
+                    <span className="text-white font-bold text-xl tracking-tight">{BRAND.name}</span>
                 </div>
 
                 {/* Content Container */}
@@ -165,7 +166,7 @@ export default function LoginView() {
                         <div className="w-full h-full relative">
                             <img
                                 src={banner}
-                                alt="Falconext Dashboard"
+                                alt={`${BRAND.name} Dashboard`}
                                 className="w-full h-full object-contain top-[-15px] relative"
                             />
                         </div>

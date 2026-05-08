@@ -25,8 +25,8 @@ interface FormData {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion?: string;
-  providerToken?: string;
-  providerId?: string;
+  usuarioPse?: string;
+  contrasenaPse?: string;
   usuario: {
     nombre: string;
     email: string;
@@ -623,25 +623,26 @@ const CreateEmpresa = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <InputPro
-                      name="providerToken"
-                      label="Token del Proveedor"
-                      value={formData.providerToken || ''}
+                      name="usuarioPse"
+                      label="Usuario PSE (QPSE)"
+                      value={formData.usuarioPse || ''}
                       onChange={handleInputChange}
-                      error={errors.providerToken}
+                      error={errors.usuarioPse}
                       isLabel
-                      placeholder="Token para integración SUNAT"
+                      placeholder="Ej. 0HGRQ55B"
                     />
                   </div>
 
                   <div>
                     <InputPro
-                      name="providerId"
-                      label="ID del Proveedor"
-                      value={formData.providerId || ''}
+                      name="contrasenaPse"
+                      label="Contraseña PSE (QPSE)"
+                      type="password"
+                      value={formData.contrasenaPse || ''}
                       onChange={handleInputChange}
-                      error={errors.providerId}
+                      error={errors.contrasenaPse}
                       isLabel
-                      placeholder="ID asignado por el proveedor"
+                      placeholder="Ej. R8101ZBD"
                     />
                   </div>
                 </div>

@@ -331,6 +331,17 @@ export const useProductsViewModel = () => {
         setState(prev => ({ ...prev, isOpenModalConfirm: false }));
     };
 
+    const togglePublicarTienda = async (producto: any) => {
+        try {
+            await apiClient.patch(`producto/${producto.id}/publicar-tienda`, {
+                publicarEnTienda: !producto.publicarEnTienda,
+            });
+            await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+        } catch {
+            // silently ignore
+        }
+    };
+
     const actions = {
         setcurrentPage: (page: number) => setState(prev => ({ ...prev, currentPage: page })),
         setitemsPerPage: (items: number) => setState(prev => ({ ...prev, itemsPerPage: items })),
@@ -361,6 +372,7 @@ export const useProductsViewModel = () => {
         confirmDeleteAllProducts,
         handleToggleClientState,
         confirmToggleroduct,
+        togglePublicarTienda,
         exportProducts: () => exportProductsAction(auth?.empresaId, debounce),
         refreshProducts: async () => {
             await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce, marcaId: state.marcaIdFilter });

@@ -31,11 +31,13 @@ import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
 import { useSedesStore } from "@/zustand/sedes";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+
 const Comprobantes = () => {
     const navigate = useNavigate();
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
-    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
+    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay, discardInvoice }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
 
     const [currentPage, setcurrentPage] = useState(1);
@@ -56,6 +58,7 @@ const Comprobantes = () => {
     const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
+    const [isOpenModalConfirmDescartar, setIsOpenModalConfirmDescartar] = useState(false);
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, row: any) => {
         setMenuAnchor(event.currentTarget);
@@ -72,6 +75,37 @@ const Comprobantes = () => {
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
     const [shouldPrint, setShouldPrint] = useState(false);
+
+    const handleDownloadAsset = async (url?: string, fallbackName: string = 'archivo') => {
+        if (!url) return;
+
+        try {
+            const isProtectedAsset = url.startsWith(API_URL);
+            const headers: HeadersInit = {};
+            if (isProtectedAsset) {
+                const token = localStorage.getItem('ACCESS_TOKEN');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(url, { headers });
+
+            if (!response.ok) {
+                throw new Error('No se pudo descargar el archivo');
+            }
+
+            const blob = await response.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = fallbackName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(objectUrl);
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.message || 'No se pudo descargar el archivo', 'error');
+        }
+    };
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -118,6 +152,8 @@ const Comprobantes = () => {
 
 
     const productsTable = invoices?.map((item: IInvoices) => {
+        const xmlDownloadUrl = item.s3XmlUrl || (item.sunatXml ? `${API_URL}/comprobante/${item.id}/xml` : '');
+        const cdrDownloadUrl = item.s3CdrUrl || (item.sunatCdrZip ? `${API_URL}/comprobante/${item.id}/cdr` : '');
         const rowBase: any = {
             id: item?.id,
             fechaEmisión: moment(item?.fechaEmision).format('DD/MM/YYYY HH:mm:ss'),
@@ -133,8 +169,13 @@ const Comprobantes = () => {
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
                 : item.estadoPago,
-            xmlSunat: item.sunatXml,
-            cdrSunat: item.sunatCdrZip,
+            xmlSunat: xmlDownloadUrl,
+            cdrSunat: cdrDownloadUrl,
+            xmlFileName: `${item.serie}-${String(item.correlativo).padStart(8, '0')}.xml`,
+            cdrFileName: `${item.serie}-${String(item.correlativo).padStart(8, '0')}-CDR.xml`,
+            estadoSunatRaw: (item as any).estadoSunatRaw,
+            sunatRetriesCount: (item as any).sunatRetriesCount ?? 0,
+            documentoId: (item as any).documentoId,
         };
 
         const canEmitirSunat = ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(rowBase.comprobante);
@@ -598,6 +639,18 @@ const Comprobantes = () => {
                 </div>
             </div>
 
+            {isOpenModalConfirmDescartar && (
+                <ModalConfirm
+                    confirmSubmit={async () => {
+                        await discardInvoice(formValues?.id);
+                        setIsOpenModalConfirmDescartar(false);
+                    }}
+                    information="¿Eliminar este comprobante? Se borrará permanentemente de la lista y se revertirá el stock. Esta acción no se puede deshacer."
+                    isOpenModal
+                    setIsOpenModal={() => setIsOpenModalConfirmDescartar(false)}
+                    title="Eliminar comprobante"
+                />
+            )}
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information={`¿Estás seguro que deseas anular este comprobante del cliente ${formValues?.client || 'Desconocido'} por un importe de ${formValues?.total || 'S/ 0.00'}?`} isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
             {isOpenModalConfirmPayment && <ModalConfirm confirmSubmit={confirmCompleteInvoice} information="¿Cuál de estos metodos de pago se completo el pago?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirmPayment(false)} title="Completar pago">
                 <div className="grid grid-cols-3 gap-10 col-start-1 col-end-2 mb-5 mt-5">
@@ -743,7 +796,7 @@ const Comprobantes = () => {
                                 disabled={!rowBase.xmlSunat}
                                 onClick={() => {
                                     if (rowBase.xmlSunat) {
-                                        window.open(rowBase.xmlSunat, '_blank');
+                                        handleDownloadAsset(rowBase.xmlSunat, rowBase.xmlFileName);
                                     }
                                     handleCloseMenu();
                                 }}
@@ -758,7 +811,7 @@ const Comprobantes = () => {
                                 disabled={!rowBase.cdrSunat}
                                 onClick={() => {
                                     if (rowBase.cdrSunat) {
-                                        window.open(rowBase.cdrSunat, '_blank');
+                                        handleDownloadAsset(rowBase.cdrSunat, rowBase.cdrFileName);
                                     }
                                     handleCloseMenu();
                                 }}
@@ -794,19 +847,20 @@ const Comprobantes = () => {
                                 </button>
                             )}
 
-                            {/* Anular Directo - Solo aplica para Facturas, no Boletas */}
-                            {rowBase.comprobante !== 'BOLETA' && (
+                            {/* Dar de Baja - Solo para documentos informales (TICKET, OT, NV, etc.)
+                                Las boletas/facturas SUNAT se anulan con Nota de Crédito */}
+                            {!canEmitirSunat && (
                                 <button
                                     type="button"
-                                    disabled={rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO'}
+                                    disabled={rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO' || rowBase.estado === 'PENDIENTE'}
                                     onClick={() => {
-                                        if (rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO') {
+                                        if (rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE') {
                                             setFormValues(rowBase);
                                             setIsOpenModalConfirm(true);
                                         }
                                         handleCloseMenu();
                                     }}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-800 ${rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 cursor-not-allowed'}`}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-800 ${rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 cursor-not-allowed'}`}
                                 >
                                     <Icon icon="solar:close-circle-bold-duotone" width={16} height={16} />
                                     <span className="font-medium">Dar de Baja</span>
@@ -816,9 +870,9 @@ const Comprobantes = () => {
                             {/* Emitir Nota de Crédito */}
                             <button
                                 type="button"
-                                disabled={!['FACTURA', 'BOLETA'].includes(rowBase.comprobante) || rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO'}
+                                disabled={!['FACTURA', 'BOLETA'].includes(rowBase.comprobante) || rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO' || rowBase.estado === 'PENDIENTE'}
                                 onClick={() => {
-                                    if (['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO') {
+                                    if (['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE') {
                                         navigate('/administrador/facturacion/nuevo', {
                                             state: {
                                                 fromCreditNote: true,
@@ -832,11 +886,30 @@ const Comprobantes = () => {
                                     }
                                     handleCloseMenu();
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/10 border-t border-gray-100 dark:border-slate-800 ${['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 cursor-not-allowed'}`}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/10 border-t border-gray-100 dark:border-slate-800 ${['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="solar:document-medicine-bold-duotone" width={16} height={16} />
                                 <span className="font-medium">Generar NC (Anular)</span>
                             </button>
+
+                            {/* Eliminar comprobante atascado */}
+                            {canEmitirSunat &&
+                                rowBase.estadoSunatRaw !== 'EMITIDO' &&
+                                rowBase.estadoSunatRaw !== 'ANULADO' &&
+                                rowBase.estadoSunatRaw !== 'NO_APLICA' && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFormValues(rowBase);
+                                        setIsOpenModalConfirmDescartar(true);
+                                        handleCloseMenu();
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/10 border-t border-gray-100 dark:border-slate-800 text-red-600 dark:text-red-400"
+                                >
+                                    <Icon icon="solar:trash-bin-trash-bold-duotone" width={16} height={16} />
+                                    <span className="font-medium">Eliminar comprobante</span>
+                                </button>
+                            )}
                         </>
                     );
                 })()}

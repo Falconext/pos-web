@@ -25,6 +25,7 @@ export interface IUser {
     permisos?: string[]
     sedes?: ISede[]
     subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[]
+    sistemaNegocio?: string | null
 }
 
 export interface IResponse {

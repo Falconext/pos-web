@@ -12,45 +12,24 @@ interface LineaTiempoEstadosProps {
     estadoActual: string;
 }
 
-const ESTADOS_CONFIG = {
-    PENDIENTE: {
-        label: 'Pendiente',
-        icon: 'mdi:clock-outline',
-        color: 'yellow',
-    },
-    CONFIRMADO: {
-        label: 'Confirmado',
-        icon: 'mdi:check-circle',
-        color: 'blue',
-    },
-    EN_PREPARACION: {
-        label: 'En Preparación',
-        icon: 'mdi:chef-hat',
-        color: 'purple',
-    },
-    LISTO: {
-        label: 'Listo',
-        icon: 'mdi:package-variant',
-        color: 'green',
-    },
-    ENTREGADO: {
-        label: 'Entregado',
-        icon: 'mdi:check-all',
-        color: 'gray',
-    },
-    CANCELADO: {
-        label: 'Cancelado',
-        icon: 'mdi:close-circle',
-        color: 'red',
-    },
-};
+const FLUJO_ESTADOS = [
+    { key: 'PENDIENTE',       label: 'Pendiente',       icon: 'mdi:clock-outline',    color: '#F59E0B' },
+    { key: 'CONFIRMADO',      label: 'Confirmado',      icon: 'mdi:check-circle',     color: '#3B82F6' },
+    { key: 'EN_PREPARACION',  label: 'En Preparación',  icon: 'mdi:chef-hat',         color: '#8B5CF6' },
+    { key: 'LISTO',           label: 'Listo para entrega', icon: 'mdi:package-variant', color: '#10B981' },
+    { key: 'ENTREGADO',       label: 'Entregado',       icon: 'mdi:check-all',        color: '#6B7280' },
+];
 
-export default function LineaTiempoEstados({
-    historial,
-    estadoActual,
-}: LineaTiempoEstadosProps) {
-    const formatearFecha = (fecha: string) => {
-        return new Date(fecha).toLocaleString('es-PE', {
+const CANCELADO = { key: 'CANCELADO', label: 'Cancelado', icon: 'mdi:close-circle', color: '#EF4444' };
+
+export default function LineaTiempoEstados({ historial, estadoActual }: LineaTiempoEstadosProps) {
+    const esCancelado = estadoActual === 'CANCELADO';
+    const estados = esCancelado ? [CANCELADO] : FLUJO_ESTADOS;
+
+    const getTimestamp = (estadoKey: string): string | null => {
+        const entry = historial.find(h => h.estadoNuevo === estadoKey);
+        if (!entry) return null;
+        return new Date(entry.creadoEn).toLocaleString('es-PE', {
             day: '2-digit',
             month: 'short',
             hour: '2-digit',
@@ -58,41 +37,64 @@ export default function LineaTiempoEstados({
         });
     };
 
-    const getColorClass = (color: string, type: 'bg' | 'text' | 'border') => {
-        const colors: any = {
-            yellow: { bg: 'bg-yellow-500', text: 'text-yellow-600', border: 'border-yellow-500' },
-            blue: { bg: 'bg-blue-500', text: 'text-blue-600', border: 'border-blue-500' },
-            purple: { bg: 'bg-purple-500', text: 'text-purple-600', border: 'border-purple-500' },
-            green: { bg: 'bg-green-500', text: 'text-green-600', border: 'border-green-500' },
-            gray: { bg: 'bg-gray-500', text: 'text-gray-600', border: 'border-gray-500' },
-            red: { bg: 'bg-red-500', text: 'text-red-600', border: 'border-red-500' },
-        };
-        return colors[color]?.[type] || colors.gray[type];
-    };
+    const currentIdx = estados.findIndex(e => e.key === estadoActual);
 
     return (
-        <div className="space-y-4">
-            {historial.map((item, index) => {
-                const config = ESTADOS_CONFIG[item.estadoNuevo as keyof typeof ESTADOS_CONFIG];
-                const isLast = index === historial.length - 1;
+        <div className="space-y-0">
+            {estados.map((estado, idx) => {
+                const isDone    = esCancelado ? true : idx < currentIdx;
+                const isActive  = idx === currentIdx;
+                const isPending = idx > currentIdx;
+                const ts        = getTimestamp(estado.key);
+                const isLast    = idx === estados.length - 1;
 
                 return (
-                    <div key={index} className="flex gap-4">
+                    <div key={estado.key} className="flex gap-4">
+                        {/* Icon + connector */}
                         <div className="flex flex-col items-center">
                             <div
-                                className={`w-10 h-10 rounded-full ${getColorClass(config.color, 'bg')} flex items-center justify-center`}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                                    isDone ? 'bg-green-500' : isPending ? 'bg-gray-100' : ''
+                                }`}
+                                style={
+                                    isActive
+                                        ? { backgroundColor: estado.color, boxShadow: `0 0 0 2px white, 0 0 0 4px ${estado.color}` }
+                                        : undefined
+                                }
                             >
-                                <Icon icon={config.icon} className="w-5 h-5 text-white" />
+                                {isDone ? (
+                                    <Icon icon="mdi:check" className="w-5 h-5 text-white" />
+                                ) : (
+                                    <Icon
+                                        icon={estado.icon}
+                                        className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-300'} ${isActive ? 'animate-pulse' : ''}`}
+                                        style={isActive ? { color: 'white' } : undefined}
+                                    />
+                                )}
                             </div>
                             {!isLast && (
-                                <div className={`w-0.5 h-full min-h-[40px] ${getColorClass(config.color, 'bg')}`} />
+                                <div className={`w-0.5 flex-1 min-h-[28px] mt-1 ${isDone ? 'bg-green-400' : 'bg-gray-100'}`} />
                             )}
                         </div>
-                        <div className="flex-1 pb-4">
-                            <p className="font-semibold">{config.label}</p>
-                            <p className="text-sm text-gray-600">{formatearFecha(item.creadoEn)}</p>
-                            {item.notas && (
-                                <p className="text-sm text-gray-500 mt-1">{item.notas}</p>
+
+                        {/* Content */}
+                        <div className={`flex-1 pb-5 ${isPending ? 'opacity-35' : ''}`}>
+                            <p
+                                className="font-bold text-sm"
+                                style={isActive ? { color: estado.color } : undefined}
+                            >
+                                {estado.label}
+                                {isActive && (
+                                    <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: estado.color }}>
+                                        Actual
+                                    </span>
+                                )}
+                            </p>
+                            {ts && (
+                                <p className="text-xs text-gray-400 mt-0.5">{ts}</p>
+                            )}
+                            {!ts && isPending && (
+                                <p className="text-xs text-gray-300 mt-0.5">Pendiente</p>
                             )}
                         </div>
                     </div>

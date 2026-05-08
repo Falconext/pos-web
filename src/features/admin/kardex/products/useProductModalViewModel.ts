@@ -77,9 +77,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     const [creationLote, setCreationLote] = useState<ICreationLote>({ lote: '', fechaVencimiento: '' });
 
     // --- Wholesale Options State ---
-    const [wholesaleOptions, setWholesaleOptions] = useState<IWholesaleOption[]>([]);
-    const [newWholesaleOption, setNewWholesaleOption] = useState({ nombre: '', precio: '' });
-    const [wholesaleGroupId, setWholesaleGroupId] = useState<number | null>(null);
+    const [newWholesaleOption, setNewWholesaleOption] = useState({ cantidadMinima: '', precio: '' });
 
     // --- Initial Effect Triggers ---
     useEffect(() => {
@@ -112,8 +110,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             setFilePrincipal(null);
             setGruposSeleccionados([]);
             setCreationLote({ lote: '', fechaVencimiento: '' });
-            setWholesaleOptions([]);
-            setWholesaleGroupId(null);
+            setNewWholesaleOption({ cantidadMinima: '', precio: '' });
         }
     }, [isOpenModal]);
 
@@ -148,34 +145,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         try {
             const res = await apiClient.get(`/modificadores/productos/${productoId}`);
             const grupos = res?.data?.data || res?.data || [];
-
-            setGruposSeleccionados(grupos.map((g: any) => g.grupoId));
-
-            const autoGroup = grupos.find((g: any) => {
-                const nombreGrupo = g.grupoNombre || g.grupo?.nombre;
-                return nombreGrupo && (nombreGrupo.startsWith('Precios:') || nombreGrupo === 'Precios por Cantidad');
+            const nonWholesaleGroups = grupos.filter((g: any) => {
+                const nombre = g.grupoNombre || g.grupo?.nombre || '';
+                return !nombre.startsWith('Precios:') && nombre !== 'Precios por Cantidad';
             });
-
-            if (autoGroup) {
-                try {
-                    const groupRes = await apiClient.get(`/modificadores/grupos/${autoGroup.grupoId}`);
-                    const groupDetails = groupRes.data.data?.data || groupRes.data.data || groupRes.data;
-
-                    if (groupDetails && groupDetails.opciones) {
-                        const options = groupDetails.opciones.map((op: any) => ({
-                            id: op.id,
-                            nombre: op.nombre,
-                            precio: (Number(op.precioExtra) + Number(formValues.precioUnitario || 0)).toFixed(2)
-                        }));
-                        setWholesaleOptions(options);
-                        setWholesaleGroupId(autoGroup.grupoId);
-                    }
-                } catch (err) {
-                    console.error('Error fetching wholesale group details', err);
-                }
-            } else {
-                setWholesaleGroupId(null);
-            }
+            setGruposSeleccionados(nonWholesaleGroups.map((g: any) => g.grupoId));
         } catch (error) {
             console.error('Error al cargar grupos asignados:', error);
         }
@@ -188,39 +162,21 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     };
 
     const handleAddWholesaleOption = () => {
-        if (!newWholesaleOption.nombre || !newWholesaleOption.precio) return;
-        setWholesaleOptions([...wholesaleOptions, { ...newWholesaleOption, esNuevo: true }]);
-        setNewWholesaleOption({ nombre: '', precio: '' });
+        if (!newWholesaleOption.cantidadMinima || !newWholesaleOption.precio) return;
+        const current: IWholesaleOption[] = formValues.preciosMayorista || [];
+        setFormValues({
+            ...formValues,
+            preciosMayorista: [
+                ...current,
+                { cantidadMinima: Number(newWholesaleOption.cantidadMinima), precio: Number(newWholesaleOption.precio) }
+            ]
+        });
+        setNewWholesaleOption({ cantidadMinima: '', precio: '' });
     };
 
     const handleRemoveWholesaleOption = (idx: number) => {
-        setWholesaleOptions(wholesaleOptions.filter((_, i) => i !== idx));
-    };
-
-    const syncWholesaleOptions = async (dedicatedGroupId: number, basePrice: number) => {
-        if (!dedicatedGroupId) return;
-
-        try {
-            const groupDetailsRes = await apiClient.get(`/modificadores/grupos/${dedicatedGroupId}`);
-            const currentOptions = groupDetailsRes.data.data?.opciones || [];
-            const optionsIdsParam = wholesaleOptions.map(o => o.id).filter(Boolean);
-            const toDelete = currentOptions.filter((o: any) => !optionsIdsParam.includes(o.id));
-
-            for (const op of toDelete) await apiClient.delete(`/modificadores/opciones/${op.id}`);
-
-            for (const opt of wholesaleOptions) {
-                const extra = Math.max(0, Number(opt.precio) - basePrice);
-                if (opt.id) {
-                    await apiClient.patch(`/modificadores/opciones/${opt.id}`, { nombre: opt.nombre, precioExtra: extra });
-                } else {
-                    await apiClient.post(`/modificadores/grupos/${dedicatedGroupId}/opciones`, {
-                        nombre: opt.nombre, precioExtra: extra, esDefault: false
-                    });
-                }
-            }
-        } catch (e) {
-            console.error('Error syncing wholesale options:', e);
-        }
+        const current: IWholesaleOption[] = formValues.preciosMayorista || [];
+        setFormValues({ ...formValues, preciosMayorista: current.filter((_, i) => i !== idx) });
     };
 
     // --- AI Features ---
@@ -297,7 +253,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
         try {
             let autoGeneratedImageUrl: string | null = null;
-            if (!filePrincipal && !previewPrincipal && !formValues.imagenUrl && formValues.descripcion) {
+            if (!isEdit && !filePrincipal && !previewPrincipal && !formValues.imagenUrl && formValues.descripcion) {
                 try {
                     useAlertStore.getState().alert('Buscando imagen automáticamente...', 'info');
                     const response = await apiClient.post('/producto/ia/generar-imagen', { nombre: formValues.descripcion });
@@ -322,6 +278,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
             if (Number(formValues?.productoId) !== 0 && isEdit) {
                 // EDIT MODE
+                const hasRemovedImage = !filePrincipal && !previewPrincipal && !formValues.imagenUrl;
                 await editProduct({
                     ...formValues,
                     unidadMedidaId: Number(formValues?.unidadMedidaId),
@@ -331,36 +288,12 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                     stock: stockFinal,
                     stockMinimo: formValues?.stockMinimo != null ? Number(formValues?.stockMinimo) : undefined,
                     stockMaximo: formValues?.stockMaximo != null ? Number(formValues?.stockMaximo) : undefined,
+                    imagenUrl: hasRemovedImage ? null : (formValues.imagenUrl || undefined),
                 });
 
-                let finalWholesaleGroupId = wholesaleGroupId;
-                if (wholesaleOptions.length > 0 && !finalWholesaleGroupId) {
-                    try {
-                        const newGroupRes = await apiClient.post('/modificadores/grupos', {
-                            nombre: `Precios: ${formValues.descripcion?.substring(0, 30)}`,
-                            descripcion: 'Autogenerado desde Kardex',
-                            seleccionMin: 0,
-                            seleccionMax: 1,
-                            esObligatorio: false
-                        });
-                        finalWholesaleGroupId = newGroupRes.data.data.data?.id || newGroupRes.data.data?.id || newGroupRes.data?.id;
-                        setWholesaleGroupId(finalWholesaleGroupId);
-                    } catch (err) { console.error('Error creating wholesale group:', err); }
-                }
-
                 try {
-                    const baseGroups = gruposSeleccionados.filter(id => id !== finalWholesaleGroupId);
-                    const allGroups = baseGroups.map((id, idx) => ({ grupoId: id, ordenOverride: idx }));
-
-                    if (finalWholesaleGroupId && wholesaleOptions.length > 0) {
-                        allGroups.push({ grupoId: finalWholesaleGroupId, ordenOverride: -1 });
-                    }
-
+                    const allGroups = gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }));
                     await apiClient.post(`/modificadores/productos/${formValues.productoId}`, { grupos: allGroups });
-
-                    if (finalWholesaleGroupId && wholesaleOptions.length > 0) {
-                        await syncWholesaleOptions(Number(finalWholesaleGroupId), Number(formValues.precioUnitario));
-                    }
                 } catch (e) {
                     console.error('Error al asignar modificadores:', e);
                 }
@@ -386,6 +319,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                         }
                     }
                 } catch (e) { }
+
+                upsertProductLocal({
+                    id: Number(formValues.productoId),
+                    imagenUrl: hasRemovedImage ? null : (previewPrincipal || formValues.imagenUrl || undefined),
+                });
 
                 setFilePrincipal(null); setPreviewPrincipal(null);
                 setFormValues(initialForm);
@@ -461,26 +399,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                     });
                 } catch (e) { }
 
-                if (product?.data?.id) {
-                    let finalWholesaleGroupId = null;
-                    if (wholesaleOptions.length > 0) {
-                        try {
-                            const newGroupRes = await apiClient.post('/modificadores/grupos', {
-                                nombre: `Precios: ${formValues.descripcion?.substring(0, 30)}`,
-                                descripcion: 'Autogenerado desde Kardex',
-                                seleccionMin: 0,
-                                seleccionMax: 1,
-                                esObligatorio: false
-                            });
-                            finalWholesaleGroupId = newGroupRes.data.data.data?.id || newGroupRes.data.data?.id || newGroupRes.data?.id;
-                        } catch (err) { }
-                    }
-
+                if (product?.data?.id && gruposSeleccionados.length > 0) {
                     try {
                         const allGroups = gruposSeleccionados.map((id, idx) => ({ grupoId: id, ordenOverride: idx }));
-                        if (finalWholesaleGroupId) allGroups.push({ grupoId: finalWholesaleGroupId, ordenOverride: -1 });
                         await apiClient.post(`/modificadores/productos/${product.data.id}`, { grupos: allGroups });
-                        if (finalWholesaleGroupId) await syncWholesaleOptions(Number(finalWholesaleGroupId), Number(formValues.precioUnitario));
                     } catch (e) { }
                 }
 
@@ -521,12 +443,13 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         showMedicamentoModal,
         showLotesModal,
         creationLote,
-        wholesaleOptions,
+        wholesaleOptions: (formValues.preciosMayorista || []) as IWholesaleOption[],
         newWholesaleOption,
         isGeneratingImage,
         isCategorizing,
         // Setters
         setIsOpenModal,
+        setFormValues,
         setFilePrincipal,
         setPreviewPrincipal,
         setLoadingImage,

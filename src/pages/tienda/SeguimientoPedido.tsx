@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -6,6 +6,8 @@ import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 import Footer from '@/components/tienda/Footer';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const TERMINAL_STATES = ['ENTREGADO', 'CANCELADO'];
+const POLLING_INTERVAL_MS = 30_000;
 
 export default function SeguimientoPedido() {
     const { slug } = useParams();
@@ -18,6 +20,8 @@ export default function SeguimientoPedido() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [tienda, setTienda] = useState<any>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         if (slug) {
@@ -32,6 +36,49 @@ export default function SeguimientoPedido() {
             buscarPedido(codigoParam);
         }
     }, [codigoParam]);
+
+    const fetchPedidoSilencioso = useCallback(async (codigoBusqueda: string) => {
+        try {
+            const { data } = await axios.get(`${BASE_URL}/public/store/track/${codigoBusqueda}`);
+            const raw: any = data?.data || data;
+            const normalizado = {
+                ...raw,
+                subtotal: Number(raw?.subtotal ?? 0),
+                igv: Number(raw?.igv ?? 0),
+                total: Number(raw?.total ?? 0),
+                costoEnvio: Number(raw?.costoEnvio ?? 0),
+                items: (raw?.items || []).map((it: any) => ({
+                    ...it,
+                    precioUnit: Number(it?.precioUnit ?? it?.precioUnitario ?? 0),
+                    subtotal: Number(it?.subtotal ?? 0),
+                })),
+            };
+            setPedido(normalizado);
+            setLastUpdated(new Date());
+        } catch {
+            // silent — don't disrupt the displayed order
+        }
+    }, []);
+
+    useEffect(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+
+        if (pedido && !TERMINAL_STATES.includes(pedido.estado)) {
+            intervalRef.current = setInterval(() => {
+                fetchPedidoSilencioso(pedido.codigoSeguimiento);
+            }, POLLING_INTERVAL_MS);
+        }
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [pedido?.estado, pedido?.codigoSeguimiento, fetchPedidoSilencioso]);
 
     // Helpers de diseño
     const diseno = tienda?.diseno || {};
@@ -107,6 +154,19 @@ export default function SeguimientoPedido() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         buscarPedido(codigo);
+    };
+
+    const [copiedLink, setCopiedLink] = useState(false);
+    const compartirSeguimiento = () => {
+        const url = `${window.location.origin}/tienda/${slug}/seguimiento?codigo=${pedido.codigoSeguimiento}`;
+        navigator.clipboard.writeText(url).then(() => {
+            setCopiedLink(true);
+            setTimeout(() => setCopiedLink(false), 2000);
+        }).catch(() => {
+            if (navigator.share) {
+                navigator.share({ title: 'Estado de mi pedido', url });
+            }
+        });
     };
 
     const getEstadoColor = (estado: string) => {
@@ -221,7 +281,24 @@ export default function SeguimientoPedido() {
                                 <div className={`bg-white ${borderRadius} shadow-sm border border-gray-100 p-4 md:p-6`}>
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
                                         <h2 className="text-lg font-black text-[#1A1A1A]">Seguimiento del pedido</h2>
-                                        <span className="text-sm font-bold break-all" style={{ color: diseno.colorPrimario || '#FF9500' }}>#{pedido.codigoSeguimiento}</span>
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <span className="text-sm font-bold break-all" style={{ color: diseno.colorPrimario || '#FF9500' }}>#{pedido.codigoSeguimiento}</span>
+                                            <button
+                                                onClick={compartirSeguimiento}
+                                                className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 transition-colors"
+                                            >
+                                                <Icon icon={copiedLink ? 'mdi:check' : 'mdi:share-variant'} className="w-3.5 h-3.5" />
+                                                {copiedLink ? '¡Copiado!' : 'Compartir'}
+                                            </button>
+                                            {!TERMINAL_STATES.includes(pedido.estado) && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                                    <span className="text-xs text-gray-500">
+                                                        En vivo{lastUpdated ? ` · ${lastUpdated.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}` : ''}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex items-center justify-between mb-5 gap-3">
                                         <span className={`px-3 py-1.5 ${borderRadius} text-xs font-bold ${getEstadoColor(pedido.estado)}`}>{getEstadoLabel(pedido.estado)}</span>

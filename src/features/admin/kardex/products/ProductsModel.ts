@@ -74,5 +74,7 @@ export const initialProductForm: IFormProduct = {
     // Campos Ofertas
     precioOferta: 0,
     fechaInicioOferta: "",
-    fechaFinOferta: ""
+    fechaFinOferta: "",
+    // Precios por Mayorista
+    preciosMayorista: []
 };

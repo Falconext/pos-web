@@ -581,10 +581,12 @@ export default function TiendaPublica() {
         {/* ── Membership Banner ── */}
         <MembershipBanner tienda={tienda} />
 
-        <section className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">
-          <SectionHeader title="También te podría interesar" onMore={() => navigate(`/tienda/${slug}/catalogo`)} />
-          <ProductGrid items={productos.slice(0, 10)} />
-        </section>
+        {productos.length > 10 && (
+          <section className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">
+            <SectionHeader title="También te podría interesar" onMore={() => navigate(`/tienda/${slug}/catalogo`)} />
+            <ProductGrid items={productos.slice(10, 20)} />
+          </section>
+        )}
 
         {/* ── Promo Banners Row 1 ── */}
         <PromoBanners tienda={tienda} />
@@ -613,10 +615,10 @@ export default function TiendaPublica() {
 
 
 
-        {/* ── Wholesale / Vet-approved Section ── */}
+        {/* ── Wholesale Section ── */}
         {wholesaleProducts.length > 0 && (
           <section className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">
-            <SectionHeader title="Garantizados" />
+            <SectionHeader title="Al por mayor" onMore={() => navigate(`/tienda/${slug}/catalogo?wholesale=true`)} />
             <ProductGrid items={wholesaleProducts} />
           </section>
         )}

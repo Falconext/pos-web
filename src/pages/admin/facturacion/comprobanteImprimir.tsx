@@ -1,6 +1,7 @@
 import moment from 'moment';
 import React, { useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
+import { BRAND } from '@/lib/branding';
 
 const ComprobantePrintPage = ({
     productsInvoice,
@@ -206,9 +207,9 @@ const ComprobantePrintPage = ({
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
                         <div className="uppercase">
                             <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center mt-10`}>
-                                Sistema punto de venta - FalcoNext.</p>
-                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>Desarrollado por FalcoNext.</p>
-                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>www.falconext.pe.</p>
+                                Sistema punto de venta - {BRAND.name}.</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>Desarrollado por {BRAND.name}.</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{BRAND.website}.</p>
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>
@@ -412,8 +413,8 @@ const ComprobantePrintPage = ({
                                         </div>
 
                                         <div className="text-right text-[10px] text-gray-500">
-                                            <div className="font-bold italic">FalcoNext ™</div>
-                                            <div>Comprobante emitido a través de www.falconext.pe</div>
+                                            <div className="font-bold italic">{BRAND.name} ™</div>
+                                            <div>Comprobante emitido a través de {BRAND.website}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -612,8 +613,8 @@ const ComprobantePrintPage = ({
                                         </div>
 
                                         <div className="text-right text-[10px] text-gray-500">
-                                            <div className="font-bold italic">FalcoNext ™</div>
-                                            <div>Comprobante emitido a través de www.falconext.pe</div>
+                                            <div className="font-bold italic">{BRAND.name} ™</div>
+                                            <div>Comprobante emitido a través de {BRAND.website}</div>
                                         </div>
                                     </div>
                                 </div>

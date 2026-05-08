@@ -7,8 +7,8 @@ const defaultForm = {
     facebookUrl: '', instagramUrl: '', tiktokUrl: '', horarioAtencion: '',
     colorPrimario: '#000000', colorSecundario: '#ffffff',
     yapeQrUrl: '', yapeNumero: '', plinQrUrl: '', plinNumero: '',
-    aceptaEfectivo: true, costoEnvioFijo: 0, aceptaRecojo: true,
-    aceptaEnvio: true, direccionRecojo: '', tiempoPreparacionMin: 30,
+    aceptaEfectivo: true, costoEnvioFijo: 0, envioGratisDesdeSoles: 0, minimoCompra: 0,
+    aceptaRecojo: true, aceptaEnvio: true, direccionRecojo: '', tiempoPreparacionMin: 30,
     bancoNombre: '', numeroCuenta: '', cci: '', monedaCuenta: 'SOLES',
 };
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useLayoutEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 interface TableActionMenuProps {
@@ -9,42 +9,50 @@ interface TableActionMenuProps {
 }
 
 const TableActionMenu = ({ isOpen, onClose, anchorEl, children }: TableActionMenuProps) => {
-    const [position, setPosition] = useState<{ top: number; left: number | 'auto'; right: number | 'auto' }>({ top: 0, left: 0, right: 'auto' });
+    const [position, setPosition] = useState<{ top: number; left: number | 'auto'; right: number | 'auto' } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const updatePosition = () => {
             if (isOpen && anchorEl) {
                 const rect = anchorEl.getBoundingClientRect();
-                const scrollY = window.scrollY;
-                const scrollX = window.scrollX;
+                
+                // We use fixed positioning, so we don't need scrollY/scrollX if we use rect values directly
+                // but getBoundingClientRect is relative to viewport, which is what 'fixed' uses.
+                
+                let top = rect.bottom + 4; // 4px gap
+                let right = document.documentElement.clientWidth - rect.right;
 
-                // Default: align top-right of menu to bottom-right of anchor
-                // We want the menu to appear below the button, aligned to the right edge of the button usually, or centered.
-                // Let's align to the right edge of the button (so menu expands to the left) to avoid going off-screen on the right.
+                // Adjust if it goes off bottom
+                if (menuRef.current) {
+                    const menuHeight = menuRef.current.offsetHeight;
+                    if (top + menuHeight > window.innerHeight) {
+                        top = rect.top - menuHeight - 4;
+                    }
+                }
 
-                let top = rect.bottom + scrollY + 4; // 4px gap
-                let left: number | 'auto' = 'auto';
-                let right: number | 'auto' = document.documentElement.clientWidth - (rect.right + scrollX);
-
-                // Simple collision detection (if needed later, expand here)
-
-                setPosition({ top, left, right });
+                setPosition({ top, left: 'auto', right });
             }
         };
 
         if (isOpen) {
             updatePosition();
-            window.addEventListener('scroll', onClose, true); // Close on any scroll to avoid floating menu
+            const handleScroll = (e: any) => {
+                // Only close if scrolling the main window or a parent container
+                onClose();
+            };
+            window.addEventListener('scroll', handleScroll, true);
             window.addEventListener('resize', onClose);
             document.addEventListener('mousedown', handleClickOutside);
+            
+            return () => {
+                window.removeEventListener('scroll', handleScroll, true);
+                window.removeEventListener('resize', onClose);
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        } else {
+            setPosition(null);
         }
-
-        return () => {
-            window.removeEventListener('scroll', onClose, true);
-            window.removeEventListener('resize', onClose);
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
     }, [isOpen, anchorEl, onClose]);
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,11 +66,12 @@ const TableActionMenu = ({ isOpen, onClose, anchorEl, children }: TableActionMen
     return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[150px] flex flex-col"
+            className="fixed z-[9999] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl py-1 min-w-[160px] flex flex-col transition-opacity duration-75"
             style={{
-                top: position.top,
-                right: position.right,
-                // left: position.left, // We use right positioning to align with the column edge usually
+                top: position?.top ?? 0,
+                right: position?.right ?? 0,
+                opacity: position ? 1 : 0,
+                pointerEvents: position ? 'auto' : 'none'
             }}
             onClick={(e) => e.stopPropagation()}
         >

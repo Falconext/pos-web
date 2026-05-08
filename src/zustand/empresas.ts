@@ -70,8 +70,9 @@ interface CreateEmpresaDto {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion?: string;
-  providerToken?: string;
-  providerId?: string;
+  brand?: string;
+  usuarioPse?: string;
+  contrasenaPse?: string;
   usuario: {
     nombre: string;
     email: string;
@@ -97,10 +98,11 @@ interface UpdateEmpresaDto {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion: string;
-  providerToken?: string;
-  providerId?: string;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
+  brand?: string;
+  usuarioPse?: string;
+  contrasenaPse?: string;
 }
 
 interface ListEmpresaDto {
@@ -211,7 +213,11 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
   crearEmpresa: async (data: CreateEmpresaDto) => {
     set({ loading: true, error: null });
     try {
-      const response = await apiClient.post<Empresa>('/empresa/crear', data);
+      const payload = {
+        ...data,
+        brand: data.brand || import.meta.env.VITE_PUBLIC_BRAND || 'falconext',
+      };
+      const response = await apiClient.post<Empresa>('/empresa/crear', payload);
 
       set({ loading: false });
       return response.data;

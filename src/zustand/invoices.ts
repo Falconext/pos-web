@@ -7,6 +7,51 @@ import { useClientsStore } from './clients';
 import { useProductsStore } from './products';
 import { useAuthStore } from './auth';
 
+const normalizeSunatEstado = (invoice: any) => {
+    const rawEstado = String(invoice?.estadoEnvioSunat ?? '').toUpperCase();
+    const qpseCode = String(
+        invoice?.qpseCode ??
+        invoice?.sunatCode ??
+        invoice?.sunatCdrResponse?.code ??
+        ''
+    );
+
+    const rawResponse = typeof invoice?.sunatCdrResponse === 'string'
+        ? (() => {
+            try {
+                return JSON.parse(invoice.sunatCdrResponse);
+            } catch {
+                return null;
+            }
+        })()
+        : invoice?.sunatCdrResponse;
+
+    const responseCode = String(rawResponse?.code ?? qpseCode ?? '');
+    const responseLabel = String(rawResponse?.state_label ?? rawResponse?.estado ?? rawEstado).toUpperCase();
+
+    let estadoEnvioSunat = rawEstado;
+
+    // ANULADO y NO_APLICA son estados de negocio definitivos — tienen prioridad sobre
+    // cualquier código de respuesta de SUNAT (el CDR original sigue diciendo "aceptado").
+    if (rawEstado === 'ANULADO' || rawEstado === 'NO_APLICA') {
+        estadoEnvioSunat = rawEstado;
+    } else if (responseCode === '0' || responseLabel === 'ACEPTADO' || responseLabel === 'OBSERVADO' || rawEstado === 'EMITIDO') {
+        estadoEnvioSunat = 'ACEPTADO';
+    } else if (responseCode === '98' || responseLabel === 'PENDIENTE' || responseLabel === 'EN_PROCESO' || responseLabel === 'INDETERMINADO' || rawEstado === 'FALLIDO_ENVIO') {
+        estadoEnvioSunat = 'PENDIENTE';
+    } else if (rawEstado === 'RECHAZADO') {
+        estadoEnvioSunat = rawEstado;
+    } else if (!estadoEnvioSunat) {
+        estadoEnvioSunat = responseCode === '0' ? 'ACEPTADO' : responseCode === '98' ? 'PENDIENTE' : 'RECHAZADO';
+    }
+
+    return {
+        ...invoice,
+        estadoEnvioSunat,
+        estadoSunatRaw: rawEstado,
+    };
+};
+
 export interface IInvoicesState {
     invoices: IInvoices[];
     totalInvoices: number;
@@ -29,6 +74,7 @@ export interface IInvoicesState {
     getInvoice: (id: number) => Promise<{ success: boolean, error?: string }>;
     completePay: (data: any, medioPago: string, montoPagado?: number) => Promise<{ success: boolean, error?: string }>;
     cancelInvoice: (id: number) => Promise<{ success: boolean, error?: string }>;
+    discardInvoice: (id: number) => Promise<{ success: boolean, error?: string }>;
     updateQuotation: (id: number, data: any) => Promise<{ success: boolean, error?: string }>;
     importReference: number
 }
@@ -54,7 +100,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
                 set({
-                    invoices: resp.data.comprobantes,
+                    invoices: (resp.data.comprobantes || []).map(normalizeSunatEstado),
                     totalInvoices: resp.data.total
                 }, false, "GET_INVOICES");
                 useAlertStore.setState({ loading: false });
@@ -235,7 +281,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 set(
                     (_state) => ({
                         invoice: {
-                            ...data,
+                            ...normalizeSunatEstado(data),
                             vendedor: vendedorNombre,
                         },
                     }),
@@ -414,6 +460,28 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
         } catch (error: any) {
             useAlertStore.getState().alert(`${error.message || 'Error al registrar el pago'}`, 'error');
             return { success: false, error: error.message || 'Error al registrar el pago' };
+        }
+    },
+    discardInvoice: async (id: number) => {
+        try {
+            const resp: any = await patch(`/comprobante/${id}/descartar`, {});
+            if (resp.code === 1) {
+                set(
+                    (state) => ({
+                        invoices: state.invoices.filter((inv) => inv.id !== id),
+                    }),
+                    false,
+                    'DESCARTAR_COMPROBANTE'
+                );
+                useAlertStore.getState().alert('Comprobante descartado exitosamente', 'success');
+                return { success: true };
+            } else {
+                useAlertStore.getState().alert(resp.error || 'Error al descartar el comprobante', 'error');
+                return { success: false, error: resp.error };
+            }
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.message || 'Error al descartar el comprobante', 'error');
+            return { success: false, error: error.message };
         }
     },
     updateQuotation: async (id: number, data: any) => {

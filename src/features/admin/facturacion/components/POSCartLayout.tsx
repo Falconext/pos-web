@@ -15,13 +15,19 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                         {/* Top Section: Image & Description */}
                         <div className="flex items-start md:items-center gap-3 w-full md:w-auto md:flex-1">
                             <div className="w-16 h-16 md:w-12 md:h-12 bg-gray-50 dark:bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                                {item.imagenUrl ? <img src={item.imagenUrl} className="w-full h-full object-contain rounded-lg" /> : <Icon icon="solar:box-linear" className="text-gray-400 dark:text-gray-500" />}
+                                {item.imagenUrl
+                                    ? <img src={item.imagenUrl} className="w-full h-full object-contain rounded-lg" />
+                                    : <Icon icon="solar:box-linear" className="text-gray-400 dark:text-gray-500" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h5 className="font-bold text-gray-800 dark:text-gray-200 text-sm md:text-sm line-clamp-2 md:line-clamp-1 leading-tight md:leading-normal mb-1 md:mb-0">{item.descripcion}</h5>
+                                <h5 className="font-bold text-gray-800 dark:text-gray-200 text-sm md:text-sm line-clamp-2 md:line-clamp-1 leading-tight md:leading-normal mb-0.5">{item.descripcion}</h5>
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-400 font-medium">PU: S/{Number(item.precioUnitario).toFixed(2)}</span>
-                                    {Number(item.descuento) > 0 && <span className="text-green-600 dark:text-green-400 font-bold">-{item.descuento}%</span>}
+                                    <span className="bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-400 font-medium">
+                                        PU: S/{Number(item.precioUnitario).toFixed(2)}
+                                    </span>
+                                    {Number(item.descuento) > 0 && (
+                                        <span className="text-green-600 dark:text-green-400 font-bold">-{item.descuento}%</span>
+                                    )}
                                 </div>
                             </div>
                             {/* Mobile Only Delete Button */}
@@ -39,7 +45,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                         if (item.cantidad > 1) {
                                             vm.updateProductInvoice(index, vm.calculateLineItem(item, Number(item.cantidad) - 1));
                                         } else {
-                                            vm.handleDeleteProduct(item)
+                                            vm.handleDeleteProduct(item);
                                         }
                                     }}
                                     className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"
@@ -50,9 +56,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                 <button
                                     onClick={() => {
                                         const newQty = Number(item.cantidad) + 1;
-                                        if (item.stock !== undefined && item.stock < newQty) {
-                                            return;
-                                        }
+                                        if (item.stock !== undefined && item.stock < newQty) return;
                                         vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
                                     }}
                                     className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"

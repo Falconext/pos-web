@@ -169,6 +169,15 @@ export default function ProductsView() {
                 'Stock minimo': item?.stockMinimo ?? 0,
                 'U.M': item?.unidadMedida.nombre,
                 'Estado': item.estado,
+                'Tienda': (item as any).publicarEnTienda ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
+                        <Icon icon="mdi:store" width={12} /> Sí
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-400">
+                        <Icon icon="mdi:store-off" width={12} /> No
+                    </span>
+                ),
                 _original: item
             };
 
@@ -432,6 +441,10 @@ export default function ProductsView() {
                                     </button>
                                     <button type="button" onClick={() => { actions.handleToggleClientState({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
                                         <Icon icon="mdi:power" width={16} height={16} /> <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
+                                    </button>
+                                    <button type="button" onClick={() => { actions.togglePublicarTienda(rowBase); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                        <Icon icon={(rowBase as any).publicarEnTienda ? 'mdi:store-off' : 'mdi:store'} width={16} height={16} className={(rowBase as any).publicarEnTienda ? 'text-orange-500' : 'text-emerald-500'} />
+                                        <span>{(rowBase as any).publicarEnTienda ? 'Quitar de tienda' : 'Publicar en tienda'}</span>
                                     </button>
                                     <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
                                         <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>

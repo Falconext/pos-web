@@ -16,7 +16,7 @@ const inferDefaultBaseUrl = () => {
     }
   }
 
-  return 'https://api.falconext.pe/api'
+  return import.meta.env.VITE_API_FALLBACK_URL || 'https://api.falconext.pe/api'
 }
 
 const BASE_URL = inferDefaultBaseUrl()

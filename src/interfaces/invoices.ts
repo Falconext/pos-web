@@ -14,6 +14,8 @@ export type IInvoices = {
   observaciones: string
   sunatCdrZip: string
   sunatXml: string,
+  s3XmlUrl?: string
+  s3CdrUrl?: string
   saldo: number
   sede: {
     nombre: string

@@ -64,6 +64,16 @@ const MOTIVO_HELP: Record<string, { title: string; description: string; tip: str
         description: "Usa este motivo para mover stock entre sedes de la misma empresa.",
         tip: "Completa códigos de establecimiento en partida y llegada para evitar observaciones.",
     },
+    "14": {
+        title: "Venta sujeta a confirmación",
+        description: "Usa este motivo cuando la venta será confirmada por el comprador.",
+        tip: "Verifica destinatario, dirección de llegada y transportista antes de enviar.",
+    },
+    "18": {
+        title: "Emisor itinerante CP",
+        description: "Usa este motivo para operaciones con emisión itinerante.",
+        tip: "Este caso no envía código de establecimiento en partida ni llegada.",
+    },
     "13": {
         title: "Otros",
         description: "Usa este motivo cuando no aplica una causal específica del catálogo.",
@@ -160,6 +170,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         if (isOpen) {
             getUbigeos();
             resetProducts();
+            setCurrentStep(1);
 
             if (guiaToEdit) {
                 // Modo Edición
@@ -256,8 +267,12 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             // Asegurar fechas con UTC
             fechaEmision: fullGuia.fechaEmision ? moment.utc(fullGuia.fechaEmision).format("YYYY-MM-DD") : prev.fechaEmision,
             fechaInicioTraslado: fullGuia.fechaInicioTraslado ? moment.utc(fullGuia.fechaInicioTraslado).format("YYYY-MM-DD") : prev.fechaInicioTraslado,
-            partidaCodigoEstablecimiento: fullGuia.partidaCodigoEstablecimiento || prev.partidaCodigoEstablecimiento || "0000",
-            llegadaCodigoEstablecimiento: fullGuia.llegadaCodigoEstablecimiento || prev.llegadaCodigoEstablecimiento || "0000",
+            partidaCodigoEstablecimiento: esTrasladoMismaEmpresa
+                ? (fullGuia.partidaCodigoEstablecimiento && fullGuia.partidaCodigoEstablecimiento !== '0000' ? fullGuia.partidaCodigoEstablecimiento : '0700')
+                : (fullGuia.partidaCodigoEstablecimiento || prev.partidaCodigoEstablecimiento || "0000"),
+            llegadaCodigoEstablecimiento: esTrasladoMismaEmpresa
+                ? (fullGuia.llegadaCodigoEstablecimiento && fullGuia.llegadaCodigoEstablecimiento !== '0000' ? fullGuia.llegadaCodigoEstablecimiento : '0700')
+                : (fullGuia.llegadaCodigoEstablecimiento || prev.llegadaCodigoEstablecimiento || "0000"),
             detalles: (fullGuia.detalles || []).map((d: any) => ({
                 ...d,
                 cantidad: Number(d.cantidad)
@@ -288,30 +303,20 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         const { name, value, type } = e.target;
         const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
         setFormValues(prev => ({ ...prev, [name]: val }));
+    };
 
-        // RENIEC consultation for destinatario
-        if (name === "destinatarioNumDoc") {
-            const cleanValue = value.trim();
-            if (cleanValue.length === 8 || cleanValue.length === 11) {
-                handleReniecLookup(cleanValue, 'destinatario');
-            }
+    const handleBuscarDocumento = (tipo: 'destinatario' | 'transportista' | 'greTRemitente') => {
+        const doc = tipo === 'destinatario'
+            ? formValues.destinatarioNumDoc
+            : tipo === 'transportista'
+                ? formValues.transportistaRuc
+                : formValues.greTRemitenteNumDoc;
+        const cleanDoc = String(doc || '').trim();
+        if (![8, 11].includes(cleanDoc.length)) {
+            useAlertStore.getState().alert('Ingresa un DNI de 8 dígitos o RUC de 11 dígitos para buscar.', 'warning');
+            return;
         }
-
-        // RENIEC consultation for transportista
-        if (name === "transportistaRuc") {
-            const cleanValue = value.trim();
-            if (cleanValue.length === 11) {
-                handleReniecLookup(cleanValue, 'transportista');
-            }
-        }
-
-        // Auto-lookup RUC del remitente de bienes para GRE-T
-        if (name === "greTRemitenteNumDoc") {
-            const cleanValue = value.trim();
-            if (cleanValue.length === 11) {
-                handleReniecLookup(cleanValue, 'greTRemitente');
-            }
-        }
+        void handleReniecLookup(cleanDoc, tipo);
     };
 
     const handleReniecLookup = async (doc: string, tipo: 'destinatario' | 'transportista' | 'greTRemitente') => {
@@ -346,9 +351,13 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 updates.destinatarioTipoDoc = '6';
                 updates.destinatarioNumDoc = auth?.empresa?.ruc || '';
                 updates.destinatarioRazonSocial = auth?.empresa?.razonSocial || '';
+                updates.partidaCodigoEstablecimiento = '0700';
+                updates.llegadaCodigoEstablecimiento = '0700';
             } else if (formValues.tipoTraslado === '04') {
                 updates.destinatarioNumDoc = '';
                 updates.destinatarioRazonSocial = '';
+                updates.partidaCodigoEstablecimiento = '0000';
+                updates.llegadaCodigoEstablecimiento = '0000';
             }
             setFormValues(prev => ({ ...prev, ...updates }));
             return;
@@ -489,6 +498,8 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
     };
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [currentStep, setCurrentStep] = useState(1);
+    const TOTAL_STEPS = 4;
 
     const handleSubmit = async () => {
         if (isSubmitting) return;
@@ -615,6 +626,8 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 conductorLicencia: licenciaNormalizada || formValues.conductorLicencia,
                 vehiculoPlaca: placaNormalizada || formValues.vehiculoPlaca,
                 vehiculoAutorizacion: numeroTucNormalizado || formValues.vehiculoAutorizacion,
+                partidaCodigoEstablecimiento: isTrasladoMismaEmpresa ? '0700' : formValues.partidaCodigoEstablecimiento,
+                llegadaCodigoEstablecimiento: isTrasladoMismaEmpresa ? '0700' : formValues.llegadaCodigoEstablecimiento,
             };
 
             let res;
@@ -635,6 +648,47 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
         }
     };
 
+    const STEPS = [
+        { id: 1, label: 'Datos Generales' },
+        { id: 2, label: 'Participantes' },
+        { id: 3, label: 'Ruta y Transporte' },
+        { id: 4, label: 'Bienes' },
+    ];
+
+    const canProceedStep1 = !!(formValues.serie.trim() && formValues.fechaEmision && formValues.fechaInicioTraslado && Number(formValues.pesoTotal) > 0);
+    const canProceedStep2 = !!(formValues.destinatarioNumDoc.trim() && formValues.destinatarioRazonSocial.trim());
+    const canProceedStep3 = (() => {
+        if (!formValues.partidaUbigeo || !formValues.partidaDireccion || !formValues.llegadaUbigeo || !formValues.llegadaDireccion) return false;
+        if (formValues.modoTransporte === '01' || isGuiaTransportista) {
+            if (!formValues.transportistaRuc || !formValues.transportistaRazonSocial) return false;
+        }
+        return true;
+    })();
+
+    const handleNext = () => {
+        if (currentStep === 1 && !canProceedStep1) {
+            useAlertStore.getState().alert('Completa serie, fechas y peso total (mayor a 0)', 'warning');
+            return;
+        }
+        if (currentStep === 2 && !canProceedStep2) {
+            useAlertStore.getState().alert('Completa los datos del destinatario (documento y razón social)', 'warning');
+            return;
+        }
+        if (currentStep === 3 && !canProceedStep3) {
+            useAlertStore.getState().alert('Completa los datos de ruta y transporte requeridos', 'warning');
+            return;
+        }
+        if (currentStep < TOTAL_STEPS) {
+            setCurrentStep(c => c + 1);
+        } else {
+            void handleSubmit();
+        }
+    };
+
+    const handleBack = () => {
+        if (currentStep > 1) setCurrentStep(c => c - 1);
+    };
+
     return (
         <>
             <Modal
@@ -642,406 +696,432 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                 closeModal={onClose}
                 title={guiaToEdit ? `Editar Guía ${guiaToEdit.serie}-${guiaToEdit.correlativo}` : "Nueva Guía de Remisión"}
                 icon="solar:delivery-bold-duotone"
-                width="1200px"
+                width="900px"
                 position="right"
             >
-                <form autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                    <div className="px-4 pb-4 space-y-5">
-                        {/* Cabecera */}
-                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                <Icon icon="solar:document-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                                Datos Generales
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                                Completa primero tipo de guía, fechas y luego motivo/modo para que el formulario te indique qué datos son obligatorios.
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Select
-                                    label="Tipo de Guía"
-                                    options={TIPO_GUIA_OPTIONS}
-                                    name="tipoGuia"
-                                    id="tipoGuia"
-                                    value={TIPO_GUIA_OPTIONS.find(o => o.id === formValues.tipoGuia)?.value || ""}
-                                    defaultValue={formValues.tipoGuia}
-                                    onChange={handleTipoGuiaChange}
-                                    withLabel
-                                    error={null}
-                                />
-                                <InputPro autocomplete="off" label="Serie" name="serie" value={formValues.serie} onChange={handleChange} isLabel disabled={!!guiaToEdit} />
-                                {guiaToEdit && (
-                                    <InputPro autocomplete="off" label="Correlativo" name="correlativo" value={formValues.correlativo} onChange={() => { }} isLabel disabled />
-                                )}
-                                <div className="z-20 relative">
-                                    <Calendar
-                                        text="Fecha Emisión"
-                                        name="fechaEmision"
-                                        value={formValues.fechaEmision ? moment(formValues.fechaEmision).format("DD/MM/YYYY") : ""}
-                                        onChange={handleDateChange}
-                                        disabled={false}
-                                    />
-                                </div>
-                                <div className="z-10 relative">
-                                    <Calendar
-                                        text="Fecha Inicio Traslado"
-                                        name="fechaInicioTraslado"
-                                        value={formValues.fechaInicioTraslado ? moment(formValues.fechaInicioTraslado).format("DD/MM/YYYY") : ""}
-                                        onChange={handleDateChange}
-                                        disabled={false}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                <form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
 
-                        <div className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-900/10">
-                            <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-400 mb-2 uppercase tracking-wide flex items-center gap-2">
-                                <Icon icon="solar:info-circle-bold-duotone" />
-                                ¿Quién es quién en la guía?
-                            </h3>
-                            <ul className="text-xs text-emerald-900/80 dark:text-emerald-300/60 space-y-2 list-disc pl-5">
-                                <li><strong>Remitente:</strong> es tu empresa y se llena automáticamente.</li>
-                                <li><strong>Destinatario:</strong> cliente/proveedor que recibe los bienes.</li>
-                                <li><strong>Transportista:</strong> solo aplica si el traslado lo realiza un tercero o emites una GRE-T.</li>
-                            </ul>
-                        </div>
-
-                        {isGuiaTransportista && (
-                            <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-900/10">
-                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-400 mb-2 uppercase tracking-wide flex items-center gap-2">
-                                    <Icon icon="solar:shield-warning-bold-duotone" />
-                                    Campos obligatorios (GRE-T)
-                                </h3>
-                                <p className="text-xs text-blue-800/80 dark:text-blue-300/60 mb-3">
-                                    Para evitar rechazos, en tipo de guía <strong>TRANSPORTISTA</strong> completa estos bloques además de los datos generales e ítems.
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Datos del Destinatario */}
-                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                <Icon icon="solar:user-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                                {isCompra ? "Datos del Proveedor" : "Datos del Destinatario"}
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                                {isCompra
-                                    ? "En motivo COMPRA, aquí registras al proveedor origen de los bienes."
-                                    : isTrasladoMismaEmpresa
-                                        ? "En traslado entre establecimientos, el destinatario es siempre tu propia empresa."
-                                        : "Registra el receptor final de los bienes con documento y razón social válidos."}
-                            </p>
-
-                            {isCompra && (
-                                <div className="mb-4 p-3 rounded-lg border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/10 text-sm text-amber-900 dark:text-amber-300">
-                                    <div className="font-semibold">Destinatario (SUNAT)</div>
-                                    <div className="dark:text-white">{auth?.empresa?.razonSocial || formValues.remitenteRazonSocial}</div>
-                                    <div className="dark:text-gray-400">{auth?.empresa?.ruc || formValues.remitenteRuc}</div>
-                                </div>
-                            )}
-
-                            {isTrasladoMismaEmpresa && (
-                                <div className="mb-4 p-3 rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/10 text-sm text-blue-900 dark:text-blue-300 flex items-start gap-2">
-                                    <Icon icon="solar:lock-bold-duotone" className="text-blue-600 dark:text-blue-400 text-lg mt-0.5 shrink-0" />
-                                    <div>
-                                        <div className="font-semibold">Destinatario bloqueado — misma empresa</div>
-                                        <div className="mt-0.5 dark:text-white">{auth?.empresa?.razonSocial} — RUC: {auth?.empresa?.ruc}</div>
-                                        <div className="mt-0.5 text-blue-700 dark:text-blue-400/80 text-xs">Para este motivo SUNAT exige que el destinatario sea la misma empresa remitente.</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Select
-                                    label={isCompra ? "Tipo Doc. Proveedor" : "Tipo Doc."}
-                                    options={TIPO_DOC_OPTIONS}
-                                    name="destinatarioTipoDoc"
-                                    id="destinatarioTipoDoc"
-                                    value={TIPO_DOC_OPTIONS.find(o => o.id === formValues.destinatarioTipoDoc)?.value || ""}
-                                    defaultValue={formValues.destinatarioTipoDoc}
-                                    onChange={isTrasladoMismaEmpresa ? () => {} : handleSelectChange}
-                                    withLabel
-                                    error={null}
-                                    disabled={isTrasladoMismaEmpresa}
-                                />
-                                <InputPro autocomplete="off" label={isCompra ? "RUC/DNI Proveedor" : "Número Documento"} name="destinatarioNumDoc" value={formValues.destinatarioNumDoc} onChange={handleChange} isLabel placeholder={isCompra ? "Ingrese documento del proveedor" : "Ingrese DNI o RUC"} disabled={isTrasladoMismaEmpresa} />
-                                <InputPro autocomplete="off" label={isCompra ? "Razón Social / Nombre Proveedor" : "Razón Social / Nombre"} name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel disabled={isTrasladoMismaEmpresa} />
-                            </div>
-                            {!isTrasladoMismaEmpresa && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">Formato recomendado de documento: {destinatarioDocHint}.</p>
-                            )}
-                        </div>
-
-                        {/* Remitente de los bienes — SOLO GRE-T */}
-                        {isGuiaTransportista && (
-                            <div className="p-4 rounded-xl border border-orange-200 dark:border-orange-800/30 bg-orange-50/40 dark:bg-orange-900/10">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Icon icon="solar:box-bold-duotone" className="text-orange-600 dark:text-orange-400 text-xl" />
-                                    <h3 className="text-sm font-bold text-orange-900 dark:text-orange-400 uppercase tracking-wide">
-                                        Remitente de los bienes (GRE-T)
-                                    </h3>
-                                </div>
-                                <p className="text-xs text-orange-800 dark:text-orange-300 mb-4">
-                                    En una GRE-T, el <strong>remitente de los bienes</strong> es la empresa o persona que
-                                    <strong> envía la carga</strong> (puede ser diferente al transportista).
-                                    Ingresa el RUC y la razón social se completará automáticamente.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <InputPro
-                                        autocomplete="off"
-                                        label="RUC del remitente de bienes"
-                                        name="greTRemitenteNumDoc"
-                                        value={formValues.greTRemitenteNumDoc || ""}
-                                        onChange={handleChange}
-                                        isLabel
-                                        placeholder="Ej: 20524076307"
-                                    />
-                                    <InputPro
-                                        autocomplete="off"
-                                        label="Razón social del remitente de bienes"
-                                        name="greTRemitenteRazonSocial"
-                                        value={formValues.greTRemitenteRazonSocial || ""}
-                                        onChange={handleChange}
-                                        isLabel
-                                        placeholder="Se completa al ingresar el RUC"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Datos de Traslado */}
-                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                <Icon icon="solar:route-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                                Datos del Traslado
-                            </h3>
-                            <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="rounded-lg border border-blue-100 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/10 p-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/20">
-                                    <p className="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-1">Motivo: {selectedMotivoHelp.title}</p>
-                                    <p className="text-xs text-blue-700/80 dark:text-blue-300/60 leading-relaxed">{selectedMotivoHelp.description}</p>
-                                    <div className="mt-2 pt-2 border-t border-blue-200/30 dark:border-blue-800/20">
-                                        <p className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase">Tip</p>
-                                        <p className="text-[11px] text-blue-700 dark:text-blue-300/80 italic">{selectedMotivoHelp.tip}</p>
-                                    </div>
-                                </div>
-                                <div className="rounded-lg border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50 dark:bg-emerald-900/10 p-3 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/20">
-                                    <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1">Modo: {selectedModoHelp.title}</p>
-                                    {selectedModoHelp.required.length > 0 && (
-                                        <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/60">Clave: {selectedModoHelp.required.join(", ")}.</p>
+                    {/* ── Stepper Header ── */}
+                    <div className="sticky top-0 z-10 bg-white dark:bg-[#111827] border-b border-gray-100 dark:border-slate-700 px-6 pt-4 pb-5">
+                        <div className="flex items-center">
+                            {STEPS.map((step, i) => (
+                                <>
+                                    <button
+                                        key={step.id}
+                                        type="button"
+                                        className="flex flex-col items-center shrink-0"
+                                        onClick={() => { if (currentStep > step.id) setCurrentStep(step.id); }}
+                                    >
+                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300
+                                            ${currentStep === step.id
+                                                ? 'border-violet-600 bg-violet-600 text-white shadow-md shadow-violet-200 dark:shadow-violet-900/40'
+                                                : currentStep > step.id
+                                                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                                                    : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-400'}`}>
+                                            {currentStep > step.id
+                                                ? <Icon icon="solar:check-bold" />
+                                                : step.id}
+                                        </div>
+                                        <span className={`mt-1 text-[10px] font-semibold hidden sm:block whitespace-nowrap transition-colors
+                                            ${currentStep === step.id ? 'text-violet-600 dark:text-violet-400'
+                                                : currentStep > step.id ? 'text-emerald-600 dark:text-emerald-400'
+                                                : 'text-gray-400 dark:text-slate-500'}`}>
+                                            {step.label}
+                                        </span>
+                                    </button>
+                                    {i < STEPS.length - 1 && (
+                                        <div key={`line-${i}`} className="flex-1 mx-2 mb-4 h-0.5 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+                                            <div className={`h-full rounded-full transition-all duration-500 ${currentStep > step.id ? 'w-full bg-emerald-400' : 'w-0'}`} />
+                                        </div>
                                     )}
-                                    <div className="mt-2 pt-2 border-t border-emerald-200/30 dark:border-emerald-800/20">
-                                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase">Tip</p>
-                                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300/80 italic">{selectedModoHelp.tip}</p>
+                                </>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="px-4 pb-4 pt-5 space-y-5 min-h-[500px]">
+
+                        {/* ── PASO 1: DATOS GENERALES ── */}
+                        {currentStep === 1 && (
+                            <div className="space-y-5 animate-in fade-in duration-300">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
+                                        <Icon icon="solar:document-text-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Datos Generales</h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Tipo de guía, fechas, motivo y modo de transporte</p>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <TrasladoTypeSelect
-                                    value={formValues.tipoTraslado}
-                                    name="tipoTraslado"
-                                    onChange={handleSelectChange}
-                                    label="Motivo de Traslado"
-                                />
-                                <Select
-                                    label="Modo Transporte"
-                                    options={MODO_TRANSPORTE_OPTIONS}
-                                    name="modoTransporte"
-                                    id="modoTransporte"
-                                    value={MODO_TRANSPORTE_OPTIONS.find(o => o.id === formValues.modoTransporte)?.value || ""}
-                                    defaultValue={formValues.modoTransporte}
-                                    onChange={handleSelectChange}
-                                    withLabel
-                                    error={null}
-                                />
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <InputPro autocomplete="off" label="Peso Total" name="pesoTotal" type="number" value={formValues.pesoTotal} onChange={handleChange} isLabel />
-                                <Select
-                                    label="Unidad Peso"
-                                    options={UNIDAD_PESO_OPTIONS}
-                                    name="unidadPeso"
-                                    id="unidadPeso"
-                                    value={UNIDAD_PESO_OPTIONS.find(o => o.id === formValues.unidadPeso)?.value || ""}
-                                    defaultValue={formValues.unidadPeso}
-                                    onChange={handleSelectChange}
-                                    withLabel
-                                    error={null}
-                                />
-                            </div>
+                                <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Select
+                                            label="Tipo de Guía"
+                                            options={TIPO_GUIA_OPTIONS}
+                                            name="tipoGuia"
+                                            id="tipoGuia"
+                                            value={TIPO_GUIA_OPTIONS.find(o => o.id === formValues.tipoGuia)?.value || ""}
+                                            defaultValue={formValues.tipoGuia}
+                                            onChange={handleTipoGuiaChange}
+                                            withLabel
+                                            error={null}
+                                        />
+                                        <InputPro autocomplete="off" label="Serie" name="serie" value={formValues.serie} onChange={handleChange} isLabel disabled={!!guiaToEdit} />
+                                        {guiaToEdit && (
+                                            <InputPro autocomplete="off" label="Correlativo" name="correlativo" value={formValues.correlativo} onChange={() => {}} isLabel disabled />
+                                        )}
+                                        <div className="z-20 relative">
+                                            <Calendar text="Fecha Emisión" name="fechaEmision" value={formValues.fechaEmision ? moment(formValues.fechaEmision).format("DD/MM/YYYY") : ""} onChange={handleDateChange} disabled={false} />
+                                        </div>
+                                        <div className="z-10 relative">
+                                            <Calendar text="Fecha Inicio Traslado" name="fechaInicioTraslado" value={formValues.fechaInicioTraslado ? moment(formValues.fechaInicioTraslado).format("DD/MM/YYYY") : ""} onChange={handleDateChange} disabled={false} />
+                                        </div>
+                                    </div>
+                                </div>
 
-                            {/* Flags Checkboxes */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-800">
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
-                                    <input type="checkbox" name="retornoVehiculoVacio" checked={formValues.retornoVehiculoVacio} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Retorno Vehículo Vacío</span>
-                                </label>
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
-                                    <input type="checkbox" name="transbordoProgramado" checked={formValues.transbordoProgramado} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Transbordo Programado</span>
-                                </label>
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
-                                    <input type="checkbox" name="retornoEnvasesVacios" checked={formValues.retornoEnvasesVacios} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Retorno Envases Vacíos</span>
-                                </label>
-                                <label className="flex items-center space-x-2 text-sm cursor-pointer group">
-                                    <input type="checkbox" name="trasladoTotal" checked={formValues.trasladoTotal} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                                    <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Traslado Total (DAM/DS)</span>
-                                </label>
-                            </div>
-                        </div>
+                                <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <TrasladoTypeSelect value={formValues.tipoTraslado} name="tipoTraslado" onChange={handleSelectChange} label="Motivo de Traslado" />
+                                        <Select
+                                            label="Modo Transporte"
+                                            options={MODO_TRANSPORTE_OPTIONS}
+                                            name="modoTransporte"
+                                            id="modoTransporte"
+                                            value={MODO_TRANSPORTE_OPTIONS.find(o => o.id === formValues.modoTransporte)?.value || ""}
+                                            defaultValue={formValues.modoTransporte}
+                                            onChange={handleSelectChange}
+                                            withLabel
+                                            error={null}
+                                        />
+                                        <InputPro autocomplete="off" label="Peso Total" name="pesoTotal" type="number" value={formValues.pesoTotal} onChange={handleChange} isLabel />
+                                        <Select
+                                            label="Unidad Peso"
+                                            options={UNIDAD_PESO_OPTIONS}
+                                            name="unidadPeso"
+                                            id="unidadPeso"
+                                            value={UNIDAD_PESO_OPTIONS.find(o => o.id === formValues.unidadPeso)?.value || ""}
+                                            defaultValue={formValues.unidadPeso}
+                                            onChange={handleSelectChange}
+                                            withLabel
+                                            error={null}
+                                        />
+                                    </div>
 
-                        {/* Datos del Transporte (Condicional) */}
-                        {(formValues.modoTransporte === "01" || formValues.tipoGuia === "TRANSPORTISTA") && (
-                            <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-900/10">
-                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-400 mb-3 uppercase tracking-wide flex items-center gap-2">
-                                    <Icon icon="solar:delivery-bold-duotone" />
-                                    Datos del Transportista
-                                </h3>
-                                <p className="text-xs text-blue-800/70 dark:text-blue-300/50 mb-3">
-                                    Bloque obligatorio para transporte público y para guías tipo TRANSPORTISTA.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputPro autocomplete="off" label="RUC Transportista" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Razón Social Transportista" name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Registro MTC (GRE-T)" name="transportistaMTC" value={formValues.transportistaMTC || ""} onChange={handleChange} isLabel />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                                        <div className="rounded-lg border border-blue-100 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/10 p-3">
+                                            <p className="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-1">Motivo: {selectedMotivoHelp.title}</p>
+                                            <p className="text-xs text-blue-700/80 dark:text-blue-300/60 leading-relaxed">{selectedMotivoHelp.description}</p>
+                                            <div className="mt-2 pt-2 border-t border-blue-200/30 dark:border-blue-800/20">
+                                                <p className="text-[10px] font-bold text-blue-600 uppercase">Tip</p>
+                                                <p className="text-[11px] text-blue-700 dark:text-blue-300/80 italic">{selectedMotivoHelp.tip}</p>
+                                            </div>
+                                        </div>
+                                        <div className="rounded-lg border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50 dark:bg-emerald-900/10 p-3">
+                                            <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1">Modo: {selectedModoHelp.title}</p>
+                                            {selectedModoHelp.required.length > 0 && <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/60">Clave: {selectedModoHelp.required.join(", ")}.</p>}
+                                            <div className="mt-2 pt-2 border-t border-emerald-200/30 dark:border-emerald-800/20">
+                                                <p className="text-[10px] font-bold text-emerald-600 uppercase">Tip</p>
+                                                <p className="text-[11px] text-emerald-700 dark:text-emerald-300/80 italic">{selectedModoHelp.tip}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-800">
+                                        {([
+                                            { name: 'retornoVehiculoVacio', label: 'Retorno Vehículo Vacío', checked: formValues.retornoVehiculoVacio },
+                                            { name: 'transbordoProgramado', label: 'Transbordo Programado', checked: formValues.transbordoProgramado },
+                                            { name: 'retornoEnvasesVacios', label: 'Retorno Envases Vacíos', checked: formValues.retornoEnvasesVacios },
+                                            { name: 'trasladoTotal', label: 'Traslado Total (DAM/DS)', checked: formValues.trasladoTotal },
+                                        ] as const).map(flag => (
+                                            <label key={flag.name} className="flex items-center space-x-2 cursor-pointer group">
+                                                <input type="checkbox" name={flag.name} checked={flag.checked} onChange={handleChange} className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                                                <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{flag.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {isGuiaTransportista && (
+                                    <div className="p-3 rounded-xl border border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-900/10 flex items-start gap-2">
+                                        <Icon icon="solar:shield-warning-bold-duotone" className="text-blue-600 dark:text-blue-400 text-lg mt-0.5 shrink-0" />
+                                        <p className="text-xs text-blue-800/80 dark:text-blue-300/60">
+                                            Para guía <strong>TRANSPORTISTA</strong> deberás completar datos de transportista, conductor, vehículo y TUC en el Paso 3.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── PASO 2: PARTICIPANTES ── */}
+                        {currentStep === 2 && (
+                            <div className="space-y-5 animate-in fade-in duration-300">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center shrink-0">
+                                        <Icon icon="solar:users-group-two-rounded-bold-duotone" className="text-sky-600 dark:text-sky-400 text-xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Participantes</h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Remitente (tu empresa), destinatario y comprador si aplica</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-900/10">
+                                    <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                        <Icon icon="solar:building-bold-duotone" /> Remitente — Tu empresa
+                                    </p>
+                                    <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">{formValues.remitenteRazonSocial}</p>
+                                    <p className="text-xs text-emerald-700 dark:text-emerald-400">RUC: {formValues.remitenteRuc} · {formValues.remitenteDireccion}</p>
+                                </div>
+
+                                <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                    <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-1 flex items-center gap-2">
+                                        <Icon icon="solar:user-bold-duotone" className="text-sky-600 dark:text-sky-400" />
+                                        {isCompra ? "Datos del Proveedor" : "Datos del Destinatario"}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                        {isCompra ? "En motivo COMPRA, registra al proveedor origen de los bienes."
+                                            : isTrasladoMismaEmpresa ? "En traslado entre establecimientos, el destinatario es tu propia empresa."
+                                            : "Ingresa el documento — la razón social se completa automáticamente (DNI 8 / RUC 11 dígitos)."}
+                                    </p>
+
+                                    {isCompra && (
+                                        <div className="mb-4 p-3 rounded-lg border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/10 text-sm">
+                                            <p className="font-semibold text-amber-900 dark:text-amber-300">Destinatario real (SUNAT)</p>
+                                            <p className="text-amber-800 dark:text-white">{auth?.empresa?.razonSocial || formValues.remitenteRazonSocial}</p>
+                                            <p className="text-amber-700 dark:text-gray-400">{auth?.empresa?.ruc || formValues.remitenteRuc}</p>
+                                        </div>
+                                    )}
+
+                                    {isTrasladoMismaEmpresa && (
+                                        <div className="mb-4 p-3 rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/10 text-sm flex items-start gap-2">
+                                            <Icon icon="solar:lock-bold-duotone" className="text-blue-600 dark:text-blue-400 text-lg mt-0.5 shrink-0" />
+                                            <div>
+                                                <p className="font-semibold text-blue-900 dark:text-blue-300">Destinatario bloqueado — misma empresa</p>
+                                                <p className="text-blue-800 dark:text-white mt-0.5">{auth?.empresa?.razonSocial} — RUC: {auth?.empresa?.ruc}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Select
+                                            label={isCompra ? "Tipo Doc. Proveedor" : "Tipo Doc."}
+                                            options={TIPO_DOC_OPTIONS}
+                                            name="destinatarioTipoDoc"
+                                            id="destinatarioTipoDoc"
+                                            value={TIPO_DOC_OPTIONS.find(o => o.id === formValues.destinatarioTipoDoc)?.value || ""}
+                                            defaultValue={formValues.destinatarioTipoDoc}
+                                            onChange={isTrasladoMismaEmpresa ? () => {} : handleSelectChange}
+                                            withLabel
+                                            error={null}
+                                            disabled={isTrasladoMismaEmpresa}
+                                        />
+                                        <div className="flex items-end gap-2">
+                                            <div className="flex-1">
+                                                <InputPro autocomplete="off" label={isCompra ? "RUC/DNI Proveedor" : "Número Documento"} name="destinatarioNumDoc" value={formValues.destinatarioNumDoc} onChange={handleChange} isLabel placeholder={isCompra ? "Documento del proveedor" : "DNI o RUC"} disabled={isTrasladoMismaEmpresa} />
+                                            </div>
+                                            <Button
+                                                onlyIcon
+                                                outline
+                                                color="primary"
+                                                title="Buscar documento"
+                                                disabled={isTrasladoMismaEmpresa}
+                                                onClick={() => handleBuscarDocumento('destinatario')}
+                                            >
+                                                <Icon icon="solar:magnifer-bold" className="text-base" />
+                                            </Button>
+                                        </div>
+                                        <InputPro autocomplete="off" label={isCompra ? "Razón Social Proveedor" : "Razón Social / Nombre"} name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel disabled={isTrasladoMismaEmpresa} />
+                                    </div>
+                                    {!isTrasladoMismaEmpresa && <p className="text-xs text-gray-400 mt-2">{destinatarioDocHint}</p>}
+                                </div>
+
+                                {isGuiaTransportista && (
+                                    <div className="p-4 rounded-xl border border-orange-200 dark:border-orange-800/30 bg-orange-50/40 dark:bg-orange-900/10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Icon icon="solar:box-bold-duotone" className="text-orange-600 dark:text-orange-400 text-xl" />
+                                            <h3 className="text-sm font-bold text-orange-900 dark:text-orange-400 uppercase tracking-wide">Remitente de los bienes (GRE-T)</h3>
+                                        </div>
+                                        <p className="text-xs text-orange-800 dark:text-orange-300 mb-4">
+                                            Empresa o persona que envía la carga. Puede ser diferente al transportista. Ingresa el RUC.
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex items-end gap-2">
+                                                <div className="flex-1">
+                                                    <InputPro autocomplete="off" label="RUC del remitente de bienes" name="greTRemitenteNumDoc" value={formValues.greTRemitenteNumDoc || ""} onChange={handleChange} isLabel placeholder="Ej: 20524076307" />
+                                                </div>
+                                                <Button
+                                                    onlyIcon
+                                                    outline
+                                                    color="primary"
+                                                    title="Buscar remitente"
+                                                    onClick={() => handleBuscarDocumento('greTRemitente')}
+                                                >
+                                                    <Icon icon="solar:magnifer-bold" className="text-base" />
+                                                </Button>
+                                            </div>
+                                            <InputPro autocomplete="off" label="Razón social del remitente" name="greTRemitenteRazonSocial" value={formValues.greTRemitenteRazonSocial || ""} onChange={handleChange} isLabel placeholder="Se completa al ingresar el RUC" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── PASO 3: RUTA Y TRANSPORTE ── */}
+                        {currentStep === 3 && (
+                            <div className="space-y-5 animate-in fade-in duration-300">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                                        <Icon icon="solar:route-bold-duotone" className="text-emerald-600 dark:text-emerald-400 text-xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Ruta y Transporte</h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Puntos de partida/llegada y datos del transportista o conductor</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                                            <Icon icon="solar:map-point-bold-duotone" className="text-blue-500 text-base" />
+                                            Punto de Partida
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <SelectUbigeo label="Ubigeo Partida" name="partidaUbigeo" id="partidaUbigeo" options={ubigeos} onChange={handleSelectChange} value={getUbigeoText(formValues.partidaUbigeo)} defaultValue={getUbigeoText(formValues.partidaUbigeo)} isSearch />
+                                            <InputPro autocomplete="off" label="Dirección Partida" name="partidaDireccion" value={formValues.partidaDireccion} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Cód. Establecimiento" name="partidaCodigoEstablecimiento" value={formValues.partidaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
+                                        </div>
+                                    </div>
+                                    <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                                            <Icon icon="solar:map-point-wave-bold-duotone" className="text-emerald-500 text-base" />
+                                            Punto de Llegada
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <SelectUbigeo label="Ubigeo Llegada" name="llegadaUbigeo" id="llegadaUbigeo" options={ubigeos} onChange={handleSelectChange} value={getUbigeoText(formValues.llegadaUbigeo)} defaultValue={getUbigeoText(formValues.llegadaUbigeo)} isSearch />
+                                            <InputPro autocomplete="off" label="Dirección Llegada" name="llegadaDireccion" value={formValues.llegadaDireccion} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Cód. Establecimiento" name="llegadaCodigoEstablecimiento" value={formValues.llegadaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {(formValues.modoTransporte === "01" || isGuiaTransportista) && (
+                                    <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-900/10">
+                                        <h4 className="text-sm font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
+                                            <Icon icon="solar:delivery-bold-duotone" />
+                                            Datos del Transportista
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="flex items-end gap-2">
+                                                <div className="flex-1">
+                                                    <InputPro autocomplete="off" label="RUC Transportista" name="transportistaRuc" value={formValues.transportistaRuc || ""} onChange={handleChange} isLabel />
+                                                </div>
+                                                <Button
+                                                    onlyIcon
+                                                    outline
+                                                    color="primary"
+                                                    title="Buscar transportista"
+                                                    onClick={() => handleBuscarDocumento('transportista')}
+                                                >
+                                                    <Icon icon="solar:magnifer-bold" className="text-base" />
+                                                </Button>
+                                            </div>
+                                            <InputPro autocomplete="off" label="Razón Social Transportista" name="transportistaRazonSocial" value={formValues.transportistaRazonSocial || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Registro MTC (GRE-T)" name="transportistaMTC" value={formValues.transportistaMTC || ""} onChange={handleChange} isLabel />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(formValues.modoTransporte === "02" || isGuiaTransportista) && (
+                                    <div className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50/30 dark:bg-emerald-900/10">
+                                        <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                                            <Icon icon="solar:bus-bold-duotone" />
+                                            Vehículo y Conductor
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <InputPro autocomplete="off" label="Placa Vehículo" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="TUC / Autorización" name="vehiculoAutorizacion" value={formValues.vehiculoAutorizacion || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="DNI Conductor" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Nombres Conductor" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Apellidos Conductor" name="conductorApellidos" value={formValues.conductorApellidos || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Licencia (9 caract.)" name="conductorLicencia" value={(formValues.conductorLicencia || "").toUpperCase()} onChange={handleChange} isLabel />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── PASO 4: BIENES Y OBSERVACIONES ── */}
+                        {currentStep === 4 && (
+                            <div className="space-y-5 animate-in fade-in duration-300">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center shrink-0">
+                                        <Icon icon="solar:box-bold-duotone" className="text-violet-600 dark:text-violet-400 text-xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Bienes a Trasladar</h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Agrega al menos un producto para generar la guía</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                    <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30">
+                                        <div className="col-span-12 md:col-span-6">
+                                            <Select label="Producto" name="producto" value={selectedProductValue} options={productOptions} onChange={handleProductChange} isSearch handleGetData={handleProductSearch} withLabel error={null} placeholder="Buscar producto..." />
+                                        </div>
+                                        <div className="col-span-6 md:col-span-2">
+                                            <InputPro autocomplete="off" type="number" label="Cantidad" name="newItem.cantidad" value={newItem.cantidad} onChange={(e) => setNewItem({ ...newItem, cantidad: Number(e.target.value) })} isLabel />
+                                        </div>
+                                        <div className="col-span-4 md:col-span-2">
+                                            <InputPro autocomplete="off" label="Unidad" name="newItem.unidadMedida" value={newItem.unidadMedida || ""} onChange={(e) => setNewItem({ ...newItem, unidadMedida: e.target.value })} isLabel disabled />
+                                        </div>
+                                        <div className="col-span-2 md:col-span-2">
+                                            <Button type="button" outline color="black" onClick={addItem} className="w-full justify-center">
+                                                Agregar <Icon icon="solar:add-circle-bold" className="ml-1" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {formValues.detalles.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 dark:border-slate-700 rounded-xl bg-gray-50 dark:bg-slate-800/20">
+                                            <Icon icon="solar:box-outline" className="text-4xl text-gray-300 dark:text-slate-600 mb-2" />
+                                            <p className="text-sm text-gray-400 dark:text-slate-500">Aún no hay productos. Usa el buscador para agregar.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="w-full overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl bg-white dark:bg-[#111827]">
+                                            <DataTable headerColumns={detallesTableColumns} bodyData={detallesTableData} actions={detallesTableActions} isCompact={false} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                                        <Icon icon="solar:notes-bold-duotone" className="text-gray-500" />
+                                        Observaciones Adicionales
+                                    </h4>
+                                    <InputPro autocomplete="off" label="Notas" name="observaciones" value={formValues.observaciones || ""} onChange={handleChange} isLabel />
                                 </div>
                             </div>
                         )}
 
-                        {(formValues.modoTransporte === "02" || formValues.tipoGuia === "TRANSPORTISTA") && (
-                            <div className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30 bg-emerald-50/30 dark:bg-emerald-900/10">
-                                <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-400 mb-3 uppercase tracking-wide flex items-center gap-2">
-                                    <Icon icon="solar:bus-bold-duotone" />
-                                    Vehículos y Conductores
-                                </h3>
-                                <p className="text-xs text-emerald-800/70 dark:text-emerald-300/50 mb-3">
-                                    Para guía transportista y/o transporte privado, completa datos del conductor y la unidad.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputPro autocomplete="off" label="Placa Vehículo" name="vehiculoPlaca" value={formValues.vehiculoPlaca || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="TUC/CHV # Autorización" name="vehiculoAutorizacion" value={formValues.vehiculoAutorizacion || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Documento Conductor" name="conductorNumDoc" value={formValues.conductorNumDoc || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Nombre Conductor" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Apellidos Conductor" name="conductorApellidos" value={formValues.conductorApellidos || ""} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Licencia (9 caract.)" name="conductorLicencia" value={(formValues.conductorLicencia || "").toUpperCase()} onChange={handleChange} isLabel />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Puntos de Partida y Llegada */}
-                            <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                                <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                    <Icon icon="solar:map-point-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                                    Punto de Partida
-                                </h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Dirección y ubigeo desde donde salen los bienes.</p>
-                                <div className="space-y-3">
-                                    <SelectUbigeo
-                                        label="Ubigeo Partida"
-                                        name="partidaUbigeo"
-                                        id="partidaUbigeo"
-                                        options={ubigeos}
-                                        onChange={handleSelectChange}
-                                        value={getUbigeoText(formValues.partidaUbigeo)}
-                                        defaultValue={getUbigeoText(formValues.partidaUbigeo)}
-                                        isSearch
-                                    />
-                                    <InputPro autocomplete="off" label="Dirección Partida" name="partidaDireccion" value={formValues.partidaDireccion} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Código Establecimiento Partida" name="partidaCodigoEstablecimiento" value={formValues.partidaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
-                                </div>
-                            </div>
-                            <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                                <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                    <Icon icon="solar:map-point-wave-bold-duotone" className="text-emerald-600 dark:text-emerald-400" />
-                                    Punto de Llegada
-                                </h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Dirección y ubigeo donde se entregarán los bienes.</p>
-                                <div className="space-y-3">
-                                    <SelectUbigeo
-                                        label="Ubigeo Llegada"
-                                        name="llegadaUbigeo"
-                                        id="llegadaUbigeo"
-                                        options={ubigeos}
-                                        onChange={handleSelectChange}
-                                        value={getUbigeoText(formValues.llegadaUbigeo)}
-                                        defaultValue={getUbigeoText(formValues.llegadaUbigeo)}
-                                        isSearch
-                                    />
-                                    <InputPro autocomplete="off" label="Dirección Llegada" name="llegadaDireccion" value={formValues.llegadaDireccion} onChange={handleChange} isLabel />
-                                    <InputPro autocomplete="off" label="Código Establecimiento Llegada" name="llegadaCodigoEstablecimiento" value={formValues.llegadaCodigoEstablecimiento || ""} onChange={handleChange} isLabel />
-                                </div>
-                            </div>
-                        {/* Ítems */}
-                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                <Icon icon="solar:box-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                                Bienes a Trasladar
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Agrega al menos un producto. La cantidad debe ser mayor a 0.</p>
-
-                            {/* Formulario Agregar Ítem */}
-                            <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30">
-                                <div className="col-span-12 md:col-span-6">
-                                    <Select
-                                        label="Producto"
-                                        name="producto"
-                                        value={selectedProductValue}
-                                        options={productOptions}
-                                        onChange={handleProductChange}
-                                        isSearch
-                                        handleGetData={handleProductSearch}
-                                        withLabel
-                                        error={null}
-                                        placeholder="Buscar producto..."
-                                    />
-                                </div>
-                                <div className="col-span-6 md:col-span-2">
-                                    <InputPro autocomplete="off" type="number" label="Cantidad" name="newItem.cantidad" value={newItem.cantidad} onChange={(e) => setNewItem({ ...newItem, cantidad: Number(e.target.value) })} isLabel />
-                                </div>
-                                <div className="col-span-4 md:col-span-2">
-                                    <InputPro autocomplete="off" label="Unidad" name="newItem.unidadMedida" value={newItem.unidadMedida || ""} onChange={(e) => setNewItem({ ...newItem, unidadMedida: e.target.value })} isLabel disabled />
-                                </div>
-                                <div className="col-span-2 md:col-span-2">
-                                    <Button type="button" outline color="black" onClick={addItem} className="w-full justify-center">
-                                        Agregar
-                                        <Icon icon="solar:add-circle-bold" className="ml-2" />
+                        {/* ── Navegación ── */}
+                        <div className="flex gap-3 justify-between pt-4 border-t border-gray-100 dark:border-slate-800">
+                            <div>
+                                {currentStep > 1 ? (
+                                    <Button color="gray" type="button" onClick={handleBack}>
+                                        <Icon icon="solar:arrow-left-bold" className="mr-1" /> Anterior
                                     </Button>
-                                </div>
-                            </div>
-
-                            {/* Tabla de Ítems */}
-                            <div className="w-full overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl bg-white dark:bg-[#111827]">
-                                <DataTable
-                                    headerColumns={detallesTableColumns}
-                                    bodyData={detallesTableData}
-                                    actions={detallesTableActions}
-                                    isCompact={false}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
-                                <Icon icon="solar:notes-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                                Observaciones Adicionales
-                            </h3>
-                            <InputPro autocomplete="off" label="Notas" name="observaciones" value={formValues.observaciones || ""} onChange={handleChange} isLabel />
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-slate-800">
-                            <Button color="gray" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
-                            <Button outline color="black" type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? (
-                                    <>
-                                        <Icon icon="svg-spinners:ring-resize" className="mr-2" />
-                                        Guardando...
-                                    </>
                                 ) : (
-                                    <>
-                                        <Icon icon="solar:diskette-bold" className="mr-2" />
-                                        {guiaToEdit ? "Actualizar Guía" : "Generar Guía"}
-                                    </>
+                                    <Button color="gray" type="button" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+                                )}
+                            </div>
+                            <Button outline color="black" type="button" onClick={handleNext} disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <><Icon icon="svg-spinners:ring-resize" className="mr-2" />Guardando...</>
+                                ) : currentStep < TOTAL_STEPS ? (
+                                    <>Siguiente <Icon icon="solar:arrow-right-bold" className="ml-1" /></>
+                                ) : (
+                                    <><Icon icon="solar:diskette-bold" className="mr-2" />{guiaToEdit ? "Actualizar Guía" : "Generar Guía"}</>
                                 )}
                             </Button>
                         </div>
@@ -1051,10 +1131,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
 
             <Modal
                 isOpenModal={isEditQtyModalOpen}
-                closeModal={() => {
-                    setIsEditQtyModalOpen(false);
-                    setEditingQtyIndex(null);
-                }}
+                closeModal={() => { setIsEditQtyModalOpen(false); setEditingQtyIndex(null); }}
                 title="Editar cantidad"
                 width="420px"
                 position="center"
@@ -1062,25 +1139,10 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             >
                 <div className="p-5 space-y-4 bg-white dark:bg-[#111827] rounded-b-2xl">
                     <p className="text-sm text-gray-600 dark:text-gray-400">Ajusta la cantidad del producto seleccionado. Este cambio solo actualiza la tabla y no guarda aún la guía.</p>
-                    <InputPro
-                        autocomplete="off"
-                        label="Cantidad"
-                        name="editingQtyValue"
-                        type="number"
-                        value={editingQtyValue}
-                        onChange={(e) => setEditingQtyValue(Number(e.target.value))}
-                        isLabel
-                    />
+                    <InputPro autocomplete="off" label="Cantidad" name="editingQtyValue" type="number" value={editingQtyValue} onChange={(e) => setEditingQtyValue(Number(e.target.value))} isLabel />
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button color="gray" onClick={() => {
-                            setIsEditQtyModalOpen(false);
-                            setEditingQtyIndex(null);
-                        }}>
-                            Cancelar
-                        </Button>
-                        <Button color="primary" onClick={handleSaveEditCantidad}>
-                            Guardar cantidad
-                        </Button>
+                        <Button color="gray" onClick={() => { setIsEditQtyModalOpen(false); setEditingQtyIndex(null); }}>Cancelar</Button>
+                        <Button color="primary" onClick={handleSaveEditCantidad}>Guardar cantidad</Button>
                     </div>
                 </div>
             </Modal>

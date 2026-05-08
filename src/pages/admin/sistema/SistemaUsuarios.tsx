@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
+import { useAuthStore } from '@/zustand/auth';
+
+type SistemaNegocio = 'FALCONEXT' | 'KREZKA' | '';
 
 interface SistemaUser {
   id: number;
@@ -11,6 +14,7 @@ interface SistemaUser {
   celular: string;
   rol: string;
   estado: string;
+  sistemaNegocio?: string | null;
 }
 
 interface FormData {
@@ -19,11 +23,19 @@ interface FormData {
   dni: string;
   celular: string;
   password: string;
+  sistemaNegocio: SistemaNegocio;
 }
 
-const EMPTY_FORM: FormData = { nombre: '', email: '', dni: '', celular: '', password: '' };
+const EMPTY_FORM: FormData = {
+  nombre: '', email: '', dni: '', celular: '', password: '', sistemaNegocio: '',
+};
 
 export default function SistemaUsuarios() {
+  const authUser = useAuthStore(s => s.auth);
+  // Si el admin logueado tiene sistemaNegocio, solo puede crear admins de su plataforma
+  const miSistemaNegocio = authUser?.sistemaNegocio ?? null;
+  const esSuperAdmin = miSistemaNegocio === null;
+
   const [users, setUsers] = useState<SistemaUser[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -63,7 +75,7 @@ export default function SistemaUsuarios() {
 
   const openCreate = () => {
     setEditTarget(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, sistemaNegocio: esSuperAdmin ? '' : (miSistemaNegocio as SistemaNegocio) });
     setErrors({});
     setShowPassword(false);
     setModalOpen(true);
@@ -71,7 +83,14 @@ export default function SistemaUsuarios() {
 
   const openEdit = (u: SistemaUser) => {
     setEditTarget(u);
-    setForm({ nombre: u.nombre, email: u.email, dni: u.dni, celular: u.celular, password: '' });
+    setForm({
+      nombre: u.nombre,
+      email: u.email,
+      dni: u.dni,
+      celular: u.celular,
+      password: '',
+      sistemaNegocio: (u.sistemaNegocio as SistemaNegocio) ?? '',
+    });
     setErrors({});
     setShowPassword(false);
     setModalOpen(true);
@@ -103,7 +122,13 @@ export default function SistemaUsuarios() {
     if (!validate()) return;
     setSaving(true);
     try {
-      const payload: any = { nombre: form.nombre, email: form.email, dni: form.dni, celular: form.celular };
+      const payload: any = {
+        nombre: form.nombre,
+        email: form.email,
+        dni: form.dni,
+        celular: form.celular,
+        sistemaNegocio: form.sistemaNegocio || null,
+      };
       if (!editTarget) payload.password = form.password;
       if (editTarget) {
         await apiClient.put(`/usuario/sistema/${editTarget.id}`, payload);
@@ -148,6 +173,53 @@ export default function SistemaUsuarios() {
   const activeCount = users.filter(u => u.estado === 'ACTIVO').length;
   const inactiveCount = users.filter(u => u.estado === 'INACTIVO').length;
 
+  const NegocioBadge = ({ sn }: { sn?: string | null }) => {
+    if (!sn) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-100 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800/50">
+          <Icon icon="solar:crown-bold" width={11} />
+          Todos los sistemas
+        </span>
+      );
+    }
+    if (sn === 'FALCONEXT') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-100 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800/50">
+          <Icon icon="solar:rocket-bold" width={11} />
+          Falconext
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50">
+        <Icon icon="solar:star-bold" width={11} />
+        Krezka
+      </span>
+    );
+  };
+
+  const SistemaBtn = ({ value, label, icon, desc, activeColor }: {
+    value: SistemaNegocio; label: string; icon: string; desc: string; activeColor: 'violet' | 'blue';
+  }) => {
+    const active = form.sistemaNegocio === value;
+    const colorActive = activeColor === 'violet'
+      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+      : 'border-blue-500 bg-blue-50 dark:bg-blue-900/20';
+    const iconColor = active ? (activeColor === 'violet' ? 'text-violet-600' : 'text-blue-600') : 'text-gray-400';
+    const textColor = active ? (activeColor === 'violet' ? 'text-violet-700 dark:text-violet-300' : 'text-blue-700 dark:text-blue-300') : 'text-gray-500 dark:text-gray-400';
+    return (
+      <button
+        type="button"
+        onClick={() => setForm(prev => ({ ...prev, sistemaNegocio: value }))}
+        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${active ? colorActive : 'border-gray-100 dark:border-slate-700 hover:border-gray-200'}`}
+      >
+        <Icon icon={icon} width={22} className={iconColor} />
+        <span className={`text-[11px] font-bold ${textColor}`}>{label}</span>
+        <span className="text-[10px] text-gray-400">{desc}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
@@ -157,10 +229,10 @@ export default function SistemaUsuarios() {
             <span className="w-9 h-9 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
               <Icon icon="solar:shield-user-bold" className="text-white" width={18} />
             </span>
-            Usuarios del Sistema
+            Administradores del Sistema
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-            Gestiona los administradores con acceso al panel de control de Falconext
+            Socios y admins
           </p>
         </div>
         <button
@@ -168,7 +240,7 @@ export default function SistemaUsuarios() {
           className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-violet-500/30 hover:bg-violet-700 transition-all active:scale-95"
         >
           <Icon icon="solar:user-plus-bold" width={18} />
-          Nuevo Administrador
+          Nuevo Admin
         </button>
       </div>
 
@@ -191,9 +263,8 @@ export default function SistemaUsuarios() {
         ))}
       </div>
 
-      {/* Table Card */}
+      {/* Table */}
       <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        {/* Search Bar */}
         <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width={17} />
@@ -207,7 +278,6 @@ export default function SistemaUsuarios() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/70 dark:bg-slate-800/50 text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold tracking-wider">
@@ -216,7 +286,7 @@ export default function SistemaUsuarios() {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">DNI</th>
                 <th className="px-6 py-4">Celular</th>
-                <th className="px-6 py-4">Rol</th>
+                <th className="px-6 py-4">Sistema de negocio</th>
                 <th className="px-6 py-4 text-center">Estado</th>
                 <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
@@ -237,7 +307,7 @@ export default function SistemaUsuarios() {
                   <td colSpan={7} className="px-6 py-20 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <Icon icon="solar:shield-user-linear" width={52} className="opacity-20" />
-                      <p className="text-sm">{search ? 'No se encontraron administradores con ese criterio.' : 'No hay administradores creados aún.'}</p>
+                      <p className="text-sm">{search ? 'No se encontraron administradores.' : 'No hay administradores creados aún.'}</p>
                       {!search && (
                         <button onClick={openCreate} className="mt-1 px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition-all">
                           Crear primer administrador
@@ -260,20 +330,14 @@ export default function SistemaUsuarios() {
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
                     <td className="px-6 py-4 font-mono text-gray-500 dark:text-gray-400">{u.dni}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.celular}</td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-100 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800/50">
-                        <Icon icon="solar:shield-bold" width={11} />
-                        Admin Sistema
-                      </span>
-                    </td>
+                    <td className="px-6 py-4"><NegocioBadge sn={u.sistemaNegocio} /></td>
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleToggleState(u)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                          u.estado === 'ACTIVO'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
-                            : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
-                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${u.estado === 'ACTIVO'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
+                          : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
+                          }`}
                       >
                         <div className={`w-1.5 h-1.5 rounded-full ${u.estado === 'ACTIVO' ? 'bg-emerald-500' : 'bg-red-500'}`} />
                         {u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
@@ -281,18 +345,10 @@ export default function SistemaUsuarios() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => openEdit(u)}
-                          className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-colors"
-                          title="Editar"
-                        >
+                        <button onClick={() => openEdit(u)} className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-colors" title="Editar">
                           <Icon icon="solar:pen-bold" width={16} />
                         </button>
-                        <button
-                          onClick={() => setConfirmDelete(u)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Deshabilitar"
-                        >
+                        <button onClick={() => setConfirmDelete(u)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Deshabilitar">
                           <Icon icon="solar:trash-bin-trash-bold" width={16} />
                         </button>
                       </div>
@@ -307,10 +363,9 @@ export default function SistemaUsuarios() {
 
       {/* Modal Crear/Editar */}
       {modalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="relative bg-white dark:bg-[#111827] rounded-3xl p-8 w-full max-w-md shadow-2xl z-10 animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
+          <div className="relative bg-white dark:bg-[#111827] rounded-3xl p-8 w-full max-w-md shadow-2xl z-10 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-7">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
@@ -320,7 +375,7 @@ export default function SistemaUsuarios() {
                   <h2 className="text-lg font-bold text-gray-800 dark:text-white">
                     {editTarget ? 'Editar Administrador' : 'Nuevo Administrador'}
                   </h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Acceso completo al panel de control</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Rol ADMIN_SISTEMA</p>
                 </div>
               </div>
               <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
@@ -329,6 +384,39 @@ export default function SistemaUsuarios() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Sistema de negocio — solo visible para supermegaadmin */}
+              {esSuperAdmin ? (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Sistema de negocio
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <SistemaBtn value="" label="Todos" icon="solar:crown-bold-duotone" desc="Ambos sistemas" activeColor="violet" />
+                    <SistemaBtn value="FALCONEXT" label="Falconext" icon="solar:rocket-bold-duotone" desc="Solo Falconext" activeColor="violet" />
+                    <SistemaBtn value="KREZKA" label="Krezka" icon="solar:star-bold-duotone" desc="Solo Krezka" activeColor="blue" />
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    {form.sistemaNegocio === ''
+                      ? 'Sin asignar → Supermegaadmin, ve y gestiona ambos sistemas completos'
+                      : `Solo verá las empresas y datos del sistema ${form.sistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}`}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
+                  <Icon
+                    icon={miSistemaNegocio === 'FALCONEXT' ? 'solar:rocket-bold-duotone' : 'solar:star-bold-duotone'}
+                    className="text-blue-600 dark:text-blue-400 flex-shrink-0"
+                    width={18}
+                  />
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Este admin se creará para el sistema <span className="font-bold">
+                      {miSistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}
+                    </span>
+                  </p>
+                </div>
+              )}
+
               {/* Nombre */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre completo *</label>
@@ -404,14 +492,6 @@ export default function SistemaUsuarios() {
                   </button>
                 </div>
                 {errors.password && <p className="text-xs text-red-500 flex items-center gap-1"><Icon icon="solar:danger-bold" width={12} />{errors.password}</p>}
-              </div>
-
-              {/* Rol badge info */}
-              <div className="flex items-center gap-2.5 px-4 py-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-100 dark:border-violet-800/30">
-                <Icon icon="solar:shield-bold-duotone" className="text-violet-600 dark:text-violet-400 flex-shrink-0" width={18} />
-                <p className="text-xs text-violet-700 dark:text-violet-300">
-                  <span className="font-bold">Rol asignado: ADMIN_SISTEMA</span> — Tendrá acceso completo a todos los módulos del panel de control.
-                </p>
               </div>
 
               {/* Buttons */}

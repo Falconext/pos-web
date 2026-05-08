@@ -16,7 +16,7 @@ export type IProduct = {
   empresaId: number
   costoPromedio?: number
   costoUnitario: number
-  imagenUrl?: string
+  imagenUrl?: string | null
   imagenesExtra?: string[]
   unidadMedida: {
     id: number
@@ -46,6 +46,8 @@ export type IProduct = {
   precioOferta?: number
   fechaInicioOferta?: string | Date
   fechaFinOferta?: string | Date
+  // Precios por Mayorista
+  preciosMayorista?: { cantidadMinima: number; precio: number }[]
 }
 
 
@@ -69,7 +71,7 @@ export type IFormProduct = {
   unidadMedidaId: number
   costoPromedio?: number
   costoUnitario?: number
-  imagenUrl?: string
+  imagenUrl?: string | null
   // Campos Farmacia
   principioActivo?: string
   concentracion?: string
@@ -84,4 +86,6 @@ export type IFormProduct = {
   precioOferta?: number
   fechaInicioOferta?: string | Date
   fechaFinOferta?: string | Date
+  // Precios por Mayorista
+  preciosMayorista?: { cantidadMinima: number; precio: number }[]
 }

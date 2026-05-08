@@ -10,12 +10,17 @@ import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
+const CLIENTE_STORAGE_KEY = (slug: string) => `tienda:${slug}:cliente`;
+
 export default function Checkout() {
     const { slug } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    const { carrito: carritoStateInitial, tienda } = location.state || {};
+    const { carrito: carritoStateInitial, tienda: tiendaFromState } = location.state || {};
     const [carritoState, setCarritoState] = useState<any[]>(carritoStateInitial || []);
+
+    // Mejora 1: tienda como estado — se carga desde API si no viene por navegación
+    const [tienda, setTienda] = useState<any>(tiendaFromState || null);
 
     const [configPago, setConfigPago] = useState<any>(null);
     const [configEnvio, setConfigEnvio] = useState<any>(null);
@@ -25,8 +30,6 @@ export default function Checkout() {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [promoExpanded, setPromoExpanded] = useState(false);
-    const [promoCode, setPromoCode] = useState('');
     const [suggestedProducts, setSuggestedProducts] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
@@ -44,16 +47,66 @@ export default function Checkout() {
     const [search, setSearch] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
 
+    // Mejora 1: cargar tienda desde API si no está disponible por navigation state
+    useEffect(() => {
+        if (!tienda && slug) {
+            axios.get(`${BASE_URL}/public/store/${slug}`)
+                .then(({ data }) => setTienda(data.data || data))
+                .catch(console.error);
+        }
+    }, [slug]);
+
+    // Mejora 2: pre-llenar datos del cliente si los guardamos antes
+    useEffect(() => {
+        if (!slug) return;
+        try {
+            const saved = localStorage.getItem(CLIENTE_STORAGE_KEY(slug));
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                setFormData(prev => ({
+                    ...prev,
+                    clienteNombre: parsed.clienteNombre || '',
+                    clienteTelefono: parsed.clienteTelefono || '',
+                    clienteEmail: parsed.clienteEmail || '',
+                    clienteDireccion: parsed.clienteDireccion || '',
+                    clienteReferencia: parsed.clienteReferencia || '',
+                }));
+            }
+        } catch { }
+    }, [slug]);
+
+    const refrescarImagenesCarrito = async (carritoActual: any[]) => {
+        try {
+            const ids = [...new Set(carritoActual.filter(i => i.productoId).map(i => i.productoId))];
+            if (ids.length === 0) return;
+            const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, {
+                params: { ids: ids.join(','), limit: 100 },
+            });
+            const actualizados = data?.data?.data || data?.data || [];
+            const urlMap = new Map<number, string>();
+            actualizados.forEach((p: any) => { if (p.id && p.imagenUrl) urlMap.set(p.id, p.imagenUrl); });
+            setCarritoState(prev => prev.map(item => {
+                if (!item.productoId) return item;
+                const url = urlMap.get(item.productoId);
+                return url ? { ...item, imagenUrl: url } : item;
+            }));
+        } catch { }
+    };
+
     useEffect(() => {
         if ((!carritoState || carritoState.length === 0) && slug) {
             try {
                 const saved = localStorage.getItem(`tienda:${slug}:carrito`);
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed) && parsed.length > 0) setCarritoState(parsed);
-                    else { navigate(`/tienda/${slug}`); return; }
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        setCarritoState(parsed);
+                        refrescarImagenesCarrito(parsed);
+                    } else { navigate(`/tienda/${slug}`); return; }
                 } else { navigate(`/tienda/${slug}`); return; }
             } catch { navigate(`/tienda/${slug}`); return; }
+        } else if (carritoStateInitial?.length > 0) {
+            refrescarImagenesCarrito(carritoStateInitial);
         }
         setIsLoaded(true);
         cargarConfigPago();
@@ -109,6 +162,7 @@ export default function Checkout() {
                 direccionRecojo: raw.direccionRecojo || raw.direccion || '',
                 costoEnvio: Number(raw.costoEnvioFijo ?? raw.costoEnvio ?? 0),
                 envioGratisDesdeSoles: Number(raw.envioGratisDesdeSoles ?? 0),
+                minimoCompra: Number(raw.minimoCompra ?? 0),
             };
             setConfigEnvio(normalized);
             if (normalized.aceptaRecojo && !normalized.aceptaEnvio) setFormData(prev => ({ ...prev, tipoEntrega: 'RECOJO' }));
@@ -130,13 +184,19 @@ export default function Checkout() {
         if (erroresForm[name]) setErroresForm(prev => { const n = { ...prev }; delete n[name]; return n; });
     };
 
+    // Mejora 3: email opcional — solo nombre y teléfono son obligatorios
     const validarFormulario = (): boolean => {
         const errores: Record<string, string> = {};
         if (!formData.clienteNombre.trim()) errores.clienteNombre = 'El nombre es requerido';
         if (!formData.clienteTelefono.trim()) errores.clienteTelefono = 'El teléfono es requerido';
-        if (!formData.clienteEmail.trim()) errores.clienteEmail = 'El email es requerido';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.clienteEmail)) errores.clienteEmail = 'Email inválido';
+        if (formData.clienteEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.clienteEmail)) {
+            errores.clienteEmail = 'Email inválido';
+        }
         if (formData.tipoEntrega === 'ENVIO' && !formData.clienteDireccion.trim()) errores.clienteDireccion = 'La dirección es requerida para envío';
+        const minimo = configEnvio?.minimoCompra || 0;
+        if (minimo > 0 && calcularSubtotal() < minimo) {
+            errores._minimo = `Monto mínimo de pedido: S/ ${minimo.toFixed(2)}`;
+        }
         setErroresForm(errores);
         return Object.keys(errores).length === 0;
     };
@@ -172,6 +232,18 @@ export default function Checkout() {
             const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, { ...formData, items, total: calcularTotal() });
             const orderData = data.data || data;
             setPedidoCreado(orderData);
+
+            // Mejora 2: guardar datos del cliente para la próxima compra
+            try {
+                localStorage.setItem(CLIENTE_STORAGE_KEY(slug!), JSON.stringify({
+                    clienteNombre: formData.clienteNombre,
+                    clienteTelefono: formData.clienteTelefono,
+                    clienteEmail: formData.clienteEmail,
+                    clienteDireccion: formData.clienteDireccion,
+                    clienteReferencia: formData.clienteReferencia,
+                }));
+            } catch { }
+
             setShowConfirmModal(false);
             setShowPaymentModal(true);
             setCarritoState([]);
@@ -202,11 +274,12 @@ export default function Checkout() {
                 onSearch={() => { if (search.trim()) window.location.href = `/tienda/${slug}?search=${encodeURIComponent(search)}`; }}
             />
 
+            {/* Mejora 4: layout mobile — flex-col en mobile, flex-row en desktop */}
             <div className="max-w-screen-xl mx-auto px-4 mt-5 md:px-8 pt-28 md:pt-32 pb-8">
-                <div className="flex gap-6 items-start">
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
 
                     {/* ── Left: Cart + Form ── */}
-                    <div className="flex-1 min-w-0 space-y-5">
+                    <div className="flex-1 min-w-0 space-y-5 w-full">
 
                         {/* Shopping Cart Card */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -237,13 +310,11 @@ export default function Checkout() {
                                                         ? (item.unidadMedida.nombre || item.unidadMedida.codigo || 'Unidad')
                                                         : (item.unidadMedida || 'Unidad')}
                                                 </p>
-                                                {/* Heart + Delete */}
+                                                {/* Mejora 5: solo botón eliminar, se quitó el corazón decorativo */}
                                                 <div className="flex items-center gap-3 mt-2">
-                                                    <button className="text-gray-300 hover:text-[#FF9500] transition-colors">
-                                                        <Icon icon="solar:heart-linear" width={18} />
-                                                    </button>
-                                                    <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-[#EF4444] transition-colors">
-                                                        <Icon icon="solar:trash-bin-trash-linear" width={18} />
+                                                    <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-[#EF4444] transition-colors flex items-center gap-1 text-xs">
+                                                        <Icon icon="solar:trash-bin-trash-linear" width={16} />
+                                                        <span>Eliminar</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -294,7 +365,7 @@ export default function Checkout() {
 
                         {/* Customer Info Form */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
                                 <h2 className="text-lg font-black text-[#1A1A1A]">Datos de entrega</h2>
                                 {configEnvio && (
                                     <div className="flex gap-3">
@@ -326,17 +397,24 @@ export default function Checkout() {
                                         className={`w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20 ${erroresForm.clienteTelefono ? 'border-red-300' : 'border-transparent'}`} />
                                     {erroresForm.clienteTelefono && <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteTelefono}</p>}
                                 </div>
+                                {/* Mejora 3: email opcional */}
                                 <div className="md:col-span-2">
-                                    <input type="email" name="clienteEmail" placeholder="Email *" value={formData.clienteEmail} onChange={handleChange}
+                                    <input type="email" name="clienteEmail" placeholder="Email (opcional)" value={formData.clienteEmail} onChange={handleChange}
                                         className={`w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20 ${erroresForm.clienteEmail ? 'border-red-300' : 'border-transparent'}`} />
                                     {erroresForm.clienteEmail && <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteEmail}</p>}
                                 </div>
                                 {formData.tipoEntrega === 'ENVIO' ? (
-                                    <div className="md:col-span-2">
-                                        <input type="text" name="clienteDireccion" placeholder="Dirección de entrega *" value={formData.clienteDireccion} onChange={handleChange}
-                                            className={`w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20 ${erroresForm.clienteDireccion ? 'border-red-300' : 'border-transparent'}`} />
-                                        {erroresForm.clienteDireccion && <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteDireccion}</p>}
-                                    </div>
+                                    <>
+                                        <div className="md:col-span-2">
+                                            <input type="text" name="clienteDireccion" placeholder="Dirección de entrega *" value={formData.clienteDireccion} onChange={handleChange}
+                                                className={`w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20 ${erroresForm.clienteDireccion ? 'border-red-300' : 'border-transparent'}`} />
+                                            {erroresForm.clienteDireccion && <p className="text-red-500 text-xs mt-1 ml-1">{erroresForm.clienteDireccion}</p>}
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <input type="text" name="clienteReferencia" placeholder="Referencia (ej: frente al parque, casa azul)" value={formData.clienteReferencia} onChange={handleChange}
+                                                className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20" />
+                                        </div>
+                                    </>
                                 ) : configEnvio?.direccionRecojo ? (
                                     <div className="md:col-span-2 p-3 bg-[#FFF3E0] rounded-xl text-sm flex items-center gap-2 text-[#FF9500]">
                                         <Icon icon="solar:shop-bold" width={16} />
@@ -362,6 +440,18 @@ export default function Checkout() {
                                             );
                                         })}
                                     </div>
+                                </div>
+
+                                {/* Observaciones */}
+                                <div className="md:col-span-2">
+                                    <textarea
+                                        name="observaciones"
+                                        placeholder="Nota para el pedido (opcional)"
+                                        value={formData.observaciones}
+                                        onChange={handleChange}
+                                        rows={2}
+                                        className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20 resize-none"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -390,35 +480,10 @@ export default function Checkout() {
                                 </div>
                             </div>
                         )}
-
-                        {/* Similar products */}
-                        {suggestedProducts.length > 8 && (
-                            <div>
-                                <h3 className="text-xl font-black text-[#1A1A1A] mb-4">Productos similares</h3>
-                                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                                    {suggestedProducts.slice(8, 14).map((producto) => (
-                                        <div key={producto.id} className="flex-shrink-0 w-44">
-                                            <ProductCardPio
-                                                producto={producto}
-                                                slug={slug || ''}
-                                                diseno={diseno}
-                                                onAddToCart={() => {
-                                                    const nuevoItem = { ...producto, id: producto.id, productoId: producto.id, cantidad: 1, precioBase: producto.precioUnitario, modificadores: [] };
-                                                    const existe = carritoState.find((i: any) => i.id === producto.id && !i.modificadores?.length);
-                                                    if (existe) setCarritoState(carritoState.map((i: any) => i.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i));
-                                                    else setCarritoState([...carritoState, nuevoItem]);
-                                                }}
-                                                onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
 
-                    {/* ── Right: Order Summary ── */}
-                    <div className="w-80 flex-shrink-0 sticky top-32">
+                    {/* ── Right: Order Summary — Mejora 4: full width en mobile, sticky solo en desktop ── */}
+                    <div className="w-full lg:w-80 lg:flex-shrink-0 lg:sticky lg:top-32">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-100">
                                 <h2 className="text-lg font-black text-[#1A1A1A]">Resumen del pedido</h2>
@@ -462,6 +527,21 @@ export default function Checkout() {
                                     </div>
                                 </div>
 
+                                {(() => {
+                                    const minimo = configEnvio?.minimoCompra || 0;
+                                    const falta = minimo > 0 ? Math.max(minimo - calcularSubtotal(), 0) : 0;
+                                    return falta > 0 ? (
+                                        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-700 font-medium flex items-center gap-2">
+                                            <Icon icon="solar:danger-triangle-bold" width={14} className="flex-shrink-0" />
+                                            Agrega S/ {falta.toFixed(2)} más para completar el monto mínimo de S/ {minimo.toFixed(2)}
+                                        </div>
+                                    ) : null;
+                                })()}
+                                {erroresForm._minimo && (
+                                    <p className="text-red-500 text-xs font-medium flex items-center gap-1">
+                                        <Icon icon="mdi:alert-circle" width={13} />{erroresForm._minimo}
+                                    </p>
+                                )}
                                 <button
                                     onClick={() => { if (validarFormulario()) setShowConfirmModal(true); }}
                                     disabled={enviando || carritoState.length === 0}
@@ -471,33 +551,7 @@ export default function Checkout() {
                                 </button>
                             </div>
 
-                            {/* Promo code */}
-                            <div className="border-t border-gray-100">
-                                <button
-                                    onClick={() => setPromoExpanded(!promoExpanded)}
-                                    className="w-full flex items-center justify-between px-6 py-3.5 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Icon icon="solar:ticket-bold" width={16} className="text-[#FF9500]" />
-                                        <span className="font-medium">Tengo un código de descuento</span>
-                                    </div>
-                                    <Icon icon="solar:alt-arrow-right-linear" width={16} className={`transition-transform ${promoExpanded ? 'rotate-90' : ''}`} />
-                                </button>
-                                {promoExpanded && (
-                                    <div className="px-6 pb-4 flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Ingresa tu código"
-                                            value={promoCode}
-                                            onChange={e => setPromoCode(e.target.value)}
-                                            className="flex-1 bg-[#F5F5F5] rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20"
-                                        />
-                                        <button className="bg-[#1A1A1A] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#2D2D2D] transition-colors">
-                                            Aplicar
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            {/* Mejora 6: se eliminó el campo de código de descuento (no tenía backend) */}
                         </div>
                     </div>
                 </div>

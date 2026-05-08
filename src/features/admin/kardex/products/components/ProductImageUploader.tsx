@@ -8,7 +8,7 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
         labels, loadingImage, previewPrincipal, filePrincipalInputRef, isGeneratingImage, formValues,
-        setFilePrincipal, setPreviewPrincipal, setLoadingImage, handleAutoImage
+        setFilePrincipal, setPreviewPrincipal, setLoadingImage, handleAutoImage, setFormValues
     } = vm;
 
     return (
@@ -84,7 +84,11 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     <div className="mt-2">
                         <button
                             type="button"
-                            onClick={() => { setFilePrincipal(null); setPreviewPrincipal(null); }}
+                            onClick={() => {
+                                setFilePrincipal(null);
+                                setPreviewPrincipal(null);
+                                setFormValues({ ...formValues, imagenUrl: null });
+                            }}
                             className="text-xs text-red-600 hover:text-red-700 underline"
                         >
                             Quitar imagen

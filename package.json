@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:krezka": "vite",
+    "dev:falconext": "vite --mode falconext",
     "build": "vite build",
+    "build:krezka": "vite build",
+    "build:falconext": "vite build --mode falconext",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest",

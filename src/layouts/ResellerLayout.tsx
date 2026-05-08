@@ -6,6 +6,7 @@ import NotificacionesCampana from '@/components/NotificacionesCampana'
 import { hasPermission, getRedirectPath } from '@/utils/permissions'
 import { useThemeStore } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
+import { BRAND } from '@/lib/branding'
 
 export default function ResellerLayout() {
     const navigate = useNavigate()
@@ -42,10 +43,10 @@ export default function ResellerLayout() {
             <aside className={`fixed inset-y-0 left-0 bg-white shadow-[2px_0_20px_rgba(0,0,0,0.06)] p-4 space-y-6 h-full overflow-y-auto w-[260px] transition-transform duration-300 z-50 md:static ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
                 <div className="flex items-center gap-3 px-2 mb-8 mt-2">
                     <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#4F6EF7] shadow-md shadow-indigo-200">
-                        <img src="/fnlogo.png" alt="Falconext" className="w-5 h-5 object-contain brightness-0 invert" />
+                        <img src={BRAND.logo} alt={BRAND.name} className="w-5 h-5 object-contain brightness-0 invert" />
                     </div>
                     <div>
-                        <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900">FALCONEXT</h2>
+                        <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900">{BRAND.name.toUpperCase()}</h2>
                         <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Distribuidor</p>
                     </div>
                 </div>

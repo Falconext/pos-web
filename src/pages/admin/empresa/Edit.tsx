@@ -26,8 +26,8 @@ interface FormData {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion: string;
-  providerToken?: string;
-  providerId?: string;
+  usuarioPse?: string;
+  contrasenaPse?: string;
   bancoNombre?: string;
   numeroCuenta?: string;
   cci?: string;
@@ -77,8 +77,8 @@ const EditEmpresa = () => {
     nombreComercial: '',
     fechaActivacion: '',
     fechaExpiracion: '',
-    providerToken: '',
-    providerId: '',
+    usuarioPse: '',
+    contrasenaPse: '',
     usaCodigoBarrasManual: false,
   });
 
@@ -129,8 +129,8 @@ const EditEmpresa = () => {
         nombreComercial: empresa.nombreComercial || '',
         fechaActivacion: empresa.fechaActivacion.split('T')[0],
         fechaExpiracion: empresa.fechaExpiracion.split('T')[0],
-        providerToken: (empresa as any).providerToken || '',
-        providerId: (empresa as any).providerId || '',
+        usuarioPse: (empresa as any).usuarioPse || '',
+        contrasenaPse: (empresa as any).contrasenaPse || '',
         bancoNombre: (empresa as any).bancoNombre || '',
         numeroCuenta: (empresa as any).numeroCuenta || '',
         cci: (empresa as any).cci || '',
@@ -630,25 +630,26 @@ const EditEmpresa = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <InputPro
-                    name="providerToken"
-                    label="Token del Proveedor"
-                    value={formData.providerToken || ''}
+                    name="usuarioPse"
+                    label="Usuario PSE (QPSE)"
+                    value={formData.usuarioPse || ''}
                     onChange={handleInputChange}
-                    error={errors.providerToken}
+                    error={errors.usuarioPse}
                     isLabel
-                    placeholder="Token para integración SUNAT"
+                    placeholder="Ej. 0HGRQ55B"
                   />
                 </div>
 
                 <div>
                   <InputPro
-                    name="providerId"
-                    label="ID del Proveedor"
-                    value={formData.providerId || ''}
+                    name="contrasenaPse"
+                    label="Contraseña PSE (QPSE)"
+                    type="password"
+                    value={formData.contrasenaPse || ''}
                     onChange={handleInputChange}
-                    error={errors.providerId}
+                    error={errors.contrasenaPse}
                     isLabel
-                    placeholder="ID asignado por el proveedor"
+                    placeholder="Ej. R8101ZBD"
                   />
                 </div>
               </div>

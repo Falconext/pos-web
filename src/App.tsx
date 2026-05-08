@@ -52,6 +52,7 @@ import LibroCompras from './pages/admin/sire/LibroCompras'
 import AdminResellers from './pages/admin/sistema/Resellers'
 import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
 import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
+import SistemaFinanzas from './pages/admin/sistema/SistemaFinanzas'
 import ResellerLayout from './layouts/ResellerLayout'
 import ResellerDashboard from './pages/reseller/Dashboard'
 import ResellerClientes from './pages/reseller/Clientes'
@@ -149,6 +150,14 @@ function App() {
             element={
               <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
                 <SistemaUsuarios />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="sistema/finanzas"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <SistemaFinanzas />
               </RoleRoute>
             }
           />

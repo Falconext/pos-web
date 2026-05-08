@@ -133,6 +133,12 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                             {tienda.direccion && (
                                 <li><span className="text-sm text-[#333]">{tienda.direccion}</span></li>
                             )}
+                            {tienda.horarioAtencion && (
+                                <li className="flex items-start gap-2 pt-1">
+                                    <Icon icon="mdi:clock-outline" width={15} className="text-[#FF9500] mt-0.5 flex-shrink-0" />
+                                    <span className="text-sm text-[#333] whitespace-pre-line">{tienda.horarioAtencion}</span>
+                                </li>
+                            )}
                         </ul>
                     </div>
                 </div>

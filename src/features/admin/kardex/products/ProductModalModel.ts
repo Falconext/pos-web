@@ -23,8 +23,6 @@ export interface ICreationLote {
 }
 
 export interface IWholesaleOption {
-    nombre: string;
-    precio: string;
-    id?: number;
-    esNuevo?: boolean;
+    cantidadMinima: number;
+    precio: number;
 }

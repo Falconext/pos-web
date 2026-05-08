@@ -406,15 +406,55 @@ export const useFacturacionViewModel = () => {
     }, [isQuotationRoute, hasOpenedConfigModal]);
 
     // Product Adding logic
+    const normalizeWholesaleUnitPrice = (basePrice: number, rule: { cantidadMinima: number; precio: number }) => {
+        const minQty = Number(rule.cantidadMinima);
+        const rulePrice = Number(rule.precio);
+
+        if (!Number.isFinite(rulePrice) || rulePrice <= 0) return basePrice;
+        if (Number.isFinite(basePrice) && basePrice > 0 && minQty > 1 && rulePrice > basePrice) {
+            return Number((rulePrice / minQty).toFixed(6));
+        }
+        return rulePrice;
+    };
+
+    const getApplicablePrice = (item: any, qty: number): number => {
+        const base = Number(item.precioBase ?? item.precioUnitario ?? 0);
+        if (!Number.isFinite(base) || base <= 0) return 0;
+
+        const parsedQty = Number(qty);
+        if (!Number.isFinite(parsedQty) || parsedQty <= 0) return base;
+
+        const rules = (item.preciosMayorista ?? [])
+            .map((r: { cantidadMinima: number; precio: number }) => ({
+                cantidadMinima: Number(r.cantidadMinima),
+                precioUnitario: normalizeWholesaleUnitPrice(base, r),
+            }))
+            .filter((r: { cantidadMinima: number; precioUnitario: number }) =>
+                Number.isFinite(r.cantidadMinima) &&
+                r.cantidadMinima > 0 &&
+                Number.isFinite(r.precioUnitario) &&
+                r.precioUnitario > 0,
+            );
+
+        if (!rules.length) return base;
+
+        const applicable = rules
+            .filter((r: { cantidadMinima: number; precioUnitario: number }) => parsedQty >= r.cantidadMinima)
+            .sort((a: { cantidadMinima: number }, b: { cantidadMinima: number }) => b.cantidadMinima - a.cantidadMinima)[0];
+
+        return applicable ? applicable.precioUnitario : base;
+    };
+
     const calculateLineItem = (item: any, newQuantity: number) => {
-        const price = Number(item.precioUnitario);
+        const price = getApplicablePrice(item, newQuantity);
         const subtotal = price * newQuantity;
         return {
             cantidad: newQuantity,
             cantidadOriginal: newQuantity,
+            precioUnitario: price,
             total: subtotal.toFixed(2),
             sale: (subtotal / 1.18).toFixed(2),
-            igv: (subtotal - (subtotal / 1.18)).toFixed(2)
+            igv: (subtotal - subtotal / 1.18).toFixed(2)
         };
     };
 
@@ -432,8 +472,12 @@ export const useFacturacionViewModel = () => {
             if (product.stock < 1) {
                 return useAlertStore.getState().alert("Sin stock", "warning");
             }
+            const base = product.precioUnitario;
+            const priceForQty1 = getApplicablePrice({ precioBase: base, preciosMayorista: product.preciosMayorista }, 1);
             addProductsInvoice({
                 ...product,
+                precioBase: base,
+                precioUnitario: priceForQty1,
                 unidadMedida: product?.unidadMedida?.nombre
             });
         }
@@ -461,19 +505,35 @@ export const useFacturacionViewModel = () => {
         }
     };
 
-    const handleSaveEdit = (newItem: any) => {
-        if (editingIndex === -1) return;
-        const price = Number(newItem.precioUnitario);
-        const qty = Number(newItem.cantidad);
+    const handleSelectWholesaleTier = (index: number, tier: { cantidadMinima: number; precio: number } | null) => {
+        const item = productsInvoice[index];
+        const qty = Number(item.cantidad);
+        const price = tier ? Number(tier.precio) : Number(item.precioBase ?? item.precioUnitario);
         const subtotal = price * qty;
-
-        const updated = {
-            ...newItem,
+        updateProductInvoice(index, {
+            precioUnitario: price,
             total: subtotal.toFixed(2),
             sale: (subtotal / 1.18).toFixed(2),
-            igv: (subtotal - (subtotal / 1.18)).toFixed(2)
-        };
-        updateProductInvoice(editingIndex, updated);
+            igv: (subtotal - subtotal / 1.18).toFixed(2),
+            _tierOverride: tier ? tier.cantidadMinima : null,
+        });
+    };
+
+    const handleSaveEdit = (newItem: any) => {
+        if (editingIndex === -1) return;
+        const qty = Number(newItem.cantidad);
+        const price = Number(newItem.precioUnitario);
+        const subtotal = price * qty;
+        const descuento = Number(newItem.descuento || 0);
+        const totalConDescuento = subtotal * (1 - descuento / 100);
+
+        updateProductInvoice(editingIndex, {
+            ...newItem,
+            precioUnitario: price,
+            total: totalConDescuento.toFixed(2),
+            sale: (totalConDescuento / 1.18).toFixed(2),
+            igv: (totalConDescuento - totalConDescuento / 1.18).toFixed(2)
+        });
         setEditingIndex(-1);
     };
 
@@ -883,6 +943,8 @@ export const useFacturacionViewModel = () => {
         handleProductClick,
         handleDeleteProduct,
         handleSaveEdit,
+        handleSelectWholesaleTier,
+        getApplicablePrice,
         updateProductInvoice,
         handleChangeSelect,
         handleGetDataClient,

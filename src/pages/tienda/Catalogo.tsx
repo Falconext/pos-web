@@ -44,6 +44,7 @@ export default function Catalogo() {
     const [minPrice, setMinPrice] = useState(0);
     const [maxPrice, setMaxPrice] = useState(1000);
     const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'relevance');
+    const [wholesaleOnly, setWholesaleOnly] = useState(searchParams.get('wholesale') === 'true');
     const [brandSearch, setBrandSearch] = useState('');
     const [openSections, setOpenSections] = useState({ categories: true, price: true, brands: true });
     const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -78,7 +79,7 @@ export default function Catalogo() {
             cargarProductos(1, true);
         }, 350);
         return () => clearTimeout(t);
-    }, [search, selectedBrands, selectedCategories, priceRange]);
+    }, [search, selectedBrands, selectedCategories, priceRange, wholesaleOnly]);
 
     useEffect(() => {
         const params = new URLSearchParams();
@@ -133,6 +134,7 @@ export default function Catalogo() {
                     category: selectedCategories.length > 0 ? selectedCategories.join(',') : undefined,
                     minPrice: priceRange[0] !== minPrice ? priceRange[0] : undefined,
                     maxPrice: priceRange[1] !== maxPrice ? priceRange[1] : undefined,
+                    wholesale: wholesaleOnly ? 'true' : undefined,
                 },
             });
             let items: any[] = [];

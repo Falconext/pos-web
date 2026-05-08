@@ -74,7 +74,8 @@ export const useAuthStore = create<IAuthState>()(
       login: async (data: any) => {
         try {
           useAlertStore.setState({ loading: true });
-          const resp: any = await post(`auth/login`, data);
+          const payload = { ...data, brand: import.meta.env.VITE_PUBLIC_BRAND || 'falconext' };
+          const resp: any = await post(`auth/login`, payload);
           console.log("Login response:", resp);
 
           if (resp.code === 1) {

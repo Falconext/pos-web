@@ -6,7 +6,7 @@ import NotificacionesCampana from '@/components/NotificacionesCampana'
 import { hasPermission, hasSubPermission, getRedirectPath } from '@/utils/permissions'
 import { useThemeStore } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
-const logo = '/assets/logofalconwhite.png'
+import { BRAND } from '@/lib/branding'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
@@ -257,11 +257,11 @@ export default function AdminLayout() {
         <div className={`flex items-center mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
           <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center justify-center w-10 h-10">
-              <img src={logo} alt="Falconext" className="w-10 h-10 object-contain rounded-full" />
+              <img src={BRAND.logoWhite} alt={BRAND.name} className="w-10 h-10 object-contain rounded-full" />
             </div>
             {!isSidebarCollapsed && (
               <div>
-                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900 dark:text-white">FALCONEXT</h2>
+                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900 dark:text-white">{BRAND.name.toUpperCase()}</h2>
                 <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Administrativo</p>
               </div>
             )}
@@ -307,6 +307,10 @@ export default function AdminLayout() {
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-web" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Catálogo Web">
                   <Icon icon="solar:shop-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Catálogo Web</span>}
+                </NavLink>
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
+                  <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Finanzas</span>}
                 </NavLink>
               </>
             )}
