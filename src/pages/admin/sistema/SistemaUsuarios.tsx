@@ -34,7 +34,7 @@ export default function SistemaUsuarios() {
   const authUser = useAuthStore(s => s.auth);
   // Si el admin logueado tiene sistemaNegocio, solo puede crear admins de su plataforma
   const miSistemaNegocio = authUser?.sistemaNegocio ?? null;
-  const esSuperAdmin = miSistemaNegocio === null;
+  const esSuperAdmin = !miSistemaNegocio;
 
   const [users, setUsers] = useState<SistemaUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -411,7 +411,7 @@ export default function SistemaUsuarios() {
                   />
                   <p className="text-xs text-blue-700 dark:text-blue-300">
                     Este admin se creará para el sistema <span className="font-bold">
-                      {miSistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}
+                      {miSistemaNegocio === 'FALCONEXT' ? 'Falconext' : miSistemaNegocio === 'KREZKA' ? 'Krezka' : 'todos'}
                     </span>
                   </p>
                 </div>

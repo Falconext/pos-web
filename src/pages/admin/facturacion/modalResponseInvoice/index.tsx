@@ -23,9 +23,10 @@ interface IProps {
     productsInvoice?: any[]
     formValues?: any
     observation?: string
+    isPendiente?: boolean
 }
 
-const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante, closeModal, handleOpenNewTab, company, productsInvoice, formValues, observation }: IProps) => {
+const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante, closeModal, handleOpenNewTab, company, productsInvoice, formValues, observation, isPendiente }: IProps) => {
 
     console.log(company)
     console.log(productsInvoice)
@@ -84,17 +85,36 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                             <div className="space-y-4 w-full">
                                 <div className="space-y-3">
                                     <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Comprobante</p>
-                                    <img className="mx-auto w-24 h-24" src="/gif/suc.gif" width={120} height={120} alt="Success" />
+                                    {isPendiente ? (
+                                        <div className="flex items-center justify-center w-20 h-20 mx-auto rounded-full bg-amber-50 border-2 border-amber-200">
+                                            <svg className="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    ) : (
+                                        <img className="mx-auto w-24 h-24" src="/gif/suc.gif" width={120} height={120} alt="Success" />
+                                    )}
                                     <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-balance">
-                                        Hola, <strong>{auth.nombre}</strong>. La {comprobante.toLowerCase()} del cliente <strong>{client?.nombre}</strong>
-                                        <span className="block">ha sido generada con éxito.</span>
+                                        {isPendiente ? (
+                                            <>
+                                                El comprobante fue <strong>registrado correctamente</strong>.<br />
+                                                <span className="text-amber-600 font-medium">SUNAT está temporalmente no disponible</span> — la confirmación llegará automáticamente en cuanto el servicio se restablezca.
+                                            </>
+                                        ) : (
+                                            <>
+                                                Hola, <strong>{auth.nombre}</strong>. La {comprobante.toLowerCase()} del cliente <strong>{client?.nombre}</strong>
+                                                <span className="block">ha sido generada con éxito.</span>
+                                            </>
+                                        )}
                                     </p>
                                 </div>
                                 <div className="flex flex-col items-center gap-2">
-                                    <span className="text-[28px] sm:text-[34px] font-semibold text-emerald-500 border border-dashed border-emerald-400 rounded-xl px-4 py-2 tracking-[0.2em]">
+                                    <span className={`text-[28px] sm:text-[34px] font-semibold border border-dashed rounded-xl px-4 py-2 tracking-[0.2em] ${isPendiente ? 'text-amber-500 border-amber-300' : 'text-emerald-500 border-emerald-400'}`}>
                                         {dataReceipt?.serie}-{dataReceipt?.correlativo}
                                     </span>
-                                    <p className="text-sm text-gray-500">Disponible en tu historial de comprobantes.</p>
+                                    <p className="text-sm text-gray-500">
+                                        {isPendiente ? 'Disponible en comprobantes — se confirmará solo.' : 'Disponible en tu historial de comprobantes.'}
+                                    </p>
                                 </div>
                             </div>
                             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">

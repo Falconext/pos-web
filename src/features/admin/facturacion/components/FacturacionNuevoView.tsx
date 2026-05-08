@@ -116,6 +116,7 @@ export const FacturacionNuevoView = () => {
                     productsInvoice={vm.productsInvoice}
                     formValues={vm.formValues}
                     observation={vm.formValues?.observaciones}
+                    isPendiente={vm.isComprobantePendiente}
                 />
             )}
 

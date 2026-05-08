@@ -114,6 +114,7 @@ export const useFacturacionViewModel = () => {
     const [receiptNote, setReceiptNote] = useState<string>("FACTURA")
     const [serie, setSerie] = useState<string>("");
     const [IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice] = useState<boolean>(false);
+    const [isComprobantePendiente, setIsComprobantePendiente] = useState<boolean>(false);
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [descountGlobal, _setDescountGlobal] = useState<number>(0)
@@ -783,6 +784,7 @@ export const useFacturacionViewModel = () => {
         }
 
         if (result.success === true) {
+            setIsComprobantePendiente(!!(result as any).pendiente);
             setIsLoading(false);
         } else {
             setIsOpenModalSuccessInvoice(false);
@@ -931,6 +933,7 @@ export const useFacturacionViewModel = () => {
         isModalRetencionOpen, setIsModalRetencionOpen,
         isQuotationConfigModalOpen, setIsQuotationConfigModalOpen,
         IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice,
+        isComprobantePendiente,
         showMobileCart, setShowMobileCart,
         editingIndex, setEditingIndex,
 

@@ -235,11 +235,12 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
             const resp: any = await post(`comprobante/${data.tipoDoc === "01" ? "factura" : data.tipoDoc === "03" ? "boleta" : data.tipoDoc === "07" ? "nota-credito" : "nota-debito"}`, payload);
             console.log(resp);
             if (resp.code === 1) {
+                const isPendiente = (resp.data?.status ?? resp.status) === 'PENDIENTE';
                 useAlertStore.setState({ success: true });
                 useAlertStore.setState({ loading: false });
                 await useClientsStore.getState().resetClients();
                 // NOTA: No llamar resetProducts() - borra el catálogo de productos
-                return { success: true };
+                return { success: true, pendiente: isPendiente };
             } else {
                 useAlertStore.getState().alert(resp.error || "Error al crear el recibo", "error");
                 return { success: false, error: resp.error || "Error al crear el recibo" };
