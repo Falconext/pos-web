@@ -6,7 +6,7 @@ import NotificacionesCampana from '@/components/NotificacionesCampana'
 import { hasPermission, hasSubPermission, getRedirectPath } from '@/utils/permissions'
 import { useThemeStore } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
-import { BRAND } from '@/lib/branding'
+import { BRAND, getBrandByKey } from '@/lib/branding'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
@@ -189,6 +189,11 @@ export default function AdminLayout() {
   // Determine theme based on role
   const isSystemAdmin = auth?.rol === 'ADMIN_SISTEMA'
 
+  // Para ADMIN_SISTEMA con sistemaNegocio asignado, usar branding de su plataforma
+  const sidebarBrand = isSystemAdmin && auth?.sistemaNegocio
+    ? getBrandByKey(auth.sistemaNegocio)
+    : BRAND
+
   // Mapping SidebarColor to gradient backgrounds
   const getSidebarBackground = (color: string) => {
     switch (color) {
@@ -257,11 +262,11 @@ export default function AdminLayout() {
         <div className={`flex items-center mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
           <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center justify-center w-10 h-10">
-              <img src={BRAND.logoWhite} alt={BRAND.name} className="w-10 h-10 object-contain rounded-full" />
+              <img src={sidebarBrand.logoWhite} alt={sidebarBrand.name} className="w-10 h-10 object-contain rounded-full" />
             </div>
             {!isSidebarCollapsed && (
               <div>
-                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900 dark:text-white">{BRAND.name.toUpperCase()}</h2>
+                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900 dark:text-white">{sidebarBrand.name.toUpperCase()}</h2>
                 <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Administrativo</p>
               </div>
             )}

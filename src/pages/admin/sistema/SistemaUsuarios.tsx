@@ -286,7 +286,7 @@ export default function SistemaUsuarios() {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">DNI</th>
                 <th className="px-6 py-4">Celular</th>
-                <th className="px-6 py-4">Sistema de negocio</th>
+                {esSuperAdmin && <th className="px-6 py-4">Sistema de negocio</th>}
                 <th className="px-6 py-4 text-center">Estado</th>
                 <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
@@ -295,7 +295,7 @@ export default function SistemaUsuarios() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: esSuperAdmin ? 7 : 6 }).map((_, j) => (
                       <td key={j} className="px-6 py-4">
                         <div className="h-4 bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
                       </td>
@@ -304,7 +304,7 @@ export default function SistemaUsuarios() {
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-gray-400">
+                  <td colSpan={esSuperAdmin ? 7 : 6} className="px-6 py-20 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <Icon icon="solar:shield-user-linear" width={52} className="opacity-20" />
                       <p className="text-sm">{search ? 'No se encontraron administradores.' : 'No hay administradores creados aún.'}</p>
@@ -330,7 +330,7 @@ export default function SistemaUsuarios() {
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
                     <td className="px-6 py-4 font-mono text-gray-500 dark:text-gray-400">{u.dni}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.celular}</td>
-                    <td className="px-6 py-4"><NegocioBadge sn={u.sistemaNegocio} /></td>
+                    {esSuperAdmin && <td className="px-6 py-4"><NegocioBadge sn={u.sistemaNegocio} /></td>}
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleToggleState(u)}

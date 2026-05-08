@@ -58,3 +58,6 @@ const brands: Record<string, BrandConfig> = {
 const activeBrandKey = import.meta.env.VITE_PUBLIC_BRAND || 'krezka';
 
 export const BRAND = brands[activeBrandKey] || brands.krezka;
+
+export const getBrandByKey = (key?: string | null): BrandConfig =>
+  brands[(key ?? '').toLowerCase()] || BRAND;
