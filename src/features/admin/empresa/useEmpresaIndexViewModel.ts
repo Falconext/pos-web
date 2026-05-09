@@ -63,7 +63,21 @@ export const useEmpresaIndexViewModel = (): any => {
         return { id: empresa.id, 'RUC': empresa.ruc, 'Razon Social': empresa.razonSocial, 'Rubro': empresa?.rubro?.nombre || '-', plan: empresa.plan?.nombre || '-', 'Uso Mensual': usoDisplay, tienda: tiendaEstado, fechaExpiracion: new Date(empresa.fechaExpiracion).toLocaleDateString(), estado: empresa.estado };
     }) || [];
 
+    const [drawerEmpresa, setDrawerEmpresa] = useState<any>(null);
+    const [alertasDismissed, setAlertasDismissed] = useState(false);
+
+    const proximasVencer = (empresas || []).filter((e: any) => {
+        if (!e.fechaExpiracion) return false;
+        const dias = Math.ceil((new Date(e.fechaExpiracion).getTime() - Date.now()) / 86400000);
+        return dias >= 0 && dias <= 7;
+    });
+
+    const handleViewDetails = (row: any) => {
+        const full = empresas?.find((e: any) => e.id === row.id);
+        setDrawerEmpresa(full ?? row);
+    };
+
     const refreshEmpresas = () => listarEmpresas({ search: debounceSearch, page: currentPageState, limit: itemsPerPage, sort: 'id', order: 'desc' });
 
-    return { empresas, empresasTable, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro };
+    return { empresas, empresasTable, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed };
 };

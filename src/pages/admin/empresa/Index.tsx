@@ -4,6 +4,7 @@ import DataTable from '@/components/Datatable';
 import Pagination from '@/components/Pagination';
 import Button from '@/components/Button';
 import EmpresaFormModal from '@/components/Empresa/EmpresaFormModal';
+import EmpresaDrawer from '@/components/Empresa/EmpresaDrawer';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import ModalConfirm from '@/components/ModalConfirm';
@@ -13,6 +14,7 @@ const EmpresasIndex = () => {
   const vm = useEmpresaIndexViewModel();
 
   const actions: any = [
+    { onClick: vm.handleViewDetails, className: "details", icon: <Icon color="#6366F1" icon="solar:eye-bold-duotone" />, tooltip: "Ver detalles" },
     { onClick: vm.handleEdit, className: "edit", icon: <Icon color="#66AD78" icon="material-symbols:edit" />, tooltip: "Editar" },
     { onClick: vm.handleToggleState, className: "toggle", icon: <Icon icon="mdi:power" color="#F59E0B" />, tooltip: "Activar/Desactivar" },
     { onClick: vm.handleDelete, className: "delete", icon: <Icon icon="mdi:trash-can" color="#EF443C" />, tooltip: "Eliminar" },
@@ -38,6 +40,46 @@ const EmpresasIndex = () => {
           Nueva Empresa
         </button>
       </div>
+      {/* Alertas de vencimiento */}
+      {vm.proximasVencer.length > 0 && !vm.alertasDismissed && (
+        <div className="mb-4 flex items-start gap-3 px-4 py-3.5 rounded-2xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center flex-shrink-0">
+            <Icon icon="solar:alarm-bold-duotone" className="text-amber-600 dark:text-amber-400 text-xl" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+              {vm.proximasVencer.length === 1
+                ? '1 empresa vence en los próximos 7 días'
+                : `${vm.proximasVencer.length} empresas vencen en los próximos 7 días`}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {vm.proximasVencer.map((e: any) => {
+                const dias = Math.ceil((new Date(e.fechaExpiracion).getTime() - Date.now()) / 86400000);
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => vm.setDrawerEmpresa(e)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-800/40 hover:bg-amber-200 dark:hover:bg-amber-700/50 text-amber-800 dark:text-amber-300 text-xs font-semibold transition-colors"
+                  >
+                    <span>{e.nombreComercial || e.razonSocial}</span>
+                    <span className="text-amber-600 dark:text-amber-400">·</span>
+                    <span className={dias === 0 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}>
+                      {dias === 0 ? 'vence hoy' : `${dias}d`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <button
+            onClick={() => vm.setAlertasDismissed(true)}
+            className="p-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-800/40 text-amber-500 flex-shrink-0 transition-colors"
+          >
+            <Icon icon="solar:close-bold" width={16} />
+          </button>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
         <div className="p-5 border-b border-gray-100 dark:border-slate-800">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -69,6 +111,7 @@ const EmpresasIndex = () => {
         confirmSubmit={vm.confirmAction}
       />
       <EmpresaFormModal open={vm.openEmpresaModal} mode={vm.empresaModalMode} empresaId={vm.empresaEditingId} onClose={() => vm.setOpenEmpresaModal(false)} onSaved={vm.refreshEmpresas} />
+      <EmpresaDrawer empresa={vm.drawerEmpresa} onClose={() => vm.setDrawerEmpresa(null)} />
     </div>
   );
 };
