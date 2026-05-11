@@ -13,6 +13,7 @@ interface BarcodeScannerInputProps {
     className?: string;
     label?: string;
     name?: string;
+    error?: boolean;
 }
 
 export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
@@ -26,19 +27,23 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
     className,
     label,
     name,
+    error = false,
 }) => {
     return (
-        <div className={cn('relative', className)}>
+        <div className={cn('relative group', className)}>
             {label && (
-                <label className="block text-sm font-[400] text-gray-900 dark:!text-gray-300 mb-2">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1">
                     {label}
                 </label>
             )}
             <div className="relative">
                 <Icon
                     icon="solar:barcode-bold-duotone"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
-                    width={18}
+                    className={cn(
+                        "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
+                        loading ? "text-violet-500" : error ? "text-red-500" : "text-gray-400 dark:text-gray-500"
+                    )}
+                    width={20}
                 />
                 <input
                     ref={inputRef}
@@ -50,21 +55,37 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
                         if (e.key === 'Enter') {
                             e.preventDefault();
                             e.stopPropagation();
-                            onScan?.(value);
+                            if (value.trim()) {
+                                onScan?.(value.trim());
+                            }
                         }
                     }}
                     placeholder={placeholder}
                     disabled={disabled || loading}
                     autoComplete="off"
-                    className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-9 py-2.5 text-sm text-[#6B7280] placeholder:text-[#6B7280] font-[300] dark:bg-[#131620] dark:border-slate-800 dark:text-gray-300 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-400 dark:focus:ring-slate-800 dark:focus:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-900 transition-all duration-150"
+                    className={cn(
+                        "w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 font-medium dark:bg-[#131620] dark:border-slate-800 dark:text-gray-300 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-150 shadow-sm",
+                        error 
+                            ? "border-red-300 focus:ring-red-100 focus:border-red-500 dark:border-red-900/50" 
+                            : "focus:ring-violet-100 focus:border-violet-500 dark:focus:ring-violet-900/20 dark:focus:border-violet-500",
+                        disabled && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900"
+                    )}
                 />
-                {loading && (
-                    <Icon
-                        icon="solar:refresh-bold"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-violet-400 pointer-events-none"
-                        width={16}
-                    />
-                )}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                    {loading ? (
+                        <Icon
+                            icon="solar:refresh-bold"
+                            className="animate-spin text-violet-500"
+                            width={16}
+                        />
+                    ) : error ? (
+                        <Icon
+                            icon="solar:danger-bold"
+                            className="text-red-500"
+                            width={16}
+                        />
+                    ) : null}
+                </div>
             </div>
         </div>
     );

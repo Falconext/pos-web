@@ -52,6 +52,7 @@ export const useFacturacionViewModel = () => {
     // Barcode scanner state
     const [barcodeInput, setBarcodeInput] = useState('');
     const [barcodeLoading, setBarcodeLoading] = useState(false);
+    const [barcodeError, setBarcodeError] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
 
     const _stateDefaultType = (location.state as any)?.defaultType as string | undefined;
@@ -99,7 +100,7 @@ export const useFacturacionViewModel = () => {
     }
 
     const initialFormProduct: IFormProduct = {
-        productoId: 0, descripcion: "", categoriaId: 0, precioUnitario: 0, categoriaNombre: "", afectacionNombre: "Gravado – Operación Onerosa", tipoAfectacionIGV: "10", stock: 50, codigo: "", unidadMedidaId: 1, unidadMedidaNombre: "UNIDAD", estado: ""
+        productoId: 0, descripcion: "", categoriaId: 0, precioUnitario: 0, categoriaNombre: "", afectacionNombre: "Gravado – Operación Onerosa", tipoAfectacionIGV: "10", stock: 50, codigo: "", unidadMedidaId: 1, unidadMedidaNombre: "UNIDAD", estado: "", codigoBarras: ""
     }
 
     const [formValuesProduct, setFormValuesProduct] = useState<IFormProduct>(initialFormProduct);
@@ -487,23 +488,51 @@ export const useFacturacionViewModel = () => {
     const handleBarcodeScan = async (codigo: string) => {
         const trimmed = codigo.trim();
         if (!trimmed) return;
+        
         setBarcodeLoading(true);
+        setBarcodeError(false);
+        
         try {
             const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
-            if (resp.code === 1 && resp.data) {
-                handleProductClick(resp.data);
+            if (resp.id) { // Backend returns product directly or error
+                handleProductClick(resp);
                 setBarcodeInput('');
+                // Success beep logic could go here
             } else {
-                useAlertStore.getState().alert(`Producto no encontrado: ${trimmed}`, 'error');
-                setBarcodeInput('');
+                handleBarcodeNotFound(trimmed);
             }
-        } catch {
-            useAlertStore.getState().alert(`Código de barras no encontrado: ${trimmed}`, 'error');
-            setBarcodeInput('');
+        } catch (error: any) {
+            console.error('Error scanning barcode:', error);
+            handleBarcodeNotFound(trimmed);
         } finally {
             setBarcodeLoading(false);
             barcodeRef.current?.focus();
         }
+    };
+
+    const handleBarcodeNotFound = (barcode: string) => {
+        setBarcodeError(true);
+        setBarcodeInput('');
+        
+        // Alerta con opción de creación rápida
+        useAlertStore.getState().alert(
+            `Código ${barcode} no encontrado. ¿Deseas crear el producto?`, 
+            'warning'
+        );
+        
+        // Pre-configurar el formulario de producto con el código escaneado
+        setFormValuesProduct({
+            ...initialFormProduct,
+            codigoBarras: barcode,
+            // Intentar generar un código correlativo para el SKU
+            codigo: "" 
+        });
+
+        // Opcional: Podríamos abrir el modal automáticamente después de un delay
+        // o dejar que el usuario haga clic en el botón de "Producto"
+        // Por ahora, lo dejaremos listo en el formValuesProduct.
+        
+        setTimeout(() => setBarcodeError(false), 2000);
     };
 
     const handleSelectWholesaleTier = (index: number, tier: { cantidadMinima: number; precio: number } | null) => {

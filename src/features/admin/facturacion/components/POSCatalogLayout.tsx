@@ -37,6 +37,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                     onChange={(e) => vm.setBarcodeInput(e.target.value)}
                     onScan={(val) => vm.handleBarcodeScan(val)}
                     loading={vm.barcodeLoading}
+                    error={vm.barcodeError}
                 />
 
                 <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
