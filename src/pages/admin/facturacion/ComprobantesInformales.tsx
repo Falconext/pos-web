@@ -190,6 +190,17 @@ const ComprobantesInformales = () => {
                             <Icon icon="solar:letter-bold" width={16} height={16} />
                             <span>Enviar Email</span>
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                handleAbrirModal(rowBase, 'whatsapp');
+                                setOpenAccionesId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 hover:bg-green-50"
+                        >
+                            <Icon icon="mdi:whatsapp" width={16} height={16} />
+                            <span>Enviar WhatsApp</span>
+                        </button>
                     </div>
                 )}
             </div>

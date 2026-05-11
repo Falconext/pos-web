@@ -213,22 +213,42 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                 </p>
                             </div>
 
-                            <div className="flex gap-3 pt-1">
-                                <Button onClick={handleClose} className="flex-1 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700">
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    onClick={handleEnviarWhatsApp}
-                                    disabled={enviandoWhatsApp || !numeroDestino.trim()}
-                                    className="flex-1 bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                            <div className="flex flex-col gap-2 pt-1">
+                                <div className="flex gap-3">
+                                    <Button onClick={handleClose} className="flex-1 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700">
+                                        Cancelar
+                                    </Button>
+                                    {/* 
+                                    <Button
+                                        onClick={handleEnviarWhatsApp}
+                                        disabled={enviandoWhatsApp || !numeroDestino.trim()}
+                                        className="flex-1 bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                                    >
+                                        {enviandoWhatsApp ? (
+                                            <Icon icon="line-md:loading-twotone-loop" className="text-xl" />
+                                        ) : (
+                                            <Icon icon="solar:whatsapp-bold" className="text-xl" />
+                                        )}
+                                        {enviandoWhatsApp ? 'Enviando...' : 'Enviar (API)'}
+                                    </Button>
+                                    */}
+                                </div>
+                                
+                                <button
+                                    onClick={() => {
+                                        const num = numeroDestino.trim().replace(/\D/g, '');
+                                        const finalNum = num.startsWith('51') ? num : `51${num}`;
+                                        const mensaje = encodeURIComponent(
+                                            `Hola ${comprobante.clienteNombre}, te enviamos tu ${comprobante.comprobante} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${pdfUrl || 'Generando...'}`
+                                        );
+                                        window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
+                                    }}
+                                    disabled={!numeroDestino.trim()}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-green-500 text-green-600 dark:text-green-400 font-bold hover:bg-green-50 dark:hover:bg-green-900/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {enviandoWhatsApp ? (
-                                        <Icon icon="line-md:loading-twotone-loop" className="text-xl" />
-                                    ) : (
-                                        <Icon icon="mdi:whatsapp" className="text-xl" />
-                                    )}
-                                    {enviandoWhatsApp ? 'Enviando...' : 'Enviar por WhatsApp'}
-                                </Button>
+                                    <Icon icon="solar:share-circle-bold-duotone" className="text-xl" />
+                                    Abrir enlace directo de WhatsApp
+                                </button>
                             </div>
                         </div>
                     )}
