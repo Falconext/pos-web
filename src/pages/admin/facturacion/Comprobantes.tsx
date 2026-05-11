@@ -16,7 +16,7 @@ import { useAuthStore } from "@/zustand/auth";
 import QRCode from 'qrcode'
 import { Calendar } from "@/components/Date";
 import Select from "@/components/Select";
-import { get } from "@/utils/fetch";
+import { get, post } from "@/utils/fetch";
 import ModalConfirm from "@/components/ModalConfirm";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -74,7 +74,32 @@ const Comprobantes = () => {
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
+    const [pdfLoading, setPdfLoading] = useState(false);
     const [shouldPrint, setShouldPrint] = useState(false);
+
+    const handleVerPdf = async (row: any) => {
+        handleCloseMenu();
+        const corr = String(row.correlativo || '').padStart(8, '0');
+        setPdfName(`${row.serie}-${corr}.pdf`);
+        setPdfUrl('');
+        setIsOpenModalPdf(true);
+
+        if (row.s3PdfUrl) {
+            setPdfUrl(row.s3PdfUrl);
+            return;
+        }
+
+        setPdfLoading(true);
+        try {
+            const res: any = await post(`comprobante/${row.id}/generar-pdf`, {});
+            const url = res?.data?.pdfUrl || res?.pdfUrl;
+            if (url) setPdfUrl(url);
+        } catch {
+            // silencioso — el modal muestra "No hay PDF disponible"
+        } finally {
+            setPdfLoading(false);
+        }
+    };
 
     const handleDownloadAsset = async (url?: string, fallbackName: string = 'archivo') => {
         if (!url) return;
@@ -687,23 +712,31 @@ const Comprobantes = () => {
             )}
             <Modal
                 isOpenModal={isOpenModalPdf}
-                closeModal={() => setIsOpenModalPdf(false)}
-                title="Vista previa del PDF"
+                closeModal={() => { setIsOpenModalPdf(false); setPdfUrl(''); setPdfLoading(false); }}
+                title="VISTA PREVIA DEL PDF"
                 width="980px"
             >
                 <div className="p-3 space-y-3">
                     <div className="flex justify-end">
-                        <a
-                            href={pdfUrl || '#'}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-1.5 text-xs rounded-md bg-[#6A6CFF] text-white hover:opacity-90"
-                        >
-                            Descargar
-                        </a>
+                        {pdfUrl && (
+                            <a
+                                href={pdfUrl}
+                                download={pdfName}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3 py-1.5 text-xs rounded-md bg-[#6A6CFF] text-white hover:opacity-90"
+                            >
+                                Descargar
+                            </a>
+                        )}
                     </div>
-                    <div className="h-[80vh]">
-                        {pdfUrl ? (
+                    <div className="h-[80vh] flex items-center justify-center">
+                        {pdfLoading ? (
+                            <div className="flex flex-col items-center gap-3 text-gray-400">
+                                <Icon icon="solar:refresh-bold" className="animate-spin text-violet-500" width={36} />
+                                <span className="text-sm">Generando PDF...</span>
+                            </div>
+                        ) : pdfUrl ? (
                             <iframe src={pdfUrl} className="w-full h-full rounded-lg border" />
                         ) : (
                             <div className="text-center text-gray-500 text-sm">No hay PDF disponible</div>
@@ -775,17 +808,8 @@ const Comprobantes = () => {
 
                             <button
                                 type="button"
-                                disabled={!rowBase.s3PdfUrl}
-                                onClick={() => {
-                                    if (rowBase.s3PdfUrl) {
-                                        setPdfUrl(rowBase.s3PdfUrl as string);
-                                        const corr = String(rowBase.correlativo || '').padStart(8, '0');
-                                        setPdfName(`${rowBase.serie}-${corr}.pdf`);
-                                        setIsOpenModalPdf(true);
-                                    }
-                                    handleCloseMenu();
-                                }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.s3PdfUrl ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
+                                onClick={() => handleVerPdf(rowBase)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="mdi:file-pdf-box" width={16} height={16} />
                                 <span>Ver PDF</span>
@@ -831,6 +855,18 @@ const Comprobantes = () => {
                             >
                                 <Icon icon="solar:letter-bold" width={16} height={16} />
                                 <span>Enviar Email</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleAbrirModal(rowBase, 'whatsapp');
+                                    handleCloseMenu();
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 hover:bg-green-50"
+                            >
+                                <Icon icon="mdi:whatsapp" width={16} height={16} />
+                                <span>Enviar WhatsApp</span>
                             </button>
 
                             {(rowBase.comprobante?.includes('COTIZACI') || rowBase.tipoDoc === 'COT') && (
