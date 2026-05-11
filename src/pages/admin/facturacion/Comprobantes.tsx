@@ -82,14 +82,9 @@ const Comprobantes = () => {
         const corr = String(row.correlativo || '').padStart(8, '0');
         setPdfName(`${row.serie}-${corr}.pdf`);
         setPdfUrl('');
+        setPdfLoading(true);
         setIsOpenModalPdf(true);
 
-        if (row.s3PdfUrl) {
-            setPdfUrl(row.s3PdfUrl);
-            return;
-        }
-
-        setPdfLoading(true);
         try {
             const res: any = await post(`comprobante/${row.id}/generar-pdf`, {});
             const url = res?.data?.pdfUrl || res?.pdfUrl;
