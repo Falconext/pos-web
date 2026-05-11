@@ -558,7 +558,7 @@ function TabMovimientos({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewMo
             </div>
 
             {/* ── Tabla Ingresos ── */}
-            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-900/10">
                     <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
                         <Icon icon="solar:wallet-money-bold-duotone" width={17} /> Ingresos
@@ -625,7 +625,7 @@ function TabMovimientos({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewMo
             </div>
 
             {/* ── Tabla Gastos ── */}
-            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-slate-800 bg-violet-50/50 dark:bg-violet-900/10">
                     <h3 className="text-sm font-bold text-violet-700 dark:text-violet-400 flex items-center gap-2">
                         <Icon icon="solar:card-bold-duotone" width={17} /> Gastos
@@ -696,6 +696,301 @@ function TabMovimientos({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewMo
                             </tbody>
                         </table>
                     </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+
+
+    const isIngresos = subTab === 'ingresos';
+    const balance = vm.totalIngresos - vm.totalGastos;
+
+    // Resúmenes de categorías
+    const resumenTipo = CATEGORIAS_INGRESO.map((c) => ({
+        ...c,
+        total: vm.ingresos.filter((i) => i.tipo === c.value).reduce((s: number, i: any) => s + Number(i.monto), 0),
+        count: vm.ingresos.filter((i) => i.tipo === c.value).length,
+    })).filter((c) => c.count > 0);
+
+    const resumenCat = CATEGORIAS_GASTO.map((c) => ({
+        ...c,
+        total: vm.gastos.filter((g) => g.categoria === c.value).reduce((s: number, g: any) => s + Number(g.monto), 0),
+        count: vm.gastos.filter((g) => g.categoria === c.value).length,
+    })).filter((c) => c.count > 0);
+
+    return (
+        <div className="space-y-5">
+
+            {/* ── Filtros compartidos + acciones ── */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2 flex-1 flex-wrap">
+                    <div className="w-40">
+                        <Calendar
+                            text="Desde"
+                            name="filtroDesde"
+                            value={toDisplay(isIngresos ? vm.filtroDesdeIngreso : vm.filtroDesde)}
+                            onChange={(v: string) => isIngresos ? vm.setFiltroDesdeIngreso(toISO(v)) : vm.setFiltroDesde(toISO(v))}
+                        />
+                    </div>
+                    <span className="text-gray-400 text-sm">—</span>
+                    <div className="w-40">
+                        <Calendar
+                            text="Hasta"
+                            name="filtroHasta"
+                            value={toDisplay(isIngresos ? vm.filtroHastaIngreso : vm.filtroHasta)}
+                            onChange={(v: string) => isIngresos ? vm.setFiltroHastaIngreso(toISO(v)) : vm.setFiltroHasta(toISO(v))}
+                        />
+                    </div>
+                    <div className="w-56">
+                        {isIngresos ? (
+                            <Select
+                                label="Tipo"
+                                name="filtroTipo"
+                                options={[{ id: '', value: 'Todos los tipos' }, ...CATEGORIAS_INGRESO.map((c) => ({ id: c.value, value: c.label }))]}
+                                value={vm.filtroTipoIngreso ? (CATEGORIAS_INGRESO.find((c) => c.value === vm.filtroTipoIngreso)?.label ?? '') : 'Todos los tipos'}
+                                onChange={(id: any) => vm.setFiltroTipoIngreso(id)}
+                                error=""
+                                readOnly
+                            />
+                        ) : (
+                            <Select
+                                label="Categoría"
+                                name="filtroCategoria"
+                                options={[{ id: '', value: 'Todas las categorías' }, ...CATEGORIAS_GASTO.map((c) => ({ id: c.value, value: c.label }))]}
+                                value={vm.filtroCategoria ? (CATEGORIAS_GASTO.find((c) => c.value === vm.filtroCategoria)?.label ?? '') : 'Todas las categorías'}
+                                onChange={(id: any) => vm.setFiltroCategoria(id)}
+                                error=""
+                                readOnly
+                            />
+                        )}
+                    </div>
+                    <button
+                        onClick={() => isIngresos ? vm.cargarIngresos() : vm.cargarGastos()}
+                        className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 transition-colors"
+                    >
+                        <Icon icon="solar:refresh-bold" width={16} />
+                    </button>
+                </div>
+
+                {/* Botón de acción según sub-tab */}
+                {isIngresos ? (
+                    <button
+                        onClick={vm.abrirNuevoIngreso}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-200 transition-colors flex-shrink-0"
+                    >
+                        <Icon icon="solar:add-circle-bold" width={18} />
+                        Registrar ingreso
+                    </button>
+                ) : (
+                    <button
+                        onClick={vm.abrirNuevo}
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-bold shadow-md shadow-violet-200 transition-colors flex-shrink-0"
+                    >
+                        <Icon icon="solar:add-circle-bold" width={18} />
+                        Registrar gasto
+                    </button>
+                )}
+            </div>
+
+            {/* ── Tarjetas de resumen ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
+                    <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                        <Icon icon="solar:wallet-money-bold-duotone" width={18} />
+                        Total ingresos
+                    </span>
+                    <span className="text-lg font-black text-emerald-700 dark:text-emerald-400">{fmt(vm.totalIngresos)}</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800/40">
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+                        <Icon icon="solar:card-bold-duotone" width={18} />
+                        Total gastos
+                    </span>
+                    <span className="text-lg font-black text-red-600 dark:text-red-400">{fmt(vm.totalGastos)}</span>
+                </div>
+                <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${balance >= 0 ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/40' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800/40'}`}>
+                    <span className={`text-sm font-bold flex items-center gap-2 ${balance >= 0 ? 'text-blue-700 dark:text-blue-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                        <Icon icon={balance >= 0 ? 'solar:graph-up-bold-duotone' : 'solar:graph-down-bold-duotone'} width={18} />
+                        Balance neto
+                    </span>
+                    <span className={`text-lg font-black ${balance >= 0 ? 'text-blue-700 dark:text-blue-400' : 'text-orange-700 dark:text-orange-400'}`}>{fmt(balance)}</span>
+                </div>
+            </div>
+
+            {/* ── Sub-tabs: Ingresos | Gastos ── */}
+            <div className="flex gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
+                <button
+                    onClick={() => setSubTab('ingresos')}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        subTab === 'ingresos'
+                            ? 'bg-white dark:bg-[#111827] text-emerald-600 shadow-sm'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+                    }`}
+                >
+                    <Icon icon="solar:wallet-money-bold-duotone" width={15} />
+                    Ingresos
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                        subTab === 'ingresos' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 dark:bg-slate-700 text-gray-500'
+                    }`}>{vm.ingresos.length}</span>
+                </button>
+                <button
+                    onClick={() => setSubTab('gastos')}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        subTab === 'gastos'
+                            ? 'bg-white dark:bg-[#111827] text-violet-600 shadow-sm'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+                    }`}
+                >
+                    <Icon icon="solar:card-bold-duotone" width={15} />
+                    Gastos
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                        subTab === 'gastos' ? 'bg-violet-100 text-violet-700' : 'bg-gray-200 dark:bg-slate-700 text-gray-500'
+                    }`}>{vm.gastos.length}</span>
+                </button>
+            </div>
+
+            {/* ── Mini resumen de categorías (según sub-tab activo) ── */}
+            {isIngresos && resumenTipo.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {resumenTipo.map((c) => (
+                        <div key={c.value} className="bg-white dark:bg-[#111827] rounded-xl border border-gray-100 dark:border-slate-800 p-3 text-center">
+                            <div className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: c.color + '20' }}>
+                                <Icon icon={c.icon} width={18} style={{ color: c.color }} />
+                            </div>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate">{c.label}</p>
+                            <p className="text-sm font-black text-gray-900 dark:text-white">{fmt(c.total)}</p>
+                            <p className="text-[10px] text-gray-400">{c.count} ingreso{c.count !== 1 ? 's' : ''}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {!isIngresos && resumenCat.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {resumenCat.map((c) => (
+                        <div key={c.value} className="bg-white dark:bg-[#111827] rounded-xl border border-gray-100 dark:border-slate-800 p-3 text-center">
+                            <div className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: c.color + '20' }}>
+                                <Icon icon={c.icon} width={18} style={{ color: c.color }} />
+                            </div>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate">{c.label}</p>
+                            <p className="text-sm font-black text-gray-900 dark:text-white">{fmt(c.total)}</p>
+                            <p className="text-[10px] text-gray-400">{c.count} gastos</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── Tabla según sub-tab ── */}
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                {isIngresos ? (
+                    vm.loadingIngresos ? (
+                        <div className="flex items-center justify-center h-40"><Icon icon="eos-icons:loading" className="w-8 h-8 text-emerald-500" /></div>
+                    ) : vm.ingresos.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                            <Icon icon="solar:wallet-money-bold-duotone" width={48} className="mb-3 opacity-40" />
+                            <p className="text-base font-semibold">No hay ingresos registrados</p>
+                            <p className="text-sm mt-1">Registra el primer ingreso de caja del sistema</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-900/30">
+                                        <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha</th>
+                                        <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Concepto</th>
+                                        <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo</th>
+                                        <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Monto</th>
+                                        <th className="px-5 py-3" />
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+                                    {vm.ingresos.map((ing) => {
+                                        const tipo = tipoInfo(ing.tipo);
+                                        return (
+                                            <tr key={ing.id} className="hover:bg-gray-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                                <td className="px-5 py-3.5 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(ing.fecha).toLocaleDateString('es-PE')}</td>
+                                                <td className="px-5 py-3.5">
+                                                    <p className="font-semibold text-gray-900 dark:text-white">{ing.concepto}</p>
+                                                    {ing.descripcion && <p className="text-xs text-gray-400 mt-0.5">{ing.descripcion}</p>}
+                                                </td>
+                                                <td className="px-5 py-3.5">
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: tipo.color + '18', color: tipo.color }}>
+                                                        <Icon icon={tipo.icon} width={12} />{tipo.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{fmt(ing.monto)}</td>
+                                                <td className="px-5 py-3.5">
+                                                    <div className="flex items-center gap-1 justify-end">
+                                                        <button onClick={() => vm.abrirEditarIngreso(ing)} className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 transition-colors"><Icon icon="solar:pen-bold" width={15} /></button>
+                                                        <button onClick={() => vm.eliminarIngreso(ing.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"><Icon icon="solar:trash-bin-trash-bold" width={15} /></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )
+                ) : (
+                    vm.loadingGastos ? (
+                        <div className="flex items-center justify-center h-40"><Icon icon="eos-icons:loading" className="w-8 h-8 text-violet-500" /></div>
+                    ) : vm.gastos.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                            <Icon icon="solar:card-search-bold-duotone" width={48} className="mb-3 opacity-40" />
+                            <p className="text-base font-semibold">No hay gastos registrados</p>
+                            <p className="text-sm mt-1">Registra el primer gasto del sistema</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-900/30">
+                                        <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha</th>
+                                        <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Concepto</th>
+                                        <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Categoría</th>
+                                        <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Monto</th>
+                                        <th className="text-center px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Recurrente</th>
+                                        <th className="px-5 py-3" />
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+                                    {vm.gastos.map((g) => {
+                                        const cat = catInfo(g.categoria);
+                                        return (
+                                            <tr key={g.id} className="hover:bg-gray-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                                <td className="px-5 py-3.5 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(g.fecha).toLocaleDateString('es-PE')}</td>
+                                                <td className="px-5 py-3.5">
+                                                    <p className="font-semibold text-gray-900 dark:text-white">{g.concepto}</p>
+                                                    {g.descripcion && <p className="text-xs text-gray-400 mt-0.5">{g.descripcion}</p>}
+                                                </td>
+                                                <td className="px-5 py-3.5">
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cat.color + '18', color: cat.color }}>
+                                                        <Icon icon={cat.icon} width={12} />{cat.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right font-bold text-red-600 dark:text-red-400 whitespace-nowrap">{fmt(g.monto)}</td>
+                                                <td className="px-5 py-3.5 text-center">
+                                                    {g.recurrente ? (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                                                            <Icon icon="solar:refresh-circle-bold" width={12} />{g.periodicidad ?? 'Mensual'}
+                                                        </span>
+                                                    ) : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>}
+                                                </td>
+                                                <td className="px-5 py-3.5">
+                                                    <div className="flex items-center gap-1 justify-end">
+                                                        <button onClick={() => vm.abrirEditar(g)} className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 transition-colors"><Icon icon="solar:pen-bold" width={15} /></button>
+                                                        <button onClick={() => vm.eliminarGasto(g.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"><Icon icon="solar:trash-bin-trash-bold" width={15} /></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )
                 )}
             </div>
         </div>

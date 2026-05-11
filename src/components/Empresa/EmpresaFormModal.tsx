@@ -39,6 +39,7 @@ interface CreateFormData {
   fechaExpiracion?: string;
   usuarioPse?: string;
   contrasenaPse?: string;
+  usaDemo: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
   usuario: {
@@ -68,6 +69,7 @@ interface EditFormData {
   fechaExpiracion: string;
   usuarioPse?: string;
   contrasenaPse?: string;
+  usaDemo: boolean;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   usuario?: {
@@ -78,6 +80,21 @@ interface EditFormData {
     celular?: string;
   };
 }
+
+const DEMO_FILL = {
+  ruc: '20999999999',
+  razonSocial: 'EMPRESA DEMO S.A.C.',
+  nombreComercial: 'Empresa Demo',
+  direccion: 'Av. Las Pruebas Nro. 123',
+  tipoEmpresa: 'FORMAL' as const,
+  usuario: {
+    nombre: 'Administrador Demo',
+    email: 'admin@demo.com',
+    password: 'Demo@1234',
+    dni: '00000001',
+    celular: '999000001',
+  },
+};
 
 export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSaved }: EmpresaFormModalProps) {
   const isEdit = mode === 'edit';
@@ -111,6 +128,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     fechaActivacion: new Date().toISOString().split('T')[0],
     fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     usaCodigoBarrasManual: false,
+    usaDemo: false,
     brand: '',
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
@@ -132,6 +150,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     fechaExpiracion: '',
     usuarioPse: '',
     contrasenaPse: '',
+    usaDemo: false,
     esAgenteRetencion: false,
     usaCodigoBarrasManual: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
@@ -142,7 +161,6 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [initialEditPlanId, setInitialEditPlanId] = useState<number | undefined>(undefined);
 
-  // Load catalogs and entity when opens
   useEffect(() => {
     if (!open) return;
     getRubros();
@@ -158,9 +176,6 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     }
   }, [open, isEdit, empresaId, getRubros, getUbigeos, getPlanes, obtenerEmpresa, initialCreate]);
 
-  // Resto del código...
-
-  // Populate edit form when empresa loads
   useEffect(() => {
     if (open && isEdit && empresa && empresaId && empresa.id === empresaId) {
       const adminUser = (empresa as any).usuarios && (empresa as any).usuarios.length > 0
@@ -184,52 +199,72 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         fechaExpiracion: empresa.fechaExpiracion.split('T')[0],
         usuarioPse: (empresa as any).usuarioPse || '',
         contrasenaPse: (empresa as any).contrasenaPse || '',
+        usaDemo: Boolean((empresa as any).usaDemo),
         usaCodigoBarrasManual: Boolean((empresa as any).usaCodigoBarrasManual),
         usuario: {
           nombre: adminUser.nombre || '',
           email: adminUser.email || '',
           dni: adminUser.dni || '',
           celular: adminUser.celular || '',
-          password: '', // Password empty by default
+          password: '',
         },
         esAgenteRetencion: (empresa as any).esAgenteRetencion || false,
       });
       setInitialEditPlanId(empresa.plan?.id || 0);
-      // Resetear y asignar logo según la empresa actual
       setLogoPreview(empresa.logo ? empresa.logo : '');
     }
   }, [open, isEdit, empresa, empresaId]);
 
-  // Limpiar preview de logo al cambiar de empresa a editar antes de que cargue
   useEffect(() => {
-    if (open && isEdit) {
-      setLogoPreview('');
-    }
+    if (open && isEdit) setLogoPreview('');
   }, [empresaId, open, isEdit]);
 
   const rubrosOptions = rubros && Array.isArray(rubros) ? rubros : [];
   const ubigeosOptions = ubigeos.map((u: any) => ({ id: u.codigo, value: `${u.departamento} - ${u.provincia} - ${u.distrito}` }));
+
   const selectedPlan: any = useMemo(() => {
     const id = isEdit ? editData.planId : createData.planId;
-    console.log('[DEBUG] selectedPlan - isEdit:', isEdit, 'editData.planId:', editData.planId, 'createData.planId:', createData.planId, 'looking for id:', id);
     return (planes as any[] || []).find((p: any) => p.id === id);
   }, [planes, isEdit, editData.planId, createData.planId]);
 
-  // Planes que incluyen tienda virtual
   const storePlans: any[] = useMemo(() => {
     return (planes as any[] || []).filter((p: any) => !!p?.tieneTienda);
   }, [planes]);
 
-  console.log('[DEBUG] empresa:', empresa, 'empresa.plan:', empresa?.plan, 'editData.planId:', editData.planId);
-  // Seleccionar automáticamente un plan con tienda virtual
   const selectFirstStorePlan = () => {
     if (!storePlans || storePlans.length === 0) {
-      alert('No hay planes con tienda virtual disponibles. Crea o habilita uno en el administrador de planes.', 'warning');
+      alert('No hay planes con tienda virtual disponibles.', 'warning');
       return;
     }
     const id = storePlans[0].id;
     if (isEdit) setEditData(prev => ({ ...prev, planId: id }));
     else setCreateData(prev => ({ ...prev, planId: id }));
+  };
+
+  const currentUsaDemo = isEdit ? editData.usaDemo : createData.usaDemo;
+
+  const handleUsaDemoToggle = (enabled: boolean) => {
+    if (isEdit) {
+      setEditData(prev => ({ ...prev, usaDemo: enabled }));
+      return;
+    }
+    if (enabled) {
+      const firstRubro = (rubrosOptions as any[])[0];
+      const firstUbigeo = (ubigeos as any[])[0];
+      setCreateData(prev => ({
+        ...prev,
+        usaDemo: true,
+        ...DEMO_FILL,
+        rubroId: firstRubro?.id || prev.rubroId,
+        ubigeo: firstUbigeo?.codigo || prev.ubigeo,
+        departamento: firstUbigeo?.departamento || prev.departamento,
+        provincia: firstUbigeo?.provincia || prev.provincia,
+        distrito: firstUbigeo?.distrito || prev.distrito,
+      }));
+      setErrors({});
+    } else {
+      setCreateData(prev => ({ ...prev, usaDemo: false }));
+    }
   };
 
   const handleSelect = (id: any, _value: string, name: string) => {
@@ -256,13 +291,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (isEdit) {
       if (name.startsWith('usuario.')) {
         const field = name.split('.')[1];
-        setEditData(prev => ({
-          ...prev,
-          usuario: {
-            ...prev.usuario,
-            [field]: value
-          }
-        }));
+        setEditData(prev => ({ ...prev, usuario: { ...prev.usuario, [field]: value } }));
       } else {
         setEditData(prev => ({ ...prev, [name]: value } as any));
       }
@@ -278,8 +307,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   };
 
   const handleEsPrueba = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const esPrueba = e.target.checked;
-    setCreateData(prev => ({ ...prev, esPrueba }));
+    setCreateData(prev => ({ ...prev, esPrueba: e.target.checked }));
   };
 
   const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -316,20 +344,12 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         const ubigeo = response.ubigeo_sunat || '';
         const selected: any = ubigeos.find((u: any) => u.codigo === ubigeo);
         setCreateData(prev => ({
-          ...prev,
-          razonSocial,
-          nombreComercial: razonSocial,
-          direccion,
-          departamento,
-          provincia,
-          distrito,
-          ubigeo: selected?.codigo || ubigeo || '',
+          ...prev, razonSocial, nombreComercial: razonSocial, direccion,
+          departamento, provincia, distrito, ubigeo: selected?.codigo || ubigeo || '',
         }));
         setErrors(prev => ({ ...prev, razonSocial: '', nombreComercial: '', direccion: '', ubigeo: '' }));
       }
-    } catch {
-      // ignore
-    } finally {
+    } catch { /* ignore */ } finally {
       setSearchingRuc(false);
     }
   };
@@ -337,18 +357,24 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     const base = isEdit ? editData : createData;
+    const isDemo = base.usaDemo;
+
     if (!base.ruc) e.ruc = 'RUC es requerido';
     if (!base.razonSocial) e.razonSocial = 'Razón social es requerida';
     if (!base.direccion) e.direccion = 'Dirección es requerida';
     if (!base.nombreComercial) e.nombreComercial = 'Nombre comercial es requerido';
-    if (!base.rubroId) e.rubroId = 'Rubro es requerido';
-    if (!base.ubigeo) e.ubigeo = 'Ubigeo es requerido';
-    if (!isEdit && !createData.usuario?.nombre) e['usuario.nombre'] = 'Nombre del administrador es requerido';
-    if (!isEdit && !createData.usuario?.email) e['usuario.email'] = 'Email del administrador es requerido';
-    if (!isEdit && !createData.usuario?.password) e['usuario.password'] = 'Contraseña es requerida';
-    if (!isEdit && !createData.usuario?.dni) e['usuario.dni'] = 'DNI es requerido';
-    if (!isEdit && !createData.usuario?.celular) e['usuario.celular'] = 'Celular es requerido';
-    if (!isEdit && esSuperAdmin && !createData.brand) e.brand = 'Selecciona la plataforma de destino';
+    if (!isDemo && !base.rubroId) e.rubroId = 'Rubro es requerido';
+    if (!isDemo && !base.ubigeo) e.ubigeo = 'Ubigeo es requerido';
+
+    if (!isEdit) {
+      if (!createData.usuario?.nombre) e['usuario.nombre'] = 'Nombre del administrador es requerido';
+      if (!createData.usuario?.email) e['usuario.email'] = 'Email del administrador es requerido';
+      if (!createData.usuario?.password) e['usuario.password'] = 'Contraseña es requerida';
+      if (!createData.usuario?.dni) e['usuario.dni'] = 'DNI es requerido';
+      if (!createData.usuario?.celular) e['usuario.celular'] = 'Celular es requerido';
+      if (!isDemo && esSuperAdmin && !createData.brand) e.brand = 'Selecciona la plataforma de destino';
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -368,73 +394,115 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       onSaved?.();
       onClose();
     } catch (_err) {
-      // El store ya maneja errores
+      // El store maneja errores
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const width = '1200px';
-
   return (
-    <Modal isOpenModal={open} closeModal={onClose} title={isEdit ? 'Editar Empresa' : 'Nueva Empresa'} width={width}>
+    <Modal isOpenModal={open} closeModal={onClose} title={isEdit ? 'Editar Empresa' : 'Nueva Empresa'} width="1200px">
       <div className="grid grid-cols-1 md:grid-cols-12 min-h-[600px]">
+
         {/* Sidebar */}
         <aside className="md:col-span-3 border-r border-gray-100 p-6 bg-slate-50/50 flex flex-col">
-          <div className="flex flex-col items-center text-center pb-6 border-b border-gray-100 mb-6">
-            <div className="h-24 w-24 rounded-full bg-white shadow-sm overflow-hidden mb-4 border border-gray-200 flex items-center justify-center">
+          <div className="flex flex-col items-center text-center pb-5 border-b border-gray-100 mb-5">
+            <div className="h-20 w-20 rounded-full bg-white shadow-sm overflow-hidden mb-3 border border-gray-200 flex items-center justify-center">
               {logoPreview ? (
-                <img src={logoPreview} className="h-full w-full object-cover" alt="Logo de la empresa" />
+                <img src={logoPreview} className="h-full w-full object-cover" alt="Logo" />
               ) : (
-                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-9 h-9 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               )}
             </div>
-            <p className="text-base font-bold text-gray-900 leading-tight">
+            <p className="text-sm font-bold text-gray-900 leading-tight">
               {isEdit ? (empresa?.razonSocial || '-') : 'Nueva Empresa'}
             </p>
-            <p className="text-xs text-gray-500 mt-1 font-medium bg-gray-100 px-2 py-1 rounded-md">{isEdit ? empresa?.ruc : 'RUC por registrar'}</p>
+            <p className="text-xs text-gray-500 mt-1 font-medium bg-gray-100 px-2 py-0.5 rounded">
+              {isEdit ? empresa?.ruc : 'RUC por registrar'}
+            </p>
           </div>
-          
+
           <nav className="space-y-1.5 flex-1">
             {[
               { id: 'datos', label: 'Datos de Empresa', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
               { id: 'suscripcion', label: 'Plan y Vigencia', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
               { id: 'sunat', label: 'Integración SUNAT', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
-              { id: 'admin', label: 'Administrador Principal', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+              { id: 'admin', label: 'Administrador', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
             ].map((t: any) => (
-              <button
-                key={t.id}
-                type="button"
-                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm transition-all duration-200 ${
-                  activeTab === t.id 
-                    ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/20' 
+              <button key={t.id} type="button"
+                className={`w-full flex items-center px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                  activeTab === t.id
+                    ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/20'
                     : 'text-gray-600 hover:bg-white hover:text-gray-900 border border-transparent hover:border-gray-200 hover:shadow-sm'
                 }`}
-                onClick={() => setActiveTab(t.id)}
-              >
-                <svg className={`w-5 h-5 mr-3 ${activeTab === t.id ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                onClick={() => setActiveTab(t.id)}>
+                <svg className={`w-4 h-4 mr-2.5 shrink-0 ${activeTab === t.id ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={activeTab === t.id ? "2" : "1.5"} d={t.icon} />
                 </svg>
                 {t.label}
               </button>
             ))}
           </nav>
+
+          {/* Demo mode indicator in sidebar */}
+          {currentUsaDemo && (
+            <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-2">
+              <Icon icon="solar:test-tube-bold-duotone" width={18} className="text-amber-500 shrink-0" />
+              <span className="text-xs font-semibold text-amber-700">Modo Demo activo</span>
+            </div>
+          )}
         </aside>
 
         {/* Content */}
-        <section className="md:col-span-9 p-8 bg-white overflow-y-auto">
-          <form onSubmit={handleSubmit} className="space-y-6 h-full flex flex-col">
-            
-            <div className="flex-1">
-              {activeTab === 'datos' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Información General</h3>
+        <section className="md:col-span-9 bg-white overflow-y-auto flex flex-col">
 
-                  {/* Selector de plataforma — solo supermegaadmin en modo creación */}
+          {/* Demo Mode Banner — always visible at top */}
+          <div className={`px-8 pt-6 pb-0 transition-all duration-300`}>
+            <div
+              className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
+                currentUsaDemo
+                  ? 'border-amber-400 bg-amber-50 shadow-sm shadow-amber-200'
+                  : 'border-dashed border-gray-200 hover:border-amber-300 hover:bg-amber-50/30'
+              }`}
+              onClick={() => handleUsaDemoToggle(!currentUsaDemo)}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl transition-colors ${currentUsaDemo ? 'bg-amber-400' : 'bg-gray-100'}`}>
+                  <Icon icon="solar:test-tube-bold-duotone" width={20} className={currentUsaDemo ? 'text-white' : 'text-gray-400'} />
+                </div>
+                <div>
+                  <p className={`font-bold text-sm ${currentUsaDemo ? 'text-amber-900' : 'text-gray-700'}`}>
+                    Modo Demo
+                    {!isEdit && currentUsaDemo && <span className="ml-2 text-xs font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Datos de prueba aplicados</span>}
+                  </p>
+                  <p className={`text-xs mt-0.5 ${currentUsaDemo ? 'text-amber-700' : 'text-gray-400'}`}>
+                    {currentUsaDemo
+                      ? 'Los comprobantes se enviarán a demo-cpe.qpse.pe (entorno de pruebas)'
+                      : isEdit
+                        ? 'Activar para usar el servidor de pruebas de QPSE'
+                        : 'Activa para crear la cuenta demo al instante con datos de prueba'
+                    }
+                  </p>
+                </div>
+              </div>
+              {/* Toggle switch */}
+              <div className={`relative w-12 h-6 rounded-full transition-colors duration-300 shrink-0 ${currentUsaDemo ? 'bg-amber-400' : 'bg-gray-200'}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${currentUsaDemo ? 'left-7' : 'left-1'}`} />
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 px-8 pb-6 pt-5 space-y-0">
+            <div className="flex-1">
+
+              {activeTab === 'datos' && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Información General</h3>
+
                   {!isEdit && esSuperAdmin && (
-                    <div className="mb-2">
+                    <div>
                       <p className="text-sm font-semibold text-gray-700 mb-2">Plataforma de destino <span className="text-red-500">*</span></p>
                       <div className="grid grid-cols-2 gap-3">
                         {([
@@ -443,15 +511,12 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                         ] as const).map((p) => {
                           const sel = createData.brand === p.id;
                           return (
-                            <button
-                              key={p.id}
-                              type="button"
+                            <button key={p.id} type="button"
                               onClick={() => { setCreateData(prev => ({ ...prev, brand: p.id })); if (errors.brand) setErrors(prev => ({ ...prev, brand: '' })); }}
-                              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}
-                            >
-                              <Icon icon={p.icon} width={22} style={{ color: sel ? p.color : '#9CA3AF' }} />
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}>
+                              <Icon icon={p.icon} width={20} style={{ color: sel ? p.color : '#9CA3AF' }} />
                               <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
-                              {sel && <Icon icon="solar:check-circle-bold" width={18} className="ml-auto text-blue-500" />}
+                              {sel && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-blue-500" />}
                             </button>
                           );
                         })}
@@ -460,93 +525,77 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative">
+                      <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
+                      {searchingRuc && (
+                        <div className="absolute right-3 top-9">
+                          <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
                     <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
                     <InputPro name="nombreComercial" label="Nombre Comercial" isLabel value={isEdit ? editData.nombreComercial : createData.nombreComercial} onChange={handleChange} error={errors.nombreComercial} />
-                    {/* @ts-ignore */}
                     <div className="relative">
                       <Select name="rubroId" label="Rubro" options={rubrosOptions} value={isEdit ? (rubrosOptions as any[]).find((r: any) => r.id === editData.rubroId)?.value : (rubrosOptions as any[]).find((r: any) => r.id === createData.rubroId)?.value} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
                     </div>
-                    <Select error={() => { }} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
-                    
+                    <Select error={() => {}} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
+
                     <div className="md:col-span-2">
                       <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />
                     </div>
-                    
                     <div className="md:col-span-2">
-                       <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
+                      <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
                     </div>
-
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Logo de la Empresa</label>
                       <div className="flex items-center space-x-4">
                         {logoPreview && (
-                          <div className="h-16 w-16 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                          <div className="h-14 w-14 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 shrink-0">
                             <img src={logoPreview} alt="preview" className="h-full w-full object-cover" />
                           </div>
                         )}
-                        <label className="flex flex-col items-center justify-center w-full max-w-sm h-16 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-300 transition-colors">
-                            <div className="flex flex-row items-center justify-center space-x-2">
-                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                                <p className="text-sm text-gray-500 font-medium">Click para subir un logo</p>
-                            </div>
-                            <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                        <label className="flex flex-col items-center justify-center w-full max-w-sm h-14 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-300 transition-colors">
+                          <div className="flex flex-row items-center justify-center space-x-2">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            <p className="text-sm text-gray-500 font-medium">Click para subir un logo</p>
+                          </div>
+                          <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         </label>
                       </div>
                     </div>
 
                     {isEdit && (
-                      <div className="md:col-span-2 mt-2">
-                        <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors mb-3">
-                          <input
-                            type="checkbox"
-                            name="usaCodigoBarrasManual"
-                            checked={Boolean(editData.usaCodigoBarrasManual)}
-                            onChange={(e) => setEditData(prev => ({ ...prev, usaCodigoBarrasManual: e.target.checked }))}
-                            className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                          />
-                          <div className="flex flex-col">
-                            <span className="font-bold text-gray-900">Habilitar código de barras en productos</span>
-                            <span className="text-sm text-gray-600 mt-0.5">
-                              Fuerza la visualización del campo "Código de Barras" en productos, sin depender del rubro.
-                            </span>
-                          </div>
-                        </label>
-
-                        <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
-                          <input
-                            type="checkbox"
-                            name="esAgenteRetencion"
-                            checked={editData.esAgenteRetencion || false}
-                            onChange={(e) => setEditData(prev => ({ ...prev, esAgenteRetencion: e.target.checked }))}
-                            className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                          />
-                          <div className="flex flex-col">
-                            <span className="font-bold text-gray-900">Agente de Retención (SUNAT)</span>
-                            <span className="text-sm text-gray-600 mt-0.5">
-                              Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT (Régimen de Retenciones del IGV).
-                            </span>
-                          </div>
-                        </label>
+                      <div className="md:col-span-2 space-y-3 mt-1">
+                        {[
+                          { key: 'usaCodigoBarrasManual', label: 'Habilitar código de barras en productos', desc: 'Fuerza la visualización del campo "Código de Barras" en productos, sin depender del rubro.' },
+                          { key: 'esAgenteRetencion', label: 'Agente de Retención (SUNAT)', desc: 'Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT.' },
+                        ].map(({ key, label, desc }) => (
+                          <label key={key} className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                            <input type="checkbox" name={key} checked={Boolean((editData as any)[key])}
+                              onChange={(e) => setEditData(prev => ({ ...prev, [key]: e.target.checked }))}
+                              className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                            <div>
+                              <span className="font-semibold text-gray-900 text-sm">{label}</span>
+                              <span className="block text-xs text-gray-500 mt-0.5">{desc}</span>
+                            </div>
+                          </label>
+                        ))}
                       </div>
                     )}
 
                     {!isEdit && (
-                      <div className="md:col-span-2 mt-2">
-                        <label className="flex items-start space-x-3 p-4 border rounded-xl bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
-                          <input
-                            type="checkbox"
-                            name="usaCodigoBarrasManual"
-                            checked={Boolean(createData.usaCodigoBarrasManual)}
+                      <div className="md:col-span-2 mt-1">
+                        <label className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                          <input type="checkbox" name="usaCodigoBarrasManual" checked={Boolean(createData.usaCodigoBarrasManual)}
                             onChange={(e) => setCreateData(prev => ({ ...prev, usaCodigoBarrasManual: e.target.checked }))}
-                            className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                          />
-                          <div className="flex flex-col">
-                            <span className="font-bold text-gray-900">Habilitar código de barras en productos</span>
-                            <span className="text-sm text-gray-600 mt-0.5">
-                              Activa el campo "Código de Barras" en productos para esta empresa desde el inicio.
-                            </span>
+                            className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                          <div>
+                            <span className="font-semibold text-gray-900 text-sm">Habilitar código de barras en productos</span>
+                            <span className="block text-xs text-gray-500 mt-0.5">Activa el campo "Código de Barras" en productos para esta empresa desde el inicio.</span>
                           </div>
                         </label>
                       </div>
@@ -556,33 +605,35 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
               )}
 
               {activeTab === 'suscripcion' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Planes Disponibles</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Planes Disponibles</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {planes && Array.isArray(planes) && planes.map((plan: any) => {
                       const selectedPlanId = Number(isEdit ? editData.planId : createData.planId);
                       const selected = selectedPlanId === Number(plan.id);
                       return (
-                        <div key={plan.id} onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))} className={`relative p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col h-full ${selected ? 'border-blue-600 bg-blue-50/40 shadow-lg ring-1 ring-blue-600' : 'border-gray-200 hover:border-blue-300 hover:shadow-md bg-white'}`}>
+                        <div key={plan.id}
+                          onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))}
+                          className={`relative p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col h-full ${selected ? 'border-blue-600 bg-blue-50/40 shadow-lg ring-1 ring-blue-600' : 'border-gray-200 hover:border-blue-300 hover:shadow-md bg-white'}`}>
                           {selected && (
                             <div className="absolute top-3 right-3 text-blue-600">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                             </div>
                           )}
-                          <div className="font-extrabold text-gray-900 mb-1 text-lg pr-6">{plan.nombre}</div>
-                          <div className="text-xs text-gray-500 mb-4 line-clamp-2 min-h-[32px]">{plan.descripcion || 'Plan estándar para uso general'}</div>
+                          <div className="font-extrabold text-gray-900 mb-1 pr-5">{plan.nombre}</div>
+                          <div className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[32px]">{plan.descripcion || 'Plan estándar'}</div>
                           <div className="mt-auto">
-                            <div className="text-2xl font-black text-blue-700 tracking-tight">
-                              <span className="text-lg text-blue-600 font-bold mr-1">S/</span>
-                              {Number(plan.costo || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              {plan.tipoFacturacion && (<span className="text-xs font-medium text-gray-500 ml-1">/{plan.tipoFacturacion.toLowerCase()}</span>)}
+                            <div className="text-xl font-black text-blue-700">
+                              <span className="text-sm text-blue-600 font-bold mr-0.5">S/</span>
+                              {Number(plan.costo || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                              {plan.tipoFacturacion && <span className="text-xs font-medium text-gray-500 ml-1">/{plan.tipoFacturacion.toLowerCase()}</span>}
                             </div>
-                            <div className="flex justify-between items-center text-xs font-medium text-gray-600 mt-4 pt-3 border-t border-gray-100">
-                              {plan.limiteUsuarios ? <span className="flex items-center"><svg className="w-3.5 h-3.5 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>{plan.limiteUsuarios} Usu.</span> : <span />}
-                              {plan.duracionDias ? <span className="flex items-center"><svg className="w-3.5 h-3.5 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>{plan.duracionDias} días</span> : <span />}
+                            <div className="flex justify-between text-xs font-medium text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                              {plan.limiteUsuarios ? <span>{plan.limiteUsuarios} Usu.</span> : <span />}
+                              {plan.duracionDias ? <span>{plan.duracionDias} días</span> : <span />}
                             </div>
                           </div>
                         </div>
@@ -590,87 +641,72 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                     })}
                   </div>
 
-                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4 mt-8">Fechas de Vigencia</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2 pt-3">Fechas de Vigencia</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputPro name="fechaActivacion" label="Fecha de Activación" type="date" isLabel value={isEdit ? editData.fechaActivacion : createData.fechaActivacion} onChange={handleChange} />
                     <InputPro name="fechaExpiracion" label="Fecha de Expiración" type="date" isLabel value={isEdit ? editData.fechaExpiracion : (createData.fechaExpiracion || '')} onChange={handleChange} />
                   </div>
 
-                  <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-5 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900">Módulo de Tienda Virtual</h4>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {selectedPlan?.tieneTienda ? (
-                          <span>Este plan <strong className="text-emerald-600 font-semibold">incluye tienda virtual</strong>.</span>
-                        ) : (
-                          <span>Este plan no incluye módulo de tienda virtual.</span>
-                        )}
+                      <h4 className="font-bold text-gray-900 text-sm">Módulo de Tienda Virtual</h4>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {selectedPlan?.tieneTienda
+                          ? <span>Este plan <strong className="text-emerald-600">incluye tienda virtual</strong>.</span>
+                          : <span>Este plan no incluye módulo de tienda virtual.</span>}
                       </p>
-                      {selectedPlan?.tieneTienda && isEdit && (
-                        <div className="mt-2 text-xs text-gray-600 flex items-center space-x-2">
-                          <span className={`w-2 h-2 rounded-full ${(empresa as any)?.slugTienda ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                          <span>Estado: <strong className="font-medium">{(empresa as any)?.slugTienda ? 'Activa' : 'Pendiente de configurar'}</strong></span>
-                          {(empresa as any)?.slugTienda && (
-                            <>
-                              <span className="text-gray-300">|</span>
-                              <a href={`${window.location.origin}/tienda/{(empresa as any).slugTienda}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
-                                Ver Tienda
-                              </a>
-                            </>
-                          )}
-                        </div>
-                      )}
                     </div>
                     {selectedPlan?.tieneTienda ? (
                       isAdminSistema ? (
-                        <div className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 text-center">Solo administradores<br/>de la empresa</div>
+                        <div className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 text-center whitespace-nowrap">Solo admin<br/>de empresa</div>
                       ) : (
-                        <Button
-                          type="button"
-                          color="secondary"
-                          className="shrink-0 font-medium whitespace-nowrap shadow-sm"
+                        <Button type="button" color="secondary" className="shrink-0 text-sm"
                           disabled={isEdit ? initialEditPlanId !== undefined && initialEditPlanId !== editData.planId : true}
-                          onClick={() => navigate('/administrador/tienda/configuracion')}
-                        >
-                          {isEdit
-                            ? (initialEditPlanId !== undefined && initialEditPlanId !== editData.planId
-                              ? 'Guardar para configurar'
-                              : ((empresa as any)?.slugTienda ? 'Gestionar Tienda' : 'Configurar Tienda'))
-                            : 'Guardar y Configurar'}
+                          onClick={() => navigate('/administrador/tienda/configuracion')}>
+                          {isEdit ? (initialEditPlanId !== undefined && initialEditPlanId !== editData.planId ? 'Guardar para configurar' : ((empresa as any)?.slugTienda ? 'Gestionar Tienda' : 'Configurar Tienda')) : 'Guardar y Configurar'}
                         </Button>
                       )
                     ) : (
-                      <Button type="button" color="white" outline onClick={selectFirstStorePlan} className="shrink-0 border-gray-300 shadow-sm font-medium">
-                        Ver planes con tienda
-                      </Button>
+                      <Button type="button" color="white" outline onClick={selectFirstStorePlan} className="shrink-0 text-sm">Ver planes con tienda</Button>
                     )}
                   </div>
-                  
+
                   {!isEdit && (
-                    <label className="flex items-center mt-4 w-max group cursor-pointer">
-                      <div className="relative flex items-center">
-                        <input type="checkbox" checked={createData.esPrueba} onChange={handleEsPrueba} className="w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer peer focus:ring-blue-500 focus:ring-2" />
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">Activar versión de prueba gratuita</span>
+                    <label className="flex items-center w-max group cursor-pointer">
+                      <input type="checkbox" checked={createData.esPrueba} onChange={handleEsPrueba} className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500" />
+                      <span className="ml-2.5 text-sm font-medium text-gray-700 group-hover:text-gray-900">Activar versión de prueba gratuita</span>
                     </label>
                   )}
                 </div>
               )}
 
               {activeTab === 'sunat' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Credenciales SUNAT / PSE</h3>
-                  <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-5 mb-6">
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Credenciales SUNAT / PSE</h3>
+
+                  {currentUsaDemo && (
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                      <Icon icon="solar:test-tube-bold-duotone" width={18} className="text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-800">Modo Demo habilitado</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          Las llamadas a QPSE usarán <code className="bg-amber-100 px-1 rounded text-amber-900">demo-cpe.qpse.pe</code> independientemente de las credenciales ingresadas.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4">
                     <div className="flex items-start">
-                      <svg className="w-5 h-5 text-amber-500 mt-0.5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 text-amber-500 mt-0.5 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p className="text-sm text-amber-800 leading-relaxed">
-                        Credenciales QPSE asignadas por el Proveedor de Servicios Electrónicos. Son necesarias para la emisión de comprobantes electrónicos válidos. Si se dejan en blanco, se usarán las credenciales globales del sistema.
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        Credenciales QPSE asignadas por el Proveedor de Servicios Electrónicos. Son necesarias para la emisión de comprobantes electrónicos válidos.
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputPro name="usuarioPse" label="Usuario PSE (QPSE)" isLabel value={isEdit ? (editData.usuarioPse || '') : (createData.usuarioPse || '')} onChange={handleChange} placeholder="Ej. 0HGRQ55B" />
                     <InputPro name="contrasenaPse" label="Contraseña PSE (QPSE)" type="password" isLabel value={isEdit ? (editData.contrasenaPse || '') : (createData.contrasenaPse || '')} onChange={handleChange} placeholder="Ej. R8101ZBD" />
                   </div>
@@ -678,55 +714,55 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
               )}
 
               {activeTab === 'admin' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Superusuario de la Empresa</h3>
-                  
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Superusuario de la Empresa</h3>
+
                   {isEdit && (
-                    <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-4">
                       <div className="flex items-start">
-                        <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 text-blue-500 mt-0.5 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p className="text-sm text-blue-800 leading-relaxed">
-                          Aquí puedes actualizar los datos del administrador principal de esta empresa. <strong>Si dejas la contraseña en blanco, se mantendrá la actual.</strong>
+                        <p className="text-xs text-blue-800 leading-relaxed">
+                          Puedes actualizar los datos del administrador principal. <strong>Si dejas la contraseña en blanco, se mantiene la actual.</strong>
                         </p>
                       </div>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputPro name="usuario.nombre" label="Nombre Completo" isLabel value={isEdit ? editData.usuario?.nombre || '' : createData.usuario.nombre} onChange={handleChange} error={isEdit ? '' : errors['usuario.nombre']} />
                     <InputPro name="usuario.dni" label="DNI" isLabel value={isEdit ? editData.usuario?.dni || '' : createData.usuario.dni} onChange={handleChange} error={isEdit ? '' : errors['usuario.dni']} maxLength={8} />
                     <InputPro name="usuario.email" label="Correo Electrónico" type="email" isLabel value={isEdit ? editData.usuario?.email || '' : createData.usuario.email} onChange={handleChange} error={isEdit ? '' : errors['usuario.email']} />
                     <InputPro name="usuario.celular" label="Número de Celular" isLabel value={isEdit ? editData.usuario?.celular || '' : createData.usuario.celular} onChange={handleChange} error={isEdit ? '' : errors['usuario.celular']} />
                     <div className="md:col-span-2">
-                       <InputPro name="usuario.password" label={isEdit ? "Nueva Contraseña (Opcional)" : "Contraseña de Acceso"} type="password" isLabel value={isEdit ? editData.usuario?.password || '' : createData.usuario.password} onChange={handleChange} error={isEdit ? '' : errors['usuario.password']} />
+                      <InputPro name="usuario.password" label={isEdit ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'} type="password" isLabel value={isEdit ? editData.usuario?.password || '' : createData.usuario.password} onChange={handleChange} error={isEdit ? '' : errors['usuario.password']} />
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Actions Footer */}
-            <div className="pt-6 border-t border-gray-100 flex items-center justify-between mt-auto">
+            {/* Footer */}
+            <div className="pt-5 border-t border-gray-100 flex items-center justify-between mt-4">
               <div>
                 {Object.keys(errors).length > 0 && (
-                  <span className="text-sm text-red-500 font-medium flex items-center">
-                    <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Por favor, completa los campos requeridos
+                  <span className="text-xs text-red-500 font-medium flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Completa los campos requeridos
                   </span>
                 )}
               </div>
-              <div className="flex gap-3">
-                <Button type="button" color="white" outline onClick={onClose} className="px-6 font-medium bg-white hover:bg-gray-50 border-gray-200">
+              <div className="flex gap-2.5">
+                <Button type="button" color="white" outline onClick={onClose} className="px-5 font-medium bg-white hover:bg-gray-50 border-gray-200 text-sm">
                   Cancelar
                 </Button>
-                <Button type="submit" color="secondary" disabled={isSubmitting} className="px-8 shadow-sm">
+                <Button type="submit" color="secondary" disabled={isSubmitting} className="px-7 shadow-sm text-sm">
                   {isSubmitting ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <span className="flex items-center gap-1.5">
+                      <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
                       {isEdit ? 'Guardando...' : 'Creando...'}
                     </span>
@@ -734,7 +770,6 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 </Button>
               </div>
             </div>
-            
           </form>
         </section>
       </div>

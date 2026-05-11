@@ -40,7 +40,7 @@ const INGRESO_VACIO = {
 export function useSistemaFinanzasViewModel() {
     const { alert } = useAlertStore();
 
-    const [tab, setTab] = useState<'dashboard' | 'gastos' | 'ingresos' | 'clientes'>('dashboard');
+    const [tab, setTab] = useState<'dashboard' | 'movimientos' | 'clientes'>('dashboard');
     const [dashboard, setDashboard] = useState<any>(null);
     const [tendencia, setTendencia] = useState<any[]>([]);
     const [gastos, setGastos] = useState<any[]>([]);
@@ -52,15 +52,21 @@ export function useSistemaFinanzasViewModel() {
     const [loadingIngresos, setLoadingIngresos] = useState(false);
     const [guardando, setGuardando] = useState(false);
 
-    // filtros gastos
-    const [filtroDesde, setFiltroDesde] = useState('');
-    const [filtroHasta, setFiltroHasta] = useState('');
-    const [filtroCategoria, setFiltroCategoria] = useState('');
+    // filtros compartidos (inicio/fin del mes actual)
+    const hoy = new Date();
+    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0, 10);
+    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().slice(0, 10);
 
-    // filtros ingresos
-    const [filtroDesdeIngreso, setFiltroDesdeIngreso] = useState('');
-    const [filtroHastaIngreso, setFiltroHastaIngreso] = useState('');
+    const [filtroDesde, setFiltroDesde] = useState(primerDia);
+    const [filtroHasta, setFiltroHasta] = useState(ultimoDia);
+    const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroTipoIngreso, setFiltroTipoIngreso] = useState('');
+
+    // Aliases para mantener compatibilidad (ingresos y gastos usan el mismo rango)
+    const filtroDesdeIngreso = filtroDesde;
+    const setFiltroDesdeIngreso = setFiltroDesde;
+    const filtroHastaIngreso = filtroHasta;
+    const setFiltroHastaIngreso = setFiltroHasta;
 
     // filtro empresas en tab clientes
     const [busquedaEmpresa, setBusquedaEmpresa] = useState('');
@@ -136,13 +142,12 @@ export function useSistemaFinanzasViewModel() {
 
     useEffect(() => { cargarDashboard(); }, [cargarDashboard]);
     useEffect(() => { cargarTendencia(mesesTendencia); }, [mesesTendencia, cargarTendencia]);
-    useEffect(() => { if (tab === 'gastos') cargarGastos(); }, [tab, cargarGastos]);
+    useEffect(() => { if (tab === 'movimientos') cargarGastos(); }, [tab, cargarGastos]);
     useEffect(() => {
-        if (tab === 'ingresos') {
+        if (tab === 'movimientos') {
             cargarIngresos();
-            cargarGastos(); // para mostrar el balance neto
         }
-    }, [tab, cargarIngresos, cargarGastos]);
+    }, [tab, cargarIngresos]);
 
     // ── Gasto CRUD ────────────────────────────────────────────────────────────
 

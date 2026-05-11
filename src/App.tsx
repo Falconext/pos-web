@@ -58,6 +58,8 @@ import ResellerDashboard from './pages/reseller/Dashboard'
 import ResellerClientes from './pages/reseller/Clientes'
 import ResellerRecargas from './pages/reseller/Recargas'
 import SedeSelectionScreen from './features/auth/sede-selection/SedeSelectionScreen'
+import ForgotPasswordPage from './pages/ForgotPassword'
+import ResetPasswordPage from './pages/ResetPassword'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -66,6 +68,8 @@ function App() {
       <Alert />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/sede-seleccion" element={<SedeSelectionScreen />} />
         {/* Login específico para tienda (mismo backend, layout invertido) */}
         <Route path="/tienda/login" element={<TiendaLogin />} />
