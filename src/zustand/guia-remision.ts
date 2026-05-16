@@ -35,6 +35,11 @@ export interface IGuiaRemision {
     destinatarioRazonSocial: string;
     clienteId?: number;
 
+    // Comprador (Para motivo 03: Venta con entrega a terceros)
+    compradorTipoDoc?: string;
+    compradorNumDoc?: string;
+    compradorRazonSocial?: string;
+
     // Shipment
     tipoTraslado: string;
     modoTransporte: string;

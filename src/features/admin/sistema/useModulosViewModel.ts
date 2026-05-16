@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useModulosStore, IModulo, ISubModulo } from '@/zustand/modulos';
 import useAlertStore from '@/zustand/alert';
+import { useAuthStore } from '@/zustand/auth';
 
-const initialModuloForm: Partial<IModulo> = { codigo: '', nombre: '', descripcion: '', icono: '', activo: true, orden: 0 };
+const initialModuloForm: Partial<IModulo> = { codigo: '', producto: 'facturacion', nombre: '', descripcion: '', icono: '', activo: true, orden: 0 };
 
 const initialSubModuloForm = { moduloId: 0, codigo: '', nombre: '', descripcion: '', activo: true, orden: 0 };
 
 export const useModulosViewModel = () => {
     const { modulos, loading, getAllModulos, createModulo, updateModulo, deleteModulo, createSubModulo, updateSubModulo, deleteSubModulo } = useModulosStore();
     const { alert } = useAlertStore();
+    const { auth } = useAuthStore();
+    const productoScope = (String(auth?.sistemaProducto || '').toLowerCase() === 'hotel' ? 'hotel' : String(auth?.sistemaProducto || '').toLowerCase() === 'facturacion' ? 'facturacion' : '') as '' | 'facturacion' | 'hotel';
+    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel'>(productoScope);
 
     // Estado módulo
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,13 +31,23 @@ export const useModulosViewModel = () => {
     const [subForm, setSubForm] = useState(initialSubModuloForm);
     const [expandedModulos, setExpandedModulos] = useState<Set<number>>(new Set());
 
-    useEffect(() => { getAllModulos(true); }, []);
+    useEffect(() => {
+        setProductoFiltro(productoScope);
+    }, [productoScope]);
+
+    useEffect(() => {
+        getAllModulos(true, productoScope || productoFiltro || undefined);
+    }, [getAllModulos, productoScope, productoFiltro]);
 
     // ── Módulos ──────────────────────────────────────────────────────────────
 
     const handleOpenCreate = () => {
         setIsEdit(false);
-        setForm({ ...initialModuloForm, orden: modulos.length + 1 });
+        setForm({
+            ...initialModuloForm,
+            producto: productoScope || productoFiltro || 'facturacion',
+            orden: modulos.length + 1,
+        });
         setIsModalOpen(true);
     };
 
@@ -47,8 +61,8 @@ export const useModulosViewModel = () => {
     const handleSubmit = async () => {
         if (!form.codigo || !form.nombre) { alert('Código y nombre son obligatorios', 'warning'); return; }
         const success = isEdit && currentId
-            ? await updateModulo(currentId, form)
-            : await createModulo(form);
+            ? await updateModulo(currentId, form, productoScope || productoFiltro || undefined)
+            : await createModulo(form, productoScope || productoFiltro || undefined);
         if (success) {
             alert(isEdit ? 'Módulo actualizado' : 'Módulo creado', 'success');
             setIsModalOpen(false);
@@ -59,7 +73,7 @@ export const useModulosViewModel = () => {
 
     const handleDelete = async () => {
         if (!deleteId) return;
-        const success = await deleteModulo(deleteId);
+        const success = await deleteModulo(deleteId, productoScope || productoFiltro || undefined);
         if (success) { alert('Módulo eliminado', 'success'); setModalConfirmOpen(false); }
     };
 
@@ -92,8 +106,8 @@ export const useModulosViewModel = () => {
     const handleSubmitSub = async () => {
         if (!subForm.codigo || !subForm.nombre) { alert('Código y nombre son obligatorios', 'warning'); return; }
         const success = isSubEdit && currentSubId
-            ? await updateSubModulo(currentSubId, { nombre: subForm.nombre, descripcion: subForm.descripcion, activo: subForm.activo, orden: subForm.orden })
-            : await createSubModulo(subForm);
+            ? await updateSubModulo(currentSubId, { nombre: subForm.nombre, descripcion: subForm.descripcion, activo: subForm.activo, orden: subForm.orden }, productoScope || productoFiltro || undefined)
+            : await createSubModulo(subForm, productoScope || productoFiltro || undefined);
         if (success) {
             alert(isSubEdit ? 'Submódulo actualizado' : 'Submódulo creado', 'success');
             setIsSubModalOpen(false);
@@ -106,12 +120,13 @@ export const useModulosViewModel = () => {
 
     const handleDeleteSub = async () => {
         if (!deleteSubId) return;
-        const success = await deleteSubModulo(deleteSubId);
+        const success = await deleteSubModulo(deleteSubId, productoScope || productoFiltro || undefined);
         if (success) { alert('Submódulo eliminado', 'success'); setModalConfirmSubOpen(false); }
     };
 
     return {
         modulos, loading,
+        productoFiltro, setProductoFiltro, productoScope,
         // Módulos
         isModalOpen, setIsModalOpen, isEdit, form, setForm, modalConfirmOpen, setModalConfirmOpen,
         handleOpenCreate, handleOpenEdit, handleSubmit, confirmDelete, handleDelete,

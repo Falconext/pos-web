@@ -7,6 +7,7 @@ import { useUsersStore, IUsuario, IFormUsuario, MODULOS_SISTEMA } from '@/zustan
 import { useModulosStore, IModulo } from '@/zustand/modulos';
 import useAlertStore from '@/zustand/alert';
 import { useSedesStore } from '@/zustand/sedes';
+import { useAuthStore } from '@/zustand/auth';
 
 interface Props {
   isOpen: boolean;
@@ -20,6 +21,8 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   const { alert } = useAlertStore();
   const { sedes, listarSedes } = useSedesStore();
   const { modulos, getAllModulos } = useModulosStore();
+  const { auth } = useAuthStore();
+  const productoEmpresa = (auth?.empresa?.producto || 'facturacion') as 'facturacion' | 'hotel';
 
   const [formData, setFormData] = useState<IFormUsuario>({
     nombre: '',
@@ -39,9 +42,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   useEffect(() => {
     if (isOpen) {
       listarSedes();
-      getAllModulos(false);
+      getAllModulos(false, productoEmpresa);
     }
-  }, [isOpen]);
+  }, [isOpen, listarSedes, getAllModulos, productoEmpresa]);
 
   useEffect(() => {
     if (user && isEdit) {
@@ -288,7 +291,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
                           <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full">Principal</span>
                         )}
                       </div>
-                      {sede.codigo && <p className="text-xs text-gray-400 ml-6">Código: {sede.codigo}</p>}
+                      {(sede as any).codigo && <p className="text-xs text-gray-400 ml-6">Código: {(sede as any).codigo}</p>}
                     </div>
                   </label>
                 );

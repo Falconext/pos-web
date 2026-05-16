@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { useModulosStore } from '@/zustand/modulos';
+import { useAuthStore } from '@/zustand/auth';
 
 export interface Plan {
     id: number; nombre: string; descripcion?: string; costo: number;
+    producto?: 'facturacion' | 'hotel';
     duracionDias: number; limiteUsuarios: number; maxSedes: number;
     maxImagenesProducto: number;
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
@@ -16,6 +18,7 @@ export interface Plan {
 }
 
 const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number[] } = {
+    producto: 'facturacion',
     nombre: '', descripcion: '', costo: 0, duracionDias: 30,
     limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
@@ -36,28 +39,48 @@ export const usePlanesViewModel = () => {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const { alert } = useAlertStore();
     const { getAllModulos } = useModulosStore();
+    const { auth } = useAuthStore();
+    const productoScope = (String(auth?.sistemaProducto || '').toLowerCase() === 'hotel' ? 'hotel' : String(auth?.sistemaProducto || '').toLowerCase() === 'facturacion' ? 'facturacion' : '') as '' | 'facturacion' | 'hotel';
+    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel'>(productoScope);
 
-    useEffect(() => { loadPlanes(); getAllModulos(true); }, []);
+    useEffect(() => {
+        setProductoFiltro(productoScope);
+    }, [productoScope]);
+
+    useEffect(() => {
+        loadPlanes();
+    }, [productoFiltro, productoScope]);
 
     const loadPlanes = async () => {
         try {
             setLoading(true);
-            const { data } = await apiClient.get('/plan');
+            const producto = productoScope || productoFiltro;
+            const qs = producto ? `?producto=${producto}` : '';
+            const { data } = await apiClient.get(`/plan${qs}`);
             setPlanes(Array.isArray(data) ? data : (data.data || []));
         } catch { alert('Error al cargar planes', 'error'); }
         finally { setLoading(false); }
     };
 
-    const handleOpenCreate = () => { setIsEdit(false); setForm(initialForm); setIsModalOpen(true); };
+    const handleOpenCreate = () => {
+        setIsEdit(false);
+        const producto = productoScope || 'facturacion';
+        setForm({ ...initialForm, producto, moduloIds: [], subModuloIds: [] });
+        getAllModulos(true, producto);
+        setIsModalOpen(true);
+    };
 
     const handleOpenEdit = (plan: Plan) => {
+        const producto = (plan.producto || 'facturacion') as 'facturacion' | 'hotel';
         setIsEdit(true);
         setCurrentId(plan.id);
         setForm({
             ...plan,
+            producto,
             moduloIds: plan.modulosAsignados?.map(m => m.modulo.id) || [],
             subModuloIds: plan.subModulosAsignados?.map(s => s.subModulo.id) || [],
         });
+        getAllModulos(true, producto);
         setIsModalOpen(true);
     };
 
@@ -67,6 +90,7 @@ export const usePlanesViewModel = () => {
             setLoading(true);
             const payload = {
                 ...form,
+                producto: (productoScope || form.producto || 'facturacion') as 'facturacion' | 'hotel',
                 costo: Number(form.costo),
                 duracionDias: Number(form.duracionDias),
                 limiteUsuarios: Number(form.limiteUsuarios),
@@ -101,6 +125,7 @@ export const usePlanesViewModel = () => {
 
     return {
         planes, loading,
+        productoFiltro, setProductoFiltro,
         isModalOpen, setIsModalOpen, isEdit, form, setForm,
         showFeaturesModal, setShowFeaturesModal,
         showModulesModal, setShowModulesModal,

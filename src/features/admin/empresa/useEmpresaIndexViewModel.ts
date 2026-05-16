@@ -65,10 +65,14 @@ export const useEmpresaIndexViewModel = (): any => {
 
     const [drawerEmpresa, setDrawerEmpresa] = useState<any>(null);
     const [alertasDismissed, setAlertasDismissed] = useState(false);
+    const [filtroPorVencer, setFiltroPorVencer] = useState(false);
+
+    const getDiasRestantes = (fechaExpiracion: string) =>
+        Math.ceil((new Date(fechaExpiracion).getTime() - Date.now()) / 86400000);
 
     const proximasVencer = (empresas || []).filter((e: any) => {
         if (!e.fechaExpiracion) return false;
-        const dias = Math.ceil((new Date(e.fechaExpiracion).getTime() - Date.now()) / 86400000);
+        const dias = getDiasRestantes(e.fechaExpiracion);
         return dias >= 0 && dias <= 7;
     });
 
@@ -79,5 +83,14 @@ export const useEmpresaIndexViewModel = (): any => {
 
     const refreshEmpresas = () => listarEmpresas({ search: debounceSearch, page: currentPageState, limit: itemsPerPage, sort: 'id', order: 'desc' });
 
-    return { empresas, empresasTable, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed };
+    const empresasTableFiltradas = filtroPorVencer
+        ? empresasTable.filter((e: any) => {
+            const full = empresas?.find((emp: any) => emp.id === e.id);
+            if (!full?.fechaExpiracion) return false;
+            const dias = getDiasRestantes(full.fechaExpiracion);
+            return dias >= 0 && dias <= 7;
+        })
+        : empresasTable;
+
+    return { empresas, empresasTable: empresasTableFiltradas, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes };
 };

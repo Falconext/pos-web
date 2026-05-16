@@ -21,7 +21,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     const { auth } = useAuthStore();
     const { getAllCategories, categories } = useCategoriesStore();
     const { editProduct, addProduct, getCodeProduct, productCode, setProductImage, upsertProductLocal }: IProductsState = useProductsStore();
-    const { brands, getAllBrands } = useBrandsStore();
+    const { brands, getAllBrands, addBrand } = useBrandsStore();
     const { grupos: gruposModificadores, getAllGrupos } = useModificadoresStore();
 
     // --- Local State ---
@@ -79,6 +79,86 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     // --- Wholesale Options State ---
     const [newWholesaleOption, setNewWholesaleOption] = useState({ cantidadMinima: '', precio: '' });
 
+    // --- Barcode Global Search ---
+    const [barcodeQuery, setBarcodeQuery] = useState('');
+    const [searchingBarcode, setSearchingBarcode] = useState(false);
+
+    const resolveBrand = async (brandRaw: string): Promise<{ marcaId: number | null; marcaNombre: string } | null> => {
+        const nombre = brandRaw.split(',')[0].trim();
+        if (!nombre) return null;
+        const existing = brands.find(b => b.nombre.toLowerCase() === nombre.toLowerCase());
+        if (existing) return { marcaId: existing.id, marcaNombre: existing.nombre };
+        try {
+            const created: any = await (addBrand as any)({ nombre });
+            if (created?.id) return { marcaId: created.id, marcaNombre: nombre };
+        } catch { }
+        return { marcaId: null, marcaNombre: nombre };
+    };
+
+    const handleBarcodeGlobalSearch = async () => {
+        const code = barcodeQuery.trim().replace(/\D/g, '');
+        if (code.length < 8) return;
+        setSearchingBarcode(true);
+        try {
+            let filled = false;
+
+            // 1. Backend local catalog
+            try {
+                const resp = await apiClient.get(`producto/barcode/${encodeURIComponent(code)}`);
+                const product = (resp.data as any)?.data;
+                if (product?.descripcion) {
+                    let brandUpdate: { marcaId?: number | null; marcaNombre?: string } = {};
+                    if (product.marca?.id) {
+                        brandUpdate = { marcaId: product.marca.id, marcaNombre: product.marca.nombre };
+                    } else if (product.marcaStr) {
+                        const brandData = await resolveBrand(product.marcaStr);
+                        if (brandData) brandUpdate = { marcaId: brandData.marcaId, marcaNombre: brandData.marcaNombre };
+                    }
+                    const categoryUpdate: { categoriaId?: number | null; categoriaNombre?: string } = product.categoria?.id
+                        ? { categoriaId: product.categoria.id, categoriaNombre: product.categoria.nombre }
+                        : {};
+                    setFormValues({
+                        ...formValues,
+                        descripcion: product.descripcion,
+                        codigoBarras: code,
+                        ...(product.imagenUrl ? { imagenUrl: product.imagenUrl } : {}),
+                        ...brandUpdate,
+                        ...categoryUpdate,
+                    });
+                    if (product.imagenUrl) setPreviewPrincipal(product.imagenUrl);
+                    filled = true;
+                }
+            } catch { }
+
+            // 2. Open Food Facts fallback
+            if (!filled) {
+                const offResp = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+                const offData = await offResp.json();
+                if (offData?.status === 1 && offData?.product) {
+                    const p = offData.product;
+                    const imgUrl = p.image_front_url || p.image_url || null;
+
+                    // Resolve brand: find existing or create new
+                    const brandData = p.brands ? await resolveBrand(p.brands) : null;
+
+                    setFormValues({
+                        ...formValues,
+                        descripcion: p.product_name || p.product_name_es || p.generic_name || formValues.descripcion,
+                        codigoBarras: code,
+                        ...(imgUrl ? { imagenUrl: imgUrl } : {}),
+                        ...(brandData ? { marcaId: brandData.marcaId, marcaNombre: brandData.marcaNombre } : {}),
+                    });
+                    if (imgUrl) setPreviewPrincipal(imgUrl);
+                    filled = true;
+                }
+            }
+
+            if (!filled) setFormValues({ ...formValues, codigoBarras: code });
+        } finally {
+            setSearchingBarcode(false);
+        }
+    };
+
     // --- Initial Effect Triggers ---
     useEffect(() => {
         if (!unitOfMeasure || (Array.isArray(unitOfMeasure) && unitOfMeasure.length === 0)) getUnitOfMeasure();
@@ -124,6 +204,12 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormValues({ ...formValues, [name]: value });
+    };
+
+    const handlePrecioUnitarioBlur = () => {
+        const price = Number(formValues?.precioUnitario);
+        const isValid = formValues?.precioUnitario !== '' && formValues?.precioUnitario !== undefined && price > 0;
+        setErrors({ ...errors, precioUnitario: isValid ? '' : 'El precio de venta es obligatorio' });
     };
 
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
@@ -462,12 +548,17 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         // Handlers
         handleChangeSelect,
         handleChange,
+        handlePrecioUnitarioBlur,
         handleAutoCategorize,
         handleAutoImage,
         toggleGrupoSeleccionado,
         handleRemoveWholesaleOption,
         handleAddWholesaleOption,
         handleSubmitProduct,
-        closeModal
+        closeModal,
+        barcodeQuery,
+        setBarcodeQuery,
+        searchingBarcode,
+        handleBarcodeGlobalSearch,
     };
 };

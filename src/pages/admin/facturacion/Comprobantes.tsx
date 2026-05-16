@@ -464,6 +464,17 @@ const Comprobantes = () => {
                   margin: 0;
                   background-color: #fff;
                 }
+                body * { visibility: hidden; }
+                #print-root, #print-root * { visibility: visible; }
+                #print-root { 
+                    position: absolute; 
+                    left: 0; 
+                    top: 0; 
+                    width: 100%;
+                    height: auto;
+                    opacity: 1 !important;
+                    display: block !important;
+                }
                 * {
                   -webkit-print-color-adjust: exact;
                   print-color-adjust: exact;
@@ -475,12 +486,6 @@ const Comprobantes = () => {
                   overflow: hidden;
                   background-color: #fff;
                   font-family: ${dimensions.width <= 80 ? "'VT323', Menlo, Monaco, Consolas, \"Courier New\", monospace" : "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"} !important;
-                }
-                .p-5 {
-                  width: 100%;
-                  height: 100%;
-                  box-sizing: border-box;
-                  background-color: #fff;
                 }
               }
             `,
@@ -524,7 +529,7 @@ const Comprobantes = () => {
 
     return (
         <>
-            <div className="hidden">
+            <div className="opacity-0 pointer-events-none absolute -z-50 overflow-hidden h-0 w-0">
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}

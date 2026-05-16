@@ -24,7 +24,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
         isFarmacia, isRestaurante, isMobile, isEdit, features, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
         isCategorizing,
-        handleChange, handleChangeSelect, handleAutoCategorize,
+        handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
         setShowMedicamentoModal, setShowLotesModal, toggleGrupoSeleccionado
     } = vm;
 
@@ -84,7 +84,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                 {/* Precios */}
                 <div className="grid grid-cols-1 gap-4">
-                    <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} isLabel label="Precio Venta (S/)" />
+                    <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label="Precio Venta (S/)" />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label="Costo (S/)" placeholder="0.00" />
                 </div>
             </div>
@@ -194,7 +194,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             )}
 
             <div className={`col-span-3 md:col-span-1 grid ${isRestaurante ? 'grid-cols-1' : 'grid-cols-2'} gap-5`}>
-                <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} isLabel label={isMobile ? (isRestaurante ? 'Precio' : 'Precio Venta') : labels.precio} />
+                <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label={isMobile ? (isRestaurante ? 'Precio' : 'Precio Venta') : labels.precio} />
                 {!isRestaurante && (
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label={isMobile ? "Costo Unitario" : "Costo Unitario (S/)"} placeholder="Costo de compra" />
                 )}

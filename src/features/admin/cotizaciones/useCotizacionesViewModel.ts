@@ -141,11 +141,23 @@ export function useCotizacionesViewModel() {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print {
+        pageStyle: `
+              @media print {
                 @page {
                   size: ${dimensions.width}mm ${dimensions.height}mm;
                   margin: 0;
                   background-color: #fff;
+                }
+                body * { visibility: hidden; }
+                #print-root, #print-root * { visibility: visible; }
+                #print-root { 
+                    position: absolute; 
+                    left: 0; 
+                    top: 0; 
+                    width: 100%;
+                    height: auto;
+                    opacity: 1 !important;
+                    display: block !important;
                 }
                 body {
                   width: ${dimensions.width}mm;
@@ -153,13 +165,8 @@ export function useCotizacionesViewModel() {
                   overflow: hidden;
                   background-color: #fff;
                 }
-                .p-5 {
-                  width: 100%;
-                  height: 100%;
-                  box-sizing: border-box;
-                  background-color: #fff;
-                }
-              }`,
+              }
+            `,
     });
 
     useEffect(() => {

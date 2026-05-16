@@ -28,6 +28,31 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                 title={vm.isEdit ? `Editar ${vm.labels.titulo}` : `Nuevo ${vm.labels.titulo}`}
                 icon="solar:box-minimalistic-bold-duotone"
             >
+                {/* Barcode global search — top of form */}
+                <div className="px-4 pt-4 pb-1">
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/60 dark:bg-violet-950/20">
+                        <Icon icon="solar:barcode-bold-duotone" className="text-violet-500 flex-shrink-0" width={20} />
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Código de barras → auto-completar desde red global"
+                            className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none min-w-0"
+                            value={vm.barcodeQuery}
+                            onChange={e => vm.setBarcodeQuery(e.target.value.replace(/\D/g, '').slice(0, 14))}
+                            onKeyDown={e => e.key === 'Enter' && void vm.handleBarcodeGlobalSearch()}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => void vm.handleBarcodeGlobalSearch()}
+                            disabled={vm.searchingBarcode || vm.barcodeQuery.length < 8}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:bg-gray-200 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 text-xs font-semibold transition-all flex-shrink-0"
+                        >
+                            <Icon icon={vm.searchingBarcode ? "svg-spinners:ring-resize" : "solar:global-bold-duotone"} width={14} />
+                            <span className="hidden sm:inline">{vm.searchingBarcode ? 'Buscando...' : 'Buscar'}</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div className={`${vm.isRestaurante ? 'grid-cols-1 md:grid-cols-2' : vm.isFarmacia ? 'flex flex-col gap-6' : 'grid-cols-1 md:grid-cols-3'} grid px-4 gap-5`}>
 
                     {/* Left Column - Image & Financials */}

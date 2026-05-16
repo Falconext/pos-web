@@ -6,6 +6,7 @@ import ModalConfirm from "@/components/ModalConfirm";
 import InputPro from "@/components/InputPro";
 import { Icon } from "@iconify/react";
 import ModuloSelector from "@/components/ModuloSelector";
+import { useAuthStore } from '@/zustand/auth';
 
 const Toggle = ({ label, value, onChange }: { label: string, value: boolean, onChange: (v: boolean) => void }) => (
     <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-2 rounded -mx-2 transition-colors">
@@ -18,12 +19,15 @@ const Toggle = ({ label, value, onChange }: { label: string, value: boolean, onC
 
 const Planes = () => {
     const vm = usePlanesViewModel();
+    const { auth } = useAuthStore();
+    const hasProductoScope = auth?.rol === 'ADMIN_SISTEMA' && !!auth?.sistemaProducto;
 
-
-
-    const headerColumns = ['Nombre', 'Costo', 'Duración', 'Anual', 'Max Compr.', 'Max Sedes', 'Max Usuarios', 'Empresas', 'Estado', 'Tienda', 'Ticketera', 'Acciones'];
+    const headerColumns = ['Nombre', 'Producto', 'Costo', 'Duración', 'Anual', 'Max Compr.', 'Max Sedes', 'Max Usuarios', 'Empresas', 'Estado', 'Tienda', 'Ticketera', 'Acciones'];
     const bodyData = vm.planes.map(p => ({
         'Nombre': <div className="font-medium text-gray-900">{p.nombre}<div className="text-xs text-gray-500">{p.descripcion}</div></div>,
+        'Producto': p.producto === 'hotel'
+            ? <span className="text-amber-700 bg-amber-100 px-2 py-1 rounded text-xs font-semibold">Hotel</span>
+            : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Facturación</span>,
         'Costo': `S/ ${Number(p.costo).toFixed(2)}`,
         'Duración': `${p.duracionDias} días`,
         'Anual': p.duracionDias >= 360 ? <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">Anual</span> : <span className="text-gray-500 text-xs">Mensual</span>,
@@ -46,7 +50,27 @@ const Planes = () => {
         <div className="p-0 md:p-6">
             <div className="flex justify-between items-center mb-6">
                 <div><h1 className="text-2xl font-bold text-gray-800">Planes de Suscripción</h1><p className="text-gray-500 text-sm">Gestiona los planes disponibles para las empresas</p></div>
-                <Button onClick={vm.handleOpenCreate} color="primary"><Icon icon="mdi:plus" className="mr-2" />Nuevo Plan</Button>
+                <div className="flex items-center gap-3">
+                    {!hasProductoScope && (
+                        <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
+                            {([
+                                { id: '', label: 'Todos' },
+                                { id: 'facturacion', label: 'Facturación' },
+                                { id: 'hotel', label: 'Hotel' },
+                            ] as const).map((item) => (
+                                <button
+                                    key={item.id || 'all'}
+                                    type="button"
+                                    onClick={() => vm.setProductoFiltro(item.id)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${vm.productoFiltro === item.id ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    <Button onClick={vm.handleOpenCreate} color="primary"><Icon icon="mdi:plus" className="mr-2" />Nuevo Plan</Button>
+                </div>
             </div>
             <div className="bg-white rounded-lg shadow border overflow-hidden">
                 <DataTable headerColumns={headerColumns} bodyData={bodyData} />
@@ -62,6 +86,31 @@ const Planes = () => {
                         <div className="space-y-4">
                             <InputPro isLabel label="Nombre del Plan" name="nombre" value={vm.form.nombre} onChange={(e) => vm.setForm({ ...vm.form, nombre: e.target.value })} placeholder="Ej. Plan Emprendedor" />
                             <InputPro isLabel label="Descripción Corta" name="descripcion" value={vm.form.descripcion} onChange={(e) => vm.setForm({ ...vm.form, descripcion: e.target.value })} placeholder="Breve descripción..." />
+                            {!hasProductoScope && (
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">Producto del plan</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {([
+                                            { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
+                                            { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                                        ] as const).map((product) => {
+                                            const selected = (vm.form.producto || 'facturacion') === product.id;
+                                            return (
+                                                <button
+                                                    key={product.id}
+                                                    type="button"
+                                                    onClick={() => vm.setForm((prev) => ({ ...prev, producto: product.id, moduloIds: [], subModuloIds: [] }))}
+                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${selected ? 'border-sky-500 bg-sky-50 shadow-sm' : 'border-gray-200 hover:border-sky-300 bg-white'}`}
+                                                >
+                                                    <Icon icon={product.icon} width={20} style={{ color: selected ? product.color : '#9CA3AF' }} />
+                                                    <span className={`font-semibold text-sm ${selected ? 'text-gray-900' : 'text-gray-500'}`}>{product.label}</span>
+                                                    {selected && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-sky-500" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-4">
                                 <InputPro isLabel label="Costo (S/)" name="costo" type="number" value={vm.form.costo} onChange={(e) => vm.setForm({ ...vm.form, costo: Number(e.target.value) })} />
                                 <InputPro isLabel label="Duración (Días)" name="duracionDias" type="number" value={vm.form.duracionDias} onChange={(e) => vm.setForm({ ...vm.form, duracionDias: Number(e.target.value) })} />
@@ -127,6 +176,7 @@ const Planes = () => {
                         <p className="text-sm text-purple-700">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
                     </div>
                     <ModuloSelector
+                        producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel'}
                         selectedModulos={vm.form.moduloIds || []}
                         onModulosChange={(modulos) => vm.setForm(prev => ({ ...prev, moduloIds: modulos }))}
                         selectedSubModulos={vm.form.subModuloIds || []}

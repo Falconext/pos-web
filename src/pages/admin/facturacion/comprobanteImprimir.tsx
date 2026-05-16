@@ -82,11 +82,14 @@ const ComprobantePrintPage = ({
     console.log(formValues)
 
     return (
-        <div id="print-root" className='hidden h-full bg-[#fff]'>
+        <div id="print-root" className='bg-[#fff]'>
             <div
                 ref={componentRef || localComponentRef}
                 className={`px-5 bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'pt-10 pb-10' : 'pt-5 pb-10'}`}
                 style={{
+                    width: size === 'TICKET' ? undefined : (size === 'A5' ? '148mm' : '210mm'),
+                    margin: size === 'TICKET' ? undefined : '0 auto',
+                    minHeight: size === 'TICKET' ? undefined : (size === 'A5' ? '210mm' : '297mm'),
                     fontFamily:
                         size === 'TICKET'
                             ? 'VT323, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'

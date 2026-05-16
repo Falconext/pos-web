@@ -25,6 +25,14 @@ const persons = [
     { id: 'CLIENTE_PROVEEDOR', value: 'CLIENTE-PROVEEDOR' },
 ];
 
+const DOC_TYPES = [
+    { key: 'DNI', label: 'DNI', digits: 8, hint: 'Ingresa 8 dígitos para consultar automáticamente' },
+    { key: 'RUC', label: 'RUC', digits: 11, hint: 'Ingresa 11 dígitos para consultar RUC automáticamente' },
+    { key: 'CE', label: 'C.E.', digits: null, hint: null },
+    { key: 'PASAPORTE', label: 'Pasaporte', digits: null, hint: null },
+    { key: 'OTRO', label: 'Otro', digits: null, hint: null },
+];
+
 export default function ModalClient({
     isOpenModal,
     closeModal,
@@ -42,15 +50,27 @@ export default function ModalClient({
         getUbigeos();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const activeTipoDoc = formValues?.tipoDoc || 'DNI';
+    const activeDocType = DOC_TYPES.find(d => d.key === activeTipoDoc) ?? DOC_TYPES[0];
+
+    const handleTipoDocChange = (key: string) => {
+        setFormValues({ ...formValues, tipoDoc: key, nroDoc: '' });
+        setErrors({ ...errors, nroDoc: '' });
+    };
+
     const handleChange = async (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const updatedFormValues = { ...formValues, [name]: value };
         setFormValues(updatedFormValues);
 
         if (name === 'nroDoc') {
-            const cleanValue = value.trim();
-            if (cleanValue.length === 8 || cleanValue.length === 11) {
-                const result = await getClientFromDoc(cleanValue);
+            const clean = value.trim();
+            const shouldLookup =
+                (activeTipoDoc === 'DNI' && clean.length === 8) ||
+                (activeTipoDoc === 'RUC' && clean.length === 11);
+
+            if (shouldLookup) {
+                const result = await getClientFromDoc(clean, activeTipoDoc);
                 if (result) {
                     setFormValues({
                         ...updatedFormValues,
@@ -67,31 +87,34 @@ export default function ModalClient({
     };
 
     const validateForm = () => {
+        const doc = formValues?.nroDoc?.trim() || '';
+        let nroDocError = '';
+
+        if (!doc) {
+            nroDocError = 'El número de documento es obligatorio';
+        } else if (activeTipoDoc === 'DNI') {
+            nroDocError = /^\d{8}$/.test(doc) ? '' : 'El DNI debe contener exactamente 8 dígitos numéricos';
+        } else if (activeTipoDoc === 'RUC') {
+            nroDocError = /^(10|20)\d{9}$/.test(doc) ? '' : 'El RUC debe contener 11 dígitos y comenzar con 10 o 20';
+        }
+
         const newErrors: any = {
-            nombre: formValues?.nombre?.trim() ? '' : 'La Razon social o el nombre de cliente es obligatorio',
-            nroDoc: (() => {
-                const doc = formValues?.nroDoc?.trim() || '';
-                if (!doc) return 'El número de documento es obligatorio';
-                if (formValues.persona === 'CLIENTE' || formValues.persona === 'CLIENTE-PROVEEDOR') {
-                    if (doc.length === 8) return /^\d{8}$/.test(doc) ? '' : 'El DNI debe contener exactamente 8 dígitos numéricos';
-                    if (doc.length === 11) return /^(10|20)\d{9}$/.test(doc) ? '' : 'El RUC debe contener 11 dígitos y comenzar con 10 o 20';
-                    return 'El documento debe ser un DNI (8 dígitos) o RUC (11 dígitos)';
-                }
-                return '';
-            })(),
+            nombre: formValues?.nombre?.trim() ? '' : 'La Razón social o nombre del cliente es obligatorio',
+            nroDoc: nroDocError,
         };
         setErrors(newErrors);
-        return Object.values(newErrors).every((error) => !error);
+        return Object.values(newErrors).every((e) => !e);
     };
 
     const handleSubmit = async () => {
         if (!validateForm()) return;
+        const payload = { ...formValues, tipoDoc: activeTipoDoc };
 
         if (Number(formValues?.id) !== 0 && isEdit) {
-            editClients({ ...formValues, tipoDoc: formValues.nroDoc.length === 8 ? 'DNI' : 'RUC' });
+            editClients(payload);
             closeModal();
         } else {
-            addClients({ ...formValues, tipoDoc: formValues.nroDoc.length === 8 ? 'DNI' : 'RUC', estado: 'ACTIVO' });
+            addClients({ ...payload, estado: 'ACTIVO' });
             closeModal();
         }
     };
@@ -100,22 +123,61 @@ export default function ModalClient({
         setFormValues({ ...formValues, [name]: value, [id]: idValue });
     };
 
+    const inputPlaceholder = activeDocType.key === 'DNI' ? 'Nro. de DNI'
+        : activeDocType.key === 'RUC' ? 'Nro. de RUC'
+            : activeDocType.key === 'CE' ? 'Nro. de Carnet de Extranjería'
+                : activeDocType.key === 'PASAPORTE' ? 'Nro. de Pasaporte'
+                    : 'Nro. de documento';
+
     return (
         <div>
             {isOpenModal && (
                 <Modal width="600px" height="auto" position="right" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? 'Editar cliente' : 'Nuevo cliente'}>
                     <div className="md:px-6 grid grid-cols-1 mt-5 gap-5">
-                        <div>
-                            <InputPro autocomplete="off" error={errors.nroDoc} value={formValues?.nroDoc} name="nroDoc" onChange={handleChange} isLabel label="Nro. documento" />
+
+                        {/* Tipo de documento + número */}
+                        <div className="space-y-3">
+                            <p className="text-xs font-semibold text-gray-500 tracking-wide">N° de Documento</p>
+                            <div className="flex flex-wrap gap-2 w-full">
+                                {DOC_TYPES.map((dt) => (
+                                    <button
+                                        key={dt.key}
+                                        type="button"
+                                        onClick={() => handleTipoDocChange(dt.key)}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 ${activeTipoDoc === dt.key
+                                            ? 'bg-gray-900 text-white border-gray-900'
+                                            : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500 hover:text-gray-800'
+                                            }`}
+                                    >
+                                        {dt.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <InputPro
+                                autocomplete="off"
+                                error={errors.nroDoc}
+                                value={formValues?.nroDoc}
+                                name="nroDoc"
+                                onChange={handleChange}
+                                isLabel
+                                label={inputPlaceholder}
+                            />
+                            {activeDocType.hint && (
+                                <p className="text-xs text-gray-400 flex items-center gap-1">
+                                    <span className="inline-block w-3.5 h-3.5 rounded-full border border-gray-400 text-center leading-3 text-[10px]">i</span>
+                                    {activeDocType.hint}
+                                </p>
+                            )}
                         </div>
+
                         <div>
                             <Select defaultValue={formValues?.persona} error={''} isSearch options={persons} id="persona" name="personaName" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Persona" />
                         </div>
                         <div className="col-start-1 col-end-3">
-                            <InputPro autocomplete="off" value={formValues?.nombre} error={errors.nombre} name="nombre" onChange={handleChange} isLabel label="Nombre o Razon social" />
+                            <InputPro autocomplete="off" value={formValues?.nombre} error={errors.nombre} name="nombre" onChange={handleChange} isLabel label="Nombre o Razón social" />
                         </div>
                         <div className="col-start-1 col-end-3">
-                            <InputPro autocomplete="off" error={errors.direccion} value={formValues?.direccion} name="direccion" onChange={handleChange} isLabel label="Direccion" />
+                            <InputPro autocomplete="off" error={errors.direccion} value={formValues?.direccion} name="direccion" onChange={handleChange} isLabel label="Dirección" />
                         </div>
                         <div>
                             <InputPro autocomplete="off" value={formValues?.email} error={errors.email} name="email" onChange={handleChange} isLabel label="Correo principal" />
@@ -131,7 +193,7 @@ export default function ModalClient({
                                 name="nombreUbigeo"
                                 id="ubigeo"
                                 onChange={handleChangeSelect}
-                                label="Seleccionar ubigeo de la empresa"
+                                label="Seleccionar ubigeo"
                             />
                         </div>
                     </div>

@@ -54,6 +54,7 @@ export const useFacturacionViewModel = () => {
     const [barcodeLoading, setBarcodeLoading] = useState(false);
     const [barcodeError, setBarcodeError] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
+    const processedGuiaRef = useRef<string | null>(null);
 
     const _stateDefaultType = (location.state as any)?.defaultType as string | undefined;
     const _tipoDocInitMap: Record<string, string> = {
@@ -83,6 +84,7 @@ export const useFacturacionViewModel = () => {
         clienteNombre: "",
         comprobante: initialDocumentType,
         tipoDoc: isQuotationRoute ? "COT" : (_stateDefaultType ? (_tipoDocInitMap[_stateDefaultType] ?? '01') : (tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01")),
+        tipoOperacionId: 0,
         detalles: [],
         discount: 0,
         motivo: "",
@@ -173,9 +175,9 @@ export const useFacturacionViewModel = () => {
                 const opsData = (rOps && Array.isArray(rOps)) ? rOps : (rOps?.data || []);
                 if (Array.isArray(opsData)) {
                     setTiposOperacion(opsData);
-                    if (formValues.motivoId === 0 && !["NOTA DE CREDITO", "NOTA DE DEBITO"].includes(formValues.comprobante)) {
+                    if ((formValues.tipoOperacionId ?? 0) === 0 && !["NOTA DE CREDITO", "NOTA DE DEBITO"].includes(formValues.comprobante)) {
                         const ventaInterna = opsData.find((op: any) => op.codigo === '0101');
-                        if (ventaInterna) setFormValues(prev => ({ ...prev, motivoId: ventaInterna.id }));
+                        if (ventaInterna) setFormValues(prev => ({ ...prev, tipoOperacionId: ventaInterna.id }));
                     }
                 }
                 const rDet: any = await get('comprobante/tipos-detraccion');
@@ -365,6 +367,73 @@ export const useFacturacionViewModel = () => {
             }, 500);
 
             window.history.replaceState({}, document.title);
+        } else if (state?.guiaRemision) {
+            const { guiaRemision } = state;
+            const guiaKey = `${guiaRemision.serie}-${guiaRemision.correlativo}`;
+
+            if (processedGuiaRef.current !== guiaKey) {
+                processedGuiaRef.current = guiaKey;
+
+                // 1. Cliente
+                const newClient = {
+                    id: guiaRemision.clienteId || 0,
+                    nombre: guiaRemision.destinatarioRazonSocial,
+                    nroDoc: guiaRemision.destinatarioNumDoc,
+                    direccion: guiaRemision.llegadaDireccion || "",
+                    departamento: "", distrito: "", provincia: "", persona: "CLIENTE",
+                    ubigeo: guiaRemision.llegadaUbigeo || "",
+                    email: "", telefono: "", tipoDoc: guiaRemision.destinatarioTipoDoc,
+                    estado: "ACTIVO", tipoDocumentoId: parseInt(guiaRemision.destinatarioTipoDoc) || 6,
+                    empresaId: auth?.empresa?.id || 0,
+                    tipoDocumento: { codigo: guiaRemision.destinatarioTipoDoc, descripcion: "", id: parseInt(guiaRemision.destinatarioTipoDoc) || 6 }
+                };
+                setSelectedClient(newClient);
+                setFormValuesClient(newClient as any);
+                setFormValues(prev => ({
+                    ...prev,
+                    clienteId: newClient.id,
+                    clienteNombre: `${newClient.nroDoc}-${newClient.nombre}`
+                }));
+
+                // 2. Observaciones (Referencia a la guía)
+                const refText = `Guía de Remisión relacionada: ${guiaRemision.serie}-${guiaRemision.correlativo}`;
+                setFormValues(prev => ({
+                    ...prev,
+                    observaciones: prev.observaciones ? `${prev.observaciones}\n${refText}` : refText
+                }));
+
+                // 3. Productos (Detalles)
+                if (guiaRemision.detalles && Array.isArray(guiaRemision.detalles)) {
+                    resetProductInvoice();
+                    guiaRemision.detalles.forEach((d: any) => {
+                        addProductsInvoice({
+                            productoId: d.productoId || 0,
+                            descripcion: d.descripcion,
+                            categoriaId: 1,
+                            precioUnitario: 0,
+                            categoriaNombre: "General",
+                            afectacionNombre: "Gravado – Operación Onerosa",
+                            tipoAfectacionIGV: "10",
+                            stock: 999,
+                            codigo: d.codigoProducto,
+                            unidadMedidaId: 1,
+                            unidadMedidaNombre: d.unidadMedida || "NIU",
+                            estado: "ACTIVO",
+                            codigoBarras: "",
+                            cantidadToInvoice: d.cantidad,
+                            discount: 0,
+                            cantidad: d.cantidad,
+                            precioBase: 0
+                        } as any);
+                    });
+
+                    setTimeout(() => {
+                        useAlertStore.getState().alert("Guía cargada. Por favor, asigne los precios unitarios a los productos.", "info");
+                    }, 500);
+                }
+            }
+
+            window.history.replaceState({}, document.title);
         }
     }, [location]);
 
@@ -375,6 +444,11 @@ export const useFacturacionViewModel = () => {
             setSerie("");
             setCorrelative("");
             getSerieAndCorrelativeByReceipt(auth?.empresa?.id, formValues?.tipoDoc);
+
+            const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
+            if (ventaInterna && (formValues.comprobante === "BOLETA" || formValues.comprobante === "NOTA DE PEDIDO")) {
+                setFormValues(prev => ({ ...prev, tipoOperacionId: ventaInterna.id }));
+            }
 
             if (formValues?.comprobante === "BOLETA" || formValues?.comprobante === "NOTA DE PEDIDO") {
                 const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
@@ -390,7 +464,7 @@ export const useFacturacionViewModel = () => {
                 setSelectedClient(null);
             }
         }
-    }, [formValues.comprobante, receiptNoteId]);
+    }, [formValues.comprobante, receiptNoteId, tiposOperacion, clients]);
 
     let comprobantesGenerar = isQuotationRoute
         ? tiposCotizacion
@@ -691,10 +765,10 @@ export const useFacturacionViewModel = () => {
 
     const addInvoiceReceipt = async () => {
         if (!validateForm()) return;
-        if (formValues?.comprobante === "FACTURA" && selectedClient?.nroDoc.length !== 11) {
-            if (selectedClient?.nroDoc.length === 8) {
-                return useAlertStore.getState().alert("El número de documento del cliente debe ser un ruc (11 dígitos) para generar una factura", "error")
-            }
+        const selectedOperacion = tiposOperacion.find(op => op.id === formValues.tipoOperacionId);
+        const isExportServiceHotel = selectedOperacion?.codigo === '0202';
+        if (formValues?.comprobante === "FACTURA" && selectedClient?.nroDoc?.length !== 11 && !isExportServiceHotel) {
+            return useAlertStore.getState().alert("El cliente debe tener RUC (11 dígitos) para generar una factura. Para Hospedaje a no domiciliados use Tipo de operación 0202.", "error");
         }
         if ((serie === "" || correlative === "") && formValues?.comprobante === "NOTA DE CREDITO") {
             return useAlertStore.getState().alert("Serie y correlativo son obligatorios para nota de credito", "error")
@@ -707,7 +781,6 @@ export const useFacturacionViewModel = () => {
         }
 
         const fechaEmision = formatISO(new Date(), { representation: 'complete' });
-        const selectedOperacion = tiposOperacion.find(op => op.id === formValues.motivoId);
 
         if (selectedOperacion?.codigo === '0112') {
             if (!tipoDetraccionId || !cuentaBancoNacion || !porcentajeDetraccion || !montoDetraccion) {
@@ -744,7 +817,7 @@ export const useFacturacionViewModel = () => {
         }
 
         const baseData = {
-            tipoOperacionId: formValues.motivoId || 1,
+            tipoOperacionId: formValues.tipoOperacionId || 1,
             fechaEmision,
             medioPago: paymentMethod,
             vuelto: formValues?.vuelto,
@@ -839,8 +912,27 @@ export const useFacturacionViewModel = () => {
         }
     }, [invoiceData])
 
+    // Hotel: si el producto de la empresa es HOTEL y el cliente no es RUC, sugerir 0202 (Hospedaje no domiciliados)
+    useEffect(() => {
+        if (formValues.comprobante !== "FACTURA") return;
+        const productoEmpresa = String(auth?.empresa?.producto ?? '').toLowerCase();
+        if (productoEmpresa !== 'hotel') return;
+
+        const cliTipoDoc = String((selectedClient as any)?.tipoDocumento?.codigo ?? '').trim();
+        if (!cliTipoDoc || cliTipoDoc === '6') return;
+
+        const op0202 = tiposOperacion.find((op: any) => op.codigo === '0202');
+        if (!op0202) return;
+
+        const currentOp = tiposOperacion.find((op: any) => op.id === formValues.tipoOperacionId);
+        if (!currentOp || currentOp.codigo === '0101') {
+            setFormValues(prev => ({ ...prev, tipoOperacionId: op0202.id }));
+        }
+    }, [auth?.empresa?.producto, formValues.comprobante, formValues.tipoOperacionId, selectedClient, tiposOperacion]);
+
     const getDocumentInvoice = async () => {
-        const result = await getInvoiceBySerieCorrelative(debounceSerie.toUpperCase(), debounceCorrelative, formValues.motivoId);
+        const motivoIdForNotes = ["NOTA DE CREDITO", "NOTA DE DEBITO"].includes(formValues.comprobante) ? formValues.motivoId : undefined;
+        const result = await getInvoiceBySerieCorrelative(debounceSerie.toUpperCase(), debounceCorrelative, motivoIdForNotes);
         if (result.error) return useAlertStore.getState().alert(`${result.error}`, 'error');
     }
 
@@ -873,7 +965,7 @@ export const useFacturacionViewModel = () => {
         }
     }, [printSize]);
 
-    const selectOperation = tiposOperacion.find(op => op.id === formValues.motivoId);
+    const selectOperation = tiposOperacion.find(op => op.id === formValues.tipoOperacionId);
 
     useEffect(() => {
         if (totalAdjusted < 700 && retencionData) {
@@ -899,7 +991,7 @@ export const useFacturacionViewModel = () => {
             comprobante: formValues?.comprobante,
             tipoDoc: formValues.tipoDoc,
             vuelto: 0,
-            motivoId: ventaInterna ? ventaInterna.id : initFormValues.motivoId
+            tipoOperacionId: ventaInterna ? ventaInterna.id : initFormValues.tipoOperacionId
         });
         setPay(0);
         setChange(0);

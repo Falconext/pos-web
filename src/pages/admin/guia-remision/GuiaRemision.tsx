@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import moment from "moment";
 import Button from "@/components/Button";
@@ -33,6 +34,7 @@ const MOTIVOS_TRASLADO: Record<string, string> = {
 };
 
 const GuiaRemision = () => {
+    const navigate = useNavigate();
     const { getAllGuiasRemision, guiasRemision, enviarSunat, deleteGuiaRemision, downloadPdf } = useGuiaRemisionStore();
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -178,16 +180,21 @@ const GuiaRemision = () => {
         destinatario: guia.destinatarioRazonSocial,
         motivo: MOTIVOS_TRASLADO[guia.tipoTraslado] || guia.tipoTraslado,
         estadoSunat: (
-            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border shadow-sm ${
                 guia.estadoSunat === 'ACEPTADO' 
-                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30' :
-                guia.estadoSunat === 'RECHAZADO' 
-                ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/30' :
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' :
+                guia.estadoSunat === 'RECHAZADO' || guia.estadoSunat === 'FALLIDO_ENVIO'
+                ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' :
                 guia.estadoSunat === 'ENVIADO' 
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/30' :
-                'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-100 dark:border-violet-500/20' :
+                'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
             }`}>
-                {guia.estadoSunat || 'PENDIENTE'}
+                <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                    guia.estadoSunat === 'ACEPTADO' ? 'bg-emerald-500' :
+                    guia.estadoSunat === 'RECHAZADO' || guia.estadoSunat === 'FALLIDO_ENVIO' ? 'bg-rose-500' :
+                    guia.estadoSunat === 'ENVIADO' ? 'bg-violet-500' : 'bg-blue-500'
+                }`}></span>
+                {guia.estadoSunat === 'FALLIDO_ENVIO' ? 'FALLIDO' : (guia.estadoSunat || 'PENDIENTE')}
             </span>
         ),
         acciones: (
@@ -279,6 +286,18 @@ const GuiaRemision = () => {
                     anchorEl={anchorEl}
                 >
                     <div className="py-1">
+                        {['PENDIENTE', 'ACEPTADO', 'EMITIDO', 'ENVIADO', 'FALLIDO_ENVIO'].includes(selectedEstadoSunat) ? (
+                            <button
+                                onClick={() => {
+                                    handleCloseMenu();
+                                    navigate("/administrador/facturacion/nuevo", { state: { guiaRemision: selectedRow } });
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50"
+                            >
+                                <Icon icon="solar:bill-bold" width={16} height={16} /> <span>Facturar Guía</span>
+                            </button>
+                        ) : null}
+
                         <button
                             onClick={async () => {
                                 handleCloseMenu();

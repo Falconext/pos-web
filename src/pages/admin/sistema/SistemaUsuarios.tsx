@@ -5,6 +5,7 @@ import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
 
 type SistemaNegocio = 'FALCONEXT' | 'KREZKA' | '';
+type SistemaProducto = 'FACTURACION' | 'HOTEL' | '';
 
 interface SistemaUser {
   id: number;
@@ -15,6 +16,7 @@ interface SistemaUser {
   rol: string;
   estado: string;
   sistemaNegocio?: string | null;
+  sistemaProducto?: string | null;
 }
 
 interface FormData {
@@ -24,17 +26,19 @@ interface FormData {
   celular: string;
   password: string;
   sistemaNegocio: SistemaNegocio;
+  sistemaProducto: SistemaProducto;
 }
 
 const EMPTY_FORM: FormData = {
-  nombre: '', email: '', dni: '', celular: '', password: '', sistemaNegocio: '',
+  nombre: '', email: '', dni: '', celular: '', password: '', sistemaNegocio: '', sistemaProducto: '',
 };
 
 export default function SistemaUsuarios() {
   const authUser = useAuthStore(s => s.auth);
-  // Si el admin logueado tiene sistemaNegocio, solo puede crear admins de su plataforma
+  // Si el admin logueado tiene alcance configurado, solo puede crear/editar dentro de ese scope
   const miSistemaNegocio = authUser?.sistemaNegocio ?? null;
-  const esSuperAdmin = !miSistemaNegocio;
+  const miSistemaProducto = authUser?.sistemaProducto ?? null;
+  const esSuperAdmin = !miSistemaNegocio && !miSistemaProducto;
 
   const [users, setUsers] = useState<SistemaUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -75,7 +79,11 @@ export default function SistemaUsuarios() {
 
   const openCreate = () => {
     setEditTarget(null);
-    setForm({ ...EMPTY_FORM, sistemaNegocio: esSuperAdmin ? '' : (miSistemaNegocio as SistemaNegocio) });
+    setForm({
+      ...EMPTY_FORM,
+      sistemaNegocio: esSuperAdmin ? '' : (miSistemaNegocio as SistemaNegocio),
+      sistemaProducto: esSuperAdmin ? '' : (miSistemaProducto as SistemaProducto),
+    });
     setErrors({});
     setShowPassword(false);
     setModalOpen(true);
@@ -90,6 +98,7 @@ export default function SistemaUsuarios() {
       celular: u.celular,
       password: '',
       sistemaNegocio: (u.sistemaNegocio as SistemaNegocio) ?? '',
+      sistemaProducto: (u.sistemaProducto as SistemaProducto) ?? '',
     });
     setErrors({});
     setShowPassword(false);
@@ -128,6 +137,7 @@ export default function SistemaUsuarios() {
         dni: form.dni,
         celular: form.celular,
         sistemaNegocio: form.sistemaNegocio || null,
+        sistemaProducto: form.sistemaProducto || null,
       };
       if (!editTarget) payload.password = form.password;
       if (editTarget) {
@@ -198,6 +208,31 @@ export default function SistemaUsuarios() {
     );
   };
 
+  const ProductoBadge = ({ sp }: { sp?: string | null }) => {
+    if (!sp) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-100 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800/50">
+          <Icon icon="solar:layers-bold" width={11} />
+          Todos los productos
+        </span>
+      );
+    }
+    if (sp === 'HOTEL') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/50">
+          <Icon icon="solar:bed-bold" width={11} />
+          Hotel
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800/50">
+        <Icon icon="solar:bill-list-bold" width={11} />
+        Facturación
+      </span>
+    );
+  };
+
   const SistemaBtn = ({ value, label, icon, desc, activeColor }: {
     value: SistemaNegocio; label: string; icon: string; desc: string; activeColor: 'violet' | 'blue';
   }) => {
@@ -211,6 +246,28 @@ export default function SistemaUsuarios() {
       <button
         type="button"
         onClick={() => setForm(prev => ({ ...prev, sistemaNegocio: value }))}
+        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${active ? colorActive : 'border-gray-100 dark:border-slate-700 hover:border-gray-200'}`}
+      >
+        <Icon icon={icon} width={22} className={iconColor} />
+        <span className={`text-[11px] font-bold ${textColor}`}>{label}</span>
+        <span className="text-[10px] text-gray-400">{desc}</span>
+      </button>
+    );
+  };
+
+  const SistemaProductoBtn = ({ value, label, icon, desc, activeColor }: {
+    value: SistemaProducto; label: string; icon: string; desc: string; activeColor: 'sky' | 'amber';
+  }) => {
+    const active = form.sistemaProducto === value;
+    const colorActive = activeColor === 'sky'
+      ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20'
+      : 'border-amber-500 bg-amber-50 dark:bg-amber-900/20';
+    const iconColor = active ? (activeColor === 'sky' ? 'text-sky-600' : 'text-amber-600') : 'text-gray-400';
+    const textColor = active ? (activeColor === 'sky' ? 'text-sky-700 dark:text-sky-300' : 'text-amber-700 dark:text-amber-300') : 'text-gray-500 dark:text-gray-400';
+    return (
+      <button
+        type="button"
+        onClick={() => setForm(prev => ({ ...prev, sistemaProducto: value }))}
         className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${active ? colorActive : 'border-gray-100 dark:border-slate-700 hover:border-gray-200'}`}
       >
         <Icon icon={icon} width={22} className={iconColor} />
@@ -287,6 +344,7 @@ export default function SistemaUsuarios() {
                 <th className="px-6 py-4">DNI</th>
                 <th className="px-6 py-4">Celular</th>
                 {esSuperAdmin && <th className="px-6 py-4">Sistema de negocio</th>}
+                {esSuperAdmin && <th className="px-6 py-4">Sistema de producto</th>}
                 <th className="px-6 py-4 text-center">Estado</th>
                 <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
@@ -295,7 +353,7 @@ export default function SistemaUsuarios() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: esSuperAdmin ? 7 : 6 }).map((_, j) => (
+                    {Array.from({ length: esSuperAdmin ? 8 : 6 }).map((_, j) => (
                       <td key={j} className="px-6 py-4">
                         <div className="h-4 bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
                       </td>
@@ -304,7 +362,7 @@ export default function SistemaUsuarios() {
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={esSuperAdmin ? 7 : 6} className="px-6 py-20 text-center text-gray-400">
+                  <td colSpan={esSuperAdmin ? 8 : 6} className="px-6 py-20 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <Icon icon="solar:shield-user-linear" width={52} className="opacity-20" />
                       <p className="text-sm">{search ? 'No se encontraron administradores.' : 'No hay administradores creados aún.'}</p>
@@ -331,6 +389,7 @@ export default function SistemaUsuarios() {
                     <td className="px-6 py-4 font-mono text-gray-500 dark:text-gray-400">{u.dni}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.celular}</td>
                     {esSuperAdmin && <td className="px-6 py-4"><NegocioBadge sn={u.sistemaNegocio} /></td>}
+                    {esSuperAdmin && <td className="px-6 py-4"><ProductoBadge sp={u.sistemaProducto} /></td>}
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleToggleState(u)}
@@ -387,32 +446,50 @@ export default function SistemaUsuarios() {
 
               {/* Sistema de negocio — solo visible para supermegaadmin */}
               {esSuperAdmin ? (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Sistema de negocio
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <SistemaBtn value="" label="Todos" icon="solar:crown-bold-duotone" desc="Ambos sistemas" activeColor="violet" />
-                    <SistemaBtn value="FALCONEXT" label="Falconext" icon="solar:rocket-bold-duotone" desc="Solo Falconext" activeColor="violet" />
-                    <SistemaBtn value="KREZKA" label="Krezka" icon="solar:star-bold-duotone" desc="Solo Krezka" activeColor="blue" />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Sistema de negocio
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <SistemaBtn value="" label="Todos" icon="solar:crown-bold-duotone" desc="Ambos sistemas" activeColor="violet" />
+                      <SistemaBtn value="FALCONEXT" label="Falconext" icon="solar:rocket-bold-duotone" desc="Solo Falconext" activeColor="violet" />
+                      <SistemaBtn value="KREZKA" label="Krezka" icon="solar:star-bold-duotone" desc="Solo Krezka" activeColor="blue" />
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      {form.sistemaNegocio === ''
+                        ? 'Sin asignar -> ve ambos sistemas'
+                        : `Solo verá el sistema ${form.sistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}`}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-gray-400">
-                    {form.sistemaNegocio === ''
-                      ? 'Sin asignar → Supermegaadmin, ve y gestiona ambos sistemas completos'
-                      : `Solo verá las empresas y datos del sistema ${form.sistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}`}
-                  </p>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Sistema de producto
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <SistemaProductoBtn value="" label="Todos" icon="solar:layers-bold-duotone" desc="Todos los productos" activeColor="sky" />
+                      <SistemaProductoBtn value="FACTURACION" label="Facturación" icon="solar:bill-list-bold-duotone" desc="Solo facturación" activeColor="sky" />
+                      <SistemaProductoBtn value="HOTEL" label="Hotel" icon="solar:bed-bold-duotone" desc="Solo hotel" activeColor="amber" />
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      {form.sistemaProducto === ''
+                        ? 'Sin asignar -> ve todos los productos'
+                        : `Solo verá el producto ${form.sistemaProducto === 'HOTEL' ? 'Hotel' : 'Facturación'}`}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2.5 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
                   <Icon
-                    icon={miSistemaNegocio === 'FALCONEXT' ? 'solar:rocket-bold-duotone' : 'solar:star-bold-duotone'}
+                    icon={!miSistemaNegocio ? 'solar:layers-bold-duotone' : (miSistemaNegocio === 'FALCONEXT' ? 'solar:rocket-bold-duotone' : 'solar:star-bold-duotone')}
                     className="text-blue-600 dark:text-blue-400 flex-shrink-0"
                     width={18}
                   />
                   <p className="text-xs text-blue-700 dark:text-blue-300">
                     Este admin se creará para el sistema <span className="font-bold">
                       {miSistemaNegocio === 'FALCONEXT' ? 'Falconext' : miSistemaNegocio === 'KREZKA' ? 'Krezka' : 'todos'}
-                    </span>
+                    </span> y producto <span className="font-bold">{miSistemaProducto || 'todos'}</span>
                   </p>
                 </div>
               )}

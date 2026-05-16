@@ -18,6 +18,8 @@ interface Empresa {
   nombreComercial?: string;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean | null;
+  brand?: string;
+  producto?: string;
   plan: {
     id: number;
     nombre: string;
@@ -71,6 +73,7 @@ interface CreateEmpresaDto {
   fechaActivacion: string;
   fechaExpiracion?: string;
   brand?: string;
+  producto?: string;
   usuarioPse?: string;
   contrasenaPse?: string;
   usuario: {
@@ -101,6 +104,7 @@ interface UpdateEmpresaDto {
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
+  producto?: string;
   usuarioPse?: string;
   contrasenaPse?: string;
 }
@@ -113,6 +117,8 @@ interface ListEmpresaDto {
   order?: 'asc' | 'desc';
   estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
   tipoEmpresa?: 'FORMAL' | 'INFORMAL' | '';
+  brand?: string;
+  producto?: 'facturacion' | 'hotel';
 }
 
 interface EmpresasListResponse {
@@ -216,6 +222,7 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
       const payload = {
         ...data,
         brand: data.brand || import.meta.env.VITE_PUBLIC_BRAND || 'falconext',
+        producto: data.producto || 'facturacion',
       };
       const response = await apiClient.post<Empresa>('/empresa/crear', payload);
 

@@ -35,18 +35,18 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
 
                 {/* Tipo de Operación y Detracción */}
-                {(!["NOTA DE CREDITO", "NOTA DE DEBITO", "COTIZACIÓN"].includes(vm.formValues?.comprobante)) && (
+                {(vm.formValues?.comprobante === "FACTURA") && (
                     <div className="col-span-1 md:col-span-2 space-y-2 mt-0 md:mt-2">
                         <div>
                             <Select
-                                value={vm.tiposOperacion.find((op: any) => Number(op.id) === Number(vm.formValues.motivoId))?.descripcion || ""}
+                                value={vm.tiposOperacion.find((op: any) => Number(op.id) === Number(vm.formValues.tipoOperacionId))?.descripcion || ""}
                                 options={vm.tiposOperacion.map((op: any) => ({ id: op.id, value: op.descripcion }))}
                                 label="Tipo de Operación"
-                                id="motivoId"
-                                name="motivo"
+                                id="tipoOperacionId"
+                                name="tipoOperacion"
                                 onChange={(idVal, val, name, id) => {
                                     const newId = Number(idVal);
-                                    const updatedForm = { ...vm.formValues, motivoId: newId };
+                                    const updatedForm = { ...vm.formValues, tipoOperacionId: newId };
                                     const selectedOp = vm.tiposOperacion.find((op: any) => Number(op.id) === newId);
 
                                     if (selectedOp?.codigo !== '0112') {
@@ -68,7 +68,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                         </div>
 
                         {/* Panel Detracción Compacto */}
-                        {vm.tiposOperacion.find((op: any) => op.id === vm.formValues.motivoId)?.codigo === '0112' && (
+                        {vm.tiposOperacion.find((op: any) => op.id === vm.formValues.tipoOperacionId)?.codigo === '0112' && (
                             <div className="space-y-2">
                                 <button
                                     type="button"
@@ -100,7 +100,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 )}
 
                 {/* Botón Retención 3% */}
-                {(vm.tiposOperacion.find((op: any) => op.id === vm.formValues.motivoId)?.codigo !== "0112" && vm.totalAdjusted >= 700 && vm.auth?.empresa?.esAgenteRetencion) && (
+                {(vm.tiposOperacion.find((op: any) => op.id === vm.formValues.tipoOperacionId)?.codigo !== "0112" && vm.totalAdjusted >= 700 && vm.auth?.empresa?.esAgenteRetencion) && (
                     <div className="mt-0 col-span-2 mb-0 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-lg p-3">
                         <div className="space-y-2">
                             <button

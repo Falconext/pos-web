@@ -38,6 +38,7 @@ const FormGuiaRemision = () => {
     const { getUbigeos, ubigeos } = useExtentionsStore();
 
     const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+    const [isCompradorModalOpen, setIsCompradorModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
     // Initial state matching IGuiaRemision
@@ -62,6 +63,9 @@ const FormGuiaRemision = () => {
         partidaDireccion: auth?.empresa?.direccion || "",
         llegadaUbigeo: "",
         llegadaDireccion: "",
+        compradorTipoDoc: "6",
+        compradorNumDoc: "",
+        compradorRazonSocial: "",
         fechaInicioTraslado: format(new Date(), "yyyy-MM-dd"),
         retornoVehiculoVacio: false,
         retornoEnvasesVacios: false,
@@ -88,6 +92,21 @@ const FormGuiaRemision = () => {
             setFormValues(prev => ({ ...prev, correlativo: siguienteCorrelativo }));
         }
     }, [siguienteCorrelativo]);
+
+    useEffect(() => {
+        // Lógica específica por Motivo de Traslado
+        if (formValues.tipoTraslado === "03") { // Venta a Terceros
+            setFormValues(prev => ({ ...prev, modoTransporte: "01" }));
+        }
+        if (formValues.tipoTraslado === "04" && auth?.empresa?.ruc) { // Traslado entre establecimientos
+            setFormValues(prev => ({
+                ...prev,
+                destinatarioTipoDoc: "6",
+                destinatarioNumDoc: auth.empresa!.ruc,
+                destinatarioRazonSocial: auth.empresa!.razonSocial || "",
+            }));
+        }
+    }, [formValues.tipoTraslado, auth?.empresa]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -117,6 +136,15 @@ const FormGuiaRemision = () => {
             clienteId: client.id,
             llegadaDireccion: client.direccion || "",
             llegadaUbigeo: client.ubigeo || ""
+        }));
+    };
+
+    const handleCompradorSelect = (client: any) => {
+        setFormValues(prev => ({
+            ...prev,
+            compradorTipoDoc: client.tipoDocumentoId === "6" ? "6" : "1",
+            compradorNumDoc: client.nroDoc,
+            compradorRazonSocial: client.nombre || client.razonSocial,
         }));
     };
 
@@ -162,6 +190,29 @@ const FormGuiaRemision = () => {
             return;
         }
 
+        // Validaciones por Motivo de Traslado
+        if (formValues.tipoTraslado === "02" && formValues.destinatarioNumDoc.trim() === auth?.empresa?.ruc) {
+            useAlertStore.getState().alert("En un traslado por Compra, el RUC del Proveedor no puede ser el mismo que el de tu empresa.", "warning");
+            return;
+        }
+
+        if (formValues.tipoTraslado === "04" && formValues.destinatarioNumDoc.trim() !== auth?.empresa?.ruc) {
+            useAlertStore.getState().alert("En traslado entre establecimientos, el destinatario debe ser tu propia empresa.", "warning");
+            return;
+        }
+
+        if (formValues.tipoTraslado === "03" && (!formValues.compradorNumDoc || !formValues.compradorRazonSocial)) {
+            useAlertStore.getState().alert("Datos del Comprador incompletos para Venta a Terceros.", "warning");
+            return;
+        }
+
+        // Configuración de Anexos para Traslado entre Establecimientos
+        const payload = { ...formValues };
+        if (payload.tipoTraslado === "04") {
+            payload.partidaCodigoEstablecimiento = "0700";
+            payload.llegadaCodigoEstablecimiento = "0700";
+        }
+
         // Validaciones específicas según modo de transporte
         if (formValues.modoTransporte === "01") { // Público
             if (!formValues.transportistaRuc || !formValues.transportistaRazonSocial) {
@@ -177,7 +228,7 @@ const FormGuiaRemision = () => {
             }
         }
 
-        const res = await createGuiaRemision(formValues);
+        const res = await createGuiaRemision(payload);
         if (res.success) {
             navigate("/admin/guia-remision");
         }
@@ -201,8 +252,16 @@ const FormGuiaRemision = () => {
             <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl relative bg-gray-50/30 dark:bg-slate-900/10">
                 <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
                     <Icon icon="solar:user-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                    Datos del Destinatario
+                    {formValues.tipoTraslado === '02' ? 'Datos del Proveedor (Origen)' : 'Datos del Destinatario'}
                 </h3>
+                {formValues.tipoTraslado === '02' && (
+                    <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg flex items-start gap-3 border border-blue-100 dark:border-blue-800/30">
+                        <Icon icon="solar:info-circle-bold-duotone" className="text-blue-500 mt-0.5" width="20" />
+                        <p className="text-sm text-blue-800 dark:text-blue-300">
+                            Al ser un traslado por Compra, el destinatario final es tu empresa. Aquí debes ingresar los datos de tu <strong>Proveedor</strong>.
+                        </p>
+                    </div>
+                )}
                 <div className="absolute top-4 right-4">
                     <Button size="sm" onClick={() => setIsClientModalOpen(true)} outline color="black">Buscar Cliente</Button>
                 </div>
@@ -221,6 +280,32 @@ const FormGuiaRemision = () => {
                     <InputPro label="Razón Social / Nombre" name="destinatarioRazonSocial" value={formValues.destinatarioRazonSocial} onChange={handleChange} isLabel />
                 </div>
             </div>
+
+            {formValues.tipoTraslado === '03' && (
+                <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl relative bg-blue-50/20 dark:bg-blue-900/10">
+                    <h3 className="font-bold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
+                        <Icon icon="solar:cart-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                        Datos del Comprador
+                    </h3>
+                    <div className="absolute top-4 right-4">
+                        <Button size="sm" onClick={() => setIsCompradorModalOpen(true)} outline color="black">Buscar Cliente</Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Select
+                            label="Tipo Doc."
+                            options={TIPO_DOC_OPTIONS}
+                            name="compradorTipoDoc"
+                            id="compradorTipoDoc"
+                            value={TIPO_DOC_OPTIONS.find(o => o.id === formValues.compradorTipoDoc)?.value || ""}
+                            defaultValue={formValues.compradorTipoDoc || "6"}
+                            onChange={handleSelectChange}
+                            error=""
+                        />
+                        <InputPro label="Número Documento" name="compradorNumDoc" value={formValues.compradorNumDoc || ""} onChange={handleChange} isLabel />
+                        <InputPro label="Razón Social / Nombre" name="compradorRazonSocial" value={formValues.compradorRazonSocial || ""} onChange={handleChange} isLabel />
+                    </div>
+                </div>
+            )}
 
             <div className="mb-6 border border-gray-100 dark:border-slate-800 p-5 rounded-2xl bg-gray-50/30 dark:bg-slate-900/10">
                 <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-wider text-xs">
@@ -426,6 +511,11 @@ const FormGuiaRemision = () => {
                 isOpen={isClientModalOpen}
                 onClose={() => setIsClientModalOpen(false)}
                 onSelect={handleClientSelect}
+            />
+            <ClientSearchModal
+                isOpen={isCompradorModalOpen}
+                onClose={() => setIsCompradorModalOpen(false)}
+                onSelect={handleCompradorSelect}
             />
             <ProductSearchModal
                 isOpen={isProductModalOpen}

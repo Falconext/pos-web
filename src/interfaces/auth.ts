@@ -26,6 +26,7 @@ export interface IUser {
     sedes?: ISede[]
     subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[]
     sistemaNegocio?: string | null
+    sistemaProducto?: string | null
 }
 
 export interface IResponse {

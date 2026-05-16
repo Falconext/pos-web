@@ -210,20 +210,18 @@ export default function ComprasView() {
                 compraId={vm.selectedCompraId}
             />
 
-            {vm.showPaymentModal && vm.selectedCompra && (
-                <ModalRegistrarPagoCompra
-                    compra={vm.selectedCompra}
-                    onClose={actions.closePago}
-                    onSuccess={actions.handlePaymentSuccess}
-                />
-            )}
+            <ModalRegistrarPagoCompra
+                isOpen={!!vm.showPaymentModal}
+                compra={vm.selectedCompra}
+                onClose={actions.closePago}
+                onSuccess={actions.handlePaymentSuccess}
+            />
 
-            {vm.showHistorialModal && vm.selectedCompra && (
-                <ModalHistorialPagosCompra
-                    compra={vm.selectedCompra}
-                    onClose={actions.closeHistorial}
-                />
-            )}
+            <ModalHistorialPagosCompra
+                isOpen={!!vm.showHistorialModal}
+                compra={vm.selectedCompra}
+                onClose={actions.closeHistorial}
+            />
 
             <ModalNuevaCompra
                 isOpen={vm.showNuevaCompraModal}

@@ -16,7 +16,7 @@ export interface IClientsState {
         allProperties?: boolean) => void
     // updateDocument: (data: any) => void
     toggleStateClient: (data: number) => void
-    getClientFromDoc: (nroDoc: string) => Promise<any>;
+    getClientFromDoc: (nroDoc: string, tipoDoc?: string) => Promise<any>;
     exportClients: (empresaId: number, search?: string) => Promise<void>;
     importClients: (file: File) => Promise<void>;
 }
@@ -120,10 +120,11 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
 
         }
     },
-    getClientFromDoc: async (nroDoc: string) => {
+    getClientFromDoc: async (nroDoc: string, tipoDoc?: string) => {
         useAlertStore.setState({ loading: true });
         try {
-            const endpoint = nroDoc.length === 8 ? `cliente/consultar/DNI/${nroDoc}` : `cliente/consultar/RUC/${nroDoc}`; 
+            const type = tipoDoc === 'RUC' ? 'RUC' : tipoDoc === 'DNI' ? 'DNI' : nroDoc.length === 11 ? 'RUC' : 'DNI';
+            const endpoint = `cliente/consultar/${type}/${nroDoc}`;
             const resp: any = await get(endpoint);
             console.log("Respuesta backend:", resp);
             useAlertStore.setState({ loading: false });

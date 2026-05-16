@@ -42,6 +42,7 @@ interface CreateFormData {
   usaDemo: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
+  producto?: 'facturacion' | 'hotel';
   usuario: {
     nombre: string;
     email: string;
@@ -72,6 +73,8 @@ interface EditFormData {
   usaDemo: boolean;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
+  brand?: string;
+  producto?: 'facturacion' | 'hotel';
   usuario?: {
     nombre?: string;
     email?: string;
@@ -105,7 +108,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const { getClientFromDoc } = useClientsStore();
   const { auth } = useAuthStore();
   const isAdminSistema = auth?.rol === 'ADMIN_SISTEMA';
-  const esSuperAdmin = isAdminSistema && !auth?.sistemaNegocio;
+  const hasNegocioScope = isAdminSistema && !!auth?.sistemaNegocio;
+  const hasProductoScope = isAdminSistema && !!auth?.sistemaProducto;
 
   const [activeTab, setActiveTab] = useState<'datos' | 'suscripcion' | 'sunat' | 'admin'>('datos');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -130,6 +134,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     usaCodigoBarrasManual: false,
     usaDemo: false,
     brand: '',
+    producto: 'facturacion',
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -151,6 +156,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     usuarioPse: '',
     contrasenaPse: '',
     usaDemo: false,
+    brand: 'falconext',
+    producto: 'facturacion',
     esAgenteRetencion: false,
     usaCodigoBarrasManual: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
@@ -171,10 +178,14 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (isEdit && empresaId) {
       obtenerEmpresa(empresaId);
     } else {
-      setCreateData(initialCreate);
+      setCreateData({
+        ...initialCreate,
+        brand: hasNegocioScope ? (String(auth?.sistemaNegocio || '').toLowerCase() || initialCreate.brand) : initialCreate.brand,
+        producto: hasProductoScope ? ((String(auth?.sistemaProducto || '').toLowerCase() === 'hotel') ? 'hotel' : 'facturacion') : initialCreate.producto,
+      });
       setLogoPreview('');
     }
-  }, [open, isEdit, empresaId, getRubros, getUbigeos, getPlanes, obtenerEmpresa, initialCreate]);
+  }, [open, isEdit, empresaId, getRubros, getUbigeos, getPlanes, obtenerEmpresa, initialCreate, hasNegocioScope, hasProductoScope, auth?.sistemaNegocio, auth?.sistemaProducto]);
 
   useEffect(() => {
     if (open && isEdit && empresa && empresaId && empresa.id === empresaId) {
@@ -201,6 +212,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         contrasenaPse: (empresa as any).contrasenaPse || '',
         usaDemo: Boolean((empresa as any).usaDemo),
         usaCodigoBarrasManual: Boolean((empresa as any).usaCodigoBarrasManual),
+        brand: (empresa as any).brand || 'falconext',
+        producto: (empresa as any).producto || 'facturacion',
         usuario: {
           nombre: adminUser.nombre || '',
           email: adminUser.email || '',
@@ -221,15 +234,22 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
   const rubrosOptions = rubros && Array.isArray(rubros) ? rubros : [];
   const ubigeosOptions = ubigeos.map((u: any) => ({ id: u.codigo, value: `${u.departamento} - ${u.provincia} - ${u.distrito}` }));
+  const productoActual = (isEdit ? editData.producto : createData.producto) || 'facturacion';
+  const planesDisponibles = useMemo(() => {
+    return (planes as any[] || []).filter((plan: any) => {
+      const planProducto = String(plan?.producto || 'facturacion').toLowerCase();
+      return planProducto === String(productoActual).toLowerCase();
+    });
+  }, [planes, productoActual]);
 
   const selectedPlan: any = useMemo(() => {
     const id = isEdit ? editData.planId : createData.planId;
-    return (planes as any[] || []).find((p: any) => p.id === id);
-  }, [planes, isEdit, editData.planId, createData.planId]);
+    return (planesDisponibles || []).find((p: any) => p.id === id);
+  }, [planesDisponibles, isEdit, editData.planId, createData.planId]);
 
   const storePlans: any[] = useMemo(() => {
-    return (planes as any[] || []).filter((p: any) => !!p?.tieneTienda);
-  }, [planes]);
+    return (planesDisponibles || []).filter((p: any) => !!p?.tieneTienda);
+  }, [planesDisponibles]);
 
   const selectFirstStorePlan = () => {
     if (!storePlans || storePlans.length === 0) {
@@ -372,7 +392,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       if (!createData.usuario?.password) e['usuario.password'] = 'Contraseña es requerida';
       if (!createData.usuario?.dni) e['usuario.dni'] = 'DNI es requerido';
       if (!createData.usuario?.celular) e['usuario.celular'] = 'Celular es requerido';
-      if (!isDemo && esSuperAdmin && !createData.brand) e.brand = 'Selecciona la plataforma de destino';
+      if (!isDemo && isAdminSistema && !hasNegocioScope && !createData.brand) e.brand = 'Selecciona la plataforma de destino';
+      if (!isDemo && isAdminSistema && !hasProductoScope && !createData.producto) e.producto = 'Selecciona el producto de destino';
     }
 
     setErrors(e);
@@ -501,27 +522,65 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 <div className="space-y-5 animate-in fade-in duration-300">
                   <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Información General</h3>
 
-                  {!isEdit && esSuperAdmin && (
+                  {(isAdminSistema && (!hasNegocioScope || !hasProductoScope)) && (
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Plataforma de destino <span className="text-red-500">*</span></p>
-                      <div className="grid grid-cols-2 gap-3">
-                        {([
-                          { id: 'falconext', label: 'Falconext', icon: 'solar:rocket-bold-duotone', color: '#6366F1' },
-                          { id: 'krezka', label: 'Krezka', icon: 'solar:star-bold-duotone', color: '#10B981' },
-                        ] as const).map((p) => {
-                          const sel = createData.brand === p.id;
-                          return (
-                            <button key={p.id} type="button"
-                              onClick={() => { setCreateData(prev => ({ ...prev, brand: p.id })); if (errors.brand) setErrors(prev => ({ ...prev, brand: '' })); }}
-                              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}>
-                              <Icon icon={p.icon} width={20} style={{ color: sel ? p.color : '#9CA3AF' }} />
-                              <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
-                              {sel && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-blue-500" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {errors.brand && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1"><Icon icon="solar:danger-circle-bold" width={13} />{errors.brand}</p>}
+                      {!hasNegocioScope && (
+                        <>
+                          <p className="text-sm font-semibold text-gray-700 mb-2">Plataforma de destino <span className="text-red-500">*</span></p>
+                          <div className="grid grid-cols-2 gap-3">
+                            {([
+                              { id: 'falconext', label: 'Falconext', icon: 'solar:rocket-bold-duotone', color: '#6366F1' },
+                              { id: 'krezka', label: 'Krezka', icon: 'solar:star-bold-duotone', color: '#10B981' },
+                            ] as const).map((p) => {
+                              const selectedBrand = isEdit ? editData.brand : createData.brand;
+                              const sel = selectedBrand === p.id;
+                              return (
+                                <button key={p.id} type="button"
+                                  onClick={() => {
+                                    if (isEdit) setEditData(prev => ({ ...prev, brand: p.id }));
+                                    else setCreateData(prev => ({ ...prev, brand: p.id }));
+                                    if (errors.brand) setErrors(prev => ({ ...prev, brand: '' }));
+                                  }}
+                                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}>
+                                  <Icon icon={p.icon} width={20} style={{ color: sel ? p.color : '#9CA3AF' }} />
+                                  <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
+                                  {sel && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-blue-500" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {errors.brand && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1"><Icon icon="solar:danger-circle-bold" width={13} />{errors.brand}</p>}
+                        </>
+                      )}
+
+                      {!hasProductoScope && (
+                        <>
+                          <p className="text-sm font-semibold text-gray-700 mt-4 mb-2">Producto de destino <span className="text-red-500">*</span></p>
+                          <div className="grid grid-cols-2 gap-3">
+                            {([
+                              { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
+                              { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                            ] as const).map((p) => {
+                              const selectedProducto = isEdit ? editData.producto : createData.producto;
+                              const sel = selectedProducto === p.id;
+                              return (
+                                <button key={p.id} type="button"
+                                  onClick={() => {
+                                    if (isEdit) setEditData(prev => ({ ...prev, producto: p.id, planId: 0 }));
+                                    else setCreateData(prev => ({ ...prev, producto: p.id, planId: 0 }));
+                                    if (errors.producto) setErrors(prev => ({ ...prev, producto: '' }));
+                                  }}
+                                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-sky-500 bg-sky-50 shadow-sm' : 'border-gray-200 hover:border-sky-300 bg-white'}`}>
+                                  <Icon icon={p.icon} width={20} style={{ color: sel ? p.color : '#9CA3AF' }} />
+                                  <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
+                                  {sel && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-sky-500" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {errors.producto && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1"><Icon icon="solar:danger-circle-bold" width={13} />{errors.producto}</p>}
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -609,7 +668,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Planes Disponibles</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {planes && Array.isArray(planes) && planes.map((plan: any) => {
+                    {planesDisponibles && Array.isArray(planesDisponibles) && planesDisponibles.map((plan: any) => {
                       const selectedPlanId = Number(isEdit ? editData.planId : createData.planId);
                       const selected = selectedPlanId === Number(plan.id);
                       return (
@@ -640,6 +699,11 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       );
                     })}
                   </div>
+                  {planesDisponibles.length === 0 && (
+                    <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      No hay planes disponibles para el producto seleccionado.
+                    </div>
+                  )}
 
                   <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2 pt-3">Fechas de Vigencia</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

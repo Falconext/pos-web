@@ -15,6 +15,7 @@ export interface ISubModulo {
 export interface IModulo {
     id: number;
     codigo: string;
+    producto?: 'facturacion' | 'hotel';
     nombre: string;
     descripcion: string;
     icono: string;
@@ -26,13 +27,13 @@ export interface IModulo {
 export interface IModulosState {
     modulos: IModulo[];
     loading: boolean;
-    getAllModulos: (admin?: boolean) => Promise<void>;
-    createModulo: (modulo: any) => Promise<boolean>;
-    updateModulo: (id: number, modulo: any) => Promise<boolean>;
-    deleteModulo: (id: number) => Promise<boolean>;
-    createSubModulo: (dto: { moduloId: number; codigo: string; nombre: string; descripcion?: string; activo?: boolean; orden?: number }) => Promise<boolean>;
-    updateSubModulo: (id: number, dto: { nombre?: string; descripcion?: string; activo?: boolean; orden?: number }) => Promise<boolean>;
-    deleteSubModulo: (id: number) => Promise<boolean>;
+    getAllModulos: (admin?: boolean, producto?: string) => Promise<void>;
+    createModulo: (modulo: any, producto?: string) => Promise<boolean>;
+    updateModulo: (id: number, modulo: any, producto?: string) => Promise<boolean>;
+    deleteModulo: (id: number, producto?: string) => Promise<boolean>;
+    createSubModulo: (dto: { moduloId: number; codigo: string; nombre: string; descripcion?: string; activo?: boolean; orden?: number }, producto?: string) => Promise<boolean>;
+    updateSubModulo: (id: number, dto: { nombre?: string; descripcion?: string; activo?: boolean; orden?: number }, producto?: string) => Promise<boolean>;
+    deleteSubModulo: (id: number, producto?: string) => Promise<boolean>;
 }
 
 export const useModulosStore = create<IModulosState>()(
@@ -41,10 +42,14 @@ export const useModulosStore = create<IModulosState>()(
             modulos: [],
             loading: false,
 
-            getAllModulos: async (admin = false) => {
+            getAllModulos: async (admin = false, producto?: string) => {
                 try {
                     set({ loading: true });
-                    const { data } = await apiClient.get(`/modulos${admin ? '?admin=true' : ''}`);
+                    const params = new URLSearchParams();
+                    if (admin) params.set('admin', 'true');
+                    if (producto) params.set('producto', producto);
+                    const query = params.toString();
+                    const { data } = await apiClient.get(`/modulos${query ? `?${query}` : ''}`);
                     const list = Array.isArray(data) ? data : (data.data || []);
                     set({ modulos: list.map((m: any) => ({ ...m, subModulos: m.subModulos || [] })) });
                 } catch (error) {
@@ -55,11 +60,11 @@ export const useModulosStore = create<IModulosState>()(
                 }
             },
 
-            createModulo: async (modulo: any) => {
+            createModulo: async (modulo: any, producto?: string) => {
                 try {
                     set({ loading: true });
                     await apiClient.post('/modulos', modulo);
-                    await get().getAllModulos(true);
+                    await get().getAllModulos(true, producto);
                     return true;
                 } catch (error) {
                     console.error('Error creating module:', error);
@@ -69,11 +74,11 @@ export const useModulosStore = create<IModulosState>()(
                 }
             },
 
-            updateModulo: async (id: number, modulo: any) => {
+            updateModulo: async (id: number, modulo: any, producto?: string) => {
                 try {
                     set({ loading: true });
                     await apiClient.put(`/modulos/${id}`, modulo);
-                    await get().getAllModulos(true);
+                    await get().getAllModulos(true, producto);
                     return true;
                 } catch (error) {
                     console.error('Error updating module:', error);
@@ -83,11 +88,11 @@ export const useModulosStore = create<IModulosState>()(
                 }
             },
 
-            deleteModulo: async (id: number) => {
+            deleteModulo: async (id: number, producto?: string) => {
                 try {
                     set({ loading: true });
                     await apiClient.delete(`/modulos/${id}`);
-                    await get().getAllModulos(true);
+                    await get().getAllModulos(true, producto);
                     return true;
                 } catch (error) {
                     console.error('Error deleting module:', error);
@@ -97,11 +102,11 @@ export const useModulosStore = create<IModulosState>()(
                 }
             },
 
-            createSubModulo: async (dto) => {
+            createSubModulo: async (dto, producto?: string) => {
                 try {
                     set({ loading: true });
                     await apiClient.post('/modulos/submodulos', dto);
-                    await get().getAllModulos(true);
+                    await get().getAllModulos(true, producto);
                     return true;
                 } catch (error) {
                     console.error('Error creating submodule:', error);
@@ -111,11 +116,11 @@ export const useModulosStore = create<IModulosState>()(
                 }
             },
 
-            updateSubModulo: async (id, dto) => {
+            updateSubModulo: async (id, dto, producto?: string) => {
                 try {
                     set({ loading: true });
                     await apiClient.put(`/modulos/submodulos/${id}`, dto);
-                    await get().getAllModulos(true);
+                    await get().getAllModulos(true, producto);
                     return true;
                 } catch (error) {
                     console.error('Error updating submodule:', error);
@@ -125,11 +130,11 @@ export const useModulosStore = create<IModulosState>()(
                 }
             },
 
-            deleteSubModulo: async (id) => {
+            deleteSubModulo: async (id, producto?: string) => {
                 try {
                     set({ loading: true });
                     await apiClient.delete(`/modulos/submodulos/${id}`);
-                    await get().getAllModulos(true);
+                    await get().getAllModulos(true, producto);
                     return true;
                 } catch (error) {
                     console.error('Error deleting submodule:', error);

@@ -67,7 +67,7 @@ export const INITIAL_PROVEEDOR_FORM: IFormClient = {
     ubigeo: '',
     email: '',
     telefono: '',
-    tipoDoc: '',
+    tipoDoc: 'RUC',
     estado: '',
     tipoDocumentoId: 0,
     empresaId: 0,

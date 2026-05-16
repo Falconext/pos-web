@@ -80,6 +80,7 @@ export interface IFormInvoice {
   sedeId?: number
   comprobante: string
   tipoDoc: string
+  tipoOperacionId?: number
   relatedInvoiceId: string
   vuelto: number,
   clienteNombre: string

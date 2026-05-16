@@ -8,6 +8,7 @@ interface ModuloSelectorProps {
     selectedSubModulos?: number[];
     onSubModulosChange?: (subModulos: number[]) => void;
     disabled?: boolean;
+    producto?: 'facturacion' | 'hotel';
 }
 
 const getModuleIcon = (codigo: string): string => {
@@ -31,13 +32,14 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
     selectedSubModulos = [],
     onSubModulosChange,
     disabled = false,
+    producto,
 }) => {
     const { modulos, loading, getAllModulos } = useModulosStore();
     const [expandedModulos, setExpandedModulos] = useState<Set<number>>(new Set());
 
     useEffect(() => {
-        if (modulos.length === 0) getAllModulos(true);
-    }, []);
+        getAllModulos(true, producto);
+    }, [getAllModulos, producto]);
 
     const handleToggleModulo = (moduloId: number) => {
         if (disabled) return;

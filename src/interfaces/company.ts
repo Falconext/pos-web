@@ -18,4 +18,6 @@ export interface IFormCompany {
     fechaExpiracion: any;
     rubroId: number
     rubroNombre: string
+    brand?: string
+    producto?: string
 }

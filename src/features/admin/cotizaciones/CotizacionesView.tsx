@@ -70,7 +70,7 @@ export default function CotizacionesView() {
 
     return (
         <>
-            <div className="hidden">
+            <div className="opacity-0 pointer-events-none absolute -z-50 overflow-hidden h-0 w-0">
             {vm.invoice && vm.invoice.detalles && (
                 <ComprobantePrintPage
                     company={vm.auth}
@@ -239,6 +239,23 @@ export default function CotizacionesView() {
                 closeModal={() => vm.setIsOpenModalPdf(false)}
                 title="Vista previa del PDF"
                 width="980px"
+                pageStyle={`
+              @media print {
+                @page { size: 210mm 297mm; margin: 0; }
+                body * { visibility: hidden; }
+                #print-root, #print-root * { visibility: visible; }
+                #print-root { 
+                    position: absolute; 
+                    left: 0; 
+                    top: 0; 
+                    width: 100%;
+                    height: auto;
+                    opacity: 1 !important;
+                    display: block !important;
+                }
+                body { margin: 0; width: 210mm; }
+              }
+            `}
             >
                 <div className="p-3 space-y-3">
                     <div className="flex justify-end">

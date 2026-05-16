@@ -9,6 +9,15 @@ import {
     IProveedoresViewModelState,
 } from './ComprasModel';
 
+const CODIGO_TO_TIPO_DOC: Record<string, string> = { '1': 'DNI', '6': 'RUC', '4': 'CE', '7': 'PASAPORTE', '0': 'OTRO' };
+const mapCodigoToTipoDoc = (data: IClient): string => {
+    const codigo = data.tipoDocumento?.codigo;
+    if (codigo && CODIGO_TO_TIPO_DOC[codigo]) return CODIGO_TO_TIPO_DOC[codigo];
+    if (data.nroDoc?.length === 8) return 'DNI';
+    if (data.nroDoc?.length === 11) return 'RUC';
+    return 'RUC';
+};
+
 export const useProveedoresViewModel = () => {
     const { getAllClients, clients, totalClients, toggleStateClient } = useClientsStore();
     const { success } = useAlertStore();
@@ -69,7 +78,7 @@ export const useProveedoresViewModel = () => {
         openNewModal: () =>
             setState(prev => ({ ...prev, formValues: INITIAL_PROVEEDOR_FORM, errors: INITIAL_PROVEEDOR_ERRORS, isOpenModal: true, isEdit: false })),
         openEditModal: (data: IClient) =>
-            setState(prev => ({ ...prev, formValues: data as any, isOpenModal: true, isEdit: true, openAccionesId: null })),
+            setState(prev => ({ ...prev, formValues: { ...data as any, tipoDoc: mapCodigoToTipoDoc(data) }, isOpenModal: true, isEdit: true, openAccionesId: null })),
         closeModal: () =>
             setState(prev => ({ ...prev, isOpenModal: false, isEdit: false })),
         setFormValues: (values: any) =>

@@ -24,7 +24,7 @@ export const INITIAL_FORM: IFormClient = {
     ubigeo: '',
     email: '',
     telefono: '',
-    tipoDoc: '',
+    tipoDoc: 'DNI',
     estado: '',
     tipoDocumentoId: 0,
     empresaId: 0,

@@ -1,4 +1,4 @@
-import { ChangeEvent, Dispatch, useEffect, useState } from "react"
+import { ChangeEvent, Dispatch, useEffect, useRef, useState } from "react"
 import Modal from "@/components/Modal"
 import Select from "@/components/Select"
 import { ICategory } from "@/interfaces/categories"
@@ -10,6 +10,7 @@ import { useAuthStore } from "@/zustand/auth"
 import InputPro from "@/components/InputPro"
 import Button from "@/components/Button"
 import { Icon } from "@iconify/react"
+import { get, post } from "@/utils/fetch"
 
 interface IPropsProducts {
     formValues: IFormProduct
@@ -43,6 +44,68 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
     const [newWholesaleRow, setNewWholesaleRow] = useState({ cantidadMinima: '', precio: '' });
     const [wholesaleFocused, setWholesaleFocused] = useState<'cantidadMinima' | 'precio' | null>(null);
+    const [barcodeSearch, setBarcodeSearch] = useState('');
+    const [searchingBarcode, setSearchingBarcode] = useState(false);
+    const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+    const resolveBrand = async (brandRaw: string) => {
+        const nombre = brandRaw.split(',')[0].trim();
+        if (!nombre) return null;
+        try {
+            const resp: any = await post('marca/crear', { nombre });
+            if (resp?.data?.id) return { marcaId: resp.data.id, marcaNombre: nombre };
+        } catch { }
+        return null;
+    };
+
+    const handleBarcodeSearch = async () => {
+        const code = barcodeSearch.trim().replace(/\D/g, '');
+        if (code.length < 8) return;
+        setSearchingBarcode(true);
+        try {
+            let filled = false;
+
+            // 1. Backend: local catalog lookup
+            try {
+                const resp: any = await get(`producto/barcode/${encodeURIComponent(code)}`);
+                const product = resp?.data;
+                if (product?.descripcion) {
+                    setFormValues({
+                        ...formValues,
+                        descripcion: product.descripcion,
+                        codigoBarras: code,
+                        ...(product.imagenUrl ? { imagenUrl: product.imagenUrl } : {}),
+                    });
+                    filled = true;
+                }
+            } catch { }
+
+            // 2. Open Food Facts fallback
+            if (!filled) {
+                const offResp = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+                const offData = await offResp.json();
+                if (offData?.status === 1 && offData?.product) {
+                    const p = offData.product;
+                    const imgUrl = p.image_front_url || p.image_url || null;
+                    const brandData = p.brands ? await resolveBrand(p.brands) : null;
+                    setFormValues({
+                        ...formValues,
+                        descripcion: p.product_name || p.product_name_es || p.generic_name || formValues.descripcion,
+                        codigoBarras: code,
+                        ...(imgUrl ? { imagenUrl: imgUrl } : {}),
+                        ...(brandData ? { marcaId: brandData.marcaId, marcaNombre: brandData.marcaNombre } : {}),
+                    });
+                    filled = true;
+                }
+            }
+
+            if (!filled) {
+                setFormValues({ ...formValues, codigoBarras: code });
+            }
+        } finally {
+            setSearchingBarcode(false);
+        }
+    };
 
     const validateForm = () => {
         const newErrors: any = {
@@ -145,6 +208,38 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
     return (
         <>
             {isOpenModal && <Modal width="750px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar producto" : "Nuevo producto"}>
+
+                {/* Barcode scanner — búsqueda en red global */}
+                <div className="md:px-6 px-3 mt-4">
+                    <div className="flex items-center gap-2 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                            <Icon icon="solar:barcode-bold-duotone" className="text-white" width={18} />
+                        </div>
+                        <input
+                            ref={barcodeInputRef as any}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Código de barras (EAN-13, UPC...)  →  auto-completar desde red global"
+                            className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                            value={barcodeSearch}
+                            onChange={e => setBarcodeSearch(e.target.value.replace(/\D/g, '').slice(0, 14))}
+                            onKeyDown={e => e.key === 'Enter' && void handleBarcodeSearch()}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => void handleBarcodeSearch()}
+                            disabled={searchingBarcode || barcodeSearch.length < 8}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 text-xs font-semibold transition-all"
+                        >
+                            {searchingBarcode
+                                ? <Icon icon="svg-spinners:ring-resize" width={14} />
+                                : <Icon icon="solar:global-bold-duotone" width={14} />
+                            }
+                            <span className="hidden sm:inline">{searchingBarcode ? 'Buscando...' : 'Buscar'}</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div className="md:px-6 px-3 grid md:grid-cols-2 grid-cols-2 mt-5 md:gap-5 gap-y-2">
                     <div className="col-span-3 md:col-span-1">
                         <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label="Codigo de producto" />
