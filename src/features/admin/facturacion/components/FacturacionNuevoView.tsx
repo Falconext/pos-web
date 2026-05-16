@@ -22,23 +22,7 @@ export const FacturacionNuevoView = () => {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `
-            @media print {
-                @page { size: ${vm.dimensions.width}mm ${vm.dimensions.height}mm; margin: 0; }
-                body * { visibility: hidden; }
-                #print-root, #print-root * { visibility: visible; }
-                #print-root { 
-                    position: absolute; 
-                    left: 0; 
-                    top: 0; 
-                    width: 100%;
-                    height: auto;
-                    opacity: 1 !important;
-                    display: block !important;
-                }
-                body { margin: 0; width: ${vm.dimensions.width}mm; }
-            }
-        `,
+        pageStyle: `@media print { @page { size: ${vm.dimensions.width}mm ${vm.dimensions.height}mm; margin: 0; } body { margin: 0; width: ${vm.dimensions.width}mm; } }`,
     });
 
     const handleOpenNewTab = (vista: string) => { printFn(); };
@@ -47,8 +31,8 @@ export const FacturacionNuevoView = () => {
         <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 dark:text-gray-200 bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
             style={{ height: !vm.isMobile ? (vm.isCompact ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
         >
-            {/* Hidden Print Component - Visually hidden but present in DOM for print engine */}
-            <div className="opacity-0 pointer-events-none absolute -z-50 overflow-hidden h-0 w-0">
+            {/* Hidden Print Component - Off-screen but with real dimensions for print engine */}
+            <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
                 <ComprobantePrintPage
                     id="print-root"
                     company={vm.auth}

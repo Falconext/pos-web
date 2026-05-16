@@ -58,14 +58,23 @@ export function detectarFuncionesRubro(
         nombre.includes('pastelería') ||
         nombre.includes('pasteleria');
 
+    // FABRICACIÓN / MANUFACTURA
+    const esFabricacion =
+        nombre.includes('fabricación') ||
+        nombre.includes('fabricacion') ||
+        nombre.includes('manufactura') ||
+        nombre.includes('industria') ||
+        nombre.includes('producción') ||
+        nombre.includes('produccion');
+
     const usaCodigoBarras =
         typeof overrides?.usaCodigoBarrasManual === 'boolean'
             ? overrides.usaCodigoBarrasManual
             : esBodega;
 
     return {
-        // Lotes: Farmacia principalmente
-        gestionLotes: esFarmacia,
+        // Lotes: Farmacia y fabricación (insumos/componentes)
+        gestionLotes: esFarmacia || esFabricacion,
 
         // Vencimientos: Farmacia y alimentos
         requiereVencimientos: esFarmacia || esAlimentos,
@@ -101,7 +110,16 @@ export const RubroHelpers = {
     usaLotes: (nombreRubro: string | null | undefined) => {
         if (!nombreRubro) return false;
         const nombre = nombreRubro.toLowerCase();
-        return nombre.includes('farmacia') || nombre.includes('botica');
+        return (
+            nombre.includes('farmacia') ||
+            nombre.includes('botica') ||
+            nombre.includes('fabricación') ||
+            nombre.includes('fabricacion') ||
+            nombre.includes('manufactura') ||
+            nombre.includes('industria') ||
+            nombre.includes('producción') ||
+            nombre.includes('produccion')
+        );
     },
 
     usaCodigoBarras: (nombreRubro: string | null | undefined) => {

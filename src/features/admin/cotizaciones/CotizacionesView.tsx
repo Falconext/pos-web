@@ -70,7 +70,7 @@ export default function CotizacionesView() {
 
     return (
         <>
-            <div className="opacity-0 pointer-events-none absolute -z-50 overflow-hidden h-0 w-0">
+            <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
             {vm.invoice && vm.invoice.detalles && (
                 <ComprobantePrintPage
                     company={vm.auth}

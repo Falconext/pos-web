@@ -464,17 +464,6 @@ const Comprobantes = () => {
                   margin: 0;
                   background-color: #fff;
                 }
-                body * { visibility: hidden; }
-                #print-root, #print-root * { visibility: visible; }
-                #print-root { 
-                    position: absolute; 
-                    left: 0; 
-                    top: 0; 
-                    width: 100%;
-                    height: auto;
-                    opacity: 1 !important;
-                    display: block !important;
-                }
                 * {
                   -webkit-print-color-adjust: exact;
                   print-color-adjust: exact;
@@ -529,7 +518,7 @@ const Comprobantes = () => {
 
     return (
         <>
-            <div className="opacity-0 pointer-events-none absolute -z-50 overflow-hidden h-0 w-0">
+            <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
