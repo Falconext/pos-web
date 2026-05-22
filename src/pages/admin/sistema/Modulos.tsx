@@ -147,7 +147,7 @@ const ModulosPage = () => {
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span className="font-mono text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2 py-1 rounded-md">
+                                                        <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2 py-1 rounded-md">
                                                             {modulo.codigo}
                                                         </span>
                                                     </td>
@@ -245,7 +245,7 @@ const ModulosPage = () => {
                                                                     <Icon icon="solar:arrow-right-down-bold" width={14} className="text-gray-300 dark:text-slate-600 mx-auto" />
                                                                 </td>
                                                                 <td>
-                                                                    <span className="font-mono text-[11px] bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-md">
+                                                                    <span className="text-[11px] bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-md">
                                                                         {sub.codigo}
                                                                     </span>
                                                                 </td>

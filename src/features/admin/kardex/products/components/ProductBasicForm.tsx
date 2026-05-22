@@ -21,7 +21,7 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 
 export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
-        isFarmacia, isRestaurante, isMobile, isEdit, features, labels,
+        isFarmacia, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
         isCategorizing,
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
@@ -86,6 +86,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 <div className="grid grid-cols-1 gap-4">
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label="Precio Venta (S/)" />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label="Costo (S/)" placeholder="0.00" />
+                    <InputPro autocomplete="off" value={(formValues as any)?.localizacion || ''} name="localizacion" onChange={handleChange} isLabel label="Ubicación / Localización" placeholder="Ej: Pasillo 3 - Estante B" />
                 </div>
             </div>
         );
@@ -136,7 +137,29 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 )}
             </div>
 
-            {features.gestionLotes && (
+            {isFabricacion && (
+                <>
+                    <div className="col-span-3 rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <h5 className="text-sm font-semibold text-blue-800 dark:text-blue-300">Flujo de fabricación</h5>
+                                <p className="text-xs text-blue-700/90 dark:text-blue-200/80 mt-1">
+                                    Aquí solo registras el ítem y su stock. Luego configuras componentes y merma en Producción &gt; Recetas y Producción &gt; Órdenes.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowLotesModal(true)}
+                                className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-700 bg-white/90 dark:bg-slate-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Gestionar lotes
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {features.gestionLotes && isFarmacia && (
                 <>
                     <div className="col-span-3 md:col-span-1">
                         <InputPro autocomplete="off" value={(formValues as any)?.principioActivo || ''} name="principioActivo" onChange={handleChange} isLabel label="Principio Activo" placeholder="Ej: Paracetamol" />
@@ -204,6 +227,18 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
             {/* Solo mayorista para NO restaurantes (súpers, tiendas, etc) */}
             {!isRestaurante && <ProductWholesalePricing vm={vm} />}
+
+            <div className="col-span-3 md:col-span-2">
+                <InputPro
+                    autocomplete="off"
+                    value={(formValues as any)?.localizacion || ''}
+                    name="localizacion"
+                    onChange={handleChange}
+                    isLabel
+                    label="Ubicación / Localización"
+                    placeholder="Ej: Pasillo 3 - Estante B"
+                />
+            </div>
 
             {isRestaurante && gruposModificadores && gruposModificadores.length > 0 && (
                 <div className="col-span-2 mt-4">

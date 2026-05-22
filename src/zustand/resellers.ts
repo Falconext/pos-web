@@ -7,6 +7,17 @@ export interface Reseller {
     id: number;
     nombre: string;
     codigo: string;
+    dominioPersonalizado?: string;
+    whiteLabelNombre?: string;
+    whiteLabelLogoUrl?: string;
+    whiteLabelLogoWhiteUrl?: string;
+    whiteLabelFaviconUrl?: string;
+    whiteLabelColorPrimario?: string;
+    whiteLabelColorSecundario?: string;
+    whiteLabelWebsite?: string;
+    whiteLabelEmail?: string;
+    whiteLabelTelefono?: string;
+    whiteLabelWhatsapp?: string;
     representante?: string;
     telefono?: string;
     email: string;

@@ -32,5 +32,6 @@ export interface IComprobanteWhatsApp {
     total: number;
     clienteNombre: string;
     clienteCelular: string;
+    clienteEmail?: string;
     pdfUrl?: string;
 }

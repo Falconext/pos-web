@@ -39,6 +39,13 @@ interface CreateFormData {
   fechaExpiracion?: string;
   usuarioPse?: string;
   contrasenaPse?: string;
+  providerId?: string;
+  providerToken?: string;
+  billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
+  billingApiBaseUrl?: string;
+  billingApiToken?: string;
+  billingApiUser?: string;
+  billingApiPassword?: string;
   usaDemo: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
@@ -70,6 +77,13 @@ interface EditFormData {
   fechaExpiracion: string;
   usuarioPse?: string;
   contrasenaPse?: string;
+  providerId?: string;
+  providerToken?: string;
+  billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
+  billingApiBaseUrl?: string;
+  billingApiToken?: string;
+  billingApiUser?: string;
+  billingApiPassword?: string;
   usaDemo: boolean;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
@@ -133,6 +147,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     usaCodigoBarrasManual: false,
     usaDemo: false,
+    providerId: '',
+    providerToken: '',
+    billingProvider: 'QPSE',
+    billingApiBaseUrl: '',
+    billingApiToken: '',
+    billingApiUser: '',
+    billingApiPassword: '',
     brand: '',
     producto: 'facturacion',
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
@@ -156,6 +177,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     usuarioPse: '',
     contrasenaPse: '',
     usaDemo: false,
+    providerId: '',
+    providerToken: '',
+    billingProvider: 'QPSE',
+    billingApiBaseUrl: '',
+    billingApiToken: '',
+    billingApiUser: '',
+    billingApiPassword: '',
     brand: 'falconext',
     producto: 'facturacion',
     esAgenteRetencion: false,
@@ -211,6 +239,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         usuarioPse: (empresa as any).usuarioPse || '',
         contrasenaPse: (empresa as any).contrasenaPse || '',
         usaDemo: Boolean((empresa as any).usaDemo),
+        providerId: (empresa as any).providerId || '',
+        providerToken: (empresa as any).providerToken || '',
+        billingProvider: (empresa as any).billingProvider || (Boolean((empresa as any).usaDemo) ? 'APISUNAT' : 'QPSE'),
+        billingApiBaseUrl: (empresa as any).billingApiBaseUrl || '',
+        billingApiToken: (empresa as any).billingApiToken || '',
+        billingApiUser: (empresa as any).billingApiUser || '',
+        billingApiPassword: (empresa as any).billingApiPassword || '',
         usaCodigoBarrasManual: Boolean((empresa as any).usaCodigoBarrasManual),
         brand: (empresa as any).brand || 'falconext',
         producto: (empresa as any).producto || 'facturacion',
@@ -385,6 +420,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (!base.nombreComercial) e.nombreComercial = 'Nombre comercial es requerido';
     if (!isDemo && !base.rubroId) e.rubroId = 'Rubro es requerido';
     if (!isDemo && !base.ubigeo) e.ubigeo = 'Ubigeo es requerido';
+    if (isDemo && !base.providerId) e.providerId = 'PersonaId (APISUNAT) es requerido en demo';
+    if (isDemo && !base.providerToken) e.providerToken = 'ProviderToken (APISUNAT) es requerido en demo';
 
     if (!isEdit) {
       if (!createData.usuario?.nombre) e['usuario.nombre'] = 'Nombre del administrador es requerido';
@@ -500,7 +537,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   </p>
                   <p className={`text-xs mt-0.5 ${currentUsaDemo ? 'text-amber-700' : 'text-gray-400'}`}>
                     {currentUsaDemo
-                      ? 'Los comprobantes se enviarán a demo-cpe.qpse.pe (entorno de pruebas)'
+                      ? 'Los comprobantes se enviarán por APISUNAT demo (PersonaId + ProviderToken)'
                       : isEdit
                         ? 'Activar para usar el servidor de pruebas de QPSE'
                         : 'Activa para crear la cuenta demo al instante con datos de prueba'
@@ -754,9 +791,32 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       <div>
                         <p className="text-sm font-semibold text-amber-800">Modo Demo habilitado</p>
                         <p className="text-xs text-amber-700 mt-0.5">
-                          Las llamadas a QPSE usarán <code className="bg-amber-100 px-1 rounded text-amber-900">demo-cpe.qpse.pe</code> independientemente de las credenciales ingresadas.
+                          En demo se usa APISUNAT. Configura <strong>PersonaId</strong> y <strong>ProviderToken</strong> para emitir.
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {currentUsaDemo && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <InputPro
+                        name="providerId"
+                        label="PersonaId (APISUNAT)"
+                        isLabel
+                        value={isEdit ? (editData.providerId || '') : (createData.providerId || '')}
+                        onChange={handleChange}
+                        placeholder="Ej. 5f6cd73425f5c52d375dd55c"
+                        error={errors.providerId}
+                      />
+                      <InputPro
+                        name="providerToken"
+                        label="ProviderToken (APISUNAT)"
+                        isLabel
+                        value={isEdit ? (editData.providerToken || '') : (createData.providerToken || '')}
+                        onChange={handleChange}
+                        placeholder="Token de la empresa en APISUNAT"
+                        error={errors.providerToken}
+                      />
                     </div>
                   )}
 

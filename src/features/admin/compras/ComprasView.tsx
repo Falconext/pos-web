@@ -13,6 +13,8 @@ import ModalDetalleCompra from '@/pages/admin/compras/ModalDetalleCompra';
 import ModalRegistrarPagoCompra from '@/pages/admin/compras/ModalRegistrarPagoCompra';
 import ModalHistorialPagosCompra from '@/pages/admin/compras/ModalHistorialPagosCompra';
 import ModalNuevaCompra from '@/pages/admin/compras/ModalNuevaCompra';
+import { motion } from 'framer-motion';
+import { fadeUp, interactiveHover, listItemFadeUp, listItemHidden, listStagger } from '@/lib/motion/presets';
 
 export default function ComprasView() {
     const vm = useComprasViewModel();
@@ -59,25 +61,27 @@ export default function ComprasView() {
     ];
 
     return (
-        <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
+        <motion.div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]" variants={fadeUp} initial="initial" animate="animate">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Cuentas por Pagar / Compras</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestión de compras y pagos a proveedores</p>
                 </div>
+                <motion.div whileHover={interactiveHover.whileHover} whileTap={interactiveHover.whileTap}>
                 <Button color="secondary" className="flex items-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none hover:opacity-90" onClick={actions.openNuevaCompra}>
                     <Icon icon="solar:cart-plus-bold" className="text-lg" />
                     Nueva Compra
                 </Button>
+                </motion.div>
             </div>
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Stats */}
                 <div className="p-5 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/20">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6" variants={listStagger} initial="initial" animate="animate">
                         {/* KPI 1 */}
-                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <motion.div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow" variants={{ initial: listItemHidden, animate: listItemFadeUp }} whileHover={interactiveHover.whileHover} whileTap={interactiveHover.whileTap} layout>
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="text-violet-600 dark:text-violet-400 text-[13px] font-bold tracking-wide uppercase">Facturas (Vista)</h3>
                                 <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 dark:shadow-violet-900/20 group-hover:-translate-y-1 transition-transform">
@@ -90,10 +94,10 @@ export default function ComprasView() {
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* KPI 2 */}
-                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <motion.div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow" variants={{ initial: listItemHidden, animate: listItemFadeUp }} whileHover={interactiveHover.whileHover} whileTap={interactiveHover.whileTap} layout>
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="text-rose-500 dark:text-rose-400 text-[13px] font-bold tracking-wide uppercase">Saldo por Pagar</h3>
                                 <div className="w-10 h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 group-hover:-translate-y-1 transition-transform">
@@ -106,10 +110,10 @@ export default function ComprasView() {
                                     <span className="text-gray-400 text-xs font-medium">(Página actual)</span>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* KPI 3 */}
-                        <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        <motion.div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow" variants={{ initial: listItemHidden, animate: listItemFadeUp }} whileHover={interactiveHover.whileHover} whileTap={interactiveHover.whileTap} layout>
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="text-amber-500 dark:text-amber-400 text-[13px] font-bold tracking-wide uppercase">Vencidos (+1 día)</h3>
                                 <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/20 group-hover:-translate-y-1 transition-transform">
@@ -122,8 +126,8 @@ export default function ComprasView() {
                                     <span className="text-gray-400 text-xs font-medium">.</span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 </div>
 
                 {/* Filters */}
@@ -195,10 +199,10 @@ export default function ComprasView() {
                             </div>
                         </>
                     ) : (
-                        <div className="py-12 text-center">
+                        <motion.div className="py-12 text-center" variants={fadeUp} initial="initial" animate="animate">
                             <Icon icon="solar:cart-large-minimalistic-linear" className="text-5xl text-gray-300 mx-auto mb-3" />
                             <p className="text-gray-500">No se encontraron compras</p>
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </div>
@@ -228,6 +232,6 @@ export default function ComprasView() {
                 onClose={actions.closeNuevaCompra}
                 onSuccess={actions.handleNuevaCompraSuccess}
             />
-        </div>
+        </motion.div>
     );
 }

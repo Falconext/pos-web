@@ -118,6 +118,7 @@ export const useFacturacionViewModel = () => {
     const [serie, setSerie] = useState<string>("");
     const [IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice] = useState<boolean>(false);
     const [isComprobantePendiente, setIsComprobantePendiente] = useState<boolean>(false);
+    const [snapshotClient, setSnapshotClient] = useState<any>(null);
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [descountGlobal, _setDescountGlobal] = useState<number>(0)
@@ -873,6 +874,7 @@ export const useFacturacionViewModel = () => {
                 }
                 : baseData;
 
+        setSnapshotClient(selectedClient ? { ...selectedClient } : null);
         setIsOpenModalSuccessInvoice(true);
         setIsLoading(true);
 
@@ -985,6 +987,7 @@ export const useFacturacionViewModel = () => {
 
     const closeModalResponse = () => {
         setIsOpenModalSuccessInvoice(false);
+        setSnapshotClient(null);
         const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
         setFormValues({
             ...initFormValues,
@@ -1038,6 +1041,7 @@ export const useFacturacionViewModel = () => {
         adelanto, setAdelanto,
         fechaRecojo, setFechaRecojo,
         selectedClient, setSelectedClient,
+        snapshotClient,
         selectedProduct, setSelectProduct,
 
         // Masters

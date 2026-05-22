@@ -120,10 +120,10 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
     }, [selectedDate]);
 
     return (
-        <div ref={ref} className={styles.date}>
-            <div className={disabled && styles.disabled}>
+        <div ref={ref} className={`${styles.date}${!text ? ` ${styles.noLabel}` : ''}`}>
+            <div className={disabled ? styles.disabled : undefined}>
                 <div className={mode === 'flex' ? styles.modeFlex : ''}>
-                    <div className="absolute z-1 top-2 right-2" onClick={() => setIsOpen(!isOpen)}>
+                    <div className={`absolute z-[1] ${text ? 'top-[8px]' : 'top-[-2px]'} right-2`} onClick={() => setIsOpen(!isOpen)}>
                         <Icon icon={Icons.date} />
                     </div>
                 </div>
@@ -132,7 +132,7 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
                     disabled={disabled}
                     name={name}
                     onClick={() => setIsOpen(true)}
-                    isLabel
+                    isLabel={!!text}
                     label={text}
                     type="text"
                     onChange={handleChangeDate}

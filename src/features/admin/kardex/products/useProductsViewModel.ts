@@ -56,12 +56,12 @@ export const useProductsViewModel = () => {
 
     const allColumns = useMemo(() => [
         'Img', 'Producto', 'Categoria', 'Marca',
-        'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
+        'Precio Venta', 'Costo', 'Stock', 'Localización', 'U.M', 'Estado', 'Acciones'
     ], []);
 
     const initialVisibleColumns = useMemo(() => [
         'Img', 'Producto', 'Categoria', 'Marca',
-        'Precio Venta', 'Costo', 'Stock', 'U.M', 'Estado', 'Acciones'
+        'Precio Venta', 'Costo', 'Stock', 'Localización', 'U.M', 'Estado', 'Acciones'
     ], []);
 
     // Labels
@@ -247,6 +247,7 @@ export const useProductsViewModel = () => {
                     unidadCompra: (originalProduct as any).unidadCompra || '',
                     unidadVenta: (originalProduct as any).unidadVenta || '',
                     factorConversion: Number((originalProduct as any).factorConversion || 1),
+                    localizacion: originalProduct.localizacion || '',
                 }
             }));
         }

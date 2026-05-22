@@ -4,6 +4,7 @@ import LoginPage from './pages/Login'
 // import DashboardPage from './pages/Dashboard' 
 import { ProtectedRoute } from './app/ProtectedRoute'
 import { RoleRoute } from './app/RoleRoute'
+import { ProduccionRoute } from './app/ProduccionRoute'
 import AdminIndex from './pages/admin/Index'
 import AdminLayout from './layouts/AdminLayout'
 import ClientesPage from './pages/admin/Clientes'
@@ -44,7 +45,6 @@ import Planes from './pages/admin/sistema/Planes'
 import ModulosPage from './pages/admin/sistema/Modulos'
 import FinanceDashboard from './pages/admin/finanzas/Dashboard'
 import ComprasIndex from './pages/admin/compras/Index'
-import NuevaCompra from './pages/admin/compras/Nuevo'
 import ProveedoresPage from './pages/admin/compras/Proveedores'
 import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
 import LibroVentas from './pages/admin/sire/LibroVentas'
@@ -60,6 +60,9 @@ import ResellerRecargas from './pages/reseller/Recargas'
 import SedeSelectionScreen from './features/auth/sede-selection/SedeSelectionScreen'
 import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
+import ProduccionRecetasPage from './pages/admin/produccion/Recetas'
+import ProduccionOrdenesPage from './pages/admin/produccion/Ordenes'
+import ReservasPage from './pages/admin/reservas/ReservasPage'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -98,7 +101,6 @@ function App() {
           <Route path="clientes" element={<ClientesPage />} />
 
           <Route path="compras" element={<ComprasIndex />} />
-          <Route path="compras/nuevo" element={<NuevaCompra />} />
           <Route path="compras/proveedores" element={<ProveedoresPage />} />
           <Route path="guia-remision" element={<GuiaRemision />} />
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
@@ -119,8 +121,25 @@ function App() {
           <Route path="kardex/productos" element={<KardexProductos />} />
           <Route path="kardex/traslados" element={<KardexTraslados />} />
           <Route path="kardex/lotes" element={<Lotes />} />
+          <Route path="reservas" element={<ReservasPage />} />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
+          <Route
+            path="produccion/recetas"
+            element={
+              <ProduccionRoute>
+                <ProduccionRecetasPage />
+              </ProduccionRoute>
+            }
+          />
+          <Route
+            path="produccion/ordenes"
+            element={
+              <ProduccionRoute>
+                <ProduccionOrdenesPage />
+              </ProduccionRoute>
+            }
+          />
           <Route path="usuarios" element={<UsuariosIndex />} />
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />

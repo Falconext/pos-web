@@ -1,6 +1,9 @@
 import React, { useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import useEscapeKey from '@/hooks/useEscapeKey'
+import { AnimatePresence, motion } from 'framer-motion'
+import { fadeIn, scaleIn, slideLeft } from '@/lib/motion/presets'
+import { useReducedMotionPreference } from '@/lib/motion/reducedMotion'
 
 type Props = {
   isOpenModal: boolean
@@ -19,27 +22,12 @@ type Props = {
 import { Icon } from "@iconify/react"
 
 export default function Modal({ isOpenModal, closeModal, title, width = '750px', children, position = 'center', icon, iconClass, style, height = 'full', backdropClassName }: Props) {
-  const [isVisible, setIsVisible] = React.useState(false);
-  const [isClosing, setIsClosing] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const reduceMotion = useReducedMotionPreference();
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
-
-  React.useEffect(() => {
-    if (isOpenModal) {
-      setIsVisible(true);
-      setIsClosing(false);
-    } else {
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 300); // Animation duration
-      return () => clearTimeout(timer);
-    }
-  }, [isOpenModal]);
 
   const handleEscape = useCallback(() => {
     if (isOpenModal) {
@@ -47,25 +35,34 @@ export default function Modal({ isOpenModal, closeModal, title, width = '750px',
     }
   }, [isOpenModal, closeModal]);
 
-  useEscapeKey(handleEscape, isVisible || isOpenModal);
-
-  if (!isVisible && !isOpenModal) return null;
+  useEscapeKey(handleEscape, isOpenModal);
 
   const backdropClasses = position === 'right'
-    ? `fixed inset-0 z-[999999] flex justify-end ${height === 'full' ? 'items-stretch' : 'items-center'} ${backdropClassName || 'bg-black/40'} ${isClosing ? 'opacity-0 transition-opacity duration-300' : 'opacity-100'} p-5`
+    ? `fixed inset-0 z-[999999] flex justify-end ${height === 'full' ? 'items-stretch' : 'items-center'} ${backdropClassName || 'bg-black/40'} p-5`
     : `fixed inset-0 z-[999999] grid place-items-center ${backdropClassName || 'bg-black/40'}`;
 
-  const animationClass = position === 'right'
-    ? (isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right')
-    : '';
-
   const modalClasses = position === 'right'
-    ? `bg-white dark:bg-[#111827] w-full h-full rounded-none md:w-[95vw] max-w-none md:max-w-[var(--modal-width)] ${height === 'full' ? 'md:rounded-l-2xl md:h-full md:max-h-screen' : 'md:rounded-2xl md:h-auto md:max-h-[90vh]'} overflow-auto shadow-2xl border dark:border-slate-800 ${animationClass}`
+    ? `bg-white dark:bg-[#111827] w-full h-full rounded-none md:w-[95vw] max-w-none md:max-w-[var(--modal-width)] ${height === 'full' ? 'md:rounded-l-2xl md:h-full md:max-h-screen' : 'md:rounded-2xl md:h-auto md:max-h-[90vh]'} overflow-auto shadow-2xl border dark:border-slate-800`
     : "bg-white dark:bg-[#111827] w-full h-full rounded-none max-w-none md:max-w-[var(--modal-width)] md:rounded-xl md:w-[95vw] md:max-h-[98%] md:h-auto overflow-auto shadow-xl border dark:border-slate-800";
 
   const modalContent = (
-    <div className={backdropClasses}>
-      <div className={modalClasses} style={{ '--modal-width': width, ...style } as React.CSSProperties}>
+    <AnimatePresence>
+      {isOpenModal && (
+        <motion.div
+          className={backdropClasses}
+          variants={fadeIn}
+          initial="initial"
+          animate={reduceMotion ? { opacity: 1 } : 'animate'}
+          exit={reduceMotion ? { opacity: 0 } : 'exit'}
+        >
+      <motion.div
+        className={modalClasses}
+        style={{ '--modal-width': width, ...style } as React.CSSProperties}
+        variants={position === 'right' ? slideLeft : scaleIn}
+        initial="initial"
+        animate={reduceMotion ? { opacity: 1 } : 'animate'}
+        exit={reduceMotion ? { opacity: 0 } : 'exit'}
+      >
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-[#e5e7eb] dark:border-slate-800 bg-white dark:bg-[#111827]">
           <div className="flex items-center gap-3">
             {icon && (
@@ -78,8 +75,10 @@ export default function Modal({ isOpenModal, closeModal, title, width = '750px',
           <button className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer text-gray-500 dark:text-gray-400" onClick={closeModal}>✕</button>
         </div>
         <div>{children}</div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 
   if (!mounted) return null;

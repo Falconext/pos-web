@@ -11,6 +11,7 @@ export default defineConfig({
     port: 5174,
     open: true,
     strictPort: true,
+    allowedHosts: ['app.jamble.peru'],
   },
   build: {
     outDir: 'dist',

@@ -10,6 +10,7 @@ import useAlertStore from "@/zustand/alert";
 import { useAuthStore } from "@/zustand/auth";
 import { usePaymentFlow, PaymentType } from "@/hooks/usePaymentFlow";
 import { useDebounce } from "@/hooks/useDebounce";
+import { post } from "@/utils/fetch";
 
 import { IComprobanteWhatsApp, IEstadoInvoiceOption, IPrintFormatOption, PrintFormatSize } from "./CotizacionesModel";
 
@@ -29,6 +30,7 @@ export function useCotizacionesViewModel() {
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [isOpenModalConfirmPayment, setIsOpenModalConfirmPayment] = useState(false);
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
+    const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
     const [isOpenModalPagoParcial, setIsOpenModalPagoParcial] = useState(false);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
 
@@ -181,7 +183,7 @@ export function useCotizacionesViewModel() {
         await getInvoice(data.id);
     };
 
-    const handleEnviarWhatsApp = (data: any) => {
+    const handleEnviarWhatsApp = (data: any, tab: 'whatsapp' | 'email' = 'whatsapp') => {
         const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
         if (comprobanteData) {
             setComprobanteWhatsApp({
@@ -192,9 +194,26 @@ export function useCotizacionesViewModel() {
                 total: comprobanteData.mtoImpVenta as number,
                 clienteNombre: comprobanteData.cliente?.nombre || 'Cliente',
                 clienteCelular: (comprobanteData as any).cliente?.telefono || '',
+                clienteEmail: (comprobanteData as any).cliente?.email || '',
                 pdfUrl: comprobanteData.s3PdfUrl || undefined,
             });
+            setModalDefaultTab(tab);
             setIsOpenModalWhatsApp(true);
+        }
+    };
+
+    const handleVerPdf = async (data: any) => {
+        const corr = String(data.correlativo || '').padStart(8, '0');
+        setPdfName(`${data.serie}-${corr}.pdf`);
+        setPdfUrl('');
+        setIsOpenModalPdf(true);
+        try {
+            const res: any = await post(`comprobante/${data.id}/generar-pdf`, {});
+            const url = res?.data?.pdfUrl || res?.pdfUrl;
+            if (url) setPdfUrl(url);
+        } catch {
+            useAlertStore.getState().alert('No se pudo generar el PDF', 'error');
+            setIsOpenModalPdf(false);
         }
     };
 
@@ -381,6 +400,7 @@ export function useCotizacionesViewModel() {
         setIsOpenModalConfirmPayment,
         isOpenModalWhatsApp,
         setIsOpenModalWhatsApp,
+        modalDefaultTab,
         isOpenModalPagoParcial,
         setIsOpenModalPagoParcial,
         isOpenModalPdf,
@@ -408,6 +428,7 @@ export function useCotizacionesViewModel() {
         handleChangeSearch,
 
         handleGetReceipt,
+        handleVerPdf,
         handleConvertirAFactura,
         handleEditCotizacion,
         handleEnviarWhatsApp,

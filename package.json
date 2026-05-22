@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:krezka": "vite",
+    "dev:krezka": "vite --mode krezka",
     "dev:falconext": "vite --mode falconext",
     "build": "vite build",
     "build:krezka": "vite build",

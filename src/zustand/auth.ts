@@ -4,6 +4,7 @@ import { get, post } from "../utils/fetch";
 import { IUser, ISede } from "../interfaces/auth";
 import useAlertStore from "./alert";
 import { devtools } from "zustand/middleware";
+import { BRAND } from "@/lib/branding";
 
 export interface IAuthState {
   auth: IUser | null;
@@ -74,7 +75,7 @@ export const useAuthStore = create<IAuthState>()(
       login: async (data: any) => {
         try {
           useAlertStore.setState({ loading: true });
-          const payload = { ...data, brand: import.meta.env.VITE_PUBLIC_BRAND || 'falconext' };
+          const payload = { ...data, brand: BRAND.authBrand || import.meta.env.VITE_PUBLIC_BRAND || 'falconext' };
           const resp: any = await post(`auth/login`, payload);
           console.log("Login response:", resp);
 

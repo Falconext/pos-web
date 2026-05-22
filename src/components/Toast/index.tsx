@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { useEffect } from 'react';
 import useAlertStore from '@/zustand/alert';
+import { slideLeft } from '@/lib/motion/presets';
+import { useReducedMotionPreference } from '@/lib/motion/reducedMotion';
 
 interface IAlertProps {
    id: number;
@@ -13,6 +15,7 @@ interface IAlertProps {
 
 const Toast = ({ id, title, message, type }: IAlertProps) => {
    const { removeAlert } = useAlertStore();
+   const reduceMotion = useReducedMotionPreference();
 
    const handleClose = () => {
       removeAlert(id);
@@ -70,9 +73,11 @@ const Toast = ({ id, title, message, type }: IAlertProps) => {
 
    return (
      <motion.div
-        initial={{ opacity: 0, x: 300 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 300 }}
+        layout
+        variants={slideLeft}
+        initial="initial"
+        animate={reduceMotion ? { opacity: 1 } : "animate"}
+        exit={reduceMotion ? { opacity: 0 } : "exit"}
         className={`rounded-2xl shadow-xl p-4 pr-5 min-w-[320px] max-w-md mb-3 bg-[#121212]/95 backdrop-blur border border-white/5`}
      >
         <div className="flex items-start gap-3">

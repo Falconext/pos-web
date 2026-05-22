@@ -4,6 +4,10 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import storeCatalogService, { StoreProduct, StoreProductPayload } from '@/services/storeCatalogService';
 import useAlertStore from '@/zustand/alert';
+import Modal from '@/components/Modal';
+import InputPro from '@/components/InputPro';
+import Button from '@/components/Button';
+import Select from '@/components/Select';
 
 const EMPTY_FORM: StoreProductPayload = {
   name: '',
@@ -250,19 +254,19 @@ export default function CatalogoWebPage() {
                         <span className="text-gray-600 dark:text-gray-300 font-medium">{p.category}</span>
                       ) : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono font-bold text-gray-800 dark:text-white">
+                    <td className="px-6 py-4 text-right text-gray-700 dark:text-gray-300">
                       S/ {Number(p.price).toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono">
+                    <td className="px-6 py-4 text-right">
                       {p.stock !== null ? (
-                        <span className={p.stock === 0 ? 'text-red-500 font-bold' : p.stock <= 5 ? 'text-amber-500 font-bold' : 'text-gray-600 dark:text-gray-300'}>
+                        <span className={p.stock === 0 ? 'text-red-500' : p.stock <= 5 ? 'text-amber-500' : 'text-gray-600 dark:text-gray-300'}>
                           {p.stock}
                         </span>
                       ) : (
-                        <span className="text-emerald-500 font-bold text-xs">∞</span>
+                        <span className="text-emerald-500 text-xs">∞</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-gray-400">
+                    <td className="px-6 py-4 text-right text-gray-400">
                       {p.oldPrice ? <span className="line-through">S/ {Number(p.oldPrice).toFixed(2)}</span> : <span>—</span>}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -305,224 +309,112 @@ export default function CatalogoWebPage() {
       </div>
 
       {/* Modal Crear / Editar */}
-      {modalOpen && (
-        <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="relative bg-white dark:bg-[#111827] rounded-3xl p-8 w-full max-w-lg z-10 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                  {editTarget ? 'Editar Producto' : 'Nuevo Producto'}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {editTarget ? 'Actualiza los datos del producto' : 'Añade un producto al catálogo web'}
-                </p>
-              </div>
-              <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                <Icon icon="solar:close-circle-bold" width="24" />
-              </button>
+      <Modal
+        isOpenModal={modalOpen}
+        closeModal={() => setModalOpen(false)}
+        title={editTarget ? 'Editar Producto' : 'Nuevo Producto'}
+        icon="solar:shop-2-bold-duotone"
+        iconClass="bg-violet-50 text-violet-600"
+        width="560px"
+        height="auto"
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="p-5 space-y-3">
+            <InputPro
+              isLabel
+              label="Nombre *"
+              name="name"
+              value={form.name}
+              onChange={handleChange as any}
+              placeholder="Ej. Sistema de Facturación Plan Pro"
+              reference={firstInputRef as any}
+            />
+
+            <div className="quill-container">
+              <label className="block text-sm font-[400] text-gray-900 dark:!text-gray-300 mb-2">Descripción</label>
+              <ReactQuill
+                theme="snow"
+                value={form.description || ''}
+                onChange={(value) => setForm(prev => ({ ...prev, description: value }))}
+                placeholder="Escribe la descripción del producto..."
+                className="bg-white dark:bg-slate-800 rounded-xl"
+                modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Nombre */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre *</label>
-                <input
-                  ref={firstInputRef}
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej. Sistema de Facturación Plan Pro"
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all placeholder:text-gray-400 font-medium dark:text-white"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <InputPro isLabel label="Precio (S/) *" name="price" type="number" step="0.01" value={String(form.price)} onChange={handleChange as any} />
+              <InputPro isLabel label="Precio anterior (S/)" name="oldPrice" type="number" step="0.01" value={String(form.oldPrice ?? '')} onChange={handleChange as any} placeholder="0.00" />
+            </div>
 
-              {/* Descripción */}
-              <div className="space-y-1.5 quill-container">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Descripción</label>
-                <ReactQuill
-                  theme="snow"
-                  value={form.description || ''}
-                  onChange={(value) => setForm(prev => ({ ...prev, description: value }))}
-                  placeholder="Escribe la descripción del producto tipo blog..."
-                  className="bg-white dark:bg-slate-800 rounded-xl"
-                  modules={{
-                    toolbar: [
-                      [{ 'header': [1, 2, 3, false] }],
-                      ['bold', 'italic', 'underline', 'strike'],
-                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                      ['link', 'image'],
-                      ['clean']
-                    ]
-                  }}
-                />
-              </div>
+            <InputPro isLabel label="URL de Imagen" name="imageUrl" value={form.imageUrl ?? ''} onChange={handleChange as any} placeholder="https://..." />
 
-              {/* Precios */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Precio (S/) *</label>
-                  <input
-                    name="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.price}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all font-mono dark:text-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Precio anterior (S/)</label>
-                  <input
-                    name="oldPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.oldPrice ?? ''}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all font-mono placeholder:text-gray-400 dark:text-white"
-                  />
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Categoría *"
+                name="category"
+                value={form.category ?? ''}
+                options={[
+                  { id: 'Accesorios', value: 'Accesorios' },
+                  { id: 'Combo', value: 'Combo' },
+                  { id: 'Equipos', value: 'Equipos' },
+                  { id: 'Sistema', value: 'Sistema' },
+                ]}
+                onChange={(id: any) => setForm(prev => ({ ...prev, category: id }))}
+                error={null}
+                readOnly={true}
+              />
+              <InputPro isLabel label="Stock (vacío = ∞)" name="stock" type="number" value={String(form.stock ?? '')} onChange={handleChange as any} placeholder="∞" />
+            </div>
 
-              {/* URL imagen */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">URL de Imagen</label>
-                <input
-                  name="imageUrl"
-                  value={form.imageUrl ?? ''}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <InputPro isLabel label="Badge" name="badge" value={form.badge ?? ''} onChange={handleChange as any} placeholder="Nuevo, Popular..." />
+              <InputPro isLabel label="Orden" name="order" type="number" value={String(form.order ?? 0)} onChange={handleChange as any} />
+            </div>
 
-              {/* Categoría y Stock */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Categoría *</label>
-                  <select
-                    name="category"
-                    value={form.category ?? ''}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all font-medium dark:text-white"
-                  >
-                    <option value="">Selecciona...</option>
-                    <option value="Accesorios">Accesorios</option>
-                    <option value="Combo">Combo</option>
-                    <option value="Equipos">Equipos</option>
-                    <option value="Sistema">Sistema</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Stock</label>
-                  <input
-                    name="stock"
-                    type="number"
-                    min="0"
-                    value={form.stock ?? ''}
-                    onChange={handleChange}
-                    placeholder="∞"
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all font-mono placeholder:text-gray-400 dark:text-white"
-                  />
-                </div>
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors border border-gray-100 dark:border-slate-700">
+              <input
+                type="checkbox"
+                name="isActive"
+                checked={form.isActive ?? true}
+                onChange={handleChange}
+                className="w-4 h-4 rounded accent-violet-600"
+              />
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-white">Producto activo</p>
+                <p className="text-xs text-gray-400">Solo los productos activos aparecen en la web pública</p>
               </div>
-
-              {/* Badge + Orden */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Badge</label>
-                  <input
-                    name="badge"
-                    value={form.badge ?? ''}
-                    onChange={handleChange}
-                    placeholder="Nuevo, Popular..."
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Orden</label>
-                  <input
-                    name="order"
-                    type="number"
-                    min="0"
-                    value={form.order ?? 0}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all font-mono dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Estado activo */}
-              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                <input
-                  type="checkbox"
-                  name="isActive"
-                  checked={form.isActive ?? true}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded accent-violet-600"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white">Producto activo</p>
-                  <p className="text-xs text-gray-400">Solo los productos activos aparecen en la web pública</p>
-                </div>
-              </label>
-
-              {/* Acciones */}
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="flex-1 py-3 text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 py-3 text-white font-bold bg-violet-600 rounded-xl hover:bg-violet-700 transition-colors shadow-lg shadow-violet-500/30 disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {saving && <Icon icon="svg-spinners:ring-resize" width="16" />}
-                  {editTarget ? 'Guardar Cambios' : 'Crear Producto'}
-                </button>
-              </div>
-            </form>
+            </label>
           </div>
-        </div>
-      )}
+
+          <div className="flex gap-3 px-5 pb-5">
+            <Button type="button" onClick={() => setModalOpen(false)} color="default" className="flex-1">Cancelar</Button>
+            <Button type="submit" color="primary" disabled={saving} className="flex-1">
+              {saving && <Icon icon="svg-spinners:ring-resize" width="15" className="mr-1.5" />}
+              {editTarget ? 'Guardar Cambios' : 'Crear Producto'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal confirmar eliminar */}
-      {deleteId !== null && (
-        <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteId(null)} />
-          <div className="relative bg-white dark:bg-[#111827] rounded-3xl p-8 w-full max-w-sm z-10 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Icon icon="solar:trash-bin-trash-bold-duotone" width="36" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">¿Eliminar producto?</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Esta acción no se puede deshacer.</p>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleDelete(deleteId)}
-                className="flex-1 py-3 text-white font-bold bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpenModal={deleteId !== null}
+        closeModal={() => setDeleteId(null)}
+        title="Eliminar producto"
+        icon="solar:trash-bin-trash-bold-duotone"
+        iconClass="bg-red-50 text-red-500"
+        width="360px"
+        height="auto"
+      >
+        <div className="px-5 py-4 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Esta acción no se puede deshacer.</p>
         </div>
-      )}
+        <div className="flex gap-3 px-5 pb-5">
+          <Button type="button" onClick={() => setDeleteId(null)} color="default" className="flex-1">Cancelar</Button>
+          <Button type="button" onClick={() => deleteId !== null && handleDelete(deleteId)} color="danger" className="flex-1">Eliminar</Button>
+        </div>
+      </Modal>
     </div>
     </>
   );

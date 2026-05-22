@@ -12,6 +12,8 @@ import { useProductsStore } from "@/zustand/products";
 import { get } from "@/utils/fetch";
 import moment from "moment";
 import { Calendar } from "@/components/Date";
+import apiClient from "@/utils/apiClient";
+import ModalConfirm from "@/components/ModalConfirm";
 
 interface ModalNuevaCompraProps {
     isOpen: boolean;
@@ -65,6 +67,16 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const [barcodeLoading, setBarcodeLoading] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
 
+    // XML import
+    const xmlInputRef = useRef<HTMLInputElement>(null);
+    const [isParsingXml, setIsParsingXml] = useState(false);
+    const [supplierDisplay, setSupplierDisplay] = useState('');
+    const [xmlBanner, setXmlBanner] = useState<{ matched: number; total: number; proveedor: boolean } | null>(null);
+    const [xmlSupplierInfo, setXmlSupplierInfo] = useState<{ ruc: string; nombre: string } | null>(null);
+    const [linkingRowIndex, setLinkingRowIndex] = useState<number | null>(null);
+    const [linkProductIdByRow, setLinkProductIdByRow] = useState<Record<number, number>>({});
+    const [showConfirmUnlinked, setShowConfirmUnlinked] = useState(false);
+
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
@@ -89,6 +101,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             setItems([]);
             setCuotas([]);
             setBarcodeInput('');
+            setSupplierDisplay('');
+            setXmlBanner(null);
+            setXmlSupplierInfo(null);
+            setLinkingRowIndex(null);
+            setLinkProductIdByRow({});
+            setShowConfirmUnlinked(false);
         }
     }, [isOpen]);
 
@@ -117,8 +135,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         getAllProducts({ search: query, limit: 20 }, cb);
     };
 
-    const onSupplierChange = (id: any, value: string) => {
-        setHeader({ ...header, proveedorId: Number(id) });
+    const onSupplierChange = (id: any) => {
+        setHeader(h => ({ ...h, proveedorId: Number(id) }));
+        setSupplierDisplay('');
     };
 
     const onProductChange = (id: any, value: string) => {
@@ -164,6 +183,114 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         }
     };
 
+    const updateItem = (idx: number, field: string, value: any) => {
+        setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+    };
+
+    const vincularItemXml = (idx: number) => {
+        const productoId = Number(linkProductIdByRow[idx] || 0);
+        if (!productoId) {
+            alert('Selecciona un producto para vincular esta línea.', 'error');
+            return;
+        }
+
+        const prod = products.find((p: any) => Number(p.id) === productoId);
+        if (!prod) {
+            alert('No se encontró el producto seleccionado. Vuelve a buscarlo.', 'error');
+            return;
+        }
+
+        setItems(prev => prev.map((item, i) => (
+            i === idx
+                ? {
+                    ...item,
+                    productoId: prod.id,
+                    _sinVincular: false,
+                    _vinculadoManual: true,
+                    _productoVinculadoLabel: `${prod.codigo} - ${prod.descripcion}`,
+                }
+                : item
+        )));
+
+        setXmlBanner((prev) => {
+            if (!prev) return prev;
+            const sinVincularAntes = items.filter((it: any) => it._sinVincular).length;
+            const matched = sinVincularAntes > 0 ? Math.min(prev.total, prev.matched + 1) : prev.matched;
+            return { ...prev, matched };
+        });
+
+        setLinkingRowIndex(null);
+        setLinkProductIdByRow((prev) => {
+            const next = { ...prev };
+            delete next[idx];
+            return next;
+        });
+    };
+
+    const handleXmlFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        setIsParsingXml(true);
+        setXmlBanner(null);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await apiClient.post('/compras/parse-xml', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const data = res.data?.data ?? res.data;
+
+            setHeader(h => ({
+                ...h,
+                tipoDoc: data.tipoDoc || h.tipoDoc,
+                serie: data.serie || h.serie,
+                numero: data.numero || h.numero,
+                fechaEmision: data.fechaEmision || h.fechaEmision,
+                fechaVencimiento: data.fechaEmision || h.fechaVencimiento,
+                moneda: data.moneda || h.moneda,
+                proveedorId: data.proveedorId || 0,
+            }));
+
+            const proveedorLabel = [data.proveedorRuc, data.proveedorNombre].filter(Boolean).join(' - ');
+            if (proveedorLabel) setSupplierDisplay(proveedorLabel);
+            setXmlSupplierInfo({
+                ruc: String(data.proveedorRuc || '').trim(),
+                nombre: String(data.proveedorNombre || '').trim(),
+            });
+            if (data.proveedorId) {
+                setSupplierOptions([{ id: data.proveedorId, value: proveedorLabel }]);
+            }
+
+            const importedItems = (data.items || []).map((item: any) => ({
+                productoId: item.productoId || 0,
+                descripcion: item.productoDescripcion || item.descripcion,
+                cantidad: item.cantidad,
+                precioUnitario: item.precioUnitario,
+                lote: '',
+                fechaVencimiento: '',
+                subtotal: item.subtotal,
+                _fromXml: true,
+                _codigoXml: item.codigo,
+                _sinVincular: !item.productoId,
+            }));
+            setItems(importedItems);
+
+            const matched = importedItems.filter((i: any) => !i._sinVincular).length;
+            setXmlBanner({ matched, total: importedItems.length, proveedor: !!data.proveedorId });
+
+            if (!data.proveedorId) {
+                alert(`XML importado. Proveedor no encontrado (RUC: ${data.proveedorRuc}) — selecciónalo manualmente.`, 'error');
+            } else {
+                alert(`XML importado: ${matched}/${importedItems.length} productos vinculados.`, 'success');
+            }
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'Error al procesar el XML. Verifica que sea una factura SUNAT válida.', 'error');
+        } finally {
+            setIsParsingXml(false);
+        }
+    };
+
     const addItem = () => {
         if (!currentItem.productoId) {
             alert("Seleccione un producto", "error");
@@ -189,8 +316,63 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const igv = subtotal * 0.18;
     const total = subtotal + igv;
 
-    const handleSubmit = async () => {
-        if (!header.proveedorId) {
+    const guardarCompra = async () => {
+        let proveedorId = Number(header.proveedorId || 0);
+        if (!proveedorId && xmlSupplierInfo?.ruc && xmlSupplierInfo?.nombre) {
+            try {
+                const tipoDoc = xmlSupplierInfo.ruc.length === 11 ? 'RUC' : 'DNI';
+                const payloadProveedor = {
+                    nombre: xmlSupplierInfo.nombre,
+                    tipoDoc,
+                    nroDoc: xmlSupplierInfo.ruc,
+                    persona: 'PROVEEDOR',
+                    direccion: '',
+                    email: '',
+                    telefono: '',
+                    ubigeo: '',
+                    departamento: '',
+                    provincia: '',
+                    distrito: '',
+                };
+                const creado = await apiClient.post('/cliente/crear', payloadProveedor);
+                const proveedorCreado = creado?.data?.data || creado?.data;
+                if (proveedorCreado?.id) {
+                    proveedorId = Number(proveedorCreado.id);
+                    setHeader((h) => ({ ...h, proveedorId }));
+                    const label = `${xmlSupplierInfo.ruc} - ${xmlSupplierInfo.nombre}`;
+                    setSupplierOptions((prev) => {
+                        const existe = prev.some((o: any) => Number(o.id) === proveedorId);
+                        return existe ? prev : [{ id: proveedorId, value: label }, ...prev];
+                    });
+                    setSupplierDisplay(label);
+                }
+            } catch (e: any) {
+                const msg = String(e?.response?.data?.message || '').toLowerCase();
+                // Si ya existe, intentar resolverlo buscando por documento.
+                if (msg.includes('ya existe')) {
+                    try {
+                        const listResp = await apiClient.get(`/cliente/listar?search=${encodeURIComponent(xmlSupplierInfo.ruc)}&limit=10`);
+                        const data = listResp?.data?.data || listResp?.data;
+                        const encontrados = Array.isArray(data?.clientes) ? data.clientes : [];
+                        const match = encontrados.find((c: any) => String(c.nroDoc || '').trim() === xmlSupplierInfo.ruc);
+                        if (match?.id) {
+                            proveedorId = Number(match.id);
+                            setHeader((h) => ({ ...h, proveedorId }));
+                            const label = `${match.nroDoc} - ${match.nombre}`;
+                            setSupplierOptions((prev) => {
+                                const existe = prev.some((o: any) => Number(o.id) === proveedorId);
+                                return existe ? prev : [{ id: proveedorId, value: label }, ...prev];
+                            });
+                            setSupplierDisplay(label);
+                        }
+                    } catch {
+                        // fallback to validation below
+                    }
+                }
+            }
+        }
+
+        if (!proveedorId) {
             alert("Seleccione un proveedor", "error");
             return;
         }
@@ -201,10 +383,18 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
 
         const payload = {
             ...header,
+            proveedorId,
+            proveedorNombre: supplierDisplay?.split(' - ').slice(1).join(' - ') || xmlSupplierInfo?.nombre || '',
+            proveedorRuc: supplierDisplay?.split(' - ')[0] || xmlSupplierInfo?.ruc || '',
             items: undefined,
             detalles: items.map(i => ({
-                ...i,
-                fechaVencimiento: i.fechaVencimiento ? i.fechaVencimiento : undefined
+                productoId: i.productoId || undefined,
+                descripcion: i.descripcion,
+                cantidad: i.cantidad,
+                precioUnitario: i.precioUnitario,
+                lote: i.lote || undefined,
+                fechaVencimiento: i.fechaVencimiento || undefined,
+                codigoXml: i._codigoXml || undefined,
             })),
             formaPago: payment.condicionPago,
             montoPagadoInicial: payment.condicionPago === 'CONTADO' ? total : Number(payment.montoPagadoInicial),
@@ -220,6 +410,20 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             onClose();
             if (onSuccess) onSuccess();
         }
+    };
+
+    const handleSubmit = async () => {
+        const sinVincular = items.filter(i => i._sinVincular).length;
+        if (sinVincular > 0) {
+            setShowConfirmUnlinked(true);
+            return;
+        }
+        await guardarCompra();
+    };
+
+    const confirmGuardarConSinVincular = async () => {
+        setShowConfirmUnlinked(false);
+        await guardarCompra();
     };
 
     return (
@@ -247,6 +451,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 withLabel
                                 error={null}
                                 placeholder="Buscar proveedor..."
+                                value={supplierDisplay || supplierOptions.find((o: any) => Number(o.id) === Number(header.proveedorId))?.value || ''}
                             />
                             <InputPro autocomplete="off" label="Serie" name="doc_serie_compra" id="doc_serie_compra" value={header.serie} onChange={(e) => setHeader({ ...header, serie: e.target.value })} isLabel />
                             <InputPro autocomplete="off" label="Nro. Comprobante" name="doc_correlativo" id="doc_correlativo" value={header.numero} onChange={(e) => setHeader({ ...header, numero: e.target.value })} isLabel />
@@ -276,7 +481,40 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
 
                     {/* Detalle de Productos */}
                     <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
-                        <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Detalle de Productos</h3>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide">Detalle de Productos</h3>
+                            <button
+                                type="button"
+                                onClick={() => xmlInputRef.current?.click()}
+                                disabled={isParsingXml}
+                                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50 transition-colors bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg"
+                            >
+                                <Icon icon={isParsingXml ? "svg-spinners:270-ring-with-bg" : "solar:upload-minimalistic-bold-duotone"} width={14} />
+                                {isParsingXml ? 'Procesando...' : 'Importar XML'}
+                            </button>
+                        </div>
+                        <input
+                            ref={xmlInputRef}
+                            type="file"
+                            accept=".xml,application/xml,text/xml"
+                            className="hidden"
+                            onChange={handleXmlFileSelect}
+                        />
+
+                        {/* Banner resultado XML */}
+                        {xmlBanner && (
+                            <div className={`mb-3 p-3 rounded-xl text-xs flex items-start gap-2 border ${xmlBanner.matched === xmlBanner.total && xmlBanner.proveedor ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30' : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>
+                                <Icon icon={xmlBanner.matched === xmlBanner.total && xmlBanner.proveedor ? "solar:check-circle-bold-duotone" : "solar:info-circle-bold-duotone"} width={16} className="mt-0.5 shrink-0" />
+                                <span className="flex-1">
+                                    <strong>XML importado:</strong> {xmlBanner.total} producto(s), {xmlBanner.matched} vinculado(s) automáticamente.
+                                    {!xmlBanner.proveedor && <span className="block mt-0.5">Proveedor no encontrado — selecciónalo manualmente.</span>}
+                                    {xmlBanner.matched < xmlBanner.total && <span className="block mt-0.5">Los items sin vincular no actualizarán el kardex de stock.</span>}
+                                </span>
+                                <button type="button" onClick={() => setXmlBanner(null)} className="opacity-40 hover:opacity-80 shrink-0 transition-opacity">
+                                    <Icon icon="solar:close-circle-bold" width={14} />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Barcode scanner input */}
                         <BarcodeScannerInput
@@ -311,7 +549,18 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 <InputPro autocomplete="off" type="number" label="Costo Unit." name="precioUnitario" value={currentItem.precioUnitario} onChange={(e) => setCurrentItem({ ...currentItem, precioUnitario: Number(e.target.value) })} isLabel />
                             </div>
                             <div className="col-span-2">
-                                <InputPro autocomplete="off" label="Lote (Opcional)" name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
+                                <InputPro autocomplete="off" label="Lote (Opc.)" name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
+                            </div>
+                            <div className="col-span-2">
+                                <Calendar
+                                    text="Venc. (Opc.)"
+                                    name="fechaVencimientoItem"
+                                    onChange={(date: string) => {
+                                        if (moment(date, 'DD/MM/YYYY', true).isValid()) {
+                                            setCurrentItem({ ...currentItem, fechaVencimiento: moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD') });
+                                        }
+                                    }}
+                                />
                             </div>
                             <div className="col-span-2">
                                 <Button outline color="black" onClick={addItem} className="w-full justify-center !bg-violet-600 !text-white !border-none shadow-md shadow-violet-200 hover:opacity-90">
@@ -322,7 +571,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                         </div>
 
                         {/* Items Table */}
-                        <div className="overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-xl">
+                        <div className="border border-gray-100 dark:border-slate-800 rounded-xl">
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-slate-700">
                                     <tr>
@@ -336,27 +585,112 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                 <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-3 py-8 text-center text-gray-400 dark:text-gray-500">
-                                                No hay productos agregados
+                                            <td colSpan={5} className="px-3 py-10 text-center text-gray-400 dark:text-gray-500">
+                                                <Icon icon="solar:box-linear" width={32} className="mx-auto mb-2 opacity-30" />
+                                                <p className="text-sm">No hay productos agregados</p>
                                             </td>
                                         </tr>
                                     ) : items.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50">
+                                        <tr key={idx} className={`hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors ${item._sinVincular ? 'border-l-2 border-l-slate-300 dark:border-l-slate-600' : ''}`}>
                                             <td className="px-3 py-3">
-                                                <div className="font-medium text-gray-800 dark:text-white">{item.descripcion}</div>
-                                                {(item.lote || item.fechaVencimiento) && (
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {item.lote && `Lote: ${item.lote} `}
-                                                        {item.fechaVencimiento && `Vence: ${item.fechaVencimiento}`}
+                                                <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                                                    <span className="font-medium text-gray-800 dark:text-white text-sm">{item.descripcion}</span>
+                                                    {item._fromXml && (
+                                                        item._sinVincular ? (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">
+                                                                Sin vincular{item._codigoXml ? ` · ${item._codigoXml}` : ''}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-800/30">
+                                                                <Icon icon="solar:check-circle-bold" width={10} />
+                                                                XML
+                                                            </span>
+                                                        )
+                                                    )}
+                                                    {item._vinculadoManual && (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-800/30">
+                                                            <Icon icon="solar:link-bold" width={10} />
+                                                            Vinculado
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {item._sinVincular && (
+                                                    <div className="mb-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
+                                                        {linkingRowIndex === idx ? (
+                                                            <div className="flex flex-col md:flex-row gap-2">
+                                                                <div className="flex-1 min-w-[260px]">
+                                                                    <Select
+                                                                        label="Vincular con producto"
+                                                                        name={`link_producto_${idx}`}
+                                                                        options={productOptions}
+                                                                        onChange={(id: any) => setLinkProductIdByRow(prev => ({ ...prev, [idx]: Number(id) }))}
+                                                                        isSearch
+                                                                        handleGetData={handleProductSearch}
+                                                                        withLabel
+                                                                        error={null}
+                                                                        placeholder="Busca el producto interno..."
+                                                                    />
+                                                                </div>
+                                                                <div className="flex items-end gap-2">
+                                                                    <Button
+                                                                        outline
+                                                                        color="black"
+                                                                        className="!bg-indigo-600 !text-white !border-none"
+                                                                        onClick={() => vincularItemXml(idx)}
+                                                                    >
+                                                                        Vincular
+                                                                    </Button>
+                                                                    <Button
+                                                                        outline
+                                                                        color="black"
+                                                                        className="!bg-gray-200 !text-gray-700 !border-none"
+                                                                        onClick={() => setLinkingRowIndex(null)}
+                                                                    >
+                                                                        Cancelar
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setLinkingRowIndex(idx)}
+                                                                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Icon icon="solar:link-bold" width={12} />
+                                                                Vincular este ítem al inventario
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 )}
+                                                <div className="flex gap-2 items-end">
+                                                    <div className="w-28">
+                                                        <InputPro
+                                                            placeholder="Lote..."
+                                                            name={`lote_${idx}`}
+                                                            value={item.lote || ''}
+                                                            onChange={e => updateItem(idx, 'lote', e.target.value)}
+                                                            autocomplete="off"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-[140px]">
+                                                        <Calendar
+                                                            text=""
+                                                            name={`venc_${idx}`}
+                                                            onChange={(date: string) => {
+                                                                if (moment(date, 'DD/MM/YYYY', true).isValid()) {
+                                                                    updateItem(idx, 'fechaVencimiento', moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'));
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td className="px-3 py-3 text-center dark:text-gray-300">{item.cantidad}</td>
-                                            <td className="px-3 py-3 text-right dark:text-gray-300">S/ {Number(item.precioUnitario).toFixed(2)}</td>
-                                            <td className="px-3 py-3 text-right font-medium text-gray-800 dark:text-white">S/ {Number(item.cantidad * item.precioUnitario).toFixed(2)}</td>
+                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-300">{item.cantidad}</td>
+                                            <td className="px-3 py-3 text-right text-gray-600 dark:text-gray-300">S/ {Number(item.precioUnitario).toFixed(2)}</td>
+                                            <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-white">S/ {Number(item.cantidad * item.precioUnitario).toFixed(2)}</td>
                                             <td className="px-3 py-3 text-center">
-                                                <button onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-700 p-1">
-                                                    <Icon icon="solar:trash-bin-trash-bold" />
+                                                <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                                    <Icon icon="solar:trash-bin-trash-bold" width={16} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -504,6 +838,14 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     </div>
                 </div>
             </form>
+            <ModalConfirm
+                isOpenModal={showConfirmUnlinked}
+                setIsOpenModal={setShowConfirmUnlinked}
+                title="Confirmar Guardado"
+                information={`${items.filter(i => i._sinVincular).length} producto(s) del XML no están vinculados y no actualizarán stock. ¿Deseas continuar de todos modos?`}
+                confirmText="Sí, guardar compra"
+                confirmSubmit={confirmGuardarConSinVincular}
+            />
         </Modal>
     );
 };

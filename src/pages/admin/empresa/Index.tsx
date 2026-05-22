@@ -40,75 +40,6 @@ const EmpresasIndex = () => {
           Nueva Empresa
         </button>
       </div>
-      {/* Vencimientos próximos */}
-      {vm.proximasVencer.length > 0 && !vm.alertasDismissed && (
-        <div className="mb-4 rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827] shadow-sm overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-slate-800">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-                <Icon icon="solar:alarm-bold-duotone" className="text-amber-600 dark:text-amber-400 text-lg" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Vencimientos próximos</span>
-                <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
-                  {vm.proximasVencer.length}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { vm.setFiltroPorVencer(!vm.filtroPorVencer); }}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${vm.filtroPorVencer ? 'bg-amber-500 text-white border-amber-500' : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 hover:border-amber-400 hover:text-amber-600'}`}
-              >
-                {vm.filtroPorVencer ? 'Ver todas' : 'Filtrar en tabla'}
-              </button>
-              <button
-                onClick={() => vm.setAlertasDismissed(true)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 transition-colors"
-              >
-                <Icon icon="solar:close-bold" width={14} />
-              </button>
-            </div>
-          </div>
-          {/* Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 divide-x-0 sm:divide-x divide-y sm:divide-y-0 divide-gray-100 dark:divide-slate-800">
-            {vm.proximasVencer.map((e: any) => {
-              const dias = vm.getDiasRestantes(e.fechaExpiracion);
-              const isCritico = dias <= 1;
-              const isUrgente = dias > 1 && dias <= 3;
-              const style = isCritico
-                ? { bar: 'bg-red-500', badge: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400', text: 'text-red-600 dark:text-red-400', icon: 'solar:danger-bold-duotone' }
-                : isUrgente
-                ? { bar: 'bg-orange-500', badge: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400', text: 'text-orange-600 dark:text-orange-400', icon: 'solar:fire-bold-duotone' }
-                : { bar: 'bg-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400', text: 'text-amber-600 dark:text-amber-400', icon: 'solar:clock-circle-bold-duotone' };
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => vm.setDrawerEmpresa(e)}
-                  className="relative flex flex-col gap-1.5 px-5 py-4 text-left hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group overflow-hidden"
-                >
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${style.bar}`} />
-                  <div className="flex items-center justify-between gap-2 pl-1">
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {e.nombreComercial || e.razonSocial}
-                    </span>
-                    <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${style.badge}`}>
-                      {dias === 0 ? 'Hoy' : dias === 1 ? '1 día' : `${dias} días`}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 pl-1">
-                    <Icon icon={style.icon} className={`text-base shrink-0 ${style.text}`} />
-                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {e.plan?.nombre || 'Sin plan'} · {new Date(e.fechaExpiracion).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
         <div className="p-5 border-b border-gray-100 dark:border-slate-800">
@@ -117,18 +48,6 @@ const EmpresasIndex = () => {
             <div className="w-full lg:w-48"><Select name="tipoFiltro" label="Tipo" error={() => { }} options={[{ id: '', value: 'Todas' }, { id: 'FORMAL', value: 'Formales' }, { id: 'INFORMAL', value: 'Informales' }]} onChange={(id: any) => { vm.setTipoFiltro(id); vm.setCurrentPageState(1); }} withLabel /></div>
             <div className="w-full lg:w-40"><Select name="estadoFiltro" label="Estado" error={() => { }} options={[{ id: 'TODOS', value: 'Todos' }, { id: 'ACTIVO', value: 'Activos' }, { id: 'INACTIVO', value: 'Inactivos' }]} onChange={(id: any) => { vm.setEstadoFiltro(id); vm.setCurrentPageState(1); }} withLabel value={vm.estadoFiltro} /></div>
           </div>
-          {vm.filtroPorVencer && (
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Filtros activos:</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-xs font-semibold">
-                <Icon icon="solar:alarm-bold-duotone" width={12} />
-                Por vencer (7 días)
-                <button onClick={() => vm.setFiltroPorVencer(false)} className="ml-0.5 hover:text-amber-900 dark:hover:text-amber-200">
-                  <Icon icon="solar:close-bold" width={10} />
-                </button>
-              </span>
-            </div>
-          )}
         </div>
         {vm.error && <div className="mx-5 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 rounded-lg flex items-center gap-2 font-medium text-sm"><Icon icon="solar:danger-circle-bold" className="text-xl" />{vm.error}</div>}
         <div className="p-4">

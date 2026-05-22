@@ -7,7 +7,7 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 
 export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
-        isEdit, isRestaurante, isFarmacia, tipoAjusteStock, cantidadAjuste, stockOriginal,
+        isEdit, isRestaurante, isFarmacia, isFabricacion, tipoAjusteStock, cantidadAjuste, stockOriginal,
         formValues, errors, isMobile,
         setTipoAjusteStock, setCantidadAjuste, handleChange
     } = vm;
@@ -17,7 +17,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             <div className="p-4 rounded-lg border border-gray-200 dark:border-slate-700">
                 <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                     <Icon icon="mdi:cube-outline" width={16} height={16} />
-                    {isRestaurante ? 'Disponibilidad' : isFarmacia ? 'Stock' : 'Gestión de Inventario'}
+                    {isRestaurante ? 'Disponibilidad' : isFarmacia ? 'Stock' : isFabricacion ? 'Stock del ítem' : 'Gestión de Inventario'}
                 </h5>
 
                 {isRestaurante ? (

@@ -5,6 +5,9 @@ import { useResellerPanelStore } from '@/zustand/reseller-panel';
 import Select from '@/components/Select';
 import ClienteDetalleModal from '@/components/reseller/ClienteDetalleModal';
 import DataTable from '@/components/Datatable';
+import Modal from '@/components/Modal';
+import InputPro from '@/components/InputPro';
+import Button from '@/components/Button';
 
 export default function ResellerClientes() {
     const { auth } = useAuthStore();
@@ -13,6 +16,11 @@ export default function ResellerClientes() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState<number>(0);
     const [search, setSearch] = useState('');
+    const [activeTab, setActiveTab] = useState<'empresa' | 'facturacion'>('empresa');
+
+    useEffect(() => {
+        if (isModalOpen) setActiveTab('empresa');
+    }, [isModalOpen]);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -22,7 +30,16 @@ export default function ResellerClientes() {
         email: '',
         telefono: '',
         password: '',
-        planId: ''
+        planId: '',
+        billingProvider: 'QPSE',
+        providerId: '',
+        providerToken: '',
+        usuarioPse: '',
+        contrasenaPse: '',
+        billingApiBaseUrl: '',
+        billingApiToken: '',
+        billingApiUser: '',
+        billingApiPassword: '',
     });
 
     useEffect(() => {
@@ -78,7 +95,16 @@ export default function ResellerClientes() {
                 email: '',
                 telefono: '',
                 password: '',
-                planId: ''
+                planId: '',
+                billingProvider: 'QPSE',
+                providerId: '',
+                providerToken: '',
+                usuarioPse: '',
+                contrasenaPse: '',
+                billingApiBaseUrl: '',
+                billingApiToken: '',
+                billingApiUser: '',
+                billingApiPassword: '',
             });
             getClientes(auth.resellerId!); // Refresh list
         }
@@ -179,70 +205,46 @@ export default function ResellerClientes() {
             />
 
             {/* Create Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg z-10 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-800">Nuevo Cliente</h2>
-                                <p className="text-sm text-gray-500">Registra una nueva empresa (Esto descontará saldo)</p>
-                            </div>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <Icon icon="solar:close-circle-bold" width="24" />
-                            </button>
-                        </div>
+            <Modal
+                isOpenModal={isModalOpen}
+                closeModal={() => setIsModalOpen(false)}
+                title="Nuevo Cliente"
+                icon="solar:buildings-bold-duotone"
+                iconClass="bg-indigo-50 text-indigo-600"
+                width="580px"
+                height="auto"
+            >
+                <form onSubmit={handleSubmit}>
+                    <div className="flex border-b border-gray-100">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('empresa')}
+                            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'empresa' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <Icon icon="solar:buildings-bold" width="14" />Empresa
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('facturacion')}
+                            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'facturacion' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <Icon icon="solar:bill-bold" width="14" />Facturación
+                        </button>
+                    </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">RUC</label>
-                                    <input
-                                        required
-                                        name="rut"
-                                        value={formData.rut}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium font-mono"
-                                        placeholder="20100100100"
-                                        maxLength={11}
-                                    />
+                    <div className="p-5">
+                        {activeTab === 'empresa' && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <InputPro isLabel label="RUC" name="rut" value={formData.rut} onChange={handleChange as any} placeholder="20100100100" maxLength={11} />
+                                <InputPro isLabel label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange as any} placeholder="999 999 999" />
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Razón Social" name="razonSocial" value={formData.razonSocial} onChange={handleChange as any} placeholder="Empresa SAC" />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</label>
-                                    <input
-                                        name="telefono"
-                                        value={formData.telefono}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium"
-                                        placeholder="999 999 999"
-                                    />
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Email (Admin)" name="email" type="email" value={formData.email} onChange={handleChange as any} placeholder="admin@empresa.com" />
                                 </div>
-                                <div className="space-y-1.5 col-span-2">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Razón Social</label>
-                                    <input
-                                        required
-                                        name="razonSocial"
-                                        value={formData.razonSocial}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium"
-                                        placeholder="Empresa SAC"
-                                    />
-                                </div>
-                                <div className="space-y-1.5 col-span-2">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email (Admin)</label>
-                                    <input
-                                        required
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium"
-                                        placeholder="admin@empresa.com"
-                                    />
-                                </div>
-                                <div className="space-y-1.5 col-span-2">
-                                    <div className="flex justify-between items-baseline mb-1">
-                                        <div className="flex-1"></div>
+                                <div className="col-span-2">
+                                    <div className="flex justify-end mb-1.5">
                                         <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
                                             Tu descuento: {stats.porcentajeDescuento || 0}%
                                         </span>
@@ -253,65 +255,80 @@ export default function ResellerClientes() {
                                         value={planes.find((p: any) => String(p.id) === String(formData.planId)) ?
                                             (() => {
                                                 const p = planes.find((p: any) => String(p.id) === String(formData.planId));
-                                                const cost = Number(p.costo);
-                                                const discount = Number(stats.porcentajeDescuento) || 0;
-                                                const finalCost = cost * (1 - discount / 100);
-                                                return `${p.nombre} - ${p.maxComprobantes} Comprobantes (Tu Precio: S/${finalCost.toFixed(2)})`;
+                                                const finalCost = Number(p.costo) * (1 - (Number(stats.porcentajeDescuento) || 0) / 100);
+                                                return `${p.nombre} - ${p.maxComprobantes} Comprob. (S/${finalCost.toFixed(2)})`;
                                             })()
                                             : ""}
                                         options={planes.map((plan: any) => {
-                                            const cost = Number(plan.costo);
-                                            const discount = Number(stats.porcentajeDescuento) || 0;
-                                            const finalCost = cost * (1 - discount / 100);
-                                            return {
-                                                id: plan.id,
-                                                value: `${plan.nombre} - ${plan.maxComprobantes} Comprobantes (Tu Precio: S/${finalCost.toFixed(2)})`
-                                            };
+                                            const finalCost = Number(plan.costo) * (1 - (Number(stats.porcentajeDescuento) || 0) / 100);
+                                            return { id: plan.id, value: `${plan.nombre} - ${plan.maxComprobantes} Comprob. (S/${finalCost.toFixed(2)})` };
                                         })}
-                                        onChange={(id: any) => {
-                                            console.log("Plan Selected ID:", id);
-                                            setFormData(prev => ({ ...prev, planId: id }));
-                                        }}
+                                        onChange={(id: any) => setFormData(prev => ({ ...prev, planId: id }))}
                                         error={null}
-                                        readOnly={true} // Using as select, so input readonly
+                                        readOnly={true}
                                     />
-                                    <p className="text-[10px] text-gray-400 mt-1">El costo final dependerá del precio base del plan menos tu descuento.</p>
+                                    <p className="text-[10px] text-gray-400 mt-1">El costo final depende del precio base del plan menos tu descuento.</p>
                                 </div>
-
-                                <div className="space-y-1.5 col-span-2">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Contraseña Inicial</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium font-mono"
-                                        placeholder="123456"
-                                    />
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Contraseña Inicial" name="password" value={formData.password} onChange={handleChange as any} placeholder="123456" />
                                 </div>
                             </div>
+                        )}
 
-                            <div className="pt-4 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 py-3 text-white font-bold bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
-                                >
-                                    Crear Cliente
-                                </button>
+                        {activeTab === 'facturacion' && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="col-span-2">
+                                    <Select
+                                        label="Proveedor de Facturación"
+                                        name="billingProvider"
+                                        value={formData.billingProvider === 'JAMBLE' ? 'JAMBLE (API propia)' : formData.billingProvider}
+                                        options={[
+                                            { id: 'QPSE', value: 'QPSE' },
+                                            { id: 'APISUNAT', value: 'APISUNAT' },
+                                            { id: 'JAMBLE', value: 'JAMBLE (API propia)' },
+                                        ]}
+                                        onChange={(id: any) => setFormData(prev => ({ ...prev, billingProvider: id }))}
+                                        error={null}
+                                        readOnly={true}
+                                    />
+                                </div>
+
+                                {formData.billingProvider === 'QPSE' && (
+                                    <>
+                                        <InputPro isLabel label="Usuario QPSE" name="usuarioPse" value={formData.usuarioPse} onChange={handleChange as any} placeholder="usuario_qpse" />
+                                        <InputPro isLabel label="Clave QPSE" name="contrasenaPse" type="password" value={formData.contrasenaPse} onChange={handleChange as any} placeholder="••••••••" />
+                                    </>
+                                )}
+
+                                {formData.billingProvider === 'APISUNAT' && (
+                                    <>
+                                        <InputPro isLabel label="Persona ID" name="providerId" value={formData.providerId} onChange={handleChange as any} placeholder="personaId" />
+                                        <InputPro isLabel label="Persona Token" name="providerToken" value={formData.providerToken} onChange={handleChange as any} placeholder="token" />
+                                    </>
+                                )}
+
+                                {formData.billingProvider === 'JAMBLE' && (
+                                    <>
+                                        <div className="col-span-2">
+                                            <InputPro isLabel label="Base URL API" name="billingApiBaseUrl" value={formData.billingApiBaseUrl} onChange={handleChange as any} placeholder="https://api.tu-proveedor.com" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <InputPro isLabel label="Token API" name="billingApiToken" value={formData.billingApiToken} onChange={handleChange as any} placeholder="token (opcional si usas usuario/clave)" />
+                                        </div>
+                                        <InputPro isLabel label="Usuario API" name="billingApiUser" value={formData.billingApiUser} onChange={handleChange as any} placeholder="usuario_api" />
+                                        <InputPro isLabel label="Clave API" name="billingApiPassword" type="password" value={formData.billingApiPassword} onChange={handleChange as any} placeholder="••••••••" />
+                                    </>
+                                )}
                             </div>
-                        </form>
+                        )}
                     </div>
-                </div >
-            )
-            }
-        </div >
+
+                    <div className="flex gap-3 px-5 pb-5">
+                        <Button type="button" onClick={() => setIsModalOpen(false)} color="default" className="flex-1">Cancelar</Button>
+                        <Button type="submit" color="primary" className="flex-1">Crear Cliente</Button>
+                    </div>
+                </form>
+            </Modal>
+        </div>
     );
 }

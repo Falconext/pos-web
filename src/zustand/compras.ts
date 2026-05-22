@@ -73,7 +73,39 @@ export const useComprasStore = create<IComprasState>()(devtools((set) => ({
         useAlertStore.setState({ loading: true });
         try {
             const resp: any = await post(`compras`, data);
-            if (resp.code === 1 || (resp.data && resp.data.id)) {
+            const created = resp?.data || null;
+            if (resp.code === 1 || (created && created.id)) {
+                const proveedorNombre =
+                    created?.proveedor?.nombre ||
+                    data?.proveedorNombre ||
+                    'Proveedor';
+                const proveedorDoc =
+                    created?.proveedor?.nroDoc ||
+                    data?.proveedorRuc ||
+                    '';
+
+                const nuevaCompra: ICompra = {
+                    id: Number(created?.id || Date.now()),
+                    serie: String(created?.serie || data?.serie || ''),
+                    numero: String(created?.numero || data?.numero || ''),
+                    fechaEmision: String(created?.fechaEmision || data?.fechaEmision || new Date().toISOString()),
+                    fechaVencimiento: created?.fechaVencimiento || data?.fechaVencimiento,
+                    proveedor: {
+                        nombre: proveedorNombre,
+                        nroDoc: proveedorDoc,
+                    },
+                    moneda: String(created?.moneda || data?.moneda || 'PEN'),
+                    total: Number(created?.total ?? data?.total ?? 0),
+                    estado: String(created?.estado || 'REGISTRADO'),
+                    estadoPago: String(created?.estadoPago || 'PENDIENTE_PAGO'),
+                    saldo: Number(created?.saldo ?? (data?.total ?? 0)),
+                };
+
+                set((state) => ({
+                    compras: [nuevaCompra, ...(state.compras || [])],
+                    totalCompras: Number(state.totalCompras || 0) + 1,
+                }));
+
                 useAlertStore.setState({ success: true, loading: false });
                 useAlertStore.getState().alert("Compra registrada correctamente", "success");
                 return true;

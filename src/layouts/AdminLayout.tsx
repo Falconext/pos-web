@@ -7,6 +7,11 @@ import { hasPermission, hasSubPermission, getRedirectPath } from '@/utils/permis
 import { useThemeStore } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
 import { BRAND, getBrandByKey } from '@/lib/branding'
+import { esRubroFabricacion } from '@/utils/rubro-features'
+import { AnimatePresence, motion } from 'framer-motion'
+import { fadeIn, fadeUp, interactiveHover, scaleIn, slideRight } from '@/lib/motion/presets'
+import { useReducedMotionPreference } from '@/lib/motion/reducedMotion'
+import { BookMarked } from 'lucide-react'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
@@ -18,6 +23,10 @@ export default function AdminLayout() {
   const isRestaurante = useMemo(() => {
     const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || ''
     return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento')
+  }, [auth?.empresa?.rubro?.nombre])
+
+  const isFabricacion = useMemo(() => {
+    return esRubroFabricacion(auth?.empresa?.rubro?.nombre)
   }, [auth?.empresa?.rubro?.nombre])
 
   // Nombres dinámicos según el rubro
@@ -36,6 +45,7 @@ export default function AdminLayout() {
   const [isTiendaSubmenuOpen, setIsTiendaSubmenuOpen] = useState(false)
   const [isCotizSubmenuOpen, setIsCotizSubmenuOpen] = useState(false)
   const [isGuiasSubmenuOpen, setIsGuiasSubmenuOpen] = useState(false)
+  const [isProduccionSubmenuOpen, setIsProduccionSubmenuOpen] = useState(false)
   const [isComprasSubmenuOpen, setIsComprasSubmenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // NUEVO ESTADO PARA DESKTOP
@@ -44,6 +54,7 @@ export default function AdminLayout() {
   const sedeMenuRef = useRef<HTMLDivElement | null>(null)
   const scrollYRef = useRef(0)
   const defaultProfileLogo = 'https://icons.veryicon.com/png/o/miscellaneous/two-color-icon-library/user-286.png'
+  const reduceMotion = useReducedMotionPreference()
 
   const companyLogoSrc = useMemo(() => {
     const logo = auth?.empresa?.logo?.trim()
@@ -64,6 +75,7 @@ export default function AdminLayout() {
     setIsCotizSubmenuOpen(false)
     setIsComprasSubmenuOpen(false)
     setIsGuiasSubmenuOpen(false)
+    setIsProduccionSubmenuOpen(false)
   }
 
   useEffect(() => {
@@ -90,7 +102,7 @@ export default function AdminLayout() {
   }, [])
 
   // Alternar acordeón exclusivo
-  const toggleAccordion = (key: 'fact' | 'cont' | 'kardex' | 'caja' | 'tienda' | 'cotiz' | 'compras' | 'guias') => {
+  const toggleAccordion = (key: 'fact' | 'cont' | 'kardex' | 'caja' | 'tienda' | 'cotiz' | 'compras' | 'guias' | 'produccion') => {
     if (key === 'fact') {
       const next = !isFactSubmenuOpen
       closeAllAccordions()
@@ -123,6 +135,10 @@ export default function AdminLayout() {
       const next = !isGuiasSubmenuOpen
       closeAllAccordions()
       setIsGuiasSubmenuOpen(next)
+    } else if (key === 'produccion') {
+      const next = !isProduccionSubmenuOpen
+      closeAllAccordions()
+      setIsProduccionSubmenuOpen(next)
     }
   }
 
@@ -247,17 +263,25 @@ export default function AdminLayout() {
   }
 
   return (
-    <div
+    <motion.div
       className="flex overflow-hidden bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300"
       style={{
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         zoom: isCompact ? '0.9' : '1',
         height: isCompact ? '110vh' : '100vh'
       }}
+      variants={fadeIn}
+      initial="initial"
+      animate={reduceMotion ? { opacity: 1 } : 'animate'}
     >
 
       {/* Sidebar/Drawer */}
-      <aside className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0D14] dark:border-r dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}>
+      <motion.aside
+        className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0D14] dark:border-r dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
+        variants={slideRight}
+        initial="initial"
+        animate={reduceMotion ? { opacity: 1, x: 0 } : 'animate'}
+      >
         {/* Logo area */}
         <div className={`flex items-center mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
           <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
@@ -380,6 +404,50 @@ export default function AdminLayout() {
                             Movimientos
                           </NavLink>
                         )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {hasPermission(auth, 'kardex') && (
+                  <NavLink
+                    onClick={() => { setIsSidebarOpen(false); setNameNavbar('Reservas') }}
+                    to="/administrador/reservas"
+                    className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
+                    title="Reservas"
+                  >
+                    <BookMarked size={18} className={`${isSidebarCollapsed ? 'm-0' : 'mr-3'}`} />
+                    {!isSidebarCollapsed && <span>Reservas</span>}
+                  </NavLink>
+                )}
+
+                {/* TÍTULO: PRODUCCIÓN */}
+                {isFabricacion && !isSidebarCollapsed && (
+                  <div className="px-2 mt-5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em]">Producción</span>
+                  </div>
+                )}
+                {isFabricacion && isSidebarCollapsed && <div className="h-4"></div>}
+
+                {/* Producción (solo rubro fabricación) */}
+                {isFabricacion && (
+                  <div className="relative group/submenu">
+                    <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/produccion/recetas'); } else { toggleAccordion('produccion'); } setNameNavbar('Producción') }} className={location.pathname.includes('/administrador/produccion') ? theme.accordionActive : theme.accordionInactive} title="Producción">
+                      <div className="flex items-center justify-center">
+                        <Icon icon="solar:layers-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        {!isSidebarCollapsed && <span>Producción</span>}
+                      </div>
+                      {!isSidebarCollapsed && <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isProduccionSubmenuOpen ? 'rotate-180' : ''}`} width="18" />}
+                    </button>
+                    {((!isSidebarCollapsed && isProduccionSubmenuOpen) || isSidebarCollapsed) && (
+                      <div className={`${isSidebarCollapsed ? 'absolute left-full top-0 ml-2 bg-white rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all' : 'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}`}>
+                        {isSidebarCollapsed && <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100">Producción</div>}
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/produccion/recetas" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Recetas
+                        </NavLink>
+                        <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/produccion/ordenes" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                          Órdenes
+                        </NavLink>
                       </div>
                     )}
                   </div>
@@ -671,27 +739,35 @@ export default function AdminLayout() {
             {!isSidebarCollapsed && <span className="text-red-500">Cerrar sesión</span>}
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Backdrop for mobile */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+            variants={fadeIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          />
+        )}
+      </AnimatePresence>
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-[#F9FAFC] dark:bg-[#0A0D14]">
-        <header className={`z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
+        <motion.header className={`z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`} variants={fadeUp} initial="initial" animate="animate">
           <div className="flex items-center gap-4">
-            <button
+            <motion.button
               className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Abrir menú"
+              whileHover={interactiveHover.whileHover}
+              whileTap={interactiveHover.whileTap}
             >
               <Icon icon="solar:hamburger-menu-linear" width="22" className="text-gray-600" />
-            </button>
+            </motion.button>
             <div className="flex items-center gap-1.5 text-[13px] font-medium">
               <span className="text-gray-400">Administrador</span>
               <Icon icon="solar:alt-arrow-right-linear" width="13" className="text-gray-300" />
@@ -714,8 +790,9 @@ export default function AdminLayout() {
                     <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
                     <Icon icon="solar:alt-arrow-down-linear" className="text-violet-600" width={12} />
                   </button>
-                  {isSedeMenuOpen && (
-                    <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]">
+                  <AnimatePresence>
+                    {isSedeMenuOpen && (
+                    <motion.div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]" variants={scaleIn} initial="initial" animate="animate" exit="exit">
                       <p className="text-[10px] uppercase font-bold text-gray-400 px-3 py-1 tracking-wider">Cambiar sede</p>
                       {todasSedes.filter(s => s.activo).map(sede => (
                         <button
@@ -732,8 +809,9 @@ export default function AdminLayout() {
                           {sede.esPrincipal && <span className="ml-auto text-[10px] text-gray-400 font-normal">Principal</span>}
                         </button>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg">
@@ -816,8 +894,9 @@ export default function AdminLayout() {
                 <Icon icon="solar:alt-arrow-down-bold" className="hidden md:block text-gray-400" width="14" />
               </button>
 
+              <AnimatePresence>
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 z-[999999] overflow-hidden">
+                <motion.div className="absolute right-0 mt-2 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 z-[999999] overflow-hidden" variants={scaleIn} initial="initial" animate="animate" exit="exit">
                   <div className="px-4 py-3.5 bg-gray-50 border-b border-gray-100">
                     <p className="text-[13px] font-bold text-gray-900 truncate">{auth?.nombre}</p>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5">{auth?.empresa?.nombreComercial}</p>
@@ -856,17 +935,18 @@ export default function AdminLayout() {
                       </button>
                     </li>
                   </ul>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className={`${theme.mainPadding} transition-all duration-300`}>
+        <motion.div className={`${theme.mainPadding} transition-all duration-300`} layout>
           <Outlet />
-        </div>
+        </motion.div>
       </main>
       <Configurator />
-    </div>
+    </motion.div>
   )
 }

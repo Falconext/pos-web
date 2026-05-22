@@ -73,6 +73,8 @@ const FormGuiaRemision = () => {
         trasladoTotal: false,
         vehiculoM1oL: false,
         datosTransportista: false,
+        conductorApellidos: "",
+        vehiculoAutorizacion: "",
         detalles: []
     });
 
@@ -94,11 +96,13 @@ const FormGuiaRemision = () => {
     }, [siguienteCorrelativo]);
 
     useEffect(() => {
-        // Lógica específica por Motivo de Traslado
-        if (formValues.tipoTraslado === "03") { // Venta a Terceros
+        const { tipoTraslado } = formValues;
+        // Forzar transporte público en motivos que lo requieren
+        if (["03", "06", "18"].includes(tipoTraslado)) {
             setFormValues(prev => ({ ...prev, modoTransporte: "01" }));
         }
-        if (formValues.tipoTraslado === "04" && auth?.empresa?.ruc) { // Traslado entre establecimientos
+        // Destinatario = misma empresa en motivos 02 y 04
+        if ((tipoTraslado === "02" || tipoTraslado === "04") && auth?.empresa?.ruc) {
             setFormValues(prev => ({
                 ...prev,
                 destinatarioTipoDoc: "6",
@@ -191,13 +195,14 @@ const FormGuiaRemision = () => {
         }
 
         // Validaciones por Motivo de Traslado
-        if (formValues.tipoTraslado === "02" && formValues.destinatarioNumDoc.trim() === auth?.empresa?.ruc) {
-            useAlertStore.getState().alert("En un traslado por Compra, el RUC del Proveedor no puede ser el mismo que el de tu empresa.", "warning");
+        if ((formValues.tipoTraslado === "02" || formValues.tipoTraslado === "04") &&
+            formValues.destinatarioNumDoc.trim() !== auth?.empresa?.ruc) {
+            useAlertStore.getState().alert("Para este motivo de traslado, el destinatario debe ser tu misma empresa.", "warning");
             return;
         }
 
-        if (formValues.tipoTraslado === "04" && formValues.destinatarioNumDoc.trim() !== auth?.empresa?.ruc) {
-            useAlertStore.getState().alert("En traslado entre establecimientos, el destinatario debe ser tu propia empresa.", "warning");
+        if (formValues.tipoTraslado === "06" && formValues.destinatarioNumDoc.trim() === auth?.empresa?.ruc) {
+            useAlertStore.getState().alert("En traslado por Devolución, el destinatario no debe ser igual al remitente.", "warning");
             return;
         }
 
@@ -206,24 +211,34 @@ const FormGuiaRemision = () => {
             return;
         }
 
-        // Configuración de Anexos para Traslado entre Establecimientos
+        // Configuración de Establecimientos
         const payload = { ...formValues };
         if (payload.tipoTraslado === "04") {
             payload.partidaCodigoEstablecimiento = "0700";
             payload.llegadaCodigoEstablecimiento = "0700";
         }
 
-        // Validaciones específicas según modo de transporte
-        if (formValues.modoTransporte === "01") { // Público
+        // Validaciones por modo de transporte
+        if (formValues.modoTransporte === "01") {
             if (!formValues.transportistaRuc || !formValues.transportistaRazonSocial) {
                 useAlertStore.getState().alert("Datos del transportista público requeridos", "warning");
                 return;
             }
         }
 
-        if (formValues.modoTransporte === "02") { // Privado
+        if (formValues.modoTransporte === "02") {
             if (!formValues.conductorNumDoc || !formValues.vehiculoPlaca) {
                 useAlertStore.getState().alert("Datos del conductor y vehículo requeridos para transporte privado", "warning");
+                return;
+            }
+            const cleanPlaca = formValues.vehiculoPlaca.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+            if (cleanPlaca.length < 6 || cleanPlaca.length > 8) {
+                useAlertStore.getState().alert("La placa debe tener entre 6 y 8 caracteres alfanuméricos (sin guiones).", "warning");
+                return;
+            }
+            const cleanLicencia = (formValues.conductorLicencia || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+            if (cleanLicencia && (cleanLicencia.length < 9 || cleanLicencia.length > 10)) {
+                useAlertStore.getState().alert("La licencia del conductor debe tener entre 9 y 10 caracteres alfanuméricos.", "warning");
                 return;
             }
         }

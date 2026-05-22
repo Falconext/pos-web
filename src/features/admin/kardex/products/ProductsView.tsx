@@ -166,6 +166,7 @@ export default function ProductsView() {
                         {item?.stock}
                     </span>
                 ),
+                'Localización': item?.localizacion?.trim() ? item.localizacion : '-',
                 'Stock minimo': item?.stockMinimo ?? 0,
                 'U.M': item?.unidadMedida.nombre,
                 'Estado': item.estado,

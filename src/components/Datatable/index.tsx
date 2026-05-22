@@ -5,6 +5,8 @@ import TableBody from './TableBody';
 import { IDataTableProps } from './types';
 import styles from './table.module.css';
 import AutoScrollTable from '../Autoscrolltable';
+import { motion } from 'framer-motion';
+import { fadeUp, interactiveHover } from '@/lib/motion/presets';
 
 const DataTable: FC<IDataTableProps> = ({
     formValues,
@@ -125,13 +127,15 @@ const DataTable: FC<IDataTableProps> = ({
                     <span className="text-gray-600 dark:text-gray-300 font-semibold">{totalItems}</span> registros
                 </p>
                 <div className="flex items-center gap-1">
-                    <button
+                    <motion.button
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        whileHover={interactiveHover.whileHover}
+                        whileTap={interactiveHover.whileTap}
                     >
                         <Icon icon="solar:alt-arrow-left-linear" className="text-sm" />
-                    </button>
+                    </motion.button>
 
                     {getPageNumbers().map((page, idx) =>
                         page === '...' ? (
@@ -139,7 +143,7 @@ const DataTable: FC<IDataTableProps> = ({
                                 ···
                             </span>
                         ) : (
-                            <button
+                            <motion.button
                                 key={page}
                                 onClick={() => setCurrentPage(page as number)}
                                 className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all ${
@@ -147,19 +151,23 @@ const DataTable: FC<IDataTableProps> = ({
                                         ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
                                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                                 }`}
+                                whileHover={interactiveHover.whileHover}
+                                whileTap={interactiveHover.whileTap}
                             >
                                 {page}
-                            </button>
+                            </motion.button>
                         )
                     )}
 
-                    <button
+                    <motion.button
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        whileHover={interactiveHover.whileHover}
+                        whileTap={interactiveHover.whileTap}
                     >
                         <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         );
@@ -170,9 +178,14 @@ const DataTable: FC<IDataTableProps> = ({
             <AutoScrollTable>
                 <div className="px-4 w-max min-w-full">
                     {data?.length > 0 ? (
-                        <table
+                        <motion.table
                             className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`}
                             id={idTable}
+                            layout
+                            variants={fadeUp}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
                         >
                             <TableHeader
                                 columns={resolvedColumns}
@@ -188,9 +201,9 @@ const DataTable: FC<IDataTableProps> = ({
                                 actions={actions}
                                 columns={resolvedColumns}
                             />
-                        </table>
+                        </motion.table>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                        <motion.div className="flex flex-col items-center justify-center py-20 text-gray-400" variants={fadeUp} initial="initial" animate="animate" exit="exit">
                             <div className="bg-white/50 dark:bg-slate-800/50 p-6 rounded-full mb-4">
                                 <Icon icon="solar:box-minimalistic-linear" className="text-6xl text-gray-300" />
                             </div>
@@ -198,7 +211,7 @@ const DataTable: FC<IDataTableProps> = ({
                             <p className="text-sm text-[#A09F9B] text-center">
                                 Intenta ajustar los filtros o realiza una nueva búsqueda para encontrar lo que necesitas.
                             </p>
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </AutoScrollTable>

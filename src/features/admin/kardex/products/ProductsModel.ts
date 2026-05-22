@@ -51,6 +51,7 @@ export const initialProductForm: IFormProduct = {
     afectacionNombre: "Gravado – Operación Onerosa",
     tipoAfectacionIGV: "10",
     stock: 50,
+    localizacion: '',
     stockMinimo: 0,
     stockMaximo: 0,
     codigo: "",

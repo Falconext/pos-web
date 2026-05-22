@@ -9,7 +9,24 @@ export const useResellersViewModel = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
-    const [formData, setFormData] = useState({ nombre: '', codigo: '', representante: '', telefono: '', email: '' });
+    const [formData, setFormData] = useState({
+        nombre: '',
+        codigo: '',
+        representante: '',
+        telefono: '',
+        email: '',
+        dominioPersonalizado: '',
+        whiteLabelNombre: '',
+        whiteLabelLogoUrl: '',
+        whiteLabelLogoWhiteUrl: '',
+        whiteLabelFaviconUrl: '',
+        whiteLabelColorPrimario: '',
+        whiteLabelColorSecundario: '',
+        whiteLabelWebsite: '',
+        whiteLabelEmail: '',
+        whiteLabelTelefono: '',
+        whiteLabelWhatsapp: '',
+    });
     const [rechargeData, setRechargeData] = useState({ monto: '', referencia: '' });
 
     useEffect(() => {
@@ -29,13 +46,47 @@ export const useResellersViewModel = () => {
 
     const openCreateModal = () => {
         setIsEditMode(false); setEditingId(null);
-        setFormData({ nombre: '', codigo: '', representante: '', telefono: '', email: '' });
+        setFormData({
+            nombre: '',
+            codigo: '',
+            representante: '',
+            telefono: '',
+            email: '',
+            dominioPersonalizado: '',
+            whiteLabelNombre: '',
+            whiteLabelLogoUrl: '',
+            whiteLabelLogoWhiteUrl: '',
+            whiteLabelFaviconUrl: '',
+            whiteLabelColorPrimario: '',
+            whiteLabelColorSecundario: '',
+            whiteLabelWebsite: '',
+            whiteLabelEmail: '',
+            whiteLabelTelefono: '',
+            whiteLabelWhatsapp: '',
+        });
         setIsCreateModalOpen(true);
     };
 
     const openEditModal = (reseller: any) => {
         setIsEditMode(true); setEditingId(reseller.id);
-        setFormData({ nombre: reseller.nombre, codigo: reseller.codigo, representante: reseller.representante || '', telefono: reseller.telefono || '', email: reseller.email });
+        setFormData({
+            nombre: reseller.nombre || '',
+            codigo: reseller.codigo || '',
+            representante: reseller.representante || '',
+            telefono: reseller.telefono || '',
+            email: reseller.email || '',
+            dominioPersonalizado: reseller.dominioPersonalizado || '',
+            whiteLabelNombre: reseller.whiteLabelNombre || '',
+            whiteLabelLogoUrl: reseller.whiteLabelLogoUrl || '',
+            whiteLabelLogoWhiteUrl: reseller.whiteLabelLogoWhiteUrl || '',
+            whiteLabelFaviconUrl: reseller.whiteLabelFaviconUrl || '',
+            whiteLabelColorPrimario: reseller.whiteLabelColorPrimario || '',
+            whiteLabelColorSecundario: reseller.whiteLabelColorSecundario || '',
+            whiteLabelWebsite: reseller.whiteLabelWebsite || '',
+            whiteLabelEmail: reseller.whiteLabelEmail || '',
+            whiteLabelTelefono: reseller.whiteLabelTelefono || '',
+            whiteLabelWhatsapp: reseller.whiteLabelWhatsapp || '',
+        });
         setIsCreateModalOpen(true);
     };
 
@@ -44,7 +95,27 @@ export const useResellersViewModel = () => {
         const result = isEditMode && editingId
             ? await useResellerStore.getState().updateReseller(editingId, formData)
             : await createReseller(formData);
-        if (result.success) { setIsCreateModalOpen(false); setFormData({ nombre: '', codigo: '', representante: '', telefono: '', email: '' }); }
+        if (result.success) {
+            setIsCreateModalOpen(false);
+            setFormData({
+                nombre: '',
+                codigo: '',
+                representante: '',
+                telefono: '',
+                email: '',
+                dominioPersonalizado: '',
+                whiteLabelNombre: '',
+                whiteLabelLogoUrl: '',
+                whiteLabelLogoWhiteUrl: '',
+                whiteLabelFaviconUrl: '',
+                whiteLabelColorPrimario: '',
+                whiteLabelColorSecundario: '',
+                whiteLabelWebsite: '',
+                whiteLabelEmail: '',
+                whiteLabelTelefono: '',
+                whiteLabelWhatsapp: '',
+            });
+        }
     };
 
     const openRechargeModal = (reseller: any) => {

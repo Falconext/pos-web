@@ -112,7 +112,6 @@ export const useComprasViewModel = () => {
         closeNuevaCompra: () => setState(prev => ({ ...prev, showNuevaCompraModal: false })),
         handleNuevaCompraSuccess: () => {
             setState(prev => ({ ...prev, showNuevaCompraModal: false }));
-            refresh();
         },
         // Refresh
         refresh,

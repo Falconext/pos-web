@@ -31,6 +31,7 @@ export interface IResellerPanelState {
     createCliente: (resellerId: number, data: any) => Promise<{ success: boolean; error?: string }>;
     toggleEstadoCliente: (resellerId: number, clienteId: number, nuevoEstado: 'ACTIVO' | 'INACTIVO') => Promise<{ success: boolean; error?: string }>;
     getClienteDetalle: (resellerId: number, clienteId: number) => Promise<any>;
+    updateClienteConfig: (resellerId: number, clienteId: number, data: any) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useResellerPanelStore = create<IResellerPanelState>((set, get) => ({
@@ -203,5 +204,26 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
             console.error(error);
             return null;
         }
-    }
+    },
+
+    updateClienteConfig: async (resellerId: number, clienteId: number, data: any) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await patch(`resellers/${resellerId}/clientes/${clienteId}/config`, data);
+
+            if (resp.code === 1) {
+                useAlertStore.setState({ loading: false });
+                useAlertStore.getState().alert('Configuración del cliente actualizada correctamente', 'success');
+                return { success: true };
+            }
+
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(resp.error || 'Error al actualizar configuración del cliente', 'error');
+            return { success: false, error: resp.error };
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al actualizar configuración del cliente', 'error');
+            return { success: false, error: error.message };
+        }
+    },
 }));

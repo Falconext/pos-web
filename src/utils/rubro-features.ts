@@ -12,6 +12,21 @@ export interface RubroFeatures {
     controlStock: boolean;           // Todos (siempre true)
 }
 
+export function esRubroFabricacion(
+    nombreRubro: string | null | undefined,
+): boolean {
+    if (!nombreRubro) return false;
+    const nombre = nombreRubro.toLowerCase();
+    return (
+        nombre.includes('fabricación') ||
+        nombre.includes('fabricacion') ||
+        nombre.includes('manufactura') ||
+        nombre.includes('industria') ||
+        nombre.includes('producción') ||
+        nombre.includes('produccion')
+    );
+}
+
 type FeatureOverrides = {
     usaCodigoBarrasManual?: boolean | null;
 };
@@ -59,13 +74,7 @@ export function detectarFuncionesRubro(
         nombre.includes('pasteleria');
 
     // FABRICACIÓN / MANUFACTURA
-    const esFabricacion =
-        nombre.includes('fabricación') ||
-        nombre.includes('fabricacion') ||
-        nombre.includes('manufactura') ||
-        nombre.includes('industria') ||
-        nombre.includes('producción') ||
-        nombre.includes('produccion');
+    const esFabricacion = esRubroFabricacion(nombreRubro);
 
     const usaCodigoBarras =
         typeof overrides?.usaCodigoBarrasManual === 'boolean'

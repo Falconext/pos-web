@@ -6,7 +6,7 @@ interface BarcodeScannerInputProps {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onScan?: (value: string) => void;
-    inputRef?: React.RefObject<HTMLInputElement>;
+    inputRef?: React.RefObject<HTMLInputElement | null>;
     loading?: boolean;
     placeholder?: string;
     disabled?: boolean;

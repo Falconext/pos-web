@@ -227,6 +227,7 @@ export default function CotizacionesView() {
             {vm.isOpenModalWhatsApp && vm.comprobanteWhatsApp && (
                 <ModalEnviarWhatsApp
                     isOpen={vm.isOpenModalWhatsApp}
+                    defaultTab={vm.modalDefaultTab}
                     onClose={() => {
                         vm.setIsOpenModalWhatsApp(false);
                     }}
@@ -239,40 +240,28 @@ export default function CotizacionesView() {
                 closeModal={() => vm.setIsOpenModalPdf(false)}
                 title="Vista previa del PDF"
                 width="980px"
-                pageStyle={`
-              @media print {
-                @page { size: 210mm 297mm; margin: 0; }
-                body * { visibility: hidden; }
-                #print-root, #print-root * { visibility: visible; }
-                #print-root { 
-                    position: absolute; 
-                    left: 0; 
-                    top: 0; 
-                    width: 100%;
-                    height: auto;
-                    opacity: 1 !important;
-                    display: block !important;
-                }
-                body { margin: 0; width: 210mm; }
-              }
-            `}
             >
                 <div className="p-3 space-y-3">
                     <div className="flex justify-end">
-                        <a
-                            href={vm.pdfUrl || '#'}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-1.5 text-xs rounded-md bg-[#6A6CFF] text-white hover:opacity-90"
-                        >
-                            Descargar
-                        </a>
+                        {vm.pdfUrl && (
+                            <a
+                                href={vm.pdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3 py-1.5 text-xs rounded-md bg-[#6A6CFF] text-white hover:opacity-90"
+                            >
+                                Descargar
+                            </a>
+                        )}
                     </div>
-                    <div className="h-[80vh]">
-                        {vm.pdfUrl ? (
-                            <iframe src={vm.pdfUrl} className="w-full h-full rounded-lg border" />
+                    <div className="h-[80vh] flex items-center justify-center">
+                        {!vm.pdfUrl ? (
+                            <div className="flex flex-col items-center gap-3 text-gray-400">
+                                <Icon icon="solar:refresh-bold" className="animate-spin text-violet-500" width={36} />
+                                <span className="text-sm">Generando PDF...</span>
+                            </div>
                         ) : (
-                            <div className="text-center text-gray-500 text-sm">No hay PDF disponible</div>
+                            <iframe src={vm.pdfUrl} className="w-full h-full rounded-lg border" />
                         )}
                     </div>
                 </div>
@@ -347,18 +336,12 @@ export default function CotizacionesView() {
                             </button>
                             <button
                                 type="button"
-                                disabled={!rowData.s3PdfUrl}
                                 onClick={() => {
-                                    if (rowData.s3PdfUrl) {
-                                        vm.setPdfUrl(rowData.s3PdfUrl as string);
-                                        const corr = String(rowData.correlativo || '').padStart(8, '0');
-                                        vm.setPdfName(`${rowData.serie}-${corr}.pdf`);
-                                        vm.setIsOpenModalPdf(true);
-                                    }
+                                    vm.handleVerPdf(rowData);
                                     vm.setOpenAccionesId(null);
                                     vm.setAnchorEl(null);
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 ${rowData.s3PdfUrl ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 cursor-not-allowed'}`}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="mdi:file-pdf-box" width={16} height={16} />
                                 <span>Ver PDF</span>
@@ -386,6 +369,30 @@ export default function CotizacionesView() {
                             >
                                 <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
                                 <span className="font-medium">Convertir a Factura</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    vm.handleEnviarWhatsApp(rowData, 'email');
+                                    vm.setOpenAccionesId(null);
+                                    vm.setAnchorEl(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 border-t border-gray-100 dark:border-slate-800"
+                            >
+                                <Icon icon="mdi:email-outline" width={16} height={16} />
+                                <span className="font-medium">Enviar por Email</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    vm.handleEnviarWhatsApp(rowData, 'whatsapp');
+                                    vm.setOpenAccionesId(null);
+                                    vm.setAnchorEl(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10"
+                            >
+                                <Icon icon="mdi:whatsapp" width={16} height={16} />
+                                <span className="font-medium">Enviar WhatsApp</span>
                             </button>
                         </>
                     );

@@ -1,10 +1,18 @@
 import { useResellersViewModel } from '@/features/admin/sistema/useResellersViewModel';
 import { Icon } from '@iconify/react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import Modal from '@/components/Modal';
+import InputPro from '@/components/InputPro';
+import Button from '@/components/Button';
 
 export default function AdminResellers() {
     const vm = useResellersViewModel();
     const [costoComprobante, setCostoComprobante] = useState(0.05);
+    const [activeTab, setActiveTab] = useState<'general' | 'whitelabel'>('general');
+
+    useEffect(() => {
+        if (vm.isCreateModalOpen) setActiveTab('general');
+    }, [vm.isCreateModalOpen]);
 
     const pricingPlans = useMemo(
         () => [
@@ -126,9 +134,9 @@ export default function AdminResellers() {
                                         <td className="px-6 py-4"><p className="font-bold text-gray-800">{reseller.nombre}</p><span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 font-mono">{reseller.codigo}</span></td>
                                         <td className="px-6 py-4 text-gray-600">{reseller.representante || '-'}</td>
                                         <td className="px-6 py-4"><div className="flex flex-col text-xs text-gray-500 gap-1">{reseller.email && <div className="flex items-center gap-1.5"><Icon icon="solar:letter-linear" width="14" />{reseller.email}</div>}{reseller.telefono && <div className="flex items-center gap-1.5"><Icon icon="solar:phone-linear" width="14" />{reseller.telefono}</div>}</div></td>
-                                        <td className="px-6 py-4 text-right font-mono font-bold text-gray-700">S/ {Number(reseller.saldo).toFixed(2)}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-gray-700">S/ {Number(metric?.mrrBruto || 0).toFixed(2)}</td>
-                                        <td className="px-6 py-4 text-right"><div className="text-gray-700 font-mono">S/ {Number(metric?.margenMensual || 0).toFixed(2)}</div><div className="text-xs text-emerald-600 font-semibold">{Number(metric?.margenPct || 0).toFixed(1)}%</div></td>
+                                        <td className="px-6 py-4 text-right text-gray-700">S/ {Number(reseller.saldo).toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-right text-gray-700">S/ {Number(metric?.mrrBruto || 0).toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-right"><div className="text-gray-700">S/ {Number(metric?.margenMensual || 0).toFixed(2)}</div><div className="text-xs text-emerald-600 font-semibold">{Number(metric?.margenPct || 0).toFixed(1)}%</div></td>
                                         <td className="px-6 py-4 text-right"><div className="text-gray-700 font-semibold">{Number(metric?.churn30dPct || 0).toFixed(1)}%</div><div className="text-xs text-gray-500">{metric?.clientesPerdidos30d || 0} perdidos</div></td>
                                         <td className="px-6 py-4 text-center"><span className="inline-flex items-center justify-center bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">{reseller._count?.empresas || 0}</span></td>
                                         <td className="px-6 py-4 text-center"><div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${reseller.activo ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}><div className={`w-1.5 h-1.5 rounded-full ${reseller.activo ? 'bg-emerald-500' : 'bg-red-500'}`}></div>{reseller.activo ? 'Activo' : 'Inactivo'}</div></td>
@@ -196,25 +204,25 @@ export default function AdminResellers() {
                                 <tr key={row.plan} className="hover:bg-gray-50/40">
                                     <td className="px-4 py-3 font-semibold text-gray-800">{row.plan}</td>
                                     <td className="px-4 py-3 text-gray-700">{row.comprobantesMes}</td>
-                                    <td className="px-4 py-3 font-mono">S/ {row.mensual.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-xs text-gray-500 font-mono">S/ {row.costoSunatMensual.toFixed(2)}</td>
-                                    <td className="px-4 py-3 font-mono text-gray-700">
+                                    <td className="px-4 py-3">S/ {row.mensual.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-xs text-gray-500">S/ {row.costoSunatMensual.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-gray-700">
                                         {`S/ ${row.mensual20.resellerPrice.toFixed(2)} / S/ ${row.mensual30.resellerPrice.toFixed(2)} / S/ ${row.mensual35.resellerPrice.toFixed(2)}`}
                                     </td>
                                     <td className="px-4 py-3 text-xs">
-                                        <div className="font-mono text-gray-700">20%: S/ {row.mensual20.platformMargin.toFixed(2)}</div>
-                                        <div className="font-mono text-gray-700">30%: S/ {row.mensual30.platformMargin.toFixed(2)}</div>
-                                        <div className="font-mono text-gray-700">35%: S/ {row.mensual35.platformMargin.toFixed(2)}</div>
+                                        <div className="text-gray-700">20%: S/ {row.mensual20.platformMargin.toFixed(2)}</div>
+                                        <div className="text-gray-700">30%: S/ {row.mensual30.platformMargin.toFixed(2)}</div>
+                                        <div className="text-gray-700">35%: S/ {row.mensual35.platformMargin.toFixed(2)}</div>
                                     </td>
-                                    <td className="px-4 py-3 font-mono">S/ {row.anual.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-xs text-gray-500 font-mono">S/ {row.costoSunatAnual.toFixed(2)}</td>
-                                    <td className="px-4 py-3 font-mono text-gray-700">
+                                    <td className="px-4 py-3">S/ {row.anual.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-xs text-gray-500">S/ {row.costoSunatAnual.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-gray-700">
                                         {`S/ ${row.anual20.resellerPrice.toFixed(2)} / S/ ${row.anual30.resellerPrice.toFixed(2)} / S/ ${row.anual35.resellerPrice.toFixed(2)}`}
                                     </td>
                                     <td className="px-4 py-3 text-xs">
-                                        <div className="font-mono text-gray-700">20%: S/ {row.anual20.platformMargin.toFixed(2)}</div>
-                                        <div className="font-mono text-gray-700">30%: S/ {row.anual30.platformMargin.toFixed(2)}</div>
-                                        <div className="font-mono text-gray-700">35%: S/ {row.anual35.platformMargin.toFixed(2)}</div>
+                                        <div className="text-gray-700">20%: S/ {row.anual20.platformMargin.toFixed(2)}</div>
+                                        <div className="text-gray-700">30%: S/ {row.anual30.platformMargin.toFixed(2)}</div>
+                                        <div className="text-gray-700">35%: S/ {row.anual35.platformMargin.toFixed(2)}</div>
                                     </td>
                                 </tr>
                             ))}
@@ -223,37 +231,116 @@ export default function AdminResellers() {
                 </div>
             </div>
 
-            {vm.isCreateModalOpen && (
-                <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => vm.setIsCreateModalOpen(false)}></div>
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg z-10 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-start mb-6"><div><h2 className="text-xl font-bold text-gray-800">{vm.isEditMode ? 'Editar Distribuidor' : 'Nuevo Distribuidor'}</h2><p className="text-sm text-gray-500">{vm.isEditMode ? 'Actualiza los datos del socio' : 'Registra un nuevo socio comercial'}</p></div><button onClick={() => vm.setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600"><Icon icon="solar:close-circle-bold" width="24" /></button></div>
-                        <form onSubmit={vm.handleCreateSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5 col-span-2"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre Comercial</label><input required name="nombre" value={vm.formData.nombre} onChange={vm.handleCreateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium" placeholder="Ej. Distribuciones Lima Norte" /></div>
-                                <div className="space-y-1.5"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Código Único</label><input required name="codigo" value={vm.formData.codigo} onChange={vm.handleCreateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium font-mono" placeholder="Ej. RES-001" /></div>
-                                <div className="space-y-1.5"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Teléfono</label><input name="telefono" value={vm.formData.telefono} onChange={vm.handleCreateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium" placeholder="999 999 999" /></div>
-                                <div className="space-y-1.5 col-span-2"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email (Usuario)</label><input required type="email" name="email" value={vm.formData.email} onChange={vm.handleCreateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium" placeholder="contacto@distribuidor.com" /></div>
-                                <div className="space-y-1.5 col-span-2"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Representante Legal</label><input name="representante" value={vm.formData.representante} onChange={vm.handleCreateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 font-medium" placeholder="Nombre completo" /></div>
+            <Modal
+                isOpenModal={vm.isCreateModalOpen}
+                closeModal={() => vm.setIsCreateModalOpen(false)}
+                title={vm.isEditMode ? 'Editar Distribuidor' : 'Nuevo Distribuidor'}
+                icon="solar:users-group-two-rounded-bold-duotone"
+                iconClass="bg-indigo-50 text-indigo-600"
+                width="660px"
+                height="auto"
+            >
+                <form onSubmit={vm.handleCreateSubmit}>
+                    <div className="flex border-b border-gray-100">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('general')}
+                            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'general' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <Icon icon="solar:user-id-bold" width="14" />General
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('whitelabel')}
+                            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'whitelabel' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <Icon icon="solar:palette-bold" width="14" />White Label
+                        </button>
+                    </div>
+
+                    <div className="p-5">
+                        {activeTab === 'general' && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Nombre Comercial" name="nombre" value={vm.formData.nombre} onChange={vm.handleCreateChange as any} placeholder="Ej. Distribuciones Lima Norte" />
+                                </div>
+                                <InputPro isLabel label="Código Único" name="codigo" value={vm.formData.codigo} onChange={vm.handleCreateChange as any} placeholder="Ej. RES-001" />
+                                <InputPro isLabel label="Teléfono" name="telefono" value={vm.formData.telefono} onChange={vm.handleCreateChange as any} placeholder="999 999 999" />
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Email (Usuario)" name="email" type="email" value={vm.formData.email} onChange={vm.handleCreateChange as any} placeholder="contacto@distribuidor.com" />
+                                </div>
+                                <InputPro isLabel label="Representante Legal" name="representante" value={vm.formData.representante} onChange={vm.handleCreateChange as any} placeholder="Nombre completo" />
+                                <InputPro isLabel label="Dominio White Label" name="dominioPersonalizado" value={vm.formData.dominioPersonalizado} onChange={vm.handleCreateChange as any} placeholder="app.jamble.pe" />
                             </div>
-                            <div className="pt-4 flex gap-3"><button type="button" onClick={() => vm.setIsCreateModalOpen(false)} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancelar</button><button type="submit" className="flex-1 py-3 text-white font-bold bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30">{vm.isEditMode ? 'Guardar Cambios' : 'Crear Distribuidor'}</button></div>
-                        </form>
+                        )}
+
+                        {activeTab === 'whitelabel' && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Nombre de Marca" name="whiteLabelNombre" value={vm.formData.whiteLabelNombre} onChange={vm.handleCreateChange as any} placeholder="Jamble" />
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <InputPro isLabel label="Color Primario" name="whiteLabelColorPrimario" value={vm.formData.whiteLabelColorPrimario} onChange={vm.handleCreateChange as any} placeholder="#0F172A" />
+                                    </div>
+                                    {vm.formData.whiteLabelColorPrimario && (
+                                        <div className="w-9 h-9 rounded-lg border border-gray-200 mb-0.5 flex-shrink-0" style={{ backgroundColor: vm.formData.whiteLabelColorPrimario }} />
+                                    )}
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <InputPro isLabel label="Color Secundario" name="whiteLabelColorSecundario" value={vm.formData.whiteLabelColorSecundario} onChange={vm.handleCreateChange as any} placeholder="#334155" />
+                                    </div>
+                                    {vm.formData.whiteLabelColorSecundario && (
+                                        <div className="w-9 h-9 rounded-lg border border-gray-200 mb-0.5 flex-shrink-0" style={{ backgroundColor: vm.formData.whiteLabelColorSecundario }} />
+                                    )}
+                                </div>
+                                <div className="col-span-2">
+                                    <InputPro isLabel label="Logo URL" name="whiteLabelLogoUrl" value={vm.formData.whiteLabelLogoUrl} onChange={vm.handleCreateChange as any} placeholder="https://.../logo.png" />
+                                </div>
+                                <InputPro isLabel label="Logo Blanco URL" name="whiteLabelLogoWhiteUrl" value={vm.formData.whiteLabelLogoWhiteUrl} onChange={vm.handleCreateChange as any} placeholder="https://.../logo-white.png" />
+                                <InputPro isLabel label="Favicon URL" name="whiteLabelFaviconUrl" value={vm.formData.whiteLabelFaviconUrl} onChange={vm.handleCreateChange as any} placeholder="https://.../favicon.ico" />
+                                <InputPro isLabel label="Website" name="whiteLabelWebsite" value={vm.formData.whiteLabelWebsite} onChange={vm.handleCreateChange as any} placeholder="https://jamble.pe" />
+                                <InputPro isLabel label="Email Comercial" name="whiteLabelEmail" value={vm.formData.whiteLabelEmail} onChange={vm.handleCreateChange as any} placeholder="ventas@jamble.pe" />
+                                <InputPro isLabel label="Teléfono Marca" name="whiteLabelTelefono" value={vm.formData.whiteLabelTelefono} onChange={vm.handleCreateChange as any} placeholder="+51 ..." />
+                                <InputPro isLabel label="WhatsApp Marca" name="whiteLabelWhatsapp" value={vm.formData.whiteLabelWhatsapp} onChange={vm.handleCreateChange as any} placeholder="51999..." />
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
-            {vm.isRechargeModalOpen && vm.selectedReseller && (
-                <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => vm.setIsRechargeModalOpen(false)}></div>
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-sm z-10 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="text-center mb-6"><div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4"><Icon icon="solar:wallet-money-bold-duotone" width="36" /></div><h2 className="text-xl font-bold text-gray-800">Recargar Saldo</h2><p className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-bold">{vm.selectedReseller.nombre}</p><p className="text-sm text-gray-400 mt-2">Saldo Actual: <span className="text-gray-800 font-bold font-mono">S/ {Number(vm.selectedReseller.saldo).toFixed(2)}</span></p></div>
-                        <form onSubmit={vm.handleRechargeSubmit} className="space-y-4">
-                            <div className="space-y-1.5"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto a Recargar (S/)</label><input required type="number" step="0.01" min="1" name="monto" value={vm.rechargeData.monto} onChange={vm.handleRechargeChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-400 font-bold text-center text-lg" placeholder="0.00" autoFocus /></div>
-                            <div className="space-y-1.5"><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Referencia (Opcional)</label><input name="referencia" value={vm.rechargeData.referencia} onChange={vm.handleRechargeChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-gray-500/20 focus:border-gray-500 outline-none transition-all placeholder:text-gray-400 text-sm" placeholder="Ej. Transferencia BCP #1234" /></div>
-                            <div className="pt-2 flex gap-3"><button type="button" onClick={() => vm.setIsRechargeModalOpen(false)} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancelar</button><button type="submit" className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30">Confirmar</button></div>
-                        </form>
+
+                    <div className="flex gap-3 px-5 pb-5">
+                        <Button type="button" onClick={() => vm.setIsCreateModalOpen(false)} color="default" className="flex-1">Cancelar</Button>
+                        <Button type="submit" color="primary" className="flex-1">{vm.isEditMode ? 'Guardar Cambios' : 'Crear Distribuidor'}</Button>
                     </div>
-                </div>
-            )}
+                </form>
+            </Modal>
+
+            <Modal
+                isOpenModal={vm.isRechargeModalOpen && !!vm.selectedReseller}
+                closeModal={() => vm.setIsRechargeModalOpen(false)}
+                title="Recargar Saldo"
+                icon="solar:wallet-money-bold-duotone"
+                iconClass="bg-emerald-50 text-emerald-600"
+                width="380px"
+                height="auto"
+            >
+                {vm.selectedReseller && (
+                    <form onSubmit={vm.handleRechargeSubmit}>
+                        <div className="px-5 pt-4 pb-2 text-center border-b border-gray-50">
+                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{vm.selectedReseller.nombre}</p>
+                            <p className="text-sm text-gray-400 mt-0.5">Saldo actual: <span className="text-gray-800 font-bold font-mono">S/ {Number(vm.selectedReseller.saldo).toFixed(2)}</span></p>
+                        </div>
+                        <div className="p-5 space-y-3">
+                            <InputPro isLabel label="Monto a Recargar (S/)" name="monto" type="number" value={vm.rechargeData.monto} onChange={vm.handleRechargeChange as any} placeholder="0.00" autoFocus step="0.01" />
+                            <InputPro isLabel label="Referencia (Opcional)" name="referencia" value={vm.rechargeData.referencia} onChange={vm.handleRechargeChange as any} placeholder="Ej. Transferencia BCP #1234" />
+                        </div>
+                        <div className="flex gap-3 px-5 pb-5">
+                            <Button type="button" onClick={() => vm.setIsRechargeModalOpen(false)} color="default" className="flex-1">Cancelar</Button>
+                            <Button type="submit" color="success" className="flex-1">Confirmar</Button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
         </div>
     );
 }

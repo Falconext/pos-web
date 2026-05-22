@@ -30,16 +30,16 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     const [tab, setTab] = useState<Tab>(defaultTab);
     const [numeroDestino, setNumeroDestino] = useState('');
     const [emailDestino, setEmailDestino] = useState('');
-    const [pdfUrl, setPdfUrl] = useState<string | undefined>(comprobante.pdfUrl);
+    const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
     const [generando, setGenerando] = useState(false);
     const [enviandoWhatsApp, setEnviandoWhatsApp] = useState(false);
     const [enviandoEmail, setEnviandoEmail] = useState(false);
 
-    // Reset y pre-llenar al abrir
+    // Reset y pre-llenar al abrir — siempre regenerar PDF para asegurar el formato correcto
     useEffect(() => {
         if (!isOpen) return;
         setTab(defaultTab);
-        setPdfUrl(comprobante.pdfUrl);
+        setPdfUrl(undefined);
         setNumeroDestino(comprobante.clienteCelular || '');
         setEmailDestino(comprobante.clienteEmail || '');
         generarPdf();
@@ -239,11 +239,11 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                         const num = numeroDestino.trim().replace(/\D/g, '');
                                         const finalNum = num.startsWith('51') ? num : `51${num}`;
                                         const mensaje = encodeURIComponent(
-                                            `Hola ${comprobante.clienteNombre}, te enviamos tu ${comprobante.comprobante} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${pdfUrl || 'Generando...'}`
+                                            `Hola ${comprobante.clienteNombre}, te enviamos tu ${comprobante.comprobante} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${pdfUrl}`
                                         );
                                         window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
                                     }}
-                                    disabled={!numeroDestino.trim()}
+                                    disabled={!numeroDestino.trim() || generando || !pdfUrl}
                                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-green-500 text-green-600 dark:text-green-400 font-bold hover:bg-green-50 dark:hover:bg-green-900/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Icon icon="solar:share-circle-bold-duotone" className="text-xl" />

@@ -66,6 +66,10 @@
     color: #5E6278;
 }
 
+.noLabel svg {
+    top: 11px;
+}
+
 .date button svg {
     margin: 0;
     position: relative;

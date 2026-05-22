@@ -9,7 +9,7 @@ import { POSCalculations } from "./POSCalculations";
 
 import ModalReponseInvoice from "@/pages/admin/facturacion/modalResponseInvoice";
 import ModalProduct from "@/pages/admin/inventario/modal-productos";
-import ModalClient from "@/pages/admin/clientes/ModalCliente";
+import ModalClient from "@/features/admin/clients/shared/ModalClient";
 import ComprobantePrintPage from "@/pages/admin/facturacion/comprobanteImprimir";
 import ModalEditLineItem from "@/pages/admin/facturacion/ModalEditLineItem";
 import ModalDetraccion from "@/pages/admin/facturacion/ModalDetraccion";
@@ -67,7 +67,7 @@ export const FacturacionNuevoView = () => {
                     correlative={vm.correlative}
                     discount={vm.finalDiscount.toString()}
                     receipt={vm.formValues?.comprobante}
-                    selectedClient={vm.selectedClient}
+                    selectedClient={vm.snapshotClient ?? vm.selectedClient}
                     totalInWords={vm.totalInWords}
                     observation={vm.formValues?.observaciones || vm.formValues?.motivo}
                     retencionData={vm.retencionData}
@@ -111,7 +111,7 @@ export const FacturacionNuevoView = () => {
                     auth={vm.auth} serie={vm.serie}
                     correlative={vm.correlative}
                     dataReceipt={vm.dataReceipt}
-                    client={vm.selectedClient}
+                    client={vm.snapshotClient ?? vm.selectedClient}
                     company={vm.auth}
                     productsInvoice={vm.productsInvoice}
                     formValues={vm.formValues}

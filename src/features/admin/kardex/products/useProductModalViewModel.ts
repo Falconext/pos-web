@@ -6,7 +6,7 @@ import { useAuthStore } from "@/zustand/auth";
 import useAlertStore from "@/zustand/alert";
 import { useBrandsStore } from '@/zustand/brands';
 import { useModificadoresStore } from '@/zustand/modificadores';
-import { useRubroFeatures } from '@/utils/rubro-features';
+import { esRubroFabricacion, useRubroFeatures } from '@/utils/rubro-features';
 import apiClient from "@/utils/apiClient";
 import { IPropsProducts, TipoAjusteStock, ICreationLote, IWholesaleOption } from "./ProductModalModel";
 
@@ -45,14 +45,16 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         return rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
     })();
 
+    const isFabricacion = esRubroFabricacion(auth?.empresa?.rubro?.nombre);
+
     const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
         usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
     });
 
     const labels = {
-        titulo: isRestaurante ? 'Plato' : isFarmacia ? 'Medicamento' : 'Producto',
-        nombre: isRestaurante ? 'Nombre del plato' : isFarmacia ? 'Nombre del medicamento' : 'Nombre del producto',
-        codigo: isRestaurante ? 'Código del plato' : isFarmacia ? 'Código' : 'Código de producto',
+        titulo: isRestaurante ? 'Plato' : isFarmacia ? 'Medicamento' : isFabricacion ? 'Ítem de producción' : 'Producto',
+        nombre: isRestaurante ? 'Nombre del plato' : isFarmacia ? 'Nombre del medicamento' : isFabricacion ? 'Nombre del ítem' : 'Nombre del producto',
+        codigo: isRestaurante ? 'Código del plato' : isFarmacia ? 'Código' : isFabricacion ? 'Código del ítem' : 'Código de producto',
         imagen: isRestaurante ? 'Imagen del plato' : 'Imagen del producto',
         precio: isRestaurante ? 'Precio (S/)' : 'Precio de Venta (S/)',
     };
@@ -507,6 +509,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         isMobile,
         isRestaurante,
         isFarmacia,
+        isFabricacion,
         features,
         labels,
         isOpenModal,

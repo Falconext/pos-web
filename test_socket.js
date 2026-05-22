@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 const io = require("socket.io-client");
 const socket = io("http://localhost:4001", { transports: ['polling', 'websocket'] });
 socket.on("connect", () => {

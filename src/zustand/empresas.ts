@@ -20,6 +20,16 @@ interface Empresa {
   usaCodigoBarrasManual?: boolean | null;
   brand?: string;
   producto?: string;
+  providerId?: string;
+  providerToken?: string;
+  usaDemo?: boolean;
+  usuarioPse?: string;
+  contrasenaPse?: string;
+  billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
+  billingApiBaseUrl?: string;
+  billingApiToken?: string;
+  billingApiUser?: string;
+  billingApiPassword?: string;
   plan: {
     id: number;
     nombre: string;
@@ -72,10 +82,18 @@ interface CreateEmpresaDto {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion?: string;
+  providerId?: string;
+  providerToken?: string;
+  usaDemo?: boolean;
   brand?: string;
   producto?: string;
   usuarioPse?: string;
   contrasenaPse?: string;
+  billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
+  billingApiBaseUrl?: string;
+  billingApiToken?: string;
+  billingApiUser?: string;
+  billingApiPassword?: string;
   usuario: {
     nombre: string;
     email: string;
@@ -101,12 +119,20 @@ interface UpdateEmpresaDto {
   nombreComercial: string;
   fechaActivacion: string;
   fechaExpiracion: string;
+  providerId?: string;
+  providerToken?: string;
+  usaDemo?: boolean;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
   producto?: string;
   usuarioPse?: string;
   contrasenaPse?: string;
+  billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
+  billingApiBaseUrl?: string;
+  billingApiToken?: string;
+  billingApiUser?: string;
+  billingApiPassword?: string;
 }
 
 interface ListEmpresaDto {

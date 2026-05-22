@@ -5,7 +5,7 @@ import KrezkaLoginView from './KrezkaLoginView';
 
 export default function LoginView() {
     // Determine which login view to show based on the active brand
-    if (BRAND.name.toLowerCase() === 'krezka') {
+    if ((BRAND.authBrand || BRAND.name.toLowerCase()) === 'krezka') {
         return <KrezkaLoginView />;
     }
 

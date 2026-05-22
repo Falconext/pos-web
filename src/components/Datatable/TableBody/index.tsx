@@ -2,6 +2,8 @@ import { FC, useEffect, useState } from 'react';
 import styles from './../table.module.css';
 import { useInvoiceStore } from '@/zustand/invoices';
 import useAlertStore from '@/zustand/alert';
+import { motion } from 'framer-motion';
+import { listItemFadeUp, listItemHidden, listStagger } from '@/lib/motion/presets';
 
 const DOCUMENT_TOKEN_CAPTURE_REGEX = /([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g;
 const DOCUMENT_TOKEN_REGEX = /^[a-zA-Z0-9]+-[a-zA-Z0-9]+$/;
@@ -105,7 +107,7 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
     };
 
     return (
-        <tbody>
+        <motion.tbody variants={listStagger} initial="initial" animate="animate" exit="exit">
             {data.map((row, index) => {
                 const isCanceled = formValues === undefined || row.estado === 'cancelado' || row.estado === 'completado' ||
                     ([1, 2, 4, 6].includes(formValues?.motivoId));
@@ -118,7 +120,16 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                 const isNoteType10 = formValues?.motivoId === 10;
 
                 return (
-                    <tr key={index} className="group transition-colors duration-150">
+                    <motion.tr
+                        key={index}
+                        className="group transition-colors duration-150"
+                        variants={{
+                            initial: listItemHidden,
+                            animate: listItemFadeUp,
+                            exit: listItemHidden,
+                        }}
+                        layout
+                    >
                         {columns.map((col, cellIndex) => {
                             const isObject = typeof col === 'object';
                             const key = isObject ? col.key : (col as string);
@@ -155,7 +166,7 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                             type={key === 'descripcion' ? 'text' : 'number'}
                                             value={cellValue}
                                             onChange={(newValue: any) => handleInputChange(index, key, newValue)}
-                                            className="w-full py-1.5 px-3 border-0 bg-gray-50 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-violet-100 transition-all"
+                                            className="w-full py-1.5 px-3 border-0 bg-gray-50 text-gray-700 text-sm rounded-lg focus:ring-2 focus:ring-violet-100 focus:bg-white transition-all"
                                             disabled={!isEditable}
                                         />
                                     ) : key === 'stock' || key === 'Stock' ? (
@@ -268,10 +279,10 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                 </div>
                             </td>
                         )}
-                    </tr>
+                    </motion.tr>
                 );
             })}
-        </tbody>
+        </motion.tbody>
     );
 };
 

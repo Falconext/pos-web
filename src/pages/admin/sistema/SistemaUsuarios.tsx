@@ -3,6 +3,9 @@ import { Icon } from '@iconify/react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
+import Modal from '@/components/Modal';
+import InputPro from '@/components/InputPro';
+import Button from '@/components/Button';
 
 type SistemaNegocio = 'FALCONEXT' | 'KREZKA' | '';
 type SistemaProducto = 'FACTURACION' | 'HOTEL' | '';
@@ -386,7 +389,7 @@ export default function SistemaUsuarios() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
-                    <td className="px-6 py-4 font-mono text-gray-500 dark:text-gray-400">{u.dni}</td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{u.dni}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.celular}</td>
                     {esSuperAdmin && <td className="px-6 py-4"><NegocioBadge sn={u.sistemaNegocio} /></td>}
                     {esSuperAdmin && <td className="px-6 py-4"><ProductoBadge sp={u.sistemaProducto} /></td>}
@@ -421,202 +424,153 @@ export default function SistemaUsuarios() {
       </div>
 
       {/* Modal Crear/Editar */}
-      {modalOpen && (
-        <div className="fixed inset-0 top-[-30px] z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="relative bg-white dark:bg-[#111827] rounded-3xl p-8 w-full max-w-md shadow-2xl z-10 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-7">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
-                  <Icon icon={editTarget ? 'solar:pen-bold' : 'solar:user-plus-bold'} className="text-white" width={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                    {editTarget ? 'Editar Administrador' : 'Nuevo Administrador'}
-                  </h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Rol ADMIN_SISTEMA</p>
-                </div>
-              </div>
-              <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                <Icon icon="solar:close-circle-bold" width={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-              {/* Sistema de negocio — solo visible para supermegaadmin */}
-              {esSuperAdmin ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Sistema de negocio
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <SistemaBtn value="" label="Todos" icon="solar:crown-bold-duotone" desc="Ambos sistemas" activeColor="violet" />
-                      <SistemaBtn value="FALCONEXT" label="Falconext" icon="solar:rocket-bold-duotone" desc="Solo Falconext" activeColor="violet" />
-                      <SistemaBtn value="KREZKA" label="Krezka" icon="solar:star-bold-duotone" desc="Solo Krezka" activeColor="blue" />
-                    </div>
-                    <p className="text-[11px] text-gray-400">
-                      {form.sistemaNegocio === ''
-                        ? 'Sin asignar -> ve ambos sistemas'
-                        : `Solo verá el sistema ${form.sistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}`}
-                    </p>
+      <Modal
+        isOpenModal={modalOpen}
+        closeModal={() => setModalOpen(false)}
+        title={editTarget ? 'Editar Administrador' : 'Nuevo Administrador'}
+        icon={editTarget ? 'solar:pen-bold' : 'solar:user-plus-bold'}
+        iconClass="bg-violet-50 text-violet-600"
+        width="480px"
+        height="auto"
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="p-5 space-y-4">
+            {/* Sistema scope */}
+            {esSuperAdmin ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sistema de negocio</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <SistemaBtn value="" label="Todos" icon="solar:crown-bold-duotone" desc="Ambos sistemas" activeColor="violet" />
+                    <SistemaBtn value="FALCONEXT" label="Falconext" icon="solar:rocket-bold-duotone" desc="Solo Falconext" activeColor="violet" />
+                    <SistemaBtn value="KREZKA" label="Krezka" icon="solar:star-bold-duotone" desc="Solo Krezka" activeColor="blue" />
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Sistema de producto
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <SistemaProductoBtn value="" label="Todos" icon="solar:layers-bold-duotone" desc="Todos los productos" activeColor="sky" />
-                      <SistemaProductoBtn value="FACTURACION" label="Facturación" icon="solar:bill-list-bold-duotone" desc="Solo facturación" activeColor="sky" />
-                      <SistemaProductoBtn value="HOTEL" label="Hotel" icon="solar:bed-bold-duotone" desc="Solo hotel" activeColor="amber" />
-                    </div>
-                    <p className="text-[11px] text-gray-400">
-                      {form.sistemaProducto === ''
-                        ? 'Sin asignar -> ve todos los productos'
-                        : `Solo verá el producto ${form.sistemaProducto === 'HOTEL' ? 'Hotel' : 'Facturación'}`}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2.5 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
-                  <Icon
-                    icon={!miSistemaNegocio ? 'solar:layers-bold-duotone' : (miSistemaNegocio === 'FALCONEXT' ? 'solar:rocket-bold-duotone' : 'solar:star-bold-duotone')}
-                    className="text-blue-600 dark:text-blue-400 flex-shrink-0"
-                    width={18}
-                  />
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Este admin se creará para el sistema <span className="font-bold">
-                      {miSistemaNegocio === 'FALCONEXT' ? 'Falconext' : miSistemaNegocio === 'KREZKA' ? 'Krezka' : 'todos'}
-                    </span> y producto <span className="font-bold">{miSistemaProducto || 'todos'}</span>
+                  <p className="text-[11px] text-gray-400">
+                    {form.sistemaNegocio === '' ? 'Sin asignar → ve ambos sistemas' : `Solo verá el sistema ${form.sistemaNegocio === 'FALCONEXT' ? 'Falconext' : 'Krezka'}`}
                   </p>
                 </div>
-              )}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sistema de producto</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <SistemaProductoBtn value="" label="Todos" icon="solar:layers-bold-duotone" desc="Todos los productos" activeColor="sky" />
+                    <SistemaProductoBtn value="FACTURACION" label="Facturación" icon="solar:bill-list-bold-duotone" desc="Solo facturación" activeColor="sky" />
+                    <SistemaProductoBtn value="HOTEL" label="Hotel" icon="solar:bed-bold-duotone" desc="Solo hotel" activeColor="amber" />
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    {form.sistemaProducto === '' ? 'Sin asignar → ve todos los productos' : `Solo verá el producto ${form.sistemaProducto === 'HOTEL' ? 'Hotel' : 'Facturación'}`}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
+                <Icon icon={!miSistemaNegocio ? 'solar:layers-bold-duotone' : miSistemaNegocio === 'FALCONEXT' ? 'solar:rocket-bold-duotone' : 'solar:star-bold-duotone'} className="text-blue-600 dark:text-blue-400 flex-shrink-0" width={18} />
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Se creará para el sistema <span className="font-bold">{miSistemaNegocio === 'FALCONEXT' ? 'Falconext' : miSistemaNegocio === 'KREZKA' ? 'Krezka' : 'todos'}</span> y producto <span className="font-bold">{miSistemaProducto || 'todos'}</span>
+                </p>
+              </div>
+            )}
 
-              {/* Nombre */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre completo *</label>
-                <input
-                  ref={firstInputRef}
-                  name="nombre"
-                  value={form.nombre}
-                  onChange={handleChange}
-                  placeholder="Ej. Carlos Mendoza"
-                  className={`w-full px-4 py-3 text-sm bg-gray-50 dark:bg-slate-800 border rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white placeholder:text-gray-400 transition-all font-medium ${errors.nombre ? 'border-red-400' : 'border-gray-100 dark:border-slate-700'}`}
+            <InputPro
+              isLabel
+              label="Nombre completo *"
+              name="nombre"
+              value={form.nombre}
+              onChange={handleChange as any}
+              placeholder="Ej. Carlos Mendoza"
+              error={errors.nombre}
+              reference={firstInputRef as any}
+            />
+
+            <InputPro
+              isLabel
+              label="Email *"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange as any}
+              placeholder="admin@falconext.pe"
+              error={errors.email}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <InputPro
+                isLabel
+                label="DNI *"
+                name="dni"
+                value={form.dni}
+                onChange={handleChange as any}
+                placeholder="12345678"
+                maxLength={8}
+                error={errors.dni}
+              />
+              <InputPro
+                isLabel
+                label="Celular *"
+                name="celular"
+                value={form.celular}
+                onChange={handleChange as any}
+                placeholder="987654321"
+                maxLength={9}
+                error={errors.celular}
+              />
+            </div>
+
+            {/* Password with show/hide toggle */}
+            <div>
+              <label className="block text-sm font-[400] text-gray-900 dark:!text-gray-300 mb-2">
+                {editTarget ? 'Nueva contraseña (vacío = sin cambios)' : 'Contraseña *'}
+              </label>
+              <div className="relative">
+                <InputPro
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={handleChange as any}
+                  placeholder={editTarget ? '••••••••' : 'Mínimo 6 caracteres'}
+                  className="pr-11"
+                  error={errors.password}
                 />
-                {errors.nombre && <p className="text-xs text-red-500 flex items-center gap-1"><Icon icon="solar:danger-bold" width={12} />{errors.nombre}</p>}
-              </div>
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email *</label>
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="admin@falconext.pe"
-                  className={`w-full px-4 py-3 text-sm bg-gray-50 dark:bg-slate-800 border rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white placeholder:text-gray-400 transition-all ${errors.email ? 'border-red-400' : 'border-gray-100 dark:border-slate-700'}`}
-                />
-                {errors.email && <p className="text-xs text-red-500 flex items-center gap-1"><Icon icon="solar:danger-bold" width={12} />{errors.email}</p>}
-              </div>
-
-              {/* DNI + Celular */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">DNI *</label>
-                  <input
-                    name="dni"
-                    value={form.dni}
-                    onChange={handleChange}
-                    placeholder="12345678"
-                    maxLength={8}
-                    className={`w-full px-4 py-3 text-sm bg-gray-50 dark:bg-slate-800 border rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white placeholder:text-gray-400 transition-all font-mono ${errors.dni ? 'border-red-400' : 'border-gray-100 dark:border-slate-700'}`}
-                  />
-                  {errors.dni && <p className="text-xs text-red-500">{errors.dni}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Celular *</label>
-                  <input
-                    name="celular"
-                    value={form.celular}
-                    onChange={handleChange}
-                    placeholder="987654321"
-                    maxLength={9}
-                    className={`w-full px-4 py-3 text-sm bg-gray-50 dark:bg-slate-800 border rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white placeholder:text-gray-400 transition-all font-mono ${errors.celular ? 'border-red-400' : 'border-gray-100 dark:border-slate-700'}`}
-                  />
-                  {errors.celular && <p className="text-xs text-red-500">{errors.celular}</p>}
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  {editTarget ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
-                </label>
-                <div className="relative">
-                  <input
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder={editTarget ? '••••••••' : 'Mínimo 6 caracteres'}
-                    className={`w-full px-4 py-3 pr-11 text-sm bg-gray-50 dark:bg-slate-800 border rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white placeholder:text-gray-400 transition-all ${errors.password ? 'border-red-400' : 'border-gray-100 dark:border-slate-700'}`}
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    <Icon icon={showPassword ? 'solar:eye-closed-bold' : 'solar:eye-bold'} width={18} />
-                  </button>
-                </div>
-                {errors.password && <p className="text-xs text-red-500 flex items-center gap-1"><Icon icon="solar:danger-bold" width={12} />{errors.password}</p>}
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="flex-1 py-3 text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[9px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 py-3 text-white font-bold bg-violet-600 rounded-xl hover:bg-violet-700 transition-colors text-sm shadow-lg shadow-violet-500/30 disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {saving && <Icon icon="svg-spinners:ring-resize" width={16} />}
-                  {editTarget ? 'Guardar Cambios' : 'Crear Administrador'}
+                  <Icon icon={showPassword ? 'solar:eye-closed-bold' : 'solar:eye-bold'} width={18} />
                 </button>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex gap-3 px-5 pb-5">
+            <Button type="button" onClick={() => setModalOpen(false)} color="default" className="flex-1">Cancelar</Button>
+            <Button type="submit" color="primary" disabled={saving} className="flex-1">
+              {saving && <Icon icon="svg-spinners:ring-resize" width={15} className="mr-1.5" />}
+              {editTarget ? 'Guardar Cambios' : 'Crear Administrador'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal Confirmar Eliminar */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} />
-          <div className="relative bg-white dark:bg-[#111827] rounded-3xl p-8 w-full max-w-sm shadow-2xl z-10 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <Icon icon="solar:shield-user-bold-duotone" width={36} />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">¿Deshabilitar administrador?</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              <span className="font-semibold text-gray-700 dark:text-gray-200">{confirmDelete.nombre}</span> será marcado como inactivo y no podrá iniciar sesión.
-            </p>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm">
-                Cancelar
-              </button>
-              <button onClick={handleDelete} className="flex-1 py-3 text-white font-bold bg-red-500 rounded-xl hover:bg-red-600 transition-colors text-sm">
-                Deshabilitar
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpenModal={!!confirmDelete}
+        closeModal={() => setConfirmDelete(null)}
+        title="Deshabilitar administrador"
+        icon="solar:shield-user-bold-duotone"
+        iconClass="bg-red-50 text-red-500"
+        width="360px"
+        height="auto"
+      >
+        <div className="px-5 py-4 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="font-semibold text-gray-700 dark:text-gray-200">{confirmDelete?.nombre}</span> será marcado como inactivo y no podrá iniciar sesión.
+          </p>
         </div>
-      )}
+        <div className="flex gap-3 px-5 pb-5">
+          <Button type="button" onClick={() => setConfirmDelete(null)} color="default" className="flex-1">Cancelar</Button>
+          <Button type="button" onClick={handleDelete} color="danger" className="flex-1">Deshabilitar</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

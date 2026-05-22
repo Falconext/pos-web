@@ -1,6 +1,10 @@
 import React, { useCallback } from 'react'
 import Button from '../Button';
 import useEscapeKey from '@/hooks/useEscapeKey';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { fadeIn, scaleIn } from '@/lib/motion/presets';
+import { useReducedMotionPreference } from '@/lib/motion/reducedMotion';
 
 type Props = {
   isOpenModal: boolean;
@@ -25,6 +29,7 @@ export default function ModalConfirm({
   confirmDisabled = false,
   confirmLoading = false,
 }: Props) {
+  const reduceMotion = useReducedMotionPreference();
   const handleClose = useCallback(() => {
     if (isOpenModal) {
       setIsOpenModal(false);
@@ -33,10 +38,23 @@ export default function ModalConfirm({
 
   useEscapeKey(() => handleClose(), isOpenModal);
 
-  if (!isOpenModal) return null
-  return (
-    <div className="fixed inset-0 z-[9999999] bg-black/40 grid place-items-center">
-      <div className="bg-white dark:bg-[#111827] rounded-xl p-6 w-[520px] max-w-[95vw] shadow-2xl border dark:border-slate-800">
+  const content = (
+    <AnimatePresence>
+      {isOpenModal && (
+        <motion.div
+          className="fixed inset-0 z-[9999999] bg-black/40 grid place-items-center"
+          variants={fadeIn}
+          initial="initial"
+          animate={reduceMotion ? { opacity: 1 } : 'animate'}
+          exit={reduceMotion ? { opacity: 0 } : 'exit'}
+        >
+      <motion.div
+        className="bg-white dark:bg-[#111827] rounded-xl p-6 w-[520px] max-w-[95vw] shadow-2xl border dark:border-slate-800"
+        variants={scaleIn}
+        initial="initial"
+        animate={reduceMotion ? { opacity: 1 } : 'animate'}
+        exit={reduceMotion ? { opacity: 0 } : 'exit'}
+      >
         <h3 className="text-lg font-semibold mb-2 dark:text-white">{title}</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">{information}</p>
         {children && (
@@ -45,7 +63,10 @@ export default function ModalConfirm({
           </div>
         )}
         <div className="mt-6 text-right space-x-2 flex justify-end">
-          <Button outline className="px-4 py-2 rounded" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
+          <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+            <Button outline className="px-4 py-2 rounded" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
+          </motion.div>
+          
           <Button
             color='danger'
             onClick={confirmSubmit}
@@ -54,7 +75,12 @@ export default function ModalConfirm({
             {confirmLoading ? 'Procesando...' : confirmText}
           </Button>
         </div>
-      </div>
-    </div>
-  )
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  if (typeof document === 'undefined') return content;
+  return createPortal(content, document.body);
 }
