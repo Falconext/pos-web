@@ -241,7 +241,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         usaDemo: Boolean((empresa as any).usaDemo),
         providerId: (empresa as any).providerId || '',
         providerToken: (empresa as any).providerToken || '',
-        billingProvider: (empresa as any).billingProvider || (Boolean((empresa as any).usaDemo) ? 'APISUNAT' : 'QPSE'),
+        billingProvider: (empresa as any).billingProvider === 'JAMBLE' ? 'JAMBLE' : 'QPSE',
         billingApiBaseUrl: (empresa as any).billingApiBaseUrl || '',
         billingApiToken: (empresa as any).billingApiToken || '',
         billingApiUser: (empresa as any).billingApiUser || '',
@@ -420,8 +420,6 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (!base.nombreComercial) e.nombreComercial = 'Nombre comercial es requerido';
     if (!isDemo && !base.rubroId) e.rubroId = 'Rubro es requerido';
     if (!isDemo && !base.ubigeo) e.ubigeo = 'Ubigeo es requerido';
-    if (isDemo && !base.providerId) e.providerId = 'PersonaId (APISUNAT) es requerido en demo';
-    if (isDemo && !base.providerToken) e.providerToken = 'ProviderToken (APISUNAT) es requerido en demo';
 
     if (!isEdit) {
       if (!createData.usuario?.nombre) e['usuario.nombre'] = 'Nombre del administrador es requerido';
@@ -537,7 +535,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   </p>
                   <p className={`text-xs mt-0.5 ${currentUsaDemo ? 'text-amber-700' : 'text-gray-400'}`}>
                     {currentUsaDemo
-                      ? 'Los comprobantes se enviarán por APISUNAT demo (PersonaId + ProviderToken)'
+                      ? 'Los comprobantes se enviarán por QPSE demo'
                       : isEdit
                         ? 'Activar para usar el servidor de pruebas de QPSE'
                         : 'Activa para crear la cuenta demo al instante con datos de prueba'
@@ -785,48 +783,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 <div className="space-y-5 animate-in fade-in duration-300">
                   <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Credenciales SUNAT / PSE</h3>
 
-                  {currentUsaDemo && (
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
-                      <Icon icon="solar:test-tube-bold-duotone" width={18} className="text-amber-500 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-amber-800">Modo Demo habilitado</p>
-                        <p className="text-xs text-amber-700 mt-0.5">
-                          En demo se usa APISUNAT. Configura <strong>PersonaId</strong> y <strong>ProviderToken</strong> para emitir.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {currentUsaDemo && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InputPro
-                        name="providerId"
-                        label="PersonaId (APISUNAT)"
-                        isLabel
-                        value={isEdit ? (editData.providerId || '') : (createData.providerId || '')}
-                        onChange={handleChange}
-                        placeholder="Ej. 5f6cd73425f5c52d375dd55c"
-                        error={errors.providerId}
-                      />
-                      <InputPro
-                        name="providerToken"
-                        label="ProviderToken (APISUNAT)"
-                        isLabel
-                        value={isEdit ? (editData.providerToken || '') : (createData.providerToken || '')}
-                        onChange={handleChange}
-                        placeholder="Token de la empresa en APISUNAT"
-                        error={errors.providerToken}
-                      />
-                    </div>
-                  )}
-
                   <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4">
                     <div className="flex items-start">
                       <svg className="w-4 h-4 text-amber-500 mt-0.5 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-xs text-amber-800 leading-relaxed">
-                        Credenciales QPSE asignadas por el Proveedor de Servicios Electrónicos. Son necesarias para la emisión de comprobantes electrónicos válidos.
+                        Emisión estándar activa con <strong>QPSE</strong>. Usa aquí las credenciales QPSE de la empresa. APISUNAT está desactivado temporalmente.
                       </p>
                     </div>
                   </div>

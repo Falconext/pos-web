@@ -10,6 +10,8 @@ export type IProduct = {
   igvPorcentaje: string
   stock: number
   localizacion?: string
+  porcentajeVenta?: number
+  porcentajeProvision?: number
   stockMinimo?: number
   stockMaximo?: number
   estado: string
@@ -67,6 +69,8 @@ export type IFormProduct = {
   precioUnitario: number,
   stock: number,
   localizacion?: string,
+  porcentajeVenta?: number,
+  porcentajeProvision?: number,
   stockMinimo?: number,
   stockMaximo?: number,
   codigo: string,

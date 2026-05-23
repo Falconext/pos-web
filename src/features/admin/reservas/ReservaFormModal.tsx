@@ -25,7 +25,7 @@ export default function ReservaFormModal({
   isOpen,
   onClose,
   onSubmit,
-  productos,
+  productos = [],
   initialData,
   loading = false,
 }: Props) {

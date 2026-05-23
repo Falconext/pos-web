@@ -44,6 +44,9 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
     const [newWholesaleRow, setNewWholesaleRow] = useState({ cantidadMinima: '', precio: '' });
     const [wholesaleFocused, setWholesaleFocused] = useState<'cantidadMinima' | 'precio' | null>(null);
+    // true = precio que ingresa el usuario YA incluye IGV (modo informal/pequeño negocio)
+    // false = precio ingresado es NETO sin IGV (modo formal)
+    const [modoConIgv, setModoConIgv] = useState(true);
     const [barcodeSearch, setBarcodeSearch] = useState('');
     const [searchingBarcode, setSearchingBarcode] = useState(false);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -240,6 +243,122 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                     </div>
                 </div>
 
+                {/* ── Sección de precios inteligente ── */}
+                {(() => {
+                    const esGravado = !['20', '30'].includes(formValues.tipoAfectacionIGV ?? '10');
+                    const igvPct = esGravado ? 0.18 : 0;
+                    const precio = Number(formValues.precioUnitario) || 0;
+                    const costo = Number(formValues.costoPromedio) || 0;
+
+                    // precioUnitario siempre se guarda CON IGV — derivar neto desde ahí
+                    const precioConIgv = precio;
+                    const precioSinIgv = esGravado ? parseFloat((precio / 1.18).toFixed(2)) : precio;
+                    const igvMonto = parseFloat((precioConIgv - precioSinIgv).toFixed(2));
+
+                    const margen = costo > 0 && precioSinIgv > 0
+                        ? parseFloat(((precioSinIgv - costo) / costo * 100).toFixed(1))
+                        : null;
+                    const margenPositivo = margen !== null && margen >= 0;
+
+                    const handlePrecioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                        const val = e.target.value;
+                        const num = parseFloat(val) || 0;
+                        if (modoConIgv) {
+                            setFormValues({ ...formValues, precioUnitario: num });
+                        } else {
+                            // ingresa sin IGV → guardar el precio CON IGV en precioUnitario
+                            const conIgv = parseFloat((num * (1 + igvPct)).toFixed(2));
+                            setFormValues({ ...formValues, precioUnitario: conIgv });
+                        }
+                    };
+
+                    return (
+                        <div className="md:px-6 px-3 mt-4">
+                            <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gradient-to-br from-white to-gray-50/30 dark:from-slate-800/60 dark:to-slate-900/40 p-4 space-y-3">
+                                {/* Header */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                            <Icon icon="solar:dollar-minimalistic-bold-duotone" className="text-white" width={14} />
+                                        </div>
+                                        <span className="text-sm font-bold text-gray-800 dark:text-white">Precio de Venta</span>
+                                    </div>
+                                    {/* Toggle modo */}
+                                    <div className="flex items-center gap-1 p-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
+                                        <button type="button"
+                                            onClick={() => setModoConIgv(true)}
+                                            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${modoConIgv ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
+                                            Con IGV
+                                        </button>
+                                        <button type="button"
+                                            onClick={() => setModoConIgv(false)}
+                                            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${!modoConIgv ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
+                                            Sin IGV
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Input principal */}
+                                <InputPro
+                                    type="number"
+                                    step="0.01"
+                                    name="precioUnitario"
+                                    placeholder="0.00"
+                                    isLabel
+                                    label={modoConIgv
+                                        ? `Precio de venta con IGV (S/)${!esGravado ? ' — ' + (formValues.tipoAfectacionIGV === '20' ? 'Exonerado' : 'Inafecto') : ''}`
+                                        : 'Precio neto sin IGV (S/)'}
+                                    value={modoConIgv ? (precio || '') : (precioSinIgv || '')}
+                                    onChange={handlePrecioChange}
+                                    error={errors.precioUnitario}
+                                />
+
+                                {/* Desglose IGV */}
+                                {esGravado && precio > 0 && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-center">
+                                            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide">Neto</p>
+                                            <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mt-0.5">S/ {precioSinIgv.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 text-center">
+                                            <p className="text-[10px] text-blue-500 dark:text-blue-400 font-medium uppercase tracking-wide">IGV 18%</p>
+                                            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">S/ {igvMonto.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2 text-center">
+                                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wide">Total</p>
+                                            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">S/ {precioConIgv.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Costo + margen */}
+                                <div className="flex gap-3 items-end">
+                                    <div className="flex-1">
+                                        <InputPro
+                                            type="number"
+                                            step="0.01"
+                                            name="costoPromedio"
+                                            placeholder="0.00"
+                                            isLabel
+                                            label="Costo promedio S/ (neto sin IGV)"
+                                            value={formValues.costoPromedio != null ? parseFloat(Number(formValues.costoPromedio).toFixed(2)) : ''}
+                                            onChange={(e) => setFormValues({ ...formValues, costoPromedio: parseFloat(e.target.value) || 0 })}
+                                        />
+                                    </div>
+                                    {margen !== null && (
+                                        <div className={`px-3 py-2 rounded-xl text-center min-w-[80px] mb-0.5 ${margenPositivo ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Margen</p>
+                                            <p className={`text-base font-bold mt-0.5 ${margenPositivo ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                                {margenPositivo ? '+' : ''}{margen}%
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
+
                 <div className="md:px-6 px-3 grid md:grid-cols-2 grid-cols-2 mt-5 md:gap-5 gap-y-2">
                     <div className="col-span-3 md:col-span-1">
                         <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label="Codigo de producto" />
@@ -250,7 +369,6 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                     <div className="col-span-3 md:col-span-1">
                         <Select defaultValue={formValues.afectacionNombre || "Gravado - operación onerosa"} error={""} isSearch options={afectaciones} id="tipoAfectacionIGV" name="afectacionNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Tipo de afectación" />
                     </div>
-
                     <div className="col-span-3 md:col-span-1">
                         <Select defaultValue={formValues?.unidadMedidaNombre} error={""} isSearch options={unitOfMeasure?.map((item: ICategory) => ({
                             id: item?.id,
@@ -262,9 +380,6 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                             id: item?.id,
                             value: `${item?.nombre}`
                         }))} id="categoriaId" name="categoriaNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Categoria" />
-                    </div>
-                    <div className="col-start-1 col-end-2 md:col-span-1">
-                        <InputPro autocomplete="off" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} isLabel label="Precio del producto" />
                     </div>
                     <div className="col-start-2 col-end-3 md:col-span-1">
                         <InputPro autocomplete="off" value={formValues?.stock} error={errors.stock} name="stock" onChange={handleChange} isLabel label="Stock" />

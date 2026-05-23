@@ -327,9 +327,9 @@ const PrintPDF = ({
                                 <View style={styles.tableRow}>
                                     <Text style={styles.tableHeaderTicket}>CANT.</Text>
                                     <Text style={styles.tableHeaderTicket}>U.M.</Text>
-                                    <Text style={styles.tableHeaderTicket}>DESCRIPCION</Text>
-                                    <Text style={styles.tableHeaderTicket}>P.U.</Text>
-                                    <Text style={styles.tableHeaderTicket}>IMP.</Text>
+                                    <Text style={[styles.tableHeaderTicket, { flex: 7, textAlign: 'left' }]}>DESCRIPCION</Text>
+                                    <Text style={[styles.tableHeaderTicket, { textAlign: 'right' }]}>P.U.</Text>
+                                    <Text style={[styles.tableHeaderTicket, { textAlign: 'right' }]}>IMP.</Text>
                                 </View>
                                 {productsInvoice?.map((item, index) => (
                                     <View style={styles.tableRow} key={index}>
@@ -337,7 +337,7 @@ const PrintPDF = ({
                                         <Text style={styles.tableCell}>{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || item?.producto?.unidadMedida?.codigo?.toUpperCase() || ''}</Text>
                                         <Text style={styles.tableCellDescription}>{item?.descripcion?.toUpperCase() || ''}</Text>
                                         <Text style={styles.tableCellNumber}>{Number(item?.precioUnitario || item?.mtoPrecioUnitario || 0).toFixed(2)}</Text>
-                                        <Text style={styles.tableCellNumber}>{Number(item?.total || item?.mtoPrecioUnitario * item?.cantidad || 0).toFixed(2)}</Text>
+                                        <Text style={styles.tableCellNumber}>{Number(item?.total || (item?.mtoPrecioUnitario ?? 0) * (item?.cantidad ?? 0) || 0).toFixed(2)}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -552,7 +552,7 @@ const PrintPDF = ({
                                         <Text style={styles.tableCell}>{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || item?.producto?.unidadMedida?.codigo?.toUpperCase() || ''}</Text>
                                         <Text style={styles.tableCellDescription}>{item?.descripcion?.toUpperCase() || ''}</Text>
                                         <Text style={styles.tableCellNumber}>{Number(item?.precioUnitario || item?.mtoPrecioUnitario || 0).toFixed(2)}</Text>
-                                        <Text style={styles.tableCellNumber}>{Number(item?.total || item?.mtoPrecioUnitario * item?.cantidad || 0).toFixed(2)}</Text>
+                                        <Text style={styles.tableCellNumber}>{Number(item?.total || (item?.mtoPrecioUnitario ?? 0) * (item?.cantidad ?? 0) || 0).toFixed(2)}</Text>
                                     </View>
                                 ))}
                             </View>

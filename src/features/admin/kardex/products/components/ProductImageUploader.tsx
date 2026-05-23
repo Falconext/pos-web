@@ -8,7 +8,8 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
         labels, loadingImage, previewPrincipal, filePrincipalInputRef, isGeneratingImage, formValues,
-        setFilePrincipal, setPreviewPrincipal, setLoadingImage, handleAutoImage, setFormValues
+        setFilePrincipal, setPreviewPrincipal, setLoadingImage, handleAutoImage, setFormValues,
+        imageCandidates, setImageCandidates
     } = vm;
 
     return (
@@ -77,6 +78,7 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             setLoadingImage(false);
                         };
                         img.src = objectUrl;
+                        setImageCandidates([]);
                     }}
                     className="hidden"
                 />
@@ -88,6 +90,7 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                 setFilePrincipal(null);
                                 setPreviewPrincipal(null);
                                 setFormValues({ ...formValues, imagenUrl: null });
+                                setImageCandidates([]);
                             }}
                             className="text-xs text-red-600 hover:text-red-700 underline"
                         >
@@ -114,6 +117,47 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     </button>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center leading-tight">Nota: La imagen generada puede no ser exacta y sirve solo como apoyo referencial.</p>
                 </div>
+
+                {imageCandidates.length > 0 && (
+                    <div className="mt-3 border border-indigo-100 dark:border-indigo-900/40 rounded-lg p-3 bg-indigo-50/40 dark:bg-indigo-950/20">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                                Opciones sugeridas (elige una)
+                            </p>
+                            <button
+                                type="button"
+                                className="text-[11px] text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+                                onClick={() => setImageCandidates([])}
+                            >
+                                Ocultar
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {imageCandidates.map((url) => {
+                                const isSelected = previewPrincipal === url;
+                                return (
+                                    <button
+                                        key={url}
+                                        type="button"
+                                        onClick={() => {
+                                            setFilePrincipal(null);
+                                            setPreviewPrincipal(url);
+                                            setFormValues({ ...formValues, imagenUrl: url });
+                                        }}
+                                        className={`relative h-24 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-900' : 'border-transparent hover:border-indigo-300'}`}
+                                    >
+                                        <img src={url} alt="Candidata IA" className="w-full h-full object-cover" />
+                                        {isSelected && (
+                                            <span className="absolute top-1 right-1 text-[10px] bg-indigo-600 text-white rounded px-1.5 py-0.5">
+                                                Seleccionada
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

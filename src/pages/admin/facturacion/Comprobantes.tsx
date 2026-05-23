@@ -48,8 +48,8 @@ const Comprobantes = () => {
     const [comprobante, setComprobante] = useState<string>("");
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [isOpenModalConfirmPayment, setIsOpenModalConfirmPayment] = useState(false)
-    const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
-    const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format("YYYY-MM-DD"));
+    const [fechaInicio, setFechaInicio] = useState<string>(moment().startOf('month').format("YYYY-MM-DD"));
+    const [fechaFin, setFechaFin] = useState<string>(moment().endOf('month').format("YYYY-MM-DD"));
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
@@ -166,9 +166,6 @@ const Comprobantes = () => {
         };
     }, []);
 
-
-
-    console.log(invoices)
 
 
     const productsTable = invoices?.map((item: IInvoices) => {
@@ -343,9 +340,6 @@ const Comprobantes = () => {
     const handleCloseReceipt = () => {
         paymentFlow.closeReceipt();
     };
-
-    console.log(productsTable)
-    console.log(fechaFin)
 
     useEffect(() => {
         getAllInvoices({

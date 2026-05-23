@@ -51,6 +51,27 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                                 <span className="hidden sm:inline">{vm.searchingBarcode ? 'Buscando...' : 'Buscar'}</span>
                             </button>
                         </div>
+                        <div className="mt-2 flex items-center justify-between rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2">
+                            <div className="min-w-0">
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                    Auto-buscar imagen al guardar
+                                </p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Solo si el producto no tiene imagen. Puede traer imágenes referenciales no exactas.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => vm.setAutoImageOnSave(!vm.autoImageOnSave)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${vm.autoImageOnSave ? 'bg-violet-600' : 'bg-gray-300 dark:bg-slate-600'}`}
+                                aria-pressed={vm.autoImageOnSave}
+                                aria-label="Auto buscar imagen al guardar"
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${vm.autoImageOnSave ? 'translate-x-5' : 'translate-x-1'}`}
+                                />
+                            </button>
+                        </div>
                     </div>
                 )}
 

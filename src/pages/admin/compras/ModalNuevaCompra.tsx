@@ -63,6 +63,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     });
 
     const [items, setItems] = useState<any[]>([]);
+    // true = los precios ingresados YA incluyen IGV (ej: ticket de caja, proveedor informal)
+    // false = los precios son NETOS sin IGV (default: factura formal de proveedor)
+    const [incluyeIgv, setIncluyeIgv] = useState(false);
     const [barcodeInput, setBarcodeInput] = useState('');
     const [barcodeLoading, setBarcodeLoading] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
@@ -99,6 +102,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                 metodoPagoInicial: 'EFECTIVO'
             });
             setItems([]);
+            setIncluyeIgv(false);
             setCuotas([]);
             setBarcodeInput('');
             setSupplierDisplay('');
@@ -311,10 +315,13 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         setItems(newItems);
     };
 
-    // Totals
-    const subtotal = items.reduce((acc, item) => acc + (item.cantidad * item.precioUnitario), 0);
-    const igv = subtotal * 0.18;
-    const total = subtotal + igv;
+    // Totals — cuando incluyeIgv, el precio ingresado ya trae el IGV embebido
+    const totalConIgvBruto = items.reduce((acc, item) => acc + (item.cantidad * item.precioUnitario), 0);
+    const subtotal = incluyeIgv
+        ? parseFloat((totalConIgvBruto / 1.18).toFixed(2))
+        : totalConIgvBruto;
+    const igv = parseFloat((subtotal * 0.18).toFixed(2));
+    const total = parseFloat((subtotal + igv).toFixed(2));
 
     const guardarCompra = async () => {
         let proveedorId = Number(header.proveedorId || 0);
@@ -392,6 +399,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                 descripcion: i.descripcion,
                 cantidad: i.cantidad,
                 precioUnitario: i.precioUnitario,
+                incluyeIgv,
                 lote: i.lote || undefined,
                 fechaVencimiento: i.fechaVencimiento || undefined,
                 codigoXml: i._codigoXml || undefined,
@@ -703,8 +711,26 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     {/* Resumen y Condiciones */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Resumen */}
-                        <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Resumen</h3>
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 space-y-3">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide">Resumen</h3>
+
+                            {/* Toggle incluyeIgv */}
+                            <button
+                                type="button"
+                                onClick={() => setIncluyeIgv(v => !v)}
+                                className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all ${incluyeIgv ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20' : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 hover:border-gray-300'}`}
+                            >
+                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${incluyeIgv ? 'bg-amber-500 border-amber-500' : 'border-gray-300 dark:border-slate-500'}`}>
+                                    {incluyeIgv && <Icon icon="mdi:check" width={11} className="text-white" />}
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 leading-none">Precios incluyen IGV</p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                                        {incluyeIgv ? 'El costo neto se calculará extrayendo el IGV (÷1.18)' : 'Los precios son netos — se agrega IGV encima (×1.18)'}
+                                    </p>
+                                </div>
+                            </button>
+
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                                     <span>Op. Gravada</span>

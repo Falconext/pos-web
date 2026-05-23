@@ -51,6 +51,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
     });
 
+    const planNombre: string = (auth?.empresa?.plan?.nombre || '').toUpperCase();
+    const tienePlanCorporativo = planNombre === 'CORPORATIVO';
+
     const labels = {
         titulo: isRestaurante ? 'Plato' : isFarmacia ? 'Medicamento' : isFabricacion ? 'Ítem de producción' : 'Producto',
         nombre: isRestaurante ? 'Nombre del plato' : isFarmacia ? 'Nombre del medicamento' : isFabricacion ? 'Nombre del ítem' : 'Nombre del producto',
@@ -84,6 +87,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     // --- Barcode Global Search ---
     const [barcodeQuery, setBarcodeQuery] = useState('');
     const [searchingBarcode, setSearchingBarcode] = useState(false);
+    const [autoImageOnSave, setAutoImageOnSave] = useState(false);
+    const [imageCandidates, setImageCandidates] = useState<string[]>([]);
+
+    const autoImagePrefKey = `producto:autoImageOnSave:${auth?.empresaId ?? 'default'}:${auth?.id ?? 'user'}`;
 
     const resolveBrand = async (brandRaw: string): Promise<{ marcaId: number | null; marcaNombre: string } | null> => {
         const nombre = brandRaw.split(',')[0].trim();
@@ -190,11 +197,28 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         if (!isOpenModal) {
             setPreviewPrincipal(null);
             setFilePrincipal(null);
+            setImageCandidates([]);
             setGruposSeleccionados([]);
             setCreationLote({ lote: '', fechaVencimiento: '' });
             setNewWholesaleOption({ cantidadMinima: '', precio: '' });
         }
     }, [isOpenModal]);
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(autoImagePrefKey);
+            if (raw === '1') setAutoImageOnSave(true);
+            if (raw === '0') setAutoImageOnSave(false);
+        } catch {
+            setAutoImageOnSave(false);
+        }
+    }, [autoImagePrefKey]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(autoImagePrefKey, autoImageOnSave ? '1' : '0');
+        } catch { }
+    }, [autoImageOnSave, autoImagePrefKey]);
 
     useEffect(() => {
         if (!isEdit) {
@@ -210,7 +234,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
     const handlePrecioUnitarioBlur = () => {
         const price = Number(formValues?.precioUnitario);
-        const isValid = formValues?.precioUnitario !== '' && formValues?.precioUnitario !== undefined && price > 0;
+        const isValid = Number.isFinite(price) && price > 0;
         setErrors({ ...errors, precioUnitario: isValid ? '' : 'El precio de venta es obligatorio' });
     };
 
@@ -226,6 +250,36 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         };
         setErrors(newErrors);
         return Object.values(newErrors).every((error) => !error);
+    };
+
+    const validarPorcentajesStock = () => {
+        const porcentajeVenta = Number(formValues?.porcentajeVenta ?? 70);
+        const porcentajeProvision = Number(formValues?.porcentajeProvision ?? 30);
+
+        if (
+            !Number.isFinite(porcentajeVenta) ||
+            !Number.isFinite(porcentajeProvision) ||
+            porcentajeVenta < 0 ||
+            porcentajeVenta > 100 ||
+            porcentajeProvision < 0 ||
+            porcentajeProvision > 100
+        ) {
+            useAlertStore.getState().alert(
+                'Los porcentajes deben estar entre 0 y 100.',
+                'warning',
+            );
+            return false;
+        }
+
+        if (porcentajeVenta + porcentajeProvision !== 100) {
+            useAlertStore.getState().alert(
+                'La suma de % Venta y % Provisión debe ser exactamente 100.',
+                'warning',
+            );
+            return false;
+        }
+
+        return true;
     };
 
     // --- Business Logic Functions ---
@@ -320,12 +374,21 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         try {
             const response = await apiClient.post('/producto/ia/generar-imagen', { nombre: query });
             const result = response.data?.data || response.data;
+            const candidates = Array.isArray(result?.candidates)
+                ? result.candidates.filter((url: unknown): url is string => typeof url === 'string' && /^https?:\/\//i.test(url))
+                : [];
+            setImageCandidates(candidates);
             if (result?.success && result?.url) {
                 setPreviewPrincipal(result.url);
                 setFormValues({ ...formValues, imagenUrl: result.url });
                 useAlertStore.getState().alert('Imagen encontrada', 'success');
+            } else if (candidates.length > 0) {
+                useAlertStore.getState().alert('No hubo coincidencia alta. Elige una opción sugerida.', 'info');
             } else {
-                useAlertStore.getState().alert('No se encontró imagen', 'info');
+                useAlertStore.getState().alert(
+                    result?.message || 'No encontré una imagen suficientemente relacionada. Usa una descripción más específica (ej: "Laptop HP 14 Intel i5") o sube una manualmente.',
+                    'info'
+                );
             }
         } catch (e) {
             useAlertStore.getState().alert('Error al buscar imagen', 'error');
@@ -334,26 +397,28 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         }
     };
 
+    const buscarImagenAutomaticaParaGuardado = async (nombre: string): Promise<string | null> => {
+        const query = String(nombre || '').trim();
+        if (!query) return null;
+        try {
+            const response = await apiClient.post('/producto/ia/generar-imagen', { nombre: query });
+            const result = response.data?.data || response.data;
+            if (result?.success && result?.url) {
+                return String(result.url);
+            }
+        } catch {
+            // silencioso: no interrumpir guardado
+        }
+        return null;
+    };
+
     // --- Main Submit handler ---
     const handleSubmitProduct = async () => {
         if (!validateForm()) return;
+        if (!validarPorcentajesStock()) return;
         setLoading(true);
 
         try {
-            let autoGeneratedImageUrl: string | null = null;
-            if (!isEdit && !filePrincipal && !previewPrincipal && !formValues.imagenUrl && formValues.descripcion) {
-                try {
-                    useAlertStore.getState().alert('Buscando imagen automáticamente...', 'info');
-                    const response = await apiClient.post('/producto/ia/generar-imagen', { nombre: formValues.descripcion });
-                    const result = response.data?.data || response.data;
-                    if (result?.success && result?.url) {
-                        autoGeneratedImageUrl = result.url;
-                        setPreviewPrincipal(result.url);
-                        setFormValues({ ...formValues, imagenUrl: result.url });
-                    }
-                } catch (e) { console.error('Auto-image generation failed:', e); }
-            }
-
             let stockFinal = Number(formValues?.stock);
             if (isEdit && tipoAjusteStock !== 'ninguno') {
                 switch (tipoAjusteStock) {
@@ -376,6 +441,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                     stock: stockFinal,
                     stockMinimo: formValues?.stockMinimo != null ? Number(formValues?.stockMinimo) : undefined,
                     stockMaximo: formValues?.stockMaximo != null ? Number(formValues?.stockMaximo) : undefined,
+                    porcentajeVenta: formValues?.porcentajeVenta != null ? Number(formValues?.porcentajeVenta) : undefined,
+                    porcentajeProvision: formValues?.porcentajeProvision != null ? Number(formValues?.porcentajeProvision) : undefined,
                     imagenUrl: hasRemovedImage ? null : (formValues.imagenUrl || undefined),
                 });
 
@@ -396,7 +463,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                         const nuevaUrl = signed || resp?.data?.data?.url || resp?.data?.url || resp?.data?.data?.imagenUrl || resp?.data?.imagenUrl || null;
                         if (nuevaUrl) setProductImage(Number(formValues.productoId), nuevaUrl);
                     } else {
-                        const externalUrl = autoGeneratedImageUrl || previewPrincipal || formValues.imagenUrl;
+                        const externalUrl = previewPrincipal || formValues.imagenUrl;
                         if (externalUrl && !externalUrl.includes('amazonaws.com')) {
                             const resp = await apiClient.post(`/producto/${formValues.productoId}/imagen-url`, { url: externalUrl });
                             const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
@@ -419,7 +486,15 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
             } else {
                 // CREATE MODE
-                const imageToSave = autoGeneratedImageUrl || formValues.imagenUrl || undefined;
+                let imageToSave = formValues.imagenUrl || undefined;
+                if (!imageToSave && autoImageOnSave && formValues.descripcion) {
+                    const autoUrl = await buscarImagenAutomaticaParaGuardado(formValues.descripcion);
+                    if (autoUrl) {
+                        imageToSave = autoUrl;
+                        setPreviewPrincipal(autoUrl);
+                        setFormValues({ ...formValues, imagenUrl: autoUrl });
+                    }
+                }
                 const product = await addProduct({
                     ...formValues,
                     unidadMedidaId: Number(formValues?.unidadMedidaId),
@@ -429,6 +504,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                     stock: (isFarmacia && features.gestionLotes && creationLote.lote) ? 0 : Number(formValues.stock),
                     stockMinimo: formValues?.stockMinimo != null ? Number(formValues?.stockMinimo) : undefined,
                     stockMaximo: formValues?.stockMaximo != null ? Number(formValues?.stockMaximo) : undefined,
+                    porcentajeVenta: formValues?.porcentajeVenta != null ? Number(formValues?.porcentajeVenta) : undefined,
+                    porcentajeProvision: formValues?.porcentajeProvision != null ? Number(formValues?.porcentajeProvision) : undefined,
                     estado: "ACTIVO",
                     imagenUrl: imageToSave,
                 }, { skipStore: true });
@@ -512,6 +589,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         isFabricacion,
         features,
         labels,
+        tienePlanCorporativo,
         isOpenModal,
         isEdit,
         formValues,
@@ -563,5 +641,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         setBarcodeQuery,
         searchingBarcode,
         handleBarcodeGlobalSearch,
+        autoImageOnSave,
+        setAutoImageOnSave,
+        imageCandidates,
+        setImageCandidates,
     };
 };

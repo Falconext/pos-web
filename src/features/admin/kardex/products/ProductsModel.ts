@@ -52,6 +52,8 @@ export const initialProductForm: IFormProduct = {
     tipoAfectacionIGV: "10",
     stock: 50,
     localizacion: '',
+    porcentajeVenta: 70,
+    porcentajeProvision: 30,
     stockMinimo: 0,
     stockMaximo: 0,
     codigo: "",
