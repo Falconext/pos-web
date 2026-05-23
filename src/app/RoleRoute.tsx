@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../zustand/auth'
+import Loading from '@/components/Loading'
 
 interface RoleRouteProps {
   children: React.ReactNode
@@ -9,10 +10,14 @@ interface RoleRouteProps {
 
 export function RoleRoute({ children, allowedRoles, fallbackPath = '/administrador' }: RoleRouteProps) {
   const { auth, isLoading } = useAuthStore()
+  const hasAccessToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN')
 
-  if (isLoading) return null
+  if (!hasAccessToken) {
+    return <Navigate to="/login" replace />
+  }
 
   if (!auth) {
+    if (isLoading) return <Loading />
     return <Navigate to="/login" replace />
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
+import { BRAND } from '@/lib/branding';
 
 const Loading = () => {
     const [mounted, setMounted] = useState(false);
@@ -25,7 +26,7 @@ const Loading = () => {
                 </div>
 
                 <div className="text-center space-y-1 mt-4">
-                    <h3 className="text-lg font-bold text-gray-800 tracking-tight">Falconext</h3>
+                    <h3 className="text-lg font-bold text-gray-800 tracking-tight">{BRAND.name}</h3>
                     <p className="text-sm text-indigo-500 font-medium animate-pulse">Cargando...</p>
                 </div>
             </div>

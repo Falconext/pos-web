@@ -71,9 +71,12 @@ const staticBrands: Record<string, BrandConfig> = {
 
 const envDefaultBrandKey = (import.meta.env.VITE_PUBLIC_BRAND || 'krezka').toLowerCase();
 const envDefaultBrand = staticBrands[envDefaultBrandKey] || staticBrands.krezka;
+const isPublicBrandingFetchDisabled =
+  String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true';
 
 const getRuntimeBranding = (): BrandConfig | null => {
   if (typeof window === 'undefined') return null;
+  if (isPublicBrandingFetchDisabled) return null;
 
   const runtime = (window as any).__FALCONEXT_PUBLIC_BRAND__;
   if (runtime && typeof runtime === 'object' && runtime.name) {

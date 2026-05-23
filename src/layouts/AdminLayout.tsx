@@ -277,7 +277,7 @@ export default function AdminLayout() {
 
       {/* Sidebar/Drawer */}
       <motion.aside
-        className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0D14] dark:border-r dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
+        className={`print:hidden fixed inset-y-0 left-0 bg-white dark:bg-[#0A0D14] dark:border-r dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
         variants={slideRight}
         initial="initial"
         animate={reduceMotion ? { opacity: 1, x: 0 } : 'animate'}
@@ -745,7 +745,7 @@ export default function AdminLayout() {
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
+            className="print:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
             onClick={() => setIsSidebarOpen(false)}
             variants={fadeIn}
             initial="initial"
@@ -756,8 +756,8 @@ export default function AdminLayout() {
       </AnimatePresence>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-[#F9FAFC] dark:bg-[#0A0D14]">
-        <motion.header className={`z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`} variants={fadeUp} initial="initial" animate="animate">
+      <main className="flex-1 overflow-y-auto print:overflow-visible bg-[#F9FAFC] dark:bg-[#0A0D14]">
+        <motion.header className={`print:hidden z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`} variants={fadeUp} initial="initial" animate="animate">
           <div className="flex items-center gap-4">
             <motion.button
               className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"

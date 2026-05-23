@@ -17,7 +17,7 @@ interface IProps {
     ref?: any
     isIcon?: boolean
     isSearch?: boolean
-    error?: string
+    error?: string | null | undefined
     form?: string; // Añade esta prop
 }
 
@@ -41,6 +41,7 @@ const Input = ({
     error,
     form, // Añade esta prop
 }: IProps) => {
+    const normalizedError = typeof error === 'string' ? error : '';
 
     return (
         <div className="rounded">
@@ -130,7 +131,7 @@ const Input = ({
                     {label}
                 </label>
             </div>
-            {error && <p className="text-[#D35130] font-bold text-sm mt-1">{error}</p>}
+            {normalizedError && <p className="text-[#D35130] font-bold text-sm mt-1">{normalizedError}</p>}
         </div>
     );
 };

@@ -22,15 +22,44 @@ export interface IAuthState {
 
 export const useAuthStore = create<IAuthState>()(
   devtools((set, _get) => {
+    const AUTH_ME_TIMEOUT_MS = 10_000;
+
+    const getTokenSafe = (): string | null => {
+      try {
+        return localStorage.getItem("ACCESS_TOKEN");
+      } catch {
+        return null;
+      }
+    };
+
+    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+      return new Promise<T>((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+          reject(new Error('AUTH_ME_TIMEOUT'));
+        }, timeoutMs);
+
+        promise
+          .then((value) => {
+            window.clearTimeout(timeoutId);
+            resolve(value);
+          })
+          .catch((error) => {
+            window.clearTimeout(timeoutId);
+            reject(error);
+          });
+      });
+    };
+
     const initAuth = async () => {
+      const token = getTokenSafe();
+      if (!token) {
+        set({ auth: null, success: false, isLoading: false });
+        return;
+      }
+
       set({ isLoading: true });
       try {
-        const token = localStorage.getItem("ACCESS_TOKEN");
-        if (!token) {
-          set({ auth: null, success: false, isLoading: false });
-          return;
-        }
-        const resp: any = await get(`auth/me`);
+        const resp: any = await withTimeout(get(`auth/me`), AUTH_ME_TIMEOUT_MS);
         console.log("Me response:", resp);
         if (resp.code === 1) {
           // Restaurar sede activa desde localStorage si existe
@@ -43,6 +72,9 @@ export const useAuthStore = create<IAuthState>()(
       } catch (error) {
         console.error("Error en initAuth:", error);
         set({ auth: null, success: false, isLoading: false });
+      } finally {
+        // Failsafe: nunca dejar el login en loading infinito
+        set({ isLoading: false });
       }
     };
 
@@ -115,7 +147,6 @@ export const useAuthStore = create<IAuthState>()(
             }
 
             useAlertStore.getState().alert("Bienvenido a la plataforma", "success");
-            await _get().me();
             useAlertStore.setState({ loading: false });
             set({
               auth: loginData.usuario,
@@ -172,14 +203,14 @@ export const useAuthStore = create<IAuthState>()(
       },
 
       me: async () => {
+        const token = getTokenSafe();
+        if (!token) {
+          set({ auth: null, success: false, isLoading: false });
+          return;
+        }
         set({ isLoading: true });
         try {
-          const token = localStorage.getItem("ACCESS_TOKEN");
-          if (!token) {
-            set({ auth: null, success: false, isLoading: false });
-            return;
-          }
-          const resp: any = await get(`auth/me`);
+          const resp: any = await withTimeout(get(`auth/me`), AUTH_ME_TIMEOUT_MS);
           console.log("Me response:", resp);
           if (resp.code === 1) {
             const sedeActivaStr = localStorage.getItem("SEDE_ACTIVA");
@@ -190,6 +221,8 @@ export const useAuthStore = create<IAuthState>()(
           }
         } catch (error) {
           console.error("Error en me:", error);
+          set({ auth: null, success: false, isLoading: false });
+        } finally {
           set({ isLoading: false });
         }
       },

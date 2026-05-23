@@ -1,22 +1,24 @@
 import { Navigate } from 'react-router-dom'
-import { useAuthStore } from '../zustand/auth'  
-import Alert from '@/components/Alert'
+import { useAuthStore } from '../zustand/auth'
 
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { auth, isLoading } = useAuthStore()
+  const hasAccessToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN')
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Alert />
-      </div>
-    )
-  }
-
-  if (!auth) {
+  if (!hasAccessToken) {
     return <Navigate to="/login" replace />
   }
 
-  return <>{children}</>
+  if (auth) {
+    return <>{children}</>
+  }
+
+  // Si ya hay token, permitimos renderizar mientras se hidrata `auth/me`
+  // para evitar bloqueos infinitos del loader en sesiones válidas.
+  if (hasAccessToken && isLoading) {
+    return <>{children}</>
+  }
+
+  return <Navigate to="/login" replace />
 }

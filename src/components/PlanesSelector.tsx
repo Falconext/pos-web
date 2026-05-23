@@ -15,7 +15,7 @@ interface PlanesSelectorProps {
   planes: Plan[];
   selectedPlanId?: number;
   onPlanSelect: (planId: number) => void;
-  error?: string;
+  error?: string | null | undefined;
 }
 
 const PlanesSelector: React.FC<PlanesSelectorProps> = ({
@@ -25,6 +25,7 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
   error
 }) => {
   const [hoveredPlan, setHoveredPlan] = useState<number | null>(null);
+  const normalizedError = typeof error === 'string' ? error : '';
 
   const getPlanColor = (planNombre: string) => {
     switch (planNombre.toUpperCase()) {
@@ -172,8 +173,8 @@ const PlanesSelector: React.FC<PlanesSelectorProps> = ({
       </div>
 
       {/* Error message */}
-      {error && (
-        <p className="text-sm text-red-600 mt-2">{error}</p>
+      {normalizedError && (
+        <p className="text-sm text-red-600 mt-2">{normalizedError}</p>
       )}
     </div>
   );

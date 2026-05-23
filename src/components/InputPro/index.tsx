@@ -20,7 +20,7 @@ interface IInput {
   id?: string;
   uppercase?: boolean;
   step?: string;
-  error?: string;
+  error?: string | null | undefined;
   onCopy?: (e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onSelect?: (e: React.SyntheticEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   reference?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
@@ -107,6 +107,8 @@ const InputPro: FC<IInput> = ({
     }
   };
 
+  const normalizedError = typeof error === "string" ? error : "";
+
   const renderInput = () => {
     // Propiedades comunes
     const baseProps = {
@@ -186,7 +188,7 @@ const InputPro: FC<IInput> = ({
         </div>
         {renderInput()}
       </div>
-      {error && <p className="text-[#D35130] font-bold text-sm mt-1">{error}</p>}
+      {normalizedError && <p className="text-[#D35130] font-bold text-sm mt-1">{normalizedError}</p>}
     </div>
   );
 };

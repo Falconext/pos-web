@@ -5,7 +5,7 @@ import TableBody from './TableBody';
 import { IDataTableProps } from './types';
 import styles from './table.module.css';
 import AutoScrollTable from '../Autoscrolltable';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { fadeUp, interactiveHover } from '@/lib/motion/presets';
 
 const DataTable: FC<IDataTableProps> = ({
@@ -178,30 +178,33 @@ const DataTable: FC<IDataTableProps> = ({
             <AutoScrollTable>
                 <div className="px-4 w-max min-w-full">
                     {data?.length > 0 ? (
-                        <motion.table
-                            className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`}
-                            id={idTable}
-                            layout
-                            variants={fadeUp}
-                            initial="initial"
-                            animate="animate"
-                            exit="exit"
-                        >
-                            <TableHeader
-                                columns={resolvedColumns}
-                                colorFont={colorFont}
-                                onSort={handleSort}
-                                actions={actions}
-                            />
-                            <TableBody
-                                formValues={formValues}
-                                data={paginatedData}
-                                colorRow={colorRow}
-                                colorFont={colorFont}
-                                actions={actions}
-                                columns={resolvedColumns}
-                            />
-                        </motion.table>
+                        <AnimatePresence mode="wait">
+                            <motion.table
+                                key={`table-${currentPage}-${totalItems}`}
+                                className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`}
+                                id={idTable}
+                                layout
+                                variants={fadeUp}
+                                initial="initial"
+                                animate="animate"
+                                exit="exit"
+                            >
+                                <TableHeader
+                                    columns={resolvedColumns}
+                                    colorFont={colorFont}
+                                    onSort={handleSort}
+                                    actions={actions}
+                                />
+                                <TableBody
+                                    formValues={formValues}
+                                    data={paginatedData}
+                                    colorRow={colorRow}
+                                    colorFont={colorFont}
+                                    actions={actions}
+                                    columns={resolvedColumns}
+                                />
+                            </motion.table>
+                        </AnimatePresence>
                     ) : (
                         <motion.div className="flex flex-col items-center justify-center py-20 text-gray-400" variants={fadeUp} initial="initial" animate="animate" exit="exit">
                             <div className="bg-white/50 dark:bg-slate-800/50 p-6 rounded-full mb-4">

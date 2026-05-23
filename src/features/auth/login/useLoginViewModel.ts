@@ -1,46 +1,45 @@
 import { useState, useEffect, ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../zustand/auth";
 import useAlertStore from "../../../zustand/alert";
 import { ILoginForm, initialLoginForm } from "./LoginModel";
+import { getRedirectPath } from "@/utils/permissions";
+import type { IUser } from "@/interfaces/auth";
 
 export const useLoginViewModel = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [formValues, setFormValues] = useState<ILoginForm>(initialLoginForm);
-    const { login, auth, me, isLoading, pendingSedes, success } = useAuthStore();
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                await me();
-            } catch (error) {
-                console.error("Error al verificar el usuario:", error);
-            }
-        };
-        fetchUser();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const { login, auth, isLoading, pendingSedes, success } = useAuthStore();
 
     // Redirigir según estado post-login
     useEffect(() => {
         // Multi-sede: ir a pantalla de selección
         if (pendingSedes && pendingSedes.length > 0) {
-            navigate("/sede-seleccion", { replace: true });
+            if (location.pathname !== "/sede-seleccion") {
+                navigate("/sede-seleccion", { replace: true });
+            }
             return;
         }
         // Login completo: redirigir al panel
         if (auth && success && typeof auth === "object" && auth.rol) {
             const token = localStorage.getItem("ACCESS_TOKEN");
             if (token) {
+                let targetPath = "/administrador";
                 if (auth.rol === "ADMIN_SISTEMA") {
-                    navigate("/administrador/empresas");
+                    targetPath = "/administrador/empresas";
                 } else if (auth.rol === "ADMIN_EMPRESA" || auth.rol === "USUARIO_EMPRESA") {
-                    navigate("/administrador");
+                    targetPath = getRedirectPath(auth as IUser, "/administrador");
                 } else if (auth.rol === "RESELLER") {
-                    navigate("/reseller");
+                    targetPath = "/reseller";
+                }
+
+                if (location.pathname !== targetPath) {
+                    navigate(targetPath, { replace: true });
                 }
             }
         }
-    }, [auth, success, pendingSedes, navigate]);
+    }, [auth, success, pendingSedes, navigate, location.pathname]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;

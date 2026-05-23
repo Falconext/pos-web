@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../zustand/auth';
 import { esRubroFabricacion } from '@/utils/rubro-features';
+import Loading from '@/components/Loading';
 
 interface ProduccionRouteProps {
   children: React.ReactNode;
@@ -12,10 +13,14 @@ export function ProduccionRoute({
   fallbackPath = '/administrador',
 }: ProduccionRouteProps) {
   const { auth, isLoading } = useAuthStore();
+  const hasAccessToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN');
 
-  if (isLoading) return null;
+  if (!hasAccessToken) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (!auth) {
+    if (isLoading) return <Loading />;
     return <Navigate to="/login" replace />;
   }
 

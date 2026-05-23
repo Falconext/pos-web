@@ -15,8 +15,9 @@ export default function FalconextLoginView() {
         handleKeyDown,
         navigate
     } = useLoginViewModel();
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN');
 
-    if (isLoading) {
+    if (isLoading && hasToken) {
         return <Loading />;
     }
 

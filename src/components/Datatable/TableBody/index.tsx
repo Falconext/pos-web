@@ -4,6 +4,8 @@ import { useInvoiceStore } from '@/zustand/invoices';
 import useAlertStore from '@/zustand/alert';
 import { motion } from 'framer-motion';
 import { listItemFadeUp, listItemHidden, listStagger } from '@/lib/motion/presets';
+import { motionTransitions } from '@/lib/motion/transitions';
+import { useReducedMotionPreference } from '@/lib/motion/reducedMotion';
 
 const DOCUMENT_TOKEN_CAPTURE_REGEX = /([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g;
 const DOCUMENT_TOKEN_REGEX = /^[a-zA-Z0-9]+-[a-zA-Z0-9]+$/;
@@ -67,6 +69,7 @@ interface ITableBodyProps {
 
 const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) => {
     const { updateProductInvoice, productsInvoice } = useInvoiceStore();
+    const reduceMotion = useReducedMotionPreference();
 
     const getOriginalQuantity = (row: any) => {
         const orig = productsInvoice.find((item: any) => item.descripcion === row.descripcion);
@@ -123,10 +126,26 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                     <motion.tr
                         key={index}
                         className="group transition-colors duration-150"
-                        variants={{
+                        variants={reduceMotion ? undefined : {
                             initial: listItemHidden,
                             animate: listItemFadeUp,
                             exit: listItemHidden,
+                        }}
+                        initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.995 }}
+                        animate={reduceMotion ? { opacity: 1 } : {
+                            opacity: 1,
+                            y: 0,
+                            scale: 1,
+                            transition: {
+                                ...motionTransitions.normal,
+                                delay: Math.min(index * 0.028, 0.2),
+                            },
+                        }}
+                        exit={reduceMotion ? { opacity: 0 } : {
+                            opacity: 0,
+                            y: 6,
+                            scale: 0.995,
+                            transition: motionTransitions.fast,
                         }}
                         layout
                     >

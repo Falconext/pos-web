@@ -14,8 +14,9 @@ export default function KrezkaLoginView() {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN');
 
-    if (isLoading) return <Loading />;
+    if (isLoading && hasToken) return <Loading />;
     if (auth && !isLoading) return null;
 
     return (

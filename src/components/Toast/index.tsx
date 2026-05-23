@@ -9,7 +9,7 @@ import { useReducedMotionPreference } from '@/lib/motion/reducedMotion';
 interface IAlertProps {
    id: number;
    title?: string;
-   message: string | string[];
+   message: string | string[] | unknown;
    type: string;
 }
 
@@ -71,6 +71,13 @@ const Toast = ({ id, title, message, type }: IAlertProps) => {
 
    const styles = getTypeStyles();
 
+   const normalizedMessage =
+      typeof message === 'string'
+         ? message
+         : Array.isArray(message)
+         ? message.filter((item): item is string => typeof item === 'string')
+         : 'Se produjo un mensaje no válido.';
+
    return (
      <motion.div
         layout
@@ -92,11 +99,11 @@ const Toast = ({ id, title, message, type }: IAlertProps) => {
                  {title}
               </h3>
               <div className={`text-sm ${styles.messageColor}`}>
-                 {typeof message === 'string' ? (
-                    <p>{message}</p>
+                 {typeof normalizedMessage === 'string' ? (
+                    <p>{normalizedMessage}</p>
                  ) : (
                     <ul className="list-disc list-inside space-y-1">
-                       {message.map((text, index) => (
+                       {normalizedMessage.map((text, index) => (
                           <li key={index}>{text}</li>
                        ))}
                     </ul>

@@ -56,10 +56,20 @@ export const useEmpresaIndexViewModel = (): any => {
         setIsOpenModalConfirm(false); setSelectedEmpresa(null);
     };
 
+    const formatUsoMensual = (usage: any): string => {
+        if (!usage) return '-';
+        const emitidos = Number(usage.comprobantesEmitidos ?? 0);
+        const limite = usage.limiteMaximo;
+        if (limite === null || limite === undefined || Number(limite) === 0) {
+            return `${emitidos}/ilimitado`;
+        }
+        return `${emitidos}/${Number(limite)}`;
+    };
+
     const empresasTable = empresas?.map((empresa: any) => {
         const tiendaEstado = empresa.plan?.tieneTienda && empresa?.slugTienda ? 'Activa' : empresa.plan?.tieneTienda && !empresa?.slugTienda ? 'Disponible' : 'No disponible';
         const usage = usageStats[empresa.id];
-        const usoDisplay = empresa.tipoEmpresa === 'FORMAL' && usage ? `${usage.comprobantesEmitidos}/${usage.limiteMaximo} (${usage.porcentajeUso}%)` : '-';
+        const usoDisplay = empresa.tipoEmpresa === 'FORMAL' ? formatUsoMensual(usage) : '-';
         return { id: empresa.id, 'RUC': empresa.ruc, 'Razon Social': empresa.razonSocial, 'Rubro': empresa?.rubro?.nombre || '-', plan: empresa.plan?.nombre || '-', 'Uso Mensual': usoDisplay, tienda: tiendaEstado, fechaExpiracion: new Date(empresa.fechaExpiracion).toLocaleDateString(), estado: empresa.estado };
     }) || [];
 

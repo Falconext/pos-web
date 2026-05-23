@@ -178,3 +178,45 @@ body {
 .animate-slide-out-right {
   animation: slideOutRight 0.3s ease-out forwards;
 }
+
+/* ─── PRINT: compatibilidad iOS/iPadOS Safari ────────────────────────────────
+   iOS Safari no soporta impresión desde iframes (react-to-print).
+   Cuando el browser imprime la página principal, esta regla oculta el layout
+   completo y muestra solo el contenido imprimible.
+   ──────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Ocultar layout de la app */
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Evitar corte de contenido entre páginas */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* El contenido principal ocupa todo el ancho */
+  main {
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ocultar elementos interactivos */
+  button:not([data-print-keep]),
+  [role="dialog"],
+  [data-radix-popper-content-wrapper],
+  .tooltip,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  /* Las clases print:hidden de Tailwind se aplican aquí también */
+  .print\:hidden {
+    display: none !important;
+  }
+}
