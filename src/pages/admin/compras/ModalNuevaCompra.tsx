@@ -6,6 +6,7 @@ import InputPro from "@/components/InputPro";
 import Select from "@/components/Select";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import useAlertStore from "@/zustand/alert";
+import { useAuthStore } from "@/zustand/auth";
 import { useComprasStore } from "@/zustand/compras";
 import { useClientsStore } from "@/zustand/clients";
 import { useProductsStore } from "@/zustand/products";
@@ -26,6 +27,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const { getAllClients, clients, resetClients } = useClientsStore();
     const { getAllProducts, products, resetProducts } = useProductsStore();
     const { alert } = useAlertStore();
+    const { auth } = useAuthStore();
+    const planNombre = String((auth as any)?.empresa?.plan?.nombre || '').toUpperCase();
+    const tieneGestionLotes = planNombre.includes('NEGOCIO') || planNombre.includes('CORPORAT') || auth?.rol === 'ADMIN_SISTEMA';
 
     // Data states
     const [supplierOptions, setSupplierOptions] = useState<any[]>([]);
@@ -556,9 +560,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                             <div className="col-span-2">
                                 <InputPro autocomplete="off" type="number" label="Costo Unit." name="precioUnitario" value={currentItem.precioUnitario} onChange={(e) => setCurrentItem({ ...currentItem, precioUnitario: Number(e.target.value) })} isLabel />
                             </div>
+                            {tieneGestionLotes && (
                             <div className="col-span-2">
                                 <InputPro autocomplete="off" label="Lote (Opc.)" name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
                             </div>
+                            )}
                             <div className="col-span-2">
                                 <Calendar
                                     text="Venc. (Opc.)"
@@ -671,6 +677,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                                     </div>
                                                 )}
                                                 <div className="flex gap-2 items-end">
+                                                    {tieneGestionLotes && (
                                                     <div className="w-28">
                                                         <InputPro
                                                             placeholder="Lote..."
@@ -680,6 +687,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                                             autocomplete="off"
                                                         />
                                                     </div>
+                                                    )}
                                                     <div className="flex-1 min-w-[140px]">
                                                         <Calendar
                                                             text=""

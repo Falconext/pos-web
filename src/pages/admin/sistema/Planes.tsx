@@ -20,24 +20,36 @@ const Toggle = ({ label, value, onChange }: { label: string, value: boolean, onC
 const Planes = () => {
     const vm = usePlanesViewModel();
     const { auth } = useAuthStore();
+    const hasNegocioScope = auth?.rol === 'ADMIN_SISTEMA' && !!auth?.sistemaNegocio;
     const hasProductoScope = auth?.rol === 'ADMIN_SISTEMA' && !!auth?.sistemaProducto;
 
-    const headerColumns = ['Nombre', 'Producto', 'Costo', 'Duración', 'Anual', 'Max Compr.', 'Max Sedes', 'Max Usuarios', 'Empresas', 'Estado', 'Tienda', 'Ticketera', 'Acciones'];
+    const headerColumns = ['Nombre', 'Plataforma', 'Producto', 'Costo', 'Duración', 'Anual', 'Max Compr.', 'Max Sedes', 'Max Usuarios', 'Empresas', 'Estado', 'Tienda', 'Ticketera', 'Acciones'];
+    const formatMaxComprobantes = (value: number | null | undefined) => {
+        if (value === null || value === undefined || Number(value) === 0) {
+            return 'Ilimitado';
+        }
+        return Number(value).toString();
+    };
+
     const bodyData = vm.planes.map(p => ({
         'Nombre': <div className="font-medium text-gray-900">{p.nombre}<div className="text-xs text-gray-500">{p.descripcion}</div></div>,
+        'Plataforma': (p.plataforma || 'falconext') === 'krezka'
+            ? <span className="text-indigo-700 bg-indigo-100 px-2 py-1 rounded text-xs font-semibold">Krezka</span>
+            : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Falconext</span>,
         'Producto': p.producto === 'hotel'
             ? <span className="text-amber-700 bg-amber-100 px-2 py-1 rounded text-xs font-semibold">Hotel</span>
             : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Facturación</span>,
         'Costo': `S/ ${Number(p.costo).toFixed(2)}`,
         'Duración': `${p.duracionDias} días`,
         'Anual': p.duracionDias >= 360 ? <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">Anual</span> : <span className="text-gray-500 text-xs">Mensual</span>,
-        'Max Compr.': <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-medium">{p.maxComprobantes || 100}</span>,
+        'Max Compr.': <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-medium">{formatMaxComprobantes(p.maxComprobantes)}</span>,
         'Max Sedes': <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">{p.maxSedes ?? 1} sede{(p.maxSedes ?? 1) !== 1 ? 's' : ''}</span>,
         'Max Usuarios': <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs font-medium">{p.limiteUsuarios ?? 1} usuar.</span>,
         'Empresas': <span className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-600 font-medium">{p._count?.empresas || 0} asignadas</span>,
         'Estado': p.esPrueba ? <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded text-xs">Prueba</span> : <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs">Comercial</span>,
         'Tienda': p.tieneTienda ? <Icon icon="mdi:check-circle" className="text-green-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
         'Ticketera': p.tieneTicketera ? <Icon icon="mdi:printer" className="text-blue-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
+        'Lotes': (p as any).tieneGestionLotes ? <Icon icon="solar:box-minimalistic-bold-duotone" className="text-indigo-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
         'Acciones': (
             <div className="flex gap-3">
                 <button type="button" onClick={() => vm.handleOpenEdit(p)} className="p-1 hover:opacity-70 cursor-pointer"><Icon icon="mdi:pencil" width={20} height={20} style={{ color: '#19A249' }} /></button>
@@ -51,6 +63,24 @@ const Planes = () => {
             <div className="flex justify-between items-center mb-6">
                 <div><h1 className="text-2xl font-bold text-gray-800">Planes de Suscripción</h1><p className="text-gray-500 text-sm">Gestiona los planes disponibles para las empresas</p></div>
                 <div className="flex items-center gap-3">
+                    {!hasNegocioScope && (
+                        <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
+                            {([
+                                { id: '', label: 'Todas' },
+                                { id: 'falconext', label: 'Falconext' },
+                                { id: 'krezka', label: 'Krezka' },
+                            ] as const).map((item) => (
+                                <button
+                                    key={item.id || 'all-platforms'}
+                                    type="button"
+                                    onClick={() => vm.setPlataformaFiltro(item.id)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${vm.plataformaFiltro === item.id ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     {!hasProductoScope && (
                         <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
                             {([
@@ -111,6 +141,31 @@ const Planes = () => {
                                     </div>
                                 </div>
                             )}
+                            {!hasNegocioScope && (
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">Plataforma del plan</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {([
+                                            { id: 'falconext', label: 'Falconext', icon: 'solar:bolt-bold-duotone', color: '#0EA5E9' },
+                                            { id: 'krezka', label: 'Krezka', icon: 'solar:star-bold-duotone', color: '#6366F1' },
+                                        ] as const).map((platform) => {
+                                            const selected = (vm.form.plataforma || 'falconext') === platform.id;
+                                            return (
+                                                <button
+                                                    key={platform.id}
+                                                    type="button"
+                                                    onClick={() => vm.setForm((prev) => ({ ...prev, plataforma: platform.id }))}
+                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${selected ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-gray-200 hover:border-indigo-300 bg-white'}`}
+                                                >
+                                                    <Icon icon={platform.icon} width={20} style={{ color: selected ? platform.color : '#9CA3AF' }} />
+                                                    <span className={`font-semibold text-sm ${selected ? 'text-gray-900' : 'text-gray-500'}`}>{platform.label}</span>
+                                                    {selected && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-indigo-500" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-4">
                                 <InputPro isLabel label="Costo (S/)" name="costo" type="number" value={vm.form.costo} onChange={(e) => vm.setForm({ ...vm.form, costo: Number(e.target.value) })} />
                                 <InputPro isLabel label="Duración (Días)" name="duracionDias" type="number" value={vm.form.duracionDias} onChange={(e) => vm.setForm({ ...vm.form, duracionDias: Number(e.target.value) })} />
@@ -165,6 +220,7 @@ const Planes = () => {
                         <Toggle label="Pasarela Pagos (Culqi)" value={vm.form.tieneCulqi || false} onChange={v => vm.setForm({ ...vm.form, tieneCulqi: v })} />
                         <Toggle label="Delivery GPS Tracker" value={vm.form.tieneDeliveryGPS || false} onChange={v => vm.setForm({ ...vm.form, tieneDeliveryGPS: v })} />
                         <Toggle label="Ticketera (Impresión Térmica)" value={vm.form.tieneTicketera || false} onChange={v => vm.setForm({ ...vm.form, tieneTicketera: v })} />
+                        <Toggle label="Gestión de Lotes" value={vm.form.tieneGestionLotes || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionLotes: v })} />
                     </div>
                     <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end"><Button onClick={() => vm.setShowFeaturesModal(false)} color="black">Listo</Button></div>
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, ChangeEvent, useMemo } from 'react';
+import { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useProductsStore } from '@/zustand/products';
 import { useBrandsStore } from '@/zustand/brands';
@@ -6,13 +6,15 @@ import { useAuthStore } from '@/zustand/auth';
 import { useSedesStore } from '@/zustand/sedes';
 import useAlertStore from '@/zustand/alert';
 import apiClient from '@/utils/apiClient';
+import { get } from '@/utils/fetch';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
 
 export const useProductsViewModel = () => {
     // Stores
     const {
-        getAllProducts, totalProducts, products, toggleStateProduct,
+        products: storeProducts,
+        toggleStateProduct,
         exportProducts: exportProductsAction, importProducts: importProductsAction,
         deleteProduct, deleteAllProducts, setProductImage
     } = useProductsStore();
@@ -63,6 +65,7 @@ export const useProductsViewModel = () => {
         'Img', 'Producto', 'Categoria', 'Marca',
         'Precio Venta', 'Costo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'
     ], []);
+    const fallbackVisibleColumns = useMemo(() => ['Producto', 'Precio Venta', 'Stock', 'Estado', 'Acciones'], []);
 
     // Labels
     const labels = {
@@ -116,6 +119,10 @@ export const useProductsViewModel = () => {
     });
 
     const debounce = useDebounce(state.searchClient, 600);
+    const [products, setProducts] = useState<IProduct[]>([]);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [productsLoaded, setProductsLoaded] = useState(false);
+    const [productsLoading, setProductsLoading] = useState(false);
     const columnsStorageKey = `datatable:${auth?.empresaId || 'default'}:productos:visibleColumns`;
     const vistaStorageKey = `productos:vista:${auth?.empresaId || 'default'}`;
 
@@ -155,56 +162,110 @@ export const useProductsViewModel = () => {
                     if (Array.isArray(parsed)) {
                         let restored = allColumns.filter(c => parsed.includes(c));
                         if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                        // Evita dejar la grilla "en blanco" por configuración inválida/corrupta.
+                        if (restored.length < 2) {
+                            restored = [...fallbackVisibleColumns];
+                        }
                         setState(prev => ({ ...prev, visibleColumns: restored }));
                     }
                 }
             } catch (_e) { }
         };
         loadColumns();
-    }, [auth?.empresaId, columnsStorageKey, allColumns]);
+    }, [auth?.empresaId, columnsStorageKey, allColumns, fallbackVisibleColumns]);
 
     // Save Columns
     useEffect(() => {
         try {
-            const toSave = state.visibleColumns.includes('Acciones')
-                ? state.visibleColumns
-                : [...state.visibleColumns, 'Acciones'];
+            const safeColumns = state.visibleColumns.length < 2
+                ? fallbackVisibleColumns
+                : state.visibleColumns;
+            const toSave = safeColumns.includes('Acciones')
+                ? safeColumns
+                : [...safeColumns, 'Acciones'];
             localStorage.setItem(columnsStorageKey, JSON.stringify(toSave));
         } catch (_) { }
-    }, [state.visibleColumns, columnsStorageKey]);
+    }, [state.visibleColumns, columnsStorageKey, fallbackVisibleColumns]);
 
     // Cargar sedes solo en sede principal
     useEffect(() => {
         if (isAdmin && esPrincipal) listarSedes();
     }, [isAdmin, esPrincipal]);
 
-    // Fetch Products
+    const fetchProductsList = useCallback(async () => {
+        if (!auth?.empresaId) {
+            setProducts([]);
+            setTotalProducts(0);
+            setProductsLoaded(false);
+            setProductsLoading(false);
+            return;
+        }
+        setProductsLoading(true);
+        try {
+            const params: Record<string, string> = {
+                page: String(state.currentPage),
+                limit: String(state.itemsPerPage),
+                search: debounce || '',
+            };
+            if (state.marcaIdFilter) params.marcaId = String(state.marcaIdFilter);
+            if (effectiveSedeId) params.sedeId = String(effectiveSedeId);
+            const query = new URLSearchParams(params).toString();
+            const resp: any = await get(`producto/listar?${query}`);
+            if (resp?.code === 1) {
+                const nextProducts = Array.isArray(resp.data?.productos) ? resp.data.productos : [];
+                const nextTotal = typeof resp.data?.total === 'number' ? resp.data.total : nextProducts.length;
+                setProducts(nextProducts);
+                setTotalProducts(nextTotal);
+            } else {
+                setProducts([]);
+                setTotalProducts(0);
+            }
+        } catch (_error) {
+            setProducts([]);
+            setTotalProducts(0);
+        } finally {
+            setProductsLoaded(true);
+            setProductsLoading(false);
+        }
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, debounce, effectiveSedeId]);
+
+    // Fetch Products (local, aislado de otros submódulos)
     useEffect(() => {
-        getAllProducts({
-            page: state.currentPage,
-            limit: state.itemsPerPage,
-            search: debounce,
-            marcaId: state.marcaIdFilter,
-            ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {}),
+        fetchProductsList();
+    }, [fetchProductsList]);
+
+    // Sincroniza actualizaciones optimistas desde Zustand (editar/crear sin recargar página).
+    useEffect(() => {
+        if (!Array.isArray(storeProducts) || storeProducts.length === 0) return;
+        setProducts(prev => {
+            if (!Array.isArray(prev) || prev.length === 0) return prev;
+            const storeById = new Map<number, IProduct>();
+            for (const item of storeProducts) {
+                if (item?.id) storeById.set(item.id, item);
+            }
+            return prev.map((item) => {
+                const fromStore = storeById.get(item.id);
+                return fromStore ? ({ ...item, ...fromStore } as IProduct) : item;
+            });
         });
-    }, [debounce, state.currentPage, state.itemsPerPage, state.marcaIdFilter, effectiveSedeId, getAllProducts]);
+    }, [storeProducts]);
 
     // Close Modals on Success
     useEffect(() => {
         if (success === true) {
             setState(prev => ({ ...prev, isOpenModal: false, isEdit: false }));
+            void fetchProductsList();
         }
-    }, [success]);
+    }, [success, fetchProductsList]);
 
-    // Click Outside Listener
+    // Click outside para filtros auxiliares (el menú de acciones ya se maneja en TableActionMenu)
     useEffect(() => {
         const handleDocClick = () => {
-            if (state.openAccionesId !== null) setState(prev => ({ ...prev, openAccionesId: null }));
             if (state.showColumnFilter) setState(prev => ({ ...prev, showColumnFilter: false }));
         };
         document.addEventListener('click', handleDocClick);
         return () => document.removeEventListener('click', handleDocClick);
-    }, [state.openAccionesId, state.showColumnFilter]);
+    }, [state.showColumnFilter]);
 
     const hasFetchedBrands = useRef(false);
 
@@ -228,6 +289,7 @@ export const useProductsViewModel = () => {
                     ...initialProductForm,
                     ...originalProduct,
                     productoId: originalProduct.id,
+                    stock: Number((originalProduct as any).stockBase ?? originalProduct.stock ?? 0),
                     unidadMedidaId: originalProduct.unidadMedida?.id || originalProduct.unidadMedidaId,
                     unidadMedidaNombre: originalProduct.unidadMedida?.nombre,
                     categoriaId: originalProduct.categoria?.id || originalProduct.categoriaId,
@@ -250,6 +312,9 @@ export const useProductsViewModel = () => {
                     localizacion: originalProduct.localizacion || '',
                     porcentajeVenta: Number((originalProduct as any).porcentajeVenta ?? 70),
                     porcentajeProvision: Number((originalProduct as any).porcentajeProvision ?? 30),
+                    preciosMayorista: Array.isArray((originalProduct as any).preciosMayorista)
+                        ? (originalProduct as any).preciosMayorista
+                        : [],
                 }
             }));
         }
@@ -294,7 +359,7 @@ export const useProductsViewModel = () => {
         }
         await importProductsAction(file);
         if (fileInputRef.current) fileInputRef.current.value = "";
-        await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+        await fetchProductsList();
     };
 
     const toggleColumn = (column: string) => {
@@ -316,13 +381,13 @@ export const useProductsViewModel = () => {
         if (!state.selectedDeleteId) return;
         await deleteProduct(state.selectedDeleteId);
         setState(prev => ({ ...prev, isOpenModalDelete: false, selectedDeleteId: null }));
-        await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+        await fetchProductsList();
     };
 
     const confirmDeleteAllProducts = async () => {
         await deleteAllProducts(effectiveSedeId ?? undefined);
         setState(prev => ({ ...prev, isOpenModalDeleteAll: false }));
-        await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+        await fetchProductsList();
     };
 
     const handleToggleClientState = async (data: any) => {
@@ -339,7 +404,7 @@ export const useProductsViewModel = () => {
             await apiClient.patch(`producto/${producto.id}/publicar-tienda`, {
                 publicarEnTienda: !producto.publicarEnTienda,
             });
-            await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
+            await fetchProductsList();
         } catch {
             // silently ignore
         }
@@ -378,7 +443,7 @@ export const useProductsViewModel = () => {
         togglePublicarTienda,
         exportProducts: () => exportProductsAction(auth?.empresaId, debounce),
         refreshProducts: async () => {
-            await getAllProducts({ page: state.currentPage, limit: state.itemsPerPage, search: debounce, marcaId: state.marcaIdFilter });
+            await fetchProductsList();
         }
     };
 
@@ -386,17 +451,24 @@ export const useProductsViewModel = () => {
         ? (sedes.find(s => s.id === effectiveSedeId)?.nombre ?? null)
         : null;
 
+    const safeVisibleColumns = state.visibleColumns.length < 2
+        ? fallbackVisibleColumns
+        : state.visibleColumns;
+
     return {
         ...state,
         auth,
         labels,
         products,
+        productsLoaded,
         totalProducts,
-        loading,
+        loading: productsLoading || loading,
+        productsLoading,
         fileInputRef,
         uploadImageRef,
         isRestaurante,
         isCodigoBarrasEnabled,
+        safeVisibleColumns,
         actions,
         // Sede filtering
         isAdmin,

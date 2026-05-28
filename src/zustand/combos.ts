@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { get, post, put, del } from '../utils/fetch';
+import { get, post, patch, del } from '../utils/fetch';
 import useAlertStore from './alert';
 
 export interface ComboItem {
@@ -109,7 +109,7 @@ export const useCombosStore = create<CombosState>()(
     updateCombo: async (id: number, data: Partial<CreateComboDto>) => {
       try {
         set({ loading: true }, false, 'UPDATE_COMBO_START');
-        const resp: any = await put(`combos/${id}`, data);
+        const resp: any = await patch(`combos/${id}`, data);
         
         if (resp.code === 1) {
           const updatedCombo = resp.data;
@@ -157,7 +157,7 @@ export const useCombosStore = create<CombosState>()(
 
     toggleActivo: async (combo: Combo) => {
       try {
-        const resp: any = await put(`combos/${combo.id}`, { activo: !combo.activo });
+        const resp: any = await patch(`combos/${combo.id}`, { activo: !combo.activo });
         
         if (resp.code === 1) {
           set((state) => ({

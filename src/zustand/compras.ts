@@ -111,7 +111,7 @@ export const useComprasStore = create<IComprasState>()(devtools((set) => ({
                 return true;
             } else {
                 useAlertStore.setState({ loading: false });
-                useAlertStore.getState().alert("Error al registrar compra", "error");
+                useAlertStore.getState().alert((resp as any).error || "Error al registrar compra", "error");
                 return false;
             }
         } catch (error: any) {

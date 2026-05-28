@@ -23,6 +23,7 @@ export default function ProductsView() {
     const vm = useProductsViewModel();
     const { actions } = vm;
     const { alert } = useAlertStore();
+    const productsSource = Array.isArray(vm.products) ? vm.products : [];
 
     const [barcodeInput, setBarcodeInput] = useState('');
     const [barcodeLoading, setBarcodeLoading] = useState(false);
@@ -78,7 +79,7 @@ export default function ProductsView() {
             );
         }
 
-        if (!vm.products || vm.products.length === 0) return <TableSkeleton />;
+        if (!vm.productsLoaded && productsSource.length === 0) return <TableSkeleton />;
 
         // Palette for category badges — picked deterministically from the category name
         const CAT_PALETTE = [
@@ -100,7 +101,13 @@ export default function ProductsView() {
         };
 
         // Prepare table data for TablaFerreteria
-        const productsTable = vm.products.map((item) => {
+        const productsTable = productsSource.map((item) => {
+            const itemAny = item as any;
+            const unidadNombre =
+                item?.unidadMedida?.nombre ||
+                (typeof itemAny?.unidadMedidaNombre === 'string' ? itemAny.unidadMedidaNombre : '') ||
+                (typeof item?.unidadMedidaId !== 'undefined' ? 'Unidad' : '-') ||
+                '-';
             const costo = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
             const precio = Number(item?.precioUnitario || 0);
             const margen = precio > 0 && costo > 0 ? ((precio - costo) / precio * 100) : 0;
@@ -170,7 +177,7 @@ export default function ProductsView() {
                 '% Venta': `${Number((item as any)?.porcentajeVenta ?? 70)}%`,
                 '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 30)}%`,
                 'Stock minimo': item?.stockMinimo ?? 0,
-                'U.M': item?.unidadMedida.nombre,
+                'U.M': unidadNombre,
                 'Estado': item.estado,
                 'Tienda': (item as any).publicarEnTienda ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
@@ -185,9 +192,14 @@ export default function ProductsView() {
             };
 
             const acciones = (
-                <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+                <div
+                    className="relative inline-block"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <button
                         type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (vm.openAccionesId === item.id) {
@@ -215,14 +227,14 @@ export default function ProductsView() {
                         <CardRestaurante
                             loading={vm.loading}
                             skeletonCount={vm.itemsPerPage > 0 ? Math.min(vm.itemsPerPage, 12) : 8}
-                            products={vm.products}
+                            products={productsSource}
                             onEdit={(p) => actions.handleGetProduct({ ...p, productoId: p.id })}
                             onDelete={(p) => actions.handleOpenDelete({ ...p, productoId: p.id })}
                             onToggleState={(p) => actions.handleToggleClientState({ ...p, productoId: p.id })}
                             onUploadImage={(p) => { actions.setUploadTarget({ id: p.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); }}
                         />
                         <Pagination
-                            data={vm.products}
+                            data={productsSource}
                             optionSelect
                             currentPage={vm.currentPage}
                             indexOfFirstItem={vm.indexOfFirstItem}
@@ -238,13 +250,13 @@ export default function ProductsView() {
                 return (
                     <>
                         <ListaBodega
-                            products={vm.products}
+                            products={productsSource}
                             onEdit={(p) => actions.handleGetProduct({ ...p, productoId: p.id })}
                             onDelete={(p) => actions.handleOpenDelete({ ...p, productoId: p.id })}
                             onToggleState={(p) => actions.handleToggleClientState({ ...p, productoId: p.id })}
                         />
                         <Pagination
-                            data={vm.products}
+                            data={productsSource}
                             optionSelect
                             currentPage={vm.currentPage}
                             indexOfFirstItem={vm.indexOfFirstItem}
@@ -261,7 +273,8 @@ export default function ProductsView() {
                 return (
                     <TablaFerreteria
                         productsTable={productsTable}
-                        visibleColumns={vm.visibleColumns}
+                        productsLoaded={vm.productsLoaded}
+                        visibleColumns={vm.safeVisibleColumns}
                         currentPage={vm.currentPage}
                         itemsPerPage={vm.itemsPerPage}
                         totalProducts={vm.totalProducts}
@@ -432,7 +445,7 @@ export default function ProductsView() {
                         onClose={() => { actions.setOpenAccionesId(null); actions.setAnchorEl(null); }}
                     >
                         {vm.openAccionesId && (() => {
-                            const rowBase = vm.products.find((r) => r.id === vm.openAccionesId);
+                            const rowBase = productsSource.find((r) => r.id === vm.openAccionesId);
                             if (!rowBase) return null;
                             return (
                                 <>

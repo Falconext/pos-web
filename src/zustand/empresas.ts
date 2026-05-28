@@ -18,6 +18,7 @@ interface Empresa {
   nombreComercial?: string;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean | null;
+  usarPrecioLoteFefo?: boolean | null;
   brand?: string;
   producto?: string;
   providerId?: string;
@@ -85,6 +86,7 @@ interface CreateEmpresaDto {
   providerId?: string;
   providerToken?: string;
   usaDemo?: boolean;
+  usarPrecioLoteFefo?: boolean;
   brand?: string;
   producto?: string;
   usuarioPse?: string;
@@ -124,6 +126,7 @@ interface UpdateEmpresaDto {
   usaDemo?: boolean;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
+  usarPrecioLoteFefo?: boolean;
   brand?: string;
   producto?: string;
   usuarioPse?: string;
@@ -393,13 +396,27 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
         updateData.logo = await base64Promise;
       }
 
-      const response = await apiClient.put<Empresa>('/empresa/mia', updateData);
-      set({ miEmpresa: response.data, loading: false });
+      const response: any = await apiClient.put('/empresa/mia', updateData);
+      const payload = response?.data?.data ?? response?.data;
 
-      // Actualizar también el estado de autenticación para reflejar cambios en el header
-      await useAuthStore.getState().me();
+      set({ miEmpresa: payload, loading: false });
 
-      return response.data;
+      // Mantener sincronizado auth.empresa sin llamada adicional al backend
+      useAuthStore.setState((state: any) => {
+        if (!state?.auth) return state;
+        return {
+          ...state,
+          auth: {
+            ...state.auth,
+            empresa: {
+              ...(state.auth.empresa || {}),
+              ...(payload || {}),
+            },
+          },
+        };
+      });
+
+      return payload as Empresa;
     } catch (error: any) {
       set({
         error: error?.response?.data?.message || 'Error al actualizar mi empresa',

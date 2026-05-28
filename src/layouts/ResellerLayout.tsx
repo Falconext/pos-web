@@ -11,7 +11,7 @@ import { BRAND } from '@/lib/branding'
 export default function ResellerLayout() {
     const navigate = useNavigate()
     const location = useLocation()
-    const { auth }: IAuthState = useAuthStore()
+    const { auth, logout: authLogout }: IAuthState = useAuthStore()
     const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact } = useThemeStore()
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -24,8 +24,7 @@ export default function ResellerLayout() {
     }
 
     const logout = () => {
-        localStorage.removeItem('ACCESS_TOKEN')
-        localStorage.removeItem('REFRESH_TOKEN')
+        authLogout()
         navigate('/login', { replace: true })
     }
 

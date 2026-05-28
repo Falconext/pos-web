@@ -8,6 +8,31 @@ import DataTable from '@/components/Datatable';
 import Modal from '@/components/Modal';
 import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
+import { BRAND } from '@/lib/branding';
+
+const FALCONEXT_VOLUME_PRICING: Record<string, [number, number, number, number]> = {
+    'Emprendedor': [14.90, 13.90, 12.90, 11.90],
+    'Negocio':     [34.90, 32.90, 29.90, 27.90],
+    'Corporativo': [59.90, 56.90, 52.90, 49.90],
+};
+
+function getVolumeTierCost(planNombre: string, clientesActivos: number): number | null {
+    const prices = FALCONEXT_VOLUME_PRICING[planNombre];
+    if (!prices) return null;
+    if (clientesActivos <= 5)  return prices[0];
+    if (clientesActivos <= 15) return prices[1];
+    if (clientesActivos <= 30) return prices[2];
+    return prices[3];
+}
+
+function getTierLabel(clientesActivos: number): string {
+    if (clientesActivos <= 5)  return '1-5 clientes';
+    if (clientesActivos <= 15) return '6-15 clientes';
+    if (clientesActivos <= 30) return '16-30 clientes';
+    return '31+ clientes';
+}
+
+const isFalconext = BRAND.key === 'falconext';
 
 export default function ResellerClientes() {
     const { auth } = useAuthStore();
@@ -245,9 +270,15 @@ export default function ResellerClientes() {
                                 </div>
                                 <div className="col-span-2">
                                     <div className="flex justify-end mb-1.5">
-                                        <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                                            Tu descuento: {stats.porcentajeDescuento || 0}%
-                                        </span>
+                                        {isFalconext ? (
+                                            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                                                Nivel: {getTierLabel((stats.clientesActivos || 0) + 1)} con este cliente
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                                                Tu descuento: {stats.porcentajeDescuento || 0}%
+                                            </span>
+                                        )}
                                     </div>
                                     <Select
                                         label="Tipo de Plan"
@@ -255,19 +286,29 @@ export default function ResellerClientes() {
                                         value={planes.find((p: any) => String(p.id) === String(formData.planId)) ?
                                             (() => {
                                                 const p = planes.find((p: any) => String(p.id) === String(formData.planId));
-                                                const finalCost = Number(p.costo) * (1 - (Number(stats.porcentajeDescuento) || 0) / 100);
-                                                return `${p.nombre} - ${p.maxComprobantes} Comprob. (S/${finalCost.toFixed(2)})`;
+                                                const clientesConNuevo = (stats.clientesActivos || 0) + 1;
+                                                const finalCost = isFalconext
+                                                    ? (getVolumeTierCost(p.nombre, clientesConNuevo) ?? Number(p.costo))
+                                                    : Number(p.costo) * (1 - (Number(stats.porcentajeDescuento) || 0) / 100);
+                                                return `${p.nombre} (S/${finalCost.toFixed(2)})`;
                                             })()
                                             : ""}
                                         options={planes.map((plan: any) => {
-                                            const finalCost = Number(plan.costo) * (1 - (Number(stats.porcentajeDescuento) || 0) / 100);
-                                            return { id: plan.id, value: `${plan.nombre} - ${plan.maxComprobantes} Comprob. (S/${finalCost.toFixed(2)})` };
+                                            const clientesConNuevo = (stats.clientesActivos || 0) + 1;
+                                            const finalCost = isFalconext
+                                                ? (getVolumeTierCost(plan.nombre, clientesConNuevo) ?? Number(plan.costo))
+                                                : Number(plan.costo) * (1 - (Number(stats.porcentajeDescuento) || 0) / 100);
+                                            return { id: plan.id, value: `${plan.nombre} (S/${finalCost.toFixed(2)})` };
                                         })}
                                         onChange={(id: any) => setFormData(prev => ({ ...prev, planId: id }))}
                                         error={null}
                                         readOnly={true}
                                     />
-                                    <p className="text-[10px] text-gray-400 mt-1">El costo final depende del precio base del plan menos tu descuento.</p>
+                                    <p className="text-[10px] text-gray-400 mt-1">
+                                        {isFalconext
+                                            ? 'El costo depende de tu volumen total de clientes activos.'
+                                            : 'El costo final depende del precio base del plan menos tu descuento.'}
+                                    </p>
                                 </div>
                                 <div className="col-span-2">
                                     <InputPro isLabel label="Contraseña Inicial" name="password" value={formData.password} onChange={handleChange as any} placeholder="123456" />

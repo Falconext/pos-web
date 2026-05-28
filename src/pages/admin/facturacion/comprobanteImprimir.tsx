@@ -81,8 +81,14 @@ const ComprobantePrintPage = ({
 
     console.log(formValues)
 
+    const isScreenHidden = mode === 'off';
+
     return (
-        <div id="print-root" className='bg-[#fff]'>
+        <div
+            id="print-root"
+            aria-hidden={isScreenHidden}
+            className={isScreenHidden ? 'pointer-events-none opacity-0 fixed -left-[200vw] top-0 z-[-1]' : 'bg-[#fff]'}
+        >
             <div
                 ref={componentRef || localComponentRef}
                 className={`px-5 bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'pt-10 pb-10' : 'pt-5 pb-10'}`}
@@ -209,10 +215,20 @@ const ComprobantePrintPage = ({
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
                         <div className="uppercase">
-                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center mt-10`}>
-                                Sistema punto de venta - {BRAND.name}.</p>
-                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>Desarrollado por {BRAND.name}.</p>
-                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{BRAND.website}.</p>
+                            {(() => {
+                                const reseller = company?.empresa?.reseller;
+                                const brandName = reseller?.nombre || BRAND.name;
+                                const developerName = reseller?.whiteLabelNombre || brandName;
+                                const brandWebsite = reseller?.whiteLabelWebsite || BRAND.website;
+                                return (
+                                    <>
+                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center mt-10`}>
+                                            Sistema punto de venta - {brandName}.</p>
+                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>Desarrollado por {developerName}.</p>
+                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{brandWebsite}.</p>
+                                    </>
+                                );
+                            })()}
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>
@@ -416,8 +432,17 @@ const ComprobantePrintPage = ({
                                         </div>
 
                                         <div className="text-right text-[10px] text-gray-500">
-                                            <div className="font-bold italic">{BRAND.name} ™</div>
-                                            <div>Comprobante emitido a través de {BRAND.website}</div>
+                                            {(() => {
+                                                const reseller = company?.empresa?.reseller;
+                                                const brandName = reseller?.whiteLabelNombre || BRAND.name;
+                                                const brandWebsite = reseller?.whiteLabelWebsite || BRAND.website;
+                                                return (
+                                                    <>
+                                                        <div className="font-bold italic">{brandName} ™</div>
+                                                        <div>Comprobante emitido a través de {brandWebsite}</div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
@@ -616,8 +641,17 @@ const ComprobantePrintPage = ({
                                         </div>
 
                                         <div className="text-right text-[10px] text-gray-500">
-                                            <div className="font-bold italic">{BRAND.name} ™</div>
-                                            <div>Comprobante emitido a través de {BRAND.website}</div>
+                                            {(() => {
+                                                const reseller = company?.empresa?.reseller;
+                                                const brandName = reseller?.whiteLabelNombre || BRAND.name;
+                                                const brandWebsite = reseller?.whiteLabelWebsite || BRAND.website;
+                                                return (
+                                                    <>
+                                                        <div className="font-bold italic">{brandName} ™</div>
+                                                        <div>Comprobante emitido a través de {brandWebsite}</div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

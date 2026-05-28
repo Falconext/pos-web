@@ -100,7 +100,8 @@ export const useUsersViewModel = () => {
         return rol;
     };
 
-    const getPermisosData = (permisos: string[] = []) => {
+    const getPermisosData = (permisos: string[] = [], rol?: string) => {
+        if (rol === 'ADMIN_EMPRESA') return { type: 'full', label: 'Acceso completo' };
         if (!permisos || permisos.length === 0) return { type: 'none', label: 'Sin permisos' };
         if (permisos.includes('*')) return { type: 'full', label: 'Acceso completo' };
 

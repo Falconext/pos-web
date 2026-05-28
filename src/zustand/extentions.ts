@@ -16,7 +16,7 @@ export interface IExtentionsState {
     getDocumentTypes: () => void
     getUnitOfMeasure: () => void
     getUbigeos: () => void
-    getPlanes: (producto?: string) => void
+    getPlanes: (producto?: string, plataforma?: string) => void
     ubigeos: []
     unitOfMeasure: []
 }
@@ -127,9 +127,13 @@ export const useExtentionsStore = create<IExtentionsState>()(devtools((set, _get
         } catch (error) {
         }
     },
-    getPlanes: async (producto?: string) => {
+    getPlanes: async (producto?: string, plataforma?: string) => {
         try {
-            const resp: any = await get(`extensiones/planes${producto ? `?producto=${producto}` : ''}`);
+            const params = new URLSearchParams();
+            if (producto) params.set('producto', producto);
+            if (plataforma) params.set('plataforma', plataforma);
+            const query = params.toString();
+            const resp: any = await get(`extensiones/planes${query ? `?${query}` : ''}`);
             // Soportar ambos formatos: { code:1, data: [...] } o directamente [...]
             const planesResp = Array.isArray(resp)
               ? resp
@@ -142,4 +146,3 @@ export const useExtentionsStore = create<IExtentionsState>()(devtools((set, _get
         }
     },
 })));
-

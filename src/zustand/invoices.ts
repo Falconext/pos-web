@@ -139,14 +139,16 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
         try {
             set(
                 (state) => {
+                    const cantidadInicial = Number(data?.cantidadInicial ?? 1);
+                    const precioUnitario = Number(data?.precioUnitario ?? 0);
                     const newProduct = {
                         ...data,
-                        cantidad: 1,
+                        cantidad: cantidadInicial,
                         descuento: 0,
                         cantidadOriginal: data?.cantidad,
-                        sale: (Number(data.precioUnitario) / 1.18).toFixed(2),
-                        igv: ((Number(data.precioUnitario) - Number(data.precioUnitario) / 1.18) * 1).toFixed(2),
-                        total: (Number(data.precioUnitario) * 1).toFixed(2),
+                        sale: ((precioUnitario * cantidadInicial) / 1.18).toFixed(2),
+                        igv: ((precioUnitario * cantidadInicial) - ((precioUnitario * cantidadInicial) / 1.18)).toFixed(2),
+                        total: (precioUnitario * cantidadInicial).toFixed(2),
                     };
                     return {
                         productsInvoice: [newProduct, ...state.productsInvoice]
@@ -240,7 +242,13 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 useAlertStore.setState({ loading: false });
                 await useClientsStore.getState().resetClients();
                 // NOTA: No llamar resetProducts() - borra el catálogo de productos
-                return { success: true, pendiente: isPendiente };
+                return {
+                    success: true,
+                    pendiente: isPendiente,
+                    serie: resp.data?.serie ?? null,
+                    correlativo: resp.data?.correlativo ?? null,
+                    id: resp.data?.comprobanteId ?? null,
+                };
             } else {
                 useAlertStore.getState().alert(resp.error || "Error al crear el recibo", "error");
                 return { success: false, error: resp.error || "Error al crear el recibo" };

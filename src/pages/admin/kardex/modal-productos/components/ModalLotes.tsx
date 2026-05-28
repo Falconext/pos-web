@@ -17,35 +17,39 @@ interface IProps {
     setCreationLote: (value: any) => void;
 }
 
+const emptyLoteForm = { lote: '', fechaVencimiento: '', stockInicial: '', costoUnitario: '', proveedor: '' };
+
 const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCreationLote }: IProps) => {
-    // Estados locales para gestión de lotes (solo edición)
     const [lotes, setLotes] = useState<any[]>([]);
     const [showLoteForm, setShowLoteForm] = useState(false);
-    const [loteForm, setLoteForm] = useState({
-        lote: '',
-        fechaVencimiento: '',
-        stockInicial: '',
-        costoUnitario: '',
-        proveedor: ''
-    });
+    const [loteForm, setLoteForm] = useState(emptyLoteForm);
     const [loteErrors, setLoteErrors] = useState<Record<string, string>>({});
 
-    // Cargar lotes al abrir
+    // Edición inline
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editForm, setEditForm] = useState<{ lote: string; fechaVencimiento: string; costoUnitario: string; proveedor: string; nuevoStock: string }>({ lote: '', fechaVencimiento: '', costoUnitario: '', proveedor: '', nuevoStock: '' });
+    const [stockOriginalEdit, setStockOriginalEdit] = useState<number>(0);
+
+    // Confirmación eliminación
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
     useEffect(() => {
         if (isOpen && isEdit && formValues?.productoId) {
-            cargarLotesProducto(Number(formValues.productoId));
+            cargarLotes(Number(formValues.productoId));
         }
     }, [isOpen, isEdit, formValues?.productoId]);
 
-    const cargarLotesProducto = async (productoId: number) => {
+    const cargarLotes = async (productoId: number) => {
         try {
             const { data } = await apiClient.get(`/producto/${productoId}/lotes`);
             setLotes(data?.data || data || []);
-        } catch (error) {
-            console.error('Error al cargar lotes:', error);
+        } catch {
+            // silencioso
         }
     };
 
+    // ── Nuevo lote ──────────────────────────────────────────────
     const handleLoteFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setLoteForm(prev => ({ ...prev, [name]: value }));
@@ -56,17 +60,13 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
         const errors: Record<string, string> = {};
         if (!loteForm.lote.trim()) errors.lote = 'El código de lote es obligatorio';
         if (!loteForm.fechaVencimiento) errors.fechaVencimiento = 'La fecha de vencimiento es obligatoria';
-        if (!loteForm.stockInicial || Number(loteForm.stockInicial) <= 0) {
-            errors.stockInicial = 'El stock inicial debe ser mayor a 0';
-        }
+        if (!loteForm.stockInicial || Number(loteForm.stockInicial) <= 0) errors.stockInicial = 'El stock inicial debe ser mayor a 0';
         setLoteErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
     const handleAgregarLote = async () => {
-        if (!validateLoteForm()) return;
-        if (!formValues.productoId) return;
-
+        if (!validateLoteForm() || !formValues.productoId) return;
         try {
             await apiClient.post('/producto/lotes', {
                 productoId: Number(formValues.productoId),
@@ -77,19 +77,78 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                 proveedor: loteForm.proveedor || undefined,
             });
             useAlertStore.getState().alert('Lote agregado correctamente', 'success');
-            setLoteForm({ lote: '', fechaVencimiento: '', stockInicial: '', costoUnitario: '', proveedor: '' });
+            setLoteForm(emptyLoteForm);
             setShowLoteForm(false);
-            cargarLotesProducto(Number(formValues.productoId));
+            cargarLotes(Number(formValues.productoId));
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Error al agregar lote';
-            useAlertStore.getState().alert(message, 'error');
+            useAlertStore.getState().alert(error.response?.data?.message || 'Error al agregar lote', 'error');
+        }
+    };
+
+    // ── Editar lote ─────────────────────────────────────────────
+    const startEdit = (lote: any) => {
+        setEditingId(lote.id);
+        setStockOriginalEdit(Number(lote.stockActual));
+        setEditForm({
+            lote: lote.lote,
+            fechaVencimiento: lote.fechaVencimiento ? moment(lote.fechaVencimiento).format('YYYY-MM-DD') : '',
+            costoUnitario: lote.costoUnitario != null ? String(lote.costoUnitario) : '',
+            proveedor: lote.proveedor || '',
+            nuevoStock: String(lote.stockActual),
+        });
+        setDeletingId(null);
+    };
+
+    const cancelEdit = () => setEditingId(null);
+
+    const handleGuardarEdicion = async () => {
+        if (!editingId) return;
+        try {
+            // 1. Actualizar metadatos
+            await apiClient.patch(`/producto/lotes/${editingId}`, {
+                lote: editForm.lote,
+                fechaVencimiento: editForm.fechaVencimiento || undefined,
+                costoUnitario: editForm.costoUnitario ? Number(editForm.costoUnitario) : undefined,
+                proveedor: editForm.proveedor || undefined,
+            });
+
+            // 2. Ajustar stock si cambió
+            const nuevoStock = Number(editForm.nuevoStock);
+            const delta = nuevoStock - stockOriginalEdit;
+            if (delta !== 0 && !isNaN(nuevoStock) && nuevoStock >= 0) {
+                await apiClient.patch(`/producto/lotes/${editingId}/ajustar-stock`, {
+                    productoId: Number(formValues.productoId),
+                    cantidad: Math.abs(delta),
+                    tipo: delta > 0 ? 'INCREMENTO' : 'DECREMENTO',
+                    motivo: 'Ajuste manual desde gestión de lotes',
+                });
+            }
+
+            useAlertStore.getState().alert('Lote actualizado', 'success');
+            setEditingId(null);
+            cargarLotes(Number(formValues.productoId));
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.response?.data?.message || 'Error al actualizar lote', 'error');
+        }
+    };
+
+    // ── Eliminar (desactivar) lote ───────────────────────────────
+    const handleEliminarLote = async (loteId: number) => {
+        setDeleteLoading(true);
+        try {
+            await apiClient.patch(`/producto/lotes/${loteId}/desactivar`);
+            useAlertStore.getState().alert('Lote eliminado correctamente', 'success');
+            setDeletingId(null);
+            cargarLotes(Number(formValues.productoId));
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.response?.data?.message || 'Error al eliminar lote', 'error');
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
     const calcularDiasParaVencer = (fechaVencimiento: string) => {
-        const hoy = new Date();
-        const vencimiento = new Date(fechaVencimiento);
-        const diferencia = vencimiento.getTime() - hoy.getTime();
+        const diferencia = new Date(fechaVencimiento).getTime() - Date.now();
         return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
     };
 
@@ -110,19 +169,15 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                     <div className="space-y-4 px-4 pb-4">
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="font-bold text-gray-800 dark:text-white">Historial de Lotes</h4>
-                            <Button
-                                color="black"
-                                onClick={() => setShowLoteForm(!showLoteForm)}
-                                className="text-xs py-2"
-                            >
+                            <Button color="black" onClick={() => { setShowLoteForm(!showLoteForm); setEditingId(null); setDeletingId(null); }} className="text-xs py-2">
                                 <Icon icon={showLoteForm ? "solar:close-circle-bold" : "solar:add-circle-bold"} width={16} className="mr-1" />
                                 {showLoteForm ? 'Cancelar' : 'Nuevo Lote'}
                             </Button>
                         </div>
 
-                        {/* Formulario Agregar Lote */}
+                        {/* Formulario Nuevo Lote */}
                         {showLoteForm && (
-                            <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 mb-4 animate-fade-in-down">
+                            <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 mb-4">
                                 <div className="grid grid-cols-2 gap-3 mb-3">
                                     <InputPro name="lote" value={loteForm.lote} onChange={handleLoteFormChange} error={loteErrors.lote} label="Código de Lote" placeholder="L2024-001" isLabel />
                                     <div className="relative">
@@ -150,10 +205,13 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                 const diasRestantes = calcularDiasParaVencer(lote.fechaVencimiento);
                                 const isVencido = diasRestantes < 0;
                                 const isPorVencer = diasRestantes >= 0 && diasRestantes <= 30;
+                                const isEditingThis = editingId === lote.id;
+                                const isDeletingThis = deletingId === lote.id;
 
                                 return (
-                                    <div key={lote.id} className="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-gray-300 dark:hover:border-slate-600 transition-colors shadow-sm">
-                                        <div className="flex justify-between items-start">
+                                    <div key={lote.id} className="rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-800/50 shadow-sm">
+                                        {/* Cabecera del lote */}
+                                        <div className="flex justify-between items-start p-4">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="font-bold text-gray-800 dark:text-gray-200">{lote.lote}</span>
@@ -165,15 +223,143 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                                         <span className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold">VIGENTE</span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-gray-500">
-                                                    Vence: {moment(lote.fechaVencimiento).format('DD/MM/YYYY')}
-                                                </p>
+                                                <p className="text-xs text-gray-500">Vence: {moment(lote.fechaVencimiento).format('DD/MM/YYYY')}</p>
+                                                {lote.proveedor && <p className="text-xs text-gray-400 mt-0.5">Prov: {lote.proveedor}</p>}
                                             </div>
-                                            <div className="text-right">
-                                                <div className="font-bold text-lg text-gray-900 dark:text-white">{lote.stockActual}</div>
-                                                <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Stock Actual</div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="text-right">
+                                                    <div className="font-bold text-lg text-gray-900 dark:text-white">{lote.stockActual}</div>
+                                                    <div className="text-[10px] text-gray-400 uppercase font-medium">Stock</div>
+                                                </div>
+                                                {/* Botones editar / eliminar */}
+                                                {!isEditingThis && !isDeletingThis && (
+                                                    <div className="flex gap-1 mt-0.5">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEdit(lote)}
+                                                            className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-500 transition-colors"
+                                                            title="Editar"
+                                                        >
+                                                            <Icon icon="solar:pen-bold" width={15} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setDeletingId(lote.id); setEditingId(null); }}
+                                                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-400 transition-colors"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Icon icon="solar:trash-bin-trash-bold" width={15} />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
+
+                                        {/* Formulario edición inline */}
+                                        {isEditingThis && (() => {
+                                            const delta = Number(editForm.nuevoStock) - stockOriginalEdit;
+                                            const deltaValido = !isNaN(Number(editForm.nuevoStock)) && Number(editForm.nuevoStock) >= 0;
+                                            return (
+                                                <div className="border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-4">
+                                                    <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-3">Editar Lote</p>
+                                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                                        <InputPro
+                                                            name="lote"
+                                                            value={editForm.lote}
+                                                            onChange={e => setEditForm(f => ({ ...f, lote: e.target.value }))}
+                                                            label="Código de Lote"
+                                                            isLabel
+                                                        />
+                                                        <div>
+                                                            <Calendar
+                                                                text="Vencimiento"
+                                                                value={editForm.fechaVencimiento ? moment(editForm.fechaVencimiento).format('DD/MM/YYYY') : ''}
+                                                                onChange={(date: string) => {
+                                                                    const [day, month, year] = date.split('/');
+                                                                    setEditForm(f => ({ ...f, fechaVencimiento: `${year}-${month}-${day}` }));
+                                                                }}
+                                                                name="editFechaVencimiento"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                                        <InputPro
+                                                            type="number"
+                                                            step="0.01"
+                                                            name="costoUnitario"
+                                                            value={editForm.costoUnitario}
+                                                            onChange={e => setEditForm(f => ({ ...f, costoUnitario: e.target.value }))}
+                                                            label="Costo Unitario"
+                                                            placeholder="0.00"
+                                                            isLabel
+                                                        />
+                                                        <InputPro
+                                                            name="proveedor"
+                                                            value={editForm.proveedor}
+                                                            onChange={e => setEditForm(f => ({ ...f, proveedor: e.target.value }))}
+                                                            label="Proveedor"
+                                                            isLabel
+                                                        />
+                                                    </div>
+
+                                                    {/* Stock editable */}
+                                                    <div className="mb-3 p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600">
+                                                        <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Ajuste de Stock</p>
+                                                        <div className="flex items-end gap-3">
+                                                            <div className="flex-1">
+                                                                <InputPro
+                                                                    type="number"
+                                                                    name="nuevoStock"
+                                                                    value={editForm.nuevoStock}
+                                                                    onChange={e => setEditForm(f => ({ ...f, nuevoStock: e.target.value }))}
+                                                                    label={`Stock actual: ${stockOriginalEdit}`}
+                                                                    placeholder="0"
+                                                                    isLabel
+                                                                />
+                                                            </div>
+                                                            {deltaValido && delta !== 0 && (
+                                                                <div className={`text-sm font-bold px-3 py-2 rounded-lg mb-0.5 ${delta > 0 ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
+                                                                    {delta > 0 ? `+${delta}` : delta}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {deltaValido && delta !== 0 && (
+                                                            <p className="text-[11px] text-gray-400 mt-1.5">
+                                                                Se registrará {delta > 0 ? 'un ingreso' : 'una salida'} de <strong>{Math.abs(delta)}</strong> unidades en el kardex.
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex justify-end gap-2">
+                                                        <button type="button" onClick={cancelEdit} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+                                                        <button type="button" onClick={handleGuardarEdicion} className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">Guardar cambios</button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
+                                        {/* Confirmación eliminación */}
+                                        {isDeletingThis && (
+                                            <div className="border-t border-red-100 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 p-4">
+                                                <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">¿Eliminar este lote?</p>
+                                                <p className="text-xs text-red-500 dark:text-red-400/80 mb-3">
+                                                    {lote.stockActual > 0
+                                                        ? `Se registrará una salida de ${lote.stockActual} unidades en el kardex.`
+                                                        : 'El lote está sin stock y se desactivará.'}
+                                                </p>
+                                                <div className="flex gap-2 justify-end">
+                                                    <button type="button" onClick={() => setDeletingId(null)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEliminarLote(lote.id)}
+                                                        disabled={deleteLoading}
+                                                        className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+                                                    >
+                                                        {deleteLoading ? 'Eliminando...' : 'Sí, eliminar'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             }) : (
@@ -189,7 +375,6 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                         <div className="p-6 rounded-xl border border-dashed border-indigo-200 dark:border-indigo-900/30 bg-[#FCFDFD] dark:bg-indigo-950/10">
                             <h5 className="font-bold text-gray-900 dark:text-white mb-2">Lote Inicial</h5>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Registra el primer lote junto con la creación del producto.</p>
-
                             <div className="space-y-4">
                                 <InputPro
                                     name="lote"
@@ -211,7 +396,6 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                     />
                                 </div>
                             </div>
-
                         </div>
                         <div className="mt-6 flex justify-end pb-4">
                             <Button color="black" className="w-full" onClick={onClose}>Confirmar Lote Inicial</Button>

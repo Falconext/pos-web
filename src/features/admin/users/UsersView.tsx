@@ -45,8 +45,8 @@ export default function UsersView() {
             : <span className="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-300 border border-gray-200 dark:border-slate-700">Usuario</span>;
     };
 
-    const getPermisosSummary = (permisos: string[] = []) => {
-        const data = getPermisosData(permisos);
+    const getPermisosSummary = (permisos: string[] = [], rol?: string) => {
+        const data = getPermisosData(permisos, rol);
         if (data.type === 'none') {
             return <span className="text-gray-400 text-xs">{data.label}</span>;
         }
@@ -67,7 +67,7 @@ export default function UsersView() {
         dni: usuario.dni,
         celular: usuario.celular,
         rol: getRolBadge(usuario.rol),
-        permisos: getPermisosSummary(usuario.permisos),
+        permisos: getPermisosSummary(usuario.permisos, usuario.rol),
         estado: usuario.estado, // Modified for display by Datatable directly
         // Para las acciones
         _original: usuario,

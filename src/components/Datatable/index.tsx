@@ -20,7 +20,7 @@ const DataTable: FC<IDataTableProps> = ({
     isCompact,
     pageSize,
 }: any) => {
-    const [data, setData] = useState(bodyData);
+    const [data, setData] = useState(Array.isArray(bodyData) ? bodyData : []);
     const [currentPage, setCurrentPage] = useState(1);
 
     const resolvedColumns = useMemo(() => {
@@ -82,8 +82,19 @@ const DataTable: FC<IDataTableProps> = ({
         });
     }, [headerColumns, bodyData]);
 
+    const safeResolvedColumns = useMemo(() => {
+        if (Array.isArray(resolvedColumns) && resolvedColumns.length > 0) return resolvedColumns;
+        const sample = Array.isArray(bodyData) && bodyData.length > 0 ? bodyData[0] : null;
+        if (!sample || typeof sample !== 'object') return [];
+        const fallbackKeys = ['Producto', 'Precio Venta', 'Stock', 'Estado', 'Acciones'];
+        return fallbackKeys
+            .filter((key) => Object.prototype.hasOwnProperty.call(sample, key))
+            .map((key) => ({ label: key, key }));
+    }, [resolvedColumns, bodyData]);
+
     useEffect(() => {
-        setData(bodyData);
+        const nextData = Array.isArray(bodyData) ? bodyData : [];
+        setData(nextData);
         setCurrentPage(1);
     }, [bodyData]);
 
@@ -177,10 +188,10 @@ const DataTable: FC<IDataTableProps> = ({
         <div className="flex flex-col">
             <AutoScrollTable>
                 <div className="px-4 w-max min-w-full">
-                    {data?.length > 0 ? (
-                        <AnimatePresence mode="wait">
+                    {data?.length > 0 && safeResolvedColumns.length > 0 ? (
+                        <AnimatePresence mode="sync">
                             <motion.table
-                                key={`table-${currentPage}-${totalItems}`}
+                                key={`table-${currentPage}`}
                                 className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`}
                                 id={idTable}
                                 layout
@@ -190,7 +201,7 @@ const DataTable: FC<IDataTableProps> = ({
                                 exit="exit"
                             >
                                 <TableHeader
-                                    columns={resolvedColumns}
+                                    columns={safeResolvedColumns}
                                     colorFont={colorFont}
                                     onSort={handleSort}
                                     actions={actions}
@@ -201,7 +212,7 @@ const DataTable: FC<IDataTableProps> = ({
                                     colorRow={colorRow}
                                     colorFont={colorFont}
                                     actions={actions}
-                                    columns={resolvedColumns}
+                                    columns={safeResolvedColumns}
                                 />
                             </motion.table>
                         </AnimatePresence>
@@ -210,9 +221,13 @@ const DataTable: FC<IDataTableProps> = ({
                             <div className="bg-white/50 dark:bg-slate-800/50 p-6 rounded-full mb-4">
                                 <Icon icon="solar:box-minimalistic-linear" className="text-6xl text-gray-300" />
                             </div>
-                            <h3 className="text-lg font-medium text-[#8C8B88] mb-1">No se encontraron registros</h3>
+                            <h3 className="text-lg font-medium text-[#8C8B88] mb-1">
+                                {data?.length > 0 ? 'No se pudieron renderizar las columnas' : 'No se encontraron registros'}
+                            </h3>
                             <p className="text-sm text-[#A09F9B] text-center">
-                                Intenta ajustar los filtros o realiza una nueva búsqueda para encontrar lo que necesitas.
+                                {data?.length > 0
+                                    ? 'Restauramos una vista segura. Recarga la página para sincronizar columnas.'
+                                    : 'Intenta ajustar los filtros o realiza una nueva búsqueda para encontrar lo que necesitas.'}
                             </p>
                         </motion.div>
                     )}

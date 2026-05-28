@@ -1,11 +1,10 @@
 
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import Input from "@/components/Input";
 import DataTable from "@/components/Datatable";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Pagination from "@/components/Pagination";
 import useAlertStore from "@/zustand/alert";
-import TableSkeleton from "@/components/Skeletons/table";
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
 import { IInvoices } from "@/interfaces/invoices";
 import moment from "moment";
@@ -33,12 +32,59 @@ import { useSedesStore } from "@/zustand/sedes";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
+const normalizeSunatEstado = (invoice: any) => {
+    const rawEstado = String(invoice?.estadoEnvioSunat ?? '').toUpperCase();
+    const qpseCode = String(
+        invoice?.qpseCode ??
+        invoice?.sunatCode ??
+        invoice?.sunatCdrResponse?.code ??
+        ''
+    );
+
+    const rawResponse = typeof invoice?.sunatCdrResponse === 'string'
+        ? (() => {
+            try {
+                return JSON.parse(invoice.sunatCdrResponse);
+            } catch {
+                return null;
+            }
+        })()
+        : invoice?.sunatCdrResponse;
+
+    const responseCode = String(rawResponse?.code ?? qpseCode ?? '');
+    const responseLabel = String(rawResponse?.state_label ?? rawResponse?.estado ?? rawEstado).toUpperCase();
+
+    let estadoEnvioSunat = rawEstado;
+
+    if (rawEstado === 'ANULADO' || rawEstado === 'NO_APLICA') {
+        estadoEnvioSunat = rawEstado;
+    } else if (responseCode === '0' || responseLabel === 'ACEPTADO' || responseLabel === 'OBSERVADO' || rawEstado === 'EMITIDO') {
+        estadoEnvioSunat = 'ACEPTADO';
+    } else if (responseCode === '98' || responseLabel === 'PENDIENTE' || responseLabel === 'EN_PROCESO' || responseLabel === 'INDETERMINADO' || rawEstado === 'FALLIDO_ENVIO') {
+        estadoEnvioSunat = 'PENDIENTE';
+    } else if (rawEstado === 'RECHAZADO') {
+        estadoEnvioSunat = rawEstado;
+    } else if (!estadoEnvioSunat) {
+        estadoEnvioSunat = responseCode === '0' ? 'ACEPTADO' : responseCode === '98' ? 'PENDIENTE' : 'RECHAZADO';
+    }
+
+    return {
+        ...invoice,
+        estadoEnvioSunat,
+        estadoSunatRaw: rawEstado,
+    };
+};
+
 const Comprobantes = () => {
     const navigate = useNavigate();
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
-    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay, discardInvoice }: IInvoicesState = useInvoiceStore();
+    const { getInvoice, invoice, resetInvoice, cancelInvoice, completePay, discardInvoice }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
+    const [invoicesList, setInvoicesList] = useState<IInvoices[]>([]);
+    const [totalInvoicesList, setTotalInvoicesList] = useState(0);
+    const [invoicesLoading, setInvoicesLoading] = useState(false);
+    const requestIdRef = useRef(0);
 
     const [currentPage, setcurrentPage] = useState(1);
     const [itemsPerPage, setitemsPerPage] = useState(50);
@@ -130,13 +176,14 @@ const Comprobantes = () => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const pages = [];
-    for (let i = 1; i <= Math.ceil(totalInvoices / itemsPerPage); i++) {
+    for (let i = 1; i <= Math.ceil(totalInvoicesList / itemsPerPage); i++) {
         pages.push(i);
     }
 
     const debounce = useDebounce(searchClient, 1000);
 
     const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
+    const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
 
 
     useEffect(() => {
@@ -166,9 +213,56 @@ const Comprobantes = () => {
         };
     }, []);
 
+    const fetchFormalInvoices = useCallback(async () => {
+        setInvoicesLoading(true);
+        const requestId = ++requestIdRef.current;
+        try {
+            const filteredParams = Object.entries({
+                tipoComprobante: "FORMAL",
+                page: currentPage,
+                limit: itemsPerPage,
+                search: debounce,
+                fechaInicio,
+                fechaFin,
+                estado: stateInvoice === "TODOS" ? "" : stateInvoice,
+                ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {})
+            })
+                .filter(([, value]) => value !== undefined)
+                .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
+
+            const query = new URLSearchParams(filteredParams as Record<string, string>).toString();
+            const resp: any = await get(`comprobante/listar?${query}`);
+
+            if (requestId !== requestIdRef.current) return;
+
+            if (resp?.code === 1) {
+                const nextInvoices = Array.isArray(resp?.data?.comprobantes)
+                    ? resp.data.comprobantes.map(normalizeSunatEstado)
+                    : [];
+                setInvoicesList(nextInvoices);
+                setTotalInvoicesList(typeof resp?.data?.total === 'number' ? resp.data.total : nextInvoices.length);
+            } else {
+                setInvoicesList([]);
+                setTotalInvoicesList(0);
+            }
+        } catch {
+            if (requestId !== requestIdRef.current) return;
+            setInvoicesList([]);
+            setTotalInvoicesList(0);
+        } finally {
+            if (requestId === requestIdRef.current) {
+                setInvoicesLoading(false);
+            }
+        }
+    }, [currentPage, itemsPerPage, debounce, fechaInicio, fechaFin, stateInvoice, effectiveSedeId]);
+
+    useEffect(() => {
+        fetchFormalInvoices();
+    }, [fetchFormalInvoices]);
 
 
-    const productsTable = invoices?.map((item: IInvoices) => {
+
+    const productsTable = invoicesList?.map((item: IInvoices) => {
         const xmlDownloadUrl = item.s3XmlUrl || (item.sunatXml ? `${API_URL}/comprobante/${item.id}/xml` : '');
         const cdrDownloadUrl = item.s3CdrUrl || (item.sunatCdrZip ? `${API_URL}/comprobante/${item.id}/cdr` : '');
         const rowBase: any = {
@@ -251,7 +345,7 @@ const Comprobantes = () => {
     };
 
     const handleConvertirAFactura = (data: any) => {
-        const cotizacion = invoices.find((inv: IInvoices) => inv.id === data.id);
+        const cotizacion = invoicesList.find((inv: IInvoices) => inv.id === data.id);
         if (!cotizacion) return;
 
         navigate('/administrador/facturacion/nuevo', {
@@ -270,7 +364,7 @@ const Comprobantes = () => {
     const handlePartialPayment = async (data: any) => {
         // Guardamos datos mínimos del row para el modal
         setFormValues(data);
-        const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
+        const comprobanteData = invoicesList.find((inv: IInvoices) => inv.id === data.id);
         if (!comprobanteData) return;
         const totalComprobante = comprobanteData.mtoImpVenta || 0;
         const saldoPendiente = (comprobanteData as any).saldo ?? totalComprobante; // si no hay saldo, asumir total
@@ -323,16 +417,7 @@ const Comprobantes = () => {
             setIsOpenModalPagoParcial(false);
             // refrescar tabla luego de cerrar recibo
             setTimeout(() => {
-                getAllInvoices({
-                    tipoComprobante: "FORMAL",
-                    page: currentPage,
-                    limit: itemsPerPage,
-                    search: debounce,
-                    fechaInicio: fechaInicio,
-                    fechaFin: fechaFin,
-                    estado: stateInvoice === "TODOS" ? "" : stateInvoice,
-                    ...(selectedSedeId ? { sedeId: selectedSedeId } : {})
-                });
+                fetchFormalInvoices();
             }, 300);
         }
     };
@@ -340,19 +425,6 @@ const Comprobantes = () => {
     const handleCloseReceipt = () => {
         paymentFlow.closeReceipt();
     };
-
-    useEffect(() => {
-        getAllInvoices({
-            tipoComprobante: "FORMAL",
-            page: currentPage,
-            limit: itemsPerPage,
-            search: debounce,
-            fechaInicio: fechaInicio,
-            fechaFin: fechaFin,
-            estado: stateInvoice === "TODOS" ? "" : stateInvoice,
-            ...(selectedSedeId ? { sedeId: selectedSedeId } : {})
-        });
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, selectedSedeId]);
 
     const ruc = "204812192919";
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
@@ -605,7 +677,12 @@ const Comprobantes = () => {
 
                 {/* Table Content */}
                 <div className="p-4">
-                    {productsTable?.length > 0 ? (
+                    {invoicesLoading ? (
+                        <div className="py-16 flex flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
+                            <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-blue-500" />
+                            <span className="text-sm">Cargando comprobantes...</span>
+                        </div>
+                    ) : productsTable?.length > 0 ? (
                         <>
                             <div className="overflow-x-auto">
                                 <DataTable bodyData={productsTable}
@@ -633,7 +710,7 @@ const Comprobantes = () => {
                                     setcurrentPage={setcurrentPage}
                                     setitemsPerPage={setitemsPerPage}
                                     pages={pages}
-                                    total={totalInvoices}
+                                    total={totalInvoicesList}
                                 />
                             </div>
                         </>

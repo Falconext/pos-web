@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { PaymentType } from '@/hooks/usePaymentFlow';
 import { Icon } from '@iconify/react';
+import { BRAND } from '@/lib/branding';
 
 interface IPaymentReceiptProps {
   comprobante: any;
@@ -170,7 +171,11 @@ const PaymentReceipt = ({
               <p>S/ {Number(nuevoSaldo ?? 0).toFixed(2)}</p>
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
-            <p className="text-[18px] text-center mt-4">Sistema punto de venta - FalcoNext.<br />www.falconext.pe.</p>
+            <p className="text-[18px] text-center mt-4">
+              Sistema punto de venta - {company?.empresa?.reseller?.nombre || BRAND.name}.<br />
+              Desarrollado por {company?.empresa?.reseller?.whiteLabelNombre || company?.empresa?.reseller?.nombre || BRAND.name}.<br />
+              {company?.empresa?.reseller?.whiteLabelWebsite || BRAND.website}.
+            </p>
             <hr className="my-1 border-dashed border-[#222]" />
             <p className="text-[18px] text-center">GRACIAS POR SU COMPRA, VUELVA PRONTO!</p>
           </div>

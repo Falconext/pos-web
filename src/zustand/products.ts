@@ -4,16 +4,18 @@ import { IResponse } from '../interfaces/auth';
 import { IFormProduct, IProduct } from '../interfaces/products';
 import useAlertStore from './alert';
 import { devtools } from 'zustand/middleware';
-import { useKardexStore } from './kardex';
+
+let latestProductsRequestId = 0;
 
 export interface IProductsState {
     products: IProduct[];
+    productsLoaded: boolean;
     product: string;
     productCode: string
     totalProducts: number;
     resetProducts: () => void;
     addProduct: (data: IFormProduct, options?: { skipStore?: boolean }) => Promise<any>
-    editProduct: (data: IFormProduct) => void
+    editProduct: (data: IFormProduct) => Promise<any>
     getAllProducts: (params: any, callback?: Function,
         allProperties?: boolean) => void
     toggleStateProduct: (data: number) => void
@@ -29,8 +31,11 @@ export interface IProductsState {
 export const useProductsStore = create<IProductsState>()(devtools((set, _get) => ({
     student: "",
     students: [],
+    productsLoaded: false,
     getAllProducts: async (params: any, callback?: Function,
         _allProperties?: boolean) => {
+        const requestId = latestProductsRequestId + 1;
+        latestProductsRequestId = requestId;
         try {
             // useAlertStore.setState({ loading: true })
             const filteredParams = Object.entries(params)
@@ -39,21 +44,30 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
 
             const query = new URLSearchParams(filteredParams).toString();
             const resp: any = await get(`producto/listar?${query}`);
-            console.log(resp)
+            if (requestId !== latestProductsRequestId) {
+                return;
+            }
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
+                const productos = Array.isArray(resp.data?.productos) ? resp.data.productos : [];
+                const total = typeof resp.data?.total === 'number' ? resp.data.total : productos.length;
                 set({
-                    products: resp.data.productos,
-                    totalProducts: resp.data.total
+                    products: productos,
+                    totalProducts: total,
+                    productsLoaded: true,
                 }, false, "GET_PRODUCTS");
                 useAlertStore.setState({ loading: false })
             } else {
-                set({
-                    products: []
-                });
+                // Mantener data previa para evitar parpadeos/tabla vacía por errores transitorios
+                set({ productsLoaded: true }, false, "GET_PRODUCTS_FAILED");
                 useAlertStore.setState({ loading: false })
             }
         } catch (error) {
+            if (requestId !== latestProductsRequestId) {
+                return;
+            }
+            // Mantener data previa para evitar parpadeos/tabla vacía por errores transitorios
+            set({ productsLoaded: true }, false, "GET_PRODUCTS_ERROR");
             useAlertStore.setState({ loading: false })
         } finally {
             if (callback) {
@@ -85,7 +99,8 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             if (resp.code === 1) {
                 set({
                     products: [],
-                    totalProducts: 0
+                    totalProducts: 0,
+                    productsLoaded: true,
                 }, false, 'DELETE_ALL_PRODUCTS');
                 useAlertStore.setState({ success: true });
                 useAlertStore.getState().alert(resp.message || 'Se eliminaron todos los productos', 'success');
@@ -168,28 +183,12 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
         console.log(data);
         useAlertStore.setState({ loading: true });
         try {
-            // Obtener el producto actual para comparar el stock
-            const currentState = _get();
-            const currentProduct = currentState.products.find((p: IProduct) => p.id === data.productoId);
-            const stockAnterior = currentProduct?.stock || 0;
-            const stockNuevo = data.stock || 0;
-
             const resp: any = await put(`producto/${data.productoId}`, data);
             if (resp.code === 1) {
-                // Si el stock cambió, crear movimiento de kardex
-                if (stockAnterior !== stockNuevo) {
-                    try {
-                        await useKardexStore.getState().createMovimientoAjuste({
-                            productoId: data.productoId,
-                            stockAnterior,
-                            stockNuevo,
-                            observacion: `Ajuste automático por edición de producto`
-                        });
-                    } catch (kardexError) {
-                        console.warn('No se pudo crear el movimiento de kardex:', kardexError);
-                        // No interrumpir el flujo principal si falla el kardex
-                    }
-                }
+                const updatedFromApi = (resp.data ?? {}) as Record<string, unknown>;
+                const preciosMayorista = Array.isArray((data as any)?.preciosMayorista)
+                    ? (data as any).preciosMayorista
+                    : undefined;
 
                 useAlertStore.setState({ success: true });
                 set((state) => ({
@@ -198,12 +197,16 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                             return {
                                 ...product,
                                 ...data,
-                                unidadMedida: { nombre: data.unidadMedidaNombre },
-                                categoria: { nombre: data.categoriaNombre },
-                                marca: data.marcaId ? {
+                                ...updatedFromApi,
+                                stock: Number((updatedFromApi as any).stock ?? data.stock ?? product.stock ?? 0),
+                                stockBase: Number((updatedFromApi as any).stockBase ?? data.stock ?? product.stockBase ?? product.stock ?? 0),
+                                preciosMayorista: preciosMayorista ?? (product as any).preciosMayorista ?? [],
+                                unidadMedida: (updatedFromApi as any).unidadMedida ?? (data.unidadMedidaNombre ? { ...product.unidadMedida, nombre: data.unidadMedidaNombre } : product.unidadMedida),
+                                categoria: (updatedFromApi as any).categoria ?? (data.categoriaNombre ? { ...product.categoria, nombre: data.categoriaNombre } : product.categoria),
+                                marca: (updatedFromApi as any).marca ?? (data.marcaId ? {
                                     id: Number(data.marcaId),
                                     nombre: data.marcaNombre
-                                } : undefined,
+                                } : undefined),
                             } as any
                         }
                         return product
@@ -211,17 +214,17 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                     ),
                 }), false, "UPDATE_PRODUCT");
                 useAlertStore.setState({ loading: false })
-                const message = stockAnterior !== stockNuevo
-                    ? "Se actualizó el producto correctamente y se registró el ajuste en kardex"
-                    : "Se actualizó el producto correctamente";
-                useAlertStore.getState().alert(message, "success");
+                useAlertStore.getState().alert("Se actualizó el producto correctamente", "success");
+                return _get().products.find((p: IProduct) => p.id === data.productoId) ?? null;
             } else {
                 useAlertStore.setState({ loading: false })
                 useAlertStore.getState().alert("Error al editar el producto", "error");
+                return null;
             }
         } catch (error: any) {
             useAlertStore.setState({ loading: false })
-            return useAlertStore.getState().alert(`${error}`, "error")
+            useAlertStore.getState().alert(`${error}`, "error");
+            return null;
         }
     },
     toggleStateProduct: async (productoId: number) => {
@@ -264,7 +267,8 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
         try {
             set(
                 (_state) => ({
-                    products: []
+                    products: [],
+                    productsLoaded: true,
                 }),
                 false,
                 'RESET_CLIENTS'
@@ -357,5 +361,3 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
         }
     },
 })));
-
-

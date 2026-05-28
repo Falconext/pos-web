@@ -151,6 +151,7 @@ export const useAuthStore = create<IAuthState>()(
             set({
               auth: loginData.usuario,
               success: true,
+              isLoading: false,
               pendingSedes: null,
               sedeActiva,
             });

@@ -35,7 +35,7 @@ export const FacturacionNuevoView = () => {
             <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
                 <ComprobantePrintPage
                     id="print-root"
-                    company={vm.auth}
+                    company={vm.authWithBranding}
                     qrCodeDataUrl={vm.qrCodeDataUrl}
                     productsInvoice={vm.productsInvoice}
                     total={vm.total}
@@ -112,7 +112,7 @@ export const FacturacionNuevoView = () => {
                     correlative={vm.correlative}
                     dataReceipt={vm.dataReceipt}
                     client={vm.snapshotClient ?? vm.selectedClient}
-                    company={vm.auth}
+                    company={vm.authWithBranding}
                     productsInvoice={vm.productsInvoice}
                     formValues={vm.formValues}
                     observation={vm.formValues?.observaciones}

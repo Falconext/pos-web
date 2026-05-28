@@ -37,6 +37,13 @@ const AutoScrollTable = ({
         return () => window.removeEventListener('resize', checkOverflow);
     }, [children]);
 
+    // Si ya no hay overflow, normalizar posición horizontal.
+    useEffect(() => {
+        if (!hasOverflow && tableContainerRef.current) {
+            tableContainerRef.current.scrollTo({ left: 0, behavior: 'auto' });
+        }
+    }, [hasOverflow]);
+
     return (
         <div className={styles.autoScrollTable}>
             {hasOverflow && (

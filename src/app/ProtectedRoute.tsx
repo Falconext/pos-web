@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../zustand/auth'
+import Loading from '@/components/Loading'
 
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -10,15 +11,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  if (auth) {
-    return <>{children}</>
-  }
-
-  // Si ya hay token, permitimos renderizar mientras se hidrata `auth/me`
-  // para evitar bloqueos infinitos del loader en sesiones válidas.
-  if (hasAccessToken && isLoading) {
-    return <>{children}</>
-  }
-
-  return <Navigate to="/login" replace />
+  if (isLoading) return <Loading />
+  if (!auth) return <Navigate to="/login" replace />
+  return <>{children}</>
 }

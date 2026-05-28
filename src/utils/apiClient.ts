@@ -36,12 +36,32 @@ function processQueue(error: any, token: string | null = null) {
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 // Request interceptor: inject access token
 apiClient.interceptors.request.use(config => {
   const token = localStorage.getItem('ACCESS_TOKEN')
+  const isFormData =
+    typeof FormData !== 'undefined' &&
+    config.data instanceof FormData
+
+  if (config.headers) {
+    // Cuando es FormData, dejar que el navegador construya el multipart boundary
+    if (isFormData) {
+      if (typeof (config.headers as { set?: (name: string, value?: string) => void }).set === 'function') {
+        (config.headers as { set: (name: string, value?: string) => void }).set('Content-Type', undefined)
+      } else {
+        const raw = config.headers as Record<string, unknown>
+        delete raw['Content-Type']
+        delete raw['content-type']
+      }
+    } else if (
+      typeof (config.headers as { set?: (name: string, value?: string) => void }).set === 'function'
+    ) {
+      (config.headers as { set: (name: string, value?: string) => void }).set('Content-Type', 'application/json')
+    }
+  }
+
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`
   }

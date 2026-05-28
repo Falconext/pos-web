@@ -23,7 +23,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
         isFarmacia, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
-        isCategorizing, tienePlanCorporativo,
+        isCategorizing, tienePlanCorporativo, tieneGestionLotes,
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
         setShowMedicamentoModal, setShowLotesModal, toggleGrupoSeleccionado,
         setFormValues,
@@ -160,6 +160,23 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         </div>
                     </div>
                 </>
+            )}
+
+            {tieneGestionLotes && !isFabricacion && (
+                <div className="col-span-1 md:col-span-2">
+                    <button type="button" onClick={() => setShowLotesModal(true)} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1E2435] hover:border-indigo-400 hover:shadow-md transition-all group text-left">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                <Icon icon="solar:box-minimalistic-bold-duotone" width={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white">Gestión de Lotes</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{isEdit ? 'Historial y vencimientos' : 'Configurar lote inicial'}</p>
+                            </div>
+                        </div>
+                        <Icon icon="solar:alt-arrow-right-linear" width={20} className="text-gray-400 dark:text-gray-500 group-hover:text-indigo-600" />
+                    </button>
+                </div>
             )}
 
             {features.gestionLotes && isFarmacia && (
@@ -371,6 +388,65 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             label="% Provisión"
                             placeholder="30"
                         />
+
+                        {(() => {
+                            const stockBase = Number((formValues as any)?.stock ?? 0);
+                            const reservadoReal = Number((formValues as any)?.stockReservado ?? 0);
+                            const porcentajeVenta = Number((formValues as any)?.porcentajeVenta ?? 70);
+                            const porcentajeProvision = Number((formValues as any)?.porcentajeProvision ?? 30);
+
+                            const cupoVenta = Math.max(0, Math.round((stockBase * porcentajeVenta) / 100));
+                            const cupoProvision = Math.max(0, Math.round((stockBase * porcentajeProvision) / 100));
+                            const provisionDisponible = Math.max(0, cupoProvision - reservadoReal);
+                            const ventaDisponible = Math.max(0, stockBase - reservadoReal);
+
+                            const statusColor =
+                                reservadoReal > cupoProvision
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-emerald-600 dark:text-emerald-400';
+
+                            return (
+                                <div className="col-span-2 mt-1 rounded-xl border border-purple-200/80 dark:border-purple-800/60 bg-white/80 dark:bg-slate-900/60 p-3">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Icon icon="solar:pie-chart-3-bold-duotone" className="text-purple-500" width={16} />
+                                        <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                            Distribución de stock
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div className="rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-800/60 px-3 py-2">
+                                            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Stock base</p>
+                                            <p className="text-base font-bold text-gray-800 dark:text-gray-100 mt-0.5">{stockBase}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/20 px-3 py-2">
+                                            <p className="text-[10px] uppercase tracking-wide text-blue-500 font-semibold">Cupo venta</p>
+                                            <p className="text-base font-bold text-blue-700 dark:text-blue-300 mt-0.5">{cupoVenta}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-900/20 px-3 py-2">
+                                            <p className="text-[10px] uppercase tracking-wide text-amber-600 font-semibold">Cupo provisión</p>
+                                            <p className="text-base font-bold text-amber-700 dark:text-amber-300 mt-0.5">{cupoProvision}</p>
+                                        </div>
+                                        <div className="rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-900/20 px-3 py-2">
+                                            <p className="text-[10px] uppercase tracking-wide text-emerald-600 font-semibold">Reservado real</p>
+                                            <p className={`text-base font-bold mt-0.5 ${statusColor}`}>{reservadoReal}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                                            Venta disponible: <strong>{ventaDisponible}</strong>
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                                            Provisión disponible: <strong>{provisionDisponible}</strong>
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                                            Las reservas se descuentan del stock real, no de los porcentajes.
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             )}

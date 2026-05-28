@@ -270,12 +270,14 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const rubrosOptions = rubros && Array.isArray(rubros) ? rubros : [];
   const ubigeosOptions = ubigeos.map((u: any) => ({ id: u.codigo, value: `${u.departamento} - ${u.provincia} - ${u.distrito}` }));
   const productoActual = (isEdit ? editData.producto : createData.producto) || 'facturacion';
+  const plataformaActual = ((isEdit ? editData.brand : createData.brand) || 'falconext').toLowerCase();
   const planesDisponibles = useMemo(() => {
     return (planes as any[] || []).filter((plan: any) => {
       const planProducto = String(plan?.producto || 'facturacion').toLowerCase();
-      return planProducto === String(productoActual).toLowerCase();
+      const planPlataforma = String(plan?.plataforma || 'falconext').toLowerCase();
+      return planProducto === String(productoActual).toLowerCase() && planPlataforma === plataformaActual;
     });
-  }, [planes, productoActual]);
+  }, [planes, productoActual, plataformaActual]);
 
   const selectedPlan: any = useMemo(() => {
     const id = isEdit ? editData.planId : createData.planId;

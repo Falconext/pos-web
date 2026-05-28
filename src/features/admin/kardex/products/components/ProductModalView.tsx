@@ -36,7 +36,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                                 type="text"
                                 inputMode="numeric"
                                 placeholder="Código de barras → auto-completar desde red global"
-                                className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none min-w-0"
+                                className="flex-1 bg-transparent text-sm text-gray-700 focus-within:outline-none dark:text-gray-200 dark:placeholder-gray-500 outline-none border-none focus:border-none min-w-0"
                                 value={vm.barcodeQuery}
                                 onChange={e => vm.setBarcodeQuery(e.target.value.replace(/\D/g, '').slice(0, 14))}
                                 onKeyDown={e => e.key === 'Enter' && void vm.handleBarcodeGlobalSearch()}
@@ -78,7 +78,13 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                 <div className={`${vm.isRestaurante ? 'grid-cols-1 md:grid-cols-2' : vm.isFarmacia ? 'flex flex-col gap-6' : 'grid-cols-1 md:grid-cols-3'} grid px-4 gap-5`}>
 
                     {/* Left Column - Image & Financials */}
-                    <div className={vm.isFarmacia ? 'w-full' : ''}>
+                    <div
+                        className={
+                            vm.isFarmacia
+                                ? 'w-full'
+                                : 'w-full md:sticky md:top-[88px] md:self-start'
+                        }
+                    >
                         <div className={`mt-5 ${vm.isFarmacia ? 'w-full' : ''}`}>
                             <ProductImageUploader vm={vm} />
                             <ProductFinancialAnalysis vm={vm} />

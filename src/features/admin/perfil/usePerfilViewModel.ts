@@ -1,20 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { get } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import useEmpresasStore from '@/zustand/empresas';
+import { useAuthStore } from '@/zustand/auth';
 import React from 'react';
 
 interface PerfilData {
     id: number; nombre: string; email: string; rol: string; celular?: string; telefono?: string;
     empresaId: number; estado: string; fechaCreacion: string; fechaActualizacion: string;
-    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
+    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
 }
 
 export const usePerfilViewModel = () => {
     const [perfil, setPerfil] = useState<PerfilData | null>(null);
     const [loading, setLoading] = useState(true);
     const [savingBarcodeConfig, setSavingBarcodeConfig] = useState(false);
+    const [savingFefoPriceConfig, setSavingFefoPriceConfig] = useState(false);
     const [usageStats, setUsageStats] = useState<any>(null);
+    const fefoToggleInFlight = useRef(false);
+    const barcodeToggleInFlight = useRef(false);
     const { alert } = useAlertStore();
 
     useEffect(() => { cargarPerfil(); cargarUsageStats(); }, []);
@@ -30,24 +34,48 @@ export const usePerfilViewModel = () => {
     };
 
     const handleBarcodeToggle = async (enabled: boolean) => {
+        if (savingBarcodeConfig || barcodeToggleInFlight.current) return;
+        if (Boolean(perfil?.empresa?.usaCodigoBarrasManual) === enabled) return;
         try {
+            barcodeToggleInFlight.current = true;
             setSavingBarcodeConfig(true);
             await useEmpresasStore.getState().actualizarMiEmpresa({ usaCodigoBarrasManual: enabled });
             setPerfil(prev => {
                 if (!prev) return prev;
-                return {
-                    ...prev,
-                    empresa: {
-                        ...prev.empresa,
-                        usaCodigoBarrasManual: enabled,
-                    },
-                };
+                return { ...prev, empresa: { ...prev.empresa, usaCodigoBarrasManual: enabled } };
             });
+            useAuthStore.setState(state => ({
+                auth: state.auth ? { ...state.auth, empresa: { ...(state.auth as any).empresa, usaCodigoBarrasManual: enabled } } : state.auth,
+            }));
             useAlertStore.getState().alert('Configuración de código de barras actualizada', 'success');
-        } catch {
-            useAlertStore.getState().alert('No se pudo actualizar la configuración', 'error');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudo actualizar la configuración', 'error');
         } finally {
+            barcodeToggleInFlight.current = false;
             setSavingBarcodeConfig(false);
+        }
+    };
+
+    const handleFefoPriceToggle = async (enabled: boolean) => {
+        if (savingFefoPriceConfig || fefoToggleInFlight.current) return;
+        if (Boolean(perfil?.empresa?.usarPrecioLoteFefo) === enabled) return;
+        try {
+            fefoToggleInFlight.current = true;
+            setSavingFefoPriceConfig(true);
+            await useEmpresasStore.getState().actualizarMiEmpresa({ usarPrecioLoteFefo: enabled });
+            setPerfil(prev => {
+                if (!prev) return prev;
+                return { ...prev, empresa: { ...prev.empresa, usarPrecioLoteFefo: enabled } };
+            });
+            useAuthStore.setState(state => ({
+                auth: state.auth ? { ...state.auth, empresa: { ...(state.auth as any).empresa, usarPrecioLoteFefo: enabled } } : state.auth,
+            }));
+            useAlertStore.getState().alert('Configuración de precio FEFO actualizada', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudo actualizar la configuración FEFO', 'error');
+        } finally {
+            fefoToggleInFlight.current = false;
+            setSavingFefoPriceConfig(false);
         }
     };
 
@@ -88,5 +116,5 @@ export const usePerfilViewModel = () => {
         return 'text-green-600 bg-green-100';
     };
 
-    return { perfil, loading, usageStats, savingBarcodeConfig, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, obtenerEstadoSuscripcion, obtenerColorEstado };
+    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, obtenerEstadoSuscripcion, obtenerColorEstado };
 };

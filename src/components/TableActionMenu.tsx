@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, useRef } from 'react';
+import { useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 interface TableActionMenuProps {
@@ -11,55 +11,63 @@ interface TableActionMenuProps {
 const TableActionMenu = ({ isOpen, onClose, anchorEl, children }: TableActionMenuProps) => {
     const [position, setPosition] = useState<{ top: number; left: number | 'auto'; right: number | 'auto' } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const rafRef = useRef<number | null>(null);
+
+    const updatePosition = useCallback(() => {
+        if (!isOpen || !anchorEl) return;
+
+        const rect = anchorEl.getBoundingClientRect();
+        let top = rect.bottom + 4;
+        const right = document.documentElement.clientWidth - rect.right;
+
+        if (menuRef.current) {
+            const menuHeight = menuRef.current.offsetHeight;
+            if (top + menuHeight > window.innerHeight) {
+                top = rect.top - menuHeight - 4;
+            }
+        }
+
+        setPosition({ top, left: 'auto', right });
+    }, [isOpen, anchorEl]);
+
+    const handleClickOutside = useCallback((event: MouseEvent) => {
+        const target = event.target as Node;
+        const clickedInsideMenu = !!menuRef.current && menuRef.current.contains(target);
+        const clickedAnchor = !!anchorEl && anchorEl.contains(target);
+        if (!clickedInsideMenu && !clickedAnchor) {
+            onClose();
+        }
+    }, [anchorEl, onClose]);
 
     useLayoutEffect(() => {
-        const updatePosition = () => {
-            if (isOpen && anchorEl) {
-                const rect = anchorEl.getBoundingClientRect();
-                
-                // We use fixed positioning, so we don't need scrollY/scrollX if we use rect values directly
-                // but getBoundingClientRect is relative to viewport, which is what 'fixed' uses.
-                
-                let top = rect.bottom + 4; // 4px gap
-                let right = document.documentElement.clientWidth - rect.right;
-
-                // Adjust if it goes off bottom
-                if (menuRef.current) {
-                    const menuHeight = menuRef.current.offsetHeight;
-                    if (top + menuHeight > window.innerHeight) {
-                        top = rect.top - menuHeight - 4;
-                    }
-                }
-
-                setPosition({ top, left: 'auto', right });
-            }
-        };
-
         if (isOpen) {
             updatePosition();
-            const handleScroll = (e: any) => {
-                // Only close if scrolling the main window or a parent container
-                onClose();
+            const handleReposition = () => {
+                if (rafRef.current !== null) {
+                    cancelAnimationFrame(rafRef.current);
+                }
+                rafRef.current = requestAnimationFrame(() => {
+                    updatePosition();
+                });
             };
-            window.addEventListener('scroll', handleScroll, true);
-            window.addEventListener('resize', onClose);
+
+            window.addEventListener('scroll', handleReposition, true);
+            window.addEventListener('resize', handleReposition);
             document.addEventListener('mousedown', handleClickOutside);
-            
+
             return () => {
-                window.removeEventListener('scroll', handleScroll, true);
-                window.removeEventListener('resize', onClose);
+                if (rafRef.current !== null) {
+                    cancelAnimationFrame(rafRef.current);
+                    rafRef.current = null;
+                }
+                window.removeEventListener('scroll', handleReposition, true);
+                window.removeEventListener('resize', handleReposition);
                 document.removeEventListener('mousedown', handleClickOutside);
             };
         } else {
             setPosition(null);
         }
-    }, [isOpen, anchorEl, onClose]);
-
-    const handleClickOutside = (event: MouseEvent) => {
-        if (menuRef.current && !menuRef.current.contains(event.target as Node) && anchorEl && !anchorEl.contains(event.target as Node)) {
-            onClose();
-        }
-    };
+    }, [isOpen, updatePosition, handleClickOutside]);
 
     if (!isOpen) return null;
 

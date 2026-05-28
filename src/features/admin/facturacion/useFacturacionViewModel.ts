@@ -4,6 +4,7 @@ import { IExtentionsState, useExtentionsStore } from "@/zustand/extentions";
 import { IClientsState, useClientsStore } from "@/zustand/clients";
 import { IProductsState, useProductsStore } from "@/zustand/products";
 import { ICategoriesState, useCategoriesStore } from "@/zustand/categories";
+import { useCombosStore } from "@/zustand/combos";
 import { IFormInvoice } from "@/interfaces/invoices";
 import { numberToWords } from "@/utils/numberToLetters";
 import { calculateTotals } from "@/utils/calculateTotals";
@@ -36,6 +37,7 @@ export const useFacturacionViewModel = () => {
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
     const { getAllClients, clients }: IClientsState = useClientsStore();
     const { getAllProducts, products, totalProducts }: IProductsState = useProductsStore();
+    const { combos, fetchCombos } = useCombosStore();
     const { getCreditDebitNoteTypes, getCurrencies, creditDebitNoteTypes, getDocumentTypes }: IExtentionsState = useExtentionsStore();
 
     const location = useLocation();
@@ -44,6 +46,14 @@ export const useFacturacionViewModel = () => {
     const isQuotationRoute = location.pathname.includes('/cotizaciones/nuevo');
     const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT', 'COT'];
     const tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
+
+    const [resellerBranding, setResellerBranding] = useState<{ nombre: string | null; whiteLabelNombre: string | null; whiteLabelWebsite: string | null } | null>(null);
+    useEffect(() => {
+        get('auth/me').then((resp: any) => {
+            const r = resp?.data?.empresa?.reseller;
+            if (r?.whiteLabelNombre || r?.whiteLabelWebsite) setResellerBranding(r);
+        }).catch(() => {});
+    }, []);
 
     // POS STATES
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
@@ -55,6 +65,9 @@ export const useFacturacionViewModel = () => {
     const [barcodeError, setBarcodeError] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
     const processedGuiaRef = useRef<string | null>(null);
+    // Tracks the comprobante type that was pre-filled from a Nota de Venta conversion.
+    // Prevents the auto-reset effect from overwriting the NV client while on that comprobante type.
+    const fromNVComprobanteRef = useRef<string | null>(null);
 
     const _stateDefaultType = (location.state as any)?.defaultType as string | undefined;
     const _tipoDocInitMap: Record<string, string> = {
@@ -63,7 +76,7 @@ export const useFacturacionViewModel = () => {
         'NV': 'NV', 'RH': 'RH', 'CP': 'CP',
         'NOTA DE PEDIDO': 'NP',
     };
-    const _comprobanteLabelInitMap: Record<string, string> = { NP: 'NOTA DE PEDIDO' };
+    const _comprobanteLabelInitMap: Record<string, string> = { NP: 'NOTA DE PEDIDO', NV: 'NOTA DE VENTA' };
 
     const initialDocumentType = isQuotationRoute
         ? "COTIZACIÓN"
@@ -118,6 +131,7 @@ export const useFacturacionViewModel = () => {
     const [serie, setSerie] = useState<string>("");
     const [IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice] = useState<boolean>(false);
     const [isComprobantePendiente, setIsComprobantePendiente] = useState<boolean>(false);
+    const [emittedDataReceipt, setEmittedDataReceipt] = useState<any>(null);
     const [snapshotClient, setSnapshotClient] = useState<any>(null);
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -210,9 +224,37 @@ export const useFacturacionViewModel = () => {
         getAllProducts(params, () => { }, true);
     }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id]);
 
+    const filteredCombos = useMemo(() => {
+        const search = String(debouncedSearchTerm || '').trim().toLowerCase();
+
+        return (combos || []).filter((combo: any) => {
+            if (!combo?.activo) return false;
+
+            const matchesSearch = !search
+                || String(combo?.nombre || '').toLowerCase().includes(search)
+                || String(combo?.descripcion || '').toLowerCase().includes(search)
+                || (combo?.items || []).some((item: any) =>
+                    String(item?.producto?.descripcion || '').toLowerCase().includes(search),
+                );
+
+            if (!matchesSearch) return false;
+
+            if (selectedCategoryId === 0) return true;
+
+            return (combo?.items || []).some((item: any) => Number(item?.producto?.categoria?.id || 0) === Number(selectedCategoryId));
+        });
+    }, [combos, debouncedSearchTerm, selectedCategoryId]);
+
+    const catalogItems = useMemo(() => {
+        const itemsProductos = (products || []).map((product: any) => ({ ...product, __catalogType: 'PRODUCTO' }));
+        const itemsCombos = filteredCombos.map((combo: any) => ({ ...combo, __catalogType: 'COMBO' }));
+        return [...itemsCombos, ...itemsProductos];
+    }, [products, filteredCombos]);
+
     // Initial Data Fetching for POS
     useEffect(() => {
         getAllCategories({});
+        fetchCombos(false);
         getCreditDebitNoteTypes();
         getCurrencies();
         getDocumentTypes();
@@ -237,6 +279,7 @@ export const useFacturacionViewModel = () => {
 
             const comprobanteLabelMap: Record<string, string> = {
                 NP: 'NOTA DE PEDIDO',
+                NV: 'NOTA DE VENTA',
             };
 
             const resolvedComprobante = comprobanteLabelMap[defaultType] ?? defaultType;
@@ -435,6 +478,42 @@ export const useFacturacionViewModel = () => {
             }
 
             window.history.replaceState({}, document.title);
+        } else if (state?.fromNotaDeVenta && state?.notaDeVentaData) {
+            const { cliente, clienteId, productos, observaciones } = state.notaDeVentaData;
+
+            if (cliente) {
+                fromNVComprobanteRef.current = formValues.comprobante;
+                setSelectedClient(cliente);
+                setFormValues(prev => ({
+                    ...prev,
+                    clienteId: clienteId || cliente.id || 0,
+                    clienteNombre: `${cliente.nroDoc}-${cliente.nombre}`
+                }));
+            }
+
+            if (productos && Array.isArray(productos) && productos.length > 0) {
+                resetProductInvoice();
+                productos.forEach((d: any) => {
+                    addProductsInvoice({
+                        productoId: d.productoId || 0,
+                        descripcion: d.descripcion,
+                        cantidadInicial: d.cantidad,
+                        precioUnitario: d.precioUnitario,
+                        descuento: 0,
+                        unidadMedidaNombre: d.unidad || 'NIU',
+                        afectacionNombre: 'Gravado – Operación Onerosa',
+                        tipoAfectacionIGV: '10',
+                        stock: 999,
+                        estado: 'ACTIVO',
+                    });
+                });
+            }
+
+            if (observaciones) {
+                setFormValues(prev => ({ ...prev, observaciones }));
+            }
+
+            window.history.replaceState({}, document.title);
         }
     }, [location]);
 
@@ -451,18 +530,29 @@ export const useFacturacionViewModel = () => {
                 setFormValues(prev => ({ ...prev, tipoOperacionId: ventaInterna.id }));
             }
 
-            if (formValues?.comprobante === "BOLETA" || formValues?.comprobante === "NOTA DE PEDIDO") {
-                const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
-                if (clientSelect) {
-                    setSelectedClient(clientSelect)
-                    setFormValues(prev => ({ ...prev, clienteId: Number(clientSelect.id) || 0, clienteNombre: "CLIENTES VARIOS" }))
+            if (fromNVComprobanteRef.current !== null) {
+                if (fromNVComprobanteRef.current !== formValues.comprobante) {
+                    // User switched comprobante away from the NV one — clear flag and allow normal reset
+                    fromNVComprobanteRef.current = null;
                 } else {
-                    setSelectedClient({ nroDoc: "10000000", nombre: "CLIENTES VARIOS" })
-                    setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "CLIENTES VARIOS" }))
+                    // Still on the same comprobante that came from NV — preserve client, skip reset
                 }
-            } else if (formValues?.comprobante === "FACTURA") {
-                setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "" }))
-                setSelectedClient(null);
+            }
+
+            if (fromNVComprobanteRef.current === null) {
+                if (formValues?.comprobante === "BOLETA" || formValues?.comprobante === "NOTA DE PEDIDO") {
+                    const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
+                    if (clientSelect) {
+                        setSelectedClient(clientSelect)
+                        setFormValues(prev => ({ ...prev, clienteId: Number(clientSelect.id) || 0, clienteNombre: "CLIENTES VARIOS" }))
+                    } else {
+                        setSelectedClient({ nroDoc: "10000000", nombre: "CLIENTES VARIOS" })
+                        setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "CLIENTES VARIOS" }))
+                    }
+                } else if (formValues?.comprobante === "FACTURA") {
+                    setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "" }))
+                    setSelectedClient(null);
+                }
             }
         }
     }, [formValues.comprobante, receiptNoteId, tiposOperacion, clients]);
@@ -535,7 +625,121 @@ export const useFacturacionViewModel = () => {
         };
     };
 
+    const getCartQtyByProductId = (productoId: number) =>
+        productsInvoice
+            .filter((item: any) => Number(item?.productoId || item?.id) === productoId)
+            .reduce((acc: number, item: any) => acc + Number(item?.cantidad || 0), 0);
+
+    const mergeOrAddProductToCart = (product: any, quantityToAdd: number, unitPrice: number, origin: string) => {
+        const existingIndex = productsInvoice.findIndex((p: any) => Number(p?.productoId || p?.id) === Number(product.id));
+
+        if (existingIndex >= 0) {
+            const currentItem = productsInvoice[existingIndex];
+            const currentQty = Number(currentItem?.cantidad || 0);
+            const newQty = currentQty + quantityToAdd;
+            const weightedUnitPrice = Number((((Number(currentItem?.precioUnitario || 0) * currentQty) + (unitPrice * quantityToAdd)) / newQty).toFixed(6));
+            const subtotal = weightedUnitPrice * newQty;
+
+            updateProductInvoice(existingIndex, {
+                cantidad: newQty,
+                cantidadOriginal: newQty,
+                precioUnitario: weightedUnitPrice,
+                precioBase: weightedUnitPrice,
+                preciosMayorista: [],
+                precioOrigen: origin,
+                total: subtotal.toFixed(2),
+                sale: (subtotal / 1.18).toFixed(2),
+                igv: (subtotal - subtotal / 1.18).toFixed(2),
+            });
+            return;
+        }
+
+        addProductsInvoice({
+            ...product,
+            productoId: product.id,
+            precioBase: unitPrice,
+            precioUnitario: unitPrice,
+            precioOrigen: origin,
+            preciosMayorista: [],
+            cantidadInicial: quantityToAdd,
+            unidadMedida: product?.unidadMedida?.nombre || product?.unidadMedida || 'NIU',
+        });
+    };
+
+    const distribuirPrecioCombo = (combo: any) => {
+        const comboItems = Array.isArray(combo?.items) ? combo.items : [];
+        const totalCombo = Number(combo?.precioCombo || 0);
+        const totalBase = comboItems.reduce((sum: number, item: any) => {
+            const base = Number(item?.producto?.precioUnitario || 0);
+            const qty = Number(item?.cantidad || 0);
+            return sum + (base * qty);
+        }, 0);
+
+        let acumulado = 0;
+        return comboItems.map((item: any, index: number) => {
+            const qty = Number(item?.cantidad || 0);
+            const producto = item?.producto;
+            const valorBaseLinea = Number(producto?.precioUnitario || 0) * qty;
+
+            let targetLineTotal = 0;
+            if (index === comboItems.length - 1) {
+                targetLineTotal = Number((totalCombo - acumulado).toFixed(2));
+            } else if (totalBase > 0) {
+                targetLineTotal = Number(((valorBaseLinea / totalBase) * totalCombo).toFixed(2));
+                acumulado += targetLineTotal;
+            } else {
+                targetLineTotal = Number((totalCombo / Math.max(comboItems.length, 1)).toFixed(2));
+                acumulado += targetLineTotal;
+            }
+
+            const unitPrice = qty > 0 ? Number((targetLineTotal / qty).toFixed(6)) : 0;
+            return { producto, qty, unitPrice };
+        });
+    };
+
+    const handleComboClick = (combo: any) => {
+        if (!combo?.items?.length) {
+            return useAlertStore.getState().alert("El kit no tiene productos configurados", "warning");
+        }
+
+        for (const comboItem of combo.items) {
+            const producto = comboItem?.producto;
+            const qtyRequerida = Number(comboItem?.cantidad || 0);
+            if (!producto || qtyRequerida <= 0) {
+                return useAlertStore.getState().alert("El kit tiene productos inválidos", "warning");
+            }
+
+            const qtyActualEnCarrito = getCartQtyByProductId(Number(producto.id));
+            const stockDisponible = Number(producto?.stock || 0);
+            if (qtyActualEnCarrito + qtyRequerida > stockDisponible) {
+                return useAlertStore.getState().alert(
+                    `Stock insuficiente para ${String(producto.descripcion || "producto").toUpperCase()} al agregar el kit`,
+                    "warning",
+                );
+            }
+        }
+
+        const lineasDistribuidas = distribuirPrecioCombo(combo);
+        lineasDistribuidas.forEach((linea: any) => {
+            mergeOrAddProductToCart(
+                linea.producto,
+                Number(linea.qty),
+                Number(linea.unitPrice),
+                `KIT:${String(combo?.nombre || "").toUpperCase()}`,
+            );
+        });
+
+        useAlertStore.getState().alert(`Kit "${String(combo?.nombre || "").toUpperCase()}" agregado al comprobante`, "success");
+    };
+
     const handleProductClick = (product: any) => {
+        const usarPrecioLoteFefo = Boolean(auth?.empresa?.usarPrecioLoteFefo);
+        const precioDesdeLoteFefo = Number(product?.loteFefoCostoUnitario ?? 0);
+        const precioBaseProducto = Number(product?.precioUnitario ?? 0);
+        const precioBaseSeleccionado = usarPrecioLoteFefo && precioDesdeLoteFefo > 0
+            ? precioDesdeLoteFefo
+            : precioBaseProducto;
+        const origenPrecio = usarPrecioLoteFefo && precioDesdeLoteFefo > 0 ? "FEFO" : "LISTA";
         const existingIndex = productsInvoice.findIndex((p: any) => p.id === product.id);
 
         if (existingIndex >= 0) {
@@ -549,12 +753,13 @@ export const useFacturacionViewModel = () => {
             if (product.stock < 1) {
                 return useAlertStore.getState().alert("Sin stock", "warning");
             }
-            const base = product.precioUnitario;
+            const base = precioBaseSeleccionado;
             const priceForQty1 = getApplicablePrice({ precioBase: base, preciosMayorista: product.preciosMayorista }, 1);
             addProductsInvoice({
                 ...product,
                 precioBase: base,
                 precioUnitario: priceForQty1,
+                precioOrigen: origenPrecio,
                 unidadMedida: product?.unidadMedida?.nombre
             });
         }
@@ -889,6 +1094,10 @@ export const useFacturacionViewModel = () => {
 
         if (result.success === true) {
             setIsComprobantePendiente(!!(result as any).pendiente);
+            const r = result as any;
+            if (r.serie != null && r.correlativo != null) {
+                setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null });
+            }
             setIsLoading(false);
         } else {
             setIsOpenModalSuccessInvoice(false);
@@ -987,6 +1196,7 @@ export const useFacturacionViewModel = () => {
 
     const closeModalResponse = () => {
         setIsOpenModalSuccessInvoice(false);
+        setEmittedDataReceipt(null);
         setSnapshotClient(null);
         const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
         setFormValues({
@@ -1027,9 +1237,16 @@ export const useFacturacionViewModel = () => {
 
     const componentRef = null; // Will be bound at view layer by useReactToPrint
 
+    const authWithBranding = useMemo(() => {
+        if (!auth?.empresa || !resellerBranding) return auth;
+        return { ...auth, empresa: { ...auth.empresa, reseller: resellerBranding } };
+    }, [auth, resellerBranding]);
+
     return {
         // Core State
         auth,
+        authWithBranding,
+        resellerBranding,
         isMobile,
         isCompact,
         isQuotationRoute,
@@ -1049,7 +1266,10 @@ export const useFacturacionViewModel = () => {
         tiposDetraccion, mediosPagoDetraccion,
         comprobantesGenerar, receiptsToNote,
         categories, clients,
-        filteredProducts: products, totalProducts,
+        filteredProducts: products,
+        filteredCombos,
+        catalogItems,
+        totalProducts,
 
         // Modal triggers
         isOpenModalClient, setIsOpenModalClient,
@@ -1069,6 +1289,7 @@ export const useFacturacionViewModel = () => {
 
         // Handlers
         handleProductClick,
+        handleComboClick,
         handleDeleteProduct,
         handleSaveEdit,
         handleSelectWholesaleTier,
@@ -1101,7 +1322,7 @@ export const useFacturacionViewModel = () => {
         serie, setSerie,
         correlative, setCorrelative,
         receiptNoteId, setReceiptNoteId,
-        dataReceipt, invoiceData,
+        dataReceipt: emittedDataReceipt ?? dataReceipt, invoiceData,
         pay, setPay,
         qrCodeDataUrl,
 

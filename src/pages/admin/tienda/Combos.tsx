@@ -78,20 +78,45 @@ export default function CombosAdmin() {
               <InputPro isLabel name="descripcion" label="Descripción" value={vm.form.descripcion} onChange={(e) => vm.setForm(prev => ({ ...prev, descripcion: e.target.value }))} placeholder="Descripción del kit..." />
               <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-4 bg-gray-50/50 dark:bg-slate-800/50">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Imagen del Kit</label>
-                <div className="flex gap-4 items-start">
-                  <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 flex-shrink-0 group">
+                <div className="space-y-3">
+                  <div className="relative w-full h-52 rounded-xl overflow-hidden border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 group shadow-sm">
                     {vm.form.imagenUrl ? (
-                      <><img src={vm.form.imagenUrl} alt="Preview" className="w-full h-full object-cover" /><button onClick={() => vm.setForm(p => ({ ...p, imagenUrl: '' }))} className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Icon icon="mdi:close" width={24} /></button></>
-                    ) : <div className="w-full h-full flex flex-col items-center justify-center text-gray-400"><Icon icon="solar:camera-bold" width={24} /></div>}
+                      <>
+                        <img src={vm.form.imagenUrl} alt="Imagen del kit" className="w-full h-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                          <p className="text-xs font-medium text-white/90">Vista previa del kit</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+                        <Icon icon="solar:camera-bold" width={30} />
+                        <p className="text-sm font-medium">Sin imagen</p>
+                        <p className="text-xs text-gray-400">Sube una imagen para destacar el kit</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <input type="file" ref={vm.fileInputRef} className="hidden" accept="image/*" onChange={vm.onFileSelect} />
-                    <div className="flex gap-2">
-                      <Button color="primary" size="sm" disabled={vm.uploading} onClick={() => vm.fileInputRef.current?.click()}>
-                        <Icon icon="solar:upload-minimalistic-bold" className="mr-2" />{vm.uploading ? 'Subiendo...' : 'Seleccionar Imagen'}
-                      </Button>
-                      {!vm.editingCombo && <span className="text-xs text-orange-500 flex items-center bg-orange-50 px-2 py-1 rounded">* Guarda para confirmar subida</span>}
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {vm.editingCombo ? (
+                      <>
+                        <input type="file" ref={vm.fileInputRef} className="hidden" accept="image/*" onChange={vm.onFileSelect} />
+                        <Button color="primary" size="sm" disabled={vm.uploading} onClick={() => vm.fileInputRef.current?.click()}>
+                          <Icon icon="solar:upload-minimalistic-bold" className="mr-2" />{vm.uploading ? 'Subiendo...' : 'Seleccionar Imagen'}
+                        </Button>
+                        {vm.form.imagenUrl && (
+                          <button
+                            type="button"
+                            onClick={() => vm.setForm(p => ({ ...p, imagenUrl: '' }))}
+                            className="px-3 py-2 text-sm rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            Quitar imagen
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
+                        Primero crea el kit. Luego podrás subir la imagen en modo edición.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -103,7 +128,18 @@ export default function CombosAdmin() {
                 <div className="space-y-3">
                     {vm.form.items.map((item, index) => (
                     <div key={index} className="flex gap-3 items-end bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
-                      <div className="flex-1"><Select label={index === 0 ? "Producto" : "Producto"} name={`producto-${index}`} value={item.productoId?.toString()} options={vm.products.map(p => ({ id: p.id, value: `${p.descripcion} - S/ ${Number(p.precioUnitario).toFixed(2)}` }))} onChange={(id: string) => vm.actualizarItem(index, 'productoId', Number(id))} placeholder="Seleccionar producto..." error={undefined} withLabel={true} /></div>
+                      <div className="flex-1">
+                        <Select
+                          label={index === 0 ? "Producto" : "Producto"}
+                          name={`producto-${index}`}
+                          value={vm.getProductOptionLabel(item.productoId)}
+                          options={vm.products.map(p => ({ id: String(p.id), value: `${String(p.descripcion || '').toUpperCase()} - S/ ${Number(p.precioUnitario).toFixed(2)}` }))}
+                          onChange={(id: string) => vm.actualizarItem(index, 'productoId', Number(id))}
+                          placeholder="Seleccionar producto..."
+                          error={undefined}
+                          withLabel={true}
+                        />
+                      </div>
                       <div className="w-24"><InputPro name={`cantidad-${index}`} label={index === 0 ? "Cant." : "Cant."} type="number" value={item.cantidad} onChange={(e) => vm.actualizarItem(index, 'cantidad', Number(e.target.value))} isLabel={true} /></div>
                       <button type="button" onClick={() => vm.eliminarItem(index)} className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mb-[2px]"><Icon icon="solar:trash-bin-trash-bold" width={20} /></button>
                     </div>

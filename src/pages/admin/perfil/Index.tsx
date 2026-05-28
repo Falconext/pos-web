@@ -4,7 +4,7 @@ import Loading from '@/components/Loading';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
-    const { perfil, loading, usageStats, savingBarcodeConfig } = vm;
+    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig } = vm;
 
     if (loading) return <div className="flex justify-center items-center h-96"><Loading /></div>;
     if (!perfil) return <div className="text-center text-gray-500 py-8">No se pudo cargar la información del perfil</div>;
@@ -17,6 +17,10 @@ export default function PerfilIndex() {
         border: isSystemAdmin ? 'border-indigo-100 dark:border-indigo-800' : 'border-blue-100 dark:border-blue-800',
         icon: isSystemAdmin ? 'text-indigo-300 dark:text-indigo-600' : 'text-blue-300 dark:text-blue-600',
     };
+    const limiteRaw = Number(usageStats?.limiteMaximo ?? 0);
+    const comprobantesIlimitados = !!usageStats && (!Number.isFinite(limiteRaw) || limiteRaw <= 0);
+    const planNombre = String(perfil?.empresa?.plan?.nombre || '').toUpperCase();
+    const fefoPermitidoPorPlan = planNombre.includes('NEGOCIO') || planNombre.includes('CORPORAT');
 
     if (perfil?.rol === 'ADMIN_SISTEMA') {
         return (
@@ -91,12 +95,18 @@ export default function PerfilIndex() {
                         </div>
                         <div className="mb-4">
                             <div className="flex justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{usageStats.comprobantesEmitidos} / {usageStats.limiteMaximo} comprobantes</span>
-                                <span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>{usageStats.porcentajeUso}%</span>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {usageStats.comprobantesEmitidos} / {comprobantesIlimitados ? 'Ilimitado' : usageStats.limiteMaximo} comprobantes
+                                </span>
+                                {!comprobantesIlimitados && (
+                                    <span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>{usageStats.porcentajeUso}%</span>
+                                )}
                             </div>
-                            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
-                                <div className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}></div>
-                            </div>
+                            {!comprobantesIlimitados && (
+                                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
+                                    <div className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}></div>
+                                </div>
+                            )}
                             {(usageStats.facturasYBoletas !== undefined || usageStats.guiasRemision !== undefined) && (
                                 <div className="flex gap-4 mt-2">
                                     <span className="text-xs text-gray-500 dark:text-gray-400">Facturas/Boletas: <span className="font-semibold text-gray-700 dark:text-gray-200">{usageStats.facturasYBoletas ?? 0}</span></span>
@@ -104,7 +114,7 @@ export default function PerfilIndex() {
                                 </div>
                             )}
                         </div>
-                        {usageStats.limiteAlcanzado && (
+                        {!comprobantesIlimitados && usageStats.limiteAlcanzado && (
                             <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-4 flex items-start gap-3">
                                 <Icon icon="solar:danger-triangle-bold" className="text-red-500 text-xl flex-shrink-0 mt-0.5" />
                                 <div>
@@ -113,7 +123,7 @@ export default function PerfilIndex() {
                                 </div>
                             </div>
                         )}
-                        {usageStats.alerta80 && !usageStats.limiteAlcanzado && (
+                        {!comprobantesIlimitados && usageStats.alerta80 && !usageStats.limiteAlcanzado && (
                             <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-xl p-4 flex items-start gap-3">
                                 <Icon icon="solar:bell-bold" className="text-orange-500 text-xl flex-shrink-0 mt-0.5" />
                                 <div>
@@ -122,7 +132,11 @@ export default function PerfilIndex() {
                                 </div>
                             </div>
                         )}
-                        {!usageStats.alerta80 && !usageStats.limiteAlcanzado && (<p className="text-sm text-gray-500 dark:text-gray-400">Te quedan <span className="font-bold text-blue-600 dark:text-blue-400">{usageStats.restantes}</span> comprobantes disponibles este mes.</p>)}
+                        {comprobantesIlimitados ? (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Plan sin límite de comprobantes este mes.</p>
+                        ) : (
+                            !usageStats.alerta80 && !usageStats.limiteAlcanzado && (<p className="text-sm text-gray-500 dark:text-gray-400">Te quedan <span className="font-bold text-blue-600 dark:text-blue-400">{usageStats.restantes}</span> comprobantes disponibles este mes.</p>)
+                        )}
                     </div>
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -159,6 +173,27 @@ export default function PerfilIndex() {
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white">Habilitar código de barras en productos</p>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Muestra el campo "Código de Barras" en el formulario de productos, incluso si el rubro no lo activa automáticamente.</p>
                                         {savingBarcodeConfig && <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <label className={`mt-3 flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                                    fefoPermitidoPorPlan
+                                        ? 'border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                                        : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 opacity-70 cursor-not-allowed'
+                                }`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(perfil.empresa.usarPrecioLoteFefo)}
+                                        disabled={savingFefoPriceConfig || !fefoPermitidoPorPlan}
+                                        onChange={(e) => vm.handleFefoPriceToggle(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Usar precio por lote FEFO en facturación</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Cuando esté activo, el precio sugerido al agregar productos en comprobantes se tomará del costo del lote FEFO activo.</p>
+                                        {!fefoPermitidoPorPlan && (
+                                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Disponible solo para planes Negocio y Corporativo.</p>
+                                        )}
+                                        {savingFefoPriceConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
                             </div>

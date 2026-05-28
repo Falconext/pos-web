@@ -187,5 +187,5 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
     return moduleRoutes[firstModule] || '/administrador';
   }
 
-  return '/login';
+  return user ? '/administrador' : '/login';
 };

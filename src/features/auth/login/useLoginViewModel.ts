@@ -29,7 +29,8 @@ export const useLoginViewModel = () => {
                 if (auth.rol === "ADMIN_SISTEMA") {
                     targetPath = "/administrador/empresas";
                 } else if (auth.rol === "ADMIN_EMPRESA" || auth.rol === "USUARIO_EMPRESA") {
-                    targetPath = getRedirectPath(auth as IUser, "/administrador");
+                    const computed = getRedirectPath(auth as IUser, "/administrador");
+                    targetPath = computed === "/login" ? "/administrador" : computed;
                 } else if (auth.rol === "RESELLER") {
                     targetPath = "/reseller";
                 }

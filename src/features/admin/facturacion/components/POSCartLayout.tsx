@@ -1,6 +1,49 @@
 import { Icon } from "@iconify/react";
+import { useState } from "react";
+
+const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
+    const [localValue, setLocalValue] = useState<string>(String(item.cantidad));
+
+    const commit = (raw: string) => {
+        const parsed = parseFloat(raw);
+        if (!Number.isFinite(parsed) || parsed <= 0) {
+            setLocalValue(String(item.cantidad));
+            return;
+        }
+        if (item.stock !== undefined && item.stock < parsed) {
+            setLocalValue(String(item.cantidad));
+            return;
+        }
+        const rounded = Math.round(parsed * 1000) / 1000;
+        setLocalValue(String(rounded));
+        vm.updateProductInvoice(index, vm.calculateLineItem(item, rounded));
+    };
+
+    // Keep local value in sync when external updates happen (e.g. +/- buttons)
+    if (String(item.cantidad) !== localValue && document.activeElement?.getAttribute('data-qty-index') !== String(index)) {
+        setLocalValue(String(item.cantidad));
+    }
+
+    return (
+        <input
+            type="number"
+            data-qty-index={index}
+            value={localValue}
+            min="0.001"
+            step="0.001"
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={(e) => commit(e.target.value)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            }}
+            className="w-14 md:w-12 text-center font-bold text-sm dark:text-white bg-transparent border-0 outline-none focus:bg-white dark:focus:bg-slate-600 focus:rounded focus:ring-1 focus:ring-violet-400 px-1 py-0.5 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+    );
+};
 
 export const POSCartLayout = ({ vm }: { vm: any }) => {
+    const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
             {vm.productsInvoice.length === 0 ? (
@@ -15,16 +58,21 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                         {/* Top Section: Image & Description */}
                         <div className="flex items-start md:items-center gap-3 w-full md:w-auto md:flex-1">
                             <div className="w-16 h-16 md:w-12 md:h-12 bg-gray-50 dark:bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                                {item.imagenUrl
-                                    ? <img src={item.imagenUrl} className="w-full h-full object-contain rounded-lg" />
-                                    : <Icon icon="solar:box-linear" className="text-gray-400 dark:text-gray-500" />}
+                                {item.imagenUrl && !brokenImages[`${item.productoId}-${index}`] ? (
+                                    <img
+                                        src={item.imagenUrl}
+                                        alt={item.descripcion || "Producto"}
+                                        className="w-full h-full object-contain rounded-lg"
+                                        loading="lazy"
+                                        onError={() => setBrokenImages((prev) => ({ ...prev, [`${item.productoId}-${index}`]: true }))}
+                                    />
+                                ) : (
+                                    <Icon icon="solar:box-linear" className="text-gray-400 dark:text-gray-500" />
+                                )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h5 className="font-bold text-gray-800 dark:text-gray-200 text-sm md:text-sm line-clamp-2 md:line-clamp-1 leading-tight md:leading-normal mb-0.5">{item.descripcion}</h5>
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-400 font-medium">
-                                        PU: S/{Number(item.precioUnitario).toFixed(2)}
-                                    </span>
                                     {Number(item.descuento) > 0 && (
                                         <span className="text-green-600 dark:text-green-400 font-bold">-{item.descuento}%</span>
                                     )}
@@ -42,20 +90,22 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                             <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
                                 <button
                                     onClick={() => {
-                                        if (item.cantidad > 1) {
-                                            vm.updateProductInvoice(index, vm.calculateLineItem(item, Number(item.cantidad) - 1));
-                                        } else {
+                                        const cur = Number(item.cantidad);
+                                        const next = Math.round((cur - 1) * 1000) / 1000;
+                                        if (next <= 0) {
                                             vm.handleDeleteProduct(item);
+                                        } else {
+                                            vm.updateProductInvoice(index, vm.calculateLineItem(item, next));
                                         }
                                     }}
                                     className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"
                                 >
                                     <Icon icon="solar:minus-circle-linear" width={18} />
                                 </button>
-                                <span className="w-10 md:w-8 text-center font-bold text-sm dark:text-white">{item.cantidad}</span>
+                                <QtyInput item={item} index={index} vm={vm} />
                                 <button
                                     onClick={() => {
-                                        const newQty = Number(item.cantidad) + 1;
+                                        const newQty = Math.round((Number(item.cantidad) + 1) * 1000) / 1000;
                                         if (item.stock !== undefined && item.stock < newQty) return;
                                         vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
                                     }}

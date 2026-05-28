@@ -56,6 +56,12 @@ export const useCombosViewModel = () => {
 
     const eliminarItem = (index: number) => setForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
 
+    const getProductOptionLabel = (productoId: number) => {
+        const product = products.find((p) => Number(p.id) === Number(productoId));
+        if (!product) return '';
+        return `${String(product.descripcion || '').toUpperCase()} - S/ ${Number(product.precioUnitario || 0).toFixed(2)}`;
+    };
+
     const calcularPrecioRegular = () => form.items.reduce((sum, item) => {
         const producto = products.find((p) => p.id === item.productoId);
         return producto ? sum + Number(producto.precioUnitario) * item.cantidad : sum;
@@ -89,12 +95,25 @@ export const useCombosViewModel = () => {
             setUploading(true);
             const fd = new FormData();
             fd.append('file', file);
-            const resp = await apiClient.post(`/combos/${comboId}/imagen`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            const resp = await apiClient.post(`/combos/${comboId}/imagen`, fd, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
             const nuevaUrl = resp.data?.url || resp.data?.imagenUrl || resp.data?.data?.url;
             if (nuevaUrl) setForm(prev => ({ ...prev, imagenUrl: nuevaUrl }));
+            await fetchCombos(true);
             useAlertStore.getState().alert('Imagen subida correctamente', 'success');
-        } catch {
-            useAlertStore.getState().alert('Error al subir imagen', 'error');
+        } catch (error: unknown) {
+            const err = error as {
+                response?: {
+                    data?: {
+                        message?: string;
+                    };
+                };
+            };
+            useAlertStore.getState().alert(
+                err.response?.data?.message || 'Error al subir imagen',
+                'error',
+            );
         } finally {
             setUploading(false);
         }
@@ -116,6 +135,7 @@ export const useCombosViewModel = () => {
         combos, loading, products, t,
         showModal, editingCombo, form, setForm, uploading, fileInputRef,
         abrirModal, cerrarModal, agregarProducto, actualizarItem, eliminarItem,
+        getProductOptionLabel,
         calcularPrecioRegular, calcularDescuento, guardarCombo, onFileSelect,
         handleEliminarCombo, toggleComboActivo,
     };

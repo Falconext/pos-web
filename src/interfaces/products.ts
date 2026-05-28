@@ -9,9 +9,15 @@ export type IProduct = {
   valorUnitario: string
   igvPorcentaje: string
   stock: number
+  stockBase?: number
+  stockReservado?: number
+  stockDisponibleVenta?: number
   localizacion?: string
   porcentajeVenta?: number
   porcentajeProvision?: number
+  loteFefoCodigo?: string | null
+  loteFefoVencimiento?: string | Date | null
+  loteFefoCostoUnitario?: number | null
   stockMinimo?: number
   stockMaximo?: number
   estado: string

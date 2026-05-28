@@ -6,23 +6,25 @@ import { useAuthStore } from '@/zustand/auth';
 
 export interface Plan {
     id: number; nombre: string; descripcion?: string; costo: number;
+    plataforma?: 'falconext' | 'krezka';
     producto?: 'facturacion' | 'hotel';
     duracionDias: number; limiteUsuarios: number; maxSedes: number;
     maxImagenesProducto: number;
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
     tieneTienda: boolean; tieneBanners: boolean; tieneGaleria: boolean;
-    tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
+    tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean; tieneGestionLotes: boolean;
     _count?: { empresas: number };
     modulosAsignados?: { modulo: { id: number; codigo: string; nombre: string; descripcion: string; icono: string; } }[];
     subModulosAsignados?: { subModulo: { id: number; codigo: string; nombre: string; moduloId: number } }[];
 }
 
 const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number[] } = {
+    plataforma: 'falconext',
     producto: 'facturacion',
     nombre: '', descripcion: '', costo: 0, duracionDias: 30,
     limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
-    tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false,
+    tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false, tieneGestionLotes: false,
     moduloIds: [], subModuloIds: [],
 };
 
@@ -40,8 +42,14 @@ export const usePlanesViewModel = () => {
     const { alert } = useAlertStore();
     const { getAllModulos } = useModulosStore();
     const { auth } = useAuthStore();
+    const plataformaScope = (String(auth?.sistemaNegocio || '').toLowerCase() === 'krezka' ? 'krezka' : String(auth?.sistemaNegocio || '').toLowerCase() === 'falconext' ? 'falconext' : '') as '' | 'falconext' | 'krezka';
     const productoScope = (String(auth?.sistemaProducto || '').toLowerCase() === 'hotel' ? 'hotel' : String(auth?.sistemaProducto || '').toLowerCase() === 'facturacion' ? 'facturacion' : '') as '' | 'facturacion' | 'hotel';
+    const [plataformaFiltro, setPlataformaFiltro] = useState<'' | 'falconext' | 'krezka'>(plataformaScope);
     const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel'>(productoScope);
+
+    useEffect(() => {
+        setPlataformaFiltro(plataformaScope);
+    }, [plataformaScope]);
 
     useEffect(() => {
         setProductoFiltro(productoScope);
@@ -49,13 +57,17 @@ export const usePlanesViewModel = () => {
 
     useEffect(() => {
         loadPlanes();
-    }, [productoFiltro, productoScope]);
+    }, [productoFiltro, productoScope, plataformaFiltro, plataformaScope]);
 
     const loadPlanes = async () => {
         try {
             setLoading(true);
             const producto = productoScope || productoFiltro;
-            const qs = producto ? `?producto=${producto}` : '';
+            const plataforma = plataformaScope || plataformaFiltro;
+            const params = new URLSearchParams();
+            if (producto) params.set('producto', producto);
+            if (plataforma) params.set('plataforma', plataforma);
+            const qs = params.toString() ? `?${params.toString()}` : '';
             const { data } = await apiClient.get(`/plan${qs}`);
             setPlanes(Array.isArray(data) ? data : (data.data || []));
         } catch { alert('Error al cargar planes', 'error'); }
@@ -64,18 +76,21 @@ export const usePlanesViewModel = () => {
 
     const handleOpenCreate = () => {
         setIsEdit(false);
+        const plataforma = plataformaScope || 'falconext';
         const producto = productoScope || 'facturacion';
-        setForm({ ...initialForm, producto, moduloIds: [], subModuloIds: [] });
+        setForm({ ...initialForm, plataforma, producto, moduloIds: [], subModuloIds: [] });
         getAllModulos(true, producto);
         setIsModalOpen(true);
     };
 
     const handleOpenEdit = (plan: Plan) => {
+        const plataforma = (plan.plataforma || 'falconext') as 'falconext' | 'krezka';
         const producto = (plan.producto || 'facturacion') as 'facturacion' | 'hotel';
         setIsEdit(true);
         setCurrentId(plan.id);
         setForm({
             ...plan,
+            plataforma,
             producto,
             moduloIds: plan.modulosAsignados?.map(m => m.modulo.id) || [],
             subModuloIds: plan.subModulosAsignados?.map(s => s.subModulo.id) || [],
@@ -90,6 +105,7 @@ export const usePlanesViewModel = () => {
             setLoading(true);
             const payload = {
                 ...form,
+                plataforma: (plataformaScope || form.plataforma || 'falconext') as 'falconext' | 'krezka',
                 producto: (productoScope || form.producto || 'facturacion') as 'facturacion' | 'hotel',
                 costo: Number(form.costo),
                 duracionDias: Number(form.duracionDias),
@@ -125,6 +141,7 @@ export const usePlanesViewModel = () => {
 
     return {
         planes, loading,
+        plataformaFiltro, setPlataformaFiltro,
         productoFiltro, setProductoFiltro,
         isModalOpen, setIsModalOpen, isEdit, form, setForm,
         showFeaturesModal, setShowFeaturesModal,

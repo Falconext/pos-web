@@ -4,7 +4,7 @@
  */
 
 export interface RubroFeatures {
-    gestionLotes: boolean;           // Farmacia/Botica
+    gestionLotes: boolean;           // Farmacia / Fabricación
     requiereVencimientos: boolean;   // Farmacia/Alimentos
     usaCodigoBarras: boolean;        // Bodega/Supermarket
     permiteFraccionamiento: boolean; // Farmacia
@@ -82,7 +82,7 @@ export function detectarFuncionesRubro(
             : esBodega;
 
     return {
-        // Lotes: Farmacia y fabricación (insumos/componentes)
+        // Lotes: Farmacia y fabricación
         gestionLotes: esFarmacia || esFabricacion,
 
         // Vencimientos: Farmacia y alimentos
@@ -116,20 +116,7 @@ export function useRubroFeatures(
  * Helpers rápidos para casos específicos
  */
 export const RubroHelpers = {
-    usaLotes: (nombreRubro: string | null | undefined) => {
-        if (!nombreRubro) return false;
-        const nombre = nombreRubro.toLowerCase();
-        return (
-            nombre.includes('farmacia') ||
-            nombre.includes('botica') ||
-            nombre.includes('fabricación') ||
-            nombre.includes('fabricacion') ||
-            nombre.includes('manufactura') ||
-            nombre.includes('industria') ||
-            nombre.includes('producción') ||
-            nombre.includes('produccion')
-        );
-    },
+    usaLotes: (_nombreRubro: string | null | undefined) => true,
 
     usaCodigoBarras: (nombreRubro: string | null | undefined) => {
         if (!nombreRubro) return false;

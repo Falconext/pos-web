@@ -55,7 +55,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         dni: user.dni,
         celular: user.celular,
         password: '',
-        permisos: user.permisos || [],
+        permisos: user.rol === 'ADMIN_EMPRESA' ? ['*'] : (user.permisos || []),
         sedeIds: (user.sedes || []).map(s => s.id),
         subModuloIds: (user.subModulos || []).map(s => s.id),
       });

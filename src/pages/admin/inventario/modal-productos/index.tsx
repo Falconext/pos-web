@@ -502,7 +502,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                         </div>
                     </div>
 
-                    <div className="flex gap-5 justify-end mt-6 mb-5 md:pr-5 pt-5">
+                    <div className="flex gap-5 justify-end mt-6 mb-5 md:pr-0 pt-0">
                         <Button color="black" outline onClick={() => setIsOpenModal(false)}>Cancelar</Button>
                         <Button color="secondary" onClick={handleSubmitProduct}>{isEdit ? "Editar" : "Guardar"}</Button>
                     </div>

@@ -11,7 +11,6 @@ import { esRubroFabricacion } from '@/utils/rubro-features'
 import { AnimatePresence, motion } from 'framer-motion'
 import { fadeIn, fadeUp, interactiveHover, scaleIn, slideRight } from '@/lib/motion/presets'
 import { useReducedMotionPreference } from '@/lib/motion/reducedMotion'
-import { BookMarked } from 'lucide-react'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
@@ -197,8 +196,7 @@ export default function AdminLayout() {
   }, [isSidebarOpen])
 
   const logout = () => {
-    localStorage.removeItem('ACCESS_TOKEN')
-    localStorage.removeItem('REFRESH_TOKEN')
+    useAuthStore.getState().logout()
     navigate('/login', { replace: true })
   }
 
@@ -404,21 +402,14 @@ export default function AdminLayout() {
                             Movimientos
                           </NavLink>
                         )}
+                        {hasSubPermission(auth, 'kardex:reservas') && (
+                          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Reservas') }} to="/administrador/reservas" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                            Reservas
+                          </NavLink>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-
-                {hasPermission(auth, 'kardex') && (
-                  <NavLink
-                    onClick={() => { setIsSidebarOpen(false); setNameNavbar('Reservas') }}
-                    to="/administrador/reservas"
-                    className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
-                    title="Reservas"
-                  >
-                    <BookMarked size={18} className={`${isSidebarCollapsed ? 'm-0' : 'mr-3'}`} />
-                    {!isSidebarCollapsed && <span>Reservas</span>}
-                  </NavLink>
                 )}
 
                 {/* TÍTULO: PRODUCCIÓN */}

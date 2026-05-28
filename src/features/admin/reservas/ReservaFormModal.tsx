@@ -44,13 +44,29 @@ export default function ReservaFormModal({
     setFechaVencimiento(initialData?.fechaVencimiento ? String(initialData.fechaVencimiento).slice(0, 10) : '')
   }, [isOpen, initialData])
 
-  const productoOptions = useMemo(
-    () =>
-      productos.map((p) => ({
-        id: p.id,
-        value: `${p.descripcion}${p.codigo ? ` (${p.codigo})` : ''}`,
-      })),
-    [productos],
+  const productoOptions = useMemo(() => {
+    const base = productos.map((p) => ({
+      id: p.id,
+      value: `${p.descripcion}${p.codigo ? ` (${p.codigo})` : ''}`,
+    }))
+
+    if (!initialData?.productoId) return base
+
+    const exists = base.some((option) => Number(option.id) === Number(initialData.productoId))
+    if (exists) return base
+
+    return [
+      {
+        id: initialData.productoId,
+        value: `${initialData.producto?.nombre || 'Producto'}${initialData.producto?.sku ? ` (${initialData.producto.sku})` : ''}`,
+      },
+      ...base,
+    ]
+  }, [productos, initialData])
+
+  const selectedProductoLabel = useMemo(
+    () => productoOptions.find((option) => Number(option.id) === Number(productoId))?.value || '',
+    [productoOptions, productoId],
   )
 
   const handleSubmit = async () => {
@@ -77,9 +93,8 @@ export default function ReservaFormModal({
           <Select
             label="Producto"
             name="productoId"
-            defaultValue={
-              productoOptions.find((option) => Number(option.id) === Number(productoId))?.value || 'Seleccionar producto'
-            }
+            value={selectedProductoLabel}
+            defaultValue={selectedProductoLabel || 'Seleccionar producto'}
             options={productoOptions}
             isSearch
             error=""
@@ -99,6 +114,7 @@ export default function ReservaFormModal({
         <Select
           label="Estado"
           name="estado"
+          value={estado}
           defaultValue={estado}
           options={RESERVA_ESTADOS.map((item) => ({ id: item.id, value: item.value }))}
           error=""
