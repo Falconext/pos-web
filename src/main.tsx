@@ -28,10 +28,28 @@ const inferDefaultBaseUrl = () => {
 const applyBrandToDocument = (brand: Partial<BrandConfig>) => {
   if (typeof document === 'undefined') return
   if (brand.name) document.title = brand.name
-  if (brand.favicon) {
-    const existing = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-    if (existing) existing.href = brand.favicon
+  const host = typeof window !== 'undefined' ? window.location.hostname : ''
+  const hostFavicon =
+    host === 'app.krezka.com'
+      ? '/assets/krezka/krezkalogo.png'
+      : host === 'app.falconext.pe'
+        ? '/assets/logofalconext.png'
+        : undefined
+
+  const finalFavicon = hostFavicon || brand.favicon
+  if (!finalFavicon) return
+
+  const existing = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (existing) {
+    existing.href = finalFavicon
+    return
   }
+
+  const link = document.createElement('link')
+  link.rel = 'icon'
+  link.type = 'image/png'
+  link.href = finalFavicon
+  document.head.appendChild(link)
 }
 
 const bootstrapBranding = async () => {
