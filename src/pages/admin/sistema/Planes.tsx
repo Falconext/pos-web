@@ -17,6 +17,30 @@ const Toggle = ({ label, value, onChange }: { label: string, value: boolean, onC
     </div>
 );
 
+const LimitToggle = ({
+    label,
+    checked,
+    onChange,
+}: {
+    label: string;
+    checked: boolean;
+    onChange: (value: boolean) => void;
+}) => (
+    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+        <span className="text-xs font-semibold text-gray-700">{label}</span>
+        <button
+            type="button"
+            onClick={() => onChange(!checked)}
+            className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-300'}`}
+        >
+            <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${checked ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+        </button>
+    </div>
+);
+
 const Planes = () => {
     const vm = usePlanesViewModel();
     const { auth } = useAuthStore();
@@ -31,6 +55,22 @@ const Planes = () => {
         return Number(value).toString();
     };
 
+    const formatMaxSedes = (value: number | null | undefined) => {
+        if (value === null || value === undefined || Number(value) === 0) {
+            return 'Ilimitado';
+        }
+        const n = Number(value);
+        return `${n} sede${n !== 1 ? 's' : ''}`;
+    };
+
+    const formatMaxUsuarios = (value: number | null | undefined) => {
+        if (value === null || value === undefined || Number(value) === 0) {
+            return 'Ilimitado';
+        }
+        const n = Number(value);
+        return `${n} usuar.`;
+    };
+
     const bodyData = vm.planes.map(p => ({
         'Nombre': <div className="font-medium text-gray-900">{p.nombre}<div className="text-xs text-gray-500">{p.descripcion}</div></div>,
         'Plataforma': (p.plataforma || 'falconext') === 'krezka'
@@ -43,8 +83,8 @@ const Planes = () => {
         'Duración': `${p.duracionDias} días`,
         'Anual': p.duracionDias >= 360 ? <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">Anual</span> : <span className="text-gray-500 text-xs">Mensual</span>,
         'Max Compr.': <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-medium">{formatMaxComprobantes(p.maxComprobantes)}</span>,
-        'Max Sedes': <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">{p.maxSedes ?? 1} sede{(p.maxSedes ?? 1) !== 1 ? 's' : ''}</span>,
-        'Max Usuarios': <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs font-medium">{p.limiteUsuarios ?? 1} usuar.</span>,
+        'Max Sedes': <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">{formatMaxSedes(p.maxSedes)}</span>,
+        'Max Usuarios': <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs font-medium">{formatMaxUsuarios(p.limiteUsuarios)}</span>,
         'Empresas': <span className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-600 font-medium">{p._count?.empresas || 0} asignadas</span>,
         'Estado': p.esPrueba ? <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded text-xs">Prueba</span> : <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs">Comercial</span>,
         'Tienda': p.tieneTienda ? <Icon icon="mdi:check-circle" className="text-green-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
@@ -176,10 +216,64 @@ const Planes = () => {
                     <div className="bg-white rounded-lg">
                         <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wider">Límites</h4>
                         <div className="grid grid-cols-3 gap-4">
-                            <InputPro isLabel label="Límite Usuarios" name="limiteUsuarios" type="number" value={vm.form.limiteUsuarios} onChange={(e) => vm.setForm({ ...vm.form, limiteUsuarios: Number(e.target.value) })} />
-                            <InputPro isLabel label="Máx. Sedes" name="maxSedes" type="number" value={(vm.form as any).maxSedes ?? 1} onChange={(e) => vm.setForm({ ...vm.form, maxSedes: Number(e.target.value) } as any)} />
-                            <InputPro isLabel label="Máx. Comprobantes" name="maxComprobantes" type="number" value={vm.form.maxComprobantes} onChange={(e) => vm.setForm({ ...vm.form, maxComprobantes: Number(e.target.value) })} />
+                            <div className="space-y-2">
+                                <InputPro
+                                    isLabel
+                                    label="Límite Usuarios"
+                                    name="limiteUsuarios"
+                                    type="number"
+                                    value={vm.form.limiteUsuarios}
+                                    disabled={Number(vm.form.limiteUsuarios ?? 0) === 0}
+                                    onChange={(e) => vm.setForm({ ...vm.form, limiteUsuarios: Number(e.target.value) })}
+                                />
+                                <LimitToggle
+                                    label="Ilimitado"
+                                    checked={Number(vm.form.limiteUsuarios ?? 0) === 0}
+                                    onChange={(checked) =>
+                                        vm.setForm({ ...vm.form, limiteUsuarios: checked ? 0 : 1 })
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <InputPro
+                                    isLabel
+                                    label="Máx. Sedes"
+                                    name="maxSedes"
+                                    type="number"
+                                    value={(vm.form as any).maxSedes ?? 1}
+                                    disabled={Number((vm.form as any).maxSedes ?? 0) === 0}
+                                    onChange={(e) => vm.setForm({ ...vm.form, maxSedes: Number(e.target.value) } as any)}
+                                />
+                                <LimitToggle
+                                    label="Ilimitado"
+                                    checked={Number((vm.form as any).maxSedes ?? 0) === 0}
+                                    onChange={(checked) =>
+                                        vm.setForm({ ...vm.form, maxSedes: checked ? 0 : 1 } as any)
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <InputPro
+                                    isLabel
+                                    label="Máx. Comprobantes"
+                                    name="maxComprobantes"
+                                    type="number"
+                                    value={vm.form.maxComprobantes}
+                                    disabled={Number(vm.form.maxComprobantes ?? 0) === 0}
+                                    onChange={(e) => vm.setForm({ ...vm.form, maxComprobantes: Number(e.target.value) })}
+                                />
+                                <LimitToggle
+                                    label="Ilimitado"
+                                    checked={Number(vm.form.maxComprobantes ?? 0) === 0}
+                                    onChange={(checked) =>
+                                        vm.setForm({ ...vm.form, maxComprobantes: checked ? 0 : 100 })
+                                    }
+                                />
+                            </div>
                         </div>
+                        <p className="mt-2 text-xs text-gray-500">
+                            Usa <span className="font-semibold">0</span> para dejar el límite como <span className="font-semibold">Ilimitado</span>.
+                        </p>
                     </div>
                     <div className="border-t border-gray-100 my-4"></div>
                     <div className="space-y-3">

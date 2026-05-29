@@ -36,10 +36,12 @@ const isFalconext = BRAND.key === 'falconext';
 
 export default function ResellerClientes() {
     const { auth } = useAuthStore();
-    const { clientes, getClientes, createCliente, stats, getDashboard, planes, getPlanes } = useResellerPanelStore(); // Added planes, getPlanes
+    const { clientes, getClientes, createCliente, updateCliente, stats, getDashboard, planes, getPlanes } = useResellerPanelStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState<number>(0);
+    const [editingCliente, setEditingCliente] = useState<any>(null);
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<'empresa' | 'facturacion'>('empresa');
 
@@ -79,6 +81,38 @@ export default function ResellerClientes() {
             console.warn("No resellerId found in auth object");
         }
     }, [auth]);
+
+    const [editData, setEditData] = useState({ planId: '', razonSocial: '', telefono: '', adminEmail: '', adminPassword: '' });
+
+    const openEditModal = (cliente: any) => {
+        const raw = clientes.find((c: any) => c.id === cliente.id);
+        setEditingCliente(raw);
+        setEditData({
+            planId: String(raw?.planId || ''),
+            razonSocial: raw?.razonSocial || '',
+            telefono: raw?.telefono || '',
+            adminEmail: raw?.usuarios?.[0]?.email || '',
+            adminPassword: '',
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!auth || !editingCliente) return;
+        const payload: any = {
+            razonSocial: editData.razonSocial,
+            telefono: editData.telefono,
+            adminEmail: editData.adminEmail,
+        };
+        if (editData.planId) payload.planId = Number(editData.planId);
+        if (editData.adminPassword) payload.adminPassword = editData.adminPassword;
+        const result = await updateCliente(auth.resellerId!, editingCliente.id, payload);
+        if (result.success) {
+            setIsEditModalOpen(false);
+            getClientes(auth.resellerId!);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -168,6 +202,11 @@ export default function ResellerClientes() {
                 setIsDetailsOpen(true);
             },
         },
+        {
+            icon: <Icon icon="solar:pen-bold" width="18" />,
+            tooltip: 'Editar',
+            onClick: (row: any) => openEditModal(row),
+        },
     ];
 
     return (
@@ -228,6 +267,52 @@ export default function ResellerClientes() {
                 isOpen={isDetailsOpen}
                 onClose={() => setIsDetailsOpen(false)}
             />
+
+            {/* Edit Modal */}
+            <Modal
+                isOpenModal={isEditModalOpen}
+                closeModal={() => setIsEditModalOpen(false)}
+                title="Editar Cliente"
+                icon="solar:pen-bold-duotone"
+                iconClass="bg-amber-50 text-amber-600"
+                width="500px"
+                height="auto"
+            >
+                <form onSubmit={handleEditSubmit}>
+                    <div className="p-5 grid grid-cols-2 gap-3">
+                        <div className="col-span-2">
+                            <InputPro isLabel label="Razón Social" name="razonSocial" value={editData.razonSocial} onChange={(e: any) => setEditData(prev => ({ ...prev, razonSocial: e.target.value }))} placeholder="Empresa SAC" />
+                        </div>
+                        <InputPro isLabel label="Teléfono" name="telefono" value={editData.telefono} onChange={(e: any) => setEditData(prev => ({ ...prev, telefono: e.target.value }))} placeholder="999 999 999" />
+                        <InputPro isLabel label="Email Admin" name="adminEmail" type="email" value={editData.adminEmail} onChange={(e: any) => setEditData(prev => ({ ...prev, adminEmail: e.target.value }))} placeholder="admin@empresa.com" />
+                        <div className="col-span-2">
+                            <InputPro isLabel label="Nueva Contraseña (opcional)" name="adminPassword" type="password" value={editData.adminPassword} onChange={(e: any) => setEditData(prev => ({ ...prev, adminPassword: e.target.value }))} placeholder="Dejar vacío para no cambiar" />
+                        </div>
+                        <div className="col-span-2">
+                            <Select
+                                label="Plan"
+                                name="planId"
+                                value={planes.find((p: any) => String(p.id) === String(editData.planId))?.nombre || ''}
+                                options={planes.map((plan: any) => ({ id: plan.id, value: plan.nombre }))}
+                                onChange={(id: any) => setEditData(prev => ({ ...prev, planId: String(id) }))}
+                                error={null}
+                                readOnly={true}
+                            />
+                        </div>
+                        {editingCliente && (
+                            <div className="col-span-2 bg-gray-50 rounded-xl p-3 text-xs text-gray-500 space-y-0.5">
+                                <p><span className="font-semibold">RUC:</span> {editingCliente.ruc}</p>
+                                <p><span className="font-semibold">Plan actual:</span> {editingCliente.plan?.nombre}</p>
+                                <p><span className="font-semibold">Estado:</span> {editingCliente.estado}</p>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex gap-3 px-5 pb-5">
+                        <Button type="button" onClick={() => setIsEditModalOpen(false)} color="default" className="flex-1">Cancelar</Button>
+                        <Button type="submit" color="primary" className="flex-1">Guardar Cambios</Button>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Create Modal */}
             <Modal

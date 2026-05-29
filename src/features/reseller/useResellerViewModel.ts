@@ -30,3 +30,16 @@ export const useResellerRecargasViewModel = () => {
 
     return { recargas, stats, renovaciones, renovacionesResumen, getRenovaciones, auth };
 };
+
+export const useResellerEstadoCuentaViewModel = () => {
+    const { auth } = useAuthStore();
+    const { estadoCuenta, getEstadoCuenta } = useResellerPanelStore();
+
+    useEffect(() => {
+        if (auth?.resellerId) {
+            getEstadoCuenta(auth.resellerId);
+        }
+    }, [auth, getEstadoCuenta]);
+
+    return { auth, estadoCuenta, getEstadoCuenta };
+};

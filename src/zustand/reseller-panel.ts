@@ -11,12 +11,61 @@ export interface ResellerDashboardStats {
     totalClientes: number;
 }
 
+export interface ResellerEstadoCuentaResumen {
+    recargas: { total: number; cantidad: number };
+    activaciones: { cobrado: number; cantidad: number };
+    mensualidades: { cobrado: number; aplicadas: number; pendientes: number; rechazadas: number };
+    devoluciones: { total: number; cantidad: number };
+    totalCobrado: number;
+    flujoNeto: number;
+}
+
+export interface ResellerEstadoCuentaMovimiento {
+    id: number;
+    tipo: string;
+    estado: string;
+    monto: number;
+    fecha: string;
+    intento?: number;
+    motivo?: string;
+    descripcion?: string;
+    empresa?: {
+        id: number;
+        razonSocial: string;
+        ruc: string;
+        estado: string;
+        plan?: { id: number; nombre: string };
+    };
+}
+
+export interface ResellerEstadoCuentaData {
+    reseller: {
+        id: number;
+        nombre: string;
+        codigo: string;
+        saldoActual: number;
+    };
+    periodo: { desde: string; hasta: string };
+    resumen: ResellerEstadoCuentaResumen;
+    paginacion: { page: number; limit: number; total: number; totalPages: number };
+    movimientos: ResellerEstadoCuentaMovimiento[];
+    recargas: Array<{
+        id: number;
+        fecha: string;
+        monto: number;
+        medioPago?: string;
+        referencia?: string;
+        observacion?: string;
+    }>;
+}
+
 export interface IResellerPanelState {
     stats: ResellerDashboardStats;
     clientes: any[];
     planes: any[];
     recargas: any[];
     renovaciones: any[];
+    estadoCuenta: ResellerEstadoCuentaData | null;
     renovacionesResumen: {
         aplicados: number;
         pendientes: number;
@@ -27,11 +76,16 @@ export interface IResellerPanelState {
     getClientes: (resellerId: number) => Promise<void>;
     getRecargas: (resellerId: number) => Promise<void>;
     getRenovaciones: (resellerId: number, estado?: 'APLICADO' | 'PENDIENTE' | 'RECHAZADO' | '') => Promise<void>;
+    getEstadoCuenta: (
+        resellerId: number,
+        filtros?: { desde?: string; hasta?: string; tipo?: string; estado?: string; page?: number; limit?: number }
+    ) => Promise<void>;
     getPlanes: () => Promise<void>;
     createCliente: (resellerId: number, data: any) => Promise<{ success: boolean; error?: string }>;
     toggleEstadoCliente: (resellerId: number, clienteId: number, nuevoEstado: 'ACTIVO' | 'INACTIVO') => Promise<{ success: boolean; error?: string }>;
     getClienteDetalle: (resellerId: number, clienteId: number) => Promise<any>;
     updateClienteConfig: (resellerId: number, clienteId: number, data: any) => Promise<{ success: boolean; error?: string }>;
+    updateCliente: (resellerId: number, clienteId: number, data: any) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useResellerPanelStore = create<IResellerPanelState>((set, get) => ({
@@ -46,6 +100,7 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
     planes: [],
     recargas: [],
     renovaciones: [],
+    estadoCuenta: null,
     renovacionesResumen: {
         aplicados: 0,
         pendientes: 0,
@@ -128,6 +183,27 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
         }
     },
 
+    getEstadoCuenta: async (resellerId: number, filtros) => {
+        try {
+            const params = new URLSearchParams();
+            if (filtros?.desde) params.set('desde', filtros.desde);
+            if (filtros?.hasta) params.set('hasta', filtros.hasta);
+            if (filtros?.tipo) params.set('tipo', filtros.tipo);
+            if (filtros?.estado) params.set('estado', filtros.estado);
+            if (filtros?.page) params.set('page', String(filtros.page));
+            if (filtros?.limit) params.set('limit', String(filtros.limit));
+
+            const query = params.toString();
+            const resp: any = await httpGet(`resellers/${resellerId}/estado-cuenta${query ? `?${query}` : ''}`);
+
+            if (resp.code === 1) {
+                set({ estadoCuenta: resp.data as ResellerEstadoCuentaData });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    },
+
     getPlanes: async () => {
         try {
             const resp: any = await httpGet(`plan`);
@@ -203,6 +279,24 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
         } catch (error) {
             console.error(error);
             return null;
+        }
+    },
+
+    updateCliente: async (resellerId: number, clienteId: number, data: any) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await patch(`resellers/${resellerId}/clientes/${clienteId}`, data);
+            useAlertStore.setState({ loading: false });
+            if (resp.code === 1) {
+                useAlertStore.getState().alert('Cliente actualizado correctamente', 'success');
+                return { success: true };
+            }
+            useAlertStore.getState().alert(resp.message || 'Error al actualizar cliente', 'error');
+            return { success: false };
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al actualizar cliente', 'error');
+            return { success: false };
         }
     },
 

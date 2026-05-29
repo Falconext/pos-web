@@ -57,6 +57,7 @@ import ResellerLayout from './layouts/ResellerLayout'
 import ResellerDashboard from './pages/reseller/Dashboard'
 import ResellerClientes from './pages/reseller/Clientes'
 import ResellerRecargas from './pages/reseller/Recargas'
+import ResellerEstadoCuenta from './pages/reseller/EstadoCuenta'
 import SedeSelectionScreen from './features/auth/sede-selection/SedeSelectionScreen'
 import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
@@ -200,6 +201,7 @@ function App() {
           <Route index element={<ResellerDashboard />} />
           <Route path="clientes" element={<ResellerClientes />} />
           <Route path="recargas" element={<ResellerRecargas />} />
+          <Route path="estado-cuenta" element={<ResellerEstadoCuenta />} />
         </Route>
         {/* Rutas de tienda */}
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}

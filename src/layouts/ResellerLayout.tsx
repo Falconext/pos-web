@@ -60,6 +60,9 @@ export default function ResellerLayout() {
                     <NavLink onClick={() => setIsSidebarOpen(false)} to="/reseller/recargas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
                         <Icon icon="solar:wallet-money-bold-duotone" className="mr-3 text-xl" /> Recargas
                     </NavLink>
+                    <NavLink onClick={() => setIsSidebarOpen(false)} to="/reseller/estado-cuenta" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}>
+                        <Icon icon="solar:bill-list-bold-duotone" className="mr-3 text-xl" /> Estado de Cuenta
+                    </NavLink>
                 </nav>
             </aside>
 
