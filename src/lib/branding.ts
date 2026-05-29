@@ -37,7 +37,7 @@ const staticBrands: Record<string, BrandConfig> = {
     whatsapp: '51932332556',
     logo: '/assets/fnlogo.png',
     logoWhite: '/assets/logofalconwhite.png',
-    favicon: '/favicon.ico',
+    favicon: '/assets/logofalconext.png',
     primaryColor: '#3E2BC7',
     secondaryColor: '#5A45D1',
     socials: {
@@ -58,7 +58,7 @@ const staticBrands: Record<string, BrandConfig> = {
     whatsapp: '51932332556',
     logo: '/assets/krezka/krezka.png',
     logoWhite: '/assets/krezka/krezkawhite.png',
-    favicon: '/favicon.ico',
+    favicon: '/assets/krezka/krezkalogo.png',
     primaryColor: '#00D0D4',
     secondaryColor: '#00A0A4',
     socials: {
