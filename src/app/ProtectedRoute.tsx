@@ -4,14 +4,16 @@ import Loading from '@/components/Loading'
 
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { auth, isLoading } = useAuthStore()
+  const { auth, isLoading, bootstrapDone } = useAuthStore()
   const hasAccessToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN')
+  const hasRefreshToken = typeof window !== 'undefined' && !!localStorage.getItem('REFRESH_TOKEN')
 
-  if (!hasAccessToken) {
+  if (!hasAccessToken || !hasRefreshToken) {
     return <Navigate to="/login" replace />
   }
 
-  if (isLoading) return <Loading />
+  if (auth) return <>{children}</>
+  if (!bootstrapDone || isLoading) return <Loading />
   if (!auth) return <Navigate to="/login" replace />
   return <>{children}</>
 }

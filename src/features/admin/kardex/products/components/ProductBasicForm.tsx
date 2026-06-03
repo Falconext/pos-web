@@ -21,7 +21,7 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 
 export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
-        isFarmacia, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
+        isFarmacia, esDrogueria, esFarmaceutico, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
         isCategorizing, tienePlanCorporativo, tieneGestionLotes,
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
@@ -87,6 +87,20 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                 {/* Precios */}
                 <div className="grid grid-cols-1 gap-4">
+                    <Select
+                        defaultValue={formValues.afectacionNombre || "Gravado - Operación Onerosa"}
+                        error=""
+                        isSearch
+                        options={afectaciones}
+                        id="tipoAfectacionIGV"
+                        name="afectacionNombre"
+                        value=""
+                        onChange={handleChangeSelect}
+                        icon="clarity:box-plot-line"
+                        isIcon
+                        label="Tipo de afectación IGV"
+                        withLabel
+                    />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label="Precio Venta (S/)" />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label="Costo (S/)" placeholder="0.00" />
                     <InputPro autocomplete="off" value={(formValues as any)?.localizacion || ''} name="localizacion" onChange={handleChange} isLabel label="Ubicación / Localización" placeholder="Ej: Pasillo 3 - Estante B" />
@@ -194,6 +208,83 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <InputPro autocomplete="off" value={(formValues as any)?.presentacion || ''} name="presentacion" onChange={handleChange} isLabel label="Presentación" placeholder="Ej: Caja x 100 tabletas" />
                     </div>
                 </>
+            )}
+
+            {/* Campos regulatorios para cualquier rubro farmacéutico (farmacia, botica, droguería) */}
+            {esFarmaceutico && (
+                <div className="col-span-1 md:col-span-2 border-t dark:border-slate-800 pt-4 mt-2">
+                    <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                        <Icon icon="solar:medical-kit-bold-duotone" width={16} className="text-violet-500" />
+                        Regulatorio Farmacéutico
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InputPro
+                            autocomplete="off"
+                            value={(formValues as any)?.codigoDigemid || ''}
+                            name="codigoDigemid"
+                            onChange={handleChange}
+                            isLabel
+                            label="Código DIGEMID"
+                            placeholder="Ej: 1234567"
+                        />
+                        <div className="flex flex-col gap-3 pt-1">
+                            {/* requiereReceta: solo farmacia/botica retail */}
+                            {isFarmacia && (
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className="relative">
+                                        <input
+                                            type="checkbox"
+                                            name="requiereReceta"
+                                            checked={Boolean((formValues as any)?.requiereReceta)}
+                                            onChange={handleChange}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-violet-600 transition-colors" />
+                                        <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Requiere Receta Médica</p>
+                                        <p className="text-xs text-gray-400">Bloquea venta en POS hasta ingresar Nº receta</p>
+                                    </div>
+                                </label>
+                            )}
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        name="controlado"
+                                        checked={Boolean((formValues as any)?.controlado)}
+                                        onChange={handleChange}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-red-600 transition-colors" />
+                                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medicamento Controlado</p>
+                                    <p className="text-xs text-gray-400">Requiere DNI paciente y nombre del médico</p>
+                                </div>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        name="refrigerado"
+                                        checked={Boolean((formValues as any)?.refrigerado)}
+                                        onChange={handleChange}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-blue-500 transition-colors" />
+                                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">🧊 Cadena de Frío</p>
+                                    <p className="text-xs text-gray-400">Muestra alerta en POS y en el carrito</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {features.permiteFraccionamiento && (
@@ -349,6 +440,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             {/* Solo mayorista para NO restaurantes (súpers, tiendas, etc) */}
             {!isRestaurante && <ProductWholesalePricing vm={vm} />}
 
+            {tienePlanCorporativo && (
             <div className="col-span-1 md:col-span-2">
                 <InputPro
                     autocomplete="off"
@@ -360,6 +452,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     placeholder="Ej: Pasillo 3 - Estante B"
                 />
             </div>
+            )}
 
             {tienePlanCorporativo && (
                 <div className="col-span-1 md:col-span-2">

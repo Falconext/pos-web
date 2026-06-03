@@ -57,7 +57,7 @@ const NotificacionesCampana: React.FC = () => {
     return () => {
       detenerWebSocket();
     };
-  }, [obtenerNotificaciones, iniciarWebSocket, detenerWebSocket]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cargar alertas de lotes para farmacias
   useEffect(() => {
@@ -66,8 +66,8 @@ const NotificacionesCampana: React.FC = () => {
     const cargarAlertasLotes = async () => {
       try {
         const [vencidosRes, porVencerRes] = await Promise.all([
-          apiClient.get('/producto/lotes/vencidos'),
-          apiClient.get('/producto/lotes/por-vencer?dias=15'),
+          apiClient.get('/productos/lotes/vencidos'),
+          apiClient.get('/productos/lotes/por-vencer?dias=15'),
         ]);
 
         const vencidos = vencidosRes.data?.data || vencidosRes.data || [];

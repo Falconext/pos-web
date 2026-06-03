@@ -31,6 +31,11 @@ interface Empresa {
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
+  whatsappProvider?: 'PLATFORM' | 'EMPRESA' | 'DISABLED';
+  whatsappApiToken?: string;
+  whatsappPhoneNumberId?: string | null;
+  whatsappBusinessId?: string | null;
+  whatsappActivo?: boolean;
   plan: {
     id: number;
     nombre: string;
@@ -96,6 +101,11 @@ interface CreateEmpresaDto {
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
+  whatsappProvider?: 'PLATFORM' | 'EMPRESA' | 'DISABLED';
+  whatsappApiToken?: string;
+  whatsappPhoneNumberId?: string | null;
+  whatsappBusinessId?: string | null;
+  whatsappActivo?: boolean;
   usuario: {
     nombre: string;
     email: string;
@@ -127,6 +137,7 @@ interface UpdateEmpresaDto {
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   usarPrecioLoteFefo?: boolean;
+  directorTecnico?: string;
   brand?: string;
   producto?: string;
   usuarioPse?: string;
@@ -136,6 +147,11 @@ interface UpdateEmpresaDto {
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
+  whatsappProvider?: 'PLATFORM' | 'EMPRESA' | 'DISABLED';
+  whatsappApiToken?: string;
+  whatsappPhoneNumberId?: string | null;
+  whatsappBusinessId?: string | null;
+  whatsappActivo?: boolean;
 }
 
 interface ListEmpresaDto {

@@ -1,258 +1,331 @@
-import { usePedidosViewModel, ESTADOS } from '@/features/admin/tienda/usePedidosViewModel';
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { Calendar } from '@/components/Date';
+import { Button } from '@/components/ui/button';
+import DataTable from '@/components/Datatable';
+import Select from '@/components/Select';
+import {
+  AGENCIAS_ENVIO,
+  ESTADOS_ENTREGA,
+  ESTADOS_ENVIO,
+  PedidoTiendaAdmin,
+  usePedidosViewModel,
+} from '@/features/admin/tienda/usePedidosViewModel';
+import { PedidoDetalleDrawer } from './PedidoDetalleDrawer';
+
+const money = (value: number) => `S/ ${value.toFixed(2)}`;
+
+const formatDate = (value: string) => new Date(value).toLocaleString('es-PE', {
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+});
+
+const inputBase = 'h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100 dark:border-slate-700 dark:bg-[#0F172A] dark:text-white';
+
+const HEADER_COLS = ['#', 'Fecha', 'Cliente', 'Vendedor', 'Estado entrega', 'Agencia envío', 'Estado envío', 'Total', 'Pagado', 'Por pagar', 'Estado pago', 'Pagos', 'Acciones'];
+
+const selCls = '!h-9 !rounded-xl !border-gray-200 dark:!border-slate-700 !bg-white dark:!bg-slate-800 !px-2 !py-0 !text-xs !shadow-none !text-gray-700 dark:!text-white';
+
+const entregaOpts = ESTADOS_ENTREGA.map(e => ({ id: e.value, value: e.label }));
+const agenciaOpts = AGENCIAS_ENVIO.map(a => ({ id: a.value, value: a.label }));
+const envioOpts   = ESTADOS_ENVIO.map(e => ({ id: e.value, value: e.label }));
+
+function ConfirmPagoModal({ pedido, onConfirm, onCancel }: { pedido: PedidoTiendaAdmin; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed top-[-30px] inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-sm p-6 z-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+            <Icon icon="solar:wallet-money-bold" className="text-blue-600 dark:text-blue-400 text-xl" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Confirmar pago completo</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{pedido.clienteNombre}</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+          ¿Marcar como pagado el total de <span className="font-semibold text-gray-900 dark:text-white">S/ {pedido.total.toFixed(2)}</span>?
+          Esta acción se puede revertir ajustando el monto manualmente.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-[2] h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+          >
+            <Icon icon="solar:check-circle-bold" className="text-base" />
+            Confirmar pago
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function toCalendarDate(value: string) {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+}
+
+function toIsoDate(value: string | Date) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+  const [day, month, year] = value.split('/');
+  if (!day || !month || !year) return '';
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+function PagoBadge({ pedido }: { pedido: PedidoTiendaAdmin }) {
+  const pagado = pedido.saldoPendiente <= 0.01;
+  return (
+    <span className={`inline-flex rounded-md border px-2.5 py-1 text-xs font-medium ${pagado ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+      {pagado ? 'Pagado' : 'Pendiente'}
+    </span>
+  );
+}
+
+function SellerCell({ nombre }: { nombre: string }) {
+  const partes = nombre.trim().split(' ').filter(Boolean);
+  const iniciales = ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase();
+  const display = [partes[0], partes[1]].filter(Boolean).join(' ');
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-medium flex-shrink-0" title={nombre}>
+        {iniciales || '?'}
+      </span>
+      <span className="text-xs text-slate-600 dark:text-slate-300">{display || '—'}</span>
+    </div>
+  );
+}
 
 export default function PedidosTienda() {
   const vm = usePedidosViewModel();
+  const [selectedPedido, setSelectedPedido] = useState<PedidoTiendaAdmin | null>(null);
+  const [confirmPago, setConfirmPago] = useState<PedidoTiendaAdmin | null>(null);
 
   if (vm.loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-50 dark:bg-[#0A0D14]">
+      <div className="flex min-h-[520px] items-center justify-center">
         <div className="text-center">
-          <Icon icon="eos-icons:loading" className="w-12 h-12 text-blue-500 dark:text-blue-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Cargando pedidos...</p>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-violet-50 text-violet-600 shadow-sm shadow-violet-200/70">
+            <Icon icon="eos-icons:loading" className="h-10 w-10" />
+          </div>
+          <p className="text-sm text-gray-500">Cargando pedidos...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen px-4 pb-8 bg-gray-50 dark:bg-[#0A0D14]">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-3 pt-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Icon icon="solar:bag-5-bold" className="w-6 h-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Pedidos de Tienda</h1>
-              {vm.newOrdersCount > 0 && (
-                <button
-                  onClick={vm.clearNewOrders}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse"
-                  title="Haz clic para marcar como visto"
-                >
-                  <Icon icon="solar:bell-bing-bold" className="w-3.5 h-3.5" />
-                  {vm.newOrdersCount} nuevo{vm.newOrdersCount > 1 ? 's' : ''}
-                </button>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
-              Actualizando cada 30s
-            </p>
-          </div>
+  const bodyData = vm.pedidosFiltrados.map((pedido, index) => {
+    const formattedDate = formatDate(pedido.creadoEn).split(',');
+    return {
+      id: pedido.id,
+      '#': <span className="text-gray-400">{index + 1}</span>,
+      'Fecha': (
+        <div>
+          <div className="text-xs text-gray-600 dark:text-gray-300">{formattedDate[0]}</div>
+          <div className="text-[11px] text-gray-400">{formattedDate[1]?.trim()}</div>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-6">
-          {vm.estadisticas.map((stat) => (
-            <button key={stat.value} onClick={() => vm.setFiltroEstado(vm.filtroEstado === stat.value ? '' : stat.value)}
-              className={`p-4 rounded-xl border-2 transition-all hover:shadow-md ${vm.filtroEstado === stat.value ? `${stat.color} shadow-sm scale-105` : 'bg-white dark:bg-[#111827] border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <Icon icon={stat.icon} className="w-5 h-5 dark:text-gray-300" />
-                <span className="text-2xl font-bold dark:text-white">{stat.count}</span>
-              </div>
-              <p className="text-xs font-semibold truncate dark:text-gray-300">{stat.label}</p>
-            </button>
-          ))}
+      ),
+      'Cliente': (
+        <div>
+          <div className="uppercase text-xs text-gray-700 dark:text-gray-200 max-w-[200px] truncate">{pedido.clienteNombre}</div>
+          <div className="text-[11px] text-gray-400">{pedido.clienteTelefono || pedido.codigoSeguimiento}</div>
         </div>
-      </div>
-
-      {/* Search + Date Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
-          <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, código o teléfono..."
-            value={vm.busqueda}
-            onChange={(e) => vm.setBusqueda(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+      ),
+      'Vendedor': <SellerCell nombre={pedido.vendedorNombre} />,
+      'Estado entrega': (
+        <div onClick={(e) => e.stopPropagation()} className="w-[200px]">
+          <Select
+            name={`estadoEntrega-${pedido.id}`}
+            label="" error={null} withLabel={false}
+            options={entregaOpts}
+            value={entregaOpts.find(o => o.id === pedido.estadoEntrega)?.value ?? ''}
+            inputClassName={selCls}
+            onChange={(id) => vm.actualizarPedidoOperativo(pedido.id, { estadoEntrega: String(id) as PedidoTiendaAdmin['estadoEntrega'] })}
           />
         </div>
+      ),
+      'Agencia envío': (
+        <div onClick={(e) => e.stopPropagation()} className="w-[170px]">
+          <Select
+            name={`agenciaEnvio-${pedido.id}`}
+            label="" error={null} withLabel={false}
+            options={agenciaOpts}
+            value={agenciaOpts.find(o => o.id === pedido.agenciaEnvio)?.value ?? ''}
+            inputClassName={selCls}
+            onChange={(id) => vm.actualizarPedidoOperativo(pedido.id, { agenciaEnvio: String(id) as PedidoTiendaAdmin['agenciaEnvio'] })}
+          />
+        </div>
+      ),
+      'Estado envío': (
+        <div onClick={(e) => e.stopPropagation()} className="w-[160px]">
+          <Select
+            name={`estadoEnvio-${pedido.id}`}
+            label="" error={null} withLabel={false}
+            options={envioOpts}
+            value={envioOpts.find(o => o.id === pedido.estadoEnvio)?.value ?? ''}
+            inputClassName={selCls}
+            onChange={(id) => vm.actualizarPedidoOperativo(pedido.id, { estadoEnvio: String(id) as PedidoTiendaAdmin['estadoEnvio'] })}
+          />
+        </div>
+      ),
+      'Total': <span className="text-xs text-gray-700 dark:text-gray-200">{money(pedido.total)}</span>,
+      'Pagado': <span className="text-xs text-gray-500 dark:text-gray-400">{money(pedido.montoPagado)}</span>,
+      'Por pagar': <span className="text-xs text-gray-500 dark:text-gray-400">{money(pedido.saldoPendiente)}</span>,
+      'Estado pago': <PagoBadge pedido={pedido} />,
+      'Pagos': (
+        <button
+          onClick={(e) => { e.stopPropagation(); setConfirmPago(pedido); }}
+          disabled={pedido.saldoPendiente <= 0.01}
+          className="inline-flex h-8 w-10 items-center justify-center rounded-xl bg-blue-500 text-white shadow-sm transition hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          title={pedido.saldoPendiente <= 0.01 ? 'Ya está pagado' : 'Marcar como pagado'}
+        >
+          <Icon icon="solar:wallet-money-bold" className="h-4 w-4" />
+        </button>
+      ),
+      'Acciones': (
         <div className="flex items-center gap-2">
-          <Icon icon="solar:calendar-linear" className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <input
-            type="date"
-            value={vm.fechaDesde}
-            onChange={(e) => vm.setFechaDesde(e.target.value)}
-            className="text-sm px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          />
-          <span className="text-gray-400 text-sm">—</span>
-          <input
-            type="date"
-            value={vm.fechaHasta}
-            onChange={(e) => vm.setFechaHasta(e.target.value)}
-            className="text-sm px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          />
-          {(vm.busqueda || vm.fechaDesde || vm.fechaHasta) && (
-            <button
-              onClick={() => { vm.setBusqueda(''); vm.setFechaDesde(''); vm.setFechaHasta(''); }}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 hover:text-gray-600 transition-colors"
-              title="Limpiar filtros"
+          {pedido.clienteTelefono && (
+            <a
+              href={vm.buildWhatsappUrl(pedido, pedido.estadoEntrega) || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-white transition hover:bg-emerald-600"
+              title="WhatsApp"
             >
-              <Icon icon="solar:close-circle-bold" className="w-4 h-4" />
-            </button>
+              <Icon icon="mdi:whatsapp" className="h-4 w-4" />
+            </a>
           )}
+          <button
+            onClick={(e) => { e.stopPropagation(); setSelectedPedido(pedido); }}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300"
+            title="Ver detalle"
+          >
+            <Icon icon="solar:eye-bold" className="h-4 w-4" />
+          </button>
         </div>
+      ),
+    };
+  });
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Pedidos</h1>
+        {vm.newOrdersCount > 0 && (
+          <button
+            onClick={vm.clearNewOrders}
+            className="inline-flex items-center rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-600"
+          >
+            {vm.newOrdersCount} nuevo{vm.newOrdersCount > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
 
-      {vm.pedidosFiltrados.length === 0 ? (
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-slate-700 p-16 text-center">
-          <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4">
-            <Icon icon="solar:bag-cross-linear" className="w-10 h-10 text-gray-400 dark:text-gray-500" />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay pedidos</h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            {vm.filtroEstado ? 'No hay pedidos con este estado. Prueba con otro filtro.' : 'Los pedidos de tu tienda aparecerán aquí. ¡Empieza a vender!'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {vm.pedidosFiltrados.map((pedido) => {
-            const estadoInfo = vm.getEstadoInfo(pedido.estado);
-            const isExpanded = vm.expandedOrders.has(pedido.id);
-            return (
-              <div key={pedido.id} className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden">
-                <div className="p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors" onClick={() => vm.toggleOrderExpanded(pedido.id)}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center flex-shrink-0">
-                        <Icon icon="solar:shopping-bag-bold" className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1 flex-wrap">
-                          <h3 className="font-bold text-lg text-gray-900 dark:text-white">{pedido.clienteNombre || `#${pedido.id}`}</h3>
-                          <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${estadoInfo.color}`}>
-                            <Icon icon={estadoInfo.icon} className="inline w-3.5 h-3.5 mr-1" />{estadoInfo.label}
-                          </span>
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${pedido.tipoEntrega === 'ENVIO' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50' : 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/50'}`}>
-                            <Icon icon={pedido.tipoEntrega === 'ENVIO' ? 'solar:scooter-bold' : 'solar:shop-bold'} className="inline w-3.5 h-3.5 mr-1" />
-                            {pedido.tipoEntrega === 'ENVIO' ? 'Envío' : 'Recojo'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
-                          <span className="flex items-center gap-1"><Icon icon="solar:calendar-bold-duotone" className="w-4 h-4" />{new Date(pedido.creadoEn).toLocaleDateString('es-PE')}</span>
-                          <span className="flex items-center gap-1"><Icon icon="solar:clock-circle-bold-duotone" className="w-4 h-4" />{new Date(pedido.creadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</span>
-                          <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{pedido.codigoSeguimiento}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">S/ {pedido?.total?.toFixed(2)}</p>
-                      </div>
-                      <Icon icon={isExpanded ? "solar:alt-arrow-up-bold" : "solar:alt-arrow-down-bold"} className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                    </div>
-                  </div>
-                </div>
-                {isExpanded && (
-                  <div className="border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/20">
-                    <div className="p-5 space-y-6">
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-slate-900/50 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
-                          <div className="flex items-center gap-2 mb-3"><Icon icon="solar:user-bold-duotone" className="w-5 h-5 text-blue-600 dark:text-blue-400" /><h4 className="font-semibold text-gray-900 dark:text-white">Cliente</h4></div>
-                          <div className="space-y-2 text-sm">
-                            <p className="font-medium text-gray-900 dark:text-white">{pedido.clienteNombre}</p>
-                            <a href={`https://wa.me/${(pedido.clienteTelefono || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600 dark:text-green-400 hover:underline">
-                              <Icon icon="mdi:whatsapp" className="w-4 h-4" />{pedido.clienteTelefono}
-                            </a>
-                            {pedido.clienteEmail && <p className="flex items-center gap-2 text-gray-600 dark:text-gray-400"><Icon icon="solar:letter-bold-duotone" className="w-4 h-4" />{pedido.clienteEmail}</p>}
-                          </div>
-                        </div>
-                        <div className="bg-white dark:bg-slate-900/50 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
-                          <div className="flex items-center gap-2 mb-3"><Icon icon="solar:map-point-bold-duotone" className="w-5 h-5 text-green-600 dark:text-green-400" /><h4 className="font-semibold text-gray-900 dark:text-white">Entrega</h4></div>
-                          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            {pedido.clienteDireccion && <p>{pedido.clienteDireccion}</p>}
-                            {pedido.clienteReferencia && <p className="text-gray-500 dark:text-gray-500 italic">{pedido.clienteReferencia}</p>}
-                            {pedido.observaciones && <p className="text-gray-500 dark:text-gray-500 italic">Obs: {pedido.observaciones}</p>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-slate-900/50 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2 mb-3"><Icon icon="solar:bag-4-bold-duotone" className="w-5 h-5 text-purple-600 dark:text-purple-400" /><h4 className="font-semibold text-gray-900 dark:text-white">Productos</h4></div>
-                        <div className="space-y-2">
-                          {pedido?.items?.map((item: any) => (
-                            <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-slate-800 last:border-0">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                {item.producto?.imagenUrl ? (
-                                  <img src={item.producto.imagenUrl} alt={item.producto.descripcion} className="w-10 h-10 rounded-lg object-contain border border-gray-100 dark:border-slate-700 bg-white flex-shrink-0" />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                                    <Icon icon="solar:gallery-linear" className="w-5 h-5 text-gray-400" />
-                                  </div>
-                                )}
-                                <div className="min-w-0">
-                                  <p className="text-sm text-gray-900 dark:text-white truncate">{item.producto.descripcion}</p>
-                                  <p className="text-xs text-gray-400">x{item.cantidad} · S/ {Number(item.precioUnit ?? item.precioUnitario ?? 0).toFixed(2)} c/u</p>
-                                </div>
-                              </div>
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white ml-3">S/ {item?.subtotal?.toFixed(2)}</span>
-                            </div>
-                          ))}
-                          {pedido.costoEnvio > 0 && (
-                            <div className="flex items-center justify-between py-2 text-emerald-600 dark:text-emerald-400">
-                              <span className="text-sm flex items-center gap-2"><Icon icon="solar:delivery-bold-duotone" className="w-4 h-4" />Costo de envío</span>
-                              <span className="text-sm font-semibold">S/ {pedido.costoEnvio.toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between py-3 border-t-2 border-gray-200 dark:border-slate-700">
-                            <span className="font-bold text-gray-900 dark:text-gray-400">Total</span>
-                            <span className="text-xl font-bold text-gray-900 dark:text-white">S/ {pedido?.total?.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
-                        {pedido.estado === 'PENDIENTE' && (
-                          <button onClick={() => vm.cambiarEstado(pedido.id, 'CONFIRMADO')} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">
-                            <Icon icon="solar:check-circle-bold" className="w-4 h-4" />Confirmar Pago
-                          </button>
-                        )}
-                        {pedido.estado === 'CONFIRMADO' && (
-                          <button onClick={() => vm.cambiarEstado(pedido.id, 'EN_PREPARACION')} className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">
-                            <Icon icon="solar:chef-hat-bold" className="w-4 h-4" />En Preparación
-                          </button>
-                        )}
-                        {pedido.estado === 'EN_PREPARACION' && (
-                          <button onClick={() => vm.cambiarEstado(pedido.id, 'LISTO')} className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">
-                            <Icon icon="solar:bag-check-bold" className="w-4 h-4" />Marcar Listo
-                          </button>
-                        )}
-                        {pedido.estado === 'LISTO' && (
-                          <button onClick={() => vm.cambiarEstado(pedido.id, 'ENTREGADO')} className="px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">
-                            <Icon icon="solar:box-bold" className="w-4 h-4" />Marcar Entregado
-                          </button>
-                        )}
-                        {pedido.estado !== 'CANCELADO' && pedido.estado !== 'ENTREGADO' && (
-                          <button onClick={() => vm.cambiarEstado(pedido.id, 'CANCELADO')} className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2 ml-auto">
-                            <Icon icon="solar:close-circle-bold" className="w-4 h-4" />Cancelar Pedido
-                          </button>
-                        )}
-                        {pedido.clienteTelefono && (() => {
-                          const nextState = pedido.estado === 'PENDIENTE' ? 'CONFIRMADO'
-                            : pedido.estado === 'CONFIRMADO' ? 'EN_PREPARACION'
-                            : pedido.estado === 'EN_PREPARACION' ? 'LISTO'
-                            : pedido.estado === 'LISTO' ? 'ENTREGADO'
-                            : null;
-                          const waUrl = nextState ? vm.buildWhatsappUrl(pedido, nextState) : vm.buildWhatsappUrl(pedido, pedido.estado);
-                          return waUrl ? (
-                            <a
-                              href={waUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2"
-                            >
-                              <Icon icon="mdi:whatsapp" className="w-4 h-4" />Notificar cliente
-                            </a>
-                          ) : null;
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                )}
+      <section className="rounded-[22px] border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827]">
+        {/* Filtros */}
+        <div className="border-b border-gray-100 p-5 dark:border-slate-800 rounded-t-[22px] bg-white dark:bg-[#111827]">
+          <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr_0.7fr_auto]">
+            <label className="space-y-2">
+              <span className="text-sm text-gray-600 dark:text-gray-300">Buscar pedido</span>
+              <div className="relative">
+                <Icon icon="solar:magnifer-linear" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={vm.busqueda}
+                  onChange={(e) => vm.setBusqueda(e.target.value)}
+                  placeholder="Cliente, teléfono, vendedor o código..."
+                  className={`${inputBase} w-full pl-12`}
+                />
               </div>
-            );
-          })}
+            </label>
+            <div>
+              <Calendar
+                text="Fecha inicio"
+                name="fechaDesde"
+                value={toCalendarDate(vm.fechaDesde)}
+                onChange={(date) => vm.setFechaDesde(toIsoDate(date))}
+              />
+            </div>
+            <div>
+              <Calendar
+                text="Fecha fin"
+                name="fechaHasta"
+                value={toCalendarDate(vm.fechaHasta)}
+                onChange={(date) => vm.setFechaHasta(toIsoDate(date))}
+                right
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="outline-default"
+                className="h-11 rounded-xl px-4"
+                onClick={() => { vm.setBusqueda(''); vm.setFechaDesde(''); vm.setFechaHasta(''); vm.setFiltroEstado(''); }}
+              >
+                <Icon icon="solar:refresh-bold" className="h-4 w-4" />
+                Limpiar
+              </Button>
+            </div>
+          </div>
+
+          {/* Filtros de estado */}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => vm.setFiltroEstado('')}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm transition ${!vm.filtroEstado ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-[#0F172A] dark:text-gray-300'}`}
+            >
+              Todos
+              <span className={`rounded-full px-2 py-0.5 text-xs ${!vm.filtroEstado ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-800'}`}>{vm.pedidos.length}</span>
+            </button>
+            {vm.estadisticas.map((estado) => (
+              <button
+                key={estado.value}
+                onClick={() => vm.setFiltroEstado(vm.filtroEstado === estado.value ? '' : estado.value)}
+                className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm transition ${vm.filtroEstado === estado.value ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-[#0F172A] dark:text-gray-300'}`}
+              >
+                {estado.label}
+                <span className={`rounded-full px-2 py-0.5 text-xs ${vm.filtroEstado === estado.value ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-800'}`}>{estado.count}</span>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* DataTable */}
+        <DataTable
+          bodyData={bodyData}
+          headerColumns={HEADER_COLS}
+          pageSize={20}
+        />
+      </section>
+
+      {/* Drawer lateral */}
+      <PedidoDetalleDrawer
+        open={selectedPedido !== null}
+        pedido={selectedPedido}
+        onClose={() => setSelectedPedido(null)}
+      />
+
+      {/* Confirmación de pago */}
+      {confirmPago && (
+        <ConfirmPagoModal
+          pedido={confirmPago}
+          onConfirm={() => {
+            vm.actualizarPedidoOperativo(confirmPago.id, { montoPagado: confirmPago.total });
+            setConfirmPago(null);
+          }}
+          onCancel={() => setConfirmPago(null)}
+        />
       )}
     </div>
   );

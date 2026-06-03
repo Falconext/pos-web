@@ -107,7 +107,7 @@ export default function ResetPasswordView() {
                                 <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 24 }}>
                                     Este enlace de recuperación no es válido o ha expirado.
                                 </p>
-                                <button onClick={() => navigate('/forgot-password')}
+                                <button onClick={() => navigate('/recuperar-contrasena')}
                                     style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 24px', fontWeight: 600, cursor: 'pointer' }}>
                                     Solicitar nuevo enlace
                                 </button>

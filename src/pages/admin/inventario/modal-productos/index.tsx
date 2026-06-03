@@ -70,7 +70,7 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
 
             // 1. Backend: local catalog lookup
             try {
-                const resp: any = await get(`producto/barcode/${encodeURIComponent(code)}`);
+                const resp: any = await get(`productos/barcode/${encodeURIComponent(code)}`);
                 const product = resp?.data;
                 if (product?.descripcion) {
                     setFormValues({

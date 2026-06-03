@@ -119,7 +119,7 @@ export default function DashboardView() {
                         <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1">Estado del stock</h3>
                         <TremorBarChart
                             className="mt-4 h-64"
-                            data={charts.stockChartData}
+                            data={charts.stockChartData ?? []}
                             index="estado"
                             categories={["Stock normal", "Stock crítico", "Sin stock"]}
                             colors={["emerald", "amber", "rose"]}
@@ -256,6 +256,113 @@ export default function DashboardView() {
                     </div>
                 </div>
                 </>
+            )}
+
+            {/* ── Sección Farmacéutica ──────────────────────────────── */}
+            {!loading && dashboardData?.farmacia && (
+                <div className="mt-8">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+                            <Icon icon="solar:medical-kit-bold-duotone" className="text-violet-600 dark:text-violet-400 text-lg" />
+                        </div>
+                        <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Control Farmacéutico</h2>
+                    </div>
+
+                    {/* KPIs farmacia */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        {[
+                            {
+                                label: 'Lotes vencidos con stock',
+                                value: dashboardData.farmacia.lotesVencidos,
+                                icon: 'solar:danger-circle-bold-duotone',
+                                color: 'red',
+                                action: dashboardData.farmacia.lotesVencidos > 0 ? '⚠️ Requieren acción' : '✅ Sin vencidos',
+                            },
+                            {
+                                label: 'Lotes por vencer <30d',
+                                value: dashboardData.farmacia.lotesPorVencer30d,
+                                icon: 'solar:clock-circle-bold-duotone',
+                                color: 'amber',
+                                action: dashboardData.farmacia.lotesPorVencer30d > 0 ? 'Revisar pronto' : '✅ Sin alertas',
+                            },
+                            {
+                                label: 'Valor inmovilizado (vencidos)',
+                                value: `S/ ${Number(dashboardData.farmacia.valorLotesVencidos).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                                icon: 'solar:wallet-money-bold-duotone',
+                                color: dashboardData.farmacia.valorLotesVencidos > 0 ? 'red' : 'emerald',
+                                action: dashboardData.farmacia.valorLotesVencidos > 0 ? 'Dar de baja o devolver' : '✅ Sin valor inmovilizado',
+                            },
+                        ].map((kpi) => (
+                            <div key={kpi.label} className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-gray-100 dark:border-slate-800 shadow-sm">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${kpi.color === 'red' ? 'bg-red-50 dark:bg-red-900/20' : kpi.color === 'amber' ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'}`}>
+                                    <Icon icon={kpi.icon} className={`text-xl ${kpi.color === 'red' ? 'text-red-600 dark:text-red-400' : kpi.color === 'amber' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                                </div>
+                                <p className="text-2xl font-black text-gray-900 dark:text-white">{kpi.value}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">{kpi.label}</p>
+                                <p className={`text-xs font-semibold mt-1.5 ${kpi.color === 'red' && String(kpi.value) !== '0' && kpi.value !== 0 ? 'text-red-500' : kpi.color === 'amber' && String(kpi.value) !== '0' && kpi.value !== 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{kpi.action}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Tablas top lotes */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Por vencer */}
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-slate-800">
+                                <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                    <Icon icon="solar:clock-circle-bold" className="text-amber-500" />
+                                    Próximos a vencer
+                                </h3>
+                                <a href="/administrador/kardex/lotes" className="text-xs text-violet-600 dark:text-violet-400 font-semibold hover:underline">Ver todos →</a>
+                            </div>
+                            {dashboardData.farmacia.top5PorVencer.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400 text-sm">Sin lotes por vencer en 30 días ✅</div>
+                            ) : (
+                                <div className="divide-y divide-gray-50 dark:divide-slate-800">
+                                    {dashboardData.farmacia.top5PorVencer.map((l: any) => (
+                                        <div key={l.id} className="flex items-center justify-between px-5 py-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{l.producto.descripcion}</p>
+                                                <p className="text-xs text-gray-400 font-mono">{l.lote} · Stock: {l.stockActual}</p>
+                                            </div>
+                                            <span className="ml-3 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
+                                                {l.diasAlVencimiento}d
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Vencidos con stock */}
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-slate-800">
+                                <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                    <Icon icon="solar:danger-circle-bold" className="text-red-500" />
+                                    Vencidos con stock
+                                </h3>
+                                <a href="/administrador/kardex/lotes" className="text-xs text-violet-600 dark:text-violet-400 font-semibold hover:underline">Ver todos →</a>
+                            </div>
+                            {dashboardData.farmacia.top5Vencidos.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400 text-sm">Sin lotes vencidos con stock ✅</div>
+                            ) : (
+                                <div className="divide-y divide-gray-50 dark:divide-slate-800">
+                                    {dashboardData.farmacia.top5Vencidos.map((l: any) => (
+                                        <div key={l.id} className="flex items-center justify-between px-5 py-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{l.producto.descripcion}</p>
+                                                <p className="text-xs text-gray-400 font-mono">{l.lote} · Stock: {l.stockActual}</p>
+                                            </div>
+                                            <span className="ml-3 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 flex-shrink-0">
+                                                Vencido
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

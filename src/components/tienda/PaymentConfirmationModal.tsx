@@ -39,6 +39,7 @@ export default function PaymentConfirmationModal({
 
     const isDigitalPayment = ['YAPE', 'PLIN', 'TRANSFERENCIA'].includes(orderData.medioPago);
     const isCashPayment = ['EFECTIVO', 'POS'].includes(orderData.medioPago);
+    const isCardPayment = orderData.medioPago === 'TARJETA';
 
     // Check availability
     const hasYape = !!paymentConfig?.yapeQR || !!paymentConfig?.yapeNumero;
@@ -116,12 +117,14 @@ export default function PaymentConfirmationModal({
 
                     {/* Title */}
                     <h2 className="text-2xl font-bold text-center text-gray-900 mb-2 tracking-tight">
-                        {isDigitalPayment ? '¡Confirma tu Pago!' : '¡Pedido Confirmado!'}
+                        {isDigitalPayment ? '¡Confirma tu Pago!' : isCardPayment ? '¡Pago Aprobado!' : '¡Pedido Confirmado!'}
                     </h2>
                     <p className="text-center text-gray-500 text-sm mb-8">
                         {isDigitalPayment
                             ? 'Usa los datos a continuación para realizar tu pago.'
-                            : 'Tu orden ha sido registrada correctamente.'}
+                            : isCardPayment
+                                ? 'Tu pago con tarjeta fue procesado correctamente.'
+                                : 'Tu orden ha sido registrada correctamente.'}
                     </p>
 
                     {/* Order Summary Card */}
@@ -155,12 +158,14 @@ export default function PaymentConfirmationModal({
                     </div>
 
                     {/* Helper Note */}
-                    <div className="flex items-start gap-2 mb-8 bg-blue-50 p-3 rounded-xl border border-blue-100">
-                        <Icon icon="solar:info-circle-bold" className="text-blue-500 w-5 h-5 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-blue-700 leading-relaxed">
-                            <span className="font-bold">Important:</span> Por favor incluye el número de pedido <span className="font-bold">#{orderData.id}</span> en el mensaje o nota de tu pago.
-                        </p>
-                    </div>
+                    {isDigitalPayment && (
+                        <div className="flex items-start gap-2 mb-8 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                            <Icon icon="solar:info-circle-bold" className="text-blue-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-blue-700 leading-relaxed">
+                                <span className="font-bold">Important:</span> Por favor incluye el número de pedido <span className="font-bold">#{orderData.id}</span> en el mensaje o nota de tu pago.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Payment Sections */}
                     {showTabs && (
@@ -261,7 +266,7 @@ export default function PaymentConfirmationModal({
                             >
                                 <Icon icon="mdi:whatsapp" className="w-6 h-6" />
                                 <div className="flex flex-col items-start leading-none">
-                                    <span>{isDigitalPayment ? 'Enviar Comprobante' : 'Notificar Pedido'}</span>
+                                    <span>{isDigitalPayment ? 'Enviar Comprobante' : isCardPayment ? 'Notificar Pago Aprobado' : 'Notificar Pedido'}</span>
                                     {isDigitalPayment && <span className="text-[10px] opacity-90 font-normal mt-1">al WhatsApp de la empresa</span>}
                                 </div>
                             </button>
@@ -276,7 +281,9 @@ export default function PaymentConfirmationModal({
                     </div>
 
                     <p className="text-[10px] text-center text-gray-400 mt-6 max-w-xs mx-auto">
-                        Al enviar el comprobante, procesaremos tu pedido lo antes posible.
+                        {isDigitalPayment
+                            ? 'Al enviar el comprobante, procesaremos tu pedido lo antes posible.'
+                            : 'Puedes hacer seguimiento del estado del pedido en tiempo real.'}
                     </p>
                 </div>
             </div>

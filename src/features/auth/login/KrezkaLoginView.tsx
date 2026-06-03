@@ -296,7 +296,7 @@ export default function KrezkaLoginView() {
                                     </div>
                                     <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>Recuérdame</span>
                                 </label>
-                                <button type="button" onClick={() => navigate('/forgot-password')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#9CA3AF', cursor: 'pointer', padding: 0 }}>
+                                <button type="button" onClick={() => navigate('/recuperar-contrasena')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#9CA3AF', cursor: 'pointer', padding: 0 }}>
                                     ¿Olvidaste tu contraseña?
                                 </button>
                             </div>
@@ -307,11 +307,6 @@ export default function KrezkaLoginView() {
                             </button>
                         </form>
 
-                        {/* Footer */}
-                        <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginTop: 28 }}>
-                            ¿No tienes una cuenta?{' '}
-                            <a href="#" style={{ color: ACCENT, fontWeight: 600, textDecoration: 'none' }}>Regístrate</a>
-                        </p>
                     </div>
                 </div>
             </div>

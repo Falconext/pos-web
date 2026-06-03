@@ -121,6 +121,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                 formValues={vm.formValues}
                 handleChange={vm.handleChange}
                 errors={vm.errors}
+                onFillFromDigemid={vm.fillFromDigemid}
             />
             <ModalLotes
                 isOpen={vm.showLotesModal}

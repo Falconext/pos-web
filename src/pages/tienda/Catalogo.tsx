@@ -8,7 +8,7 @@ import ProductCardPio from '@/components/tienda/ProductCardPio';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 export default function Catalogo() {
     const { slug } = useParams();

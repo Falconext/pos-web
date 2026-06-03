@@ -48,7 +48,7 @@ export default function ResellerEstadoCuenta() {
             Number(mov.monto || 0).toFixed(2),
             mov.estado || '',
             String(mov.intento || 1),
-            (mov.descripcion || '').replaceAll('"', "'"),
+            (mov.descripcion || '').replace(/"/g, "'"),
         ]);
 
         const csv = [headers, ...lines].map((row) => row.map((value) => `"${value}"`).join(',')).join('\n');

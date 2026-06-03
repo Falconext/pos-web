@@ -213,6 +213,7 @@ const ComprobantesInformales = () => {
                                                 defaultType: 'FACTURA',
                                                 fromNotaDeVenta: true,
                                                 notaDeVentaData: {
+                                                    origenComprobanteId: item.id,
                                                     cliente: esRuc ? item.cliente : null,
                                                     clienteId: esRuc ? item.clienteId : null,
                                                     observaciones: item.observaciones,
@@ -241,6 +242,7 @@ const ComprobantesInformales = () => {
                                                 defaultType: 'BOLETA',
                                                 fromNotaDeVenta: true,
                                                 notaDeVentaData: {
+                                                    origenComprobanteId: item.id,
                                                     cliente: item.cliente,
                                                     clienteId: item.clienteId,
                                                     observaciones: item.observaciones,
@@ -554,7 +556,7 @@ const ComprobantesInformales = () => {
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                 >
                     <Icon icon="solar:add-circle-bold" className="text-lg" />
-                    Nuevo comprobante
+                    Nueva venta
                 </button>
             </div>
 

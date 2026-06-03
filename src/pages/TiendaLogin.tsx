@@ -106,7 +106,7 @@ const TiendaLogin = () => {
                                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-colors cursor-pointer" />
                                 <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Recordarme</span>
                             </label>
-                            <Link to="/forgot-password" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
+                            <Link to="/recuperar-contrasena" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
                                 ¿Olvidaste tu contraseña?
                             </Link>
                         </div>

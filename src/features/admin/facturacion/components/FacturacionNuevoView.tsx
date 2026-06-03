@@ -14,6 +14,7 @@ import ComprobantePrintPage from "@/pages/admin/facturacion/comprobanteImprimir"
 import ModalEditLineItem from "@/pages/admin/facturacion/ModalEditLineItem";
 import ModalDetraccion from "@/pages/admin/facturacion/ModalDetraccion";
 import ModalConfiguracionCotizacion from "@/pages/admin/facturacion/ModalConfiguracionCotizacion";
+import { ModalRecetaMedica } from "@/pages/admin/facturacion/ModalRecetaMedica";
 
 export const FacturacionNuevoView = () => {
     const vm = useFacturacionViewModel();
@@ -54,7 +55,8 @@ export const FacturacionNuevoView = () => {
                         serie: vm.dataReceipt?.serie,
                         correlativo: vm.dataReceipt?.correlativo,
                         numDocAfectado: `${vm.serie}-${vm.correlative}`,
-                        medioPago: vm.formValues?.comprobante === "NOTA DE PEDIDO" ? "" : vm.paymentMethod,
+                        medioPago: vm.formValues?.comprobante === "NOTA DE PEDIDO" ? "" : (vm.isMixedPayment ? 'MIXTO' : vm.paymentMethod),
+                        splitPayments: vm.isMixedPayment ? vm.splitPayments : undefined,
                         ...(vm.tipoDetraccionId ? {
                             tipoDetraccion: vm.tiposDetraccion.find((t: any) => t.id === vm.tipoDetraccionId),
                             montoDetraccion: vm.montoDetraccion,
@@ -199,6 +201,13 @@ export const FacturacionNuevoView = () => {
                     quotationAdvance: vm.quotationAdvance,
                     observaciones: vm.formValues.observaciones
                 }}
+            />
+            {/* Farmacia: modal de receta médica */}
+            <ModalRecetaMedica
+                isOpen={vm.isRecetaModalOpen}
+                item={vm.recetaModalItemIndex !== null ? vm.productsInvoice[vm.recetaModalItemIndex] : null}
+                onConfirmar={(datos) => vm.recetaModalItemIndex !== null && vm.handleConfirmarReceta(vm.recetaModalItemIndex, datos)}
+                onCerrar={() => vm.setIsRecetaModalOpen(false)}
             />
         </div>
     );

@@ -73,6 +73,8 @@ export type IInvoices = {
     descripcion: string
   }
   comprobante: string
+  sunatErrorMsg?: string | null
+  sunatRetriesCount?: number
 }
 
 

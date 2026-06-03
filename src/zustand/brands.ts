@@ -12,6 +12,7 @@ export interface IBrand {
 export interface IBrandsState {
   brands: IBrand[];
   totalBrands: number;
+  isLoadingBrands: boolean;
   getAllBrands: () => Promise<void>;
   addBrand: (data: { nombre: string }) => Promise<void>;
   editBrand: (data: { id: number; nombre: string }) => Promise<void>;
@@ -26,12 +27,15 @@ export interface IBrandsState {
 export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
   brands: [],
   totalBrands: 0,
+  isLoadingBrands: false,
   formValues: { id: 0, nombre: "", imagenUrl: "" },
   isEdit: false,
   setFormValues: (data: { id: number; nombre: string; imagenUrl?: string }) => set({ formValues: data }),
   setIsEdit: (value: boolean) => set({ isEdit: value }),
 
   getAllBrands: async () => {
+    if (_get().isLoadingBrands) return;
+    set({ isLoadingBrands: true }, false, 'GET_BRANDS_START');
     try {
       const resp: any = await get('marca/listar');
       if ((resp as any).code === 1 || Array.isArray(resp?.data) || Array.isArray(resp)) {
@@ -39,12 +43,13 @@ export const useBrandsStore = create<IBrandsState>()(devtools((set, _get) => ({
         set({
           brands: list || [],
           totalBrands: Array.isArray(list) ? list.length : 0,
+          isLoadingBrands: false,
         }, false, 'GET_BRANDS');
       } else {
-        set({ brands: [], totalBrands: 0 }, false, 'GET_BRANDS_EMPTY');
+        set({ brands: [], totalBrands: 0, isLoadingBrands: false }, false, 'GET_BRANDS_EMPTY');
       }
     } catch (_e) {
-      set({ brands: [], totalBrands: 0 }, false, 'GET_BRANDS_ERROR');
+      set({ brands: [], totalBrands: 0, isLoadingBrands: false }, false, 'GET_BRANDS_ERROR');
     }
   },
 

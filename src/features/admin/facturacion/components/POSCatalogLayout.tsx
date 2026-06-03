@@ -23,9 +23,14 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
         return date.toLocaleDateString("es-PE");
     };
     const lotesInfo = useMemo(() => {
-        if (!infoProduct?.lotes || !Array.isArray(infoProduct.lotes)) return [];
-        return infoProduct.lotes.map((l: any) => ({
-            lote: l?.lote || "-",
+        // El catálogo farmacia retorna lotesDisponibles; el catálogo general retorna lotes
+        const raw: any[] = Array.isArray(infoProduct?.lotesDisponibles)
+            ? infoProduct.lotesDisponibles
+            : Array.isArray(infoProduct?.lotes)
+                ? infoProduct.lotes
+                : [];
+        return raw.map((l: any) => ({
+            lote: l?.loteNumero || l?.lote || "-",
             stock: Number(l?.stockActual ?? 0),
             costo: l?.costoUnitario !== null && l?.costoUnitario !== undefined ? Number(l.costoUnitario) : null,
             venc: formatDate(l?.fechaVencimiento),
@@ -135,6 +140,28 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                         KIT
                                     </span>
                                 )}
+                                {/* Farmacia: badge cadena de frío */}
+                                {vm.usaLotesFarmacia && item.refrigerado && (
+                                    <span className="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500 text-white font-bold flex items-center gap-0.5">
+                                        🧊
+                                    </span>
+                                )}
+                                {/* Farmacia: badge vencimiento */}
+                                {vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && (() => {
+                                    const dias = item?.loteFefo?.diasAlVencimiento;
+                                    if (dias === null || dias === undefined) return null;
+                                    if (dias < 0) return (
+                                        <span className="absolute left-2 bottom-2 text-[9px] px-1.5 py-0.5 rounded-full bg-red-600 text-white font-bold">
+                                            🚫 Vencido
+                                        </span>
+                                    );
+                                    if (dias <= 30) return (
+                                        <span className="absolute left-2 bottom-2 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400 text-white font-bold">
+                                            ⚠️ Vence en {dias}d
+                                        </span>
+                                    );
+                                    return null;
+                                })()}
                             </div>
 
                             <div className="flex-1 flex flex-col justify-between px-1">
@@ -142,10 +169,34 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                     {item.__catalogType === 'COMBO' ? item.nombre : item.descripcion}
                                 </h4>
 
+                                {/* Fraccionamiento: selector CAJA / UNIDAD */}
+                                {vm.isFarmaciaRetail && item.__catalogType === 'PRODUCTO' && Number(item.factorConversion ?? 1) > 1 && (
+                                    <div className="flex gap-1 mb-1.5">
+                                        {(['CAJA', 'UNIDAD'] as const).map((modo) => {
+                                            const activo = (vm.modoFraccionPorProducto[item.id] ?? 'CAJA') === modo;
+                                            return (
+                                                <button
+                                                    key={modo}
+                                                    onClick={(e) => { e.stopPropagation(); vm.setModoFraccionProducto(item.id, modo); }}
+                                                    className={`flex-1 text-[10px] font-bold py-0.5 rounded-md transition-colors ${activo ? 'bg-violet-600 text-white' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400'}`}
+                                                >
+                                                    {modo === 'CAJA' ? (item.unidadCompra || 'CAJA') : (item.unidadVenta || 'UNIDAD')}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
                                 <div className="flex items-end justify-between gap-2">
                                     <div>
                                         <p className="text-base font-black text-gray-900 dark:text-white leading-none mb-0.5">
-                                            S/{Number(item.__catalogType === 'COMBO' ? item.precioCombo : item.precioUnitario).toFixed(2)}
+                                            {(() => {
+                                                if (item.__catalogType === 'COMBO') return `S/${Number(item.precioCombo).toFixed(2)}`;
+                                                const factor = Number(item.factorConversion ?? 1);
+                                                const modo = vm.modoFraccionPorProducto?.[item.id] ?? 'CAJA';
+                                                const precio = Number(item.precioUnitario);
+                                                return `S/${(vm.isFarmaciaRetail && factor > 1 && modo === 'UNIDAD' ? precio / factor : precio).toFixed(2)}`;
+                                            })()}
                                         </p>
                                         <div className="text-[10px] leading-tight font-medium space-y-0.5">
                                             <p className="text-emerald-600 dark:text-emerald-400">
@@ -163,7 +214,8 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                         </button>
                                         <button
                                             onClick={() => item.__catalogType === 'COMBO' ? vm.handleComboClick(item) : vm.handleProductClick(item)}
-                                            className="p-2 !bg-violet-600 hover:!bg-violet-700 text-white rounded-lg shadow-md shadow-violet-200/50 transition-all active:scale-95 flex items-center justify-center"
+                                            disabled={vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && item?.loteFefo?.diasAlVencimiento !== undefined && item?.loteFefo?.diasAlVencimiento < 0}
+                                            className="p-2 !bg-violet-600 hover:!bg-violet-700 disabled:!bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg shadow-md shadow-violet-200/50 transition-all active:scale-95 flex items-center justify-center"
                                         >
                                             <Icon icon="solar:add-circle-bold" className="text-lg" />
                                         </button>

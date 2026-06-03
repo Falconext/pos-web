@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -8,9 +8,46 @@ import ProductCardPio from '@/components/tienda/ProductCardPio';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const CLIENTE_STORAGE_KEY = (slug: string) => `tienda:${slug}:cliente`;
+
+type MedioPagoCheckout = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+
+interface PaymentConfig {
+    yapeQrUrl?: string | null;
+    yapeQR?: string | null;
+    yapeNumero?: string | null;
+    plinQrUrl?: string | null;
+    plinQR?: string | null;
+    plinNumero?: string | null;
+    aceptaEfectivo?: boolean;
+    aceptaTarjeta?: boolean;
+    culqiPublicKey?: string | null;
+    culqiBackendReady?: boolean;
+    whatsappTienda?: string | null;
+    whatsapp?: string | null;
+    telefono?: string | null;
+}
+
+interface CulqiTokenResult {
+    token: string;
+    email?: string;
+}
+
+declare global {
+    interface Window {
+        Culqi?: {
+            publicKey?: string;
+            token?: { id?: string; email?: string };
+            error?: { user_message?: string; merchant_message?: string };
+            settings: (config: Record<string, unknown>) => void;
+            options: (config: Record<string, unknown>) => void;
+            open: () => void;
+        };
+        culqi?: () => void;
+    }
+}
 
 export default function Checkout() {
     const { slug } = useParams();
@@ -22,7 +59,7 @@ export default function Checkout() {
     // Mejora 1: tienda como estado — se carga desde API si no viene por navegación
     const [tienda, setTienda] = useState<any>(tiendaFromState || null);
 
-    const [configPago, setConfigPago] = useState<any>(null);
+    const [configPago, setConfigPago] = useState<PaymentConfig | null>(null);
     const [configEnvio, setConfigEnvio] = useState<any>(null);
     const [enviando, setEnviando] = useState(false);
     const [pedidoCreado, setPedidoCreado] = useState<any>(null);
@@ -38,7 +75,7 @@ export default function Checkout() {
         clienteEmail: '',
         clienteDireccion: '',
         clienteReferencia: '',
-        medioPago: 'EFECTIVO',
+        medioPago: 'EFECTIVO' as MedioPagoCheckout,
         observaciones: '',
         referenciaTransf: '',
         tipoEntrega: 'RECOJO' as 'RECOJO' | 'ENVIO',
@@ -55,6 +92,21 @@ export default function Checkout() {
                 .catch(console.error);
         }
     }, [slug]);
+
+    useEffect(() => {
+        if (!configPago?.aceptaTarjeta || !configPago?.culqiPublicKey) return;
+        if (document.getElementById('culqi-checkout-script')) return;
+
+        const script = document.createElement('script');
+        script.id = 'culqi-checkout-script';
+        script.src = 'https://checkout.culqi.com/js/v3';
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            document.getElementById('culqi-checkout-script')?.remove();
+        };
+    }, [configPago?.aceptaTarjeta, configPago?.culqiPublicKey]);
 
     // Mejora 2: pre-llenar datos del cliente si los guardamos antes
     useEffect(() => {
@@ -138,7 +190,7 @@ export default function Checkout() {
         try {
             const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/payment-config`);
             const rawConfig = data.data || data;
-            const normalizedConfig = {
+            const normalizedConfig: PaymentConfig = {
                 ...rawConfig,
                 yapeQR: rawConfig.yapeQrUrl || rawConfig.yapeQR,
                 plinQR: rawConfig.plinQrUrl || rawConfig.plinQR,
@@ -147,8 +199,15 @@ export default function Checkout() {
                 whatsappTienda: rawConfig.whatsappTienda || rawConfig.whatsapp || rawConfig.telefono,
             };
             setConfigPago(normalizedConfig);
-            if (normalizedConfig.aceptaEfectivo) setFormData(p => ({ ...p, medioPago: 'EFECTIVO' }));
-            else if (normalizedConfig.yapeQrUrl) setFormData(p => ({ ...p, medioPago: 'YAPE' }));
+            if (normalizedConfig.aceptaEfectivo) {
+                setFormData(p => ({ ...p, medioPago: 'EFECTIVO' }));
+            } else if (normalizedConfig.yapeQrUrl || normalizedConfig.yapeNumero) {
+                setFormData(p => ({ ...p, medioPago: 'YAPE' }));
+            } else if (normalizedConfig.plinQrUrl || normalizedConfig.plinNumero) {
+                setFormData(p => ({ ...p, medioPago: 'PLIN' }));
+            } else if (normalizedConfig.aceptaTarjeta) {
+                setFormData(p => ({ ...p, medioPago: 'TARJETA' }));
+            }
         } catch { }
     };
 
@@ -178,7 +237,7 @@ export default function Checkout() {
         } catch { }
     };
 
-    const handleChange = (e: any) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         if (erroresForm[name]) setErroresForm(prev => { const n = { ...prev }; delete n[name]; return n; });
@@ -191,6 +250,9 @@ export default function Checkout() {
         if (!formData.clienteTelefono.trim()) errores.clienteTelefono = 'El teléfono es requerido';
         if (formData.clienteEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.clienteEmail)) {
             errores.clienteEmail = 'Email inválido';
+        }
+        if (formData.medioPago === 'TARJETA' && !formData.clienteEmail.trim()) {
+            errores.clienteEmail = 'Para pagar con tarjeta, el email es obligatorio';
         }
         if (formData.tipoEntrega === 'ENVIO' && !formData.clienteDireccion.trim()) errores.clienteDireccion = 'La dirección es requerida para envío';
         const minimo = configEnvio?.minimoCompra || 0;
@@ -228,8 +290,22 @@ export default function Checkout() {
         if (!validarFormulario()) { document.querySelector('.border-red-300')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         setEnviando(true);
         try {
+            let culqiTokenPayload: CulqiTokenResult | null = null;
+            if (formData.medioPago === 'TARJETA') {
+                if (configPago?.culqiBackendReady === false) {
+                    throw new Error('El pago con tarjeta está temporalmente no disponible. Intenta con Yape/Plin/Efectivo.');
+                }
+                culqiTokenPayload = await solicitarTokenCulqi();
+            }
+
             const items = carritoState.map((item: any) => ({ productoId: item.productoId || item.id, cantidad: item.cantidad, modificadores: item.modificadores }));
-            const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, { ...formData, items, total: calcularTotal() });
+            const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, {
+                ...formData,
+                items,
+                total: calcularTotal(),
+                culqiToken: culqiTokenPayload?.token,
+                culqiEmail: culqiTokenPayload?.email || formData.clienteEmail,
+            });
             const orderData = data.data || data;
             setPedidoCreado(orderData);
 
@@ -245,12 +321,110 @@ export default function Checkout() {
             } catch { }
 
             setShowConfirmModal(false);
-            setShowPaymentModal(true);
+            if (formData.medioPago === 'TARJETA') {
+                window.location.href = `/tienda/${slug}/seguimiento?codigo=${orderData.codigoSeguimiento}`;
+            } else {
+                setShowPaymentModal(true);
+            }
             setCarritoState([]);
             localStorage.removeItem(`tienda:${slug}:carrito`);
         } catch (error: any) {
             alert(error.response?.data?.message || 'Error al crear pedido');
         } finally { setEnviando(false); }
+    };
+
+    const solicitarTokenCulqi = async (): Promise<CulqiTokenResult> => {
+        const publicKey = configPago?.culqiPublicKey?.trim();
+        if (!publicKey || !configPago?.aceptaTarjeta) {
+            throw new Error('Pago con tarjeta no disponible para esta tienda');
+        }
+
+        if (!window.Culqi) {
+            await new Promise<void>((resolve, reject) => {
+                const existing = document.getElementById('culqi-checkout-script');
+                if (existing) {
+                    const intervalId = window.setInterval(() => {
+                        if (window.Culqi) {
+                            window.clearInterval(intervalId);
+                            resolve();
+                        }
+                    }, 150);
+                    window.setTimeout(() => {
+                        window.clearInterval(intervalId);
+                        reject(new Error('No se pudo cargar Culqi'));
+                    }, 12000);
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.id = 'culqi-checkout-script';
+                script.src = 'https://checkout.culqi.com/js/v3';
+                script.async = true;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('No se pudo cargar Culqi'));
+                document.body.appendChild(script);
+            });
+        }
+
+        const totalCentavos = Math.max(100, Math.round(calcularTotal() * 100));
+        const emailCheckout = formData.clienteEmail.trim();
+
+        return new Promise<CulqiTokenResult>((resolve, reject) => {
+            const culqi = window.Culqi;
+            if (!culqi) {
+                reject(new Error('No se pudo inicializar Culqi'));
+                return;
+            }
+
+            const timeoutId = window.setTimeout(() => {
+                window.culqi = undefined;
+                reject(new Error('Tiempo de espera agotado para el pago con tarjeta'));
+            }, 120000);
+
+            window.culqi = () => {
+                const currentCulqi = window.Culqi;
+                if (!currentCulqi) {
+                    window.clearTimeout(timeoutId);
+                    reject(new Error('No se pudo leer la respuesta de Culqi'));
+                    return;
+                }
+
+                const token = currentCulqi.token;
+                const error = currentCulqi.error;
+                window.clearTimeout(timeoutId);
+                window.culqi = undefined;
+
+                if (token?.id) {
+                    resolve({
+                        token: token.id,
+                        email: token.email || emailCheckout,
+                    });
+                    return;
+                }
+
+                reject(new Error(error?.user_message || error?.merchant_message || 'Pago con tarjeta cancelado'));
+            };
+
+            culqi.publicKey = publicKey;
+            culqi.settings({
+                title: (tienda?.nombreComercial || tienda?.razonSocial || 'Falconext').toString(),
+                currency: 'PEN',
+                amount: totalCentavos,
+            });
+            culqi.options({
+                lang: 'auto',
+                installments: false,
+                paymentMethods: {
+                    tarjeta: true,
+                    yape: false,
+                    bancaMovil: false,
+                    agente: false,
+                    billetera: false,
+                    cuotealo: false,
+                },
+            });
+            culqi.open();
+        });
     };
 
     const diseno = tienda?.diseno || {};
@@ -426,10 +600,15 @@ export default function Checkout() {
                                 <div className="md:col-span-2">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Método de pago</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {['YAPE', 'PLIN', 'EFECTIVO'].map(method => {
-                                            const labels: Record<string, string> = { YAPE: 'Yape', PLIN: 'Plin', EFECTIVO: 'Efectivo' };
-                                            const icons: Record<string, string> = { YAPE: 'solar:smartphone-bold', PLIN: 'solar:wallet-money-bold', EFECTIVO: 'solar:banknote-2-bold' };
-                                            const show = method === 'EFECTIVO' ? configPago?.aceptaEfectivo : true;
+                                        {(['YAPE', 'PLIN', 'EFECTIVO', 'TARJETA'] as MedioPagoCheckout[]).map(method => {
+                                            const labels: Record<MedioPagoCheckout, string> = { YAPE: 'Yape', PLIN: 'Plin', EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta' };
+                                            const icons: Record<MedioPagoCheckout, string> = { YAPE: 'solar:smartphone-bold', PLIN: 'solar:wallet-money-bold', EFECTIVO: 'solar:banknote-2-bold', TRANSFERENCIA: 'solar:card-transfer-bold', TARJETA: 'solar:card-2-bold' };
+                                            const show =
+                                                method === 'EFECTIVO'
+                                                    ? Boolean(configPago?.aceptaEfectivo)
+                                                    : method === 'TARJETA'
+                                                        ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
+                                                        : true;
                                             if (!show) return null;
                                             return (
                                                 <label key={method} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full text-sm font-bold border-2 transition-colors ${formData.medioPago === method ? 'border-[#FF9500] bg-[#FFF3E0] text-[#FF9500]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
@@ -576,7 +755,13 @@ export default function Checkout() {
                         tipoEntrega: formData.tipoEntrega,
                         clienteNombre: formData.clienteNombre,
                     }}
-                    paymentConfig={configPago}
+                    paymentConfig={configPago ? {
+                        yapeQR: configPago.yapeQR || configPago.yapeQrUrl || undefined,
+                        plinQR: configPago.plinQR || configPago.plinQrUrl || undefined,
+                        yapeNumero: configPago.yapeNumero || undefined,
+                        plinNumero: configPago.plinNumero || undefined,
+                        whatsappTienda: configPago.whatsappTienda || undefined,
+                    } : undefined}
                     storeSlug={slug || ''}
                 />
             )}

@@ -1,10 +1,13 @@
 import { usePerfilViewModel } from '@/features/admin/perfil/usePerfilViewModel';
 import { Icon } from '@iconify/react';
 import Loading from '@/components/Loading';
+import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
+import { useState } from 'react';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
-    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig } = vm;
+    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty } = vm;
+    const [directorInput, setDirectorInput] = useState<string | null>(null);
 
     if (loading) return <div className="flex justify-center items-center h-96"><Loading /></div>;
     if (!perfil) return <div className="text-center text-gray-500 py-8">No se pudo cargar la información del perfil</div>;
@@ -150,6 +153,135 @@ export default function PerfilIndex() {
                             <Field label="Estado"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.estado === 'ACTIVO' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>{perfil.estado}</span></Field>
                         </div>
                     </div>
+                    <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827]">
+                        <div className="relative border-b border-emerald-100/70 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 dark:border-emerald-900/30 dark:from-emerald-950/30 dark:via-[#111827] dark:to-sky-950/20">
+                            <div className="absolute right-5 top-5 hidden rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-slate-900/70 dark:text-emerald-300 sm:inline-flex">
+                                WhatsApp Cloud API
+                            </div>
+                            <div className="flex items-start gap-3 pr-0 sm:pr-40">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+                                    <Icon icon="mdi:whatsapp" width={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-gray-950 dark:text-white">Envío automático por WhatsApp</h2>
+                                    <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                                        Define si los comprobantes se envían con el número oficial de la plataforma o con el número propio de esta empresa.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 p-5 lg:grid-cols-[1.1fr_0.9fr]">
+                            <div className="space-y-4">
+                                <div className="grid gap-3 md:grid-cols-3">
+                                    {[
+                                        { value: 'PLATFORM', title: 'Plataforma', icon: 'solar:cloud-bold-duotone', description: 'Falconext/Krezka envía por ti.' },
+                                        { value: 'EMPRESA', title: 'Propio', icon: 'solar:smartphone-bold-duotone', description: 'Usa el número de Meta de la empresa.' },
+                                        { value: 'DISABLED', title: 'Desactivado', icon: 'solar:close-circle-bold-duotone', description: 'Bloquea envíos automáticos.' },
+                                    ].map(option => {
+                                        const selected = whatsAppForm.provider === option.value;
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                onClick={() => vm.setWhatsAppProvider(option.value as 'PLATFORM' | 'EMPRESA' | 'DISABLED')}
+                                                className={`rounded-2xl border p-4 text-left transition-all ${
+                                                    selected
+                                                        ? 'border-emerald-400 bg-emerald-50 shadow-sm shadow-emerald-500/10 dark:border-emerald-700 dark:bg-emerald-950/20'
+                                                        : 'border-gray-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:border-emerald-900/50'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${selected ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400'}`}>
+                                                        <Icon icon={option.icon} width={19} />
+                                                    </span>
+                                                    {selected && <Icon icon="solar:check-circle-bold" className="text-emerald-500" width={20} />}
+                                                </div>
+                                                <p className="mt-3 text-sm font-black text-gray-950 dark:text-white">{option.title}</p>
+                                                <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">{option.description}</p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {whatsAppForm.provider === 'EMPRESA' && (
+                                    <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+                                        <div className="mb-4 flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-black text-gray-950 dark:text-white">Credenciales propias de Meta</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">El token no se muestra por seguridad. Si escribes uno nuevo, se reemplaza.</p>
+                                            </div>
+                                            <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${perfil.empresa.whatsappApiTokenConfigured ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                                                {perfil.empresa.whatsappApiTokenConfigured ? 'Token configurado' : 'Sin token'}
+                                            </span>
+                                        </div>
+                                        <div className="grid gap-3 md:grid-cols-2">
+                                            <label className="space-y-1.5">
+                                                <span className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Phone Number ID *</span>
+                                                <input
+                                                    value={whatsAppForm.phoneNumberId}
+                                                    onChange={e => vm.updateWhatsAppField('phoneNumberId', e.target.value)}
+                                                    placeholder="Ej. 123456789012345"
+                                                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-emerald-900/30"
+                                                />
+                                            </label>
+                                            <label className="space-y-1.5">
+                                                <span className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">WhatsApp Business Account ID</span>
+                                                <input
+                                                    value={whatsAppForm.businessId}
+                                                    onChange={e => vm.updateWhatsAppField('businessId', e.target.value)}
+                                                    placeholder="Opcional, pero recomendado"
+                                                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-emerald-900/30"
+                                                />
+                                            </label>
+                                            <label className="space-y-1.5 md:col-span-2">
+                                                <span className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Permanent Access Token</span>
+                                                <input
+                                                    value={whatsAppForm.apiToken}
+                                                    onChange={e => vm.updateWhatsAppField('apiToken', e.target.value)}
+                                                    type="password"
+                                                    autoComplete="new-password"
+                                                    placeholder={perfil.empresa.whatsappApiTokenConfigured ? 'Dejar vacío para conservar el token actual' : 'Pega aquí el token permanente de Meta'}
+                                                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-emerald-900/30"
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="text-xs leading-5 text-gray-500 dark:text-gray-400">
+                                        Estado actual: <span className="font-bold text-gray-800 dark:text-gray-200">{whatsAppForm.provider === 'DISABLED' ? 'Desactivado' : whatsAppForm.provider === 'EMPRESA' ? 'Número propio' : 'Número de plataforma'}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        disabled={!whatsappConfigDirty || savingWhatsAppConfig}
+                                        onClick={vm.handleWhatsAppConfigSave}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-600/15 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none dark:disabled:bg-slate-700"
+                                    >
+                                        <Icon icon={savingWhatsAppConfig ? 'svg-spinners:180-ring' : 'solar:diskette-bold'} width={18} />
+                                        {savingWhatsAppConfig ? 'Guardando...' : 'Guardar WhatsApp'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4 dark:border-sky-900/30 dark:bg-sky-950/20">
+                                <p className="flex items-center gap-2 text-sm font-black text-sky-900 dark:text-sky-200">
+                                    <Icon icon="solar:info-circle-bold-duotone" width={19} />
+                                    Qué necesitas de Meta
+                                </p>
+                                <div className="mt-4 space-y-3 text-sm leading-6 text-sky-900/80 dark:text-sky-100/75">
+                                    <p><span className="font-black">1.</span> Crear o entrar a una app en Meta for Developers.</p>
+                                    <p><span className="font-black">2.</span> Agregar el producto WhatsApp y vincular un número.</p>
+                                    <p><span className="font-black">3.</span> Copiar el <span className="font-bold">Phone Number ID</span>.</p>
+                                    <p><span className="font-black">4.</span> Crear un <span className="font-bold">System User</span> y generar un token permanente con permisos de WhatsApp.</p>
+                                </div>
+                                <div className="mt-4 rounded-xl border border-sky-200 bg-white/70 p-3 text-xs leading-5 text-sky-900 dark:border-sky-900/40 dark:bg-slate-950/40 dark:text-sky-100/75">
+                                    Para empresas normales puedes dejar “Plataforma”. Para reseller white-label o corporativo con su propio número, usa “Propio”.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
                         <div className="space-y-4">
@@ -196,6 +328,31 @@ export default function PerfilIndex() {
                                         {savingFefoPriceConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                                {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                        <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                            <Icon icon="solar:medical-kit-bold-duotone" width={14} />
+                                            Director Técnico Q.F. (Libro Control DIGEMID)
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                                placeholder="Q.F. Nombre Apellido — CQP 12345"
+                                                value={directorInput ?? (perfil.empresa.directorTecnico ?? '')}
+                                                onChange={e => setDirectorInput(e.target.value)}
+                                            />
+                                            <button
+                                                disabled={savingDirectorTecnico || directorInput === null}
+                                                onClick={() => vm.handleDirectorTecnicoSave(directorInput ?? '', () => setDirectorInput(null))}
+                                                className="px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
+                                            >
+                                                {savingDirectorTecnico ? '...' : 'Guardar'}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aparece en el Libro de Control de Psicotrópicos — DS 023-2001-SA</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

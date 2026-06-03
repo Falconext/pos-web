@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import QRCode from 'qrcode';
@@ -48,7 +48,6 @@ export function useCotizacionesViewModel() {
 
     // Print Size & Dimensions
     const [printSize, setPrintSize] = useState<string>('A4');
-    const [dimensions, setDimensions] = useState(() => ({ width: 210, height: 297 }));
 
     const paymentFlow = usePaymentFlow();
     const debounce = useDebounce(searchClient, 1000);
@@ -75,31 +74,27 @@ export function useCotizacionesViewModel() {
         };
     }, []);
 
-    // Cerrar menú de acciones al hacer click fuera
+    // Cerrar menú de acciones al hacer click fuera — listener estable, sin re-registro por estado
     useEffect(() => {
         const handleClickOutside = () => {
-            if (openAccionesId !== null) {
-                setOpenAccionesId(null);
-                setAnchorEl(null);
-            }
+            setOpenAccionesId(null);
+            setAnchorEl(null);
         };
 
         document.addEventListener('click', handleClickOutside);
         return () => {
             document.removeEventListener('click', handleClickOutside);
         };
-    }, [openAccionesId]);
+    }, []);
 
-    // Dimensions setup based on printSize
-    useEffect(() => {
-        setDimensions(() => {
-            switch (printSize) {
-                case 'TICKET': return { width: 80, height: 330 };
-                case 'A5': return { width: 148, height: 210 };
-                case 'A4': return { width: 210, height: 297 };
-                default: return { width: 210, height: 297 };
-            }
-        });
+    // Dimensions derivadas de printSize — sin estado extra ni efecto
+    const dimensions = useMemo(() => {
+        switch (printSize) {
+            case 'TICKET': return { width: 80, height: 330 };
+            case 'A5': return { width: 148, height: 210 };
+            case 'A4': return { width: 210, height: 297 };
+            default: return { width: 210, height: 297 };
+        }
     }, [printSize]);
 
     // Fetch invoices on change
@@ -224,6 +219,24 @@ export function useCotizacionesViewModel() {
         navigate('/administrador/facturacion/nuevo', {
             state: {
                 fromQuotation: true,
+                defaultType: 'FACTURA',
+                quotationData: {
+                    cliente: cotizacion.cliente,
+                    productos: cotizacion.detalles,
+                    observaciones: cotizacion.observaciones,
+                }
+            }
+        });
+    };
+
+    const handleConvertirABoleta = (data: any) => {
+        const cotizacion = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (!cotizacion) return;
+
+        navigate('/administrador/facturacion/nuevo', {
+            state: {
+                fromQuotation: true,
+                defaultType: 'BOLETA',
                 quotationData: {
                     cliente: cotizacion.cliente,
                     productos: cotizacion.detalles,
@@ -430,6 +443,7 @@ export function useCotizacionesViewModel() {
         handleGetReceipt,
         handleVerPdf,
         handleConvertirAFactura,
+        handleConvertirABoleta,
         handleEditCotizacion,
         handleEnviarWhatsApp,
         handlePartialPayment,

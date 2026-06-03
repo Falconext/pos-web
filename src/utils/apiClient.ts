@@ -36,6 +36,7 @@ function processQueue(error: any, token: string | null = null) {
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
+  timeout: 12_000, // 12s — evita que requests colgados dejen el loading indefinido
 })
 
 // Request interceptor: inject access token

@@ -1,0 +1,277 @@
+import { Icon } from "@iconify/react";
+import { useState } from "react";
+import { Calendar } from "@/components/Date";
+import Select from "@/components/Select";
+import moment from "moment";
+
+export const COURIERS = [
+    { value: 'SHALOM_PRO', label: 'Shalom PRO' },
+    { value: 'SHALOM_COD', label: 'Shalom COD' },
+    { value: 'OLVA', label: 'Olva Courier' },
+    { value: 'URBANO', label: 'Urbano Express' },
+    { value: 'CRUZ_SUR', label: 'Cruz del Sur' },
+    { value: 'PROPIOS', label: 'Reparto propio' },
+    { value: 'OTRO', label: 'Otro' },
+];
+
+export const TURNOS = [
+    { value: 'MANANA', label: 'Mañana' },
+    { value: 'TARDE', label: 'Tarde' },
+    { value: 'NOCHE', label: 'Noche' },
+];
+
+const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+
+const inp = "w-full h-10 px-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all placeholder:text-slate-400";
+const lbl = "block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5";
+
+function PasswordField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+    const [show, setShow] = useState(false);
+    return (
+        <div className="relative">
+            <input
+                type={show ? 'text' : 'password'}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                className={inp + ' pr-10'}
+            />
+            <button
+                type="button"
+                onClick={() => setShow(v => !v)}
+                className="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+            >
+                <Icon icon={show ? 'solar:eye-bold' : 'solar:eye-closed-bold'} className="text-base" />
+            </button>
+        </div>
+    );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <label className={lbl}>{label}</label>
+            {children}
+        </div>
+    );
+}
+
+export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
+    const { setEnvioActivo, envioData, setEnvioData } = vm;
+    const set = (field: string, value: any) =>
+        setEnvioData((prev: any) => ({ ...prev, [field]: value }));
+
+    const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
+    const esShalom = SHALOM_COURIERS.has(envioData.transportista);
+    const esPropio = envioData.transportista === 'PROPIOS';
+
+    const handleConfirmar = () => {
+        setEnvioActivo(true);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-2xl bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                                <Icon icon="solar:delivery-bold-duotone" className="text-white text-xl" />
+                            </div>
+                            <div>
+                                <h2 className="text-white font-black text-lg leading-none">Coordinación de Envío</h2>
+                                <p className="text-indigo-200 text-xs mt-0.5">Courier · Datos de despacho y entrega</p>
+                            </div>
+                        </div>
+                        <button type="button" onClick={onClose}
+                            className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors">
+                            <Icon icon="solar:close-circle-bold" className="text-lg" />
+                        </button>
+                    </div>
+
+                    {/* Courier chips */}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {COURIERS.map(c => (
+                            <button key={c.value} type="button" onClick={() => set('transportista', c.value)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${envioData.transportista === c.value
+                                        ? 'bg-white text-indigo-700 shadow-lg shadow-indigo-900/20'
+                                        : 'bg-white/15 text-white/80 hover:bg-white/25'
+                                    }`}>
+                                {c.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Body — scrollable */}
+                <div className="overflow-y-auto p-6 space-y-4 flex-1">
+
+                    {/* SECCIÓN 1: Establecimiento + Clave envío + Clave orden */}
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <Icon icon="solar:shop-bold-duotone" className="text-indigo-400" />
+                            Origen del despacho
+                        </p>
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="Establecimiento">
+                                <input type="text" value={envioData.establecimiento}
+                                    onChange={e => set('establecimiento', e.target.value)}
+                                    placeholder="Ej: Local 2 - Lima" className={inp} />
+                            </Field>
+                            <Field label="Clave envío">
+                                <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío" />
+                            </Field>
+                            <Field label="Clave orden">
+                                <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="Clave orden" />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* SECCIÓN 2: Tipo envío + Agencia destino */}
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <Icon icon="solar:map-point-bold-duotone" className="text-indigo-400" />
+                            Datos de entrega
+                        </p>
+                       <div className="mt-4 mb-4">
+                       <Field label="Agencia de destino">
+                            <input type="text" value={envioData.agenciaDestino}
+                                onChange={e => set('agenciaDestino', e.target.value)}
+                                placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Shalom Cusco Centro' : 'Dirección de entrega'}
+                                className={inp} />
+                        </Field>
+                       </div>
+                        <div className="grid grid-cols-2 gap-3">
+
+                            <Field label="Tipo de envío">
+                                <div className="flex gap-2 w-full">
+                                    {[
+                                        { value: 'AGENCIA', label: 'Para agencia', icon: 'solar:buildings-2-bold-duotone' },
+                                        { value: 'DOMICILIO', label: 'A domicilio', icon: 'solar:home-2-bold-duotone' },
+                                    ].map(t => (
+                                        <button key={t.value} type="button" onClick={() => set('tipoEnvio', t.value)}
+                                            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border-2 text-xs font-bold transition-all ${envioData.tipoEnvio === t.value
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                                                    : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+                                                }`}>
+                                            <Icon icon={t.icon} className="text-lg" />
+                                            {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </Field>
+
+                        </div>
+                    </div>
+
+                    {/* SECCIÓN 3: Celular + Paquetes + Turno + Fecha + N° Orden */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <Field label="Celular destinatario">
+                            <input type="text" value={envioData.celularDest}
+                                onChange={e => set('celularDest', e.target.value)}
+                                placeholder="9XXXXXXXX" className={inp} />
+                        </Field>
+                        <Field label="N° Paquetes">
+                            <input type="number" min={1} value={envioData.nroPaquetes}
+                                onChange={e => set('nroPaquetes', Number(e.target.value))} className={inp} />
+                        </Field>
+                        <Field label="Turno">
+                            <Select
+                                label=""
+                                name="turnoEnvio"
+                                error=""
+                                value={TURNOS.find(t => t.value === envioData.turnoEnvio)?.label ?? ''}
+                                options={TURNOS.map(t => ({ id: t.value, value: t.label }))}
+                                onChange={(id) => set('turnoEnvio', String(id))}
+                            />
+                        </Field>
+
+                        <Calendar
+                            text="Fecha"
+                            name="fechaEstimada"
+                            value={envioData.fechaEstimada ? moment(envioData.fechaEstimada).format('DD/MM/YYYY') : ''}
+                            onChange={(date) => {
+                                if (!date) { set('fechaEstimada', ''); return; }
+                                const parsed = moment(date, 'DD/MM/YYYY');
+                                set('fechaEstimada', parsed.isValid() ? parsed.format('YYYY-MM-DD') : '');
+                            }}
+                        />
+                        <Field label="N° Orden courier">
+                            <input type="text" value={envioData.nroOrden}
+                                onChange={e => set('nroOrden', e.target.value)}
+                                placeholder="Número de orden" className={inp} />
+                        </Field>
+                        {/* Tipo mercadería: solo Shalom */}
+                        {esShalom && (
+                            <Field label="Tipo mercadería (Shalom)">
+                                <input type="text" value={envioData.tipoMercaderia}
+                                    onChange={e => set('tipoMercaderia', e.target.value)}
+                                    placeholder="Ej: Frágil, Electrónico" className={inp} />
+                            </Field>
+                        )}
+                    </div>
+
+                    {/* SECCIÓN 4: Personal */}
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <Icon icon="solar:users-group-rounded-bold-duotone" className="text-indigo-400" />
+                            Personal asignado
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            {esPropio && (
+                                <Field label="Repartidor">
+                                    <input type="text" value={envioData.repartidor}
+                                        onChange={e => set('repartidor', e.target.value)}
+                                        placeholder="Nombre del repartidor" className={inp} />
+                                </Field>
+                            )}
+                            <Field label="Empaquetador">
+                                <input type="text" value={envioData.empaquetador}
+                                    onChange={e => set('empaquetador', e.target.value)}
+                                    placeholder="Nombre del empaquetador" className={inp} />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* Observaciones */}
+                    <Field label="Observaciones">
+                        <input type="text" value={envioData.observaciones}
+                            onChange={e => set('observaciones', e.target.value)}
+                            placeholder="Instrucciones especiales de embalaje o entrega..." className={inp} />
+                    </Field>
+
+                    {/* Resumen */}
+                    {(selectedCourier || envioData.agenciaDestino) && (
+                        <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/40">
+                            <Icon icon="solar:info-circle-bold-duotone" className="text-indigo-500 text-lg flex-shrink-0" />
+                            <p className="text-xs text-indigo-700 dark:text-indigo-300 font-semibold">
+                                {selectedCourier?.label ?? '—'}
+                                {' · '}{envioData.tipoEnvio === 'AGENCIA' ? 'Para agencia' : 'A domicilio'}
+                                {envioData.agenciaDestino ? ` · ${envioData.agenciaDestino}` : ''}
+                                {envioData.nroPaquetes > 1 ? ` · ${envioData.nroPaquetes} paquetes` : ''}
+                                {envioData.establecimiento ? ` · ${envioData.establecimiento}` : ''}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 pb-6 pt-3 flex gap-3 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onClick={onClose}
+                        className="flex-1 h-11 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={handleConfirmar}
+                        className="flex-[2] h-11 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                        <Icon icon="solar:check-circle-bold" className="text-lg" />
+                        Confirmar envío
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

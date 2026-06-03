@@ -1,4 +1,4 @@
-import React, { JSX, useEffect, useState } from 'react';
+import React, { JSX, useEffect, useRef, useState } from 'react';
 import styles from './date.module.css';
 import { Icons } from '../Svg/iconsPack';
 import Icon from '../Icon';
@@ -15,8 +15,26 @@ export interface CalendarEvent {
 
 const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{1,4})$/;
 
-export const Calendar = ({ mode, events, text, onChange, name, right, left, disabled, top, withOutFormat, value }: any) => {
+interface CalendarProps {
+    mode?: string;
+    events?: CalendarEvent[];
+    text?: string;
+    onChange: (date: string, name: string) => void;
+    name?: string;
+    right?: boolean;
+    left?: boolean;
+    disabled?: boolean;
+    top?: boolean;
+    withOutFormat?: boolean;
+    value?: string;
+    className?: string;
+    isLabel?: boolean;
+}
+
+export const Calendar = ({ mode, events, text, onChange, name, right, left, disabled, top, withOutFormat, value = '', className = '' }: CalendarProps) => {
     const [writeDate, setWriteDate] = useState<string>(value || '');
+    const userChangedDate = useRef(false);
+    const onChangeRef = useRef(onChange);
     const [selectedDate, setSelectedDate] = useState(() => {
         if (value) {
             const parsed = moment(value, 'DD/MM/YYYY');
@@ -33,9 +51,18 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
     });
     const [isOpen, setIsOpen, ref] = useOutsideClick(false);
 
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
+
     // Efecto para actualizar cuando cambia el prop value
     useEffect(() => {
-        if (value && value !== writeDate) {
+        if (!value) {
+            setWriteDate('');
+            return;
+        }
+
+        if (value !== writeDate) {
             setWriteDate(value);
             const parsed = moment(value, 'DD/MM/YYYY');
             if (parsed.isValid()) {
@@ -60,6 +87,7 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
     };
 
     const handleDateClick = (date: Date): void => {
+        userChangedDate.current = true;
         setWriteDate(moment(date).format('DD/MM/YYYY'));
         setSelectedDate(date);
         setIsOpen(false);
@@ -67,18 +95,26 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
 
     const handleChangeDate = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
         const input = e.target.value;
+        if (!input) {
+            userChangedDate.current = true;
+            setWriteDate('');
+            onChange('', name ?? '');
+            return;
+        }
+
         if (input.length > 10 || input.replace(dateRegex, '').length > 0) return;
         const match = input.match(dateRegex);
         if (match) {
             const [, day, month, year] = match;
             if (parseInt(day) > 31 || parseInt(month) > 12) return;
             const formatted = `${day}/${month}/${year}`;
+            userChangedDate.current = true;
             setWriteDate(formatted);
         }
     };
 
     const getEventDescription = (date: Date): string | null => {
-        const event = events?.find((e: any) => e.date.toDateString() === date.toDateString());
+        const event = events?.find((e) => e.date.toDateString() === date.toDateString());
         return event ? event.description : null;
     };
 
@@ -113,30 +149,30 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
     }, [writeDate]);
 
     useEffect(() => {
-        if (selectedDate) {
-            const formatted = withOutFormat ? selectedDate : moment(selectedDate).format('DD/MM/YYYY');
-            onChange(formatted, name);
+        if (selectedDate && userChangedDate.current && writeDate.length === 10) {
+            const formatted = withOutFormat ? moment(selectedDate).format('YYYY-MM-DD') : moment(selectedDate).format('DD/MM/YYYY');
+            onChangeRef.current(formatted, name ?? '');
         }
-    }, [selectedDate]);
+    }, [selectedDate, writeDate, withOutFormat, name]);
 
     return (
-        <div ref={ref} className={`${styles.date}${!text ? ` ${styles.noLabel}` : ''}`}>
+        <div ref={ref} className={`${styles.date}${!text ? ` ${styles.noLabel}` : ''} ${className}`}>
             <div className={disabled ? styles.disabled : undefined}>
                 <div className={mode === 'flex' ? styles.modeFlex : ''}>
-                    <div className={`absolute z-[1] ${text ? 'top-[8px]' : 'top-[-2px]'} right-2`} onClick={() => setIsOpen(!isOpen)}>
+                    <div className={`absolute z-[1] ${text ? 'top-[0px]' : 'top-[-2px]'} right-2`} onClick={() => setIsOpen(!isOpen)}>
                         <Icon icon={Icons.date} />
                     </div>
                 </div>
                 <InputPro
                     mode={mode}
                     disabled={disabled}
-                    name={name}
+                    name={name ?? ''}
                     onClick={() => setIsOpen(true)}
                     isLabel={!!text}
                     label={text}
                     type="text"
                     onChange={handleChangeDate}
-                    value={writeDate || moment(selectedDate).format('DD/MM/YYYY')}
+                    value={writeDate}
                 />
             </div>
             {isOpen && (

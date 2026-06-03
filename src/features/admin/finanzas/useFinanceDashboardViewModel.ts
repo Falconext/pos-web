@@ -95,7 +95,7 @@ export function useFinanceDashboardViewModel() {
                     fechaFin,
                     empresa,
                     sedeName,
-                })
+                }) as any
             ).toBlob();
 
             const url = URL.createObjectURL(blob);

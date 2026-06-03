@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDashboardStore, type IDashboardState } from '@/zustand/dashboard'
 import { useAuthStore } from '@/zustand/auth'
 import { useSedesStore } from '@/zustand/sedes'
@@ -7,10 +8,13 @@ import moment from 'moment'
 import Select from '@/components/Select'
 import { Calendar } from '@/components/Date'
 import { AreaChart, DonutChart, ProgressCircle, SparkAreaChart } from '@tremor/react'
+import { WelcomeModal, TourSpotlight, useWelcomeTour } from '@/components/WelcomeTour'
 
 export default function AdminIndex() {
   const { overviewData, getOverview }: IDashboardState = useDashboardStore()
+  const navigate = useNavigate()
   const { auth, sedeActiva } = useAuthStore()
+  const { showModal, tourStep, startTour, skipTour, nextStep, prevStep, endTour } = useWelcomeTour(auth)
   const { sedes, listarSedes } = useSedesStore()
   const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA'
   const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true
@@ -53,7 +57,7 @@ export default function AdminIndex() {
     )
   }
 
-  const { kpis, chartVentas, chartCanales, actividad, topProductos, financiero } = overviewData
+  const { kpis, chartVentas, chartCanales, actividad, topProductos, financiero, alertas } = overviewData
 
   const formatMoney = (val: number) => `S/ ${val.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -68,6 +72,7 @@ export default function AdminIndex() {
   }
 
   return (
+    <>
     <div className="min-h-screen pb-8 max-w-8xl mx-auto px-4 pt-2 font-inter bg-transparent">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
@@ -272,10 +277,141 @@ export default function AdminIndex() {
               <div className="text-center text-gray-400 text-sm">No hay actividad</div>
             )}
           </div>
-          <button className="w-full mt-4 py-2 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-sm font-bold rounded-xl hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors">
-            Ver toda la actividad <Icon icon="solar:alt-arrow-down-linear" className="inline ml-1" />
+          <button
+            onClick={() => navigate('/administrador/facturacion/comprobantes')}
+            className="w-full mt-4 py-2 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-sm font-bold rounded-xl hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors"
+          >
+            Ver toda la actividad <Icon icon="solar:alt-arrow-right-linear" className="inline ml-1" />
           </button>
         </div>
+      </div>
+
+      {/* Alertas del Negocio */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+
+        {/* Stock Bajo */}
+        <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${alertas?.stockBajo?.length > 0 ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}>
+              <Icon icon={alertas?.stockBajo?.length > 0 ? 'solar:danger-triangle-bold' : 'solar:check-circle-bold'} className="text-lg" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Stock Bajo</h3>
+              <p className={`text-xs font-medium ${alertas?.stockBajo?.length > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                {alertas?.stockBajo?.length > 0 ? `${alertas.stockBajo.length} producto${alertas.stockBajo.length > 1 ? 's' : ''}` : 'Todo en orden'}
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 min-h-[80px]">
+            {alertas?.stockBajo?.length > 0 ? (
+              <div className="space-y-2">
+                {alertas.stockBajo.map((p: any) => (
+                  <div key={p.id} className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 truncate flex-1">{p.descripcion}</p>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs font-bold text-rose-500">{p.stock}</span>
+                      <span className="text-xs text-gray-400">/</span>
+                      <span className="text-xs text-gray-500">{p.stockMinimo}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Todos los productos tienen stock suficiente</p>
+            )}
+          </div>
+          <button onClick={() => navigate('/administrador/kardex/productos')} className="mt-4 w-full py-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors flex items-center justify-center gap-1">
+            Ver Kardex <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
+          </button>
+        </div>
+
+        {/* SUNAT Pendientes */}
+        <div className={`bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border ${alertas?.sunatPendientes?.count > 0 ? 'border-rose-200 dark:border-rose-500/30' : 'border-gray-100 dark:border-slate-800'} flex flex-col`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${alertas?.sunatPendientes?.count > 0 ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}>
+              <Icon icon={alertas?.sunatPendientes?.count > 0 ? 'solar:shield-warning-bold' : 'solar:shield-check-bold'} className="text-lg" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">SUNAT</h3>
+              <p className={`text-xs font-medium ${alertas?.sunatPendientes?.count > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                {alertas?.sunatPendientes?.count > 0 ? `${alertas.sunatPendientes.count} pendiente${alertas.sunatPendientes.count > 1 ? 's' : ''}` : 'Al día'}
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 min-h-[80px]">
+            {alertas?.sunatPendientes?.items?.length > 0 ? (
+              <div className="space-y-2">
+                {alertas.sunatPendientes.items.map((c: any) => {
+                  const estadoLabel = c.estado === 'FALLIDO_ENVIO' ? 'Error envío' : c.estado === 'RECHAZADO' ? 'Rechazado' : 'Pendiente';
+                  const estadoColor = c.estado === 'PENDIENTE' ? 'text-amber-500' : 'text-rose-500';
+                  return (
+                    <div key={c.id} className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{c.serie}-{String(c.correlativo).padStart(8, '0')}</p>
+                      <span className={`text-[10px] font-bold ${estadoColor}`}>{estadoLabel}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Todos los comprobantes enviados correctamente</p>
+            )}
+          </div>
+          <button onClick={() => navigate('/administrador/facturacion/comprobantes')} className="mt-4 w-full py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors flex items-center justify-center gap-1">
+            Ver Comprobantes <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
+          </button>
+        </div>
+
+        {/* Cuentas por Cobrar */}
+        <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+              <Icon icon="solar:bill-check-bold" className="text-lg" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Por Cobrar</h3>
+              <p className="text-xs font-medium text-blue-500">{alertas?.cuentasCobrar?.cantidad ?? 0} comprobante{alertas?.cuentasCobrar?.cantidad !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <div className="flex-1 min-h-[80px] flex flex-col justify-center">
+            <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{formatMoney(alertas?.cuentasCobrar?.total ?? 0)}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">pendiente de cobro</p>
+          </div>
+          <button onClick={() => navigate('/administrador/pagos/cuentas-cobrar')} className="mt-4 w-full py-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-xl hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-1">
+            Ver Cuentas <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
+          </button>
+        </div>
+
+        {/* Pedidos Tienda Pendientes */}
+        <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${alertas?.pedidosTiendaPendientes > 0 ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400' : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}>
+              <Icon icon="solar:shop-bold" className="text-lg" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Tienda Online</h3>
+              <p className={`text-xs font-medium ${alertas?.pedidosTiendaPendientes > 0 ? 'text-violet-500' : 'text-emerald-500'}`}>
+                {alertas?.pedidosTiendaPendientes > 0 ? `${alertas.pedidosTiendaPendientes} pendiente${alertas.pedidosTiendaPendientes > 1 ? 's' : ''}` : 'Sin pendientes'}
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 min-h-[80px] flex flex-col justify-center">
+            {alertas?.pedidosTiendaPendientes > 0 ? (
+              <>
+                <p className="text-4xl font-extrabold text-violet-600 dark:text-violet-400">{alertas.pedidosTiendaPendientes}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">pedido{alertas.pedidosTiendaPendientes > 1 ? 's' : ''} esperando atención</p>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 text-emerald-500">
+                <Icon icon="solar:check-circle-bold" className="text-2xl" />
+                <p className="text-sm font-bold">Sin pedidos pendientes</p>
+              </div>
+            )}
+          </div>
+          <button onClick={() => navigate('/administrador/tienda/pedidos')} className="mt-4 w-full py-2 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-xs font-bold rounded-xl hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-1">
+            Ver Pedidos <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
+          </button>
+        </div>
+
       </div>
 
       {/* Bottom Row */}
@@ -393,5 +529,14 @@ export default function AdminIndex() {
 
       </div>
     </div>
+
+    {/* Tour de bienvenida — solo primer login */}
+    {showModal && auth && (
+      <WelcomeModal user={auth} onStartTour={startTour} onSkip={skipTour} />
+    )}
+    {tourStep !== null && (
+      <TourSpotlight step={tourStep} onNext={nextStep} onPrev={prevStep} onEnd={endTour} />
+    )}
+    </>
   )
 }

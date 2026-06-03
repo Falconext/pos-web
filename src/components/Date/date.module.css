@@ -2,6 +2,46 @@
     position: relative;
 }
 
+:global(.admin-date-filter) {
+    width: 100%;
+}
+
+:global(.admin-date-filter) label {
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+:global(.admin-date-filter) input {
+    height: 44px;
+    border-radius: 12px;
+    border-color: #e5e7eb;
+    background: #fff;
+    padding: 0 42px 0 16px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #374151;
+    box-shadow: none;
+}
+
+:global(.admin-date-filter) input:focus {
+    border-color: #c4b5fd;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+}
+
+:global(.admin-date-filter) svg {
+    top: 36px;
+    right: 12px;
+    color: #9ca3af;
+}
+
+:global(.admin-date-filter) > div:nth-child(2) {
+    border: 1px solid #eef0f4;
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+}
+
 .text__label {
     margin-bottom: 4px;
 }

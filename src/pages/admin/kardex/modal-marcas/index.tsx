@@ -102,16 +102,6 @@ const BrandForm = ({ closeModal }: { closeModal: any }) => {
   return (
     <div className="px-6 mt-5">
       <div className="flex flex-col md:flex-row gap-6 items-start border-b border-[#e5e7eb] dark:border-slate-800 pb-10">
-        <div className="flex-shrink-0">
-          <CircularImageUploader
-            imageUrl={previewUrl}
-            onFileSelect={(file) => {
-              setImageFile(file);
-              setPreviewUrl(URL.createObjectURL(file));
-            }}
-          />
-        </div>
-
         <div className="w-full flex-1">
           <InputPro
             key={`input-marca-${formValues.id}`}
@@ -175,26 +165,17 @@ const BrandList = () => {
     }
   };
 
-  const actions: any = [
-    {
-      onClick: handleGetMarca,
-      className: "edit",
-      icon: <Icon color="#66AD78" icon="material-symbols:edit" />,
-      tooltip: "Editar",
-    },
-    {
-      onClick: handleDeleteMarca,
-      className: "delete",
-      icon: <Icon icon="material-symbols:delete-outline-rounded" color="#EF443C" />,
-      tooltip: "Eliminar",
-    },
+  const actions = [
+    { onClick: handleGetMarca, icon: <Icon icon="solar:pen-bold" width={18} />, tooltip: 'Editar', color: 'blue' as const },
+    { onClick: handleDeleteMarca, icon: <Icon icon="solar:trash-bin-trash-bold" width={18} />, tooltip: 'Eliminar', color: 'rose' as const },
   ];
 
   const marcasTable = (marcas || []).map((item: any, index: number) => ({
     '#': index + 1,
     id: item.id,
     nombre: item.nombre,
-    imagenUrl: item.imagenUrl, // Pass this so handleGetMarca can pick it up
+    'Nombre': <span className="font-medium tracking-wide">{item.nombre?.toUpperCase()}</span>,
+    imagenUrl: item.imagenUrl,
   }));
 
   return (
@@ -202,7 +183,7 @@ const BrandList = () => {
       <div className="px-6">
         <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible mt-4">
           {marcas?.length > 0 ? (
-            <DataTable actions={actions} bodyData={marcasTable} tableInitFinal={false} headerColumns={["#", "nombre"]} isCompact={true} />
+            <DataTable actions={actions} bodyData={marcasTable} tableInitFinal={false} headerColumns={['#', { label: 'Nombre', key: 'Nombre' }]} isCompact={true} />
           ) : (
             <TableSkeleton arrayData={marcas || []} />
           )}

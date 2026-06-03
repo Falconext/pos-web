@@ -50,7 +50,7 @@ export default function TrasladoSedesView() {
         if (!trimmed) return;
         setBarcodeLoading(true);
         try {
-            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
             if (resp.code === 1 && resp.data) {
                 addProduct(resp.data);
                 setBarcodeInput('');
@@ -78,7 +78,6 @@ export default function TrasladoSedesView() {
 
     const searchRef = useRef<HTMLDivElement>(null);
 
-
     useEffect(() => {
         listarSedes();
     }, [listarSedes]);
@@ -91,7 +90,7 @@ export default function TrasladoSedesView() {
             }
             try {
                 setLoadingProducts(true);
-                const { data } = await apiClient.get('/producto/listar', {
+                const { data } = await apiClient.get('/productos/listar', {
                     params: {
                         search: searchTerm.trim(),
                         limit: 10,
@@ -137,7 +136,6 @@ export default function TrasladoSedesView() {
             return;
         }
 
-        // Obtener stock específico de la sede actual
         const stockSede = p.stocks?.find((s: any) => s.sedeId === sedeActiva?.id)?.stock ?? p.stock ?? 0;
 
         setSelectedProducts([...selectedProducts, {
@@ -175,7 +173,6 @@ export default function TrasladoSedesView() {
             return;
         }
 
-        // Validar stock
         for (const p of selectedProducts) {
             if (p.cantidad > p.stockActual) {
                 alert(`Stock insuficiente para ${p.descripcion}. Disponible: ${p.stockActual}`, 'error');
@@ -205,11 +202,10 @@ export default function TrasladoSedesView() {
                 products: [...selectedProducts],
                 observacion
             });
-            
+
             setIsSuccess(true);
             alert('Traslado guardado correctamente', 'success');
         } catch (error: any) {
-
             alert(error.response?.data?.message || 'Error al realizar el traslado', 'error');
         } finally {
             setIsSubmitting(false);
@@ -217,32 +213,42 @@ export default function TrasladoSedesView() {
     };
 
     const sedesDestino = sedes.filter(s => s.activo && s.id !== sedeActiva?.id);
+    const sedeDestino = sedes.find(s => s.id === destinationSedeId);
+    const totalUnidades = selectedProducts.reduce((sum, p) => sum + p.cantidad, 0);
+    const hasStockIssues = selectedProducts.some(p => p.cantidad > p.stockActual);
 
     return (
         <div className="min-h-screen px-4 pb-8 font-inter dark:bg-[#0A0D14]">
+
+            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Traslado de Stock entre Sedes</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Mueve mercadería de forma segura entre tus sucursales</p>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-800/30">
+                        <Icon icon="solar:transfer-horizontal-bold" className="text-[#4F6EF7]" width={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Traslado entre Sedes</h1>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Mueve mercadería de forma segura entre sucursales</p>
+                    </div>
                 </div>
                 <Button outline onClick={() => navigate('/administrador/kardex')}>
-                    <Icon icon="solar:alt-arrow-left-linear" className="mr-2" />
+                    <Icon icon="solar:alt-arrow-left-linear" className="mr-1.5" width={15} />
                     Volver al Kardex
                 </Button>
             </div>
 
             {isSuccess && transferData ? (
-                <div className="bg-white dark:bg-[#111827] p-10 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center justify-center min-h-[400px]">
-                    <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-500 rounded-full flex items-center justify-center mb-6">
-                        <Icon icon="solar:check-circle-bold" width={48} />
+                <div className="bg-white dark:bg-[#111827] p-10 rounded-2xl border border-gray-100 dark:border-slate-800 flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 text-green-500 rounded-2xl flex items-center justify-center mb-5">
+                        <Icon icon="solar:check-circle-bold" width={44} />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">¡Traslado completado con éxito!</h2>
-                    <p className="text-gray-500 dark:text-gray-400 mb-8 text-center max-w-md">
-                        Los productos han sido descontados de tu sede origen y agregados a la sede destino correctamente.
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Traslado completado</h2>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mb-8 text-center max-w-md">
+                        Los productos han sido descontados de <span className="font-semibold text-gray-600 dark:text-gray-300">{transferData.sedeOrigen?.nombre}</span> y agregados a <span className="font-semibold text-gray-600 dark:text-gray-300">{transferData.sedeDestino?.nombre}</span>.
                     </p>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                         <Button color="secondary" onClick={() => handlePrint()}>
-                            <Icon icon="solar:printer-minimalistic-bold" className="mr-2" />
+                            <Icon icon="solar:printer-minimalistic-bold" className="mr-2" width={16} />
                             Imprimir Reporte
                         </Button>
                         <Button outline onClick={() => {
@@ -268,192 +274,294 @@ export default function TrasladoSedesView() {
                     />
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-                {/* Panel Izquierdo: Configuración y Búsqueda */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white dark:bg-[#111827] p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
-                        <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">1. Configuración del Traslado</h3>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 ml-1">Sede de Origen</label>
-                                <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-400 dark:text-gray-400">
-                                    <Icon icon="solar:city-bold-duotone" width={18} />
-                                    <span className="text-sm font-medium dark:text-gray-300">{sedeActiva?.nombre} (Actual)</span>
+                    {/* Panel Izquierdo */}
+                    <div className="lg:col-span-1 space-y-4">
+
+                        {/* Configuración */}
+                        <div className="bg-white dark:bg-[#111827] p-5 rounded-2xl border border-gray-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2.5 mb-4">
+                                <span className="w-5 h-5 bg-[#4F6EF7] text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">1</span>
+                                <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Configuración del Traslado</span>
+                            </div>
+
+                            {/* Route visualizer */}
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-800 mb-4">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Origen</p>
+                                    <div className="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800/50 rounded-lg">
+                                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate block">{sedeActiva?.nombre}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center pt-3 shrink-0">
+                                    <div className={`w-4 h-px ${destinationSedeId ? 'bg-indigo-400' : 'bg-gray-200 dark:bg-slate-700'} transition-colors`} />
+                                    <Icon
+                                        icon="solar:arrow-right-bold"
+                                        width={13}
+                                        className={`transition-colors ${destinationSedeId ? 'text-[#4F6EF7]' : 'text-gray-300 dark:text-slate-600'}`}
+                                    />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Destino</p>
+                                    <div className={`px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${
+                                        destinationSedeId
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700'
+                                            : 'bg-white dark:bg-slate-800 border-dashed border-gray-200 dark:border-slate-600'
+                                    }`}>
+                                        <span className={`text-xs font-semibold truncate block transition-colors ${destinationSedeId ? 'text-[#4F6EF7]' : 'text-gray-400 dark:text-slate-500'}`}>
+                                            {sedeDestino?.nombre ?? 'Por seleccionar'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <Select
-                                label="Sede de Destino"
-                                name="sedeDestino"
-                                options={sedesDestino.map(s => ({ id: s.id, value: s.nombre }))}
-                                onChange={(val) => setDestinationSedeId(Number(val))}
-                                error={!destinationSedeId ? "Selecciona destino" : ""}
-                            />
+                            <div className="space-y-3">
+                                <Select
+                                    label="Sede de Destino"
+                                    name="sedeDestino"
+                                    options={sedesDestino.map(s => ({ id: s.id, value: s.nombre }))}
+                                    onChange={(val) => setDestinationSedeId(Number(val))}
+                                    error={!destinationSedeId ? "Selecciona destino" : ""}
+                                />
 
-                            <InputPro
-                                label="Observación (Opcional)"
-                                name="observacion"
-                                value={observacion}
-                                onChange={(e: any) => setObservacion(e.target.value)}
-                                isLabel
-                            />
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#111827] p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 relative" ref={searchRef}>
-                        <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">2. Agregar Productos</h3>
-
-                        {/* Barcode scanner */}
-                        <BarcodeScannerInput
-                            className="mb-3"
-                            inputRef={barcodeRef}
-                            value={barcodeInput}
-                            onChange={(e) => setBarcodeInput(e.target.value)}
-                            onScan={handleBarcodeScan}
-                            loading={barcodeLoading}
-                        />
-
-                        <div className="relative">
-                            <InputPro
-                                name="buscarProductos"
-                                placeholder="Buscar por nombre o código..."
-                                value={searchTerm}
-                                onChange={(e: any) => setSearchTerm(e.target.value)}
-                            />
-                            {loadingProducts && (
-                                <div className="absolute right-3 top-3">
-                                    <Icon icon="line-md:loading-twotone-loop" className="text-[#4F6EF7]" width={20} />
-                                </div>
-                            )}
-                        </div>
-
-                        {searchResults.length > 0 && (
-                            <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-[#111827] border border-gray-100 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto m-5">
-                                {searchResults.map((p) => (
-                                    <button
-                                        key={p.id}
-                                        onClick={() => addProduct(p)}
-                                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors border-b border-gray-50 dark:border-slate-700 last:border-0"
-                                    >
-                                        <div className="h-11 w-11 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 overflow-hidden flex items-center justify-center shrink-0">
-                                            {p.imagenUrl ? (
-                                                <img
-                                                    src={p.imagenUrl}
-                                                    alt={p.descripcion}
-                                                    className="h-full w-full object-cover"
-                                                    loading="lazy"
-                                                />
-                                            ) : (
-                                                <Icon icon="solar:box-minimalistic-linear" className="text-gray-300" width={18} />
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-col min-w-0 flex-1">
-                                            <div className="flex justify-between items-start gap-2 w-full">
-                                                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{p.descripcion}</span>
-                                                <span className="text-xs font-bold text-[#4F6EF7] shrink-0">{p.codigo}</span>
-                                            </div>
-                                            <div className="flex justify-between w-full mt-1">
-                                                <span className="text-[11px] text-gray-400 dark:text-gray-500">Stock actual: {p.stocks?.find((s: any) => s.sedeId === sedeActiva?.id)?.stock ?? p.stock ?? 0}</span>
-                                                <span className="text-[11px] text-gray-400 dark:text-gray-500">{p.unidadMedida?.nombre}</span>
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))}
+                                <InputPro
+                                    label="Observación (Opcional)"
+                                    name="observacion"
+                                    value={observacion}
+                                    onChange={(e: any) => setObservacion(e.target.value)}
+                                    isLabel
+                                />
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Panel Derecho: Lista de Selección */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden min-h-[400px] flex flex-col">
-                        <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/30">
-                            <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Productos a trasladar ({selectedProducts.length})</h3>
-                            {selectedProducts.length > 0 && (
-                                <button onClick={() => setSelectedProducts([])} className="text-xs font-semibold text-red-500 hover:text-red-600">Limpiar lista</button>
-                            )}
                         </div>
 
-                        <div className="flex-1 overflow-x-auto">
-                            {selectedProducts.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center p-20 text-gray-300 dark:text-slate-700">
-                                    <Icon icon="solar:box-minimalistic-linear" width={64} className="mb-4 opacity-20" />
-                                    <p className="text-sm font-medium">No has agregado productos aún</p>
-                                </div>
-                            ) : (
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-white dark:bg-[#111827] border-b border-gray-100 dark:border-slate-800">
-                                            <th className="text-left px-5 py-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Producto</th>
-                                            <th className="text-center px-5 py-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Stock Origen</th>
-                                            <th className="text-center px-5 py-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-32">Cantidad</th>
-                                            <th className="text-right px-5 py-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {selectedProducts.map((p) => (
-                                            <tr key={p.id} className="border-b border-gray-50 dark:border-slate-800 last:border-0 hover:bg-gray-50/30 dark:hover:bg-slate-800/30 transition-colors">
-                                                <td className="px-5 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{p.descripcion}</span>
-                                                        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">{p.codigo}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-5 py-4 text-center">
-                                                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{p.stockActual} {p.unidadMedida}</span>
-                                                </td>
-                                                <td className="px-5 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="number"
-                                                            value={p.cantidad}
-                                                            onChange={(e) => updateQuantity(p.id, Number(e.target.value))}
-                                                            className="w-full h-9 px-3 text-sm border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-[#4F6EF7] outline-none transition-all text-center bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-200"
-                                                            min={1}
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td className="px-5 py-4 text-right">
-                                                    <button
-                                                        onClick={() => removeProduct(p.id)}
-                                                        className="h-8 w-8 inline-flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                    >
-                                                        <Icon icon="solar:trash-bin-trash-linear" width={18} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
+                        {/* Buscador */}
+                        <div className="bg-white dark:bg-[#111827] p-5 rounded-2xl border border-gray-100 dark:border-slate-800 relative" ref={searchRef}>
+                            <div className="flex items-center gap-2.5 mb-4">
+                                <span className="w-5 h-5 bg-[#4F6EF7] text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">2</span>
+                                <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Agregar Productos</span>
+                            </div>
 
-                        <div className="p-5 bg-gray-50/50 dark:bg-slate-900/30 border-t border-gray-100 dark:border-slate-800">
-                            <Button
-                                color="primary"
-                                className="w-full py-3.5 shadow-lg shadow-indigo-100"
-                                onClick={handleTraslado}
-                                disabled={isSubmitting || selectedProducts.length === 0}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Icon icon="line-md:loading-twotone-loop" className="mr-2" />
-                                        Procesando traslado...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Icon icon="solar:transfer-horizontal-bold" className="mr-2" />
-                                        Confirmar Traslado de Mercadería
-                                    </>
+                            <BarcodeScannerInput
+                                className="mb-3"
+                                inputRef={barcodeRef}
+                                value={barcodeInput}
+                                onChange={(e) => setBarcodeInput(e.target.value)}
+                                onScan={handleBarcodeScan}
+                                loading={barcodeLoading}
+                            />
+
+                            <div className="relative">
+                                <InputPro
+                                    name="buscarProductos"
+                                    placeholder="Buscar por nombre o código..."
+                                    value={searchTerm}
+                                    onChange={(e: any) => setSearchTerm(e.target.value)}
+                                />
+                                {loadingProducts && (
+                                    <div className="absolute right-3 top-3">
+                                        <Icon icon="line-md:loading-twotone-loop" className="text-[#4F6EF7]" width={18} />
+                                    </div>
                                 )}
-                            </Button>
+                            </div>
+
+                            {searchResults.length > 0 && (
+                                <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-[#111827] border border-gray-100 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto mx-5">
+                                    {searchResults.map((p) => {
+                                        const stockOrigen = p.stocks?.find((s: any) => s.sedeId === sedeActiva?.id)?.stock ?? p.stock ?? 0;
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                onClick={() => addProduct(p)}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors border-b border-gray-50 dark:border-slate-700/50 last:border-0 text-left"
+                                            >
+                                                <div className="h-10 w-10 rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                                                    {p.imagenUrl ? (
+                                                        <img src={p.imagenUrl} alt={p.descripcion} className="h-full w-full object-cover" loading="lazy" />
+                                                    ) : (
+                                                        <Icon icon="solar:box-minimalistic-linear" className="text-gray-300 dark:text-slate-600" width={16} />
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{p.descripcion}</span>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="font-mono text-[10px] text-[#4F6EF7] font-bold">{p.codigo}</span>
+                                                        <span className="text-[10px] text-gray-400 dark:text-gray-500">Stock: {stockOrigen} {p.unidadMedida?.nombre}</span>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Panel Derecho: Lista */}
+                    <div className="lg:col-span-2">
+                        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden flex flex-col min-h-[460px]">
+
+                            {/* Table header */}
+                            <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="w-5 h-5 bg-[#4F6EF7] text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">3</span>
+                                    <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                        Productos a Trasladar
+                                        {selectedProducts.length > 0 && (
+                                            <span className="ml-1.5 text-[#4F6EF7]">({selectedProducts.length})</span>
+                                        )}
+                                    </span>
+                                </div>
+                                {selectedProducts.length > 0 && (
+                                    <button
+                                        onClick={() => setSelectedProducts([])}
+                                        className="text-xs font-semibold text-red-400 hover:text-red-500 transition-colors"
+                                    >
+                                        Limpiar lista
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Table or empty state */}
+                            <div className="flex-1 overflow-x-auto">
+                                {selectedProducts.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full py-16 px-8 text-center">
+                                        <div className="w-14 h-14 bg-gray-50 dark:bg-slate-800 border border-dashed border-gray-200 dark:border-slate-700 rounded-2xl flex items-center justify-center mb-4">
+                                            <Icon icon="solar:box-minimalistic-linear" width={26} className="text-gray-300 dark:text-slate-600" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-400 dark:text-slate-500">Sin productos agregados</p>
+                                        <p className="text-xs text-gray-300 dark:text-slate-600 mt-1 max-w-[220px]">Busca por nombre, código o escanea un código de barras</p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b border-gray-100 dark:border-slate-800">
+                                                <th className="text-left px-5 py-3 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Producto</th>
+                                                <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Disponible</th>
+                                                <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider w-32">Cantidad</th>
+                                                <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Restante</th>
+                                                <th className="px-4 py-3 w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedProducts.map((p) => {
+                                                const remaining = p.stockActual - p.cantidad;
+                                                const isOver = p.cantidad > p.stockActual;
+                                                const isLow = !isOver && remaining <= Math.ceil(p.stockActual * 0.2);
+
+                                                return (
+                                                    <tr
+                                                        key={p.id}
+                                                        className={`border-b border-gray-50 dark:border-slate-800/60 last:border-0 transition-colors ${
+                                                            isOver
+                                                                ? 'bg-red-50/40 dark:bg-red-900/5'
+                                                                : 'hover:bg-gray-50/40 dark:hover:bg-slate-800/20'
+                                                        }`}
+                                                    >
+                                                        <td className="px-5 py-3.5">
+                                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{p.descripcion}</p>
+                                                            <p className="font-mono text-[10px] font-bold text-[#4F6EF7] mt-0.5">{p.codigo}</p>
+                                                        </td>
+                                                        <td className="px-4 py-3.5 text-center">
+                                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                                                {p.stockActual}
+                                                                {p.unidadMedida && (
+                                                                    <span className="text-[10px] text-gray-400 ml-0.5">{p.unidadMedida}</span>
+                                                                )}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3.5">
+                                                            <input
+                                                                type="number"
+                                                                value={p.cantidad}
+                                                                onChange={(e) => updateQuantity(p.id, Number(e.target.value))}
+                                                                className={`w-full h-8 px-3 text-sm font-semibold border rounded-lg focus:ring-2 outline-none transition-all text-center ${
+                                                                    isOver
+                                                                        ? 'border-red-300 dark:border-red-700/60 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 focus:ring-red-100 dark:focus:ring-red-900/20'
+                                                                        : 'border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-200 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 focus:border-[#4F6EF7]'
+                                                                }`}
+                                                                min={1}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3.5 text-center">
+                                                            {isOver ? (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-[10px] font-bold rounded-full">
+                                                                    <Icon icon="solar:danger-circle-bold" width={10} />
+                                                                    Sin stock
+                                                                </span>
+                                                            ) : (
+                                                                <span className={`text-sm font-semibold ${isLow ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                                    {remaining}
+                                                                    {p.unidadMedida && (
+                                                                        <span className="text-[10px] font-normal text-gray-400 ml-0.5">{p.unidadMedida}</span>
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3.5">
+                                                            <button
+                                                                onClick={() => removeProduct(p.id)}
+                                                                className="h-7 w-7 inline-flex items-center justify-center text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                            >
+                                                                <Icon icon="solar:trash-bin-trash-linear" width={15} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-5 border-t border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/20">
+                                {selectedProducts.length > 0 && (
+                                    <div className="flex items-center justify-between mb-3 px-0.5">
+                                        <div className="flex items-center gap-4">
+                                            <div>
+                                                <p className="text-base font-bold text-gray-800 dark:text-white leading-none">{selectedProducts.length}</p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">Productos</p>
+                                            </div>
+                                            <div className="w-px h-7 bg-gray-200 dark:bg-slate-700" />
+                                            <div>
+                                                <p className="text-base font-bold text-gray-800 dark:text-white leading-none">{totalUnidades}</p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">Unidades</p>
+                                            </div>
+                                        </div>
+                                        {hasStockIssues && (
+                                            <span className="flex items-center gap-1.5 text-xs text-red-500 font-semibold bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 px-3 py-1.5 rounded-lg">
+                                                <Icon icon="solar:danger-triangle-bold" width={13} />
+                                                Stock insuficiente
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
+                                <Button
+                                    color="primary"
+                                    className="w-full py-3"
+                                    onClick={handleTraslado}
+                                    disabled={isSubmitting || selectedProducts.length === 0}
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Icon icon="line-md:loading-twotone-loop" className="mr-2" width={16} />
+                                            Procesando traslado...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon icon="solar:transfer-horizontal-bold" className="mr-2" width={16} />
+                                            Confirmar Traslado de Mercadería
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             )}
         </div>
     );

@@ -10,7 +10,7 @@ const ACCENT = '#642AE5';
 
 export default function ForgotPasswordView() {
     const navigate = useNavigate();
-    const { email, isLoading, sent, handleChange, handleSubmit, handleKeyDown } = useForgotPasswordViewModel();
+    const { email, isLoading, sent, handleChange, handleSubmit, handleKeyDown, handleResend } = useForgotPasswordViewModel();
 
     return (
         <>
@@ -66,12 +66,7 @@ export default function ForgotPasswordView() {
                 .fp-btn:hover { opacity: 0.88; }
                 .fp-btn:active { transform: scale(0.98); }
                 .fp-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-                .fp-success-box {
-                    text-align: center; padding: 32px 24px;
-                    background: #F0FDF4; border-radius: 16px;
-                    border: 1.5px solid #86EFAC;
-                }
-                @media (max-width: 768px) { .fp-left { display: none; } .fp-form-wrap { padding: 60px 28px; } }
+@media (max-width: 768px) { .fp-left { display: none; } .fp-form-wrap { padding: 60px 28px; } }
             `}</style>
 
             <div className="fp-root">
@@ -92,30 +87,77 @@ export default function ForgotPasswordView() {
                 {/* Right form */}
                 <div className="fp-right">
                     <div className="fp-form-wrap">
-                        {/* Back to login */}
-                        <button
-                            onClick={() => navigate('/login')}
-                            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 13, marginBottom: 32, padding: 0 }}
-                        >
-                            <Icon icon="solar:arrow-left-linear" style={{ fontSize: 16 }} />
-                            Volver al inicio de sesión
-                        </button>
-
                         {sent ? (
-                            <div className="fp-success-box">
-                                <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-                                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#166534', marginBottom: 8 }}>
-                                    ¡Revisa tu correo!
-                                </h2>
-                                <p style={{ fontSize: 14, color: '#15803D', lineHeight: 1.6 }}>
-                                    Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña en los próximos minutos.
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                                {/* Icono con glow radial en color de marca */}
+                                <div style={{
+                                    width: 88, height: 88, borderRadius: '50%',
+                                    background: `${ACCENT}12`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    marginBottom: 28,
+                                    boxShadow: `0 0 0 14px ${ACCENT}08`,
+                                }}>
+                                    <Icon icon="solar:letter-opened-bold-duotone" style={{ fontSize: 42, color: ACCENT }} />
+                                </div>
+
+                                {/* Título */}
+                                <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111', marginBottom: 10, letterSpacing: '-0.4px' }}>
+                                    Correo enviado
+                                </h1>
+                                <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 16, lineHeight: 1.6, maxWidth: 320 }}>
+                                    Enviamos las instrucciones de recuperación a:
                                 </p>
-                                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 16 }}>
-                                    Revisa también tu carpeta de spam.
-                                </p>
+
+                                {/* Pill del email — recibo de envío */}
+                                <div style={{
+                                    background: '#F9FAFB', border: '1.5px solid #E5E7EB',
+                                    borderRadius: 10, padding: '10px 22px',
+                                    fontSize: 14, fontWeight: 600, color: '#111',
+                                    letterSpacing: '0.01em', marginBottom: 20,
+                                    maxWidth: '100%', wordBreak: 'break-all',
+                                }}>
+                                    {email}
+                                </div>
+
+                                {/* Badge de expiración en tint de marca */}
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    background: `${ACCENT}0E`, border: `1px solid ${ACCENT}22`,
+                                    borderRadius: 8, padding: '8px 14px',
+                                    fontSize: 12, color: ACCENT, fontWeight: 500,
+                                    marginBottom: 32,
+                                }}>
+                                    <Icon icon="solar:clock-circle-bold" style={{ fontSize: 14, flexShrink: 0 }} />
+                                    El enlace expira en 15 min · Revisa también spam
+                                </div>
+
+                                {/* Botón primario */}
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    className="fp-btn"
+                                    style={{ marginBottom: 16 }}
+                                >
+                                    Volver al inicio de sesión
+                                </button>
+
+                                {/* Reintento secundario */}
+                                <button
+                                    type="button"
+                                    onClick={handleResend}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#9CA3AF', padding: 0 }}
+                                >
+                                    ¿No llegó el correo? Reintentar
+                                </button>
                             </div>
                         ) : (
                             <>
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 13, marginBottom: 32, padding: 0 }}
+                                >
+                                    <Icon icon="solar:arrow-left-linear" style={{ fontSize: 16 }} />
+                                    Volver al inicio de sesión
+                                </button>
                                 <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111', marginBottom: 6 }}>
                                     ¿Olvidaste tu contraseña?
                                 </h1>

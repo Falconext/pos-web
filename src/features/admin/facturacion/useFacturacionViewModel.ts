@@ -27,7 +27,9 @@ import {
     tiposComprobantesInformales,
     tiposCotizacion,
     metodosContado,
-    metodosCredito
+    metodosCredito,
+    type ICatalogoFarmaciaItem,
+    type IDatosReceta,
 } from "./FacturacionModel";
 
 export const useFacturacionViewModel = () => {
@@ -47,6 +49,13 @@ export const useFacturacionViewModel = () => {
     const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT', 'COT'];
     const tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
 
+    // Detección de rubros farmacéuticos
+    const rubroNombre = ((auth?.empresa as any)?.rubro?.nombre ?? '').toLowerCase();
+    const isFarmaciaRetail = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
+    const esDrogueria = rubroNombre.includes('drogueria') || rubroNombre.includes('droguería');
+    const usaLotesFarmacia = isFarmaciaRetail || esDrogueria;
+    const usarPrecioLoteFefo = Boolean((auth?.empresa as any)?.usarPrecioLoteFefo);
+
     const [resellerBranding, setResellerBranding] = useState<{ nombre: string | null; whiteLabelNombre: string | null; whiteLabelWebsite: string | null } | null>(null);
     useEffect(() => {
         get('auth/me').then((resp: any) => {
@@ -58,6 +67,20 @@ export const useFacturacionViewModel = () => {
     // POS STATES
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState<string>("");
+
+    // Fraccionamiento: modo por producto (CAJA = unidadCompra, UNIDAD = unidadVenta)
+    const [modoFraccionPorProducto, setModoFraccionPorProducto] = useState<Record<number, 'CAJA' | 'UNIDAD'>>({});
+
+    const setModoFraccionProducto = (productId: number, modo: 'CAJA' | 'UNIDAD') => {
+        setModoFraccionPorProducto(prev => ({ ...prev, [productId]: modo }));
+    };
+
+    // Farmacia: catálogo con lotes FEFO y datos de receta
+    const [farmaciaProductos, setFarmaciaProductos] = useState<ICatalogoFarmaciaItem[]>([]);
+    const [farmaciaTotal, setFarmaciaTotal] = useState(0);
+    const [farmaciaLoading, setFarmaciaLoading] = useState(false);
+    const [isRecetaModalOpen, setIsRecetaModalOpen] = useState(false);
+    const [recetaModalItemIndex, setRecetaModalItemIndex] = useState<number | null>(null);
 
     // Barcode scanner state
     const [barcodeInput, setBarcodeInput] = useState('');
@@ -87,9 +110,25 @@ export const useFacturacionViewModel = () => {
                 : receipt.toUpperCase()));
 
     const [paymentMethod, setPaymentMethod] = useState<string>('Efectivo');
+    const [isMixedPayment, setIsMixedPayment] = useState<boolean>(false);
+    const [splitPayments, setSplitPayments] = useState<{ method: string; amount: number }[]>([
+        { method: 'Efectivo', amount: 0 },
+        { method: 'Yape', amount: 0 },
+    ]);
     const [adelanto, setAdelanto] = useState<number>(0);
     const [fechaRecojo, setFechaRecojo] = useState<string>('');
     const [adelantoError, _setAdelantoError] = useState<string>('');
+
+    // ID del comprobante informal de origen (cuando se convierte NV/Ticket → Formal)
+    // Cuando está presente, el backend NO descuenta el stock (ya fue descontado por el informal)
+    const [origenComprobanteId, setOrigenComprobanteId] = useState<number | null>(null);
+
+    // Fecha de emisión manual (backdating SUNAT): YYYY-MM-DD, default hoy
+    const todayStr = (() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })();
+    const [fechaEmisionManual, setFechaEmisionManual] = useState<string>(todayStr);
 
     const initFormValues: IFormInvoice = {
         clienteId: 0,
@@ -133,9 +172,30 @@ export const useFacturacionViewModel = () => {
     const [isComprobantePendiente, setIsComprobantePendiente] = useState<boolean>(false);
     const [emittedDataReceipt, setEmittedDataReceipt] = useState<any>(null);
     const [snapshotClient, setSnapshotClient] = useState<any>(null);
+
+    // Coordinación de envío nacional
+    const [envioActivo, setEnvioActivo] = useState(false);
+    const [envioData, setEnvioData] = useState({
+        transportista: '',
+        tipoEnvio: 'AGENCIA',
+        agenciaDestino: '',
+        celularDest: '',
+        nroPaquetes: 1,
+        turnoEnvio: 'MANANA',
+        tipoMercaderia: '',
+        claveEnvio: '',
+        nroOrden: '',
+        claveOrden: '',
+        establecimiento: '',
+        repartidor: '',
+        empaquetador: '',
+        observaciones: '',
+        fechaEstimada: '',
+    });
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [descountGlobal, _setDescountGlobal] = useState<number>(0)
+    const [descuentoPctNV, setDescuentoPctNV] = useState<number>(0)
     const [errors, setErrors] = useState({ observaciones: "" });
     const [errorsProduct, setErrorsProduct] = useState({ codigo: "", descripcion: "", categoriaId: 0, description: "", precioUnitario: "", stock: "", unidadMedida: "" });
     const [errorsClient, setErrorsClient] = useState({ nombre: "", nroDoc: "", direccion: "", departamento: "", distrito: "", provincia: "", ubigeo: "", email: "", telefono: "", estado: "", tipoDocumentoId: 0, empresaId: 0 });
@@ -186,7 +246,11 @@ export const useFacturacionViewModel = () => {
     useEffect(() => {
         const loadMasters = async () => {
             try {
-                const rOps: any = await get('comprobante/tipo-operacion');
+                const [rOps, rDet, rMed]: any[] = await Promise.all([
+                    get('comprobante/tipo-operacion'),
+                    get('comprobante/tipos-detraccion'),
+                    get('comprobante/medios-pago-detraccion'),
+                ]);
                 const opsData = (rOps && Array.isArray(rOps)) ? rOps : (rOps?.data || []);
                 if (Array.isArray(opsData)) {
                     setTiposOperacion(opsData);
@@ -195,10 +259,7 @@ export const useFacturacionViewModel = () => {
                         if (ventaInterna) setFormValues(prev => ({ ...prev, tipoOperacionId: ventaInterna.id }));
                     }
                 }
-                const rDet: any = await get('comprobante/tipos-detraccion');
                 setTiposDetraccion((rDet && Array.isArray(rDet)) ? rDet : (rDet?.data || []));
-
-                const rMed: any = await get('comprobante/medios-pago-detraccion');
                 setMediosPagoDetraccion((rMed && Array.isArray(rMed)) ? rMed : (rMed?.data || []));
             } catch (e) { console.error(e); }
         };
@@ -221,8 +282,30 @@ export const useFacturacionViewModel = () => {
         if (selectedCategoryId !== 0) params.categoriaId = selectedCategoryId;
         if (sedeActiva?.id) params.sedeId = sedeActiva.id;
 
-        getAllProducts(params, () => { }, true);
-    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id]);
+        if (!usaLotesFarmacia) {
+            getAllProducts(params, () => { }, true);
+        }
+    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia]);
+
+    // Farmacia: catálogo con FEFO (reemplaza getAllProducts para rubros regulados)
+    useEffect(() => {
+        if (!usaLotesFarmacia) return;
+        let cancelled = false;
+        setFarmaciaLoading(true);
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (sedeActiva?.id) params.set('sedeId', String(sedeActiva.id));
+        if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
+        if (selectedCategoryId !== 0) params.set('categoriaId', String(selectedCategoryId));
+        get(`productos/catalogo-farmacia?${params.toString()}`)
+            .then((resp: any) => {
+                if (cancelled) return;
+                setFarmaciaProductos(resp?.data?.productos ?? []);
+                setFarmaciaTotal(resp?.data?.total ?? 0);
+            })
+            .catch(() => {})
+            .finally(() => { if (!cancelled) setFarmaciaLoading(false); });
+        return () => { cancelled = true; };
+    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia]);
 
     const filteredCombos = useMemo(() => {
         const search = String(debouncedSearchTerm || '').trim().toLowerCase();
@@ -246,10 +329,11 @@ export const useFacturacionViewModel = () => {
     }, [combos, debouncedSearchTerm, selectedCategoryId]);
 
     const catalogItems = useMemo(() => {
-        const itemsProductos = (products || []).map((product: any) => ({ ...product, __catalogType: 'PRODUCTO' }));
+        const sourceProductos = usaLotesFarmacia ? farmaciaProductos : products;
+        const itemsProductos = (sourceProductos || []).map((product: any) => ({ ...product, __catalogType: 'PRODUCTO' }));
         const itemsCombos = filteredCombos.map((combo: any) => ({ ...combo, __catalogType: 'COMBO' }));
         return [...itemsCombos, ...itemsProductos];
-    }, [products, filteredCombos]);
+    }, [products, farmaciaProductos, filteredCombos, usaLotesFarmacia]);
 
     // Initial Data Fetching for POS
     useEffect(() => {
@@ -479,7 +563,8 @@ export const useFacturacionViewModel = () => {
 
             window.history.replaceState({}, document.title);
         } else if (state?.fromNotaDeVenta && state?.notaDeVentaData) {
-            const { cliente, clienteId, productos, observaciones } = state.notaDeVentaData;
+            const { cliente, clienteId, productos, observaciones, origenComprobanteId } = state.notaDeVentaData;
+            if (origenComprobanteId) setOrigenComprobanteId(Number(origenComprobanteId));
 
             if (cliente) {
                 fromNVComprobanteRef.current = formValues.comprobante;
@@ -573,6 +658,7 @@ export const useFacturacionViewModel = () => {
     }, [isQuotationRoute, hasOpenedConfigModal]);
 
     // Product Adding logic
+
     const normalizeWholesaleUnitPrice = (basePrice: number, rule: { cantidadMinima: number; precio: number }) => {
         const minQty = Number(rule.cantidadMinima);
         const rulePrice = Number(rule.precio);
@@ -733,37 +819,154 @@ export const useFacturacionViewModel = () => {
     };
 
     const handleProductClick = (product: any) => {
-        const usarPrecioLoteFefo = Boolean(auth?.empresa?.usarPrecioLoteFefo);
+        // Farmacia: el stock siempre viene de lotes activos (FEFO/trazabilidad)
+        if (usaLotesFarmacia) {
+            const loteFefo = product?.loteFefo;
+            if (!loteFefo) {
+                return useAlertStore.getState().alert("Este producto no tiene lotes registrados. Ingresa un lote en Kardex antes de vender.", "warning");
+            }
+            if (loteFefo.diasAlVencimiento !== null && loteFefo.diasAlVencimiento < 0) {
+                return useAlertStore.getState().alert(`El lote ${loteFefo.loteNumero} está vencido`, "error");
+            }
+        }
+
+        // Fraccionamiento
+        const factorConversion = Number(product?.factorConversion ?? 1);
+        const tieneFraccionamiento = isFarmaciaRetail && factorConversion > 1;
+        const modoActual = tieneFraccionamiento
+            ? (modoFraccionPorProducto[product.id] ?? 'CAJA')
+            : 'CAJA';
+        const vendePorUnidad = tieneFraccionamiento && modoActual === 'UNIDAD';
+
+        const fraccionExtra = tieneFraccionamiento
+            ? {
+                unidadSeleccionada: modoActual,
+                unidadVentaNombre: vendePorUnidad
+                    ? (product?.unidadVenta || 'UNIDAD')
+                    : (product?.unidadCompra || product?.unidadMedida?.nombre || 'UNIDAD'),
+                factorConversion,
+            }
+            : {};
+        const unidadMedidaNombre = (fraccionExtra as any).unidadVentaNombre ?? (product?.unidadMedida?.nombre ?? product?.unidadCodigo);
+
+        // ── Multi-lote FEFO: una línea de carrito por lote ─────────────────────
+        // Cuando usarPrecioLoteFefo está activo y el producto tiene lotes con costoUnitario,
+        // cada lote genera su propia línea en el comprobante con su precio real.
+        if (usarPrecioLoteFefo && (product?.lotesDisponibles?.length ?? 0) > 0) {
+            type LoteDisponible = { loteId: number; loteNumero: string; stockActual: number; costoUnitario: number | null; fechaVencimiento: string };
+            const lotesActivos = [...(product.lotesDisponibles as LoteDisponible[])]
+                .filter((l) => l.stockActual > 0)
+                .sort((a, b) => new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime());
+
+            if (!lotesActivos.length) {
+                return useAlertStore.getState().alert("Sin stock en lotes activos", "warning");
+            }
+
+            for (const lote of lotesActivos) {
+                const existingLoteIdx = productsInvoice.findIndex(
+                    (p: any) => Number(p?.productoId || p?.id) === product.id && p.loteId === lote.loteId,
+                );
+
+                if (existingLoteIdx >= 0) {
+                    const currentItem = productsInvoice[existingLoteIdx];
+                    const currentQty = Number(currentItem.cantidad);
+                    if (currentQty < lote.stockActual) {
+                        updateProductInvoice(existingLoteIdx, calculateLineItem(currentItem, currentQty + 1));
+                        return;
+                    }
+                    continue; // este lote está lleno, intentar el siguiente
+                }
+
+                // Nueva línea para este lote
+                const costoBase = lote.costoUnitario ?? Number(product?.precioUnitario ?? 0);
+                const lotPrice = vendePorUnidad ? costoBase / factorConversion : costoBase;
+                addProductsInvoice({
+                    ...product,
+                    descripcion: `${String(product.descripcion || '')} [${lote.loteNumero}]`,
+                    precioBase: lotPrice,
+                    precioUnitario: lotPrice,
+                    precioOrigen: 'FEFO',
+                    stock: lote.stockActual,
+                    unidadMedida: unidadMedidaNombre,
+                    lotesDisponibles: product?.lotesDisponibles ?? [],
+                    loteId: lote.loteId,
+                    loteNumero: lote.loteNumero,
+                    pendienteReceta: isFarmaciaRetail && (product.requiereReceta || product.controlado),
+                    requiereReceta: product.requiereReceta ?? false,
+                    controlado: product.controlado ?? false,
+                    refrigerado: product.refrigerado ?? false,
+                    ...fraccionExtra,
+                });
+                return;
+            }
+
+            return useAlertStore.getState().alert("Stock insuficiente en todos los lotes activos", "warning");
+        }
+        // ── Fin multi-lote ──────────────────────────────────────────────────────
+
         const precioDesdeLoteFefo = Number(product?.loteFefoCostoUnitario ?? 0);
         const precioBaseProducto = Number(product?.precioUnitario ?? 0);
-        const precioBaseSeleccionado = usarPrecioLoteFefo && precioDesdeLoteFefo > 0
+        const precioBaseCaja = usarPrecioLoteFefo && precioDesdeLoteFefo > 0
             ? precioDesdeLoteFefo
             : precioBaseProducto;
-        const origenPrecio = usarPrecioLoteFefo && precioDesdeLoteFefo > 0 ? "FEFO" : "LISTA";
+        const precioBaseSeleccionado = vendePorUnidad ? precioBaseCaja / factorConversion : precioBaseCaja;
+        const origenPrecio = vendePorUnidad ? "UNIDAD" : usarPrecioLoteFefo && precioDesdeLoteFefo > 0 ? "FEFO" : "LISTA";
         const existingIndex = productsInvoice.findIndex((p: any) => p.id === product.id);
+
+        const farmaciaExtra = usaLotesFarmacia && product?.loteFefo
+            ? {
+                loteId: product.loteFefo.loteId,
+                loteNumero: product.loteFefo.loteNumero,
+                pendienteReceta: isFarmaciaRetail && (product.requiereReceta || product.controlado),
+                requiereReceta: product.requiereReceta ?? false,
+                controlado: product.controlado ?? false,
+                refrigerado: product.refrigerado ?? false,
+            }
+            : {};
 
         if (existingIndex >= 0) {
             const currentItem = productsInvoice[existingIndex];
             const newQty = Number(currentItem.cantidad) + 1;
-            if (product.stock < newQty) {
+            const stockDisponible = usaLotesFarmacia
+                ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
+                : product.stock;
+            if (stockDisponible < newQty) {
                 return useAlertStore.getState().alert("Stock insuficiente", "warning");
             }
             updateProductInvoice(existingIndex, calculateLineItem(currentItem, newQty));
         } else {
-            if (product.stock < 1) {
+            const stockDisponible = usaLotesFarmacia
+                ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
+                : product.stock;
+            if (stockDisponible < 1) {
                 return useAlertStore.getState().alert("Sin stock", "warning");
             }
             const base = precioBaseSeleccionado;
-            const priceForQty1 = getApplicablePrice({ precioBase: base, preciosMayorista: product.preciosMayorista }, 1);
             addProductsInvoice({
                 ...product,
                 precioBase: base,
-                precioUnitario: priceForQty1,
+                precioUnitario: getApplicablePrice({ precioBase: base, preciosMayorista: product.preciosMayorista }, 1),
                 precioOrigen: origenPrecio,
-                unidadMedida: product?.unidadMedida?.nombre
+                unidadMedida: unidadMedidaNombre,
+                ...farmaciaExtra,
+                ...fraccionExtra,
             });
         }
     }
+
+    // Farmacia: confirmar datos de receta para un ítem del carrito
+    const handleConfirmarReceta = (itemIndex: number, datos: IDatosReceta) => {
+        const item = productsInvoice[itemIndex];
+        if (!item) return;
+        updateProductInvoice(itemIndex, { ...item, pendienteReceta: false, datosReceta: datos });
+        setIsRecetaModalOpen(false);
+        setRecetaModalItemIndex(null);
+    };
+
+    const handleAbrirRecetaModal = (itemIndex: number) => {
+        setRecetaModalItemIndex(itemIndex);
+        setIsRecetaModalOpen(true);
+    };
 
     const handleBarcodeScan = async (codigo: string) => {
         const trimmed = codigo.trim();
@@ -773,7 +976,7 @@ export const useFacturacionViewModel = () => {
         setBarcodeError(false);
         
         try {
-            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
             if (resp.id) { // Backend returns product directly or error
                 handleProductClick(resp);
                 setBarcodeInput('');
@@ -927,9 +1130,13 @@ export const useFacturacionViewModel = () => {
     };
 
     const { total, discount: productDiscount, hasDiscount } = useMemo(() => calculateTotals(productsInvoice), [productsInvoice]);
+    const esInformal = tiposInformales.includes(formValues.tipoDoc);
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
-    const totalAdjusted = isDiscountGlobalApplicable ? Math.max(totalOriginal - descountGlobal, 0) : totalOriginal;
+    const montoDescuentoNV = esInformal && descuentoPctNV > 0 ? parseFloat((totalOriginal * descuentoPctNV / 100).toFixed(2)) : 0;
+    const totalAdjusted = isDiscountGlobalApplicable
+        ? Math.max(totalOriginal - descountGlobal, 0)
+        : Math.max(totalOriginal - montoDescuentoNV, 0);
 
     useEffect(() => {
         if (porcentajeDetraccion > 0 && totalAdjusted > 0) {
@@ -942,7 +1149,9 @@ export const useFacturacionViewModel = () => {
     const igvRate = 0.18;
     const opGravadaAdjusted = totalAdjusted / (1 + igvRate);
     const igvAdjusted = totalAdjusted - opGravadaAdjusted;
-    const finalDiscount = isDiscountGlobalApplicable ? Number(productDiscount) + descountGlobal : Number(productDiscount);
+    const finalDiscount = isDiscountGlobalApplicable
+        ? Number(productDiscount) + descountGlobal
+        : Number(productDiscount) + montoDescuentoNV;
 
     const totalDescount = productsInvoice.length > 0 && formValues.motivoId === 4 && productsInvoice
         ?.map((d: any) => d?.precioUnitario)
@@ -986,7 +1195,21 @@ export const useFacturacionViewModel = () => {
             return useAlertStore.getState().alert("Debe agregar al menos un producto", "error")
         }
 
-        const fechaEmision = formatISO(new Date(), { representation: 'complete' });
+        // Farmacia: bloquear emisión si hay ítems con receta pendiente
+        if (isFarmaciaRetail) {
+            const pendientes = productsInvoice.filter((p: any) => p.pendienteReceta);
+            if (pendientes.length > 0) {
+                return useAlertStore.getState().alert(
+                    `Hay ${pendientes.length} producto(s) que requieren datos de receta médica antes de cobrar.`,
+                    "error"
+                );
+            }
+        }
+
+        // Fecha de emisión: usar la fecha seleccionada por el usuario (con hora Lima actual)
+        const [fyear, fmonth, fday] = fechaEmisionManual.split('-').map(Number);
+        const fechaEmisionDate = new Date(fyear, fmonth - 1, fday, new Date().getHours(), new Date().getMinutes(), new Date().getSeconds());
+        const fechaEmision = formatISO(fechaEmisionDate, { representation: 'complete' });
 
         if (selectedOperacion?.codigo === '0112') {
             if (!tipoDetraccionId || !cuentaBancoNacion || !porcentajeDetraccion || !montoDetraccion) {
@@ -1022,10 +1245,15 @@ export const useFacturacionViewModel = () => {
             observacionesFinal = `${observacionesFinal} | Operación sujeta a Retención del 3% del IGV`.replace(/^ \| /, '');
         }
 
+        const effectiveMedioPago = isMixedPayment
+            ? 'MIXTO'
+            : paymentMethod;
+
         const baseData = {
             tipoOperacionId: formValues.tipoOperacionId || 1,
             fechaEmision,
-            medioPago: paymentMethod,
+            medioPago: effectiveMedioPago,
+            ...(origenComprobanteId != null ? { comprobanteOrigenId: origenComprobanteId } : {}),
             vuelto: formValues?.vuelto,
             clienteId: Number(formValues?.clienteId) || invoiceData?.cliente?.id,
             clienteName: selectedClient?.nombre,
@@ -1035,7 +1263,15 @@ export const useFacturacionViewModel = () => {
                 descripcion: item.descripcion,
                 cantidad: Number(item.cantidad),
                 nuevoValorUnitario: Number(item.precioUnitario),
-                descuento: Number(item.descuento ?? 0)
+                descuento: Number(item.descuento ?? 0),
+                // Farmacia: trazabilidad de lote y receta médica
+                ...(item.loteId != null ? { loteId: item.loteId } : {}),
+                ...(item.datosReceta?.numeroReceta ? { numeroReceta: item.datosReceta.numeroReceta } : {}),
+                ...(item.datosReceta?.dniPaciente ? { dniPaciente: item.datosReceta.dniPaciente } : {}),
+                ...(item.datosReceta?.nombrePaciente ? { nombrePaciente: item.datosReceta.nombrePaciente } : {}),
+                ...(item.datosReceta?.medicoNombre ? { medicoNombre: item.datosReceta.medicoNombre } : {}),
+                // Fraccionamiento: unidad de venta cuando difiere de la unidad base
+                ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
             })),
             formaPagoTipo: formValues.medioPago || "Contado",
             formaPagoMoneda: "PEN",
@@ -1097,6 +1333,18 @@ export const useFacturacionViewModel = () => {
             const r = result as any;
             if (r.serie != null && r.correlativo != null) {
                 setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null });
+            }
+            // Auto-crear despacho si se activó el panel de envío
+            const comprobanteId = r.id ?? dataReceipt?.id ?? null;
+            if (envioActivo && comprobanteId) {
+                const payload = {
+                    ...envioData,
+                    nroPaquetes: Number(envioData.nroPaquetes) || 1,
+                    ...(envioData.fechaEstimada ? { fechaEstimada: new Date(envioData.fechaEstimada).toISOString() } : {}),
+                };
+                import('@/utils/fetch').then(({ post }) =>
+                    post(`envio-despacho/comprobante/${comprobanteId}`, payload).catch(() => {})
+                );
             }
             setIsLoading(false);
         } else {
@@ -1209,6 +1457,8 @@ export const useFacturacionViewModel = () => {
         setPay(0);
         setChange(0);
         setPaymentMethod('Efectivo');
+        setIsMixedPayment(false);
+        setSplitPayments([{ method: 'Efectivo', amount: 0 }, { method: 'Yape', amount: 0 }]);
         resetInvoice();
         resetProductInvoice();
         if (formValues?.comprobante === "BOLETA") {
@@ -1255,8 +1505,20 @@ export const useFacturacionViewModel = () => {
         // Form & Selections
         formValues, setFormValues,
         paymentMethod, setPaymentMethod,
+        isMixedPayment, setIsMixedPayment,
+        splitPayments, setSplitPayments,
         adelanto, setAdelanto,
         fechaRecojo, setFechaRecojo,
+        fechaEmisionManual, setFechaEmisionManual,
+        fechaEmisionMinDate: (() => {
+            const tipoDoc = (formValues as any)?.tipoDoc;
+            const diasAtras = tipoDoc === '01' ? 3 : tipoDoc === '03' ? 5 : 0;
+            const d = new Date();
+            d.setDate(d.getDate() - diasAtras);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })(),
+        fechaEmisionMaxDate: todayStr,
+        fechaEmisionDiasAtras: (formValues as any)?.tipoDoc === '01' ? 3 : (formValues as any)?.tipoDoc === '03' ? 5 : 0,
         selectedClient, setSelectedClient,
         snapshotClient,
         selectedProduct, setSelectProduct,
@@ -1266,10 +1528,20 @@ export const useFacturacionViewModel = () => {
         tiposDetraccion, mediosPagoDetraccion,
         comprobantesGenerar, receiptsToNote,
         categories, clients,
-        filteredProducts: products,
+        filteredProducts: usaLotesFarmacia ? farmaciaProductos : products,
         filteredCombos,
         catalogItems,
-        totalProducts,
+        totalProducts: usaLotesFarmacia ? farmaciaTotal : totalProducts,
+        farmaciaLoading,
+
+        // Farmacia flags
+        isFarmaciaRetail,
+        esDrogueria,
+        usaLotesFarmacia,
+
+        // Fraccionamiento
+        modoFraccionPorProducto,
+        setModoFraccionProducto,
 
         // Modal triggers
         isOpenModalClient, setIsOpenModalClient,
@@ -1286,6 +1558,19 @@ export const useFacturacionViewModel = () => {
         barcodeInput, setBarcodeInput,
         barcodeLoading, barcodeRef,
         handleBarcodeScan,
+
+        // Envío nacional
+        envioActivo, setEnvioActivo,
+        envioData, setEnvioData,
+        // Descuento % y condición de pago para informales
+        descuentoPctNV, setDescuentoPctNV,
+        esInformal,
+
+        // Farmacia: receta modal
+        isRecetaModalOpen, setIsRecetaModalOpen,
+        recetaModalItemIndex,
+        handleConfirmarReceta,
+        handleAbrirRecetaModal,
 
         // Handlers
         handleProductClick,

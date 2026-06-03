@@ -9,15 +9,16 @@ interface RoleRouteProps {
 }
 
 export function RoleRoute({ children, allowedRoles, fallbackPath = '/administrador' }: RoleRouteProps) {
-  const { auth, isLoading } = useAuthStore()
+  const { auth, isLoading, bootstrapDone } = useAuthStore()
   const hasAccessToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN')
+  const hasRefreshToken = typeof window !== 'undefined' && !!localStorage.getItem('REFRESH_TOKEN')
 
-  if (!hasAccessToken) {
+  if (!hasAccessToken || !hasRefreshToken) {
     return <Navigate to="/login" replace />
   }
 
   if (!auth) {
-    if (isLoading) return <Loading />
+    if (!bootstrapDone || isLoading) return <Loading />
     return <Navigate to="/login" replace />
   }
 

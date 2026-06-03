@@ -34,7 +34,7 @@ export default function ProductsView() {
         if (!trimmed) return;
         setBarcodeLoading(true);
         try {
-            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
             if (resp.code === 1 && resp.data) {
                 // Vuelca la descripción en el buscador existente → el debounce filtra la lista
                 actions.setSearchClient({ target: { value: resp.data.descripcion } });

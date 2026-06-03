@@ -347,10 +347,24 @@ const PrintPDF = ({
                                     <Text style={styles.label}>FORMA PAGO:</Text>
                                     <Text style={styles.value}>CONTADO</Text>
                                 </View>
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.label}>MEDIO PAGO:</Text>
-                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
-                                </View>
+                                {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                    <>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>MEDIOS PAGO:</Text>
+                                        </View>
+                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
+                                            <View key={idx} style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
+                                                <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                            </View>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <View style={styles.infoRow}>
+                                        <Text style={styles.label}>MEDIO PAGO:</Text>
+                                        <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
+                                    </View>
+                                )}
                             </>
                             <View style={styles.section}>
                                 <Text style={styles.bold}>SON: {totalInWords || ''}</Text>
@@ -511,10 +525,24 @@ const PrintPDF = ({
                                                 <Text style={styles.label}>FORMA DE PAGO</Text>
                                                 <Text style={styles.value}>CONTADO</Text>
                                             </View>
-                                            <View style={styles.infoRow}>
-                                                <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
-                                            </View>
+                                            {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                <>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.label}>MEDIOS DE PAGO</Text>
+                                                    </View>
+                                                    {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
+                                                        <View key={idx} style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                            <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
+                                                            <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                        </View>
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                <View style={styles.infoRow}>
+                                                    <Text style={styles.label}>MEDIO DE PAGO</Text>
+                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
+                                                </View>
+                                            )}
                                         </>
                                     )}
                                 </View>
@@ -550,7 +578,24 @@ const PrintPDF = ({
                                     <View style={styles.tableRow} key={index}>
                                         <Text style={styles.tableCell}>{item?.cantidad || 0}</Text>
                                         <Text style={styles.tableCell}>{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || item?.producto?.unidadMedida?.codigo?.toUpperCase() || ''}</Text>
-                                        <Text style={styles.tableCellDescription}>{item?.descripcion?.toUpperCase() || ''}</Text>
+                                        <View style={styles.tableCellDescription}>
+                                            <Text>{item?.descripcion?.toUpperCase() || ''}</Text>
+                                            {item?.lotes && item.lotes.length > 0 && item.lotes.map((l: any, i: number) => (
+                                                <Text key={i} style={{ fontSize: size === "A5" ? 6 : 7, color: '#555' }}>
+                                                    Lote: {l.lote} | Venc: {l.fechaVencimiento ? new Date(l.fechaVencimiento).toLocaleDateString('es-PE') : ''}
+                                                </Text>
+                                            ))}
+                                            {!item?.lotes?.length && item?.lote && (
+                                                <Text style={{ fontSize: size === "A5" ? 6 : 7, color: '#555' }}>
+                                                    Lote: {item.lote?.lote ?? item.lote}{(item.lote?.fechaVencimiento) ? ` | Venc: ${new Date(item.lote.fechaVencimiento).toLocaleDateString('es-PE')}` : ''}
+                                                </Text>
+                                            )}
+                                            {item?.numeroReceta && (
+                                                <Text style={{ fontSize: size === "A5" ? 6 : 7, color: '#555' }}>
+                                                    Receta: {item.numeroReceta}{item.medicoNombre ? ` | Dr. ${item.medicoNombre}` : ''}{item.dniPaciente ? ` | Pac DNI: ${item.dniPaciente}` : ''}
+                                                </Text>
+                                            )}
+                                        </View>
                                         <Text style={styles.tableCellNumber}>{Number(item?.precioUnitario || item?.mtoPrecioUnitario || 0).toFixed(2)}</Text>
                                         <Text style={styles.tableCellNumber}>{Number(item?.total || (item?.mtoPrecioUnitario ?? 0) * (item?.cantidad ?? 0) || 0).toFixed(2)}</Text>
                                     </View>

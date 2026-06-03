@@ -170,6 +170,20 @@ const ComprobantePrintPage = ({
                                                 ))}
                                             </div>
                                         )}
+                                        {/* Lote directo desde DetalleComprobante (farmacia POS) */}
+                                        {!item?.lotes?.length && item?.lote && (
+                                            <div className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[9px]'} mt-0.5`}>
+                                                Lote: {item.lote.lote}{item.lote.fechaVencimiento ? ` Venc: ${moment(item.lote.fechaVencimiento).format('DD/MM/YYYY')}` : ''}
+                                            </div>
+                                        )}
+                                        {/* Datos de receta médica */}
+                                        {item?.numeroReceta && (
+                                            <div className={`${size === 'TICKET' ? 'text-[13px]' : 'text-[9px]'} mt-0.5 text-gray-600`}>
+                                                Receta: {item.numeroReceta}
+                                                {item.medicoNombre ? ` — Dr. ${item.medicoNombre}` : ''}
+                                                {item.dniPaciente ? ` — Pac. DNI: ${item.dniPaciente}` : ''}
+                                            </div>
+                                        )}
                                     </span>
                                     <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>{Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
                                     <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-right`}>{Number(item?.total || (Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0) * item?.cantidad)).toFixed(2)}</span>
@@ -208,7 +222,19 @@ const ComprobantePrintPage = ({
                                 ))}
                             </div>
                         )}
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                        {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                            <div>
+                                <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
+                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
+                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}>
+                                        <span>{sp.method?.toUpperCase()}:</span>
+                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                    </p>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                        )}
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">VUELTO: </span> S/ {formValues?.vuelto?.toFixed(2) || (0).toFixed(2)}</p>
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">PAGADO: </span>S/ {Number(totalPrices).toFixed(2)}</p>
                         <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
@@ -503,8 +529,24 @@ const ComprobantePrintPage = ({
                                                     <span className="font-bold text-xs">FORMA PAGO:</span>
                                                     <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</span>
 
-                                                    <span className="font-bold text-xs">MEDIO PAGO:</span>
-                                                    <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(totalPrices).toFixed(2)}</span>
+                                                    {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                        <>
+                                                            <span className="font-bold text-xs">MEDIOS PAGO:</span>
+                                                            <span className="text-xs">
+                                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
+                                                                    <span key={idx} className="flex justify-between">
+                                                                        <span>{sp.method?.toUpperCase()}:</span>
+                                                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                                    </span>
+                                                                ))}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="font-bold text-xs">MEDIO PAGO:</span>
+                                                            <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(totalPrices).toFixed(2)}</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -576,7 +618,30 @@ const ComprobantePrintPage = ({
                                                         {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover" alt="" /> : '-'}
                                                     </div>
                                                 )}
-                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">{item?.descripcion?.toUpperCase()}</div>
+                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">
+                                                    <div>{item?.descripcion?.toUpperCase()}</div>
+                                                    {item?.lotes && item.lotes.length > 0 && (
+                                                        <div className="flex flex-col mt-0.5">
+                                                            {item.lotes.map((l: any, idx: number) => (
+                                                                <span key={idx} className="text-[9px] text-gray-500">Lote: {l.lote} | Venc: {moment(l.fechaVencimiento).format('DD/MM/YYYY')}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    {/* Lote directo desde DetalleComprobante (farmacia POS) */}
+                                                    {!item?.lotes?.length && item?.lote && (
+                                                        <div className="text-[9px] text-gray-500 mt-0.5">
+                                                            Lote: {item.lote.lote}{item.lote.fechaVencimiento ? ` | Venc: ${moment(item.lote.fechaVencimiento).format('DD/MM/YYYY')}` : ''}
+                                                        </div>
+                                                    )}
+                                                    {/* Datos de receta médica */}
+                                                    {item?.numeroReceta && (
+                                                        <div className="text-[9px] text-gray-500 mt-0.5">
+                                                            Receta: {item.numeroReceta}
+                                                            {item.medicoNombre ? ` — Dr. ${item.medicoNombre}` : ''}
+                                                            {item.dniPaciente ? ` — Pac. DNI: ${item.dniPaciente}` : ''}
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
                                                 <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
                                             </div>

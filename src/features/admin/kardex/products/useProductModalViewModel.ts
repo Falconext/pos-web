@@ -72,6 +72,14 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     return rubroNombre.includes("farmacia") || rubroNombre.includes("botica");
   })();
 
+  const esDrogueria = (() => {
+    const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || "";
+    return rubroNombre.includes("drogueria") || rubroNombre.includes("droguería");
+  })();
+
+  // Cualquier rubro farmacéutico regulado
+  const esFarmaceutico = isFarmacia || esDrogueria;
+
   const isFabricacion = esRubroFabricacion(auth?.empresa?.rubro?.nombre);
 
   const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
@@ -90,7 +98,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     "kardex:reservas",
   );
   const tienePlanCorporativo =
-    planEsCorporativo || tieneAccesoReservas || auth?.rol === "ADMIN_SISTEMA";
+    planEsCorporativo || auth?.rol === "ADMIN_SISTEMA";
   const tieneGestionLotes =
     planNombre.includes("NEGOCIO") ||
     planNombre.includes("CORPORAT") ||
@@ -185,7 +193,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       // 1. Backend local catalog
       try {
         const resp = await apiClient.get(
-          `producto/barcode/${encodeURIComponent(code)}`,
+          `productos/barcode/${encodeURIComponent(code)}`,
         );
         const product = (resp.data as any)?.data;
         if (product?.descripcion) {
@@ -220,46 +228,20 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             ...(product.imagenUrl ? { imagenUrl: product.imagenUrl } : {}),
             ...brandUpdate,
             ...categoryUpdate,
+            // Campos farmacéuticos — se rellenan si vienen de OpenFDA
+            ...(product.principioActivo ? { principioActivo: product.principioActivo } : {}),
+            ...(product.laboratorio ? { laboratorio: product.laboratorio } : {}),
+            ...(product.presentacion ? { presentacion: product.presentacion } : {}),
+            ...(product.concentracion ? { concentracion: product.concentracion } : {}),
+            ...(product.tipoAfectacionIGV ? { tipoAfectacionIGV: product.tipoAfectacionIGV } : {}),
           });
           if (product.imagenUrl) setPreviewPrincipal(product.imagenUrl);
           filled = true;
         }
       } catch {}
 
-      // 2. Open Food Facts fallback
-      if (!filled) {
-        const offResp = await fetch(
-          `https://world.openfoodfacts.org/api/v2/product/${code}.json`,
-        );
-        const offData = await offResp.json();
-        if (offData?.status === 1 && offData?.product) {
-          const p = offData.product;
-          const imgUrl = p.image_front_url || p.image_url || null;
-
-          // Resolve brand: find existing or create new
-          const brandData = p.brands ? await resolveBrand(p.brands) : null;
-
-          setFormValues({
-            ...formValues,
-            descripcion:
-              p.product_name ||
-              p.product_name_es ||
-              p.generic_name ||
-              formValues.descripcion,
-            codigoBarras: code,
-            ...(imgUrl ? { imagenUrl: imgUrl } : {}),
-            ...(brandData
-              ? {
-                  marcaId: brandData.marcaId,
-                  marcaNombre: brandData.marcaNombre,
-                }
-              : {}),
-          });
-          if (imgUrl) setPreviewPrincipal(imgUrl);
-          filled = true;
-        }
-      }
-
+      // El backend ya maneja el cascade completo (local → FDA/OFF según rubro).
+      // Si no se encontró nada, solo registrar el código de barras.
       if (!filled) setFormValues({ ...formValues, codigoBarras: code });
     } finally {
       setSearchingBarcode(false);
@@ -334,7 +316,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = e.target;
+    const { name, type } = e.target;
+    const value = type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
     setFormValues({ ...formValues, [name]: value });
   };
 
@@ -372,8 +355,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   };
 
   const validarPorcentajesStock = () => {
-    const porcentajeVenta = Number(formValues?.porcentajeVenta ?? 70);
-    const porcentajeProvision = Number(formValues?.porcentajeProvision ?? 30);
+    const porcentajeVenta = Number(formValues?.porcentajeVenta ?? 100);
+    const porcentajeProvision = Number(formValues?.porcentajeProvision ?? 0);
 
     if (
       !Number.isFinite(porcentajeVenta) ||
@@ -479,7 +462,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
     setIsCategorizing(true);
     try {
-      const response = await apiClient.post("/producto/ia/categorizar", {
+      const response = await apiClient.post("/productos/ia/categorizar", {
         nombre: formValues.descripcion,
       });
       const result = response.data?.data || response.data;
@@ -538,7 +521,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
     setIsGeneratingImage(true);
     try {
-      const response = await apiClient.post("/producto/ia/generar-imagen", {
+      const response = await apiClient.post("/productos/ia/generar-imagen", {
         nombre: query,
         marca: (formValues as any)?.marcaNombre || "",
         categoria: (formValues as any)?.categoriaNombre || "",
@@ -584,7 +567,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     const query = String(nombre || "").trim();
     if (!query) return null;
     try {
-      const response = await apiClient.post("/producto/ia/generar-imagen", {
+      const response = await apiClient.post("/productos/ia/generar-imagen", {
         nombre: query,
         marca: (formValues as any)?.marcaNombre || "",
         categoria: (formValues as any)?.categoriaNombre || "",
@@ -622,7 +605,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     const nombre = String(formValues?.descripcion || "").trim();
     if (!nombre) return;
     try {
-      await apiClient.post("/producto/ia/aprobar-imagen", {
+      await apiClient.post("/productos/ia/aprobar-imagen", {
         nombre,
         marca: (formValues as any)?.marcaNombre || "",
         categoria: (formValues as any)?.categoriaNombre || "",
@@ -726,7 +709,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             const fd = new FormData();
             fd.append("file", filePrincipal);
             const resp = await apiClient.post(
-              `/producto/${formValues.productoId}/imagen`,
+              `/productos/${formValues.productoId}/imagen`,
               fd,
               { headers: { "Content-Type": "multipart/form-data" } },
             );
@@ -744,7 +727,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             const externalUrl = previewPrincipal || formValues.imagenUrl;
             if (externalUrl && !externalUrl.includes("amazonaws.com")) {
               const resp = await apiClient.post(
-                `/producto/${formValues.productoId}/imagen-url`,
+                `/productos/${formValues.productoId}/imagen-url`,
                 { url: externalUrl },
               );
               const signed =
@@ -779,8 +762,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             tipoAjusteStock !== "ninguno"
               ? Number(stockFinal)
               : Number(formValues?.stock ?? 0),
-          porcentajeVenta: Number(formValues?.porcentajeVenta ?? 70),
-          porcentajeProvision: Number(formValues?.porcentajeProvision ?? 30),
+          porcentajeVenta: Number(formValues?.porcentajeVenta ?? 100),
+          porcentajeProvision: Number(formValues?.porcentajeProvision ?? 0),
           localizacion: formValues?.localizacion || "",
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
@@ -873,7 +856,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             const fd = new FormData();
             fd.append("file", filePrincipal);
             const resp2 = await apiClient.post(
-              `/producto/${newId}/imagen`,
+              `/productos/${newId}/imagen`,
               fd,
               { headers: { "Content-Type": "multipart/form-data" } },
             );
@@ -889,7 +872,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           } else if (newId && imageToSave) {
             try {
               const resp3 = await apiClient.post(
-                `/producto/${newId}/imagen-url`,
+                `/productos/${newId}/imagen-url`,
                 { url: imageToSave },
               );
               const signed =
@@ -909,7 +892,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             creationLote.fechaVencimiento
           ) {
             try {
-              await apiClient.post("/producto/lotes", {
+              await apiClient.post("/productos/lotes", {
                 productoId: Number(newId),
                 lote: creationLote.lote,
                 fechaVencimiento: creationLote.fechaVencimiento,
@@ -988,6 +971,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     isMobile,
     isRestaurante,
     isFarmacia,
+    esDrogueria,
+    esFarmaceutico,
     isFabricacion,
     features,
     labels,
@@ -1049,5 +1034,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     setAutoImageOnSave,
     imageCandidates,
     setImageCandidates,
+    fillFromDigemid: (data: Partial<Record<string, string>>) => {
+      setFormValues({ ...formValues, ...data });
+    },
   };
 };

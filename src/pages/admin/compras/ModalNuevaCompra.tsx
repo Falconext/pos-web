@@ -15,6 +15,7 @@ import moment from "moment";
 import { Calendar } from "@/components/Date";
 import apiClient from "@/utils/apiClient";
 import ModalConfirm from "@/components/ModalConfirm";
+import { usaLotesFarmaciaRubro } from "@/utils/rubro-features";
 
 interface ModalNuevaCompraProps {
     isOpen: boolean;
@@ -29,7 +30,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const { alert } = useAlertStore();
     const { auth } = useAuthStore();
     const planNombre = String((auth as any)?.empresa?.plan?.nombre || '').toUpperCase();
-    const tieneGestionLotes = planNombre.includes('NEGOCIO') || planNombre.includes('CORPORAT') || auth?.rol === 'ADMIN_SISTEMA';
+    const rubroNombre = (auth as any)?.empresa?.rubro?.nombre;
+    const esRubroFarmaceutico = usaLotesFarmaciaRubro(rubroNombre);
+    const tieneGestionLotes = planNombre.includes('NEGOCIO') || planNombre.includes('CORPORAT')
+        || auth?.rol === 'ADMIN_SISTEMA'
+        || esRubroFarmaceutico;
 
     // Data states
     const [supplierOptions, setSupplierOptions] = useState<any[]>([]);
@@ -165,7 +170,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         if (!trimmed) return;
         setBarcodeLoading(true);
         try {
-            const resp: any = await get(`producto/barcode/${encodeURIComponent(trimmed)}`);
+            const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
             if (resp.code === 1 && resp.data) {
                 const prod = resp.data;
                 setCurrentItem(prev => ({
@@ -345,7 +350,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     provincia: '',
                     distrito: '',
                 };
-                const creado = await apiClient.post('/cliente/crear', payloadProveedor);
+                const creado = await apiClient.post('/clientes', payloadProveedor);
                 const proveedorCreado = creado?.data?.data || creado?.data;
                 if (proveedorCreado?.id) {
                     proveedorId = Number(proveedorCreado.id);
@@ -362,7 +367,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                 // Si ya existe, intentar resolverlo buscando por documento.
                 if (msg.includes('ya existe')) {
                     try {
-                        const listResp = await apiClient.get(`/cliente/listar?search=${encodeURIComponent(xmlSupplierInfo.ruc)}&limit=10`);
+                        const listResp = await apiClient.get(`/clientes?search=${encodeURIComponent(xmlSupplierInfo.ruc)}&limit=10`);
                         const data = listResp?.data?.data || listResp?.data;
                         const encontrados = Array.isArray(data?.clientes) ? data.clientes : [];
                         const match = encontrados.find((c: any) => String(c.nroDoc || '').trim() === xmlSupplierInfo.ruc);
@@ -390,6 +395,20 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         if (items.length === 0) {
             alert("Agregue al menos un producto", "error");
             return;
+        }
+
+        // Rubro farmacéutico: lote + fecha de vencimiento obligatorios por ítem
+        if (esRubroFarmaceutico) {
+            for (const item of items) {
+                if (!item.lote?.trim()) {
+                    alert(`El producto "${item.descripcion}" requiere código de lote (rubro farmacéutico).`, "error");
+                    return;
+                }
+                if (!item.fechaVencimiento) {
+                    alert(`El producto "${item.descripcion}" requiere fecha de vencimiento (rubro farmacéutico).`, "error");
+                    return;
+                }
+            }
         }
 
         const payload = {
@@ -562,7 +581,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                             </div>
                             {tieneGestionLotes && (
                             <div className="col-span-2">
-                                <InputPro autocomplete="off" label="Lote (Opc.)" name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
+                                <InputPro autocomplete="off" label={esRubroFarmaceutico ? "Lote *" : "Lote (Opc.)"} name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
                             </div>
                             )}
                             <div className="col-span-2">

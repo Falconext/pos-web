@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useState } from 'react';
+import { useFavoritosStore } from '@/zustand/favoritos';
 
 interface ProductCardProps {
     producto: any;
@@ -9,10 +10,11 @@ interface ProductCardProps {
     onClick?: () => void;
 }
 
-export default function ProductCardPio({ producto, diseno, onAddToCart, onClick }: ProductCardProps) {
+export default function ProductCardPio({ producto, slug, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
-    const [wished, setWished] = useState(false);
     const [added, setAdded] = useState(false);
+    const { toggleFavorito, isFavorito } = useFavoritosStore();
+    const wished = isFavorito(producto.id, slug);
 
     const price = Number(producto.precioUnitario || 0);
     const originalPrice = Number(producto.precioOriginal || 0);
@@ -32,7 +34,13 @@ export default function ProductCardPio({ producto, diseno, onAddToCart, onClick 
 
     const handleWish = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setWished(w => !w);
+        toggleFavorito({
+            id: producto.id,
+            descripcion: producto.descripcion,
+            precioUnitario: Number(producto.precioUnitario || 0),
+            imagenUrl: producto.imagenUrl,
+            slug,
+        });
     };
 
     return (

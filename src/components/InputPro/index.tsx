@@ -66,9 +66,9 @@ const InputPro: FC<IInput> = ({
   const [localValue, setLocalValue] = useState<string | number>(value);
 
   const commonClasses =
-    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-[#6B7280] placeholder:text-[#6B7280] font-[300]" +
-    " dark:bg-[#131620] dark:border-slate-800 dark:text-gray-300 dark:placeholder:text-gray-500" +
-    " focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-400 dark:focus:ring-slate-800 dark:focus:border-slate-700" +
+    "w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 font-normal" +
+    " dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500" +
+    " outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400" +
     " disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-900 transition-all duration-150";
 
   useEffect(() => {
@@ -146,7 +146,7 @@ const InputPro: FC<IInput> = ({
     // Propiedades específicas para textarea
     const textareaProps = {
       ...baseProps,
-      className: className ? className : `${commonClasses} h-24 resize-none align-top`,
+      className: className ? className : `${commonClasses} !h-24 py-2.5 resize-none align-top`,
       ref: (reference || refInput || inputRef) as RefObject<HTMLTextAreaElement>,
       rows: rows, // Solo se pasa si está definido
     };
@@ -184,7 +184,7 @@ const InputPro: FC<IInput> = ({
     <div className="relative">
       <div className={mode === "flex" ? "flex items-center" : ""}>
         <div>
-          {isLabel && <label className="block text-sm font-[400] text-gray-900 dark:!text-gray-300 mb-2">{label}</label>}
+          {isLabel && <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{label}</label>}
         </div>
         {renderInput()}
       </div>

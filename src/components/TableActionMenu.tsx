@@ -74,7 +74,7 @@ const TableActionMenu = ({ isOpen, onClose, anchorEl, children }: TableActionMen
     return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-[9999] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl py-1 min-w-[160px] flex flex-col transition-opacity duration-75"
+            className="fixed z-[1000001] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl py-1 min-w-[160px] flex flex-col transition-opacity duration-75"
             style={{
                 top: position?.top ?? 0,
                 right: position?.right ?? 0,

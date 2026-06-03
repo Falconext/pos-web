@@ -12,6 +12,34 @@ export interface RubroFeatures {
     controlStock: boolean;           // Todos (siempre true)
 }
 
+/**
+ * Farmacia retail: farmacia o botica. Habilita receta médica y fraccionamiento.
+ * NO incluye droguería (mayorista sin dispensación al público).
+ */
+export function esFarmaciaRetailRubro(nombre: string | null | undefined): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('farmacia') || n.includes('botica');
+}
+
+/**
+ * Droguería: mayorista farmacéutico. Habilita FEFO + vencimientos + cadena de frío.
+ * Sin receta médica ni fraccionamiento.
+ */
+export function esDrogueriaRubro(nombre: string | null | undefined): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('drogueria') || n.includes('droguería');
+}
+
+/**
+ * Cualquier rubro farmacéutico regulado (farmacia, botica o droguería).
+ * Activa FEFO, vencimientos y cadena de frío.
+ */
+export function usaLotesFarmaciaRubro(nombre: string | null | undefined): boolean {
+    return esFarmaciaRetailRubro(nombre) || esDrogueriaRubro(nombre);
+}
+
 export function esRubroFabricacion(
     nombreRubro: string | null | undefined,
 ): boolean {
@@ -54,8 +82,11 @@ export function detectarFuncionesRubro(
 
     const nombre = nombreRubro.toLowerCase();
 
-    // FARMACIA / BOTICA
+    // FARMACIA / BOTICA (retail — vende al público, requiere receta)
     const esFarmacia = nombre.includes('farmacia') || nombre.includes('botica');
+
+    // DROGUERÍA (mayorista — distribuye a empresas, sin dispensación al público)
+    const esDrogueria = nombre.includes('drogueria') || nombre.includes('droguería');
 
     // BODEGA / SUPERMARKET / MINIMARKET  
     const esBodega =
@@ -82,16 +113,16 @@ export function detectarFuncionesRubro(
             : esBodega;
 
     return {
-        // Lotes: Farmacia y fabricación
-        gestionLotes: esFarmacia || esFabricacion,
+        // Lotes: Farmacia, droguería y fabricación
+        gestionLotes: esFarmacia || esFabricacion || esDrogueria,
 
-        // Vencimientos: Farmacia y alimentos
-        requiereVencimientos: esFarmacia || esAlimentos,
+        // Vencimientos: Farmacia, droguería y alimentos
+        requiereVencimientos: esFarmacia || esAlimentos || esDrogueria,
 
         // Código de barras: Bodega/Supermarket
         usaCodigoBarras,
 
-        // Fraccionamiento (venta por unidad de caja): Farmacia
+        // Fraccionamiento (venta por unidad de caja): solo Farmacia retail, NO droguería
         permiteFraccionamiento: esFarmacia,
 
         // Ofertas/Promociones: Supermarket

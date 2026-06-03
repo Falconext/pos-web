@@ -142,7 +142,7 @@ export default function ProduccionRecetasPage() {
     callback?: () => void,
   ) => {
     try {
-      const resp: any = await apiClient.get('/producto/listar', {
+      const resp: any = await apiClient.get('/productos', {
         params: { search, page: 1, limit: 20 },
       });
       if (resp?.data?.code === 1) {

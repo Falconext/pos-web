@@ -21,3 +21,52 @@ export interface IRetencionData {
     montoDetraccion: number;
     porcentajeDetraccion: number;
 }
+
+// ── Farmacia / Botica / Droguería ──────────────────────────────────────────
+
+export interface ILoteFefo {
+    loteId: number;
+    loteNumero: string;
+    fechaVencimiento: string | null; // ISO string
+    stockActual: number;
+    stockDisponibleVenta: number;
+    diasAlVencimiento: number | null;
+}
+
+export interface IDatosReceta {
+    numeroReceta?: string;
+    dniPaciente?: string;
+    nombrePaciente?: string;
+    medicoNombre?: string;
+}
+
+/** Ítem del carrito enriquecido para rubros farmacéuticos */
+export interface ICartItemFarmacia {
+    loteId?: number;
+    loteNumero?: string;
+    pendienteReceta: boolean;
+    datosReceta?: IDatosReceta;
+}
+
+/** Producto del catálogo-farmacia (endpoint /productos/catalogo-farmacia) */
+export interface ICatalogoFarmaciaItem {
+    id: number;
+    codigo: string;
+    descripcion: string;
+    imagenUrl: string | null;
+    precioUnitario: number;
+    igvPorcentaje: number;
+    tipoAfectacionIGV: string;
+    unidadCodigo: string;
+    refrigerado: boolean;
+    requiereReceta: boolean;
+    controlado: boolean;
+    categoriaId: number | null;
+    // Fraccionamiento
+    factorConversion: number;
+    unidadCompra: string | null;
+    unidadVenta: string | null;
+    stockDisponibleVenta: number;
+    stockReservado: number;
+    loteFefo: ILoteFefo | null;
+}

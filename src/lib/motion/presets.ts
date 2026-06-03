@@ -109,3 +109,56 @@ export const chipInteractive = {
   whileHover: { scale: 1.04 },
   whileTap: { scale: 0.97 },
 }
+
+export const accordionReveal: Variants = {
+  initial: { opacity: 0, height: 0 },
+  animate: {
+    opacity: 1,
+    height: 'auto',
+    transition: {
+      height: motionTransitions.fast,
+      opacity: { duration: 0.18, delay: 0.06, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: {
+      height: motionTransitions.micro,
+      opacity: motionTransitions.micro,
+    },
+  },
+}
+
+export const pageTransition: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: motionTransitions.fast,
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    transition: motionTransitions.micro,
+  },
+}
+
+export const navStagger: Variants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: 0.045,
+      delayChildren: 0.12,
+    },
+  },
+}
+
+export const navItemReveal: Variants = {
+  initial: { opacity: 0, x: -8 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: motionTransitions.fast,
+  },
+}

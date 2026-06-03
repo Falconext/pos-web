@@ -270,7 +270,12 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 useAlertStore.setState({ loading: false });
                 await useClientsStore.getState().resetClients();
                 // NOTA: No llamar resetProducts() - borra el catálogo de productos
-                return { success: true };
+                return {
+                    success: true,
+                    id: resp.data?.id ?? resp.data?.comprobanteId ?? null,
+                    serie: resp.data?.serie ?? null,
+                    correlativo: resp.data?.correlativo ?? null,
+                };
             }
             useAlertStore.getState().alert(resp.error || 'Error al crear comprobante informal', 'error');
             return { success: false, error: resp.error };

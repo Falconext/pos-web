@@ -29,6 +29,7 @@ import PaymentReceipt from "@/components/PaymentReceipt";
 import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
 import { useSedesStore } from "@/zustand/sedes";
+import ModalDetalleComprobante from "./ModalDetalleComprobante";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -105,6 +106,8 @@ const Comprobantes = () => {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
     const [isOpenModalConfirmDescartar, setIsOpenModalConfirmDescartar] = useState(false);
+    const [detalleComprobanteId, setDetalleComprobanteId] = useState<number | null>(null);
+    const [errorSunatModal, setErrorSunatModal] = useState<{ titulo: string; mensaje: string } | null>(null);
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, row: any) => {
         setMenuAnchor(event.currentTarget);
@@ -286,6 +289,7 @@ const Comprobantes = () => {
             cdrFileName: `${item.serie}-${String(item.correlativo).padStart(8, '0')}-CDR.xml`,
             estadoSunatRaw: (item as any).estadoSunatRaw,
             sunatRetriesCount: (item as any).sunatRetriesCount ?? 0,
+            sunatErrorMsg: item.sunatErrorMsg ?? null,
             documentoId: (item as any).documentoId,
         };
 
@@ -728,6 +732,8 @@ const Comprobantes = () => {
                 <ModalConfirm
                     confirmSubmit={async () => {
                         await discardInvoice(formValues?.id);
+                        setInvoicesList(prev => prev.filter(inv => inv.id !== formValues?.id));
+                        setTotalInvoicesList(prev => Math.max(0, prev - 1));
                         setIsOpenModalConfirmDescartar(false);
                     }}
                     information="¿Eliminar este comprobante? Se borrará permanentemente de la lista y se revertirá el stock. Esta acción no se puede deshacer."
@@ -842,6 +848,50 @@ const Comprobantes = () => {
                 />
             )}
 
+            <ModalDetalleComprobante
+                comprobanteId={detalleComprobanteId}
+                isOpen={detalleComprobanteId !== null}
+                onClose={() => setDetalleComprobanteId(null)}
+            />
+
+            {/* Modal error SUNAT */}
+            {errorSunatModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg border border-orange-200 dark:border-orange-800/40">
+                        <div className="flex items-center gap-3 p-5 border-b border-gray-100 dark:border-slate-800">
+                            <div className="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                                <Icon icon="solar:danger-triangle-bold-duotone" className="text-orange-500" width={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{errorSunatModal.titulo}</p>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">Error reportado por SUNAT</p>
+                            </div>
+                            <button onClick={() => setErrorSunatModal(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 dark:text-slate-500">
+                                <Icon icon="solar:close-circle-bold-duotone" width={20} />
+                            </button>
+                        </div>
+                        <div className="p-5">
+                            <div className="rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-800/30 p-4">
+                                <p className="text-xs font-mono text-orange-800 dark:text-orange-300 whitespace-pre-wrap break-words leading-relaxed">
+                                    {errorSunatModal.mensaje}
+                                </p>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-slate-400 mt-3">
+                                Este error proviene directamente de los servidores de SUNAT. Corrige los datos del comprobante y vuelve a emitirlo.
+                            </p>
+                        </div>
+                        <div className="flex justify-end px-5 pb-5">
+                            <button
+                                onClick={() => setErrorSunatModal(null)}
+                                className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Menu de Acciones Flotante con Portal */}
             <TableActionMenu
                 isOpen={Boolean(menuAnchor)}
@@ -854,6 +904,17 @@ const Comprobantes = () => {
 
                     return (
                         <>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setDetalleComprobanteId(rowBase.id);
+                                    handleCloseMenu();
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium"
+                            >
+                                <Icon icon="solar:document-text-bold-duotone" width={16} height={16} />
+                                <span>Ver detalle</span>
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -987,6 +1048,24 @@ const Comprobantes = () => {
                                 <Icon icon="solar:document-medicine-bold-duotone" width={16} height={16} />
                                 <span className="font-medium">Generar NC (Anular)</span>
                             </button>
+
+                            {/* Ver error SUNAT */}
+                            {rowBase.sunatErrorMsg && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setErrorSunatModal({
+                                            titulo: `Error SUNAT — ${rowBase.serie}-${String(rowBase.correlativo).padStart(8, '0')}`,
+                                            mensaje: rowBase.sunatErrorMsg,
+                                        });
+                                        handleCloseMenu();
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-orange-50 dark:hover:bg-orange-900/10 border-t border-gray-100 dark:border-slate-800 text-orange-600 dark:text-orange-400"
+                                >
+                                    <Icon icon="solar:danger-triangle-bold-duotone" width={16} height={16} />
+                                    <span className="font-medium">Ver error SUNAT</span>
+                                </button>
+                            )}
 
                             {/* Eliminar comprobante atascado */}
                             {canEmitirSunat &&

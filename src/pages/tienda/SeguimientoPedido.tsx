@@ -5,7 +5,7 @@ import axios from 'axios';
 import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 import Footer from '@/components/tienda/Footer';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const TERMINAL_STATES = ['ENTREGADO', 'CANCELADO'];
 const POLLING_INTERVAL_MS = 30_000;
 

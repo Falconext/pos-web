@@ -1,6 +1,7 @@
 import { useState, ChangeEvent } from 'react';
 import useAlertStore from '@/zustand/alert';
 import apiClient from '@/utils/apiClient';
+import { BRAND } from '@/lib/branding';
 
 export const useForgotPasswordViewModel = () => {
     const [email, setEmail] = useState('');
@@ -18,7 +19,7 @@ export const useForgotPasswordViewModel = () => {
         }
         setIsLoading(true);
         try {
-            await apiClient.post('auth/forgot-password', { email: email.trim() });
+            await apiClient.post('auth/forgot-password', { email: email.trim(), brand: BRAND.key });
             setSent(true);
         } catch {
             // Always show success to avoid user enumeration
@@ -35,5 +36,7 @@ export const useForgotPasswordViewModel = () => {
         }
     };
 
-    return { email, isLoading, sent, handleChange, handleSubmit, handleKeyDown };
+    const handleResend = () => setSent(false);
+
+    return { email, isLoading, sent, handleChange, handleSubmit, handleKeyDown, handleResend };
 };

@@ -40,6 +40,27 @@ export interface DashboardData {
         }>;
     };
     fechaActualizacion: Date;
+    farmacia: {
+        lotesVencidos: number;
+        lotesPorVencer30d: number;
+        valorLotesVencidos: number;
+        top5PorVencer: Array<{
+            id: number;
+            lote: string;
+            fechaVencimiento: string;
+            diasAlVencimiento: number;
+            stockActual: number;
+            producto: { descripcion: string; codigo: string };
+        }>;
+        top5Vencidos: Array<{
+            id: number;
+            lote: string;
+            fechaVencimiento: string;
+            diasAlVencimiento: number;
+            stockActual: number;
+            producto: { descripcion: string; codigo: string };
+        }>;
+    } | null;
 }
 
 export interface IDashboardViewModelState {

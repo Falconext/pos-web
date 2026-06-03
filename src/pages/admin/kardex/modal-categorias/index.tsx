@@ -84,21 +84,6 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
         });
     };
 
-    const actions: any =
-        [
-            {
-                onClick: handleGetCategory,
-                className: "edit",
-                icon: <Icon color="#66AD78" icon="material-symbols:edit" />,
-                tooltip: "Editar"
-            },
-            {
-                onClick: handleDeleteCategory,
-                className: "delete", // Usaremos esta clase genérica y la lógica estará en TableBody
-                icon: <Icon icon="material-symbols:delete-outline-rounded" color="#EF443C" />,
-                tooltip: "Eliminar", // Tooltip genérico (se cambiará en TableBody)
-            }
-        ]
 
     const handleSubmitCategory = async () => {
         if (!validateForm()) {
@@ -146,11 +131,17 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
         setIsEdit(false)
     }
 
+    const actions = [
+        { onClick: (row: any) => handleGetCategory(row), icon: <Icon icon="solar:pen-bold" width={18} />, tooltip: 'Editar', color: 'blue' as const },
+        { onClick: (row: any) => handleDeleteCategory(row), icon: <Icon icon="solar:trash-bin-trash-bold" width={18} />, tooltip: 'Eliminar', color: 'rose' as const },
+    ];
+
     const categoriesTable = categories?.map((item: any, index: number) => ({
         '#': index + 1,
         categoriaId: item.id,
         nombre: item.nombre,
-        imagenUrl: item.imagenUrl
+        'Nombre': <span className="font-medium tracking-wide">{item.nombre?.toUpperCase()}</span>,
+        imagenUrl: item.imagenUrl,
     }))
 
     const confirmDeleteCategory = () => {
@@ -163,16 +154,6 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
         <>
             {isOpenModal && <Modal width="650px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar categoria" : "Nueva categoria"}>
                 <div className="px-6 mt-5 flex flex-col md:flex-row gap-6 items-start border-b border-[#e5e7eb] dark:border-slate-800 pb-10">
-                    <div className="flex-shrink-0">
-                        <CircularImageUploader
-                            imageUrl={previewUrl}
-                            onFileSelect={(file) => {
-                                setImageFile(file);
-                                setPreviewUrl(URL.createObjectURL(file));
-                            }}
-                        />
-                    </div>
-
                     <div className="flex-1 w-full">
                         <InputPro
                             autocomplete="off"
@@ -203,10 +184,7 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
                                 <div className="px-6">
                                     <div className="overflow-hidden overflow-x-scroll md:overflow-x-visible mt-4">
                                         <DataTable actions={actions} bodyData={categoriesTable} tableInitFinal={false}
-                                            headerColumns={[
-                                                '#',
-                                                'nombre'
-                                            ]} isCompact={true} />
+                                            headerColumns={['#', { label: 'Nombre', key: 'Nombre' }]} isCompact={true} />
                                     </div>
                                     <Pagination
                                         data={categories}

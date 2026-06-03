@@ -25,11 +25,14 @@ import InventarioDashboard from './pages/admin/kardex/Dashboard'
 import KardexProductos from './pages/admin/kardex/Productos'
 import KardexTraslados from './pages/admin/kardex/Traslados'
 import Lotes from './pages/admin/kardex/Lotes'
+import LibroControl from './pages/admin/kardex/LibroControl'
 import UsuariosIndex from './pages/admin/usuarios/Index'
+import VendedoresView from './features/admin/users/VendedoresView'
 import SedesIndex from './pages/admin/sedes/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
+import DespachoView from './pages/admin/despacho/DespachoView'
 import CombosTienda from './pages/admin/tienda/Combos'
 import ModificadoresTienda from './pages/admin/tienda/Modificadores'
 import TiendaPublica from './pages/tienda/[slug]'
@@ -72,8 +75,11 @@ function App() {
       <Alert />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
+        <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
+        {/* Redirects de compatibilidad para enlaces viejos */}
+        <Route path="/forgot-password" element={<Navigate to="/recuperar-contrasena" replace />} />
+        <Route path="/reset-password" element={<Navigate to="/restablecer-contrasena" replace />} />
         <Route path="/sede-seleccion" element={<SedeSelectionScreen />} />
         {/* Login específico para tienda (mismo backend, layout invertido) */}
         <Route path="/tienda/login" element={<TiendaLogin />} />
@@ -122,6 +128,7 @@ function App() {
           <Route path="kardex/productos" element={<KardexProductos />} />
           <Route path="kardex/traslados" element={<KardexTraslados />} />
           <Route path="kardex/lotes" element={<Lotes />} />
+          <Route path="kardex/libro-control" element={<LibroControl />} />
           <Route path="reservas" element={<ReservasPage />} />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
@@ -142,10 +149,12 @@ function App() {
             }
           />
           <Route path="usuarios" element={<UsuariosIndex />} />
+          <Route path="usuarios/vendedores" element={<VendedoresView />} />
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
+          <Route path="despacho" element={<DespachoView />} />
           <Route path="tienda/combos" element={<CombosTienda />} />
           <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
           {/* Rutas de ADMIN_SISTEMA */}

@@ -3,7 +3,6 @@ import { useClientsStore } from '@/zustand/clients';
 import { useAuthStore } from '@/zustand/auth';
 import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
-import apiClient from '@/utils/apiClient';
 import { IClient } from '@/interfaces/clients';
 import {
     ALL_COLUMNS,
@@ -56,42 +55,26 @@ export const useClientsViewModel = () => {
 
     // --- Effects ---
 
-    // Load column preferences (server first, then localStorage)
+    // Load column preferences from localStorage
     useEffect(() => {
-        const loadColumns = async () => {
-            if (!auth?.empresaId) return;
-            try {
-                const res = await apiClient.get(`/preferencias/tabla`, {
-                    params: { tabla: 'clientes', empresaId: auth.empresaId },
-                });
-                const serverCols = res?.data?.visibleColumns;
-                if (Array.isArray(serverCols) && serverCols.length) {
-                    let restored = ALL_COLUMNS.filter((c) => serverCols.includes(c));
-                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
-                    setState(prev => ({ ...prev, visibleColumns: restored }));
-                    return;
-                }
-            } catch (_e) { /* fallthrough */ }
-
-            try {
-                const defaultKey = columnsStorageKey.replace(`${auth.empresaId}`, 'default');
-                let parsed: any = null;
-                for (const k of [columnsStorageKey, defaultKey]) {
-                    const raw = localStorage.getItem(k);
-                    if (raw) { try { parsed = JSON.parse(raw); } catch { parsed = null; } }
-                    if (Array.isArray(parsed)) break;
-                }
-                if (Array.isArray(parsed)) {
-                    let restored = ALL_COLUMNS.filter((c) => parsed.includes(c));
-                    if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
-                    setState(prev => ({ ...prev, visibleColumns: restored }));
-                }
-            } catch (_e) { /* noop */ }
-        };
-        loadColumns();
+        if (!auth?.empresaId) return;
+        try {
+            const defaultKey = columnsStorageKey.replace(`${auth.empresaId}`, 'default');
+            let parsed: any = null;
+            for (const k of [columnsStorageKey, defaultKey]) {
+                const raw = localStorage.getItem(k);
+                if (raw) { try { parsed = JSON.parse(raw); } catch { parsed = null; } }
+                if (Array.isArray(parsed)) break;
+            }
+            if (Array.isArray(parsed)) {
+                let restored = ALL_COLUMNS.filter((c) => parsed.includes(c));
+                if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
+                setState(prev => ({ ...prev, visibleColumns: restored }));
+            }
+        } catch (_e) { /* noop */ }
     }, [auth?.empresaId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Persist column preferences
+    // Persist column preferences to localStorage
     useEffect(() => {
         try {
             const toSave = state.visibleColumns.includes('Acciones')
@@ -99,18 +82,6 @@ export const useClientsViewModel = () => {
                 : [...state.visibleColumns, 'Acciones'];
             localStorage.setItem(columnsStorageKey, JSON.stringify(toSave));
         } catch (_e) { /* noop */ }
-
-        const persist = async () => {
-            try {
-                const toSave = state.visibleColumns.includes('Acciones')
-                    ? state.visibleColumns
-                    : [...state.visibleColumns, 'Acciones'];
-                await apiClient.put(`/preferencias/tabla`, { visibleColumns: toSave }, {
-                    params: { tabla: 'clientes', empresaId: auth?.empresaId },
-                });
-            } catch (_e) { /* noop */ }
-        };
-        if (auth?.empresaId) persist();
     }, [state.visibleColumns]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Close dropdown on document click
@@ -244,7 +215,7 @@ export const useClientsViewModel = () => {
             if (fileInputRef.current) fileInputRef.current.value = '';
             await getAllClients({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
         },
-        exportClients: () => exportClients(auth?.empresaId, debounce),
+        exportClients: () => exportClients(debounce),
     };
 
     return {

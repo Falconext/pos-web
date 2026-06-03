@@ -17,7 +17,7 @@ export interface IClientsState {
     // updateDocument: (data: any) => void
     toggleStateClient: (data: number) => void
     getClientFromDoc: (nroDoc: string, tipoDoc?: string) => Promise<any>;
-    exportClients: (empresaId: number, search?: string) => Promise<void>;
+    exportClients: (search?: string) => Promise<void>;
     importClients: (file: File) => Promise<void>;
 }
 
@@ -32,7 +32,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
                 .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
 
             const query = new URLSearchParams(filteredParams).toString();
-            const resp: any = await get(`cliente/listar?${query}`);
+            const resp: any = await get(`clientes?${query}`);
             console.log(resp)
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
@@ -58,7 +58,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
     addClients: async (data: any) => {
         useAlertStore.setState({ loading: true });
         try {
-            const resp: any = await post(`cliente/crear`, data);
+            const resp: any = await post(`clientes`, data);
             console.log(resp);
             if (resp.code === 1 || resp.success === true) {
                 useAlertStore.setState({ success: true, loading: false });
@@ -82,7 +82,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
     editClients: async (data: any) => {
         useAlertStore.setState({ loading: true });
         try {
-            const resp: any = await put(`cliente/${data.id}`, data);
+            const resp: any = await put(`clientes/${data.id}`, data);
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
                 set((state) => ({
@@ -101,30 +101,29 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
         }
     },
     toggleStateClient: async (id: number) => {
-        console.log(id)
         try {
-            const resp: any = await patch(`cliente/${id}/estado`);
+            const current = _get().clients.find(c => c.id === id);
+            const nuevoEstado = current?.estado === 'INACTIVO' ? 'ACTIVO' : 'INACTIVO';
+            const resp: any = await patch(`clientes/${id}/estado`, { estado: nuevoEstado });
             if (resp.code === 1) {
                 set((state) => ({
                     clients: state.clients.map((client) =>
-                        client.id === id
-                            ? { ...client, estado: client.estado === "INACTIVO" ? "ACTIVO" : "INACTIVO" }
-                            : client
+                        client.id === id ? { ...client, estado: nuevoEstado } : client
                     ),
-                }), false, "DELETE_Clients");
+                }), false, "TOGGLE_STATE_CLIENT");
                 useAlertStore.getState().alert("El cliente se ha cambiado su estado correctamente", "success");
             } else {
-                useAlertStore.getState().alert("Error al eliminar el documento", "error");
+                useAlertStore.getState().alert("Error al cambiar el estado del cliente", "error");
             }
         } catch (error) {
-
+            useAlertStore.getState().alert("Error al cambiar el estado del cliente", "error");
         }
     },
     getClientFromDoc: async (nroDoc: string, tipoDoc?: string) => {
         useAlertStore.setState({ loading: true });
         try {
             const type = tipoDoc === 'RUC' ? 'RUC' : tipoDoc === 'DNI' ? 'DNI' : nroDoc.length === 11 ? 'RUC' : 'DNI';
-            const endpoint = `cliente/consultar/${type}/${nroDoc}`;
+            const endpoint = `clientes/consultar/${type}/${nroDoc}`;
             const resp: any = await get(endpoint);
             console.log("Respuesta backend:", resp);
             useAlertStore.setState({ loading: false });
@@ -142,12 +141,12 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
             return null;
         }
     },
-    exportClients: async (empresaId: number, search?: string) => {
+    exportClients: async (search?: string) => {
         try {
             useAlertStore.setState({ loading: true });
             const baseUrl = import.meta.env.VITE_API_URL as string;
             const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-            const response = await fetch(`${baseUrl}/cliente/empresa/${empresaId}/exportar-archivo${qs}`, {
+            const response = await fetch(`${baseUrl}/clientes/exportar${qs}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
@@ -181,7 +180,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
             const formData = new FormData();
             formData.append('file', file);
             const baseUrl = import.meta.env.VITE_API_URL as string;
-            const response = await fetch(`${baseUrl}/cliente/carga-masiva`, {
+            const response = await fetch(`${baseUrl}/clientes/importar`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,

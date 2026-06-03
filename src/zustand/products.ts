@@ -20,7 +20,7 @@ export interface IProductsState {
         allProperties?: boolean) => void
     toggleStateProduct: (data: number) => void
     getCodeProduct: (empresa: number) => void
-    exportProducts: (empresaId: number, search?: string) => void;
+    exportProducts: (search?: string) => void;
     importProducts: (file: File) => Promise<void>;
     deleteProduct: (productoId: number) => Promise<void>;
     deleteAllProducts: (sedeId?: number) => Promise<void>;
@@ -29,8 +29,10 @@ export interface IProductsState {
 }
 
 export const useProductsStore = create<IProductsState>()(devtools((set, _get) => ({
-    student: "",
-    students: [],
+    products: [],
+    product: '',
+    productCode: '',
+    totalProducts: 0,
     productsLoaded: false,
     getAllProducts: async (params: any, callback?: Function,
         _allProperties?: boolean) => {
@@ -43,7 +45,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                 .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
 
             const query = new URLSearchParams(filteredParams).toString();
-            const resp: any = await get(`producto/listar?${query}`);
+            const resp: any = await get(`productos?${query}`);
             if (requestId !== latestProductsRequestId) {
                 return;
             }
@@ -78,7 +80,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
     deleteProduct: async (productoId: number) => {
         try {
             useAlertStore.setState({ loading: true });
-            await del(`producto/${productoId}`);
+            await del(`productos/${productoId}`);
             set((state) => ({
                 products: state.products.filter((p: IProduct) => p.id !== productoId),
                 totalProducts: Math.max(0, (state.totalProducts || 0) - 1),
@@ -94,7 +96,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
     deleteAllProducts: async (sedeId?: number) => {
         try {
             useAlertStore.setState({ loading: true });
-            const url = sedeId ? `producto/empresa/eliminar-todo?sedeId=${sedeId}` : `producto/empresa/eliminar-todo`;
+            const url = sedeId ? `productos/eliminar-todo?sedeId=${sedeId}` : `productos/eliminar-todo`;
             const resp: any = await del(url);
             if (resp.code === 1) {
                 set({
@@ -135,7 +137,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
     addProduct: async (data: any, options?: { skipStore?: boolean }) => {
         useAlertStore.setState({ loading: true });
         try {
-            const resp: any = await post(`producto/crear`, data);
+            const resp: any = await post(`productos`, data);
             console.log(resp);
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
@@ -156,7 +158,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                                 id: data.marcaId,
                                 nombre: data.marcaNombre,
                             } : undefined,
-                        }, ...state.products],
+                        }, ...(state.products ?? [])],
                         totalProducts: (state.totalProducts || 0) + 1,
                     }), false, "ADD_PRODUCTS");
                 }
@@ -183,7 +185,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
         console.log(data);
         useAlertStore.setState({ loading: true });
         try {
-            const resp: any = await put(`producto/${data.productoId}`, data);
+            const resp: any = await put(`productos/${data.productoId}`, data);
             if (resp.code === 1) {
                 const updatedFromApi = (resp.data ?? {}) as Record<string, unknown>;
                 const preciosMayorista = Array.isArray((data as any)?.preciosMayorista)
@@ -192,7 +194,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
 
                 useAlertStore.setState({ success: true });
                 set((state) => ({
-                    products: state.products.map((product: IProduct) => {
+                    products: (state.products ?? []).map((product: IProduct) => {
                         if (product.id === data?.productoId) {
                             return {
                                 ...product,
@@ -228,29 +230,28 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
         }
     },
     toggleStateProduct: async (productoId: number) => {
-        console.log(productoId)
         try {
-            const resp: any = await patch(`producto/${productoId}/estado`);
+            const current = _get().products.find(p => p.id === productoId);
+            const nuevoEstado = current?.estado === 'INACTIVO' ? 'ACTIVO' : 'INACTIVO';
+            const resp: any = await patch(`productos/${productoId}/estado`, { estado: nuevoEstado });
             if (resp.code === 1) {
                 set((state) => ({
-                    products: state.products.map((product) =>
-                        product.id === productoId
-                            ? { ...product, estado: product.estado === "INACTIVO" ? "ACTIVO" : "INACTIVO" }
-                            : product
+                    products: (state.products ?? []).map((product) =>
+                        product.id === productoId ? { ...product, estado: nuevoEstado } : product
                     ),
                 }), false, "TOGGLE_STATE_PRODUCT");
                 useAlertStore.getState().alert(`El producto ha cambiado su estado correctamente`, "success");
             } else {
-                useAlertStore.getState().alert("Error al eliminar el documento", "error");
+                useAlertStore.getState().alert("Error al cambiar el estado del producto", "error");
             }
         } catch (error) {
-
+            useAlertStore.getState().alert("Error al cambiar el estado del producto", "error");
         }
     },
     getCodeProduct: async (empresa_id: number) => {
         console.log(empresa_id)
         try {
-            const resp: any = await get(`producto/empresa/${empresa_id}/codigo-siguiente`);
+            const resp: any = await get(`productos/codigo-siguiente`);
             console.log(resp)
             if (resp.code === 1) {
                 set((_state) => ({
@@ -277,12 +278,12 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             console.log(error);
         }
     },
-    exportProducts: async (empresaId: number, search?: string) => {
+    exportProducts: async (search?: string) => {
         try {
             useAlertStore.setState({ loading: true });
             const baseUrl = import.meta.env.VITE_API_URL as string;
             const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-            const response = await fetch(`${baseUrl}/producto/empresa/${empresaId}/exportar-archivo${qs}`, {
+            const response = await fetch(`${baseUrl}/productos/exportar${qs}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
@@ -321,7 +322,7 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                 type: file.type,
             });
             const baseUrl = import.meta.env.VITE_API_URL as string;
-            const response = await fetch(`${baseUrl}/producto/carga-masiva`, {
+            const response = await fetch(`${baseUrl}/productos/importar`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,

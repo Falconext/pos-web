@@ -6,7 +6,7 @@ import InputPro from '@/components/InputPro';
 import Pagination from '@/components/Pagination';
 import ModalConfirm from '@/components/ModalConfirm';
 import Loading from '@/components/Loading';
-import ModalUsuario from '../../../pages/admin/usuarios/ModalUsuario'; // Reusing existing modal for now
+import ModalUsuario from '../../../pages/admin/usuarios/ModalUsuario';
 import { useUsersViewModel } from './useUsersViewModel';
 
 export default function UsersView() {
@@ -60,6 +60,11 @@ export default function UsersView() {
         );
     };
 
+    const actions = [
+        { onClick: (row: any) => handleEditUser(row._original), icon: <Icon icon="solar:pen-bold" width={18} />, tooltip: 'Editar', color: 'blue' as const },
+        { onClick: (row: any) => handleToggleState(row._original), icon: <Icon icon="solar:power-bold" width={18} />, tooltip: 'Cambiar estado', color: 'amber' as const },
+    ];
+
     const usuariosTableData = usuarios.map((usuario) => ({
         id: usuario.id,
         nombre: usuario.nombre,
@@ -68,25 +73,18 @@ export default function UsersView() {
         celular: usuario.celular,
         rol: getRolBadge(usuario.rol),
         permisos: getPermisosSummary(usuario.permisos, usuario.rol),
-        estado: usuario.estado, // Modified for display by Datatable directly
-        // Para las acciones
+        'Estado': (
+            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                usuario.estado === 'ACTIVO'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                    : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+            }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${usuario.estado === 'ACTIVO' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                {usuario.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+            </span>
+        ),
         _original: usuario,
     }));
-
-    const actions = [
-        {
-            onClick: (data: any) => handleEditUser(data._original),
-            className: "edit",
-            icon: <Icon color="#66AD78" icon="material-symbols:edit" />,
-            tooltip: "Editar usuario"
-        },
-        {
-            onClick: (data: any) => handleToggleState(data._original),
-            className: "delete",
-            icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />,
-            tooltip: "Cambiar estado"
-        }
-    ];
 
     if (loading && usuarios.length === 0) {
         return <Loading />;
@@ -156,13 +154,8 @@ export default function UsersView() {
                                     actions={actions}
                                     bodyData={usuariosTableData}
                                     headerColumns={[
-                                        'Nombre',
-                                        'Email',
-                                        'DNI',
-                                        'Celular',
-                                        'Rol',
-                                        'Permisos',
-                                        'Estado'
+                                        'Nombre', 'Email', 'DNI', 'Celular', 'Rol', 'Permisos',
+                                        { label: 'Estado', key: 'Estado' },
                                     ]}
                                 />
                             </div>

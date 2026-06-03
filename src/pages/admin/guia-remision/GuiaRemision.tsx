@@ -361,23 +361,25 @@ const GuiaRemision = () => {
                     </div>
                 </TableActionMenu>
 
-                {/* Modal de Nueva Guía */}
-                <ModalGuiaRemision
-                    isOpen={isModalOpen}
-                    onClose={() => {
-                        setIsModalOpen(false);
-                        setGuiaToEdit(null);
-                    }}
-                    onSuccess={() => {
-                        getAllGuiasRemision({
-                            search: debouncedSearchTerm,
-                            fechaInicio,
-                            fechaFin
-                        });
-                        setGuiaToEdit(null);
-                    }}
-                    guiaToEdit={guiaToEdit}
-                />
+                {/* Modal de Nueva Guía — solo monta cuando se abre */}
+                {isModalOpen && (
+                    <ModalGuiaRemision
+                        isOpen={isModalOpen}
+                        onClose={() => {
+                            setIsModalOpen(false);
+                            setGuiaToEdit(null);
+                        }}
+                        onSuccess={() => {
+                            getAllGuiasRemision({
+                                search: debouncedSearchTerm,
+                                fechaInicio,
+                                fechaFin
+                            });
+                            setGuiaToEdit(null);
+                        }}
+                        guiaToEdit={guiaToEdit}
+                    />
+                )}
                 <ModalConfirm
                     isOpenModal={isSendConfirmOpen}
                     setIsOpenModal={setIsSendConfirmOpen}

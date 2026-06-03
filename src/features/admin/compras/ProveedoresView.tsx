@@ -49,6 +49,16 @@ export default function ProveedoresView() {
                                 <DataTable
                                     bodyData={proveedoresTable.map((row: any) => ({
                                         ...row,
+                                        'Estado': row['Estado'] ? (
+                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                                row['Estado'] === 'ACTIVO'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                    : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                                            }`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${row['Estado'] === 'ACTIVO' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                                {row['Estado'] === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+                                            </span>
+                                        ) : null,
                                         'Acciones': (
                                             <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
                                                 <button

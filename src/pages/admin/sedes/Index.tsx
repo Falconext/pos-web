@@ -9,21 +9,32 @@ import SedeModal from './SedeModal';
 const SedesIndex = () => {
     const vm = useSedesViewModel();
 
-    const tableData = vm.sedes.map(sede => ({
-        id: sede.id,
-        nombre: sede.nombre,
-        direccion: sede.direccion || '-',
-        codigo: (sede as any).codigo || '-',
-        tipo: sede.esPrincipal ? 'Principal' : 'Secundaria',
-        estado: (sede as any).activo !== false ? 'ACTIVO' : 'INACTIVO',
-        _original: sede
-    }));
-
     const actions = [
-        { onClick: (data: any) => vm.handleEdit(data._original), className: 'edit', icon: <Icon color="#66AD78" icon="material-symbols:edit" />, tooltip: 'Editar' },
-        { onClick: (data: any) => vm.handleToggleActivo(data._original), className: 'toggle', icon: <Icon icon="mdi:power" color="#6366f1" />, tooltip: 'Activar / Desactivar' },
-        { onClick: (data: any) => vm.handleDelete(data._original), className: 'delete', icon: <Icon icon="healthicons:cancel-24px" color="#EF443C" />, tooltip: 'Desactivar', condition: (data: any) => !data._original?.esPrincipal && (data._original?.activo !== false) }
+        { onClick: (data: any) => vm.handleEdit(data._original), icon: <Icon icon="solar:pen-bold" width={18} />, tooltip: 'Editar', color: 'blue' as const },
+        { onClick: (data: any) => vm.handleToggleActivo(data._original), icon: <Icon icon="solar:power-bold" width={18} />, tooltip: 'Activar / Desactivar', color: 'amber' as const },
+        { onClick: (data: any) => vm.handleDelete(data._original), icon: <Icon icon="solar:trash-bin-trash-bold" width={18} />, tooltip: 'Eliminar', color: 'rose' as const, condition: (data: any) => !data._original?.esPrincipal && (data._original?.activo !== false) },
     ];
+
+    const tableData = vm.sedes.map(sede => {
+        const isActivo = (sede as any).activo !== false;
+        return {
+            id: sede.id,
+            nombre: sede.nombre,
+            direccion: sede.direccion || '-',
+            codigo: (sede as any).codigo || '-',
+            tipo: sede.esPrincipal ? 'Principal' : 'Secundaria',
+            'Estado': (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    isActivo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                             : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isActivo ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    {isActivo ? 'Activo' : 'Inactivo'}
+                </span>
+            ),
+            _original: sede,
+        };
+    });
 
     if (vm.loading && vm.sedes.length === 0) return <Loading />;
 
@@ -47,7 +58,11 @@ const SedesIndex = () => {
             </div>
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden p-4">
                 {tableData.length > 0 ? (
-                    <DataTable actions={actions} bodyData={tableData} headerColumns={[{ label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' }, { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'tipo' }, { label: 'Estado', key: 'estado' }]} />
+                    <DataTable actions={actions} bodyData={tableData} headerColumns={[
+                        { label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' },
+                        { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'tipo' },
+                        { label: 'Estado', key: 'Estado' },
+                    ]} />
                 ) : <div className="text-center py-12 text-gray-500 dark:text-gray-400">No hay sedes registradas.</div>}
             </div>
             {vm.showModal && <SedeModal isOpen={vm.showModal} onClose={() => vm.setShowModal(false)} sede={vm.selectedSede} isEdit={vm.isEdit} />}

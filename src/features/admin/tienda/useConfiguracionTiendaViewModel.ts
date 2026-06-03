@@ -120,6 +120,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
                 aceptaEnvio: data.data.aceptaEnvio ?? true, direccionRecojo: data.data.direccionRecojo || '',
                 tiempoPreparacionMin: data.data.tiempoPreparacionMin || 30, bancoNombre: data.data.bancoNombre || '',
                 numeroCuenta: data.data.numeroCuenta || '', cci: data.data.cci || '', monedaCuenta: data.data.monedaCuenta || 'SOLES',
+                envioGratisDesdeSoles: Number(data.data.envioGratisDesdeSoles || 0), minimoCompra: Number(data.data.minimoCompra || 0),
             });
             setPreviewYapeUrl(data.data.yapeQrSignedUrl || data.data.yapeQrUrl || '');
             setPreviewPlinUrl(data.data.plinQrSignedUrl || data.data.plinQrUrl || '');

@@ -104,11 +104,15 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
 
   const handleAccesoCompleto = () => {
     const tieneAccesoCompleto = formData.permisos.includes('*');
-    setFormData(prev => ({
-      ...prev,
-      permisos: tieneAccesoCompleto ? [] : ['*'],
-      subModuloIds: tieneAccesoCompleto ? [] : prev.subModuloIds,
-    }));
+    if (tieneAccesoCompleto) {
+      // Al quitar acceso completo, pre-seleccionar todos los módulos individualmente
+      const todosLosCodigos = modulosParaPermisos
+        .map((m: any) => m.codigo)
+        .filter(Boolean) as string[];
+      setFormData(prev => ({ ...prev, permisos: todosLosCodigos }));
+    } else {
+      setFormData(prev => ({ ...prev, permisos: ['*'], subModuloIds: prev.subModuloIds }));
+    }
   };
 
   const handleSubModuloToggle = (subModuloId: number) => {
@@ -200,7 +204,10 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   const modulosConSubs = modulos.filter(m => m.subModulos && m.subModulos.some(s => s.activo));
 
   // Determinar qué módulos mostrar en permisos: los del backend o fallback a hardcoded
-  const modulosParaPermisos = modulos.length > 0 ? modulos : MODULOS_SISTEMA.map(m => ({ ...m, id: 0, icono: '', orden: 0, subModulos: [] }));
+  // IMPORTANTE: el fallback mapea `id` → `codigo` para que permisos.includes(modulo.codigo) funcione
+  const modulosParaPermisos = modulos.length > 0
+    ? modulos
+    : MODULOS_SISTEMA.map(m => ({ ...m, codigo: m.id, id: 0, icono: '', orden: 0, subModulos: [] }));
 
   return (
     <Modal

@@ -9,6 +9,7 @@ import { BRAND } from "@/lib/branding";
 export interface IAuthState {
   auth: IUser | null;
   isLoading: boolean;
+  bootstrapDone: boolean;
   pendingSedes: ISede[] | null;      // Sedes pendientes cuando el usuario tiene 2+
   sedeActiva: ISede | null;          // Sede activa de la sesión actual
   me: () => void;
@@ -23,6 +24,7 @@ export interface IAuthState {
 export const useAuthStore = create<IAuthState>()(
   devtools((set, _get) => {
     const AUTH_ME_TIMEOUT_MS = 10_000;
+    const AUTH_BOOTSTRAP_MAX_WAIT_MS = 12_000;
 
     const getTokenSafe = (): string | null => {
       try {
@@ -52,29 +54,37 @@ export const useAuthStore = create<IAuthState>()(
 
     const initAuth = async () => {
       const token = getTokenSafe();
+      useAlertStore.setState({ loading: false });
       if (!token) {
-        set({ auth: null, success: false, isLoading: false });
+        localStorage.removeItem("REFRESH_TOKEN");
+        localStorage.removeItem("SEDE_ACTIVA");
+        set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
         return;
       }
 
-      set({ isLoading: true });
+      let bootstrapCompleted = false;
+      const safetyRelease = window.setTimeout(() => {
+        if (!bootstrapCompleted) {
+          set({ isLoading: false, bootstrapDone: true });
+        }
+      }, AUTH_BOOTSTRAP_MAX_WAIT_MS);
+
+      set({ isLoading: true, bootstrapDone: false });
       try {
         const resp: any = await withTimeout(get(`auth/me`), AUTH_ME_TIMEOUT_MS);
-        console.log("Me response:", resp);
         if (resp.code === 1) {
-          // Restaurar sede activa desde localStorage si existe
           const sedeActivaStr = localStorage.getItem("SEDE_ACTIVA");
           const sedeActiva: ISede | null = sedeActivaStr ? JSON.parse(sedeActivaStr) : null;
-          set({ auth: resp.data, success: true, isLoading: false, sedeActiva });
+          set({ auth: resp.data, success: true, isLoading: false, sedeActiva, bootstrapDone: true });
         } else {
-          set({ auth: null, success: false, isLoading: false });
+          set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
         }
       } catch (error) {
         console.error("Error en initAuth:", error);
-        set({ auth: null, success: false, isLoading: false });
+        set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
       } finally {
-        // Failsafe: nunca dejar el login en loading infinito
-        set({ isLoading: false });
+        bootstrapCompleted = true;
+        window.clearTimeout(safetyRelease);
       }
     };
 
@@ -101,28 +111,26 @@ export const useAuthStore = create<IAuthState>()(
       success: false,
       auth: null,
       isLoading: true,
+      bootstrapDone: false,
       pendingSedes: null,
       sedeActiva: null,
 
       login: async (data: any) => {
+        useAlertStore.setState({ loading: true });
         try {
-          useAlertStore.setState({ loading: true });
           const payload = { ...data, brand: BRAND.authBrand || import.meta.env.VITE_PUBLIC_BRAND || 'falconext' };
           const resp: any = await post(`auth/login`, payload);
-          console.log("Login response:", resp);
 
           if (resp.code === 1) {
             const loginData = resp.data;
 
             // Caso multi-sede: necesita seleccionar sede
             if (loginData.requiresSedeSelection) {
-              // Guardar token temporal para poder llamar a select-sede
               localStorage.setItem("ACCESS_TOKEN", loginData.tempToken);
-              useAlertStore.setState({ loading: false });
               set({
                 auth: loginData.usuario,
                 pendingSedes: loginData.sedes,
-                success: false, // No completó el login aún
+                success: false,
               });
               return;
             }
@@ -131,13 +139,11 @@ export const useAuthStore = create<IAuthState>()(
             localStorage.setItem("ACCESS_TOKEN", loginData.accessToken);
             localStorage.setItem("REFRESH_TOKEN", loginData.refreshToken);
 
-            // Detectar sede activa desde las sedes del usuario
             let sedeActiva: ISede | null = null;
             const sedes = loginData.usuario?.sedes || [];
             if (sedes.length === 1) {
               sedeActiva = sedes[0];
             } else if (sedes.length > 1) {
-              // Multi-sede: iniciar siempre en la sede principal para evitar estado residual
               sedeActiva = sedes.find((s: ISede) => s.esPrincipal) || sedes[0];
             }
             if (sedeActiva) {
@@ -146,29 +152,29 @@ export const useAuthStore = create<IAuthState>()(
               localStorage.removeItem("SEDE_ACTIVA");
             }
 
-            useAlertStore.getState().alert("Bienvenido a la plataforma", "success");
-            useAlertStore.setState({ loading: false });
             set({
               auth: loginData.usuario,
               success: true,
               isLoading: false,
+              bootstrapDone: true,
               pendingSedes: null,
               sedeActiva,
             });
+            useAlertStore.getState().alert("Bienvenido a la plataforma", "success");
           } else if (resp.code === 11) {
-            useAlertStore.setState({ loading: false });
             useAlertStore.getState().alert(`${resp.Message || resp.error}`, "error");
           } else {
-            useAlertStore.setState({ loading: false });
             useAlertStore.getState().alert(
               resp.error || "La contraseña o el usuario son incorrectos, intentelo de nuevo por favor",
               "error"
             );
           }
         } catch (error: any) {
-          useAlertStore.setState({ loading: false });
           const msg = error?.response?.data?.message || "El usuario o contraseña son incorrectas";
           useAlertStore.getState().alert(msg, "error");
+        } finally {
+          // Garantiza que loading siempre se apaga sin importar qué ocurra
+          useAlertStore.setState({ loading: false });
         }
       },
 
@@ -189,6 +195,7 @@ export const useAuthStore = create<IAuthState>()(
             set({
               auth: usuario,
               success: true,
+              bootstrapDone: true,
               pendingSedes: null,
               sedeActiva: sede,
             });
@@ -206,25 +213,27 @@ export const useAuthStore = create<IAuthState>()(
       me: async () => {
         const token = getTokenSafe();
         if (!token) {
-          set({ auth: null, success: false, isLoading: false });
+          set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
           return;
         }
-        set({ isLoading: true });
+        // Refresh en background — no toca isLoading para no mostrar spinner al usuario
         try {
           const resp: any = await withTimeout(get(`auth/me`), AUTH_ME_TIMEOUT_MS);
-          console.log("Me response:", resp);
           if (resp.code === 1) {
             const sedeActivaStr = localStorage.getItem("SEDE_ACTIVA");
             const sedeActiva: ISede | null = sedeActivaStr ? JSON.parse(sedeActivaStr) : null;
-            set({ auth: resp.data, success: true, isLoading: false, sedeActiva });
+            set({ auth: resp.data, success: true, sedeActiva });
           } else {
-            set({ auth: null, success: false, isLoading: false });
+            // El servidor rechazó el token (ej. 401) — cerrar sesión
+            set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
           }
-        } catch (error) {
-          console.error("Error en me:", error);
-          set({ auth: null, success: false, isLoading: false });
-        } finally {
-          set({ isLoading: false });
+        } catch (error: any) {
+          if (error?.message === 'AUTH_ME_TIMEOUT') {
+            // Problema de red transitorio — mantener sesión activa, sin loading
+            console.warn("auth/me timeout en refresh background — sesión mantenida");
+          } else {
+            set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
+          }
         }
       },
 
@@ -238,7 +247,8 @@ export const useAuthStore = create<IAuthState>()(
         localStorage.removeItem("ACCESS_TOKEN");
         localStorage.removeItem("REFRESH_TOKEN");
         localStorage.removeItem("SEDE_ACTIVA");
-        set({ auth: null, success: false, isLoading: false, pendingSedes: null, sedeActiva: null }, false, "LOGOUT");
+        useAlertStore.setState({ loading: false });
+        set({ auth: null, success: false, isLoading: false, bootstrapDone: true, pendingSedes: null, sedeActiva: null }, false, "LOGOUT");
       },
 
       refresh: async () => {},

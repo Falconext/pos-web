@@ -1,7 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
-import { BRANDING_STORAGE_KEY, type BrandConfig } from './lib/branding'
+
+// Clave inline — NO importar branding.ts aquí para evitar que BRAND se evalúe
+// antes de que bootstrapBranding() resuelva el fetch y setee __FALCONEXT_PUBLIC_BRAND__
+const BRANDING_STORAGE_KEY = 'PUBLIC_BRANDING_CONFIG'
+type BrandConfig = { name?: string; favicon?: string; [key: string]: unknown }
 
 const inferDefaultBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
@@ -86,9 +90,7 @@ const start = async () => {
   const { default: App } = await import('./App')
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
+    <App />
   )
 }
 

@@ -148,8 +148,11 @@ const PaymentReceipt = ({
                   {item?.lotes?.length > 0 ? item.lotes.map((lote: any, li: number) => (
                     <div key={li} className="text-left w-full pl-8 text-[16px]">LOTE: {lote.lote} | VENC: {new Date(lote.fechaVencimiento).toLocaleDateString('es-PE')}</div>
                   )) : item?.lote ? (
-                    <div className="text-left w-full pl-8 text-[16px]">LOTE: {item.lote} {item.fechaVencimiento ? `| VENC: ${new Date(item.fechaVencimiento).toLocaleDateString('es-PE')}` : ''}</div>
+                    <div className="text-left w-full pl-8 text-[16px]">LOTE: {item.lote?.lote ?? item.lote} {(item.lote?.fechaVencimiento || item.fechaVencimiento) ? `| VENC: ${new Date(item.lote?.fechaVencimiento ?? item.fechaVencimiento).toLocaleDateString('es-PE')}` : ''}</div>
                   ) : null}
+                  {item?.numeroReceta && (
+                    <div className="text-left w-full pl-8 text-[14px] text-gray-600">RECETA: {item.numeroReceta}{item.medicoNombre ? ` | DR. ${item.medicoNombre}` : ''}{item.dniPaciente ? ` | PAC DNI: ${item.dniPaciente}` : ''}</div>
+                  )}
                 </div>
               ))}
             </div>

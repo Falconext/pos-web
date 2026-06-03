@@ -1,6 +1,60 @@
 import Select from "@/components/Select";
 import InputPro from "@/components/InputPro";
 import { Icon } from "@iconify/react";
+import { useState } from "react";
+import { EnvioModal } from "./EnvioModal";
+
+const COURIER_LABELS: Record<string, string> = {
+    SHALOM_PRO: 'Shalom PRO', SHALOM_COD: 'Shalom COD', OLVA: 'Olva',
+    URBANO: 'Urbano', CRUZ_SUR: 'Cruz del Sur', PROPIOS: 'Propio', OTRO: 'Otro',
+};
+
+function EnvioTrigger({ vm }: { vm: any }) {
+    const { envioActivo, setEnvioActivo, envioData } = vm;
+    const [open, setOpen] = useState(false);
+    const courier = COURIER_LABELS[envioData?.transportista] ?? '';
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className={`mt-2 w-full flex items-center justify-between px-3 py-2 rounded-2xl border transition-all ${
+                    envioActivo
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700'
+                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                }`}
+            >
+                <span className="flex items-center gap-2">
+                    <Icon icon="solar:delivery-bold-duotone" className={`text-base ${envioActivo ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-semibold ${envioActivo ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                        Coordinación de Envío
+                    </span>
+                    {envioActivo && (
+                        <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black">ACTIVO</span>
+                    )}
+                </span>
+                <div className="flex items-center gap-2">
+                    {envioActivo && courier && (
+                        <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">{courier}</span>
+                    )}
+                    {envioActivo ? (
+                        <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); setEnvioActivo(false); }}
+                            className="text-[10px] text-red-500 hover:text-red-700 font-black px-1.5 rounded hover:bg-red-50 transition-colors"
+                        >
+                            Quitar
+                        </button>
+                    ) : (
+                        <Icon icon="solar:alt-arrow-right-linear" className="text-gray-400 text-sm" />
+                    )}
+                </div>
+            </button>
+            {open && <EnvioModal vm={vm} onClose={() => setOpen(false)} />}
+        </>
+    );
+}
 
 export const POSOptionsForm = ({ vm }: { vm: any }) => {
     return (
@@ -165,6 +219,95 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                     <button onClick={() => vm.setIsOpenModalClient(true)} className="px-4 py-3 relative top-2 bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-2xl hover:bg-gray-200 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-700 transition-colors shadow-sm">
                         <Icon icon="solar:user-plus-bold" className="text-xl" />
                     </button>
+                </div>
+            )}
+
+            {/* Fecha de Emisión — solo Boleta y Factura, máx 5 y 3 días atrás respectivamente */}
+            {vm.fechaEmisionDiasAtras > 0 && !vm.isQuotationRoute && (
+                <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            <Icon icon="solar:calendar-bold-duotone" width={13} className="text-violet-500" />
+                            Fecha de Emisión
+                        </label>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">
+                            Hasta {vm.fechaEmisionDiasAtras} días atrás (SUNAT)
+                        </span>
+                    </div>
+                    <input
+                        type="date"
+                        value={vm.fechaEmisionManual}
+                        min={vm.fechaEmisionMinDate}
+                        max={vm.fechaEmisionMaxDate}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val >= vm.fechaEmisionMinDate && val <= vm.fechaEmisionMaxDate) {
+                                vm.setFechaEmisionManual(val);
+                            }
+                        }}
+                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+                    />
+                    {vm.fechaEmisionManual !== vm.fechaEmisionMaxDate && (
+                        <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl">
+                            <Icon icon="solar:clock-circle-bold-duotone" width={13} className="text-amber-500 flex-shrink-0" />
+                            <p className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
+                                Emitiendo con fecha retroactiva
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Coordinación de Envío — trigger */}
+            {vm.formValues?.comprobante !== "NOTA DE CREDITO" && vm.formValues?.comprobante !== "NOTA DE DEBITO" && (
+                <div className={vm.esInformal ? 'mt-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20 p-1' : ''}>
+                    {vm.esInformal && (
+                        <p className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider px-2 pt-1.5 pb-0.5">
+                        Datos de envío
+                        </p>
+                    )}
+                    <EnvioTrigger vm={vm} />
+                </div>
+            )}
+
+            {/* Descuento % y Condición de Pago — solo para comprobantes informales (NV, Ticket, etc.) */}
+            {vm.esInformal && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Descuento %</label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={0.5}
+                                value={vm.descuentoPctNV || ''}
+                                onChange={e => vm.setDescuentoPctNV(Math.min(100, Math.max(0, Number(e.target.value))))}
+                                placeholder="0"
+                                className="w-full h-9 pl-3 pr-7 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Condición de Pago</label>
+                        <div className="flex gap-1.5">
+                            {['Contado', 'Crédito'].map(c => (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    onClick={() => vm.setFormValues({ ...vm.formValues, medioPago: c })}
+                                    className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-all ${
+                                        (vm.formValues?.medioPago === c || (!vm.formValues?.medioPago && c === 'Contado'))
+                                            ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-violet-400'
+                                    }`}
+                                >
+                                    {c}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
 

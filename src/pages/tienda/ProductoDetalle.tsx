@@ -6,7 +6,7 @@ import ProductCardPio from '@/components/tienda/ProductCardPio';
 import Footer from '@/components/tienda/Footer';
 import StoreHeader from '@/components/tienda/StoreHeader';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 

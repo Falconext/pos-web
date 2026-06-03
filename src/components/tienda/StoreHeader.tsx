@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useEscapeKey from '@/hooks/useEscapeKey';
+import { useFavoritosStore } from '@/zustand/favoritos';
 
 interface StoreHeaderProps {
     tienda: any;
@@ -36,17 +37,22 @@ export default function StoreHeader({
     hideCart = false
 }: StoreHeaderProps & { onSearch?: () => void }) {
     const navigate = useNavigate();
-    const isLoggedIn = !!localStorage.getItem('ACCESS_TOKEN');
+    const isLoggedIn = (() => { try { return !!localStorage.getItem('ACCESS_TOKEN'); } catch { return false; } })();
     const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isFavoritosOpen, setIsFavoritosOpen] = useState(false);
+    const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
+    const favoritos = getFavoritosBySlug(slug);
 
     useEscapeKey(() => setIsSearchFocused(false), isSearchFocused);
     useEscapeKey(() => setIsCatDropdownOpen(false), isCatDropdownOpen);
     useEscapeKey(() => setIsAdminOpen(false), isAdminOpen);
+    useEscapeKey(() => setIsFavoritosOpen(false), isFavoritosOpen);
 
     const handleSearchTrigger = () => { if (onSearch) onSearch(); };
 
     return (
+        <>
         <header className="fixed top-0 left-0 right-0 z-[100] font-sans bg-white shadow-sm">
 
             {/* ── Main Row ── */}
@@ -124,8 +130,17 @@ export default function StoreHeader({
                 {/* Right Icons */}
                 <div className="flex items-center gap-3 flex-shrink-0">
                     {/* Favorites */}
-                    <button className="p-2 text-[#FF9500] hover:bg-[#FFF3E0] rounded-full transition-colors">
-                        <Icon icon="solar:heart-linear" width={24} />
+                    <button
+                        onClick={() => setIsFavoritosOpen(o => !o)}
+                        className="relative p-2 text-[#FF9500] hover:bg-[#FFF3E0] rounded-full transition-colors"
+                        title="Mis favoritos"
+                    >
+                        <Icon icon={favoritos.length > 0 ? 'solar:heart-bold' : 'solar:heart-linear'} width={24} />
+                        {favoritos.length > 0 && (
+                            <span className="absolute top-0 right-0 bg-[#FF9500] text-white text-[9px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white">
+                                {favoritos.length > 9 ? '9+' : favoritos.length}
+                            </span>
+                        )}
                     </button>
 
                     {/* Cart */}
@@ -265,5 +280,70 @@ export default function StoreHeader({
                 </>
             )}
         </header>
+
+        {/* Favorites Drawer */}
+        {isFavoritosOpen && (
+            <>
+                <div className="fixed inset-0 z-[110] bg-black/30" onClick={() => setIsFavoritosOpen(false)} />
+                <div className="fixed top-0 right-0 h-full w-full max-w-sm z-[120] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right-4 duration-200">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                            <Icon icon="solar:heart-bold" width={20} className="text-[#FF9500]" />
+                            <span className="font-bold text-[#1A1A1A]">Mis Favoritos</span>
+                            {favoritos.length > 0 && (
+                                <span className="bg-[#FF9500] text-white text-[10px] font-black px-2 py-0.5 rounded-full">{favoritos.length}</span>
+                            )}
+                        </div>
+                        <button onClick={() => setIsFavoritosOpen(false)} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+                            <Icon icon="solar:close-circle-bold" width={22} className="text-gray-400" />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                        {favoritos.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-16">
+                                <Icon icon="solar:heart-linear" width={56} className="text-gray-200" />
+                                <p className="text-sm font-semibold text-gray-400">Aún no tienes favoritos</p>
+                                <p className="text-xs text-gray-300">Toca el corazón en cualquier producto para guardarlo aquí</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {favoritos.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-[#FAF6F1] transition-colors group">
+                                        <div
+                                            className="w-14 h-14 rounded-xl bg-[#FAF6F1] flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer"
+                                            onClick={() => { navigate(`/tienda/${slug}/producto/${item.id}`); setIsFavoritosOpen(false); }}
+                                        >
+                                            {item.imagenUrl ? (
+                                                <img src={item.imagenUrl} alt={item.descripcion} className="w-full h-full object-contain p-1" />
+                                            ) : (
+                                                <Icon icon="solar:box-linear" width={28} className="text-gray-300" />
+                                            )}
+                                        </div>
+                                        <div
+                                            className="flex-1 min-w-0 cursor-pointer"
+                                            onClick={() => { navigate(`/tienda/${slug}/producto/${item.id}`); setIsFavoritosOpen(false); }}
+                                        >
+                                            <p className="text-xs font-semibold text-[#1A1A1A] leading-tight line-clamp-2">{item.descripcion}</p>
+                                            <p className="text-sm font-black text-[#FF9500] mt-1">S/ {Number(item.precioUnitario).toFixed(2)}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => removeFavorito(item.id, slug)}
+                                            className="p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all flex-shrink-0"
+                                            title="Quitar de favoritos"
+                                        >
+                                            <Icon icon="solar:trash-bin-minimalistic-bold" width={16} className="text-red-400" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </>
+        )}
+    </>
     );
 }

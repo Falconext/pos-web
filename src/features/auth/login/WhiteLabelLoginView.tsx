@@ -155,7 +155,7 @@ export default function WhiteLabelLoginView() {
             <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => navigate("/forgot-password")}
+                onClick={() => navigate("/recuperar-contrasena")}
                 className="text-sm font-medium transition-colors"
                 style={{ color: colors.secondary }}
               >

@@ -72,9 +72,30 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h5 className="font-bold text-gray-800 dark:text-gray-200 text-sm md:text-sm line-clamp-2 md:line-clamp-1 leading-tight md:leading-normal mb-0.5">{item.descripcion}</h5>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                                     {Number(item.descuento) > 0 && (
                                         <span className="text-green-600 dark:text-green-400 font-bold">-{item.descuento}%</span>
+                                    )}
+                                    {/* Farmacia: lote asignado */}
+                                    {item.loteNumero && (
+                                        <span className="text-slate-500 dark:text-slate-400">Lote: {item.loteNumero}</span>
+                                    )}
+                                    {/* Farmacia: cadena de frío */}
+                                    {vm.usaLotesFarmacia && item.refrigerado && (
+                                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">🧊 Frío</span>
+                                    )}
+                                    {/* Farmacia: receta pendiente */}
+                                    {vm.isFarmaciaRetail && item.pendienteReceta && (
+                                        <button
+                                            onClick={() => vm.handleAbrirRecetaModal(index)}
+                                            className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px] hover:bg-red-200 transition-colors"
+                                        >
+                                            📋 Receta
+                                        </button>
+                                    )}
+                                    {/* Farmacia: receta confirmada */}
+                                    {vm.isFarmaciaRetail && item.datosReceta && !item.pendienteReceta && (
+                                        <span className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">✅ Receta OK</span>
                                     )}
                                 </div>
                             </div>

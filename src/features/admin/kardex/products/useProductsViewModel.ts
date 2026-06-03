@@ -10,6 +10,9 @@ import { get } from '@/utils/fetch';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
 
+const COLUMNAS_CORPORATIVAS = ['Localización', '% Venta', '% Provisión'];
+const FALLBACK_VISIBLE_COLUMNS = ['Producto', 'Precio Venta', 'Stock', 'Estado', 'Acciones'];
+
 export const useProductsViewModel = () => {
     // Stores
     const {
@@ -31,9 +34,12 @@ export const useProductsViewModel = () => {
     const userChoseSede = useRef(false);
     // For principal-sede admins: default to the current sede's stock instead of the
     // global total (sum of all sedes), which doesn't change on inter-sede transfers.
-    const effectiveSedeId = esPrincipal
-        ? (userChoseSede.current ? selectedSedeId : (selectedSedeId ?? sedeActiva?.id ?? null))
-        : (sedeActiva?.id ?? null);
+    const effectiveSedeId = useMemo(() => {
+        const id = esPrincipal
+            ? (userChoseSede.current ? selectedSedeId : (selectedSedeId ?? sedeActiva?.id ?? null))
+            : (sedeActiva?.id ?? null);
+        return id !== null && id !== undefined ? Number(id) : null;
+    }, [esPrincipal, selectedSedeId, sedeActiva?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
@@ -46,29 +52,38 @@ export const useProductsViewModel = () => {
     };
 
     // Derived State
-    const isRestaurante = (() => {
+    const isRestaurante = useMemo(() => {
         const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
         return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento');
-    })();
+    }, [auth?.empresa?.rubro?.nombre]);
 
     const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
         usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
     });
     const isCodigoBarrasEnabled = features.usaCodigoBarras;
 
-    const allColumns = useMemo(() => [
-        'Img', 'Producto', 'Categoria', 'Marca',
-        'Precio Venta', 'Costo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'
-    ], []);
+    const esFarmaceuticoRubro = (() => {
+        const r = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
+        return r.includes('farmacia') || r.includes('botica') || r.includes('drogueria') || r.includes('droguería');
+    })();
+    const farmaciaIgvDefault = esFarmaceuticoRubro
+        ? { tipoAfectacionIGV: '20', afectacionNombre: 'Exonerado' }
+        : {};
 
-    const initialVisibleColumns = useMemo(() => [
-        'Img', 'Producto', 'Categoria', 'Marca',
-        'Precio Venta', 'Costo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'
-    ], []);
-    const fallbackVisibleColumns = useMemo(() => ['Producto', 'Precio Venta', 'Stock', 'Estado', 'Acciones'], []);
+    const planNombre = String(auth?.empresa?.plan?.nombre || '').toUpperCase();
+    const tienePlanCorporativo = planNombre.includes('CORPORAT') || auth?.rol === 'ADMIN_SISTEMA';
+
+    const allColumns = useMemo(() => {
+        const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'];
+        return tienePlanCorporativo ? base : base.filter(c => !COLUMNAS_CORPORATIVAS.includes(c));
+    }, [tienePlanCorporativo]);
+
+    const initialVisibleColumns = allColumns;
+
+    const fallbackVisibleColumns = FALLBACK_VISIBLE_COLUMNS;
 
     // Labels
-    const labels = {
+    const labels = useMemo(() => ({
         titulo: isRestaurante ? 'Platos' : 'Productos',
         nuevoBtn: isRestaurante ? 'Nuevo plato' : 'Nuevo producto',
         nuevoBtnMobile: isRestaurante ? '+ Plato' : '+ Nuevo',
@@ -76,7 +91,7 @@ export const useProductsViewModel = () => {
         confirmarEstado: isRestaurante ? '¿Estás seguro que deseas cambiar el estado de este plato?' : '¿Estás seguro que deseas cambiar el estado de este producto?',
         eliminar: isRestaurante ? 'Eliminar plato' : 'Eliminar producto',
         eliminarInfo: isRestaurante ? 'Esta acción eliminará el plato de tu catálogo. ¿Deseas continuar?' : 'Esta acción eliminará el producto de tu empresa (eliminación lógica). ¿Deseas continuar?',
-    };
+    }), [isRestaurante]);
 
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,7 +110,7 @@ export const useProductsViewModel = () => {
         isOpenModalDelete: false,
         isOpenModalDeleteAll: false,
         selectedDeleteId: null,
-        formValues: initialProductForm,
+        formValues: { ...initialProductForm, ...farmaciaIgvDefault },
         isEdit: false,
         errors: {
             codigo: "",
@@ -210,7 +225,7 @@ export const useProductsViewModel = () => {
             if (state.marcaIdFilter) params.marcaId = String(state.marcaIdFilter);
             if (effectiveSedeId) params.sedeId = String(effectiveSedeId);
             const query = new URLSearchParams(params).toString();
-            const resp: any = await get(`producto/listar?${query}`);
+            const resp: any = await get(`productos?${query}`);
             if (resp?.code === 1) {
                 const nextProducts = Array.isArray(resp.data?.productos) ? resp.data.productos : [];
                 const nextTotal = typeof resp.data?.total === 'number' ? resp.data.total : nextProducts.length;
@@ -229,10 +244,15 @@ export const useProductsViewModel = () => {
         }
     }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, debounce, effectiveSedeId]);
 
-    // Fetch Products (local, aislado de otros submódulos)
+    // Siempre mantiene la ref actualizada sin recrear efectos dependientes
+    const fetchProductsListRef = useRef(fetchProductsList);
+    fetchProductsListRef.current = fetchProductsList;
+
+    // Fetch Products — depende de los parámetros reales, no del callback
     useEffect(() => {
-        fetchProductsList();
-    }, [fetchProductsList]);
+        if (!auth?.empresaId) return;
+        fetchProductsListRef.current();
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Sincroniza actualizaciones optimistas desde Zustand (editar/crear sin recargar página).
     useEffect(() => {
@@ -250,13 +270,23 @@ export const useProductsViewModel = () => {
         });
     }, [storeProducts]);
 
-    // Close Modals on Success
+    // Close Modals on Success — solo refresca cuando success cambia a true, no en el mount inicial
+    const isMountedSuccessRef = useRef(false);
     useEffect(() => {
-        if (success === true) {
-            setState(prev => ({ ...prev, isOpenModal: false, isEdit: false }));
-            void fetchProductsList();
+        if (!isMountedSuccessRef.current) {
+            isMountedSuccessRef.current = true;
+            return;
         }
-    }, [success, fetchProductsList]);
+        if (success === true) {
+            setState(prev => ({
+                ...prev,
+                isOpenModal: false,
+                isEdit: false,
+                formValues: { ...initialProductForm, ...farmaciaIgvDefault },
+            }));
+            void fetchProductsListRef.current();
+        }
+    }, [success]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Click outside para filtros auxiliares (el menú de acciones ya se maneja en TableActionMenu)
     useEffect(() => {
@@ -310,8 +340,8 @@ export const useProductsViewModel = () => {
                     unidadVenta: (originalProduct as any).unidadVenta || '',
                     factorConversion: Number((originalProduct as any).factorConversion || 1),
                     localizacion: originalProduct.localizacion || '',
-                    porcentajeVenta: Number((originalProduct as any).porcentajeVenta ?? 70),
-                    porcentajeProvision: Number((originalProduct as any).porcentajeProvision ?? 30),
+                    porcentajeVenta: Number((originalProduct as any).porcentajeVenta ?? 100),
+                    porcentajeProvision: Number((originalProduct as any).porcentajeProvision ?? 0),
                     preciosMayorista: Array.isArray((originalProduct as any).preciosMayorista)
                         ? (originalProduct as any).preciosMayorista
                         : [],
@@ -327,7 +357,7 @@ export const useProductsViewModel = () => {
             setState(prev => ({ ...prev, uploading: true }));
             const fd = new FormData();
             fd.append('file', file);
-            const url = `/producto/${state.uploadTarget!.id}/imagen`;
+            const url = `/productos/${state.uploadTarget!.id}/imagen`;
             const resp = await apiClient.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             useAlertStore.getState().alert('Imagen subida correctamente', 'success');
             const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
@@ -401,7 +431,7 @@ export const useProductsViewModel = () => {
 
     const togglePublicarTienda = async (producto: any) => {
         try {
-            await apiClient.patch(`producto/${producto.id}/publicar-tienda`, {
+            await apiClient.patch(`productos/${producto.id}/publicar-tienda`, {
                 publicarEnTienda: !producto.publicarEnTienda,
             });
             await fetchProductsList();
@@ -441,7 +471,7 @@ export const useProductsViewModel = () => {
         handleToggleClientState,
         confirmToggleroduct,
         togglePublicarTienda,
-        exportProducts: () => exportProductsAction(auth?.empresaId, debounce),
+        exportProducts: () => exportProductsAction(debounce),
         refreshProducts: async () => {
             await fetchProductsList();
         }

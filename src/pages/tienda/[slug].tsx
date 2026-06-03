@@ -14,7 +14,7 @@ import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 import PromoBanners from '@/components/tienda/PromoBanners';
 import MembershipBanner from '@/components/tienda/MembershipBanner';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 export default function TiendaPublica() {
   const { slug } = useParams();

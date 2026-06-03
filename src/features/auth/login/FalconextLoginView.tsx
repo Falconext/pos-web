@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Alert from "@/components/Alert";
 import Loading from "@/components/Loading";
 import banner from '@/assets/fnlogin.png';
@@ -15,6 +16,7 @@ export default function FalconextLoginView() {
         handleKeyDown,
         navigate
     } = useLoginViewModel();
+    const [showPassword, setShowPassword] = useState(false);
     const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('ACCESS_TOKEN');
 
     if (isLoading && hasToken) {
@@ -66,13 +68,20 @@ export default function FalconextLoginView() {
                                 <div className="relative">
                                     <input
                                         autoComplete="off"
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={formValues.password}
                                         onChange={handleChange}
                                         placeholder="Ingresa tu contraseña"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] text-gray-900 placeholder:text-gray-400 transition-all text-sm"
+                                        className="w-full px-4 py-2.5 pr-11 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] text-gray-900 placeholder:text-gray-400 transition-all text-sm"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        <Icon icon={showPassword ? "solar:eye-bold" : "solar:eye-closed-bold"} className="text-lg" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -85,7 +94,7 @@ export default function FalconextLoginView() {
                                 </div>
                                 <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">Recordarme</span>
                             </label>
-                            <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm font-medium text-[#4F46E5] hover:text-[#4338ca] transition-colors">
+                            <button type="button" onClick={() => navigate('/recuperar-contrasena')} className="text-sm font-medium text-[#4F46E5] hover:text-[#4338ca] transition-colors">
                                 ¿Olvidaste tu contraseña?
                             </button>
                         </div>
@@ -98,15 +107,6 @@ export default function FalconextLoginView() {
                             INICIAR SESIÓN
                         </button>
 
-                        <div className="text-center pt-2">
-                            <span className="text-sm text-gray-500">¿Aún no tienes cuenta? </span>
-                            <button
-                                type="button"
-                                className="text-sm font-semibold text-[#4F46E5] hover:underline"
-                            >
-                                Regístrate
-                            </button>
-                        </div>
 
                         <div className="text-center mt-2">
                             <button

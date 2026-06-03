@@ -42,7 +42,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
 
     const cargarLotes = async (productoId: number) => {
         try {
-            const { data } = await apiClient.get(`/producto/${productoId}/lotes`);
+            const { data } = await apiClient.get(`/productos/${productoId}/lotes`);
             setLotes(data?.data || data || []);
         } catch {
             // silencioso
@@ -68,7 +68,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
     const handleAgregarLote = async () => {
         if (!validateLoteForm() || !formValues.productoId) return;
         try {
-            await apiClient.post('/producto/lotes', {
+            await apiClient.post('/productos/lotes', {
                 productoId: Number(formValues.productoId),
                 lote: loteForm.lote,
                 fechaVencimiento: loteForm.fechaVencimiento,
@@ -105,7 +105,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
         if (!editingId) return;
         try {
             // 1. Actualizar metadatos
-            await apiClient.patch(`/producto/lotes/${editingId}`, {
+            await apiClient.patch(`/productos/lotes/${editingId}`, {
                 lote: editForm.lote,
                 fechaVencimiento: editForm.fechaVencimiento || undefined,
                 costoUnitario: editForm.costoUnitario ? Number(editForm.costoUnitario) : undefined,
@@ -116,7 +116,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
             const nuevoStock = Number(editForm.nuevoStock);
             const delta = nuevoStock - stockOriginalEdit;
             if (delta !== 0 && !isNaN(nuevoStock) && nuevoStock >= 0) {
-                await apiClient.patch(`/producto/lotes/${editingId}/ajustar-stock`, {
+                await apiClient.patch(`/productos/lotes/${editingId}/ajustar-stock`, {
                     productoId: Number(formValues.productoId),
                     cantidad: Math.abs(delta),
                     tipo: delta > 0 ? 'INCREMENTO' : 'DECREMENTO',
@@ -136,7 +136,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
     const handleEliminarLote = async (loteId: number) => {
         setDeleteLoading(true);
         try {
-            await apiClient.patch(`/producto/lotes/${loteId}/desactivar`);
+            await apiClient.patch(`/productos/lotes/${loteId}/desactivar`);
             useAlertStore.getState().alert('Lote eliminado correctamente', 'success');
             setDeletingId(null);
             cargarLotes(Number(formValues.productoId));
