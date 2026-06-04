@@ -29,6 +29,19 @@ import Modal from "@/components/Modal";
 import { useSedesStore } from "@/zustand/sedes";
 import { useNavigate } from "react-router-dom";
 
+const hasDespachoCompleto = (item: IInvoices) => {
+    const despacho = item.envioDespacho;
+    if (!despacho?.id) return false;
+    const celular = String(despacho.celularDest ?? '').replace(/\D/g, '');
+    return Boolean(
+        despacho.transportista &&
+        despacho.tipoEnvio &&
+        (despacho.agenciaDestino || despacho.direccionDestino) &&
+        celular.length >= 9 &&
+        Number(despacho.nroPaquetes ?? 1) >= 1
+    );
+};
+
 const ComprobantesInformales = () => {
     const navigate = useNavigate();
     const { auth, sedeActiva } = useAuthStore();
@@ -95,6 +108,11 @@ const ComprobantesInformales = () => {
     }, [canFilterBySede]);
 
     const productsTable = invoices?.map((item: IInvoices) => {
+        const despachoCompleto = item.comprobante === 'NOTA DE VENTA' && hasDespachoCompleto(item);
+        const despachoFecha = item.envioDespacho?.creadoEn
+            ? moment(item.envioDespacho.creadoEn).format('YYYY-MM-DD')
+            : moment(item.fechaEmision).format('YYYY-MM-DD');
+
         const rowBase: any = {
             id: item?.id,
             fechaEmisión: moment(item?.fechaEmision).format('DD/MM/YYYY HH:mm:ss'),
@@ -111,6 +129,7 @@ const ComprobantesInformales = () => {
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
                 : item.estadoPago,
+            despachoCompleto,
         };
 
         const isOpen = openAccionesId === rowBase.id;
@@ -148,7 +167,7 @@ const ComprobantesInformales = () => {
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
                 {isOpen && (
-                    <div className="fixed flex-col right-10 mt-1 w-40 bg-white dark:bg-[#1E2435] border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
+                    <div className="fixed flex-col right-10 mt-1 w-44 bg-white dark:bg-[#1E2435] border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
                         <button
                             type="button"
                             onClick={() => {
@@ -201,6 +220,19 @@ const ComprobantesInformales = () => {
                             <Icon icon="mdi:whatsapp" width={16} height={16} />
                             <span>Enviar WhatsApp</span>
                         </button>
+                        {despachoCompleto && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    navigate(`/administrador/despacho?fecha=${despachoFecha}&comprobanteId=${item.id}`);
+                                    setOpenAccionesId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30"
+                            >
+                                <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
+                                <span>Ver despacho</span>
+                            </button>
+                        )}
                         {item.comprobante === 'NOTA DE VENTA' && (
                             <>
                                 <div className="border-t border-gray-100 dark:border-slate-700 my-1" />

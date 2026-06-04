@@ -15,7 +15,7 @@ import { IFormProduct } from "@/interfaces/products";
 import { formatISO, parse } from 'date-fns';
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNavigate, useLocation } from "react-router-dom";
-import { get } from "@/utils/fetch";
+import { get, patch } from "@/utils/fetch";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useThemeStore } from "@/zustand/theme";
 import QRCode from 'qrcode';
@@ -31,6 +31,67 @@ import {
     type ICatalogoFarmaciaItem,
     type IDatosReceta,
 } from "./FacturacionModel";
+
+type EnvioDespachoFormData = {
+    transportista?: string;
+    tipoEnvio?: string;
+    agenciaDestino?: string;
+    celularDest?: string;
+    nroPaquetes?: number | string;
+    turnoEnvio?: string;
+    tipoMercaderia?: string;
+    claveEnvio?: string;
+    nroOrden?: string;
+    claveOrden?: string;
+    establecimiento?: string;
+    repartidor?: string;
+    empaquetador?: string;
+    observaciones?: string;
+    fechaEstimada?: string;
+};
+
+const cleanText = (value?: string) => String(value ?? '').trim();
+
+const isCompleteEnvioDespacho = (data: EnvioDespachoFormData) => {
+    const celular = cleanText(data.celularDest).replace(/\D/g, '');
+    return Boolean(
+        cleanText(data.transportista) &&
+        ['AGENCIA', 'DOMICILIO'].includes(cleanText(data.tipoEnvio)) &&
+        cleanText(data.agenciaDestino) &&
+        celular.length >= 9 &&
+        Number(data.nroPaquetes) >= 1 &&
+        ['MANANA', 'TARDE', 'NOCHE'].includes(cleanText(data.turnoEnvio))
+    );
+};
+
+const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
+    const tipoEnvio = cleanText(data.tipoEnvio) || 'AGENCIA';
+    const destino = cleanText(data.agenciaDestino);
+    const fecha = cleanText(data.fechaEstimada);
+    const fechaEstimada = fecha && !Number.isNaN(new Date(`${fecha}T00:00:00-05:00`).getTime())
+        ? new Date(`${fecha}T00:00:00-05:00`).toISOString()
+        : undefined;
+
+    return {
+        estado: 'PREPARANDO',
+        transportista: cleanText(data.transportista),
+        tipoEnvio,
+        agenciaDestino: destino,
+        direccionDestino: tipoEnvio === 'DOMICILIO' ? destino : undefined,
+        celularDest: cleanText(data.celularDest).replace(/\D/g, ''),
+        nroPaquetes: Number(data.nroPaquetes) || 1,
+        turnoEnvio: cleanText(data.turnoEnvio) || 'MANANA',
+        tipoMercaderia: cleanText(data.tipoMercaderia),
+        claveEnvio: cleanText(data.claveEnvio),
+        nroOrden: cleanText(data.nroOrden),
+        claveOrden: cleanText(data.claveOrden),
+        establecimiento: cleanText(data.establecimiento),
+        repartidor: cleanText(data.repartidor),
+        empaquetador: cleanText(data.empaquetador),
+        observaciones: cleanText(data.observaciones),
+        ...(fechaEstimada ? { fechaEstimada } : {}),
+    };
+};
 
 export const useFacturacionViewModel = () => {
     const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation }: IInvoicesState = useInvoiceStore();
@@ -1334,17 +1395,26 @@ export const useFacturacionViewModel = () => {
             if (r.serie != null && r.correlativo != null) {
                 setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null });
             }
-            // Auto-crear despacho si se activó el panel de envío
+            // Auto-crear despacho si se completó la coordinación de envío.
             const comprobanteId = r.id ?? dataReceipt?.id ?? null;
             if (envioActivo && comprobanteId) {
-                const payload = {
-                    ...envioData,
-                    nroPaquetes: Number(envioData.nroPaquetes) || 1,
-                    ...(envioData.fechaEstimada ? { fechaEstimada: new Date(envioData.fechaEstimada).toISOString() } : {}),
-                };
-                import('@/utils/fetch').then(({ post }) =>
-                    post(`envio-despacho/comprobante/${comprobanteId}`, payload).catch(() => {})
-                );
+                if (isCompleteEnvioDespacho(envioData)) {
+                    const despachoResult = await patch(
+                        `envio-despacho/comprobante/${comprobanteId}/upsert`,
+                        buildEnvioDespachoPayload(envioData),
+                    );
+                    if (despachoResult.success === false || despachoResult.error) {
+                        useAlertStore.getState().alert(
+                            `La venta se guardó, pero no se pudo crear el despacho: ${despachoResult.error || 'verifique los datos de envío'}`,
+                            'warning',
+                        );
+                    }
+                } else {
+                    useAlertStore.getState().alert(
+                        'La venta se guardó, pero el despacho no se creó porque faltan courier, destino, celular o turno de envío.',
+                        'warning',
+                    );
+                }
             }
             setIsLoading(false);
         } else {

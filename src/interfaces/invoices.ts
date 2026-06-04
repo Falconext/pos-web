@@ -31,6 +31,19 @@ export type IInvoices = {
   subTotal: number
   mtoImpVenta: number
   estadoEnvioSunat: string
+  envioDespacho?: {
+    id: number
+    comprobanteId: number
+    estado: string
+    transportista?: string | null
+    tipoEnvio?: string | null
+    agenciaDestino?: string | null
+    direccionDestino?: string | null
+    celularDest?: string | null
+    nroPaquetes?: number | null
+    turnoEnvio?: string | null
+    creadoEn?: string
+  } | null
   medioPago: any
   clienteId: number
   empresaId: number

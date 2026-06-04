@@ -5,6 +5,7 @@ import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import DataTable from '@/components/Datatable';
 import { Calendar } from '@/components/Date';
+import { useLocation } from 'react-router-dom';
 
 const ESTADO_COLOR: Record<string, string> = {
     PREPARANDO: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -72,12 +73,22 @@ interface DespachoItem {
 const HEADER_COLUMNS = ['Tipo', 'Referencia', 'Cliente', 'Vendedor', 'Courier', 'Agencia destino', 'Celular', 'Paquetes', 'Turno', 'Total', 'Estado', 'WhatsApp'];
 
 export default function DespachoView() {
+    const location = useLocation();
+    const query = new URLSearchParams(location.search);
+    const queryFecha = query.get('fecha');
+    const queryComprobanteId = Number(query.get('comprobanteId') || 0) || null;
     const [items, setItems] = useState<DespachoItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+    const [fecha, setFecha] = useState(() => queryFecha || moment().format('YYYY-MM-DD'));
     const [busqueda, setBusqueda] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('');
     const { alert } = useAlertStore();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const nextFecha = params.get('fecha');
+        if (nextFecha) setFecha(nextFecha);
+    }, [location.search]);
 
     const cargar = useCallback(async () => {
         setLoading(true);
@@ -109,6 +120,7 @@ export default function DespachoView() {
     };
 
     const filtrados = items.filter(i => {
+        if (queryComprobanteId && i.comprobanteId !== queryComprobanteId) return false;
         if (filtroEstado && i.estado !== filtroEstado) return false;
         if (busqueda) {
             const q = busqueda.toLowerCase();

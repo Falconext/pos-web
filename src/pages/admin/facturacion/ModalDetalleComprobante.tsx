@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { useReactToPrint } from 'react-to-print';
 import Modal from '@/components/Modal';
 import Button from '@/components/Button';
-import InputPro from '@/components/InputPro';
-import { Calendar } from '@/components/Date';
 import ModalConfirm from '@/components/ModalConfirm';
 import { get, post, put } from '@/utils/fetch';
 import { useAuthStore } from '@/zustand/auth';
@@ -15,7 +14,6 @@ import { numberToWords } from '@/utils/numberToLetters';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type EstadoDespacho = 'PREPARANDO' | 'EN_CAMINO' | 'EN_DESTINO' | 'ENTREGADO' | 'DEVUELTO';
 type PrintSize = 'TICKET' | 'A4' | 'A5';
 
 const ESTADOS_DESPACHO = [
@@ -38,7 +36,54 @@ const PRINT_DIMENSIONS: Record<PrintSize, { width: number; height: number }> = {
     A5:     { width: 148, height: 210 },
 };
 
+const COMPROBANTE_LABELS: Record<string, string> = {
+    '01': 'FACTURA',
+    '03': 'BOLETA',
+    '07': 'NOTA DE CRÉDITO',
+    '08': 'NOTA DE DÉBITO',
+    NV: 'NOTA DE VENTA',
+    NP: 'NOTA DE PEDIDO',
+    OT: 'ORDEN DE TRABAJO',
+    TICKET: 'TICKET',
+    CP: 'COMPROBANTE DE PAGO',
+    RH: 'RECIBO POR HONORARIO',
+};
+
 const getEstado = (id: string) => ESTADOS_DESPACHO.find(e => e.id === id) ?? ESTADOS_DESPACHO[0];
+const unwrapApiPayload = (response: any) => {
+    if (!response || response.success === false) return null;
+    return response.data ?? response;
+};
+const getComprobanteLabel = (comprobante: any) => (
+    comprobante?.comprobante ||
+    COMPROBANTE_LABELS[String(comprobante?.tipoDoc ?? '')] ||
+    comprobante?.tipoDoc ||
+    'COMPROBANTE'
+);
+const getComprobanteTotal = (comprobante: any) => Number(
+    comprobante?.mtoImpVenta ??
+    comprobante?.total ??
+    comprobante?.subTotal ??
+    comprobante?.valorVenta ??
+    0
+);
+const getDetalleDescripcion = (detalle: any) => (
+    detalle?.descripcion ||
+    detalle?.producto?.descripcion ||
+    detalle?.producto?.nombre ||
+    'Producto / servicio'
+);
+const getDetallePrecio = (detalle: any) => Number(
+    detalle?.mtoPrecioUnitario ??
+    detalle?.mtoValorUnitario ??
+    detalle?.precioUnitario ??
+    0
+);
+const getDetalleSubtotal = (detalle: any) => Number(
+    detalle?.mtoValorVenta ??
+    detalle?.subtotal ??
+    (Number(detalle?.cantidad ?? 0) * getDetallePrecio(detalle))
+);
 
 const planPermiteDespacho = (auth: any) => {
     const plan = String(auth?.empresa?.plan?.nombre || '').toUpperCase();
@@ -56,14 +101,12 @@ interface Props {
 export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose }: Props) {
     const { auth } = useAuthStore();
     const { alert } = useAlertStore();
+    const navigate = useNavigate();
     const puedeDespacho = planPermiteDespacho(auth);
 
     const [comprobante, setComprobante] = useState<any>(null);
     const [envio, setEnvio] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [savingEnvio, setSavingEnvio] = useState(false);
-    const [showDespachoForm, setShowDespachoForm] = useState(false);
-    const [confirmDevuelto, setConfirmDevuelto] = useState(false);
 
     // ── Print / Share state ──
     const [printSize, setPrintSize] = useState<PrintSize>('TICKET');
@@ -77,15 +120,6 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
     const [emailDest, setEmailDest] = useState('');
     const [enviandoEmail, setEnviandoEmail] = useState(false);
 
-    const [despachoForm, setDespachoForm] = useState({
-        transportista: '',
-        codigoGuia: '',
-        estado: 'PREPARANDO' as EstadoDespacho,
-        observaciones: '',
-        direccionDestino: '',
-        fechaEstimada: '',
-    });
-
     const load = useCallback(async () => {
         if (!comprobanteId) return;
         setLoading(true);
@@ -93,27 +127,15 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
             const [respComp, respEnvio] = await Promise.all([
                 get<any>(`comprobante/${comprobanteId}`),
                 puedeDespacho
-                    ? get<any>(`envio-despacho/comprobante/${comprobanteId}`).catch(() => ({ data: null }))
-                    : Promise.resolve({ data: null }),
+                    ? get<any>(`envio-despacho/comprobante/${comprobanteId}`).catch(() => null)
+                    : Promise.resolve(null),
             ]);
-            const comp = (respComp as any)?.data ?? respComp;
+            const comp = unwrapApiPayload(respComp);
+            if (!comp) return;
             setComprobante(comp);
             setWaNumber(comp?.cliente?.telefono || comp?.cliente?.celular || '');
             setEmailDest(comp?.cliente?.email || '');
-            const env = (respEnvio as any)?.data ?? null;
-            setEnvio(env);
-            if (env) {
-                setDespachoForm({
-                    transportista: env.transportista ?? '',
-                    codigoGuia: env.codigoGuia ?? '',
-                    estado: env.estado,
-                    observaciones: env.observaciones ?? '',
-                    direccionDestino: env.direccionDestino ?? '',
-                    fechaEstimada: env.fechaEstimada ? moment(env.fechaEstimada).format('YYYY-MM-DD') : '',
-                });
-            } else if (comp?.cliente?.direccion) {
-                setDespachoForm(f => ({ ...f, direccionDestino: comp.cliente.direccion }));
-            }
+            setEnvio(unwrapApiPayload(respEnvio));
         } finally {
             setLoading(false);
         }
@@ -123,7 +145,6 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
         if (!isOpen || !comprobanteId) return;
         setComprobante(null);
         setEnvio(null);
-        setShowDespachoForm(false);
         setPdfUrl(null);
         load();
     }, [isOpen, comprobanteId, load]);
@@ -194,10 +215,10 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
         }
         const finalNum = num.startsWith('51') ? num : `51${num}`;
         const serie = `${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')}`;
-        const monto = `S/ ${Number(comprobante.mtoImpVenta ?? 0).toFixed(2)}`;
+        const monto = `S/ ${getComprobanteTotal(comprobante).toFixed(2)}`;
         const link = pdfUrl || comprobante.s3PdfUrl || '';
         const mensaje = encodeURIComponent(
-            `Hola ${comprobante?.cliente?.nombre || ''}, te enviamos tu ${comprobante?.comprobante || 'comprobante'} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${link}`
+            `Hola ${comprobante?.cliente?.nombre || ''}, te enviamos tu ${getComprobanteLabel(comprobante)} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${link}`
         );
         window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
     };
@@ -217,49 +238,8 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
         alert('Correo enviado correctamente', 'success');
     };
 
-    // ── Despacho ──
-    const handleSaveDespacho = async () => {
-        if (!comprobanteId) return;
-        setSavingEnvio(true);
-        try {
-            const payload = { ...despachoForm, fechaEstimada: despachoForm.fechaEstimada || undefined };
-            const res: any = envio
-                ? await put(`envio-despacho/comprobante/${comprobanteId}`, payload)
-                : await post(`envio-despacho/comprobante/${comprobanteId}`, payload);
-
-            if (res?.error || res?.success === false) {
-                alert(res.error || 'Error al guardar el despacho', 'error');
-                return;
-            }
-            await load();
-            setShowDespachoForm(false);
-            alert(envio ? 'Despacho actualizado' : 'Seguimiento creado', 'success');
-        } catch {
-            alert('Error al guardar el despacho', 'error');
-        } finally {
-            setSavingEnvio(false);
-        }
-    };
-
-    const handleCambiarEstado = async (nuevoEstado: EstadoDespacho) => {
-        if (!comprobanteId || !envio) return;
-        setSavingEnvio(true);
-        try {
-            const res: any = await put(`envio-despacho/comprobante/${comprobanteId}`, { estado: nuevoEstado });
-            if (res?.error || res?.success === false) {
-                alert(res.error || 'Error al cambiar el estado', 'error');
-                return;
-            }
-            await load();
-        } catch {
-            alert('Error al cambiar el estado', 'error');
-        } finally {
-            setSavingEnvio(false);
-        }
-    };
-
-    const total = Number(comprobante?.mtoImpVenta ?? 0);
-    const historial: any[] = Array.isArray(envio?.historial) ? envio.historial : [];
+    const total = getComprobanteTotal(comprobante);
+    const comprobanteLabel = getComprobanteLabel(comprobante);
 
     return (
         <>
@@ -278,7 +258,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                     mode="off"
                     qrCodeDataUrl={undefined}
                     discount={comprobante.discount ?? null}
-                    receipt={comprobante.comprobante}
+                    receipt={comprobanteLabel}
                     selectedClient={comprobante.cliente}
                     totalInWords={numberToWords(total) + ' SOLES'}
                     observation={comprobante.observaciones}
@@ -312,7 +292,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                         <div>
                             <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Comprobante</p>
                             <p className="font-bold text-gray-900 dark:text-white text-lg leading-tight">
-                                {comprobante.comprobante}
+                                {comprobanteLabel}
                             </p>
                             <p className="text-sm text-gray-500 font-mono">
                                 {comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}
@@ -352,14 +332,14 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                                 >
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                                            {det.descripcion}
+                                            {getDetalleDescripcion(det)}
                                         </p>
                                         <p className="text-xs text-gray-400 mt-0.5">
-                                            {det.unidad} &middot; {Number(det.cantidad)} und &times; S/ {Number(det.mtoPrecioUnitario ?? det.mtoValorUnitario).toFixed(2)}
+                                            {det.unidad || 'NIU'} &middot; {Number(det.cantidad ?? 0)} und &times; S/ {getDetallePrecio(det).toFixed(2)}
                                         </p>
                                     </div>
                                     <p className="text-sm font-bold text-gray-800 dark:text-white shrink-0">
-                                        S/ {Number(det.mtoValorVenta ?? det.subtotal ?? 0).toFixed(2)}
+                                        S/ {getDetalleSubtotal(det).toFixed(2)}
                                     </p>
                                 </div>
                             ))}
@@ -501,29 +481,36 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                         </div>
                     </div>
 
-                    {/* ── Seguimiento de despacho ── */}
+                    {/* ── Seguimiento de despacho (solo lectura) ── */}
                     {puedeDespacho && (
                         <div className="p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <Icon icon="solar:delivery-bold-duotone" className="text-blue-500 text-xl" />
-                                    <p className="text-sm font-bold text-gray-800 dark:text-white">
-                                        Seguimiento de despacho
-                                    </p>
+                                    <p className="text-sm font-bold text-gray-800 dark:text-white">Seguimiento de despacho</p>
                                 </div>
-                                <Button
-                                    color={showDespachoForm ? 'default' : envio ? 'secondary' : 'primary'}
-                                    outline={showDespachoForm}
-                                    onClick={() => setShowDespachoForm(!showDespachoForm)}
+                                <button
+                                    type="button"
+                                    onClick={() => { onClose(); navigate('/administrador/tienda/pedidos'); }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-200 dark:border-blue-800/50"
                                 >
-                                    <Icon icon={showDespachoForm ? 'mdi:close' : envio ? 'solar:pen-bold' : 'solar:add-circle-bold'} width={14} className="mr-1" />
-                                    {showDespachoForm ? 'Cancelar' : envio ? 'Editar' : 'Crear despacho'}
-                                </Button>
+                                    <Icon icon="solar:arrow-right-up-bold" width={13} />
+                                    Ir al Panel de Despacho
+                                </button>
                             </div>
 
-                            {/* Despacho existente */}
-                            {envio && !showDespachoForm && (
-                                <div className="space-y-5">
+                            {envio ? (
+                                <div className="space-y-3">
+                                    {/* Badge de estado */}
+                                    {(() => {
+                                        const estadoInfo = getEstado(envio.estado);
+                                        return (
+                                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${estadoInfo.bg}`}>
+                                                <Icon icon={estadoInfo.icon} width={14} />
+                                                {estadoInfo.value}
+                                            </div>
+                                        );
+                                    })()}
                                     <div className="grid grid-cols-2 gap-3">
                                         <InfoCard icon="solar:bus-bold-duotone" label="Transportista" value={envio.transportista || '-'} />
                                         <InfoCard icon="solar:tag-bold-duotone" label="Código guía / SKU" value={envio.codigoGuia || '-'} />
@@ -534,163 +521,12 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                                             value={envio.fechaEstimada ? moment(envio.fechaEstimada).format('DD/MM/YYYY') : '-'}
                                         />
                                     </div>
-
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Estado del envío</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {ESTADOS_DESPACHO.map(e => (
-                                                <button
-                                                    key={e.id}
-                                                    type="button"
-                                                    disabled={savingEnvio}
-                                                    onClick={() => {
-                                                        if (e.id === 'DEVUELTO') {
-                                                            setConfirmDevuelto(true);
-                                                        } else {
-                                                            handleCambiarEstado(e.id as EstadoDespacho);
-                                                        }
-                                                    }}
-                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all disabled:opacity-50 ${
-                                                        envio.estado === e.id
-                                                            ? `${e.bg} ring-2 ring-offset-1`
-                                                            : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-200 dark:border-slate-700 hover:border-gray-300'
-                                                    }`}
-                                                >
-                                                    <Icon icon={e.icon} width={14} />
-                                                    {e.value}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {historial.length > 0 && (
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-3">Historial de estados</p>
-                                            <div className="space-y-0">
-                                                {[...historial].reverse().map((h: any, i: number) => {
-                                                    const info = getEstado(h.estado);
-                                                    const isFirst = i === 0;
-                                                    const isLast = i === historial.length - 1;
-                                                    return (
-                                                        <div key={i} className="flex gap-3">
-                                                            <div className="flex flex-col items-center">
-                                                                <div
-                                                                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2"
-                                                                    style={isFirst
-                                                                        ? { backgroundColor: info.color, borderColor: info.color }
-                                                                        : { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb' }
-                                                                    }
-                                                                >
-                                                                    <Icon icon={info.icon} className={`w-4 h-4 ${isFirst ? 'text-white' : 'text-gray-400'}`} />
-                                                                </div>
-                                                                {!isLast && <div className="w-0.5 flex-1 min-h-[20px] mt-1 bg-gray-100 dark:bg-slate-800" />}
-                                                            </div>
-                                                            <div className={`flex-1 pb-4 ${!isFirst ? 'opacity-50' : ''}`}>
-                                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{info.value}</p>
-                                                                <p className="text-xs text-gray-400">{moment(h.fecha).format('DD/MM/YYYY HH:mm')}</p>
-                                                                {h.nota && <p className="text-xs text-gray-400 mt-0.5 italic">{h.nota}</p>}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                            )}
-
-                            {/* Formulario crear / editar */}
-                            {showDespachoForm && (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <InputPro
-                                            name="transportista"
-                                            isLabel
-                                            label="Transportista"
-                                            placeholder="Ej: Olva, Shalom, Motorizado..."
-                                            value={despachoForm.transportista}
-                                            onChange={e => setDespachoForm(f => ({ ...f, transportista: e.target.value }))}
-                                        />
-                                        <InputPro
-                                            name="codigoGuia"
-                                            isLabel
-                                            label="Código guía / SKU proveedor"
-                                            placeholder="Ej: OLV-2024-000123"
-                                            value={despachoForm.codigoGuia}
-                                            onChange={e => setDespachoForm(f => ({ ...f, codigoGuia: e.target.value }))}
-                                        />
-                                        <InputPro
-                                            name="direccionDestino"
-                                            isLabel
-                                            label="Dirección de destino"
-                                            placeholder="Calle, ciudad, referencia..."
-                                            value={despachoForm.direccionDestino}
-                                            onChange={e => setDespachoForm(f => ({ ...f, direccionDestino: e.target.value }))}
-                                        />
-                                        <div>
-                                            <Calendar
-                                                text="Fecha estimada de entrega"
-                                                name="fechaEstimada"
-                                                value={despachoForm.fechaEstimada
-                                                    ? moment(despachoForm.fechaEstimada, 'YYYY-MM-DD').format('DD/MM/YYYY')
-                                                    : ''}
-                                                onChange={(val: string) =>
-                                                    setDespachoForm(f => ({
-                                                        ...f,
-                                                        fechaEstimada: moment(val, 'DD/MM/YYYY').format('YYYY-MM-DD'),
-                                                    }))
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Estado inicial</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {ESTADOS_DESPACHO.map(e => (
-                                                <button
-                                                    key={e.id}
-                                                    type="button"
-                                                    onClick={() => setDespachoForm(f => ({ ...f, estado: e.id as EstadoDespacho }))}
-                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                                                        despachoForm.estado === e.id
-                                                            ? `${e.bg} ring-2 ring-offset-1`
-                                                            : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-200 dark:border-slate-700 hover:border-gray-300'
-                                                    }`}
-                                                >
-                                                    <Icon icon={e.icon} width={13} />{e.value}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <InputPro
-                                        name="observaciones"
-                                        isLabel
-                                        label="Observaciones"
-                                        placeholder="Notas adicionales sobre el despacho..."
-                                        value={despachoForm.observaciones}
-                                        onChange={e => setDespachoForm(f => ({ ...f, observaciones: e.target.value }))}
-                                    />
-
-                                    <Button
-                                        color="primary"
-                                        fill
-                                        isLoading={savingEnvio}
-                                        onClick={handleSaveDespacho}
-                                    >
-                                        <Icon icon="solar:check-circle-bold" width={16} className="mr-1.5" />
-                                        {envio ? 'Actualizar despacho' : 'Crear seguimiento'}
-                                    </Button>
-                                </div>
-                            )}
-
-                            {/* Sin despacho todavía */}
-                            {!envio && !showDespachoForm && (
+                            ) : (
                                 <div className="text-center py-8 rounded-xl border border-dashed border-gray-200 dark:border-slate-700">
                                     <Icon icon="solar:delivery-linear" className="text-4xl text-gray-300 dark:text-slate-600 mx-auto mb-2" />
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Sin seguimiento de despacho</p>
-                                    <p className="text-xs text-gray-400 mt-1">Crea uno para rastrear el envío de este comprobante</p>
+                                    <p className="text-xs text-gray-400 mt-1">Créalo desde el Panel de Despacho</p>
                                 </div>
                             )}
                         </div>
@@ -703,19 +539,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
             )}
         </Modal>
 
-        <ModalConfirm
-            isOpenModal={confirmDevuelto}
-            setIsOpenModal={setConfirmDevuelto}
-            title="Marcar como Devuelto"
-            information="¿Estás seguro que deseas marcar este envío como Devuelto? Esta acción indica que el paquete regresó al origen y quedará registrado en el historial."
-            confirmText="Sí, marcar como Devuelto"
-            confirmLoading={savingEnvio}
-            confirmSubmit={() => {
-                setConfirmDevuelto(false);
-                handleCambiarEstado('DEVUELTO');
-            }}
-        />
-        </>
+</>
     );
 }
 
