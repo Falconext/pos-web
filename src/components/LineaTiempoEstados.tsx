@@ -15,19 +15,30 @@ interface LineaTiempoEstadosProps {
 const FLUJO_ESTADOS = [
     { key: 'PENDIENTE',       label: 'Pendiente',       icon: 'mdi:clock-outline',    color: '#F59E0B' },
     { key: 'CONFIRMADO',      label: 'Confirmado',      icon: 'mdi:check-circle',     color: '#3B82F6' },
-    { key: 'EN_PREPARACION',  label: 'En Preparación',  icon: 'mdi:chef-hat',         color: '#8B5CF6' },
-    { key: 'LISTO',           label: 'Listo para entrega', icon: 'mdi:package-variant', color: '#10B981' },
-    { key: 'ENTREGADO',       label: 'Entregado',       icon: 'mdi:check-all',        color: '#6B7280' },
+    { key: 'EN_TRANSITO',     label: 'En tránsito',     icon: 'mdi:truck-fast',       color: '#4F46E5' },
+    { key: 'ENTREGADO_COMPLETADO', label: 'Entregado',  icon: 'mdi:check-all',        color: '#10B981' },
 ];
 
 const CANCELADO = { key: 'CANCELADO', label: 'Cancelado', icon: 'mdi:close-circle', color: '#EF4444' };
+const CANCELADOS = new Set(['CANCELADO', 'CANCELADO_INTERNO', 'CANCELADO_CLIENTE']);
+
+const normalizeEstado = (estado: string) => {
+    if (estado === 'ENTREGADO') return 'ENTREGADO_COMPLETADO';
+    if (estado === 'EN_PREPARACION' || estado === 'LISTO' || estado === 'REPROGRAMADO') return 'CONFIRMADO';
+    if (CANCELADOS.has(estado)) return 'CANCELADO';
+    return estado;
+};
 
 export default function LineaTiempoEstados({ historial, estadoActual }: LineaTiempoEstadosProps) {
-    const esCancelado = estadoActual === 'CANCELADO';
+    const estadoActualNormalizado = normalizeEstado(estadoActual);
+    const esCancelado = estadoActualNormalizado === 'CANCELADO';
     const estados = esCancelado ? [CANCELADO] : FLUJO_ESTADOS;
 
     const getTimestamp = (estadoKey: string): string | null => {
-        const entry = historial.find(h => h.estadoNuevo === estadoKey);
+        const entry = historial.find(h => (
+            normalizeEstado(h.estadoNuevo) === estadoKey ||
+            (h.notas ?? '').includes(`Entrega: ${estadoKey}`)
+        ));
         if (!entry) return null;
         return new Date(entry.creadoEn).toLocaleString('es-PE', {
             day: '2-digit',
@@ -37,7 +48,7 @@ export default function LineaTiempoEstados({ historial, estadoActual }: LineaTie
         });
     };
 
-    const currentIdx = estados.findIndex(e => e.key === estadoActual);
+    const currentIdx = estados.findIndex(e => e.key === estadoActualNormalizado);
 
     return (
         <div className="space-y-0">

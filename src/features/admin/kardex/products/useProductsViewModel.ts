@@ -278,13 +278,18 @@ export const useProductsViewModel = () => {
             return;
         }
         if (success === true) {
+            const wasEdit = state.isEdit;
             setState(prev => ({
                 ...prev,
                 isOpenModal: false,
                 isEdit: false,
                 formValues: { ...initialProductForm, ...farmaciaIgvDefault },
             }));
-            void fetchProductsListRef.current();
+            // En edición no re-fetcheamos — upsertProductLocal ya actualizó el estado local
+            // incluyendo la nueva imagen subida a S3. Re-fetchear pisaría esa actualización.
+            if (!wasEdit) {
+                void fetchProductsListRef.current();
+            }
         }
     }, [success]); // eslint-disable-line react-hooks/exhaustive-deps
 

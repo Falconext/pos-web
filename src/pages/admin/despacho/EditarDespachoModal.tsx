@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { Calendar } from "@/components/Date";
 import Select from "@/components/Select";
 import moment from "moment";
-import { useRepartidoresStore } from "@/zustand/repartidores";
+import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
+import { useRepartidoresStore } from "@/zustand/repartidores";
 
 export const COURIERS = [
     { value: 'SHALOM_PRO', label: 'Shalom PRO' },
@@ -26,19 +27,8 @@ const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
 
 const inp = "w-full h-10 px-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all placeholder:text-slate-400";
 const lbl = "block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5";
-const invalidInp = "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-red-400/20";
 
-type EnvioValidationErrors = Partial<Record<
-    'transportista' | 'establecimiento' | 'claveEnvio' | 'claveOrden' | 'agenciaDestino' |
-    'tipoEnvio' | 'celularDest' | 'nroPaquetes' | 'turnoEnvio' | 'fechaEstimada' |
-    'tipoMercaderia' | 'repartidor' | 'empaquetador',
-    string
->>;
-
-const text = (value: unknown) => String(value ?? '').trim();
-const onlyDigits = (value: unknown) => text(value).replace(/\D/g, '');
-
-function PasswordField({ value, onChange, placeholder, invalid }: { value: string; onChange: (v: string) => void; placeholder?: string; invalid?: boolean }) {
+function PasswordField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
     const [show, setShow] = useState(false);
     return (
         <div className="relative">
@@ -47,7 +37,7 @@ function PasswordField({ value, onChange, placeholder, invalid }: { value: strin
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                className={`${inp} pr-10 ${invalid ? invalidInp : ''}`}
+                className={inp + ' pr-10'}
             />
             <button
                 type="button"
@@ -60,82 +50,109 @@ function PasswordField({ value, onChange, placeholder, invalid }: { value: strin
     );
 }
 
-function Field({ label, children, error, required }: { label: string; children: React.ReactNode; error?: string; required?: boolean }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div>
-            <label className={lbl}>{label}{required ? <span className="text-red-400"> *</span> : null}</label>
+            <label className={lbl}>{label}</label>
             {children}
-            {error ? <p className="mt-1 text-[11px] font-semibold text-red-500">{error}</p> : null}
         </div>
     );
 }
 
-export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
-    const { setEnvioActivo, envioData, setEnvioData } = vm;
-    const [errors, setErrors] = useState<EnvioValidationErrors>({});
+export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { comprobanteId: number; onClose: () => void; onSuccess: () => void }) {
+    const [envioData, setEnvioData] = useState<any>({
+        transportista: '',
+        codigoGuia: '',
+        observaciones: '',
+        tipoEnvio: 'DOMICILIO',
+        agenciaDestino: '',
+        celularDest: '',
+        nroPaquetes: 1,
+        turnoEnvio: '',
+        tipoMercaderia: '',
+        claveEnvio: '',
+        nroOrden: '',
+        claveOrden: '',
+        establecimiento: '',
+        repartidorId: '',
+        repartidor: '',
+        empaquetador: '',
+        fechaEstimada: '',
+    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const { alert } = useAlertStore();
-
-    const set = (field: string, value: any) => {
-        setErrors(prev => {
-            if (!(field in prev)) return prev;
-            const next = { ...prev };
-            delete next[field as keyof EnvioValidationErrors];
-            return next;
-        });
-        setEnvioData((prev: any) => ({ ...prev, [field]: value }));
-    };
-
     const { repartidores, fetchRepartidores } = useRepartidoresStore();
 
-    useEffect(() => { void fetchRepartidores(); }, [fetchRepartidores]);
+    useEffect(() => {
+        const fetchDespacho = async () => {
+            try {
+                const [, despachoResp, comprobanteResp] = await Promise.all([
+                    fetchRepartidores(),
+                    apiClient.get<any>(`/envio-despacho/comprobante/${comprobanteId}`),
+                    apiClient.get<any>(`/comprobante/${comprobanteId}`).catch(() => null),
+                ]);
+                const data = despachoResp.data;
+                const payload = data?.data ?? data;
+                const comprobantePayload = comprobanteResp?.data?.data ?? comprobanteResp?.data ?? null;
+                const vendedorNombre = comprobantePayload?.usuario?.nombre ?? '';
+                if (payload) {
+                    setEnvioData({
+                        transportista: payload.transportista || '',
+                        codigoGuia: payload.codigoGuia || '',
+                        observaciones: payload.observaciones || '',
+                        tipoEnvio: payload.tipoEnvio || 'DOMICILIO',
+                        agenciaDestino: payload.agenciaDestino || '',
+                        celularDest: payload.celularDest || '',
+                        nroPaquetes: payload.nroPaquetes || 1,
+                        turnoEnvio: payload.turnoEnvio || '',
+                        tipoMercaderia: payload.tipoMercaderia || '',
+                        claveEnvio: payload.claveEnvio || '',
+                        nroOrden: payload.nroOrden || '',
+                        claveOrden: payload.claveOrden || '',
+                        establecimiento: payload.establecimiento || '',
+                        repartidorId: payload.repartidorId ? String(payload.repartidorId) : '',
+                        repartidor: payload.repartidor || '',
+                        empaquetador: payload.empaquetador || vendedorNombre || '',
+                        fechaEstimada: payload.fechaEstimada ? moment(payload.fechaEstimada).format('YYYY-MM-DD') : '',
+                    });
+                }
+            } catch (error) {
+                alert('No se pudo cargar el despacho', 'error');
+                onClose();
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDespacho();
+    }, [comprobanteId, alert, fetchRepartidores, onClose]);
+
+    const set = (field: string, value: any) =>
+        setEnvioData((prev: any) => ({ ...prev, [field]: value }));
 
     const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
     const esPropio = envioData.transportista === 'PROPIOS';
-    const inputClass = (field: keyof EnvioValidationErrors) => `${inp} ${errors[field] ? invalidInp : ''}`;
 
-    const validate = () => {
-        const next: EnvioValidationErrors = {};
-        const celular = onlyDigits(envioData.celularDest);
-        const paquetes = Number(envioData.nroPaquetes);
-        const fecha = text(envioData.fechaEstimada);
-        const fechaValida = fecha ? moment(fecha, 'YYYY-MM-DD', true).isValid() : false;
-
-        if (!text(envioData.transportista)) next.transportista = 'Selecciona un courier o tipo de reparto.';
-        if (!text(envioData.establecimiento)) next.establecimiento = 'Indica desde qué local saldrá el despacho.';
-        if (!text(envioData.agenciaDestino)) {
-            next.agenciaDestino = envioData.tipoEnvio === 'DOMICILIO'
-                ? 'Ingresa la dirección de entrega.'
-                : 'Ingresa la agencia de destino.';
+    const handleConfirmar = async () => {
+        setSaving(true);
+        try {
+            const payload = {
+                ...envioData,
+                repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
+                repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
+            };
+            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, payload);
+            alert('Despacho actualizado correctamente', 'success');
+            onSuccess();
+        } catch (error) {
+            alert('Error al actualizar el despacho', 'error');
+        } finally {
+            setSaving(false);
         }
-        if (!['AGENCIA', 'DOMICILIO'].includes(text(envioData.tipoEnvio))) next.tipoEnvio = 'Selecciona el tipo de envío.';
-        if (celular.length !== 9 || !celular.startsWith('9')) next.celularDest = 'Ingresa un celular peruano válido de 9 dígitos.';
-        if (!Number.isFinite(paquetes) || paquetes < 1) next.nroPaquetes = 'Debe ser 1 paquete como mínimo.';
-        if (!['MANANA', 'TARDE', 'NOCHE'].includes(text(envioData.turnoEnvio))) next.turnoEnvio = 'Selecciona un turno.';
-        if (!fechaValida) next.fechaEstimada = 'Selecciona una fecha válida de despacho.';
-        if (!text(envioData.empaquetador)) next.empaquetador = 'Indica quién prepara el pedido.';
-
-        if (esShalom) {
-            if (!text(envioData.claveEnvio)) next.claveEnvio = 'La clave de envío es obligatoria para Shalom.';
-            if (!text(envioData.claveOrden)) next.claveOrden = 'La clave de orden es obligatoria para Shalom.';
-            if (!text(envioData.tipoMercaderia)) next.tipoMercaderia = 'Indica el tipo de mercadería.';
-        }
-
-        if (esPropio && !text(envioData.repartidor)) next.repartidor = 'Selecciona o ingresa un repartidor.';
-
-        setErrors(next);
-        return next;
     };
 
-    const handleConfirmar = () => {
-        const nextErrors = validate();
-        if (Object.keys(nextErrors).length > 0) {
-            alert('Completa los datos obligatorios del despacho antes de confirmar el envío.', 'warning');
-            return;
-        }
-        setEnvioActivo(true);
-        onClose();
-    };
+    if (loading) return null;
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -147,11 +164,11 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-                                <Icon icon="solar:delivery-bold-duotone" className="text-white text-xl" />
+                                <Icon icon="solar:pen-bold-duotone" className="text-white text-xl" />
                             </div>
                             <div>
-                                <h2 className="text-white font-black text-lg leading-none">Coordinación de Envío</h2>
-                                <p className="text-indigo-200 text-xs mt-0.5">Courier · Datos de despacho y entrega</p>
+                                <h2 className="text-white font-black text-lg leading-none">Editar Despacho</h2>
+                                <p className="text-indigo-200 text-xs mt-0.5">Actualizar datos de envío o agregar número de guía</p>
                             </div>
                         </div>
                         <button type="button" onClick={onClose}
@@ -164,7 +181,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                     <div className="mt-4 flex flex-wrap gap-2">
                         {COURIERS.map(c => (
                             <button key={c.value} type="button" onClick={() => set('transportista', c.value)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${errors.transportista ? 'ring-2 ring-red-300/70' : ''} ${envioData.transportista === c.value
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${envioData.transportista === c.value
                                         ? 'bg-white text-indigo-700 shadow-lg shadow-indigo-900/20'
                                         : 'bg-white/15 text-white/80 hover:bg-white/25'
                                     }`}>
@@ -172,11 +189,25 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                             </button>
                         ))}
                     </div>
-                    {errors.transportista ? <p className="mt-2 text-xs font-semibold text-red-100">{errors.transportista}</p> : null}
                 </div>
 
                 {/* Body — scrollable */}
                 <div className="overflow-y-auto p-6 space-y-4 flex-1">
+
+                    {/* Código de Guía (Importante para la vista de edición) */}
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <Icon icon="solar:barcode-bold-duotone" className="text-indigo-400" />
+                            Rastreo
+                        </p>
+                        <div className="grid grid-cols-1 gap-3">
+                            <Field label="Código de Guía / Rastreo">
+                                <input type="text" value={envioData.codigoGuia}
+                                    onChange={e => set('codigoGuia', e.target.value)}
+                                    placeholder="Nro de guía de remisión o courier" className={inp} />
+                            </Field>
+                        </div>
+                    </div>
 
                     {/* SECCIÓN 1: Establecimiento + Clave envío + Clave orden */}
                     <div>
@@ -185,16 +216,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                             Origen del despacho
                         </p>
                         <div className="grid grid-cols-3 gap-3">
-                            <Field label="Establecimiento" required error={errors.establecimiento}>
+                            <Field label="Establecimiento">
                                 <input type="text" value={envioData.establecimiento}
                                     onChange={e => set('establecimiento', e.target.value)}
-                                    placeholder="Ej: Local 2 - Lima" className={inputClass('establecimiento')} />
+                                    placeholder="Ej: Local 2 - Lima" className={inp} />
                             </Field>
-                            <Field label="Clave envío" required={esShalom} error={errors.claveEnvio}>
-                                <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío" invalid={Boolean(errors.claveEnvio)} />
+                            <Field label="Clave envío">
+                                <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío" />
                             </Field>
-                            <Field label="Clave orden" required={esShalom} error={errors.claveOrden}>
-                                <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="Clave orden" invalid={Boolean(errors.claveOrden)} />
+                            <Field label="Clave orden">
+                                <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="Clave orden" />
                             </Field>
                         </div>
                     </div>
@@ -206,16 +237,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                             Datos de entrega
                         </p>
                        <div className="mt-4 mb-4">
-                       <Field label={envioData.tipoEnvio === 'AGENCIA' ? 'Agencia de destino' : 'Dirección de entrega'} required error={errors.agenciaDestino}>
+                       <Field label="Agencia de destino / Dirección">
                             <input type="text" value={envioData.agenciaDestino}
                                 onChange={e => set('agenciaDestino', e.target.value)}
                                 placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Shalom Cusco Centro' : 'Dirección de entrega'}
-                                className={inputClass('agenciaDestino')} />
+                                className={inp} />
                         </Field>
                        </div>
                         <div className="grid grid-cols-2 gap-3">
 
-                            <Field label="Tipo de envío" required error={errors.tipoEnvio}>
+                            <Field label="Tipo de envío">
                                 <div className="flex gap-2 w-full">
                                     {[
                                         { value: 'AGENCIA', label: 'Para agencia', icon: 'solar:buildings-2-bold-duotone' },
@@ -238,16 +269,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
 
                     {/* SECCIÓN 3: Celular + Paquetes + Turno + Fecha + N° Orden */}
                     <div className="grid grid-cols-3 gap-3">
-                        <Field label="Celular destinatario" required error={errors.celularDest}>
+                        <Field label="Celular destinatario">
                             <input type="text" value={envioData.celularDest}
-                                onChange={e => set('celularDest', e.target.value.replace(/\D/g, '').slice(0, 9))}
-                                placeholder="9XXXXXXXX" className={inputClass('celularDest')} />
+                                onChange={e => set('celularDest', e.target.value)}
+                                placeholder="9XXXXXXXX" className={inp} />
                         </Field>
-                        <Field label="N° Paquetes" required error={errors.nroPaquetes}>
+                        <Field label="N° Paquetes">
                             <input type="number" min={1} value={envioData.nroPaquetes}
-                                onChange={e => set('nroPaquetes', Number(e.target.value))} className={inputClass('nroPaquetes')} />
+                                onChange={e => set('nroPaquetes', Number(e.target.value))} className={inp} />
                         </Field>
-                        <Field label="Turno" required error={errors.turnoEnvio}>
+                        <Field label="Turno">
                             <Select
                                 label=""
                                 name="turnoEnvio"
@@ -268,7 +299,6 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 set('fechaEstimada', parsed.isValid() ? parsed.format('YYYY-MM-DD') : '');
                             }}
                         />
-                        {errors.fechaEstimada ? <p className="-mt-2 text-[11px] font-semibold text-red-500">{errors.fechaEstimada}</p> : null}
                         <Field label="N° Orden courier">
                             <input type="text" value={envioData.nroOrden}
                                 onChange={e => set('nroOrden', e.target.value)}
@@ -276,10 +306,10 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                         </Field>
                         {/* Tipo mercadería: solo Shalom */}
                         {esShalom && (
-                            <Field label="Tipo mercadería (Shalom)" required error={errors.tipoMercaderia}>
+                            <Field label="Tipo mercadería (Shalom)">
                                 <input type="text" value={envioData.tipoMercaderia}
                                     onChange={e => set('tipoMercaderia', e.target.value)}
-                                    placeholder="Ej: Frágil, Electrónico" className={inputClass('tipoMercaderia')} />
+                                    placeholder="Ej: Frágil, Electrónico" className={inp} />
                             </Field>
                         )}
                     </div>
@@ -292,35 +322,35 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             {esPropio && (
-                                <Field label="Repartidor" required error={errors.repartidor}>
+                                <Field label="Repartidor">
                                     {repartidores.length > 0 ? (
                                         <select
-                                            value={envioData.repartidorId ?? ''}
+                                            value={envioData.repartidorId}
                                             onChange={e => {
+                                                set('repartidorId', e.target.value);
                                                 const selected = repartidores.find(r => String(r.id) === e.target.value);
-                                                set('repartidorId', selected ? selected.id : null);
                                                 set('repartidor', selected?.nombre ?? '');
                                             }}
-                                            className={inputClass('repartidor')}
+                                            className={inp}
                                         >
                                             <option value="">Seleccionar repartidor</option>
                                             {repartidores.map(r => (
                                                 <option key={r.id} value={r.id}>
-                                                    {r.nombre}{r.celular ? ` · ${r.celular}` : ''}
+                                                    {r.nombre}{r.celular ? ` · ${r.celular}` : ''}{r.sede?.nombre ? ` · ${r.sede.nombre}` : ''}
                                                 </option>
                                             ))}
                                         </select>
                                     ) : (
                                         <input type="text" value={envioData.repartidor}
                                             onChange={e => set('repartidor', e.target.value)}
-                                            placeholder="Nombre del repartidor" className={inputClass('repartidor')} />
+                                            placeholder="Nombre del repartidor" className={inp} />
                                     )}
                                 </Field>
                             )}
-                            <Field label="Empaquetador" required error={errors.empaquetador}>
+                            <Field label="Empaquetador">
                                 <input type="text" value={envioData.empaquetador}
                                     onChange={e => set('empaquetador', e.target.value)}
-                                    placeholder="Nombre del empaquetador" className={inputClass('empaquetador')} />
+                                    placeholder="Nombre del empaquetador" className={inp} />
                             </Field>
                         </div>
                     </div>
@@ -349,14 +379,18 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
 
                 {/* Footer */}
                 <div className="px-6 pb-6 pt-3 flex gap-3 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onClick={onClose}
+                    <button type="button" onClick={onClose} disabled={saving}
                         className="flex-1 h-11 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         Cancelar
                     </button>
-                    <button type="button" onClick={handleConfirmar}
+                    <button type="button" onClick={handleConfirmar} disabled={saving}
                         className="flex-[2] h-11 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-                        <Icon icon="solar:check-circle-bold" className="text-lg" />
-                        Confirmar envío
+                        {saving ? (
+                            <Icon icon="eos-icons:loading" className="text-lg" />
+                        ) : (
+                            <Icon icon="solar:check-circle-bold" className="text-lg" />
+                        )}
+                        Guardar cambios
                     </button>
                 </div>
             </div>

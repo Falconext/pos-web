@@ -12,6 +12,7 @@ import {
   usePedidosViewModel,
 } from '@/features/admin/tienda/usePedidosViewModel';
 import { PedidoDetalleDrawer } from './PedidoDetalleDrawer';
+import { useNavigate } from 'react-router-dom';
 
 const money = (value: number) => `S/ ${value.toFixed(2)}`;
 
@@ -107,10 +108,35 @@ function SellerCell({ nombre }: { nombre: string }) {
   );
 }
 
+const pedidoPuedeDocumentarse = (pedido: PedidoTiendaAdmin) => (
+  pedido.saldoPendiente <= 0.01 || pedido.estadoEntrega === 'ENTREGADO_COMPLETADO' || pedido.estadoEnvio === 'ENTREGADO'
+);
+
 export default function PedidosTienda() {
   const vm = usePedidosViewModel();
+  const navigate = useNavigate();
   const [selectedPedido, setSelectedPedido] = useState<PedidoTiendaAdmin | null>(null);
   const [confirmPago, setConfirmPago] = useState<PedidoTiendaAdmin | null>(null);
+
+  const navegarComprobantePedido = (pedido: PedidoTiendaAdmin, defaultType: 'BOLETA' | 'FACTURA') => {
+    navigate('/administrador/facturacion/nuevo', {
+      state: {
+        defaultType,
+        defaultClient: 'CLIENTES_VARIOS',
+        fromPedidoTienda: true,
+        pedidoTiendaData: pedido,
+      },
+    });
+  };
+
+  const navegarGuiaPedido = (pedido: PedidoTiendaAdmin) => {
+    navigate('/administrador/guia-remision', {
+      state: {
+        fromPedidoTienda: true,
+        pedidoTiendaGuia: pedido,
+      },
+    });
+  };
 
   if (vm.loading) {
     return (
@@ -195,6 +221,33 @@ export default function PedidosTienda() {
       ),
       'Acciones': (
         <div className="flex items-center gap-2">
+          {pedidoPuedeDocumentarse(pedido) && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); navegarComprobantePedido(pedido, 'BOLETA'); }}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500 text-white transition hover:bg-violet-600"
+                title="Hacer boleta"
+              >
+                <Icon icon="solar:bill-list-bold" className="h-4 w-4" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); navegarComprobantePedido(pedido, 'FACTURA'); }}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700"
+                title="Hacer factura"
+              >
+                <Icon icon="solar:document-add-bold" className="h-4 w-4" />
+              </button>
+              {pedido.tipoEntrega === 'ENVIO' && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); navegarGuiaPedido(pedido); }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600"
+                  title="Hacer guía de remisión"
+                >
+                  <Icon icon="solar:route-bold-duotone" className="h-4 w-4" />
+                </button>
+              )}
+            </>
+          )}
           {pedido.clienteTelefono && (
             <a
               href={vm.buildWhatsappUrl(pedido, pedido.estadoEntrega) || undefined}
@@ -214,6 +267,18 @@ export default function PedidosTienda() {
           >
             <Icon icon="solar:eye-bold" className="h-4 w-4" />
           </button>
+          {pedido.tipoEntrega === 'ENVIO' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/administrador/despacho?fecha=${pedido.creadoEn.slice(0, 10)}&pedidoId=${pedido.id}`);
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500 text-white transition hover:bg-indigo-600"
+              title="Ver en despacho"
+            >
+              <Icon icon="solar:delivery-bold-duotone" className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ),
     };

@@ -119,6 +119,7 @@ export const FacturacionNuevoView = () => {
                     formValues={vm.formValues}
                     observation={vm.formValues?.observaciones}
                     isPendiente={vm.isComprobantePendiente}
+                    hasDespacho={vm.despachoCreado}
                 />
             )}
 

@@ -6,7 +6,7 @@ import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 import Footer from '@/components/tienda/Footer';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
-const TERMINAL_STATES = ['ENTREGADO', 'CANCELADO'];
+const TERMINAL_STATES = ['ENTREGADO', 'ENTREGADO_COMPLETADO', 'CANCELADO', 'CANCELADO_INTERNO', 'CANCELADO_CLIENTE'];
 const POLLING_INTERVAL_MS = 30_000;
 
 export default function SeguimientoPedido() {
@@ -66,7 +66,8 @@ export default function SeguimientoPedido() {
             intervalRef.current = null;
         }
 
-        if (pedido && !TERMINAL_STATES.includes(pedido.estado)) {
+        const estadoSeguimiento = getEstadoSeguimiento(pedido);
+        if (pedido && !TERMINAL_STATES.includes(estadoSeguimiento)) {
             intervalRef.current = setInterval(() => {
                 fetchPedidoSilencioso(pedido.codigoSeguimiento);
             }, POLLING_INTERVAL_MS);
@@ -78,7 +79,7 @@ export default function SeguimientoPedido() {
                 intervalRef.current = null;
             }
         };
-    }, [pedido?.estado, pedido?.codigoSeguimiento, fetchPedidoSilencioso]);
+    }, [pedido?.estado, pedido?.estadoEntrega, pedido?.codigoSeguimiento, fetchPedidoSilencioso]);
 
     // Helpers de diseño
     const diseno = tienda?.diseno || {};
@@ -169,14 +170,23 @@ export default function SeguimientoPedido() {
         });
     };
 
+    const getEstadoSeguimiento = (pedidoActual: any) => (
+        pedidoActual?.estadoEntrega || pedidoActual?.estado || 'PENDIENTE'
+    );
+
     const getEstadoColor = (estado: string) => {
         const colors: any = {
             PENDIENTE: 'bg-yellow-100 text-yellow-800',
             CONFIRMADO: 'bg-blue-100 text-blue-800',
+            EN_TRANSITO: 'bg-indigo-100 text-indigo-800',
+            REPROGRAMADO: 'bg-orange-100 text-orange-800',
             EN_PREPARACION: 'bg-purple-100 text-purple-800',
             LISTO: 'bg-green-100 text-green-800',
             ENTREGADO: 'bg-gray-100 text-gray-800',
+            ENTREGADO_COMPLETADO: 'bg-green-100 text-green-800',
             CANCELADO: 'bg-red-100 text-red-800',
+            CANCELADO_INTERNO: 'bg-red-100 text-red-800',
+            CANCELADO_CLIENTE: 'bg-red-100 text-red-800',
         };
         return colors[estado] || 'bg-gray-100 text-gray-800';
     };
@@ -185,10 +195,15 @@ export default function SeguimientoPedido() {
         const labels: any = {
             PENDIENTE: 'Pendiente',
             CONFIRMADO: 'Confirmado',
+            EN_TRANSITO: 'En tránsito',
+            REPROGRAMADO: 'Reprogramado',
             EN_PREPARACION: 'En Preparación',
             LISTO: 'Listo',
             ENTREGADO: 'Entregado',
+            ENTREGADO_COMPLETADO: 'Entregado - Completado',
             CANCELADO: 'Cancelado',
+            CANCELADO_INTERNO: 'Cancelado',
+            CANCELADO_CLIENTE: 'Cancelado',
         };
         return labels[estado] || estado;
     };
@@ -255,6 +270,7 @@ export default function SeguimientoPedido() {
                     )}
 
                     {pedido && (() => {
+                        const estadoSeguimiento = getEstadoSeguimiento(pedido);
                         const tiempoBase = (pedido?.empresa as any)?.tiempoPreparacionMin ?? 20;
                         const estimada = new Date(new Date(pedido.creadoEn).getTime() + tiempoBase * 60000);
                         const horaEstimada = estimada.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' });
@@ -290,7 +306,7 @@ export default function SeguimientoPedido() {
                                                 <Icon icon={copiedLink ? 'mdi:check' : 'mdi:share-variant'} className="w-3.5 h-3.5" />
                                                 {copiedLink ? '¡Copiado!' : 'Compartir'}
                                             </button>
-                                            {!TERMINAL_STATES.includes(pedido.estado) && (
+                                            {!TERMINAL_STATES.includes(estadoSeguimiento) && (
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                                                     <span className="text-xs text-gray-500">
@@ -301,12 +317,12 @@ export default function SeguimientoPedido() {
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between mb-5 gap-3">
-                                        <span className={`px-3 py-1.5 ${borderRadius} text-xs font-bold ${getEstadoColor(pedido.estado)}`}>{getEstadoLabel(pedido.estado)}</span>
+                                        <span className={`px-3 py-1.5 ${borderRadius} text-xs font-bold ${getEstadoColor(estadoSeguimiento)}`}>{getEstadoLabel(estadoSeguimiento)}</span>
                                         <div className="text-xs md:text-sm text-gray-500">{new Date(pedido.creadoEn).toLocaleString('es-PE')}</div>
                                     </div>
 
                                     {pedido.historialEstados && pedido.historialEstados.length > 0 ? (
-                                        <LineaTiempoEstados historial={pedido.historialEstados} estadoActual={pedido.estado} />
+                                        <LineaTiempoEstados historial={pedido.historialEstados} estadoActual={estadoSeguimiento} />
                                     ) : (
                                         <p className="text-sm text-gray-500">No hay historial disponible.</p>
                                     )}

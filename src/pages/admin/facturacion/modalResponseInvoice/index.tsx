@@ -21,9 +21,10 @@ interface IProps {
     formValues?: any
     observation?: string
     isPendiente?: boolean
+    hasDespacho?: boolean
 }
 
-const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante, closeModal, handleOpenNewTab, formValues, isPendiente }: IProps) => {
+const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante, closeModal, handleOpenNewTab, formValues, isPendiente, hasDespacho }: IProps) => {
     const { resetInvoice, resetProductInvoice }: IInvoicesState = useInvoiceStore();
     const isMobile = useIsMobile();
     const navigate = useNavigate();
@@ -68,6 +69,12 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
         } else {
             navigate('/administrador/facturacion/comprobantes-informales');
         }
+    };
+
+    const goDespacho = () => {
+        resetInvoice();
+        resetProductInvoice();
+        navigate('/administrador/despacho');
     };
 
     const canShare = dataReceipt?.id != null && dataReceipt.id !== 0;
@@ -176,6 +183,15 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                                     {comprobante === 'COTIZACIÓN' ? 'Ver lista' : 'Ver lista'}
                                 </button>
                             </div>
+                            {hasDespacho && (
+                                <button
+                                    onClick={goDespacho}
+                                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors active:scale-95"
+                                >
+                                    <Icon icon="solar:delivery-bold-duotone" className="text-lg" />
+                                    Ver despacho
+                                </button>
+                            )}
                             <button
                                 onClick={() => closeModal()}
                                 className="w-full py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold transition-colors active:scale-95"

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import moment from "moment";
 import Button from "@/components/Button";
@@ -35,6 +35,7 @@ const MOTIVOS_TRASLADO: Record<string, string> = {
 
 const GuiaRemision = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { getAllGuiasRemision, guiasRemision, enviarSunat, deleteGuiaRemision, downloadPdf } = useGuiaRemisionStore();
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -83,6 +84,66 @@ const GuiaRemision = () => {
     // Filtros
     const [fechaInicio, setFechaInicio] = useState(moment().format('YYYY-MM-DD'));
     const [fechaFin, setFechaFin] = useState(moment().format('YYYY-MM-DD'));
+
+    useEffect(() => {
+        const state = location.state as any;
+        if (state?.fromDespachoComprobante && state?.comprobanteGuia) {
+            const comprobante = state.comprobanteGuia;
+            setGuiaToEdit({
+                tipoGuia: "REMITENTE",
+                serie: "T001",
+                tipoDocumento: "09",
+                destinatarioTipoDoc: String(comprobante.clienteNroDoc || '').length === 11 ? "6" : "1",
+                destinatarioNumDoc: comprobante.clienteNroDoc || "10000000",
+                destinatarioRazonSocial: comprobante.clienteNombre || "CLIENTES VARIOS",
+                tipoTraslado: "01",
+                modoTransporte: comprobante.agenciaEnvio === "PROPIOS" ? "02" : "01",
+                pesoTotal: 1,
+                unidadPeso: "KGM",
+                llegadaDireccion: comprobante.clienteDireccion || "",
+                fechaInicioTraslado: moment().format("YYYY-MM-DD"),
+                observaciones: `Comprobante origen: ${comprobante.referencia}`,
+                detalles: Array.isArray(comprobante.items) ? comprobante.items.map((item: any) => ({
+                    productoId: item.productoId || undefined,
+                    codigoProducto: item.codigo || "",
+                    descripcion: item.descripcion || "Producto",
+                    cantidad: Number(item.cantidad || 1),
+                    unidadMedida: item.unidad || "NIU",
+                })) : [],
+            });
+            setIsModalOpen(true);
+            window.history.replaceState({}, document.title);
+            return;
+        }
+
+        if (!state?.fromPedidoTienda || !state?.pedidoTiendaGuia) return;
+
+        const pedido = state.pedidoTiendaGuia;
+        setGuiaToEdit({
+            tipoGuia: "REMITENTE",
+            serie: "T001",
+            tipoDocumento: "09",
+            destinatarioTipoDoc: "1",
+            destinatarioNumDoc: "10000000",
+            destinatarioRazonSocial: pedido.clienteNombre || "CLIENTES VARIOS",
+            tipoTraslado: "01",
+            modoTransporte: pedido.agenciaEnvio === "PROPIOS" ? "02" : "01",
+            pesoTotal: 1,
+            unidadPeso: "KGM",
+            llegadaDireccion: pedido.clienteDireccion || "",
+            fechaInicioTraslado: moment().format("YYYY-MM-DD"),
+            observaciones: `Pedido tienda: ${pedido.codigoSeguimiento}`,
+            detalles: Array.isArray(pedido.items) ? pedido.items.map((item: any) => ({
+                productoId: item.productoId || item.producto?.id || undefined,
+                codigoProducto: item.producto?.codigo || "",
+                descripcion: item.producto?.descripcion || "Producto",
+                cantidad: Number(item.cantidad || 1),
+                unidadMedida: "NIU",
+            })) : [],
+        });
+        setIsModalOpen(true);
+        window.history.replaceState({}, document.title);
+    }, [location.state]);
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
 
     useEffect(() => {

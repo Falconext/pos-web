@@ -34,7 +34,6 @@ export default function VendedoresView() {
             <div className="flex flex-col gap-4">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Icon icon="solar:cup-star-bold-duotone" className="text-amber-500" width={22} />
                         Ranking Vendedores
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">

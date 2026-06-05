@@ -33,6 +33,8 @@ import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
 import DespachoView from './pages/admin/despacho/DespachoView'
+import DespachoConfigPage from './pages/admin/despacho/DespachoConfigPage'
+import RepartidoresView from './pages/admin/repartidores/RepartidoresView'
 import CombosTienda from './pages/admin/tienda/Combos'
 import ModificadoresTienda from './pages/admin/tienda/Modificadores'
 import TiendaPublica from './pages/tienda/[slug]'
@@ -155,6 +157,8 @@ function App() {
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
           <Route path="despacho" element={<DespachoView />} />
+          <Route path="despacho/config" element={<DespachoConfigPage />} />
+          <Route path="repartidores" element={<RepartidoresView />} />
           <Route path="tienda/combos" element={<CombosTienda />} />
           <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
           {/* Rutas de ADMIN_SISTEMA */}

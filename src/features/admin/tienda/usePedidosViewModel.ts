@@ -60,6 +60,7 @@ interface PaginatedResponse<T> {
 }
 
 interface ProductoPedido {
+    id?: number | null;
     codigo?: string | null;
     descripcion?: string | null;
     imagenUrl?: string | null;
@@ -67,6 +68,7 @@ interface ProductoPedido {
 
 export interface PedidoItemTienda {
     id: number;
+    productoId?: number | null;
     cantidad: number;
     precioUnit: number;
     subtotal: number;
@@ -151,10 +153,12 @@ const normalizarItem = (raw: unknown): PedidoItemTienda => {
 
     return {
         id: toNumber(item.id),
+        productoId: toNumber(item.productoId ?? producto?.id),
         cantidad: toNumber(item.cantidad),
         precioUnit: toNumber(item.precioUnit ?? item.precioUnitario),
         subtotal: toNumber(item.subtotal),
         producto: producto ? {
+            id: toNumber(producto.id),
             codigo: asString(producto.codigo, ''),
             descripcion: asString(producto.descripcion, 'Producto'),
             imagenUrl: asString(producto.imagenUrl, ''),
@@ -362,10 +366,15 @@ export const usePedidosViewModel = () => {
 
     const buildWhatsappUrl = (pedido: PedidoTiendaAdmin, nuevoEstado: string) => {
         const estadoLabel = getEntregaInfo(nuevoEstado)?.label ?? getEstadoInfo(nuevoEstado)?.label ?? nuevoEstado;
-        const telefono = (pedido.clienteTelefono || '').replace(/\D/g, '');
-        if (!telefono) return null;
+        const digits = (pedido.clienteTelefono || '').replace(/\D/g, '');
+        if (!digits) return null;
+        const telefono = digits.startsWith('51') ? digits : `51${digits}`;
+        const seguimiento = `${window.location.origin}/tienda/seguimiento?codigo=${encodeURIComponent(pedido.codigoSeguimiento)}`;
+        const envio = pedido.tipoEntrega === 'ENVIO'
+            ? `\nDestino: ${pedido.clienteDireccion || 'por coordinar'}`
+            : '\nModalidad: Recojo en tienda';
         const msg = encodeURIComponent(
-            `Hola ${pedido.clienteNombre}, tu pedido ${pedido.codigoSeguimiento} fue actualizado a ${estadoLabel}. Gracias por tu preferencia.`
+            `Hola ${pedido.clienteNombre}, tu pedido ${pedido.codigoSeguimiento} está en estado: ${estadoLabel}.${envio}\nTotal: S/ ${pedido.total.toFixed(2)}\nSeguimiento: ${seguimiento}\nGracias por tu preferencia.`
         );
         return `https://wa.me/${telefono}?text=${msg}`;
     };

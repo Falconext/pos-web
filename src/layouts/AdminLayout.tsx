@@ -48,7 +48,10 @@ export default function AdminLayout() {
   const [isComprasSubmenuOpen, setIsComprasSubmenuOpen] = useState(false)
   const [isUsuariosSubmenuOpen, setIsUsuariosSubmenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // NUEVO ESTADO PARA DESKTOP
+  const autoCollapsePaths = ['/administrador/despacho', '/administrador/tienda/pedidos']
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
+    autoCollapsePaths.some(p => window.location.pathname.startsWith(p))
+  )
   const [isSedeMenuOpen, setIsSedeMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
   const sedeMenuRef = useRef<HTMLDivElement | null>(null)
@@ -206,6 +209,20 @@ export default function AdminLayout() {
     }
   }, [isSidebarOpen])
 
+  // Auto-colapsar sidebar solo al ENTRAR a rutas de Despacho/Pedidos desde otra ruta
+  const prevPathRef = useRef(location.pathname)
+  useEffect(() => {
+    const prev = prevPathRef.current
+    const curr = location.pathname
+    prevPathRef.current = curr
+    const wasAutoCollapse = autoCollapsePaths.some(p => prev.startsWith(p))
+    const isAutoCollapse = autoCollapsePaths.some(p => curr.startsWith(p))
+    // Solo forzar colapso al entrar desde una ruta que no era auto-collapse
+    if (isAutoCollapse && !wasAutoCollapse) setIsSidebarCollapsed(true)
+    // Expandir al salir de esas rutas
+    if (!isAutoCollapse && wasAutoCollapse) setIsSidebarCollapsed(false)
+  }, [location.pathname])
+
   const logout = () => {
     useAuthStore.getState().logout()
     navigate('/login', { replace: true })
@@ -292,7 +309,7 @@ export default function AdminLayout() {
         animate={reduceMotion ? { opacity: 1, x: 0 } : 'animate'}
       >
         {/* Logo area */}
-        <div className={`flex items-center mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
+        <div className={`flex items-center relative mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
           <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center justify-center w-10 h-10">
               <img src={sidebarBrand.logoWhite} alt={sidebarBrand.name} className="w-10 h-10 object-contain rounded-full" />
@@ -306,7 +323,7 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex items-center justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
+            className="hidden md:flex items-center absolute right-[-30px] z-[999999] justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
           >
             <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
           </button>
@@ -789,7 +806,7 @@ export default function AdminLayout() {
                 {auth?.empresa?.plan?.tieneTienda && (auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
                   <>
                     <div className="relative group/submenu">
-                      <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/tienda/pedidos'); } else { toggleAccordion('tienda'); } setNameNavbar('Tienda Virtual') }} className={location.pathname.includes('/administrador/tienda') ? theme.accordionActive : theme.accordionInactive} title="Tienda Virtual">
+                      <button onClick={() => { if (isSidebarCollapsed) { navigate('/administrador/tienda/pedidos'); } else { toggleAccordion('tienda'); } setNameNavbar('Tienda Virtual') }} className={(location.pathname.includes('/administrador/tienda') || location.pathname.includes('/administrador/despacho') || location.pathname.includes('/administrador/repartidores')) ? theme.accordionActive : theme.accordionInactive} title="Tienda Virtual">
                         <div className="flex items-center justify-center">
                           <Icon icon="solar:shop-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                           {!isSidebarCollapsed && <span>Tienda Virtual</span>}
@@ -803,11 +820,15 @@ export default function AdminLayout() {
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Pedidos</NavLink>
                           )}
                           <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/despacho" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Panel Despacho</NavLink>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/repartidores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Repartidores</NavLink>
                           {hasSubPermission(auth, 'tienda:modificadores') && (
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Modificadores</NavLink>
                           )}
                           {hasSubPermission(auth, 'tienda:configuracion') && (
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Configuración</NavLink>
+                          )}
+                          {auth?.rol === 'ADMIN_EMPRESA' && (
+                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/usuarios/vendedores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Ranking Vendedores</NavLink>
                           )}
                         </div>
                       )}
@@ -829,6 +850,9 @@ export default function AdminLayout() {
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/despacho" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                               Panel Despacho
                             </NavLink>
+                            <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/repartidores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                              Repartidores
+                            </NavLink>
                             {hasSubPermission(auth, 'tienda:modificadores') && (
                               <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                                 Modificadores
@@ -837,6 +861,11 @@ export default function AdminLayout() {
                             {hasSubPermission(auth, 'tienda:configuracion') && (
                               <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/configuracion" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                                 Configuración
+                              </NavLink>
+                            )}
+                            {auth?.rol === 'ADMIN_EMPRESA' && (
+                              <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Ranking Vendedores'); }} to="/administrador/usuarios/vendedores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
+                                Ranking Vendedores
                               </NavLink>
                             )}
                           </motion.div>
@@ -862,9 +891,6 @@ export default function AdminLayout() {
                       <motion.div variants={accordionReveal} initial="hidden" animate="visible" className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-slate-700 pl-3">
                         <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Usuarios') }} to="/administrador/usuarios" end className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                           Gestión de usuarios
-                        </NavLink>
-                        <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Ranking Vendedores') }} to="/administrador/usuarios/vendedores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                          Ranking Vendedores
                         </NavLink>
                       </motion.div>
                     )}

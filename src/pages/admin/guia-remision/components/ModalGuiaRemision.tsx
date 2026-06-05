@@ -172,9 +172,37 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             resetProducts();
             setCurrentStep(1);
 
-            if (guiaToEdit) {
+            if (guiaToEdit?.id) {
                 // Modo Edición
                 loadGuiaData(guiaToEdit);
+            } else if (guiaToEdit) {
+                const initialSerie = guiaToEdit.serie || "T001";
+                getSiguienteCorrelativo(initialSerie);
+                setFormValues(prev => ({
+                    ...prev,
+                    ...guiaToEdit,
+                    serie: initialSerie,
+                    correlativo: 0,
+                    fechaEmision: format(new Date(), "yyyy-MM-dd"),
+                    horaEmision: format(new Date(), "HH:mm:ss"),
+                    remitenteRuc: auth?.empresa?.ruc || prev.remitenteRuc,
+                    remitenteRazonSocial: auth?.empresa?.razonSocial || prev.remitenteRazonSocial,
+                    remitenteDireccion: auth?.empresa?.direccion || prev.remitenteDireccion,
+                    partidaUbigeo: auth?.empresa?.ubigeo || prev.partidaUbigeo,
+                    partidaDireccion: auth?.empresa?.direccion || prev.partidaDireccion,
+                    detalles: (guiaToEdit.detalles || []).map((d: any) => ({
+                        ...d,
+                        cantidad: Number(d.cantidad || 1),
+                    })),
+                }));
+                setNewItem({
+                    cantidad: 1,
+                    unidadMedida: "NIU"
+                });
+                setSelectedProductValue("");
+                setIsEditQtyModalOpen(false);
+                setEditingQtyIndex(null);
+                setEditingQtyValue(1);
             } else {
                 // Modo Creación
                 const initialSerie = "T001";
@@ -694,7 +722,7 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
             <Modal
                 isOpenModal={isOpen}
                 closeModal={onClose}
-                title={guiaToEdit ? `Editar Guía ${guiaToEdit.serie}-${guiaToEdit.correlativo}` : "Nueva Guía de Remisión"}
+                title={guiaToEdit?.id ? `Editar Guía ${guiaToEdit.serie}-${guiaToEdit.correlativo}` : "Nueva Guía de Remisión"}
                 icon="solar:delivery-bold-duotone"
                 width="900px"
                 position="right"
@@ -1115,13 +1143,13 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit }: ModalGuia
                                     <Button color="gray" type="button" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
                                 )}
                             </div>
-                            <Button outline color="black" type="button" onClick={handleNext} disabled={isSubmitting}>
+                            <Button color="indigo" type="button" onClick={handleNext} disabled={isSubmitting}>
                                 {isSubmitting ? (
                                     <><Icon icon="svg-spinners:ring-resize" className="mr-2" />Guardando...</>
                                 ) : currentStep < TOTAL_STEPS ? (
                                     <>Siguiente <Icon icon="solar:arrow-right-bold" className="ml-1" /></>
                                 ) : (
-                                    <><Icon icon="solar:diskette-bold" className="mr-2" />{guiaToEdit ? "Actualizar Guía" : "Generar Guía"}</>
+                                    <><Icon icon="solar:diskette-bold" className="mr-2" />{guiaToEdit?.id ? "Actualizar Guía" : "Generar Guía"}</>
                                 )}
                             </Button>
                         </div>

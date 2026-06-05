@@ -386,14 +386,14 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     const reservadoReal = Number((formValues as any)?.stockReservado ?? 0);
     const cupoProvision = Math.floor((stockBase * porcentajeProvision) / 100);
 
-    if (isEdit && reservadoReal > cupoProvision) {
+    if (isEdit && reservadoReal > cupoProvision && porcentajeProvision > 0) {
+      // En edición solo advertir, no bloquear — el usuario puede estar editando precio/descripción sin tocar porcentajes
       useAlertStore
         .getState()
         .alert(
-          `No se puede guardar: reservas activas (${reservadoReal}) superan el nuevo cupo de provisión (${cupoProvision}). Ajusta reservas o porcentajes.`,
-          "warning",
+          `Aviso: reservas activas (${reservadoReal}) superan el cupo de provisión (${cupoProvision}). Considera ajustar reservas o porcentajes.`,
+          "info",
         );
-      return false;
     }
 
     return true;
@@ -703,6 +703,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           console.error("Error al asignar modificadores:", e);
         }
 
+        let imagenUrlFinal: string | null | undefined = hasRemovedImage
+          ? null
+          : previewPrincipal || formValues.imagenUrl || updatedProduct?.imagenUrl || undefined;
+
         try {
           // Upload Image flow
           if (filePrincipal) {
@@ -721,8 +725,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               resp?.data?.data?.imagenUrl ||
               resp?.data?.imagenUrl ||
               null;
-            if (nuevaUrl)
+            if (nuevaUrl) {
               setProductImage(Number(formValues.productoId), nuevaUrl);
+              imagenUrlFinal = nuevaUrl;
+            }
           } else {
             const externalUrl = previewPrincipal || formValues.imagenUrl;
             if (externalUrl && !externalUrl.includes("amazonaws.com")) {
@@ -736,13 +742,13 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 signed || resp?.data?.data?.url || resp?.data?.url || null;
               if (s3Url) {
                 setProductImage(Number(formValues.productoId), s3Url);
+                imagenUrlFinal = s3Url;
               }
             }
           }
         } catch (e) {}
 
-        const imagenFinalAprobada =
-          formValues.imagenUrl || previewPrincipal || null;
+        const imagenFinalAprobada = imagenUrlFinal || previewPrincipal || null;
         if (imagenFinalAprobada) {
           void aprobarImagenReferencia(imagenFinalAprobada);
         }
@@ -785,9 +791,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 nombre: formValues.marcaNombre || "",
               }
             : undefined,
-          imagenUrl: hasRemovedImage
-            ? null
-            : previewPrincipal || formValues.imagenUrl || updatedProduct?.imagenUrl || undefined,
+          imagenUrl: imagenUrlFinal ?? undefined,
         });
 
         setFilePrincipal(null);

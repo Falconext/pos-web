@@ -45,6 +45,7 @@ type EnvioDespachoFormData = {
     claveOrden?: string;
     establecimiento?: string;
     repartidor?: string;
+    repartidorId?: number | null;
     empaquetador?: string;
     observaciones?: string;
     fechaEstimada?: string;
@@ -86,7 +87,8 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         nroOrden: cleanText(data.nroOrden),
         claveOrden: cleanText(data.claveOrden),
         establecimiento: cleanText(data.establecimiento),
-        repartidor: cleanText(data.repartidor),
+        repartidor: data.repartidorId ? undefined : cleanText(data.repartidor),
+        repartidorId: data.repartidorId || undefined,
         empaquetador: cleanText(data.empaquetador),
         observaciones: cleanText(data.observaciones),
         ...(fechaEstimada ? { fechaEstimada } : {}),
@@ -149,6 +151,7 @@ export const useFacturacionViewModel = () => {
     const [barcodeError, setBarcodeError] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
     const processedGuiaRef = useRef<string | null>(null);
+    const processedPedidoTiendaRef = useRef<string | null>(null);
     // Tracks the comprobante type that was pre-filled from a Nota de Venta conversion.
     // Prevents the auto-reset effect from overwriting the NV client while on that comprobante type.
     const fromNVComprobanteRef = useRef<string | null>(null);
@@ -231,6 +234,7 @@ export const useFacturacionViewModel = () => {
     const [serie, setSerie] = useState<string>("");
     const [IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice] = useState<boolean>(false);
     const [isComprobantePendiente, setIsComprobantePendiente] = useState<boolean>(false);
+    const [despachoCreado, setDespachoCreado] = useState<boolean>(false);
     const [emittedDataReceipt, setEmittedDataReceipt] = useState<any>(null);
     const [snapshotClient, setSnapshotClient] = useState<any>(null);
 
@@ -249,6 +253,7 @@ export const useFacturacionViewModel = () => {
         claveOrden: '',
         establecimiento: '',
         repartidor: '',
+        repartidorId: null as number | null,
         empaquetador: '',
         observaciones: '',
         fechaEstimada: '',
@@ -619,6 +624,62 @@ export const useFacturacionViewModel = () => {
                     setTimeout(() => {
                         useAlertStore.getState().alert("Guía cargada. Por favor, asigne los precios unitarios a los productos.", "info");
                     }, 500);
+                }
+            }
+
+            window.history.replaceState({}, document.title);
+        } else if (state?.fromPedidoTienda && state?.pedidoTiendaData) {
+            const pedido = state.pedidoTiendaData;
+            const pedidoKey = `pedido-tienda-${pedido.id}-${state.defaultType || ''}`;
+
+            if (processedPedidoTiendaRef.current !== pedidoKey) {
+                processedPedidoTiendaRef.current = pedidoKey;
+
+                const clienteVarios = clients?.find((item: any) => item.nroDoc === '10000000');
+                const cliente = clienteVarios || {
+                    id: 0,
+                    nombre: pedido.clienteNombre || 'CLIENTES VARIOS',
+                    nroDoc: '10000000',
+                    direccion: pedido.clienteDireccion || '',
+                    telefono: pedido.clienteTelefono || '',
+                    tipoDoc: '1',
+                    tipoDocumentoId: 1,
+                    estado: 'ACTIVO',
+                };
+
+                setSelectedClient(cliente);
+                setFormValuesClient(cliente as any);
+                setFormValues(prev => ({
+                    ...prev,
+                    clienteId: Number(cliente.id) || 0,
+                    clienteNombre: `${cliente.nroDoc}-${cliente.nombre}`,
+                    observaciones: [
+                        prev.observaciones,
+                        `Pedido tienda: ${pedido.codigoSeguimiento}`,
+                        pedido.tipoEntrega === 'ENVIO' ? `Entrega: ${pedido.clienteDireccion || 'por coordinar'}` : 'Recojo en tienda',
+                    ].filter(Boolean).join('\n'),
+                }));
+
+                if (Array.isArray(pedido.items) && pedido.items.length > 0) {
+                    resetProductInvoice();
+                    pedido.items.forEach((item: any) => {
+                        addProductsInvoice({
+                            productoId: item.productoId || item.producto?.id || 0,
+                            id: item.productoId || item.producto?.id || 0,
+                            descripcion: item.producto?.descripcion || item.descripcion || 'Producto',
+                            codigo: item.producto?.codigo || '',
+                            cantidad: Number(item.cantidad || 1),
+                            cantidadToInvoice: Number(item.cantidad || 1),
+                            precioUnitario: Number(item.precioUnit || item.precioUnitario || 0),
+                            descuento: 0,
+                            unidadMedidaId: 1,
+                            unidadMedidaNombre: 'NIU',
+                            afectacionNombre: 'Gravado – Operación Onerosa',
+                            tipoAfectacionIGV: '10',
+                            stock: 999,
+                            estado: 'ACTIVO',
+                        } as any);
+                    });
                 }
             }
 
@@ -1377,6 +1438,7 @@ export const useFacturacionViewModel = () => {
                 : baseData;
 
         setSnapshotClient(selectedClient ? { ...selectedClient } : null);
+        setDespachoCreado(false);
         setIsOpenModalSuccessInvoice(true);
         setIsLoading(true);
 
@@ -1408,6 +1470,8 @@ export const useFacturacionViewModel = () => {
                             `La venta se guardó, pero no se pudo crear el despacho: ${despachoResult.error || 'verifique los datos de envío'}`,
                             'warning',
                         );
+                    } else {
+                        setDespachoCreado(true);
                     }
                 } else {
                     useAlertStore.getState().alert(
@@ -1516,6 +1580,7 @@ export const useFacturacionViewModel = () => {
         setIsOpenModalSuccessInvoice(false);
         setEmittedDataReceipt(null);
         setSnapshotClient(null);
+        setDespachoCreado(false);
         const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
         setFormValues({
             ...initFormValues,
@@ -1621,6 +1686,7 @@ export const useFacturacionViewModel = () => {
         isQuotationConfigModalOpen, setIsQuotationConfigModalOpen,
         IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice,
         isComprobantePendiente,
+        despachoCreado,
         showMobileCart, setShowMobileCart,
         editingIndex, setEditingIndex,
 
