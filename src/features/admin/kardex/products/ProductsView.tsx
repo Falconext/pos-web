@@ -174,8 +174,8 @@ export default function ProductsView() {
                     </span>
                 ),
                 'Localización': item?.localizacion?.trim() ? item.localizacion : '-',
-                '% Venta': `${Number((item as any)?.porcentajeVenta ?? 70)}%`,
-                '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 30)}%`,
+                '% Venta': `${Number((item as any)?.porcentajeVenta ?? 100)}%`,
+                '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 0)}%`,
                 'Stock minimo': item?.stockMinimo ?? 0,
                 'U.M': unidadNombre,
                 'Estado': item.estado,

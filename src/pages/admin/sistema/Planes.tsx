@@ -89,7 +89,7 @@ const Planes = () => {
         'Estado': p.esPrueba ? <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded text-xs">Prueba</span> : <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs">Comercial</span>,
         'Tienda': p.tieneTienda ? <Icon icon="mdi:check-circle" className="text-green-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
         'Ticketera': p.tieneTicketera ? <Icon icon="mdi:printer" className="text-blue-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
-        'Lotes': (p as any).tieneGestionLotes ? <Icon icon="solar:box-minimalistic-bold-duotone" className="text-indigo-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
+        'Lotes': p.tieneGestionLotes ? <Icon icon="solar:box-minimalistic-bold-duotone" className="text-indigo-500" width={20} /> : <Icon icon="mdi:close-circle" className="text-gray-300" width={20} />,
         'Acciones': (
             <div className="flex gap-3">
                 <button type="button" onClick={() => vm.handleOpenEdit(p)} className="p-1 hover:opacity-70 cursor-pointer"><Icon icon="mdi:pencil" width={20} height={20} style={{ color: '#19A249' }} /></button>
@@ -315,6 +315,7 @@ const Planes = () => {
                         <Toggle label="Delivery GPS Tracker" value={vm.form.tieneDeliveryGPS || false} onChange={v => vm.setForm({ ...vm.form, tieneDeliveryGPS: v })} />
                         <Toggle label="Ticketera (Impresión Térmica)" value={vm.form.tieneTicketera || false} onChange={v => vm.setForm({ ...vm.form, tieneTicketera: v })} />
                         <Toggle label="Gestión de Lotes" value={vm.form.tieneGestionLotes || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionLotes: v })} />
+                        <Toggle label="Gestión de Comisiones" value={vm.form.tieneGestionComisiones || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionComisiones: v })} />
                     </div>
                     <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end"><Button onClick={() => vm.setShowFeaturesModal(false)} color="black">Listo</Button></div>
                 </div>

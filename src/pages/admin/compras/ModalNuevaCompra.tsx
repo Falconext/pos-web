@@ -29,10 +29,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const { getAllProducts, products, resetProducts } = useProductsStore();
     const { alert } = useAlertStore();
     const { auth } = useAuthStore();
-    const planNombre = String((auth as any)?.empresa?.plan?.nombre || '').toUpperCase();
     const rubroNombre = (auth as any)?.empresa?.rubro?.nombre;
     const esRubroFarmaceutico = usaLotesFarmaciaRubro(rubroNombre);
-    const tieneGestionLotes = planNombre.includes('NEGOCIO') || planNombre.includes('CORPORAT')
+    const tieneGestionLotes = (auth as any)?.empresa?.plan?.tieneGestionLotes === true
         || auth?.rol === 'ADMIN_SISTEMA'
         || esRubroFarmaceutico;
 

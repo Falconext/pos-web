@@ -323,7 +323,7 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex items-center absolute right-[-30px] z-[999999] justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
+            className="hidden md:flex items-center absolute right-[-30px] z-[1024] justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
           >
             <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
           </button>

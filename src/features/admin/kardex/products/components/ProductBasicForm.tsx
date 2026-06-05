@@ -23,7 +23,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
         isFarmacia, esDrogueria, esFarmaceutico, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
-        isCategorizing, tienePlanCorporativo, tieneGestionLotes,
+        isCategorizing, tieneGestionComisiones, tieneGestionLotes,
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
         setShowMedicamentoModal, setShowLotesModal, toggleGrupoSeleccionado,
         setFormValues,
@@ -440,7 +440,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             {/* Solo mayorista para NO restaurantes (súpers, tiendas, etc) */}
             {!isRestaurante && <ProductWholesalePricing vm={vm} />}
 
-            {tienePlanCorporativo && (
+            {tieneGestionComisiones && (
             <div className="col-span-1 md:col-span-2">
                 <InputPro
                     autocomplete="off"
@@ -454,44 +454,46 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             </div>
             )}
 
-            {tienePlanCorporativo && (
+            {tieneGestionComisiones && (
                 <div className="col-span-1 md:col-span-2">
                     <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/10">
                         <div className="col-span-2 flex items-center gap-2 mb-1">
                             <Icon icon="solar:star-bold-duotone" className="text-purple-500" width={14} />
-                            <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Gestión de comisiones — Plan Corporativo</span>
+                            <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Gestión de comisiones</span>
                         </div>
+                        <p className="col-span-2 text-[11px] leading-4 text-gray-500 dark:text-gray-400">
+                            Venta define el máximo para despacho inmediato. Provisión define el máximo para reservas activas. Ambos porcentajes deben sumar 100%.
+                        </p>
                         <InputPro
                             autocomplete="off"
                             type="number"
-                            value={(formValues as any)?.porcentajeVenta ?? 70}
+                            value={(formValues as any)?.porcentajeVenta ?? 100}
                             name="porcentajeVenta"
                             onChange={handleChange}
                             isLabel
                             label="% Venta"
-                            placeholder="70"
+                            placeholder="100"
                         />
                         <InputPro
                             autocomplete="off"
                             type="number"
-                            value={(formValues as any)?.porcentajeProvision ?? 30}
+                            value={(formValues as any)?.porcentajeProvision ?? 0}
                             name="porcentajeProvision"
                             onChange={handleChange}
                             isLabel
                             label="% Provisión"
-                            placeholder="30"
+                            placeholder="0"
                         />
 
                         {(() => {
                             const stockBase = Number((formValues as any)?.stock ?? 0);
                             const reservadoReal = Number((formValues as any)?.stockReservado ?? 0);
-                            const porcentajeVenta = Number((formValues as any)?.porcentajeVenta ?? 70);
-                            const porcentajeProvision = Number((formValues as any)?.porcentajeProvision ?? 30);
+                            const porcentajeProvision = Number((formValues as any)?.porcentajeProvision ?? 0);
 
-                            const cupoVenta = Math.max(0, Math.round((stockBase * porcentajeVenta) / 100));
-                            const cupoProvision = Math.max(0, Math.round((stockBase * porcentajeProvision) / 100));
+                            const cupoProvision = Math.max(0, Math.floor((stockBase * porcentajeProvision) / 100));
+                            const cupoVenta = Math.max(0, stockBase - cupoProvision);
                             const provisionDisponible = Math.max(0, cupoProvision - reservadoReal);
-                            const ventaDisponible = Math.max(0, stockBase - reservadoReal);
+                            const ventaDisponible = Math.max(0, Math.min(stockBase - reservadoReal, cupoVenta));
 
                             const statusColor =
                                 reservadoReal > cupoProvision
@@ -534,7 +536,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                             Provisión disponible: <strong>{provisionDisponible}</strong>
                                         </span>
                                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300">
-                                            Las reservas se descuentan del stock real, no de los porcentajes.
+                                            Provisión se redondea hacia abajo y las unidades restantes quedan disponibles para venta.
                                         </span>
                                     </div>
                                 </div>

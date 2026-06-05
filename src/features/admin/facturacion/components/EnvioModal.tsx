@@ -332,6 +332,52 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                             placeholder="Instrucciones especiales de embalaje o entrega..." className={inp} />
                     </Field>
 
+                    {/* Costo de envío */}
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <Icon icon="solar:wallet-money-bold-duotone" className="text-indigo-400" />
+                            Costo de envío
+                        </p>
+                        <div className={`grid gap-3 ${Number(envioData.costoEnvio) > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                            <Field label="Monto cobrado al cliente (S/)">
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step={0.01}
+                                    value={envioData.costoEnvio ?? 0}
+                                    onChange={e => set('costoEnvio', Number(e.target.value) || 0)}
+                                    placeholder="0.00 — dejar en 0 si no aplica"
+                                    className={inp}
+                                />
+                            </Field>
+                            {Number(envioData.costoEnvio) > 0 && (
+                                <Field label="¿Quién paga el flete?">
+                                    <div className="flex gap-2 w-full">
+                                        {[
+                                            { value: 'CLIENTE', label: 'Cliente paga' },
+                                            { value: 'NEGOCIO', label: 'Negocio absorbe' },
+                                        ].map(opt => (
+                                            <button key={opt.value} type="button"
+                                                onClick={() => set('pagarFlete', opt.value)}
+                                                className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${(envioData.pagarFlete ?? 'NEGOCIO') === opt.value
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                                                    : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
+                                                }`}>
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </Field>
+                            )}
+                        </div>
+                        {Number(envioData.costoEnvio) > 0 && (envioData.pagarFlete ?? 'NEGOCIO') === 'CLIENTE' && (
+                            <p className="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <Icon icon="solar:bill-check-bold-duotone" className="text-base" />
+                                S/ {Number(envioData.costoEnvio).toFixed(2)} se agregará como línea en el comprobante
+                            </p>
+                        )}
+                    </div>
+
                     {/* Resumen */}
                     {(selectedCourier || envioData.agenciaDestino) && (
                         <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/40">
@@ -342,6 +388,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 {envioData.agenciaDestino ? ` · ${envioData.agenciaDestino}` : ''}
                                 {envioData.nroPaquetes > 1 ? ` · ${envioData.nroPaquetes} paquetes` : ''}
                                 {envioData.establecimiento ? ` · ${envioData.establecimiento}` : ''}
+                                {Number(envioData.costoEnvio) > 0 ? ` · S/ ${Number(envioData.costoEnvio).toFixed(2)} flete (${(envioData.pagarFlete ?? 'NEGOCIO') === 'CLIENTE' ? 'cliente' : 'negocio'})` : ''}
                             </p>
                         </div>
                     )}

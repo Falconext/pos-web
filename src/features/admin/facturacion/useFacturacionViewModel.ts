@@ -31,6 +31,7 @@ import {
     type ICatalogoFarmaciaItem,
     type IDatosReceta,
 } from "./FacturacionModel";
+import { COURIERS } from "./components/EnvioModal";
 
 type EnvioDespachoFormData = {
     transportista?: string;
@@ -49,6 +50,8 @@ type EnvioDespachoFormData = {
     empaquetador?: string;
     observaciones?: string;
     fechaEstimada?: string;
+    costoEnvio?: number;
+    pagarFlete?: 'CLIENTE' | 'NEGOCIO';
 };
 
 const cleanText = (value?: string) => String(value ?? '').trim();
@@ -257,6 +260,8 @@ export const useFacturacionViewModel = () => {
         empaquetador: '',
         observaciones: '',
         fechaEstimada: '',
+        costoEnvio: 0,
+        pagarFlete: 'NEGOCIO' as 'CLIENTE' | 'NEGOCIO',
     });
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -1380,21 +1385,31 @@ export const useFacturacionViewModel = () => {
             clienteId: Number(formValues?.clienteId) || invoiceData?.cliente?.id,
             clienteName: selectedClient?.nombre,
             tipoDoc: formValues?.tipoDoc,
-            detalles: productsInvoice?.map((item: any) => ({
-                productoId: Number(item?.productoId || item?.id) || null,
-                descripcion: item.descripcion,
-                cantidad: Number(item.cantidad),
-                nuevoValorUnitario: Number(item.precioUnitario),
-                descuento: Number(item.descuento ?? 0),
-                // Farmacia: trazabilidad de lote y receta médica
-                ...(item.loteId != null ? { loteId: item.loteId } : {}),
-                ...(item.datosReceta?.numeroReceta ? { numeroReceta: item.datosReceta.numeroReceta } : {}),
-                ...(item.datosReceta?.dniPaciente ? { dniPaciente: item.datosReceta.dniPaciente } : {}),
-                ...(item.datosReceta?.nombrePaciente ? { nombrePaciente: item.datosReceta.nombrePaciente } : {}),
-                ...(item.datosReceta?.medicoNombre ? { medicoNombre: item.datosReceta.medicoNombre } : {}),
-                // Fraccionamiento: unidad de venta cuando difiere de la unidad base
-                ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
-            })),
+            detalles: [
+                ...(productsInvoice?.map((item: any) => ({
+                    productoId: Number(item?.productoId || item?.id) || null,
+                    descripcion: item.descripcion,
+                    cantidad: Number(item.cantidad),
+                    nuevoValorUnitario: Number(item.precioUnitario),
+                    descuento: Number(item.descuento ?? 0),
+                    // Farmacia: trazabilidad de lote y receta médica
+                    ...(item.loteId != null ? { loteId: item.loteId } : {}),
+                    ...(item.datosReceta?.numeroReceta ? { numeroReceta: item.datosReceta.numeroReceta } : {}),
+                    ...(item.datosReceta?.dniPaciente ? { dniPaciente: item.datosReceta.dniPaciente } : {}),
+                    ...(item.datosReceta?.nombrePaciente ? { nombrePaciente: item.datosReceta.nombrePaciente } : {}),
+                    ...(item.datosReceta?.medicoNombre ? { medicoNombre: item.datosReceta.medicoNombre } : {}),
+                    // Fraccionamiento: unidad de venta cuando difiere de la unidad base
+                    ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
+                })) ?? []),
+                // Costo de envío como línea en el comprobante (solo cuando cliente paga)
+                ...(envioActivo && Number(envioData.costoEnvio) > 0 && envioData.pagarFlete === 'CLIENTE' ? [{
+                    productoId: null,
+                    descripcion: `Servicio de envío${envioData.transportista ? ` (${COURIERS.find((c) => c.value === envioData.transportista)?.label ?? envioData.transportista})` : ''}`,
+                    cantidad: 1,
+                    nuevoValorUnitario: Number(envioData.costoEnvio),
+                    descuento: 0,
+                }] : []),
+            ],
             formaPagoTipo: formValues.medioPago || "Contado",
             formaPagoMoneda: "PEN",
             tipoMoneda: "PEN",

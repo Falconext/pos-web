@@ -70,13 +70,14 @@ export const useProductsViewModel = () => {
         ? { tipoAfectacionIGV: '20', afectacionNombre: 'Exonerado' }
         : {};
 
-    const planNombre = String(auth?.empresa?.plan?.nombre || '').toUpperCase();
-    const tienePlanCorporativo = planNombre.includes('CORPORAT') || auth?.rol === 'ADMIN_SISTEMA';
+    const tieneGestionComisiones =
+        auth?.empresa?.plan?.tieneGestionComisiones === true ||
+        auth?.rol === 'ADMIN_SISTEMA';
 
     const allColumns = useMemo(() => {
         const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'];
-        return tienePlanCorporativo ? base : base.filter(c => !COLUMNAS_CORPORATIVAS.includes(c));
-    }, [tienePlanCorporativo]);
+        return tieneGestionComisiones ? base : base.filter(c => !COLUMNAS_CORPORATIVAS.includes(c));
+    }, [tieneGestionComisiones]);
 
     const initialVisibleColumns = allColumns;
 

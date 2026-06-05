@@ -86,10 +86,6 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
   });
 
-  const planNombre: string = String(
-    auth?.empresa?.plan?.nombre || "",
-  ).toUpperCase();
-  const planEsCorporativo = planNombre.includes("CORPORAT");
   const userPermissions: IUserPermissions | null = auth
     ? (auth as unknown as IUserPermissions)
     : null;
@@ -97,11 +93,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     userPermissions,
     "kardex:reservas",
   );
-  const tienePlanCorporativo =
-    planEsCorporativo || auth?.rol === "ADMIN_SISTEMA";
+  const tieneGestionComisiones =
+    auth?.empresa?.plan?.tieneGestionComisiones === true ||
+    auth?.rol === "ADMIN_SISTEMA";
   const tieneGestionLotes =
-    planNombre.includes("NEGOCIO") ||
-    planNombre.includes("CORPORAT") ||
+    auth?.empresa?.plan?.tieneGestionLotes === true ||
     auth?.rol === "ADMIN_SISTEMA";
 
   const labels = {
@@ -980,7 +976,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     isFabricacion,
     features,
     labels,
-    tienePlanCorporativo,
+    tieneGestionComisiones,
     tieneGestionLotes,
     isOpenModal,
     isEdit,

@@ -34,11 +34,11 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
     const getProvisionInfo = (item: any) => {
         const stockBase = Number(item?.stockBase ?? item?.stock ?? 0);
-        const porcentajeProvision = Number(item?.porcentajeProvision ?? 30);
+        const porcentajeProvision = Number(item?.porcentajeProvision ?? 0);
         const cupoProvision = Math.max(0, Math.floor((stockBase * porcentajeProvision) / 100));
         const reservadoActual = Number(item?.stockReservado ?? 0);
         const cupoVenta = Math.max(0, stockBase - cupoProvision);
-        const disponibleVenta = Math.max(0, stockBase - reservadoActual);
+        const disponibleVenta = Math.max(0, Math.min(stockBase - reservadoActual, cupoVenta));
         return { cupoProvision, reservadoActual, porcentajeProvision, cupoVenta, disponibleVenta };
     };
     const formatDate = (value: string | Date | null | undefined) => {

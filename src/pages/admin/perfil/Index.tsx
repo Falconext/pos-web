@@ -22,8 +22,7 @@ export default function PerfilIndex() {
     };
     const limiteRaw = Number(usageStats?.limiteMaximo ?? 0);
     const comprobantesIlimitados = !!usageStats && (!Number.isFinite(limiteRaw) || limiteRaw <= 0);
-    const planNombre = String(perfil?.empresa?.plan?.nombre || '').toUpperCase();
-    const fefoPermitidoPorPlan = planNombre.includes('NEGOCIO') || planNombre.includes('CORPORAT');
+    const fefoPermitidoPorPlan = perfil?.empresa?.plan?.tieneGestionLotes === true;
 
     if (perfil?.rol === 'ADMIN_SISTEMA') {
         return (
