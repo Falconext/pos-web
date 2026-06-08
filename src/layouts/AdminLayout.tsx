@@ -328,8 +328,7 @@ export default function AdminLayout() {
             <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
           </button>
         </div>
-
-        <div className={`flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full scrollbar-none [&::-webkit-scrollbar]:hidden' : 'pr-1 custom-scrollbar'}`}>
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full scrollbar-none [&::-webkit-scrollbar]:hidden' : 'pr-1 custom-scrollbar'}`}>
           <motion.nav
             className="space-y-0.5 w-full"
             variants={navStagger}
@@ -709,6 +708,18 @@ export default function AdminLayout() {
                 )}
 
 
+                {/* Mi Negocio */}
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Mi Negocio') }} to="/administrador/ecommerce/resumen" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="¿Cómo me fue este mes?">
+                  <Icon icon="solar:home-smile-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Mi Negocio</span>}
+                </NavLink>
+
+                {/* Marketing */}
+                <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Campañas') }} to="/administrador/marketing/campanas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Campañas de Marketing">
+                  <Icon icon="solar:target-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Marketing</span>}
+                </NavLink>
+
                 {/* Dashboard Financiero */}
                 {hasPermission(auth, 'reportes') && (
                   <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Dashboard Financiero') }} to="/administrador/finanzas/dashboard" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Dashboard Financiero">
@@ -819,7 +830,7 @@ export default function AdminLayout() {
                           {hasSubPermission(auth, 'tienda:pedidos') && (
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/pedidos" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Pedidos</NavLink>
                           )}
-                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/despacho" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Panel Despacho</NavLink>
+                          <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/despacho" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Panel de Ventas</NavLink>
                           <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/repartidores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Repartidores</NavLink>
                           {hasSubPermission(auth, 'tienda:modificadores') && (
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/tienda/modificadores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>Modificadores</NavLink>
@@ -848,7 +859,7 @@ export default function AdminLayout() {
                               </NavLink>
                             )}
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/despacho" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
-                              Panel Despacho
+                              Panel de Ventas
                             </NavLink>
                             <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/repartidores" className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}>
                               Repartidores

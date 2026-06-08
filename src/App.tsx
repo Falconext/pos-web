@@ -32,7 +32,7 @@ import SedesIndex from './pages/admin/sedes/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
-import DespachoView from './pages/admin/despacho/DespachoView'
+import PanelVentasView from './pages/admin/despacho/PanelVentasView'
 import DespachoConfigPage from './pages/admin/despacho/DespachoConfigPage'
 import RepartidoresView from './pages/admin/repartidores/RepartidoresView'
 import CombosTienda from './pages/admin/tienda/Combos'
@@ -49,6 +49,8 @@ import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
 import Planes from './pages/admin/sistema/Planes'
 import ModulosPage from './pages/admin/sistema/Modulos'
 import FinanceDashboard from './pages/admin/finanzas/Dashboard'
+import Campanas from './pages/admin/marketing/Campanas'
+import ResumenNegocio from './pages/admin/ecommerce/ResumenNegocio'
 import ComprasIndex from './pages/admin/compras/Index'
 import ProveedoresPage from './pages/admin/compras/Proveedores'
 import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
@@ -126,6 +128,8 @@ function App() {
           <Route path="cotizaciones/nuevo" element={<Invoice />} />
           <Route path="facturacion/nuevo" element={<Invoice />} />
           <Route path="finanzas/dashboard" element={<FinanceDashboard />} />
+          <Route path="marketing/campanas" element={<Campanas />} />
+          <Route path="ecommerce/resumen" element={<ResumenNegocio />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
           <Route path="kardex/traslados" element={<KardexTraslados />} />
@@ -156,7 +160,7 @@ function App() {
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
-          <Route path="despacho" element={<DespachoView />} />
+          <Route path="despacho" element={<PanelVentasView />} />
           <Route path="despacho/config" element={<DespachoConfigPage />} />
           <Route path="repartidores" element={<RepartidoresView />} />
           <Route path="tienda/combos" element={<CombosTienda />} />
