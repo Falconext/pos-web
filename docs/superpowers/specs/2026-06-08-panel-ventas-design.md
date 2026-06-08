@@ -48,7 +48,9 @@ src/layouts/AdminLayout.tsx     ← renombrar "Panel Despacho" → "Panel de Ven
 ```ts
 interface VentaPanelItem {
   id: number
-  tipo: 'BOLETA' | 'FACTURA' | 'NOTA_VENTA' | 'PEDIDO_TIENDA' | 'NOTA_CREDITO' | 'NOTA_DEBITO'
+  tipo: 'BOLETA' | 'FACTURA' | 'NOTA_CREDITO' | 'NOTA_DEBITO'  // SUNAT formales
+       | 'TICKET' | 'NOTA_VENTA' | 'NOTA_PEDIDO' | 'RECIBO_HONORARIOS' | 'COMP_PAGO' | 'OTRO'  // informales
+       | 'PEDIDO_TIENDA'
   referencia: string          // "B001-00000123" | codigoSeguimiento
   fecha: string               // ISO datetime
   cliente: string
@@ -90,13 +92,13 @@ const [sunat, informales, pedidos] = await Promise.all([
     },
   }),
 
-  // Notas de Venta (informales): cualquier tipoDoc que no sea SUNAT
+  // Informales: TICKET, NV, NP, RH, CP, OT
   prisma.comprobante.findMany({
     where: {
       empresaId,
       ...(sedeId ? { sedeId } : {}),
       fechaEmision: { gte: inicioLima, lte: finLima },
-      tipoDoc: { notIn: ['01', '03', '07', '08'] },
+      tipoDoc: { in: ['TICKET', 'NV', 'NP', 'RH', 'CP', 'OT'] },
     },
     include: {
       cliente: true,
@@ -126,7 +128,7 @@ const [sunat, informales, pedidos] = await Promise.all([
 
 | Campo | Comprobante SUNAT | Nota de Venta | Pedido Tienda |
 |-------|-------------------|---------------|---------------|
-| `tipo` | `BOLETA` si `03`, `FACTURA` si `01`, `NOTA_CREDITO` si `07`, `NOTA_DEBITO` si `08` | `NOTA_VENTA` | `PEDIDO_TIENDA` |
+| `tipo` | `BOLETA` si `03`, `FACTURA` si `01`, `NOTA_CREDITO` si `07`, `NOTA_DEBITO` si `08` | Mapear: `TICKET`→`TICKET`, `NV`→`NOTA_VENTA`, `NP`→`NOTA_PEDIDO`, `RH`→`RECIBO_HONORARIOS`, `CP`→`COMP_PAGO`, `OT`→`OTRO` | `PEDIDO_TIENDA` |
 | `referencia` | `serie-correlativo` (correlativo con padding 8) | `serie-correlativo` | `codigoSeguimiento` |
 | `estadoSunat` | normalizar `estadoEnvioSunat` → `ACEPTADO/PENDIENTE/RECHAZADO` | `NO_APLICA` | `NO_APLICA` |
 | `estadoPago` | `montoPagado >= mtoImpVenta` → `PAGADO`; `montoPagado > 0` → `PARCIAL`; sino `PENDIENTE` | igual | `saldoPendiente <= 0.01` → `PAGADO`; `montoPagado > 0` → `PARCIAL`; sino `PENDIENTE` |
@@ -194,10 +196,15 @@ const filtrados = useMemo(() => {
 **Tipo:**
 - `BOLETA` → blue
 - `FACTURA` → indigo
-- `NOTA_VENTA` → amber
-- `PEDIDO_TIENDA` → violet
 - `NOTA_CREDITO` → rose
 - `NOTA_DEBITO` → orange
+- `TICKET` → teal
+- `NOTA_VENTA` → amber
+- `NOTA_PEDIDO` → amber
+- `RECIBO_HONORARIOS` → amber
+- `COMP_PAGO` → amber
+- `OTRO` → slate
+- `PEDIDO_TIENDA` → violet
 
 **Estado SUNAT:**
 - `ACEPTADO` → emerald
