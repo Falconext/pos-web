@@ -119,7 +119,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
 
   comprobantes: {
     navRoute: () => '/administrador/facturacion/comprobantes',
-    pathPrefix: () => '/administrador/facturacion/comprobantes',
+    pathPrefix: () => '/administrador/facturacion',
   },
 
   cotizaciones: {
