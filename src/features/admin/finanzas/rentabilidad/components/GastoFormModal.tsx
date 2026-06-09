@@ -22,8 +22,26 @@ const INITIAL_FORM = {
     categoria: 'PUBLICIDAD',
     etiqueta: '',
     monto: '',
+    fecha: '',
+    recurrenteDiario: false,
+    fechaFin: '',
     descripcion: '',
 };
+
+function toDateInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getDefaultDate(mes: number, anio: number): string {
+    const now = new Date();
+    if (now.getFullYear() === anio && now.getMonth() + 1 === mes) {
+        return toDateInputValue(now);
+    }
+    return `${anio}-${String(mes).padStart(2, '0')}-01`;
+}
 
 export default function GastoFormModal({
     isOpen,
@@ -37,6 +55,8 @@ export default function GastoFormModal({
 }: GastoFormModalProps) {
     const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const minDate = `${anioActual}-${String(mesActual).padStart(2, '0')}-01`;
+    const maxDate = toDateInputValue(new Date(anioActual, mesActual, 0));
 
     // Populate form when editing
     useEffect(() => {
@@ -45,13 +65,16 @@ export default function GastoFormModal({
                 categoria: gastoEditando.categoria,
                 etiqueta: gastoEditando.etiqueta ?? '',
                 monto: String(gastoEditando.monto),
+                fecha: gastoEditando.fechaInicio?.slice(0, 10) ?? gastoEditando.fecha?.slice(0, 10) ?? getDefaultDate(mesActual, anioActual),
+                recurrenteDiario: gastoEditando.recurrenteDiario,
+                fechaFin: gastoEditando.fechaFin?.slice(0, 10) ?? '',
                 descripcion: gastoEditando.descripcion ?? '',
             });
         } else {
-            setForm(INITIAL_FORM);
+            setForm({ ...INITIAL_FORM, fecha: getDefaultDate(mesActual, anioActual) });
         }
         setErrors({});
-    }, [gastoEditando, isOpen]);
+    }, [gastoEditando, isOpen, mesActual, anioActual]);
 
     if (!isOpen) return null;
 
@@ -60,6 +83,13 @@ export default function GastoFormModal({
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
         if (!form.categoria) newErrors.categoria = 'Selecciona una categoría';
+        if (!form.fecha) newErrors.fecha = 'Selecciona la fecha del gasto';
+        if (!form.recurrenteDiario && form.fecha && (form.fecha < minDate || form.fecha > maxDate)) {
+            newErrors.fecha = 'La fecha debe pertenecer al período seleccionado';
+        }
+        if (form.recurrenteDiario && form.fechaFin && form.fechaFin < form.fecha) {
+            newErrors.fechaFin = 'La fecha final no puede ser menor al inicio';
+        }
         if (isPersonalizada && !form.etiqueta.trim()) {
             newErrors.etiqueta = 'Ingresa un nombre para el gasto personalizado';
         }
@@ -78,6 +108,10 @@ export default function GastoFormModal({
         const payload: GastoFormData = {
             mes: mesActual,
             anio: anioActual,
+            fecha: form.fecha,
+            recurrenteDiario: form.recurrenteDiario,
+            ...(form.recurrenteDiario ? { fechaInicio: form.fecha } : {}),
+            ...(form.recurrenteDiario && form.fechaFin ? { fechaFin: form.fechaFin } : {}),
             categoria: form.categoria,
             monto: parseFloat(form.monto),
             ...(form.etiqueta.trim() ? { etiqueta: form.etiqueta.trim() } : {}),
@@ -91,7 +125,7 @@ export default function GastoFormModal({
         }
     };
 
-    const handleChange = (field: keyof typeof form, value: string) => {
+    const handleChange = (field: keyof typeof form, value: string | boolean) => {
         setForm(prev => ({ ...prev, [field]: value }));
         if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
     };
@@ -99,7 +133,7 @@ export default function GastoFormModal({
     const selectedCategoria = CATEGORIAS_FIJAS.find(c => c.key === form.categoria);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -192,32 +226,99 @@ export default function GastoFormModal({
                     )}
 
                     {/* Monto */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                            Monto (S/) <span className="text-rose-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                <span className="text-gray-400 text-sm font-semibold">S/</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                {form.recurrenteDiario ? 'Monto diario (S/)' : 'Monto (S/)'} <span className="text-rose-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-400 text-sm font-semibold">S/</span>
+                                </div>
+                                <input
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={form.monto}
+                                    onChange={e => handleChange('monto', e.target.value)}
+                                placeholder={form.recurrenteDiario ? 'Ej: 400.00 por día' : '0.00'}
+                                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors tabular-nums ${
+                                        errors.monto
+                                            ? 'border-rose-400 dark:border-rose-500'
+                                            : 'border-gray-200 dark:border-slate-700'
+                                    }`}
+                                />
                             </div>
+                            {errors.monto && (
+                                <p className="mt-1 text-xs text-rose-500">{errors.monto}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                {form.recurrenteDiario ? 'Inicio' : 'Fecha'} <span className="text-rose-500">*</span>
+                            </label>
                             <input
-                                type="number"
-                                min="0.01"
-                                step="0.01"
-                                value={form.monto}
-                                onChange={e => handleChange('monto', e.target.value)}
-                                placeholder="0.00"
-                                className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors tabular-nums ${
-                                    errors.monto
+                                type="date"
+                                min={form.recurrenteDiario ? undefined : minDate}
+                                max={form.recurrenteDiario ? undefined : maxDate}
+                                value={form.fecha}
+                                onChange={e => handleChange('fecha', e.target.value)}
+                                className={`w-full px-3 py-2.5 rounded-xl border text-sm bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+                                    errors.fecha
                                         ? 'border-rose-400 dark:border-rose-500'
                                         : 'border-gray-200 dark:border-slate-700'
                                 }`}
                             />
+                            {errors.fecha && (
+                                <p className="mt-1 text-xs text-rose-500">{errors.fecha}</p>
+                            )}
                         </div>
-                        {errors.monto && (
-                            <p className="mt-1 text-xs text-rose-500">{errors.monto}</p>
-                        )}
                     </div>
+
+                    {form.categoria === 'PUBLICIDAD' && (
+                        <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/70 dark:bg-indigo-900/10 p-4 space-y-3">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={form.recurrenteDiario}
+                                    onChange={e => handleChange('recurrenteDiario', e.target.checked)}
+                                    className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <span>
+                                    <span className="block text-sm font-bold text-gray-800 dark:text-gray-100">
+                                        Repetir diariamente
+                                    </span>
+                                    <span className="block text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                        Úsalo para campañas activas. El sistema aplicará este monto cada día y calculará ROAS y ganancia neta sin que lo registres manualmente.
+                                    </span>
+                                </span>
+                            </label>
+
+                            {form.recurrenteDiario && (
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                                        Termina el
+                                        <span className="ml-1 font-normal normal-case text-gray-400">(opcional)</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        min={form.fecha || minDate}
+                                        value={form.fechaFin}
+                                        onChange={e => handleChange('fechaFin', e.target.value)}
+                                        className={`w-full px-3 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+                                            errors.fechaFin
+                                                ? 'border-rose-400 dark:border-rose-500'
+                                                : 'border-indigo-100 dark:border-slate-700'
+                                        }`}
+                                    />
+                                    {errors.fechaFin && (
+                                        <p className="mt-1 text-xs text-rose-500">{errors.fechaFin}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Descripción */}
                     <div>
@@ -238,9 +339,10 @@ export default function GastoFormModal({
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-slate-800 rounded-xl">
                         <Icon icon="solar:calendar-bold" className="text-gray-400 text-base flex-shrink-0" />
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Se registrará para:&nbsp;
+                            {form.recurrenteDiario ? 'Se descontará diariamente desde ' : 'Se descontará del día '}
                             <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                {getMesFullLabel(mesActual)} {anioActual}
+                                {form.fecha || `${getMesFullLabel(mesActual)} ${anioActual}`}
+                                {form.recurrenteDiario && form.fechaFin ? ` hasta ${form.fechaFin}` : ''}
                             </span>
                         </span>
                     </div>

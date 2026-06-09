@@ -159,7 +159,7 @@ export default function DespachoConfigPage() {
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => navigate('/administrador/despacho')}
+                        onClick={() => navigate('/administrador/ventas')}
                         className="h-9 w-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                         <Icon icon="solar:arrow-left-bold" />

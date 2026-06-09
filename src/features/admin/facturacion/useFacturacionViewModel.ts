@@ -113,6 +113,8 @@ export const useFacturacionViewModel = () => {
     const isMobile = useIsMobile();
     const isQuotationRoute = location.pathname.includes('/cotizaciones/nuevo');
     const tiposInformales = ['TICKET', 'NV', 'RH', 'CP', 'NP', 'OT', 'COT'];
+    // Comprobante labels que usan "Clientes Varios" por defecto (todos los informales excepto FACTURA/NC/ND)
+    const LABELS_CLIENTES_VARIOS = ["BOLETA", "TICKET", "NOTA DE VENTA", "NOTA DE PEDIDO", "ORDEN DE TRABAJO", "COMPROBANTE DE PAGO", "RECIBO POR HONORARIO"];
     const tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
 
     // Detección de rubros farmacéuticos
@@ -257,7 +259,7 @@ export const useFacturacionViewModel = () => {
         establecimiento: '',
         repartidor: '',
         repartidorId: null as number | null,
-        empaquetador: '',
+        empaquetador: auth?.nombre ?? '',
         observaciones: '',
         fechaEstimada: '',
         costoEnvio: 0,
@@ -752,7 +754,7 @@ export const useFacturacionViewModel = () => {
             }
 
             if (fromNVComprobanteRef.current === null) {
-                if (formValues?.comprobante === "BOLETA" || formValues?.comprobante === "NOTA DE PEDIDO") {
+                if (LABELS_CLIENTES_VARIOS.includes(formValues?.comprobante)) {
                     const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
                     if (clientSelect) {
                         setSelectedClient(clientSelect)
@@ -1470,7 +1472,7 @@ export const useFacturacionViewModel = () => {
             setIsComprobantePendiente(!!(result as any).pendiente);
             const r = result as any;
             if (r.serie != null && r.correlativo != null) {
-                setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null });
+                setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null, total: r.mtoImpVenta ?? totalAdjusted });
             }
             // Auto-crear despacho si se completó la coordinación de envío.
             const comprobanteId = r.id ?? dataReceipt?.id ?? null;
@@ -1611,10 +1613,10 @@ export const useFacturacionViewModel = () => {
         setSplitPayments([{ method: 'Efectivo', amount: 0 }, { method: 'Yape', amount: 0 }]);
         resetInvoice();
         resetProductInvoice();
-        if (formValues?.comprobante === "BOLETA") {
+        if (LABELS_CLIENTES_VARIOS.includes(formValues?.comprobante)) {
             const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
             setSelectedClient(clientSelect ? clientSelect : { nroDoc: "10000000", nombre: "CLIENTES VARIOS" });
-            setFormValues(prev => ({ ...prev, clienteNombre: "CLIENTES VARIOS" }));
+            setFormValues(prev => ({ ...prev, clienteNombre: "CLIENTES VARIOS", clienteId: clientSelect ? Number(clientSelect.id) || 0 : 0 }));
         } else {
             setSelectedClient(null);
         }

@@ -3,8 +3,9 @@ import { Icon } from '@iconify/react';
 import { useRentabilidadViewModel } from './rentabilidad/useRentabilidadViewModel';
 import RentabilidadView from './rentabilidad/RentabilidadView';
 import FinanceDashboardView from './FinanceDashboardView';
+import ComisionesView from './comisiones/ComisionesView';
 
-type TabId = 'rentabilidad' | 'flujo';
+type TabId = 'rentabilidad' | 'flujo' | 'comisiones';
 
 interface Tab {
     id: TabId;
@@ -25,6 +26,12 @@ const TABS: Tab[] = [
         label: 'Flujo de Caja',
         icon: 'solar:wallet-money-bold-duotone',
         description: 'Ingresos y egresos del período',
+    },
+    {
+        id: 'comisiones',
+        label: 'Comisiones',
+        icon: 'solar:users-group-rounded-bold-duotone',
+        description: 'Comisiones por vendedor',
     },
 ];
 
@@ -97,6 +104,12 @@ export default function FinanzasTabs() {
             {/* Flujo tab: FinanceDashboardView owns its own full-page container */}
             {activeTab === 'flujo' && (
                 <FinanceDashboardView />
+            )}
+
+            {activeTab === 'comisiones' && (
+                <div className="px-6 pb-6">
+                    <ComisionesView />
+                </div>
             )}
         </div>
     );

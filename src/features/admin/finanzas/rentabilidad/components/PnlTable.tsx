@@ -113,12 +113,26 @@ export default function PnlTable({ pnl }: PnlTableProps) {
 
             {/* Costo de mercadería */}
             <PnlRow
-                label="Costo de Mercadería"
+                label="Costo Real de Productos"
                 icon="solar:box-bold-duotone"
                 value={pnl.costoMercaderia}
                 reference={ref}
                 indent
                 barColor="bg-rose-400"
+            />
+            <PnlRow
+                label="Costo base vendido"
+                value={pnl.costoBaseProductos ?? 0}
+                reference={ref}
+                indent
+                barColor="bg-slate-400"
+            />
+            <PnlRow
+                label="Costos fijos (envío/empaque)"
+                value={pnl.costosFijosProducto ?? 0}
+                reference={ref}
+                indent
+                barColor="bg-amber-400"
             />
 
             <Divider />

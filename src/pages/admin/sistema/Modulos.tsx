@@ -358,6 +358,10 @@ const ModulosPage = () => {
                     <div className="col-span-2 md:col-span-1">
                         <InputPro isLabel label="Orden" name="orden" type="number" value={vm.form.orden} onChange={(e) => vm.setForm({ ...vm.form, orden: Number(e.target.value) })} />
                     </div>
+                    <div className="col-span-2">
+                        <InputPro isLabel label="Ruta (sidebar)" name="ruta" value={vm.form.ruta || ''} onChange={(e) => vm.setForm({ ...vm.form, ruta: e.target.value })} placeholder="Ej. /administrador/ventas" />
+                        <p className="text-xs text-gray-400 mt-1">Ruta de navegación que abre este módulo en el sidebar.</p>
+                    </div>
                     <div className="col-span-2 mt-2">
                         <Toggle label="Módulo Activo" value={vm.form.activo || false} onChange={v => vm.setForm({ ...vm.form, activo: v })} />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Si se desactiva, no aparecerá disponible para asignar a nuevos planes.</p>
@@ -396,6 +400,10 @@ const ModulosPage = () => {
                     </div>
                     <div className="col-span-2 md:col-span-1">
                         <InputPro isLabel label="Orden" name="orden" type="number" value={vm.subForm.orden} onChange={(e) => vm.setSubForm({ ...vm.subForm, orden: Number(e.target.value) })} />
+                    </div>
+                    <div className="col-span-2">
+                        <InputPro isLabel label="Ruta (sidebar)" name="ruta" value={vm.subForm.ruta || ''} onChange={(e) => vm.setSubForm({ ...vm.subForm, ruta: e.target.value })} placeholder="Ej. /administrador/ventas/panel" />
+                        <p className="text-xs text-gray-400 mt-1">Ruta de navegación que abre este submódulo en el sidebar.</p>
                     </div>
                     <div className="col-span-2 mt-2">
                         <Toggle label="Submódulo Activo" value={vm.subForm.activo} onChange={v => vm.setSubForm({ ...vm.subForm, activo: v })} />

@@ -3,18 +3,41 @@
 export interface PnlResponse {
     periodo: { mes: number; anio: number; label: string };
     ventasNetas: number;
+    costoBaseProductos: number;
+    costosFijosProducto: number;
     costoMercaderia: number;
+    unidadesVendidas: number;
+    lineasProducto: number;
+    lineasServicio: number;
     gananciaBruta: number;
     margenBruto: number;
     gastosTotales: number;
+    gastoPublicidad: number;
     gastosPorCategoria: Array<{ categoria: string; etiqueta: string | null; monto: number }>;
     gananciaNeta: number;
     margenNeto: number;
+    resumenDiario: RentabilidadDia[];
     comparacion: {
         mesAnterior: { gananciaNeta: number; margenNeto: number } | null;
         variacionMonto: number | null;
         variacionPorcentaje: number | null;
     };
+}
+
+export interface RentabilidadDia {
+    fecha: any;
+    ventasNetas: number;
+    costoMercaderia: number;
+    gananciaBruta: number;
+    margenBruto: number;
+    publicidad: number;
+    otrosGastos: number;
+    gastosOperativos: number;
+    gananciaNeta: number;
+    margenNeto: number;
+    pedidos: number;
+    roas: number | null;
+    costoPublicidadPorPedido: number | null;
 }
 
 export interface EvolucionPoint {
@@ -28,6 +51,12 @@ export interface EvolucionPoint {
 
 export interface GastoOperativo {
     id: number;
+    mes: number;
+    anio: number;
+    fecha: string | null;
+    recurrenteDiario: boolean;
+    fechaInicio: string | null;
+    fechaFin: string | null;
     categoria: string;
     etiqueta: string | null;
     monto: number;
@@ -38,6 +67,10 @@ export interface GastoOperativo {
 export interface GastoFormData {
     mes: number;
     anio: number;
+    fecha?: string;
+    recurrenteDiario?: boolean;
+    fechaInicio?: string;
+    fechaFin?: string;
     categoria: string;
     etiqueta?: string;
     monto: number;
@@ -79,6 +112,11 @@ export function formatCurrency(value: number): string {
 
 export function formatPercent(value: number): string {
     return `${Math.abs(value).toFixed(1)}%`;
+}
+
+export function formatDate(value: string): string {
+    const [year, month, day] = value.slice(0, 10).split('-');
+    return `${day}/${month}/${year}`;
 }
 
 export const MESES_LABELS = [

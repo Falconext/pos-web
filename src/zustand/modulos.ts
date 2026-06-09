@@ -8,6 +8,7 @@ export interface ISubModulo {
     codigo: string;
     nombre: string;
     descripcion?: string;
+    ruta?: string | null;
     activo: boolean;
     orden: number;
 }
@@ -19,6 +20,7 @@ export interface IModulo {
     nombre: string;
     descripcion: string;
     icono: string;
+    ruta?: string | null;
     activo: boolean;
     orden: number;
     subModulos: ISubModulo[];
@@ -32,7 +34,7 @@ export interface IModulosState {
     updateModulo: (id: number, modulo: any, producto?: string) => Promise<boolean>;
     deleteModulo: (id: number, producto?: string) => Promise<boolean>;
     createSubModulo: (dto: { moduloId: number; codigo: string; nombre: string; descripcion?: string; activo?: boolean; orden?: number }, producto?: string) => Promise<boolean>;
-    updateSubModulo: (id: number, dto: { nombre?: string; descripcion?: string; activo?: boolean; orden?: number }, producto?: string) => Promise<boolean>;
+    updateSubModulo: (id: number, dto: { nombre?: string; descripcion?: string; ruta?: string; activo?: boolean; orden?: number }, producto?: string) => Promise<boolean>;
     deleteSubModulo: (id: number, producto?: string) => Promise<boolean>;
 }
 

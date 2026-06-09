@@ -1,0 +1,73 @@
+<h2>¿Cómo se calculan las ventas atribuidas a una campaña?</h2>
+<p class="subtitle">Esto define cómo el sistema calcula el CPA (costo por adquisición)</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Automático por producto y período</h3>
+      <p>El sistema cuenta todas las ventas del producto vinculado mientras la campaña está activa.</p>
+      <div style="margin-top:10px;background:rgba(99,102,241,0.08);border-radius:8px;padding:10px;font-size:12px;">
+        <div style="color:#10b981;font-weight:700;margin-bottom:4px;">Ejemplo:</div>
+        <div style="color:#9ca3af;line-height:1.7;">
+          Campaña "Blusa Negra" activa del 1 al 30 Jun<br>
+          → Sistema detecta: 62 comprobantes con ese producto en ese período<br>
+          → CPA = S/ 900 gasto ÷ 62 ventas = <strong style="color:#f59e0b;">S/ 14.52</strong>
+        </div>
+        <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">
+          ✅ Sin trabajo manual — el dueño solo registra el gasto<br>
+          ✅ Siempre actualizado en tiempo real<br>
+          ⚠️ Incluye ventas orgánicas (WhatsApp directo, recurrentes) — el CPA puede ser más bajo de lo real
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Manual — el dueño ingresa las ventas</h3>
+      <p>El dueño registra semanalmente cuántas ventas generó la campaña según su criterio.</p>
+      <div style="margin-top:10px;background:rgba(99,102,241,0.08);border-radius:8px;padding:10px;font-size:12px;">
+        <div style="color:#10b981;font-weight:700;margin-bottom:4px;">Ejemplo:</div>
+        <div style="color:#9ca3af;line-height:1.7;">
+          Dueño sabe que de 62 ventas, 45 vinieron de sus ads<br>
+          → Ingresa: 45 ventas<br>
+          → CPA = S/ 900 ÷ 45 = <strong style="color:#f59e0b;">S/ 20.00</strong>
+        </div>
+        <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">
+          ✅ CPA más honesto y preciso<br>
+          ⚠️ Requiere que el dueño lleve el conteo manualmente<br>
+          ⚠️ Riesgo de que no lo actualice y los datos queden vacíos
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Automático + ajuste manual opcional</h3>
+      <p>Por defecto usa las ventas del producto en el período. El dueño puede corregir si sabe el número real.</p>
+      <div style="margin-top:10px;background:rgba(99,102,241,0.08);border-radius:8px;padding:10px;font-size:12px;">
+        <div style="color:#10b981;font-weight:700;margin-bottom:4px;">Ejemplo:</div>
+        <div style="color:#9ca3af;line-height:1.7;">
+          Sistema calcula: 62 ventas automáticas<br>
+          Dueño ajusta a 45 si quiere precisión<br>
+          → CPA muestra ambos: <strong style="color:#6366f1;">S/ 14.52 (auto)</strong> / <strong style="color:#f59e0b;">S/ 20.00 (ajustado)</strong>
+        </div>
+        <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">
+          ✅ Siempre tiene datos, nunca queda vacío<br>
+          ✅ El dueño que quiere precisión puede ajustar<br>
+          ✅ El que no quiere complicarse, no hace nada extra
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:14px;padding:12px 14px;background:rgba(245,158,11,0.06);border-radius:10px;border:1px solid rgba(245,158,11,0.2);font-size:12px;color:#9ca3af;">
+  💡 <strong style="color:#f59e0b;">Recomendación:</strong> La opción C es la más inteligente — el dueño que va rápido nunca queda con datos vacíos, y el que quiere rigor puede ajustar el número.
+</div>

@@ -240,7 +240,7 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                     ) : (
                                         <div className="flex">
                                             {(() => {
-                                                const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria') || keyLower.includes('doc') || keyLower === 'referencia' || keyLower === 'comprobante';
+                                                const isCode = keyLower.includes('código') || keyLower.includes('codigo') || keyLower.includes('code') || keyLower.includes('serie') || keyLower.includes('seria') || keyLower.includes('doc') || keyLower === 'referencia' || keyLower === 'comprobante' || keyLower === 'email' || keyLower.includes('email');
                                                 const isString = typeof cell === 'string';
 
                                                 if (isConceptoColumn && isString) {

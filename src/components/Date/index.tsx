@@ -6,6 +6,7 @@ import useOutsideClick from '../../hooks/useOutsideClick';
 import moment from 'moment';
 import { motion } from 'framer-motion';
 import InputPro from '../InputPro';
+import { useThemeStore } from '../../zustand/theme';
 
 export interface CalendarEvent {
     date: Date;
@@ -32,6 +33,7 @@ interface CalendarProps {
 }
 
 export const Calendar = ({ mode, events, text, onChange, name, right, left, disabled, top, withOutFormat, value = '', className = '' }: CalendarProps) => {
+    const { isDarkMode } = useThemeStore();
     const [writeDate, setWriteDate] = useState<string>(value || '');
     const userChangedDate = useRef(false);
     const onChangeRef = useRef(onChange);
@@ -179,8 +181,9 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
                 <motion.div
                     animate={left ? { x: -140, y: 10 } : top ? { x: 0, y: -400 } : right ? { y: 40 } : { x: 0, y: 10 }}
                     initial={left ? { y: 10, x: -10 } : top ? { x: 0, y: -390 } : right ? { y: 20 } : { y: 40 }}
+                    style={isDarkMode ? { background: '#1e2435', border: '1px solid #2d3748', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' } : {}}
                 >
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div onClick={(e) => e.stopPropagation()} className={isDarkMode ? styles.dark : ''}>
                         <div className={styles.header}>
                             <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}>
                                 <Icon icon={Icons.arrowLeft} />

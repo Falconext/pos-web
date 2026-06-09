@@ -25,6 +25,9 @@ export type IProduct = {
   empresaId: number
   costoPromedio?: number
   costoUnitario: number
+  costoFijo?: number
+  comisionPorVenta?: number
+  comisionPorcentaje?: number
   imagenUrl?: string | null
   imagenesExtra?: string[]
   unidadMedida: {
@@ -83,6 +86,9 @@ export type IFormProduct = {
   unidadMedidaId: number
   costoPromedio?: number
   costoUnitario?: number
+  costoFijo?: number
+  comisionPorVenta?: number
+  comisionPorcentaje?: number
   imagenUrl?: string | null
   // Campos Farmacia
   principioActivo?: string

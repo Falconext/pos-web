@@ -93,8 +93,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     userPermissions,
     "kardex:reservas",
   );
-  const tieneGestionComisiones =
-    auth?.empresa?.plan?.tieneGestionComisiones === true ||
+  const tieneGestionProvisiones =
+    auth?.empresa?.plan?.tieneGestionProvisiones === true ||
+    auth?.rol === "ADMIN_SISTEMA";
+  const tieneTienda =
+    auth?.empresa?.plan?.tieneTienda === true ||
     auth?.rol === "ADMIN_SISTEMA";
   const tieneGestionLotes =
     auth?.empresa?.plan?.tieneGestionLotes === true ||
@@ -279,10 +282,17 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     if (!isOpenModal) {
       setPreviewPrincipal(null);
       setFilePrincipal(null);
+      setLoadingImage(false);
       setImageCandidates([]);
       setGruposSeleccionados([]);
       setCreationLote({ lote: "", fechaVencimiento: "" });
       setNewWholesaleOption({ cantidadMinima: "", precio: "" });
+      setBarcodeQuery("");
+      setSearchingBarcode(false);
+      setTipoAjusteStock("ninguno");
+      setCantidadAjuste(0);
+      setShowMedicamentoModal(false);
+      setShowLotesModal(false);
     }
   }, [isOpenModal]);
 
@@ -644,7 +654,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       if (Number(formValues?.productoId) !== 0 && isEdit) {
         // EDIT MODE
         const hasRemovedImage =
-          !filePrincipal && !previewPrincipal && !formValues.imagenUrl;
+          !filePrincipal && !previewPrincipal && formValues.imagenUrl === null;
+        const currentImageUrl =
+          typeof formValues.imagenUrl === "string" && formValues.imagenUrl.trim()
+            ? formValues.imagenUrl
+            : undefined;
         const stockPayload =
           tipoAjusteStock !== "ninguno"
             ? stockFinal
@@ -660,6 +674,18 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           costoUnitario: formValues?.costoUnitario
             ? Number(formValues?.costoUnitario)
             : undefined,
+          costoFijo:
+            (formValues as any)?.costoFijo != null
+              ? Number((formValues as any).costoFijo)
+              : undefined,
+          comisionPorVenta:
+            (formValues as any)?.comisionPorVenta != null
+              ? Number((formValues as any).comisionPorVenta)
+              : undefined,
+          comisionPorcentaje:
+            (formValues as any)?.comisionPorcentaje != null
+              ? Number((formValues as any).comisionPorcentaje)
+              : undefined,
           stock: stockPayload,
           stockMinimo:
             formValues?.stockMinimo != null
@@ -683,7 +709,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 precio: Number(p.precio),
               }))
             : [],
-          imagenUrl: hasRemovedImage ? null : formValues.imagenUrl || undefined,
+          imagenUrl: hasRemovedImage ? null : currentImageUrl,
         });
 
         try {
@@ -701,7 +727,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
         let imagenUrlFinal: string | null | undefined = hasRemovedImage
           ? null
-          : previewPrincipal || formValues.imagenUrl || updatedProduct?.imagenUrl || undefined;
+          : previewPrincipal || currentImageUrl || updatedProduct?.imagenUrl || undefined;
 
         try {
           // Upload Image flow
@@ -726,7 +752,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               imagenUrlFinal = nuevaUrl;
             }
           } else {
-            const externalUrl = previewPrincipal || formValues.imagenUrl;
+            const externalUrl = previewPrincipal || currentImageUrl;
             if (externalUrl && !externalUrl.includes("amazonaws.com")) {
               const resp = await apiClient.post(
                 `/productos/${formValues.productoId}/imagen-url`,
@@ -756,6 +782,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           codigo: formValues.codigo,
           precioUnitario: Number(formValues.precioUnitario),
           costoUnitario: Number(formValues.costoUnitario || 0),
+          costoFijo: Number((formValues as any).costoFijo || 0),
+          comisionPorVenta: Number((formValues as any).comisionPorVenta || 0),
+          comisionPorcentaje: Number((formValues as any).comisionPorcentaje || 0),
           stock:
             tipoAjusteStock !== "ninguno"
               ? Number(stockFinal)
@@ -787,7 +816,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 nombre: formValues.marcaNombre || "",
               }
             : undefined,
-          imagenUrl: imagenUrlFinal ?? undefined,
+          imagenUrl: hasRemovedImage
+            ? null
+            : imagenUrlFinal ?? currentImageUrl ?? updatedProduct?.imagenUrl ?? undefined,
         });
 
         setFilePrincipal(null);
@@ -819,6 +850,18 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             costoUnitario: formValues?.costoUnitario
               ? Number(formValues?.costoUnitario)
               : undefined,
+            costoFijo:
+              (formValues as any)?.costoFijo != null
+                ? Number((formValues as any).costoFijo)
+                : undefined,
+            comisionPorVenta:
+              (formValues as any)?.comisionPorVenta != null
+                ? Number((formValues as any).comisionPorVenta)
+                : undefined,
+            comisionPorcentaje:
+              (formValues as any)?.comisionPorcentaje != null
+                ? Number((formValues as any).comisionPorcentaje)
+                : undefined,
             stock:
               isFarmacia && features.gestionLotes && creationLote.lote
                 ? 0
@@ -915,24 +958,53 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             }
           }
 
-          upsertProductLocal({
+          if (newId) upsertProductLocal({
+            ...(product?.data || {}),
             id: Number(newId),
             descripcion: formValues.descripcion,
             codigo: product?.data?.codigo || formValues.codigo,
-            precioUnitario: String(formValues.precioUnitario) as any,
+            categoriaId:
+              formValues.categoriaId === "" || formValues.categoriaId == null
+                ? undefined
+                : Number(formValues.categoriaId),
+            unidadMedidaId: Number(formValues.unidadMedidaId),
+            precioUnitario: String(formValues.precioUnitario),
+            costoUnitario: Number(formValues.costoUnitario || 0),
+            costoFijo: Number((formValues as any).costoFijo || 0),
+            comisionPorVenta: Number((formValues as any).comisionPorVenta || 0),
+            comisionPorcentaje: Number((formValues as any).comisionPorcentaje || 0),
             stock: Number(formValues.stock),
+            stockBase: Number(formValues.stock),
+            stockMinimo: Number(formValues.stockMinimo || 0),
+            stockMaximo: Number(formValues.stockMaximo || 0),
+            porcentajeVenta: Number(formValues.porcentajeVenta ?? 100),
+            porcentajeProvision: Number(formValues.porcentajeProvision ?? 0),
+            localizacion: formValues.localizacion || "",
+            preciosMayorista: Array.isArray(formValues.preciosMayorista)
+              ? formValues.preciosMayorista.map((precio) => ({
+                  cantidadMinima: Number(precio.cantidadMinima),
+                  precio: Number(precio.precio),
+                }))
+              : [],
             unidadMedida: {
-              nombre: formValues.unidadMedidaNombre as any,
-            } as any,
-            categoria: { nombre: formValues.categoriaNombre as any } as any,
+              ...(product?.data?.unidadMedida || {}),
+              id: Number(formValues.unidadMedidaId),
+              nombre: formValues.unidadMedidaNombre,
+            },
+            categoria: {
+              ...(product?.data?.categoria || {}),
+              id: Number(formValues.categoriaId || 0),
+              nombre: formValues.categoriaNombre,
+            },
             marca: formValues.marcaId
-              ? ({
+              ? {
+                  ...(product?.data?.marca || {}),
                   id: Number(formValues.marcaId),
-                  nombre: formValues.marcaNombre as any,
-                } as any)
+                  nombre: formValues.marcaNombre || "",
+                }
               : undefined,
-            imagenUrl: urlFinal || undefined,
-            estado: "ACTIVO" as any,
+            imagenUrl: urlFinal || imageToSave || product?.data?.imagenUrl || undefined,
+            estado: "ACTIVO",
           });
 
           const imagenFinalAprobada =
@@ -976,7 +1048,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     isFabricacion,
     features,
     labels,
-    tieneGestionComisiones,
+    tieneGestionProvisiones,
+    tieneTienda,
     tieneGestionLotes,
     isOpenModal,
     isEdit,

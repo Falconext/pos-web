@@ -114,22 +114,30 @@ function App() {
           <Route path="compras" element={<ComprasIndex />} />
           <Route path="compras/proveedores" element={<ProveedoresPage />} />
           <Route path="guia-remision" element={<GuiaRemision />} />
+          <Route path="facturacion/guia-remision" element={<GuiaRemision />} />
+          <Route path="contabilidad" element={<Navigate to="/administrador/contabilidad/reporte" replace />} />
           <Route path="contabilidad/reporte" element={<ReporteContabilidad />} />
           <Route path="contabilidad/reporte-informales" element={<ReporteInformales />} />
           <Route path="contabilidad/arqueo" element={<ArqueoCaja />} />
           <Route path="sire/ventas" element={<LibroVentas />} />
           <Route path="sire/compras" element={<LibroCompras />} />
           <Route path="caja" element={<CajaIndex />} />
+          <Route path="ventas/caja" element={<CajaIndex />} />
           <Route path="facturacion/comprobantes" element={<ComprobantesPage />} />
           <Route path="facturacion/comprobantes-informales" element={<ComprobantesInformales />} />
           <Route path="pagos" element={<Pagos />} />
           <Route path="pagos/cuentas-cobrar" element={<CuentasPorCobrar />} />
+          <Route path="ventas/pagos" element={<Pagos />} />
+          <Route path="ventas/pagos/cuentas-cobrar" element={<CuentasPorCobrar />} />
           <Route path="cotizaciones" element={<Cotizaciones />} />
           <Route path="cotizaciones/nuevo" element={<Invoice />} />
+          <Route path="facturacion/cotizaciones" element={<Cotizaciones />} />
+          <Route path="facturacion/cotizaciones/nuevo" element={<Invoice />} />
           <Route path="facturacion/nuevo" element={<Invoice />} />
           <Route path="finanzas/dashboard" element={<FinanceDashboard />} />
-          <Route path="marketing/campanas" element={<Campanas />} />
-          <Route path="ecommerce/resumen" element={<ResumenNegocio />} />
+          <Route path="mi-negocio/marketing/finanzas" element={<FinanceDashboard />} />
+          <Route path="mi-negocio/marketing/campanas" element={<Campanas />} />
+          <Route path="mi-negocio/resumen" element={<ResumenNegocio />} />
           <Route path="kardex" element={<KardexIndex />} />
           <Route path="kardex/productos" element={<KardexProductos />} />
           <Route path="kardex/traslados" element={<KardexTraslados />} />
@@ -156,11 +164,14 @@ function App() {
           />
           <Route path="usuarios" element={<UsuariosIndex />} />
           <Route path="usuarios/vendedores" element={<VendedoresView />} />
+          <Route path="usuarios/repartidores" element={<RepartidoresView />} />
+          <Route path="usuarios/clientes" element={<ClientesPage />} />
+          <Route path="usuarios/proveedores" element={<ProveedoresPage />} />
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
-          <Route path="despacho" element={<PanelVentasView />} />
+          <Route path="ventas" element={<PanelVentasView />} />
           <Route path="despacho/config" element={<DespachoConfigPage />} />
           <Route path="repartidores" element={<RepartidoresView />} />
           <Route path="tienda/combos" element={<CombosTienda />} />

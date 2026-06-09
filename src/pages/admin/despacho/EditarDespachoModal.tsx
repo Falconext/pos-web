@@ -6,6 +6,8 @@ import moment from "moment";
 import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
 import { useRepartidoresStore } from "@/zustand/repartidores";
+import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
+import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
 
 export const COURIERS = [
     { value: 'SHALOM_PRO', label: 'Shalom PRO' },
@@ -78,7 +80,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         repartidor: '',
         empaquetador: '',
         fechaEstimada: '',
+        costoEnvio: 0,
+        pagarFlete: 'NEGOCIO' as 'CLIENTE' | 'NEGOCIO',
     });
+    const [esNV, setEsNV] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { alert } = useAlertStore();
@@ -96,6 +101,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const payload = data?.data ?? data;
                 const comprobantePayload = comprobanteResp?.data?.data ?? comprobanteResp?.data ?? null;
                 const vendedorNombre = comprobantePayload?.usuario?.nombre ?? '';
+                const tipoComp = comprobantePayload?.tipoComprobante ?? comprobantePayload?.tipo ?? '';
+                const FORMALES = ['01', '03', '07', '08'];
+                setEsNV(!FORMALES.includes(tipoComp) || tipoComp === '');
                 if (payload) {
                     setEnvioData({
                         transportista: payload.transportista || '',
@@ -115,6 +123,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         repartidor: payload.repartidor || '',
                         empaquetador: payload.empaquetador || vendedorNombre || '',
                         fechaEstimada: payload.fechaEstimada ? moment(payload.fechaEstimada).format('YYYY-MM-DD') : '',
+                        costoEnvio: payload.costoEnvio ?? 0,
+                        pagarFlete: payload.pagarFlete ?? 'NEGOCIO',
                     });
                 }
             } catch (error) {
@@ -217,9 +227,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </p>
                         <div className="grid grid-cols-3 gap-3">
                             <Field label="Establecimiento">
-                                <input type="text" value={envioData.establecimiento}
-                                    onChange={e => set('establecimiento', e.target.value)}
-                                    placeholder="Ej: Local 2 - Lima" className={inp} />
+                                <EstablecimientoCombobox
+                                    value={envioData.establecimiento}
+                                    onChange={v => set('establecimiento', v)}
+                                />
                             </Field>
                             <Field label="Clave envío">
                                 <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío" />
@@ -238,10 +249,18 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </p>
                        <div className="mt-4 mb-4">
                        <Field label="Agencia de destino / Dirección">
-                            <input type="text" value={envioData.agenciaDestino}
-                                onChange={e => set('agenciaDestino', e.target.value)}
-                                placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Shalom Cusco Centro' : 'Dirección de entrega'}
-                                className={inp} />
+                            {esShalom && envioData.tipoEnvio === 'AGENCIA' ? (
+                                <ShalomAgenciaSelect
+                                    value={envioData.agenciaDestino}
+                                    onChange={v => set('agenciaDestino', v)}
+                                    placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
+                                />
+                            ) : (
+                                <input type="text" value={envioData.agenciaDestino}
+                                    onChange={e => set('agenciaDestino', e.target.value)}
+                                    placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Olva Cusco Centro' : 'Dirección de entrega'}
+                                    className={inp} />
+                            )}
                         </Field>
                        </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -361,6 +380,48 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             onChange={e => set('observaciones', e.target.value)}
                             placeholder="Instrucciones especiales de embalaje o entrega..." className={inp} />
                     </Field>
+
+                    {/* Costo de envío — solo editable en NV (informales) */}
+                    {esNV && (
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <Icon icon="solar:wallet-money-bold-duotone" className="text-indigo-400" />
+                                Costo de envío
+                            </p>
+                            <div className={`grid gap-3 ${Number(envioData.costoEnvio) > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                <Field label="Monto cobrado al cliente (S/)">
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step={0.01}
+                                        value={envioData.costoEnvio ?? 0}
+                                        onChange={e => set('costoEnvio', Number(e.target.value) || 0)}
+                                        placeholder="0.00 — dejar en 0 si no aplica"
+                                        className={inp}
+                                    />
+                                </Field>
+                                {Number(envioData.costoEnvio) > 0 && (
+                                    <Field label="¿Quién paga el flete?">
+                                        <div className="flex gap-2 w-full">
+                                            {[
+                                                { value: 'CLIENTE', label: 'Cliente paga' },
+                                                { value: 'NEGOCIO', label: 'Negocio absorbe' },
+                                            ].map(opt => (
+                                                <button key={opt.value} type="button"
+                                                    onClick={() => set('pagarFlete', opt.value)}
+                                                    className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${(envioData.pagarFlete ?? 'NEGOCIO') === opt.value
+                                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                                                        : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
+                                                    }`}>
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Field>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Resumen */}
                     {(selectedCourier || envioData.agenciaDestino) && (

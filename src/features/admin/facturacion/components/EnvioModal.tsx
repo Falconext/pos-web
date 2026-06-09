@@ -5,6 +5,8 @@ import Select from "@/components/Select";
 import moment from "moment";
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import useAlertStore from "@/zustand/alert";
+import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
+import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
 
 export const COURIERS = [
     { value: 'SHALOM_PRO', label: 'Shalom PRO' },
@@ -115,12 +117,6 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
         if (!fechaValida) next.fechaEstimada = 'Selecciona una fecha válida de despacho.';
         if (!text(envioData.empaquetador)) next.empaquetador = 'Indica quién prepara el pedido.';
 
-        if (esShalom) {
-            if (!text(envioData.claveEnvio)) next.claveEnvio = 'La clave de envío es obligatoria para Shalom.';
-            if (!text(envioData.claveOrden)) next.claveOrden = 'La clave de orden es obligatoria para Shalom.';
-            if (!text(envioData.tipoMercaderia)) next.tipoMercaderia = 'Indica el tipo de mercadería.';
-        }
-
         if (esPropio && !text(envioData.repartidor)) next.repartidor = 'Selecciona o ingresa un repartidor.';
 
         setErrors(next);
@@ -186,14 +182,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                         </p>
                         <div className="grid grid-cols-3 gap-3">
                             <Field label="Establecimiento" required error={errors.establecimiento}>
-                                <input type="text" value={envioData.establecimiento}
-                                    onChange={e => set('establecimiento', e.target.value)}
-                                    placeholder="Ej: Local 2 - Lima" className={inputClass('establecimiento')} />
+                                <EstablecimientoCombobox
+                                    value={envioData.establecimiento}
+                                    onChange={v => set('establecimiento', v)}
+                                    invalid={Boolean(errors.establecimiento)}
+                                />
                             </Field>
-                            <Field label="Clave envío" required={esShalom} error={errors.claveEnvio}>
+                            <Field label="Clave envío" error={errors.claveEnvio}>
                                 <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío" invalid={Boolean(errors.claveEnvio)} />
                             </Field>
-                            <Field label="Clave orden" required={esShalom} error={errors.claveOrden}>
+                            <Field label="Clave orden" error={errors.claveOrden}>
                                 <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="Clave orden" invalid={Boolean(errors.claveOrden)} />
                             </Field>
                         </div>
@@ -207,10 +205,19 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                         </p>
                        <div className="mt-4 mb-4">
                        <Field label={envioData.tipoEnvio === 'AGENCIA' ? 'Agencia de destino' : 'Dirección de entrega'} required error={errors.agenciaDestino}>
-                            <input type="text" value={envioData.agenciaDestino}
-                                onChange={e => set('agenciaDestino', e.target.value)}
-                                placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Shalom Cusco Centro' : 'Dirección de entrega'}
-                                className={inputClass('agenciaDestino')} />
+                            {esShalom && envioData.tipoEnvio === 'AGENCIA' ? (
+                                <ShalomAgenciaSelect
+                                    value={envioData.agenciaDestino}
+                                    onChange={v => set('agenciaDestino', v)}
+                                    invalid={Boolean(errors.agenciaDestino)}
+                                    placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
+                                />
+                            ) : (
+                                <input type="text" value={envioData.agenciaDestino}
+                                    onChange={e => set('agenciaDestino', e.target.value)}
+                                    placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Olva Cusco Centro' : 'Dirección de entrega'}
+                                    className={inputClass('agenciaDestino')} />
+                            )}
                         </Field>
                        </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -276,7 +283,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                         </Field>
                         {/* Tipo mercadería: solo Shalom */}
                         {esShalom && (
-                            <Field label="Tipo mercadería (Shalom)" required error={errors.tipoMercaderia}>
+                            <Field label="Tipo mercadería (Shalom)" error={errors.tipoMercaderia}>
                                 <input type="text" value={envioData.tipoMercaderia}
                                     onChange={e => set('tipoMercaderia', e.target.value)}
                                     placeholder="Ej: Frágil, Electrónico" className={inputClass('tipoMercaderia')} />

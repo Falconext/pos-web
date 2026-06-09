@@ -39,7 +39,14 @@ const ModalHistorialPagos = ({ comprobante, onClose }: ModalHistorialPagosProps)
     }, [comprobante?.id, getHistorialPagos]);
 
     const totalComprobante = Number(comprobante?.mtoImpVenta || 0);
-    const saldoPendiente = Number(comprobante?.saldo || 0);
+    // comprobante.saldo viene del panel y ya descuenta adelanto + pagos anteriores.
+    // totalPagado viene de los Pago records fetched ahora.
+    // Math.min asegura que si el adelanto no generó un Pago record,
+    // el saldo del panel (que sí lo descuenta) sea el techo correcto.
+    const saldoPendiente = Math.min(
+        Number(comprobante?.saldo ?? 0),
+        Math.max(0, totalComprobante - totalPagado),
+    );
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

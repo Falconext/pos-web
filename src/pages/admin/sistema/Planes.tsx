@@ -9,9 +9,9 @@ import ModuloSelector from "@/components/ModuloSelector";
 import { useAuthStore } from '@/zustand/auth';
 
 const Toggle = ({ label, value, onChange }: { label: string, value: boolean, onChange: (v: boolean) => void }) => (
-    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-2 rounded -mx-2 transition-colors">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-        <button type="button" onClick={() => onChange(!value)} className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${value ? 'bg-blue-600' : 'bg-gray-200'}`}>
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-slate-700 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800 px-2 rounded -mx-2 transition-colors">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+        <button type="button" onClick={() => onChange(!value)} className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${value ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-600'}`}>
             <span aria-hidden="true" className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
     </div>
@@ -26,12 +26,12 @@ const LimitToggle = ({
     checked: boolean;
     onChange: (value: boolean) => void;
 }) => (
-    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-        <span className="text-xs font-semibold text-gray-700">{label}</span>
+    <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 px-3 py-2">
+        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{label}</span>
         <button
             type="button"
             onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-300'}`}
+            className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-600'}`}
         >
             <span
                 aria-hidden="true"
@@ -101,10 +101,10 @@ const Planes = () => {
     return (
         <div className="p-0 md:p-6">
             <div className="flex justify-between items-center mb-6">
-                <div><h1 className="text-2xl font-bold text-gray-800">Planes de Suscripción</h1><p className="text-gray-500 text-sm">Gestiona los planes disponibles para las empresas</p></div>
+                <div><h1 className="text-2xl font-bold text-gray-800 dark:text-white">Planes de Suscripción</h1><p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona los planes disponibles para las empresas</p></div>
                 <div className="flex items-center gap-3">
                     {!hasNegocioScope && (
-                        <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
+                        <div className="flex items-center rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1">
                             {([
                                 { id: '', label: 'Todas' },
                                 { id: 'falconext', label: 'Falconext' },
@@ -114,7 +114,7 @@ const Planes = () => {
                                     key={item.id || 'all-platforms'}
                                     type="button"
                                     onClick={() => vm.setPlataformaFiltro(item.id)}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${vm.plataformaFiltro === item.id ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${vm.plataformaFiltro === item.id ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
                                 >
                                     {item.label}
                                 </button>
@@ -122,7 +122,7 @@ const Planes = () => {
                         </div>
                     )}
                     {!hasProductoScope && (
-                        <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
+                        <div className="flex items-center rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1">
                             {([
                                 { id: '', label: 'Todos' },
                                 { id: 'facturacion', label: 'Facturación' },
@@ -132,7 +132,7 @@ const Planes = () => {
                                     key={item.id || 'all'}
                                     type="button"
                                     onClick={() => vm.setProductoFiltro(item.id)}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${vm.productoFiltro === item.id ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${vm.productoFiltro === item.id ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
                                 >
                                     {item.label}
                                 </button>
@@ -142,23 +142,23 @@ const Planes = () => {
                     <Button onClick={vm.handleOpenCreate} color="primary"><Icon icon="mdi:plus" className="mr-2" />Nuevo Plan</Button>
                 </div>
             </div>
-            <div className="bg-white rounded-lg shadow border overflow-hidden">
+            <div className="bg-white dark:bg-[#111827] rounded-lg shadow border dark:border-slate-800 overflow-hidden">
                 <DataTable headerColumns={headerColumns} bodyData={bodyData} />
-                {!vm.loading && vm.planes.length === 0 && <div className="p-8 text-center text-gray-500">No hay planes registrados</div>}
+                {!vm.loading && vm.planes.length === 0 && <div className="p-8 text-center text-gray-500 dark:text-gray-400">No hay planes registrados</div>}
             </div>
 
 
 
             <Modal isOpenModal={vm.isModalOpen} closeModal={() => vm.setIsModalOpen(false)} title={vm.isEdit ? 'Editar Plan' : 'Nuevo Plan'} position="right" width="600px">
                 <div className="p-6 space-y-5">
-                    <div className="bg-white rounded-lg">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wider">Información Básica</h4>
+                    <div className="rounded-lg">
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wider">Información Básica</h4>
                         <div className="space-y-4">
                             <InputPro isLabel label="Nombre del Plan" name="nombre" value={vm.form.nombre} onChange={(e) => vm.setForm({ ...vm.form, nombre: e.target.value })} placeholder="Ej. Plan Emprendedor" />
                             <InputPro isLabel label="Descripción Corta" name="descripcion" value={vm.form.descripcion} onChange={(e) => vm.setForm({ ...vm.form, descripcion: e.target.value })} placeholder="Breve descripción..." />
                             {!hasProductoScope && (
                                 <div>
-                                    <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">Producto del plan</p>
+                                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">Producto del plan</p>
                                     <div className="grid grid-cols-2 gap-3">
                                         {([
                                             { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
@@ -170,10 +170,10 @@ const Planes = () => {
                                                     key={product.id}
                                                     type="button"
                                                     onClick={() => vm.setForm((prev) => ({ ...prev, producto: product.id, moduloIds: [], subModuloIds: [] }))}
-                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${selected ? 'border-sky-500 bg-sky-50 shadow-sm' : 'border-gray-200 hover:border-sky-300 bg-white'}`}
+                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${selected ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/30 dark:border-sky-400 shadow-sm' : 'border-gray-200 dark:border-slate-600 hover:border-sky-300 dark:hover:border-sky-400 bg-white dark:bg-slate-800/50'}`}
                                                 >
                                                     <Icon icon={product.icon} width={20} style={{ color: selected ? product.color : '#9CA3AF' }} />
-                                                    <span className={`font-semibold text-sm ${selected ? 'text-gray-900' : 'text-gray-500'}`}>{product.label}</span>
+                                                    <span className={`font-semibold text-sm ${selected ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{product.label}</span>
                                                     {selected && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-sky-500" />}
                                                 </button>
                                             );
@@ -183,7 +183,7 @@ const Planes = () => {
                             )}
                             {!hasNegocioScope && (
                                 <div>
-                                    <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">Plataforma del plan</p>
+                                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">Plataforma del plan</p>
                                     <div className="grid grid-cols-2 gap-3">
                                         {([
                                             { id: 'falconext', label: 'Falconext', icon: 'solar:bolt-bold-duotone', color: '#0EA5E9' },
@@ -195,10 +195,10 @@ const Planes = () => {
                                                     key={platform.id}
                                                     type="button"
                                                     onClick={() => vm.setForm((prev) => ({ ...prev, plataforma: platform.id }))}
-                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${selected ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-gray-200 hover:border-indigo-300 bg-white'}`}
+                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${selected ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 dark:border-indigo-400 shadow-sm' : 'border-gray-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-400 bg-white dark:bg-slate-800/50'}`}
                                                 >
                                                     <Icon icon={platform.icon} width={20} style={{ color: selected ? platform.color : '#9CA3AF' }} />
-                                                    <span className={`font-semibold text-sm ${selected ? 'text-gray-900' : 'text-gray-500'}`}>{platform.label}</span>
+                                                    <span className={`font-semibold text-sm ${selected ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{platform.label}</span>
                                                     {selected && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-indigo-500" />}
                                                 </button>
                                             );
@@ -212,9 +212,9 @@ const Planes = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="border-t border-gray-100 my-4"></div>
-                    <div className="bg-white rounded-lg">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wider">Límites</h4>
+                    <div className="border-t border-gray-100 dark:border-slate-700 my-4"></div>
+                    <div className="rounded-lg">
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wider">Límites</h4>
                         <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <InputPro
@@ -271,19 +271,19 @@ const Planes = () => {
                                 />
                             </div>
                         </div>
-                        <p className="mt-2 text-xs text-gray-500">
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             Usa <span className="font-semibold">0</span> para dejar el límite como <span className="font-semibold">Ilimitado</span>.
                         </p>
                     </div>
-                    <div className="border-t border-gray-100 my-4"></div>
+                    <div className="border-t border-gray-100 dark:border-slate-700 my-4"></div>
                     <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Configuración Avanzada</h4>
-                        <button type="button" onClick={() => vm.setShowFeaturesModal(true)} className="w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors group">
-                            <div className="flex items-center gap-3"><div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Icon icon="solar:stars-minimalistic-bold-duotone" width={24} /></div><div className="text-left"><div className="font-semibold text-gray-800">Características</div><div className="text-xs text-gray-500">Tienda, delivery, imágenes, etc.</div></div></div>
-                            <Icon icon="solar:alt-arrow-right-linear" className="text-gray-400 group-hover:text-gray-600" width={20} />
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Configuración Avanzada</h4>
+                        <button type="button" onClick={() => vm.setShowFeaturesModal(true)} className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group">
+                            <div className="flex items-center gap-3"><div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Icon icon="solar:stars-minimalistic-bold-duotone" width={24} /></div><div className="text-left"><div className="font-semibold text-gray-800 dark:text-white">Características</div><div className="text-xs text-gray-500 dark:text-gray-400">Tienda, delivery, imágenes, etc.</div></div></div>
+                            <Icon icon="solar:alt-arrow-right-linear" className="text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300" width={20} />
                         </button>
-                        <button type="button" onClick={() => vm.setShowModulesModal(true)} className="w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors group">
-                            <div className="flex items-center gap-3"><div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><Icon icon="solar:widget-bold-duotone" width={24} /></div><div className="text-left"><div className="font-semibold text-gray-800">Módulos y Submódulos</div><div className="text-xs text-gray-500">Acceso a secciones del sistema</div></div></div>
+                        <button type="button" onClick={() => vm.setShowModulesModal(true)} className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group">
+                            <div className="flex items-center gap-3"><div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><Icon icon="solar:widget-bold-duotone" width={24} /></div><div className="text-left"><div className="font-semibold text-gray-800 dark:text-white">Módulos y Submódulos</div><div className="text-xs text-gray-500 dark:text-gray-400">Acceso a secciones del sistema</div></div></div>
                             <div className="flex items-center gap-2">
                                 {(vm.form.moduloIds?.length || 0) > 0 && <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{vm.form.moduloIds?.length} mód.</span>}
                                 {(vm.form.subModuloIds?.length || 0) > 0 && <span className="bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{vm.form.subModuloIds?.length} sub.</span>}
@@ -292,19 +292,19 @@ const Planes = () => {
                         </button>
                     </div>
                 </div>
-                <div className="flex justify-end gap-2 p-6 border-t border-gray-100 bg-white sticky bottom-0 z-10">
+                <div className="flex justify-end gap-2 p-6 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827] sticky bottom-0 z-10">
                     <Button onClick={() => vm.setIsModalOpen(false)} color="secondary" outline>Cancelar</Button>
                     <Button onClick={vm.handleSubmit} color="primary" disabled={vm.loading}>{vm.loading ? 'Guardando...' : 'Guardar Plan'}</Button>
                 </div>
             </Modal>
             <Modal isOpenModal={vm.showFeaturesModal} closeModal={() => vm.setShowFeaturesModal(false)} title="Características del Plan" position="right" width="500px" backdropClassName="bg-black/20">
                 <div className="p-6">
-                    <div className="space-y-1">
+                    <div className="space-y-1 dark:bg-transparent">
                         <Toggle label="Plan de Prueba (Gratuito)" value={vm.form.esPrueba || false} onChange={v => vm.setForm({ ...vm.form, esPrueba: v })} />
                         <Toggle label="Tienda Virtual" value={vm.form.tieneTienda || false} onChange={v => vm.setForm({ ...vm.form, tieneTienda: v })} />
                         {vm.form.tieneTienda && (
-                            <div className="ml-4 pl-4 border-l-2 border-gray-100 mb-2 space-y-2 bg-gray-50 p-3 rounded-r-lg">
-                                <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Configuración Tienda</h5>
+                            <div className="ml-4 pl-4 border-l-2 border-gray-100 dark:border-slate-700 mb-2 space-y-2 bg-gray-50 dark:bg-slate-800/30 p-3 rounded-r-lg">
+                                <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Configuración Tienda</h5>
                                 <InputPro isLabel label="Máx. Banners" name="maxBanners" type="number" value={vm.form.maxBanners} onChange={(e) => vm.setForm({ ...vm.form, maxBanners: Number(e.target.value) })} />
                                 <InputPro isLabel label="Máx. Img/Producto" name="maxImagenesProducto" type="number" value={vm.form.maxImagenesProducto} onChange={(e) => vm.setForm({ ...vm.form, maxImagenesProducto: Number(e.target.value) })} />
                             </div>
@@ -315,16 +315,16 @@ const Planes = () => {
                         <Toggle label="Delivery GPS Tracker" value={vm.form.tieneDeliveryGPS || false} onChange={v => vm.setForm({ ...vm.form, tieneDeliveryGPS: v })} />
                         <Toggle label="Ticketera (Impresión Térmica)" value={vm.form.tieneTicketera || false} onChange={v => vm.setForm({ ...vm.form, tieneTicketera: v })} />
                         <Toggle label="Gestión de Lotes" value={vm.form.tieneGestionLotes || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionLotes: v })} />
-                        <Toggle label="Gestión de Comisiones" value={vm.form.tieneGestionComisiones || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionComisiones: v })} />
+                        <Toggle label="Gestión de Provisiones" value={vm.form.tieneGestionProvisiones || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionProvisiones: v })} />
                     </div>
-                    <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end"><Button onClick={() => vm.setShowFeaturesModal(false)} color="black">Listo</Button></div>
+                    <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-end"><Button onClick={() => vm.setShowFeaturesModal(false)} color="black">Listo</Button></div>
                 </div>
             </Modal>
             <Modal isOpenModal={vm.showModulesModal} closeModal={() => vm.setShowModulesModal(false)} title="Módulos y Submódulos del Plan" position="right" width="900px" backdropClassName="bg-black/20">
                 <div className="p-6">
-                    <div className="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-100">
-                        <h4 className="text-sm font-bold text-purple-800 mb-1">Control de Acceso por Plan</h4>
-                        <p className="text-sm text-purple-700">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
+                    <div className="mb-6 bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-100 dark:border-purple-800">
+                        <h4 className="text-sm font-bold text-purple-800 dark:text-purple-300 mb-1">Control de Acceso por Plan</h4>
+                        <p className="text-sm text-purple-700 dark:text-purple-400">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
                     </div>
                     <ModuloSelector
                         producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel'}
@@ -333,7 +333,7 @@ const Planes = () => {
                         selectedSubModulos={vm.form.subModuloIds || []}
                         onSubModulosChange={(subs) => vm.setForm(prev => ({ ...prev, subModuloIds: subs }))}
                     />
-                    <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end">
+                    <div className="mt-8 pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-end">
                         <Button onClick={() => vm.setShowModulesModal(false)} color="black">Guardar Selección</Button>
                     </div>
                 </div>

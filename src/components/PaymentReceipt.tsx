@@ -59,16 +59,14 @@ const PaymentReceipt = ({
     contentRef: componentRef,
     pageStyle: `
       @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-      @media print {
-        @page { size: 80mm 297mm; margin: 0; }
-        * {
-          font-family: 'VT323', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        body { width: 80mm; height: 297mm; overflow: hidden; }
-        .p-5 { width: 100%; height: 100%; box-sizing: border-box; }
+      @page { size: 80mm 297mm; margin: 0; }
+      * {
+        font-family: 'VT323', 'Courier New', Courier, monospace !important;
+        text-transform: uppercase !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
+      body { width: 80mm; margin: 0; }
     `,
   });
 
@@ -126,7 +124,7 @@ const PaymentReceipt = ({
             <div className="text-[18px] mb-2">
               <p>Comprobante Original:</p>
               <p>Serie - Nro: {serieCorrelativo}</p>
-              <p className="capitalize">Cliente: {clienteNombre?.toLowerCase()}</p>
+              <p>CLIENTE: {clienteNombre?.toUpperCase()}</p>
               <p>RUC/DNI: {(comprobante?.data?.cliente)?.nroDoc}</p>
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
@@ -141,7 +139,7 @@ const PaymentReceipt = ({
                 <div key={i} className="flex flex-col mb-1">
                   <div className="flex">
                     <span className="w-1/5 text-[18px] text-center">{item?.cantidad || 0}</span>
-                    <span className="w-3/5 text-[18px] text-left capitalize">{item?.descripcion?.toLowerCase() || ''}</span>
+                    <span className="w-3/5 text-[18px] text-left">{item?.descripcion?.toUpperCase() || ''}</span>
                     <span className="w-1/5 text-[18px] text-left">{Number(item?.mtoPrecioUnitario || item?.mtoValorUnitario || 0).toFixed(2)}</span>
                     <span className="w-1/5 text-[18px] text-right">{Number((item?.mtoPrecioUnitario || 0) * (item?.cantidad || 1)).toFixed(2)}</span>
                   </div>
@@ -186,23 +184,23 @@ const PaymentReceipt = ({
       </div>
 
       {/* Modal visual en pantalla */}
-      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-gray-100 dark:border-slate-700">
 
           {/* Header */}
-          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+          <div className="p-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-gray-100 text-gray-600">
+              <div className="p-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300">
                 <Icon icon={getIconByType()} className="text-xl" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Pago Registrado</h3>
-                <p className="text-xs text-gray-400">{getTitleByType()}</p>
+                <h3 className="font-bold text-gray-900 dark:text-white">Pago Registrado</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500">{getTitleByType()}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-xl text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
             >
               <Icon icon="mdi:close" className="text-xl" />
             </button>
@@ -216,31 +214,31 @@ const PaymentReceipt = ({
               </div>
             )}
             <Row label="Comprobante" value={serieCorrelativo} />
-            {clienteNombre && <Row label="Cliente" value={clienteNombre} />}
+            {clienteNombre && <Row label="Cliente" value={clienteNombre.toUpperCase()} />}
             <Row label="Total comprobante" value={`S/ ${totalComprobante.toFixed(2)}`} />
 
-            <div className="border-t border-gray-100 pt-2.5 space-y-2.5">
+            <div className="border-t border-gray-100 dark:border-slate-700 pt-2.5 space-y-2.5">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-gray-400 dark:text-slate-500">
                   {payment.tipo === 'ADELANTO' ? 'Adelanto' : 'Monto pagado'}
                 </span>
-                <span className="text-xl font-black text-gray-900">S/ {payment.monto?.toFixed(2)}</span>
+                <span className="text-xl font-black text-gray-900 dark:text-white">S/ {payment.monto?.toFixed(2)}</span>
               </div>
               <Row label="Método de pago" value={payment.medioPago?.toUpperCase()} />
               {payment.referencia && <Row label="Referencia" value={payment.referencia.toUpperCase()} />}
               {payment.observacion && <Row label="Observación" value={payment.observacion} />}
             </div>
 
-            <div className="border-t border-gray-100 pt-2.5 flex justify-between items-center">
-              <span className="text-sm text-gray-400">
+            <div className="border-t border-gray-100 dark:border-slate-700 pt-2.5 flex justify-between items-center">
+              <span className="text-sm text-gray-400 dark:text-slate-500">
                 {payment.tipo === 'ADELANTO' ? 'Nuevo saldo a pagar' : 'Saldo pendiente'}
               </span>
-              <span className={`text-xl font-black`}>
+              <span className="text-xl font-black text-gray-900 dark:text-white">
                 S/ {Number(nuevoSaldo ?? 0).toFixed(2)}
               </span>
             </div>
             {nuevoSaldo === 0 && (
-              <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                 <Icon icon="solar:check-circle-bold" width="13" height="13" />
                 Comprobante pagado en su totalidad
               </p>
@@ -248,16 +246,16 @@ const PaymentReceipt = ({
           </div>
 
           {/* Acciones */}
-          <div className="p-4 border-t border-gray-100 flex gap-2">
+          <div className="p-4 border-t border-gray-100 dark:border-slate-700 flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm"
+              className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors font-medium text-sm"
             >
               Cerrar
             </button>
             <button
               onClick={handlePrint}
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
             >
               <Icon icon="solar:printer-bold" width="15" height="15" />
               Imprimir
@@ -272,8 +270,8 @@ const PaymentReceipt = ({
 
 const Row = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between items-center text-sm">
-    <span className="text-gray-400">{label}</span>
-    <span className="font-medium text-gray-700 text-right max-w-[60%]">{value}</span>
+    <span className="text-gray-400 dark:text-slate-500">{label}</span>
+    <span className="font-medium text-gray-700 dark:text-slate-200 text-right max-w-[60%]">{value}</span>
   </div>
 );
 

@@ -68,7 +68,7 @@ export default function UsersView() {
     const usuariosTableData = usuarios.map((usuario) => ({
         id: usuario.id,
         nombre: usuario.nombre,
-        email: usuario.email,
+        email: usuario.email?.toLowerCase(),
         dni: usuario.dni,
         celular: usuario.celular,
         rol: getRolBadge(usuario.rol),

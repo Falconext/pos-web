@@ -13,6 +13,8 @@ export interface IProductsState {
     product: string;
     productCode: string
     totalProducts: number;
+    lastUpsertedProduct: IProduct | null;
+    productMutationVersion: number;
     resetProducts: () => void;
     addProduct: (data: IFormProduct, options?: { skipStore?: boolean }) => Promise<any>
     editProduct: (data: IFormProduct) => Promise<any>
@@ -25,7 +27,7 @@ export interface IProductsState {
     deleteProduct: (productoId: number) => Promise<void>;
     deleteAllProducts: (sedeId?: number) => Promise<void>;
     setProductImage: (productoId: number, imagenUrl: string) => void;
-    upsertProductLocal: (product: any) => void;
+    upsertProductLocal: (product: Partial<IProduct> & Pick<IProduct, 'id'>) => void;
 }
 
 export const useProductsStore = create<IProductsState>()(devtools((set, _get) => ({
@@ -34,6 +36,8 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
     productCode: '',
     totalProducts: 0,
     productsLoaded: false,
+    lastUpsertedProduct: null,
+    productMutationVersion: 0,
     getAllProducts: async (params: any, callback?: Function,
         _allProperties?: boolean) => {
         const requestId = latestProductsRequestId + 1;
@@ -122,15 +126,26 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             ),
         }), false, 'SET_PRODUCT_IMAGE');
     },
-    upsertProductLocal: (product: any) => {
+    upsertProductLocal: (product: Partial<IProduct> & Pick<IProduct, 'id'>) => {
+        const productId = Number(product.id);
+        if (!Number.isFinite(productId) || productId <= 0) return;
+
         set((state) => {
-            const exists = state.products?.some((p: IProduct) => p.id === product.id);
+            const currentProduct = state.products?.find((p: IProduct) => p.id === productId);
+            const nextProduct = {
+                ...(currentProduct || {}),
+                ...product,
+                id: productId,
+            } as IProduct;
+            const exists = Boolean(currentProduct);
             const merged = exists
-                ? state.products.map((p: IProduct) => p.id === product.id ? { ...p, ...product } as any : p)
-                : [{ ...(product as any) }, ...(state.products || [])];
+                ? state.products.map((p: IProduct) => p.id === productId ? nextProduct : p)
+                : [nextProduct, ...(state.products || [])];
             return {
-                products: merged as any,
+                products: merged,
                 totalProducts: exists ? state.totalProducts : (state.totalProducts || 0) + 1,
+                lastUpsertedProduct: nextProduct,
+                productMutationVersion: state.productMutationVersion + 1,
             };
         }, false, 'UPSERT_PRODUCT_LOCAL');
     },
@@ -141,44 +156,45 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             console.log(resp);
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
+                const createdProduct = {
+                    ...data,
+                    ...resp.data,
+                    id: Number(resp.data?.id),
+                    codigo: data?.codigo || resp.data?.codigo,
+                    imagenUrl: data.imagenUrl,
+                    categoria: {
+                        ...(resp.data?.categoria || {}),
+                        nombre: data.categoriaNombre || resp.data?.categoria?.nombre,
+                    },
+                    unidadMedida: {
+                        ...(resp.data?.unidadMedida || {}),
+                        nombre: data.unidadMedidaNombre || resp.data?.unidadMedida?.nombre,
+                    },
+                    marca: data.marcaId ? {
+                        ...(resp.data?.marca || {}),
+                        id: Number(data.marcaId),
+                        nombre: data.marcaNombre || resp.data?.marca?.nombre,
+                    } : undefined,
+                } as IProduct;
+
                 if (!options?.skipStore) {
-                    set((state) => ({
-                        products: [{
-                            ...data,
-                            id: resp.data?.id,
-                            codigo: data?.codigo || resp.data?.codigo,
-                            imagenUrl: (data as any).imagenUrl,
-                            categoria: {
-                                nombre: data.categoriaNombre
-                            },
-                            unidadMedida: {
-                                nombre: data.unidadMedidaNombre
-                            },
-                            marca: data.marcaId ? {
-                                id: data.marcaId,
-                                nombre: data.marcaNombre,
-                            } : undefined,
-                        }, ...(state.products ?? [])],
-                        totalProducts: (state.totalProducts || 0) + 1,
-                    }), false, "ADD_PRODUCTS");
+                    _get().upsertProductLocal(createdProduct);
                 }
 
-                useAlertStore.setState({ loading: false });
                 useAlertStore.getState().alert("Se agrego el producto correctamente", "success")
                 return {
                     data: {
-                        ...resp.data,
-                        unidadMedida: {
-                            nombre: data.unidadMedidaNombre
-                        }
+                        ...createdProduct,
                     }
                 };
             }
             if (resp.code === 2) {
-                useAlertStore.getState().alert(`Este dni ya ha sido registrado en un producto`, "error")
+                useAlertStore.getState().alert(`Este código ya ha sido registrado en un producto`, "error")
             }
         } catch (error: any) {
-            return useAlertStore.getState().alert(`${error}, el dni ya ha sido registrado en un producto`, "error")
+            return useAlertStore.getState().alert(`${error}`, "error")
+        } finally {
+            useAlertStore.setState({ loading: false });
         }
     },
     editProduct: async (data: any) => {

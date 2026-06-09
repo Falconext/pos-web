@@ -64,6 +64,9 @@ export const initialProductForm: IFormProduct = {
     estado: "",
     costoPromedio: 0,
     costoUnitario: 0,
+    costoFijo: 0,
+    comisionPorVenta: 0,
+    comisionPorcentaje: 0,
     // Campos Farmacia
     principioActivo: "",
     concentracion: "",

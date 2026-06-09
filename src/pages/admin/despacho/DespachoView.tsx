@@ -10,7 +10,148 @@ import { EditarDespachoModal } from './EditarDespachoModal';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
 import { useRepartidoresStore } from '@/zustand/repartidores';
 
-const ESTADOS_WA_NOTIFICADOS = new Set(['EN_CAMINO', 'ENTREGADO']);
+const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+
+const SHALOM_TIMELINE = [
+    { key: 'registrado', label: 'Registrado' },
+    { key: 'origen',     label: 'En origen' },
+    { key: 'transito',   label: 'En tránsito' },
+    { key: 'destino',    label: 'En destino / Agencia' },
+    { key: 'entregado',  label: 'Entregado' },
+];
+
+function openBlob(blob: Blob, filename: string, mimeType: string) {
+    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    if (mimeType === 'application/pdf') a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber: string; orderCode: string; onClose: () => void }) {
+    const [trackData, setTrackData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [blobLoading, setBlobLoading] = useState<'ticket' | 'label' | null>(null);
+
+    useEffect(() => {
+        apiClient.post('/shalom/track', { orderNumber, orderCode })
+            .then(res => setTrackData(res.data?.data ?? res.data))
+            .catch(() => setError('No se pudo obtener el tracking. Verifica el N° de orden.'))
+            .finally(() => setLoading(false));
+    }, [orderNumber, orderCode]);
+
+    const openTicket = async () => {
+        setBlobLoading('ticket');
+        try {
+            const res = await apiClient.get(`/shalom/ticket/${orderNumber}/${orderCode}`, { responseType: 'blob' });
+            openBlob(res.data, `ticket-${orderNumber}.png`, 'image/png');
+        } catch { useAlertStore.getState().alert('No se pudo obtener el ticket', 'error'); }
+        finally { setBlobLoading(null); }
+    };
+
+    const openLabel = async () => {
+        setBlobLoading('label');
+        try {
+            const res = await apiClient.get(`/shalom/label/${orderNumber}/${orderCode}`, { responseType: 'blob' });
+            openBlob(res.data, `etiqueta-${orderNumber}.pdf`, 'application/pdf');
+        } catch { useAlertStore.getState().alert('No se pudo obtener la etiqueta', 'error'); }
+        finally { setBlobLoading(null); }
+    };
+
+    const search = trackData?.search?.data ?? trackData?.search ?? null;
+    const statuses = trackData?.statuses?.data ?? trackData?.statuses ?? null;
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-lg bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+                            <Icon icon="solar:delivery-bold-duotone" className="text-white text-lg" />
+                        </div>
+                        <div>
+                            <p className="text-white font-black text-sm">Tracking Shalom</p>
+                            <p className="text-slate-400 text-xs">Orden #{orderNumber} · clave {orderCode}</p>
+                        </div>
+                    </div>
+                    <button type="button" onClick={onClose} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+                        <Icon icon="solar:close-circle-bold" />
+                    </button>
+                </div>
+
+                <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+                    {loading && (
+                        <div className="flex items-center justify-center gap-2 py-8 text-slate-500">
+                            <Icon icon="eos-icons:loading" className="animate-spin text-xl" />
+                            <span className="text-sm">Consultando Shalom...</span>
+                        </div>
+                    )}
+                    {error && <p className="text-sm text-red-500 text-center py-6">{error}</p>}
+
+                    {search && !loading && (
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 text-xs space-y-1.5">
+                            <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">{search.contenido}</p>
+                            <div className="flex gap-4 text-slate-500 dark:text-slate-400">
+                                <span>De: <strong className="text-slate-700 dark:text-slate-200">{search.origen?.nombre}</strong></span>
+                                <span>→</span>
+                                <span>A: <strong className="text-slate-700 dark:text-slate-200">{search.destino?.nombre}</strong></span>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400">
+                                Destinatario: <strong className="text-slate-700 dark:text-slate-200">{search.destinatario?.nombre}</strong>
+                            </p>
+                            {search.entregado && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 font-bold">
+                                    <Icon icon="solar:check-circle-bold" width={12} /> Entregado
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {statuses && !loading && (
+                        <div className="space-y-0">
+                            {SHALOM_TIMELINE.map((step, i) => {
+                                const ev = statuses[step.key];
+                                const done = Boolean(ev?.fecha);
+                                const isLast = i === SHALOM_TIMELINE.length - 1;
+                                return (
+                                    <div key={step.key} className="flex gap-3">
+                                        <div className="flex flex-col items-center">
+                                            <div className={`w-3 h-3 rounded-full mt-0.5 flex-shrink-0 ${done ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
+                                            {!isLast && <div className={`w-0.5 flex-1 my-0.5 ${done ? 'bg-indigo-200 dark:bg-indigo-900' : 'bg-slate-100 dark:bg-slate-800'}`} style={{ minHeight: 20 }} />}
+                                        </div>
+                                        <div className="pb-3">
+                                            <p className={`text-sm font-semibold ${done ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-600'}`}>{step.label}</p>
+                                            {ev?.fecha && <p className="text-xs text-slate-400 dark:text-slate-500">{ev.fecha}</p>}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onClick={openTicket} disabled={blobLoading === 'ticket'}
+                        className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-60">
+                        {blobLoading === 'ticket' ? <Icon icon="eos-icons:loading" className="animate-spin" /> : <Icon icon="solar:ticket-bold-duotone" />}
+                        Ver ticket
+                    </button>
+                    <button type="button" onClick={openLabel} disabled={blobLoading === 'label'}
+                        className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors disabled:opacity-60">
+                        {blobLoading === 'label' ? <Icon icon="eos-icons:loading" className="animate-spin" /> : <Icon icon="solar:tag-price-bold-duotone" />}
+                        Etiqueta PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const ESTADOS_WA_NOTIFICADOS = new Set(['EN_CAMINO', 'EN_AGENCIA', 'ENTREGADO']);
 
 const WA_CONFIG_DEFAULTS = {
     mensajeEnCamino: 'Hola {{nombre}}, tu pedido {{pedido}} ya está en camino 🚚. Repartidor: {{repartidor}}.',
@@ -33,6 +174,8 @@ function buildWaMessage(item: DespachoItem, config: typeof WA_CONFIG_DEFAULTS): 
         case 'EN_REPARTO':
         case 'ENVIADO':
             return interpolar(config.mensajeEnCamino);
+        case 'EN_AGENCIA':
+            return `Hola ${item.cliente}, tu pedido ${item.referencia} llegó a la agencia 📦. Para retirarlo necesitamos confirmar el pago restante. Te avisamos cuando esté listo. Gracias.`;
         case 'EN_DESTINO':
             return `Hola ${item.cliente}, tu pedido ${item.referencia} está llegando a su destino. ¡Por favor estate atento! 🚚`;
         case 'ENTREGADO':
@@ -50,6 +193,7 @@ const ESTADO_COLOR: Record<string, string> = {
     PREPARANDO: 'bg-amber-50 text-amber-700 border-amber-200',
     EN_CAMINO: 'bg-blue-50 text-blue-700 border-blue-200',
     EN_DESTINO: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    EN_AGENCIA: 'bg-orange-50 text-orange-700 border-orange-200',
     ENTREGADO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     DEVUELTO: 'bg-red-50 text-red-700 border-red-200',
     SIN_ASIGNAR: 'bg-slate-100 text-slate-600 border-slate-200',
@@ -63,6 +207,7 @@ const ESTADO_COLOR: Record<string, string> = {
 const ESTADOS_DESPACHO = [
     { value: 'PREPARANDO', label: 'Preparando' },
     { value: 'EN_CAMINO', label: 'En camino' },
+    { value: 'EN_AGENCIA', label: 'En agencia' },
     { value: 'EN_DESTINO', label: 'En destino' },
     { value: 'ENTREGADO', label: 'Entregado' },
     { value: 'DEVUELTO', label: 'Devuelto' },
@@ -71,6 +216,7 @@ const ESTADOS_DESPACHO = [
 const DESPACHO_TO_PEDIDO: Record<string, { estadoEntrega: string; estadoEnvio: string }> = {
     PREPARANDO: { estadoEntrega: 'CONFIRMADO', estadoEnvio: 'POR_COORDINAR' },
     EN_CAMINO: { estadoEntrega: 'EN_TRANSITO', estadoEnvio: 'EN_REPARTO' },
+    EN_AGENCIA: { estadoEntrega: 'EN_AGENCIA', estadoEnvio: 'ENVIADO' },
     EN_DESTINO: { estadoEntrega: 'EN_TRANSITO', estadoEnvio: 'EN_REPARTO' },
     ENTREGADO: { estadoEntrega: 'ENTREGADO_COMPLETADO', estadoEnvio: 'ENTREGADO' },
     DEVUELTO: { estadoEntrega: 'PENDIENTE', estadoEnvio: 'INCIDENCIA' },
@@ -80,6 +226,7 @@ const toDespachoEstado = (estado: string) => {
     if (ESTADOS_DESPACHO.some(e => e.value === estado)) return estado;
     if (['POR_COORDINAR', 'SIN_ASIGNAR', 'NO_APLICA'].includes(estado)) return 'PREPARANDO';
     if (['ENVIADO', 'EN_REPARTO'].includes(estado)) return 'EN_CAMINO';
+    if (['EN_AGENCIA'].includes(estado)) return 'EN_AGENCIA';
     if (['ENTREGADO_COMPLETADO'].includes(estado)) return 'ENTREGADO';
     if (['INCIDENCIA'].includes(estado)) return 'DEVUELTO';
     return 'PREPARANDO';
@@ -144,6 +291,8 @@ interface DespachoItem {
     nroPaquetes: number;
     turnoEnvio: string;
     codigoGuia: string;
+    nroOrden?: string;
+    claveOrden?: string;
     estado: string;
     creadoEn: string;
     repartidorId?: number | null;
@@ -187,6 +336,8 @@ function EditarPedidoTiendaDespachoModal({ item, onClose, onSuccess }: EditarPed
     const { repartidores, fetchRepartidores, loading: loadingRepartidores } = useRepartidoresStore();
     const { alert } = useAlertStore();
     const [saving, setSaving] = useState(false);
+    const [confirmandoPago, setConfirmandoPago] = useState(false);
+    const [montoPagadoInput, setMontoPagadoInput] = useState(String(item.montoPagado ?? 0));
     const [form, setForm] = useState({
         agenciaEnvio: normalizeCourier(item.courier),
         clienteDireccion: item.agenciaDestino && item.agenciaDestino !== '—' ? item.agenciaDestino : '',
@@ -196,20 +347,19 @@ function EditarPedidoTiendaDespachoModal({ item, onClose, onSuccess }: EditarPed
         notasInternas: '',
     });
 
-    useEffect(() => {
-        fetchRepartidores();
-    }, [fetchRepartidores]);
+    useEffect(() => { fetchRepartidores(); }, [fetchRepartidores]);
 
-    const updateField = (field: keyof typeof form, value: string) => {
+    const updateField = (field: keyof typeof form, value: string) =>
         setForm(prev => ({ ...prev, [field]: value }));
-    };
+
+    const total = item.total ?? 0;
+    const saldoActual = item.saldoPendiente ?? 0;
+    const tieneSaldo = saldoActual > 0.01;
+    const saldoCalcInput = Math.max(total - Number(montoPagadoInput || 0), 0);
 
     const guardar = async () => {
         if (!item.pedidoId) return;
-        if (!form.clienteTelefono.trim()) {
-            alert('Ingresa el celular de entrega', 'warning');
-            return;
-        }
+        if (!form.clienteTelefono.trim()) { alert('Ingresa el celular de entrega', 'warning'); return; }
         setSaving(true);
         try {
             await apiClient.patch(`/tienda/pedidos/${item.pedidoId}/estado`, {
@@ -220,25 +370,54 @@ function EditarPedidoTiendaDespachoModal({ item, onClose, onSuccess }: EditarPed
                 repartidorId: form.repartidorId ? Number(form.repartidorId) : null,
                 notasInternas: form.notasInternas.trim(),
             });
-            alert('Despacho del pedido actualizado', 'success');
+            alert('Despacho actualizado', 'success');
             onSuccess();
-        } catch {
-            alert('Error al actualizar el pedido de tienda', 'error');
-        } finally {
-            setSaving(false);
-        }
+        } catch { alert('Error al actualizar el pedido', 'error'); }
+        finally { setSaving(false); }
+    };
+
+    const confirmarPagoCompleto = async () => {
+        setConfirmandoPago(true);
+        try {
+            if (item.tipo === 'COMPROBANTE' && item.comprobanteId) {
+                await apiClient.patch(`/envio-despacho/comprobante/${item.comprobanteId}/confirmar-pago`);
+            } else if (item.pedidoId) {
+                await apiClient.patch(`/tienda/pedidos/${item.pedidoId}/estado`, { montoPagado: total });
+            } else return;
+            alert('¡Pago completo confirmado! Se notificó al cliente por WhatsApp', 'success');
+            onSuccess();
+        } catch { alert('Error al confirmar pago', 'error'); }
+        finally { setConfirmandoPago(false); }
+    };
+
+    const actualizarMontoParcial = async () => {
+        const monto = Number(montoPagadoInput || 0);
+        if (monto < 0 || monto > total) { alert('Monto inválido', 'warning'); return; }
+        setSaving(true);
+        try {
+            if (item.tipo === 'COMPROBANTE' && item.comprobanteId) {
+                // Para comprobante, actualizar saldo directamente
+                const nuevoSaldo = Math.max(total - monto, 0);
+                await apiClient.patch(`/envio-despacho/comprobante/${item.comprobanteId}/actualizar-saldo`, { saldo: nuevoSaldo });
+            } else if (item.pedidoId) {
+                await apiClient.patch(`/tienda/pedidos/${item.pedidoId}/estado`, { montoPagado: monto });
+            } else return;
+            alert('Pago actualizado', 'success');
+            onSuccess();
+        } catch { alert('Error al actualizar pago', 'error'); }
+        finally { setSaving(false); }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4">
-            <div className="w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] shadow-2xl overflow-hidden">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4">
+            <div className="w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <span className="h-11 w-11 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
                             <Icon icon="solar:delivery-bold-duotone" className="text-2xl" />
                         </span>
                         <div>
-                            <h2 className="text-lg font-black text-slate-900 dark:text-white">Editar despacho tienda</h2>
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white">Editar despacho</h2>
                             <p className="text-xs text-slate-500">{item.referencia} · {item.cliente}</p>
                         </div>
                     </div>
@@ -247,78 +426,153 @@ function EditarPedidoTiendaDespachoModal({ item, onClose, onSuccess }: EditarPed
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
-                    <label className="space-y-1.5">
-                        <span className="text-[11px] font-black uppercase text-slate-500">Courier / modalidad</span>
-                        <select
-                            value={form.agenciaEnvio}
-                            onChange={e => updateField('agenciaEnvio', e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
-                        >
-                            {Object.entries(COURIER_LABEL).map(([value, label]) => (
-                                <option key={value} value={value}>{label}</option>
-                            ))}
-                        </select>
-                    </label>
+                <div className="overflow-y-auto flex-1">
+                    {/* ── Sección de pagos ── */}
+                    <div className="mx-6 mt-5 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
+                            <Icon icon="solar:wallet-money-bold-duotone" className="text-indigo-500 text-lg" />
+                            <span className="text-xs font-black uppercase text-slate-600 dark:text-slate-300">Estado de pago</span>
+                        </div>
 
-                    <label className="space-y-1.5">
-                        <span className="text-[11px] font-black uppercase text-slate-500">Repartidor</span>
-                        <select
-                            value={form.repartidorId}
-                            onChange={e => updateField('repartidorId', e.target.value)}
-                            disabled={loadingRepartidores}
-                            className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
-                        >
-                            <option value="">Sin asignar</option>
-                            {repartidores.filter(r => r.activo).map(r => (
-                                <option key={r.id} value={r.id}>{r.nombre}</option>
-                            ))}
-                        </select>
-                    </label>
+                        <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-700">
+                            <div className="px-4 py-3 text-center">
+                                <p className="text-[10px] text-slate-400 uppercase font-semibold">Total pedido</p>
+                                <p className="text-base font-black text-slate-800 dark:text-white mt-0.5">S/ {total.toFixed(2)}</p>
+                            </div>
+                            <div className="px-4 py-3 text-center">
+                                <p className="text-[10px] text-slate-400 uppercase font-semibold">Pagado</p>
+                                <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">S/ {(item.montoPagado ?? 0).toFixed(2)}</p>
+                            </div>
+                            <div className="px-4 py-3 text-center">
+                                <p className="text-[10px] text-slate-400 uppercase font-semibold">Saldo pendiente</p>
+                                <p className={`text-base font-black mt-0.5 ${tieneSaldo ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                    {tieneSaldo ? `S/ ${saldoActual.toFixed(2)}` : '✓ Pagado'}
+                                </p>
+                            </div>
+                        </div>
 
-                    <label className="space-y-1.5 md:col-span-2">
-                        <span className="text-[11px] font-black uppercase text-slate-500">Dirección / destino</span>
-                        <input
-                            value={form.clienteDireccion}
-                            onChange={e => updateField('clienteDireccion', e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
-                            placeholder="Dirección de entrega"
-                        />
-                    </label>
+                        {tieneSaldo && (
+                            <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                                {/* Confirmar pago completo */}
+                                <button
+                                    type="button"
+                                    onClick={confirmarPagoCompleto}
+                                    disabled={confirmandoPago}
+                                    className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-black flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
+                                >
+                                    {confirmandoPago
+                                        ? <><Icon icon="mdi:loading" className="animate-spin" /> Confirmando...</>
+                                        : <><Icon icon="solar:check-circle-bold-duotone" className="text-lg" /> Confirmar pago completo (S/ {saldoActual.toFixed(2)})</>
+                                    }
+                                </button>
 
-                    <label className="space-y-1.5">
-                        <span className="text-[11px] font-black uppercase text-slate-500">Celular entrega</span>
-                        <input
-                            value={form.clienteTelefono}
-                            onChange={e => updateField('clienteTelefono', e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
-                            placeholder="999999999"
-                        />
-                    </label>
+                                {/* O registrar pago parcial */}
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">S/</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={total}
+                                            step={0.01}
+                                            value={montoPagadoInput}
+                                            onChange={e => setMontoPagadoInput(e.target.value)}
+                                            className="h-10 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-8 pr-3 text-sm text-slate-800 dark:text-white outline-none"
+                                            placeholder="Monto pagado total"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={actualizarMontoParcial}
+                                        disabled={saving}
+                                        className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+                                    >
+                                        Actualizar
+                                    </button>
+                                </div>
+                                {Number(montoPagadoInput) > 0 && Number(montoPagadoInput) < total && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                        Quedará un saldo de S/ {saldoCalcInput.toFixed(2)} pendiente
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                    <label className="space-y-1.5">
-                        <span className="text-[11px] font-black uppercase text-slate-500">Guía / tracking</span>
-                        <input
-                            value={form.numeroTracking}
-                            onChange={e => updateField('numeroTracking', e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
-                            placeholder="Código de guía"
-                        />
-                    </label>
+                    {/* ── Campos de despacho ── */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+                        <label className="space-y-1.5">
+                            <span className="text-[11px] font-black uppercase text-slate-500">Courier / modalidad</span>
+                            <select
+                                value={form.agenciaEnvio}
+                                onChange={e => updateField('agenciaEnvio', e.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
+                            >
+                                {Object.entries(COURIER_LABEL).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </label>
 
-                    <label className="space-y-1.5 md:col-span-2">
-                        <span className="text-[11px] font-black uppercase text-slate-500">Nota interna</span>
-                        <textarea
-                            value={form.notasInternas}
-                            onChange={e => updateField('notasInternas', e.target.value)}
-                            rows={3}
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-white outline-none resize-none"
-                            placeholder="Indicaciones para despacho"
-                        />
-                    </label>
+                        <label className="space-y-1.5">
+                            <span className="text-[11px] font-black uppercase text-slate-500">Repartidor</span>
+                            <select
+                                value={form.repartidorId}
+                                onChange={e => updateField('repartidorId', e.target.value)}
+                                disabled={loadingRepartidores}
+                                className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
+                            >
+                                <option value="">Sin asignar</option>
+                                {repartidores.filter(r => r.activo).map(r => (
+                                    <option key={r.id} value={r.id}>{r.nombre}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className="space-y-1.5 md:col-span-2">
+                            <span className="text-[11px] font-black uppercase text-slate-500">Dirección / destino</span>
+                            <input
+                                value={form.clienteDireccion}
+                                onChange={e => updateField('clienteDireccion', e.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
+                                placeholder="Dirección de entrega o agencia destino"
+                            />
+                        </label>
+
+                        <label className="space-y-1.5">
+                            <span className="text-[11px] font-black uppercase text-slate-500">Celular entrega</span>
+                            <input
+                                value={form.clienteTelefono}
+                                onChange={e => updateField('clienteTelefono', e.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
+                                placeholder="999999999"
+                            />
+                        </label>
+
+                        <label className="space-y-1.5">
+                            <span className="text-[11px] font-black uppercase text-slate-500">Guía / tracking</span>
+                            <input
+                                value={form.numeroTracking}
+                                onChange={e => updateField('numeroTracking', e.target.value)}
+                                className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-white outline-none"
+                                placeholder="Código de guía"
+                            />
+                        </label>
+
+                        <label className="space-y-1.5 md:col-span-2">
+                            <span className="text-[11px] font-black uppercase text-slate-500">Nota interna</span>
+                            <textarea
+                                value={form.notasInternas}
+                                onChange={e => updateField('notasInternas', e.target.value)}
+                                rows={2}
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-white outline-none resize-none"
+                                placeholder="Indicaciones para despacho"
+                            />
+                        </label>
+                    </div>
                 </div>
 
-                <div className="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 px-6 py-4">
+                <div className="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 px-6 py-4 flex-shrink-0">
                     <button type="button" onClick={onClose} className="h-11 px-5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300">
                         Cancelar
                     </button>
@@ -437,6 +691,7 @@ export default function DespachoView() {
     const [editingPedidoTienda, setEditingPedidoTienda] = useState<DespachoItem | null>(null);
     const [trazabilidadItem, setTrazabilidadItem] = useState<DespachoItem | null>(null);
     const [trazabilidadPedidoTienda, setTrazabilidadPedidoTienda] = useState<DespachoItem | null>(null);
+    const [shalomTracking, setShalomTracking] = useState<{ orderNumber: string; orderCode: string } | null>(null);
     const [waConfig, setWaConfig] = useState(WA_CONFIG_DEFAULTS);
     const { alert } = useAlertStore();
 
@@ -511,7 +766,7 @@ export default function DespachoView() {
         if (!item.comprobanteId) return;
         try {
             const comprobante = await cargarComprobante(item.comprobanteId);
-            navigate('/administrador/guia-remision', {
+            navigate('/administrador/facturacion/guia-remision', {
                 state: {
                     fromDespachoComprobante: true,
                     comprobanteGuia: {
@@ -542,7 +797,7 @@ export default function DespachoView() {
     };
 
     const navegarGuiaPedidoTienda = (item: DespachoItem) => {
-        navigate('/administrador/guia-remision', {
+        navigate('/administrador/facturacion/guia-remision', {
             state: {
                 fromPedidoTienda: true,
                 pedidoTiendaGuia: pedidoTiendaDocumento(item),
@@ -649,7 +904,9 @@ export default function DespachoView() {
         total: items.length,
         preparando: items.filter(i => i.estado === 'PREPARANDO' || i.estado === 'POR_COORDINAR').length,
         enCamino: items.filter(i => i.estado === 'EN_CAMINO' || i.estado === 'ENVIADO' || i.estado === 'EN_REPARTO').length,
+        enAgencia: items.filter(i => i.estadoEntrega === 'EN_AGENCIA').length,
         entregado: items.filter(i => i.estado === 'ENTREGADO' || i.estado === 'ENTREGADO_COMPLETADO').length,
+        conSaldo: items.filter(i => Number(i.saldoPendiente ?? 0) > 0.01).length,
     };
 
     const tableData = filtrados.map(item => {
@@ -693,7 +950,19 @@ export default function DespachoView() {
             'Guía': item.codigoGuia
                 ? <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-lg">{item.codigoGuia}</span>
                 : <span className="text-slate-400 text-xs">—</span>,
-            'Total': <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">S/ {Number(item.total).toFixed(2)}</span>,
+            'Total': (
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">S/ {Number(item.total).toFixed(2)}</span>
+                    {item.saldoPendiente !== undefined && Number(item.saldoPendiente) > 0.01 && (
+                        <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-md">
+                            Saldo: S/ {Number(item.saldoPendiente).toFixed(2)}
+                        </span>
+                    )}
+                    {item.montoPagado !== undefined && item.saldoPendiente !== undefined && Number(item.saldoPendiente) <= 0.01 && Number(item.montoPagado) > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-md">✓ Pagado</span>
+                    )}
+                </div>
+            ),
             'Estado': (
                 <select
                     value={toDespachoEstado(item.estado)}
@@ -781,6 +1050,22 @@ export default function DespachoView() {
                             </button>
                         </>
                     )}
+                    {SHALOM_COURIERS.has(item.courier) && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!item.nroOrden) {
+                                    useAlertStore.getState().alert('Agrega el N° de orden Shalom en "Editar despacho" primero', 'warning');
+                                    return;
+                                }
+                                setShalomTracking({ orderNumber: item.nroOrden, orderCode: item.claveOrden ?? '' });
+                            }}
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${item.nroOrden ? 'bg-slate-800 hover:bg-slate-900 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}
+                            title={item.nroOrden ? `Tracking Shalom #${item.nroOrden}` : 'Sin N° orden — edita el despacho para agregarlo'}
+                        >
+                            <Icon icon="solar:delivery-bold-duotone" className="text-base" />
+                        </button>
+                    )}
                     {celular ? (
                         <a
                             href={`https://wa.me/51${celular.replace(/\D/g, '')}?text=${encodeURIComponent(buildWaMessage(item, waConfig))}`}
@@ -859,12 +1144,14 @@ export default function DespachoView() {
                 </div>
 
                 {/* KPIs */}
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     {[
                         { label: 'Total hoy', value: kpis.total, icon: 'solar:box-bold-duotone', color: 'blue' },
                         { label: 'Por preparar', value: kpis.preparando, icon: 'solar:clock-circle-bold-duotone', color: 'amber' },
                         { label: 'En tránsito', value: kpis.enCamino, icon: 'solar:delivery-bold-duotone', color: 'indigo' },
+                        { label: 'En agencia', value: kpis.enAgencia, icon: 'solar:buildings-3-bold-duotone', color: 'orange' },
                         { label: 'Entregados', value: kpis.entregado, icon: 'solar:check-circle-bold-duotone', color: 'emerald' },
+                        { label: 'Saldo pendiente', value: kpis.conSaldo, icon: 'solar:wallet-money-bold-duotone', color: 'red' },
                     ].map(k => (
                         <div key={k.label} className={`rounded-xl border p-3 flex items-center gap-3 bg-${k.color}-50 dark:bg-${k.color}-900/20 border-${k.color}-100 dark:border-${k.color}-800/30`}>
                             <Icon icon={k.icon} className={`text-2xl text-${k.color}-600 dark:text-${k.color}-400`} />
@@ -1031,6 +1318,13 @@ export default function DespachoView() {
                 <ModalTrazabilidadPedidoTienda
                     item={trazabilidadPedidoTienda}
                     onClose={() => setTrazabilidadPedidoTienda(null)}
+                />
+            )}
+            {shalomTracking && (
+                <ShalomTrackingModal
+                    orderNumber={shalomTracking.orderNumber}
+                    orderCode={shalomTracking.orderCode}
+                    onClose={() => setShalomTracking(null)}
                 />
             )}
         </div>

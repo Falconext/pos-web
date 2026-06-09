@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import ModalEnviarWhatsApp from "@/pages/admin/facturacion/ModalEnviarWhatsApp";
+import { useThemeStore } from "@/zustand/theme";
 
 interface IProps {
     serie: string
@@ -28,6 +29,7 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
     const { resetInvoice, resetProductInvoice }: IInvoicesState = useInvoiceStore();
     const isMobile = useIsMobile();
     const navigate = useNavigate();
+    const { isDarkMode } = useThemeStore();
     const [showEnviar, setShowEnviar] = useState(false);
     const [tabEnviar, setTabEnviar] = useState<'whatsapp' | 'email'>('whatsapp');
 
@@ -40,17 +42,20 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
             width: isMobile ? '92vw' : '460px',
             maxWidth: '500px',
             maxHeight: '96vh',
-            border: 'none',
-            backgroundColor: '#fff',
+            border: isDarkMode ? '1px solid #1e293b' : 'none',
+            backgroundColor: isDarkMode ? '#0f172a' : '#fff',
             borderRadius: '24px',
             marginRight: '-50%',
             padding: '0px',
+            zIndex: 999999,
             overflow: 'auto',
             transform: 'translate(-50%, -50%)',
-            boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.35)',
+            boxShadow: isDarkMode
+                ? '0 25px 60px -15px rgba(0, 0, 0, 0.6)'
+                : '0 25px 60px -15px rgba(15, 23, 42, 0.35)',
         },
         overlay: {
-            backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.7)' : 'rgba(15, 23, 42, 0.5)',
             zIndex: 60,
             display: 'flex',
             alignItems: 'center',
@@ -65,7 +70,7 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
         if (['BOLETA', 'FACTURA', 'NOTA DE CREDITO', 'NOTA DE DEBITO'].includes(comprobante)) {
             navigate('/administrador/facturacion/comprobantes');
         } else if (comprobante === 'COTIZACIÓN') {
-            navigate('/administrador/cotizaciones');
+            navigate('/administrador/facturacion/cotizaciones');
         } else {
             navigate('/administrador/facturacion/comprobantes-informales');
         }
@@ -74,7 +79,7 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
     const goDespacho = () => {
         resetInvoice();
         resetProductInvoice();
-        navigate('/administrador/despacho');
+        navigate('/administrador/ventas');
     };
 
     const canShare = dataReceipt?.id != null && dataReceipt.id !== 0;
@@ -96,32 +101,32 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                 {isLoading ? (
                     <div className="p-10 flex flex-col items-center gap-4">
                         <img className="w-32 h-32 object-contain" src="/gif/loading.gif" alt="Procesando" />
-                        <p className="text-sm font-semibold text-gray-500 text-center">
+                        <p className={`text-sm font-semibold text-center ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                             Espere por favor, procesando su comprobante...
                         </p>
                     </div>
                 ) : (
                     <div className="flex flex-col">
                         {/* Header con estado */}
-                        <div className="px-6 pt-7 pb-5 flex flex-col items-center gap-3 text-center border-b border-gray-100">
+                        <div className={`px-6 pt-7 pb-5 flex flex-col items-center gap-3 text-center border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-100'}`}>
                             <p className="text-[10px] uppercase tracking-[0.25em] text-gray-400 font-medium">Comprobante emitido</p>
 
                             {isPendiente ? (
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-200">
+                                <div className={`flex items-center justify-center w-16 h-16 rounded-full border-2 ${isDarkMode ? 'bg-amber-950/40 border-amber-700' : 'bg-amber-50 border-amber-200'}`}>
                                     <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
                             ) : (
-                                <img className="w-20 h-20" src="/gif/suc.gif" alt="Éxito" />
+                                <img className="w-20 h-20 rounded-full" src="/gif/suc.gif" alt="Éxito" />
                             )}
 
                             <div>
-                                <p className="text-sm text-gray-600 leading-relaxed">
+                                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
                                     {isPendiente ? (
                                         <>
                                             Comprobante <strong>registrado correctamente</strong>.<br />
-                                            <span className="text-amber-600 font-medium text-xs">SUNAT no disponible — se confirmará automáticamente.</span>
+                                            <span className="text-amber-500 font-medium text-xs">SUNAT no disponible — se confirmará automáticamente.</span>
                                         </>
                                     ) : (
                                         <>
@@ -132,8 +137,12 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                             </div>
 
                             {/* Número de comprobante destacado */}
-                            <div className={`mt-1 px-6 py-3 rounded-2xl border-2 border-dashed ${isPendiente ? 'border-amber-300 bg-amber-50' : 'border-emerald-300 bg-emerald-50'}`}>
-                                <span className={`text-3xl font-bold tracking-[0.18em] ${isPendiente ? 'text-amber-500' : 'text-emerald-600'}`}>
+                            <div className={`mt-1 px-6 py-3 rounded-2xl border-2 border-dashed ${
+                                isPendiente
+                                    ? isDarkMode ? 'border-amber-700 bg-amber-950/30' : 'border-amber-300 bg-amber-50'
+                                    : isDarkMode ? 'border-emerald-700 bg-emerald-950/30' : 'border-emerald-300 bg-emerald-50'
+                            }`}>
+                                <span className={`text-3xl font-bold tracking-[0.18em] ${isPendiente ? 'text-amber-500' : 'text-emerald-500'}`}>
                                     {dataReceipt?.serie}-{dataReceipt?.correlativo}
                                 </span>
                             </div>
@@ -170,17 +179,17 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={handleOpenNewTab}
-                                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-sm font-medium transition-colors ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                                 >
-                                    <Icon icon="mingcute:print-line" className="text-base text-gray-500" />
-                                    {comprobante === 'COTIZACIÓN' ? 'Imprimir' : 'Imprimir'}
+                                    <Icon icon="mingcute:print-line" className={`text-base ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    Imprimir
                                 </button>
                                 <button
                                     onClick={goListInvoice}
-                                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-sm font-medium transition-colors ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                                 >
-                                    <Icon icon="solar:list-bold-duotone" className="text-base text-gray-500" />
-                                    {comprobante === 'COTIZACIÓN' ? 'Ver lista' : 'Ver lista'}
+                                    <Icon icon="solar:list-bold-duotone" className={`text-base ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    Ver lista
                                 </button>
                             </div>
                             {hasDespacho && (
@@ -194,7 +203,7 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
                             )}
                             <button
                                 onClick={() => closeModal()}
-                                className="w-full py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold transition-colors active:scale-95"
+                                className={`w-full py-3 rounded-xl text-white text-sm font-semibold transition-colors active:scale-95 ${isDarkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-900 hover:bg-gray-800'}`}
                             >
                                 Nueva {comprobante?.toLowerCase()}
                             </button>

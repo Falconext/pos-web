@@ -13,7 +13,7 @@ export interface Plan {
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
     tieneTienda: boolean; tieneBanners: boolean; tieneGaleria: boolean;
     tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
-    tieneGestionLotes: boolean; tieneGestionComisiones: boolean;
+    tieneGestionLotes: boolean; tieneGestionProvisiones: boolean;
     _count?: { empresas: number };
     modulosAsignados?: { modulo: { id: number; codigo: string; nombre: string; descripcion: string; icono: string; } }[];
     subModulosAsignados?: { subModulo: { id: number; codigo: string; nombre: string; moduloId: number } }[];
@@ -26,7 +26,7 @@ const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number
     limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
     tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false,
-    tieneGestionLotes: false, tieneGestionComisiones: false,
+    tieneGestionLotes: false, tieneGestionProvisiones: false,
     moduloIds: [], subModuloIds: [],
 };
 

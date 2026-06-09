@@ -3,11 +3,11 @@
 export interface IUserPermissions {
   permisos?: string[];
   rol?: 'ADMIN_SISTEMA' | 'ADMIN_EMPRESA' | 'USUARIO_EMPRESA' | 'RESELLER';
-  subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[];
+  subModulos?: { id: number; codigo: string; nombre: string; moduloId: number; ruta?: string | null; orden?: number }[];
   empresa?: {
     plan?: {
-      modulosAsignados?: { modulo: { codigo: string } }[];
-      subModulosAsignados?: { subModulo: { id: number; codigo: string; moduloId: number } }[];
+      modulosAsignados?: { modulo: { id?: number; codigo: string; nombre?: string; icono?: string | null; ruta?: string | null; orden?: number } }[];
+      subModulosAsignados?: { subModulo: { id: number; codigo: string; nombre?: string; moduloId: number; ruta?: string | null; orden?: number } }[];
     }
   }
 }
@@ -175,10 +175,10 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       contabilidad: '/administrador/contabilidad/reporte',
       configuracion: '/administrador/configuracion',
       usuarios: '/administrador/usuarios',
-      caja: '/administrador/caja',
-      pagos: '/administrador/pagos',
-      cotizaciones: '/administrador/cotizaciones',
-      'guias-remision': '/administrador/guia-remision',
+      caja: '/administrador/ventas/caja',
+      pagos: '/administrador/ventas/pagos',
+      cotizaciones: '/administrador/facturacion/cotizaciones',
+      'guias-remision': '/administrador/facturacion/guia-remision',
       compras: '/administrador/compras',
       sedes: '/administrador/sedes',
       notificaciones: '/administrador/notificaciones',

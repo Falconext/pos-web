@@ -148,7 +148,14 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                             key={`${item.__catalogType}-${item.id}-${itemIndex}`}
                             className="group bg-white dark:bg-[#1E2435] rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-slate-800 flex flex-col"
                         >
-                            <div className="aspect-[4/3] bg-[#F3F4F6] dark:bg-slate-800/50 rounded-xl mb-2 overflow-hidden relative flex items-center justify-center">
+                            <div
+                                className="aspect-[4/3] bg-[#F3F4F6] dark:bg-slate-800/50 rounded-xl mb-2 overflow-hidden relative flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity active:scale-95"
+                                onClick={() => {
+                                    const isExpired = vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && item?.loteFefo?.diasAlVencimiento !== undefined && item?.loteFefo?.diasAlVencimiento < 0;
+                                    if (isExpired) return;
+                                    item.__catalogType === 'COMBO' ? vm.handleComboClick(item) : vm.handleProductClick(item);
+                                }}
+                            >
                                 {(uploadedImages[item.id] || item.imagenUrl) && !brokenImages[`${item.__catalogType}-${item.id}`] ? (
                                     <img
                                         src={uploadedImages[item.id] ?? item.imagenUrl}
@@ -267,14 +274,6 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                             </>
                                         )}
 
-                                        {/* Agregar al carrito */}
-                                        <button
-                                            onClick={() => item.__catalogType === 'COMBO' ? vm.handleComboClick(item) : vm.handleProductClick(item)}
-                                            disabled={vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && item?.loteFefo?.diasAlVencimiento !== undefined && item?.loteFefo?.diasAlVencimiento < 0}
-                                            className="p-2 !bg-violet-600 hover:!bg-violet-700 disabled:!bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg shadow-md shadow-violet-200/50 transition-all active:scale-95 flex items-center justify-center"
-                                        >
-                                            <Icon icon="solar:add-circle-bold" className="text-lg" />
-                                        </button>
                                     </div>
                                 </div>
                             </div>

@@ -3,9 +3,9 @@ import { useModulosStore, IModulo, ISubModulo } from '@/zustand/modulos';
 import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
 
-const initialModuloForm: Partial<IModulo> = { codigo: '', producto: 'facturacion', nombre: '', descripcion: '', icono: '', activo: true, orden: 0 };
+const initialModuloForm: Partial<IModulo> = { codigo: '', producto: 'facturacion', nombre: '', descripcion: '', icono: '', ruta: '', activo: true, orden: 0 };
 
-const initialSubModuloForm = { moduloId: 0, codigo: '', nombre: '', descripcion: '', activo: true, orden: 0 };
+const initialSubModuloForm = { moduloId: 0, codigo: '', nombre: '', descripcion: '', ruta: '', activo: true, orden: 0 };
 
 export const useModulosViewModel = () => {
     const { modulos, loading, getAllModulos, createModulo, updateModulo, deleteModulo, createSubModulo, updateSubModulo, deleteSubModulo } = useModulosStore();
@@ -99,14 +99,14 @@ export const useModulosViewModel = () => {
     const handleOpenEditSub = (sub: ISubModulo) => {
         setIsSubEdit(true);
         setCurrentSubId(sub.id);
-        setSubForm({ moduloId: sub.moduloId, codigo: sub.codigo, nombre: sub.nombre, descripcion: sub.descripcion || '', activo: sub.activo, orden: sub.orden });
+        setSubForm({ moduloId: sub.moduloId, codigo: sub.codigo, nombre: sub.nombre, descripcion: sub.descripcion || '', ruta: sub.ruta || '', activo: sub.activo, orden: sub.orden });
         setIsSubModalOpen(true);
     };
 
     const handleSubmitSub = async () => {
         if (!subForm.codigo || !subForm.nombre) { alert('Código y nombre son obligatorios', 'warning'); return; }
         const success = isSubEdit && currentSubId
-            ? await updateSubModulo(currentSubId, { nombre: subForm.nombre, descripcion: subForm.descripcion, activo: subForm.activo, orden: subForm.orden }, productoScope || productoFiltro || undefined)
+            ? await updateSubModulo(currentSubId, { nombre: subForm.nombre, descripcion: subForm.descripcion, ruta: subForm.ruta || undefined, activo: subForm.activo, orden: subForm.orden }, productoScope || productoFiltro || undefined)
             : await createSubModulo(subForm, productoScope || productoFiltro || undefined);
         if (success) {
             alert(isSubEdit ? 'Submódulo actualizado' : 'Submódulo creado', 'success');

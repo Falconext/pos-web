@@ -4,6 +4,7 @@ import {
     GastoOperativo,
     EvolucionPoint,
     formatCurrency,
+    formatDate,
     formatPercent,
     getMesFullLabel,
     GastoFormData,
@@ -104,6 +105,88 @@ function VariacionBadge({ variacion }: { variacion: number | null }) {
     );
 }
 
+function DailyProfitCard({ pnl }: { pnl: PnlResponse }) {
+    const topDays = pnl.resumenDiario.slice(0, 7);
+
+    return (
+        <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800">
+            <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                        <Icon icon="solar:calendar-mark-bold-duotone" className="text-emerald-600 dark:text-emerald-400 text-xl" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white text-base">Ganancia diaria real</h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Ventas menos productos, publicidad y gastos diarios</p>
+                    </div>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
+                    Últimos {topDays.length || 0} días
+                </span>
+            </div>
+
+            {topDays.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 py-4">
+                    Aún no hay ventas con productos para este período.
+                </p>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {topDays.map((day) => {
+                        const positive = day.gananciaNeta >= 0;
+                        return (
+                            <div
+                                key={day.fecha}
+                                className="rounded-2xl border border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/40 p-4"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-sm font-bold text-gray-900 dark:text-white">{formatDate(day.fecha)}</span>
+                                    <span className={`text-xs font-black px-2 py-1 rounded-full ${
+                                        positive
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                            : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                                    }`}>
+                                        Neto {formatPercent(day.margenNeto)}
+                                    </span>
+                                </div>
+                                <div className="space-y-1 text-xs">
+                                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                                        <span>Ventas</span>
+                                        <span>{formatCurrency(day.ventasNetas)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                                        <span>Costo real</span>
+                                        <span>{formatCurrency(day.costoMercaderia)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                                        <span>Publicidad</span>
+                                        <span>{formatCurrency(day.publicidad)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                                        <span>ROAS</span>
+                                        <span>{day.roas === null ? '-' : `${day.roas.toFixed(2)}x`}</span>
+                                    </div>
+                                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                                        <span>Pedidos / costo pub.</span>
+                                        <span>
+                                            {day.pedidos} / {day.costoPublicidadPorPedido === null ? '-' : formatCurrency(day.costoPublicidadPorPedido)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between pt-2 mt-2 border-t border-gray-200 dark:border-slate-700">
+                                        <span className="font-bold text-gray-700 dark:text-gray-300">Ganancia neta</span>
+                                        <span className={`font-black ${positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                                            {formatCurrency(day.gananciaNeta)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Main View ────────────────────────────────────────────────────────────────
 
 export default function RentabilidadView(props: RentabilidadViewProps) {
@@ -182,7 +265,7 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             icon="solar:chart-bold-duotone"
                             iconBg="bg-blue-50 dark:bg-blue-900/20"
                             iconColor="text-blue-600 dark:text-blue-400"
-                            sub={pnl ? `Margen ${formatPercent(pnl.margenBruto)}` : undefined}
+                            sub={pnl ? `Margen ${formatPercent(pnl.margenBruto)} · Costo real ${formatCurrency(pnl.costoMercaderia)}` : undefined}
                             subColor="text-blue-500 dark:text-blue-400"
                         />
 
@@ -193,8 +276,8 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             icon="solar:bill-list-bold-duotone"
                             iconBg="bg-amber-50 dark:bg-amber-900/20"
                             iconColor="text-amber-600 dark:text-amber-400"
-                            sub={pnl && pnl.gastosPorCategoria.length > 0
-                                ? `${pnl.gastosPorCategoria.length} categorías`
+                            sub={pnl
+                                ? `Publicidad ${formatCurrency(pnl.gastoPublicidad)}`
                                 : 'Sin gastos registrados'}
                             subColor="text-amber-500 dark:text-amber-400"
                         />
@@ -246,6 +329,8 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Aún no hay ventas registradas en este período</p>
                         </div>
                     )}
+
+                    {pnl && <DailyProfitCard pnl={pnl} />}
 
                     {/* ── Row 3: Evolution Chart ── */}
                     <EvolucionChart evolucion={evolucion} />

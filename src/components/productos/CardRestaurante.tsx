@@ -19,16 +19,16 @@ const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadIm
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
                 {Array.from({ length: skeletonCount }).map((_, i) => (
-                    <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                        <div className="h-48 bg-gray-200 animate-pulse" />
+                    <div key={i} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-slate-700">
+                        <div className="h-48 bg-gray-200 dark:bg-slate-700 animate-pulse" />
                         <div className="p-4 space-y-3">
-                            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
-                            <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                            <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4 animate-pulse" />
+                            <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/2 animate-pulse" />
                             <div className="mt-4 grid grid-cols-2 gap-3">
-                                <div className="h-3 bg-gray-200 rounded animate-pulse" />
-                                <div className="h-3 bg-gray-200 rounded animate-pulse" />
+                                <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+                                <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
                             </div>
-                            <div className="mt-4 h-9 bg-gray-200 rounded-lg animate-pulse" />
+                            <div className="mt-4 h-9 bg-gray-200 dark:bg-slate-700 rounded-lg animate-pulse" />
                         </div>
                     </div>
                 ))}

@@ -128,15 +128,16 @@ export const useUsersStore = create<IUsersState>()(
           const response: any = await post('usuario', data);
 
           if (response.code === 1) {
-            // Recargar la lista de usuarios
             await _get().getAllUsers({ page: 1, limit: 50 });
             useAlertStore.getState().alert('Usuario creado exitosamente', 'success');
           } else {
-            useAlertStore.getState().alert(response.message || 'Error al crear usuario', 'error');
+            const raw = (response as any).error || (response as any).message;
+            const msg = Array.isArray(raw) ? raw.join(', ') : (raw || 'Error al crear usuario');
+            throw new Error(msg);
           }
         } catch (error: any) {
-          console.error('Error al crear usuario:', error);
-          useAlertStore.getState().alert(error.message || 'Error al crear usuario', 'error');
+          set({ loading: false });
+          throw error;
         } finally {
           set({ loading: false });
         }

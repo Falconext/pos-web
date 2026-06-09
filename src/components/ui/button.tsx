@@ -66,9 +66,9 @@ const buttonVariants = cva(
         white:
           "bg-white text-slate-800 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98]",
         black:
-          "bg-slate-900 text-white shadow-sm hover:bg-slate-700 active:scale-[0.98]",
+          "bg-slate-900 dark:bg-slate-600 text-white shadow-sm hover:bg-slate-700 dark:hover:bg-slate-500 active:scale-[0.98]",
         "outline-black":
-          "border border-slate-900 bg-transparent text-slate-900 hover:bg-slate-900 hover:text-white active:scale-[0.98]",
+          "border border-slate-900 dark:border-slate-400 bg-transparent text-slate-900 dark:text-slate-200 hover:bg-slate-900 dark:hover:bg-slate-700 hover:text-white active:scale-[0.98]",
         "outline-white":
           "border border-white bg-transparent text-white hover:bg-white hover:text-slate-900 active:scale-[0.98]",
       },

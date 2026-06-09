@@ -52,6 +52,11 @@ export const useCatalogoGlobalViewModel = (): any => {
         } catch (error: any) { alert(error.response?.data?.message || 'Error al guardar', 'error'); }
     };
 
+    const openDelete = (id: number) => {
+        setDeleteId(id);
+        setModalConfirmOpen(true);
+    };
+
     const handleDelete = async () => {
         if (!deleteId) return;
         try { await deletePlantilla(deleteId); alert('Plantilla eliminada', 'success'); setModalConfirmOpen(false); }
@@ -87,6 +92,8 @@ export const useCatalogoGlobalViewModel = (): any => {
     const toggleSelect = (id: number) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
     const toggleSelectAll = () => setSelectedIds(selectedIds.length === plantillas.length && plantillas.length > 0 ? [] : plantillas.map(p => p.id));
+
+    const clearSelection = () => setSelectedIds([]);
 
     const handleBuscarImagenesFaltantes = async () => {
         const sinImagen = plantillas.filter(p => !p.imagenUrl);
@@ -130,8 +137,10 @@ export const useCatalogoGlobalViewModel = (): any => {
         actionLoading, buscandoImagenes, processingId,
         setPage, setLimit, setSearch, setRubroId,
         handleSubmit, handleDelete, handleImportFromCompany,
+        openDelete,
         openNew, openEdit, handleCategorizarIA,
         toggleSelect, toggleSelectAll,
+        clearSelection,
         handleBuscarImagenesFaltantes, handleBulkDeleteImages, handleBulkDelete,
     };
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { get } from '@/utils/fetch';
+import { get, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import useEmpresasStore from '@/zustand/empresas';
 import { useAuthStore } from '@/zustand/auth';
@@ -32,6 +32,9 @@ const whatsappFormFromPerfil = (perfil: PerfilData): WhatsAppSettingsForm => ({
 export const usePerfilViewModel = () => {
     const [perfil, setPerfil] = useState<PerfilData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [passwordForm, setPasswordForm] = useState({ actual: '', nueva: '', confirmar: '' });
+    const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+    const [savingPassword, setSavingPassword] = useState(false);
     const [savingBarcodeConfig, setSavingBarcodeConfig] = useState(false);
     const [savingFefoPriceConfig, setSavingFefoPriceConfig] = useState(false);
     const [savingDirectorTecnico, setSavingDirectorTecnico] = useState(false);
@@ -249,5 +252,32 @@ export const usePerfilViewModel = () => {
         }
     };
 
-    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado };
+    const handleChangePassword = async () => {
+        const errs: Record<string, string> = {};
+        if (!passwordForm.actual) errs.actual = 'Ingresa tu contraseña actual';
+        if (!passwordForm.nueva) errs.nueva = 'Ingresa la nueva contraseña';
+        else if (passwordForm.nueva.length < 6) errs.nueva = 'Mínimo 6 caracteres';
+        if (passwordForm.nueva !== passwordForm.confirmar) errs.confirmar = 'Las contraseñas no coinciden';
+        setPasswordErrors(errs);
+        if (Object.keys(errs).length > 0) return;
+        try {
+            setSavingPassword(true);
+            const result = await patch('usuario/password', { actual: passwordForm.actual, nueva: passwordForm.nueva });
+            if (result.error) {
+                const msg = result.error || 'Contraseña actual incorrecta';
+                useAlertStore.getState().alert(Array.isArray(msg) ? msg[0] : msg, 'error');
+                return;
+            }
+            useAlertStore.getState().alert('Contraseña actualizada correctamente', 'success');
+            setPasswordForm({ actual: '', nueva: '', confirmar: '' });
+            setPasswordErrors({});
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || error?.message || 'Error al cambiar contraseña';
+            useAlertStore.getState().alert(Array.isArray(msg) ? msg[0] : msg, 'error');
+        } finally {
+            setSavingPassword(false);
+        }
+    };
+
+    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado };
 };

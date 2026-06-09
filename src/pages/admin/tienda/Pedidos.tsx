@@ -130,7 +130,7 @@ export default function PedidosTienda() {
   };
 
   const navegarGuiaPedido = (pedido: PedidoTiendaAdmin) => {
-    navigate('/administrador/guia-remision', {
+    navigate('/administrador/facturacion/guia-remision', {
       state: {
         fromPedidoTienda: true,
         pedidoTiendaGuia: pedido,

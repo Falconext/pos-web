@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { GastoOperativo, formatCurrency, getCategoriaLabel, getCategoriaIcon } from '../RentabilidadModel';
+import { GastoOperativo, formatCurrency, formatDate, getCategoriaLabel, getCategoriaIcon } from '../RentabilidadModel';
 
 interface GastosPanelProps {
     gastos: GastoOperativo[];
@@ -76,6 +76,23 @@ export default function GastosPanel({ gastos, onAgregar, onEditar, onEliminar }:
                                             {getCategoriaLabel(gasto.categoria)}
                                         </span>
                                     )}
+                                    {(gasto.fecha || gasto.fechaInicio) && (
+                                        <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                                            {gasto.recurrenteDiario
+                                                ? `Desde ${formatDate(gasto.fechaInicio ?? gasto.fecha ?? '')}`
+                                                : formatDate(gasto.fecha ?? '')}
+                                        </span>
+                                    )}
+                                    {gasto.recurrenteDiario && (
+                                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                                            Diario
+                                        </span>
+                                    )}
+                                    {gasto.recurrenteDiario && gasto.fechaFin && (
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                                            hasta {formatDate(gasto.fechaFin)}
+                                        </span>
+                                    )}
                                     {gasto.descripcion && (
                                         <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[120px]">
                                             {gasto.descripcion}
@@ -89,6 +106,9 @@ export default function GastosPanel({ gastos, onAgregar, onEditar, onEliminar }:
                                 <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
                                     {formatCurrency(gasto.monto)}
                                 </span>
+                                {gasto.recurrenteDiario && (
+                                    <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-300">por día</p>
+                                )}
                             </div>
 
                             {/* Actions */}
@@ -116,7 +136,7 @@ export default function GastosPanel({ gastos, onAgregar, onEditar, onEliminar }:
             {/* Footer total */}
             {gastos.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total gastos</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Monto configurado</span>
                     <span className="text-base font-bold text-gray-900 dark:text-white tabular-nums">
                         {formatCurrency(gastos.reduce((sum, g) => sum + g.monto, 0))}
                     </span>

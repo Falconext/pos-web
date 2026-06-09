@@ -108,8 +108,14 @@ export default function ProductsView() {
                 (typeof itemAny?.unidadMedidaNombre === 'string' ? itemAny.unidadMedidaNombre : '') ||
                 (typeof item?.unidadMedidaId !== 'undefined' ? 'Unidad' : '-') ||
                 '-';
+            const formatMoney = (value: number) => value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const costo = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
             const precio = Number(item?.precioUnitario || 0);
+            const stock = Number(item?.stock || 0);
+            const costoFijo = Number(itemAny?.costoFijo || 0);
+            const costoFijoUnitario = costo + costoFijo;
+            const valorInventario = stock * costo;
+            const costoTotalFijo = stock * costoFijoUnitario;
             const margen = precio > 0 && costo > 0 ? ((precio - costo) / precio * 100) : 0;
             const gananciaUnidad = precio - costo;
 
@@ -160,17 +166,24 @@ export default function ProductsView() {
                 marcaNombre: (item as any)?.marca?.nombre || "",
                 'Precio Venta': `S/ ${precio.toFixed(2)}`,
                 'Costo': costo > 0 ? `S/ ${costo.toFixed(2)}` : '-',
+                'Valor Inventario': valorInventario > 0 ? `S/ ${formatMoney(valorInventario)}` : '-',
+                'Costo Total Fijo': costoTotalFijo > 0 ? (
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-gray-800 dark:text-gray-100">S/ {formatMoney(costoTotalFijo)}</span>
+                        <span className="text-[10px] text-gray-400">Unit. S/ {formatMoney(costoFijoUnitario)}</span>
+                    </div>
+                ) : '-',
                 'Margen': margen > 0 ? `${margen.toFixed(1)}%` : '-',
                 'Ganancia/Unidad': gananciaUnidad > 0 ? `S/ ${gananciaUnidad.toFixed(2)}` : '-',
                 'Stock': (
                     <span
                         style={{
-                            backgroundColor: item?.stock <= 0 ? '#F43F5F' : item?.stock <= 10 ? '#F49D0D' : '#0BB980',
+                            backgroundColor: stock <= 0 ? '#F43F5F' : stock <= 10 ? '#F49D0D' : '#0BB980',
                             color: '#ffffff',
                         }}
                         className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
                     >
-                        {item?.stock}
+                        {stock}
                     </span>
                 ),
                 'Localización': item?.localizacion?.trim() ? item.localizacion : '-',
@@ -299,10 +312,7 @@ export default function ProductsView() {
                 <div className="flex gap-3">
                     <Button
                         color="secondary"
-                        onClick={() => {
-                            actions.setFormValues({ ...vm.formValues, productoId: 0 });
-                            actions.setIsOpenModal(true);
-                        }}
+                        onClick={actions.openNewProduct}
                         className="flex items-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-lg" />
@@ -475,9 +485,9 @@ export default function ProductsView() {
             {vm.isOpenModal && <ModalProduct
                 isOpenModal={vm.isOpenModal}
                 setIsOpenModal={actions.setIsOpenModal}
-                closeModal={() => actions.setIsOpenModal(false)}
+                closeModal={actions.closeProductModal}
                 errors={vm.errors}
-                initialForm={{ ...vm.formValues, productoId: 0 }} // Hack to reset if new
+                initialForm={vm.emptyProductForm}
                 formValues={vm.formValues}
                 setErrors={actions.setErrors}
                 setFormValues={actions.setFormValues}

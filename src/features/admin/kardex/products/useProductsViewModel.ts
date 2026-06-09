@@ -11,12 +11,24 @@ import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
 
 const COLUMNAS_CORPORATIVAS = ['Localización', '% Venta', '% Provisión'];
-const FALLBACK_VISIBLE_COLUMNS = ['Producto', 'Precio Venta', 'Stock', 'Estado', 'Acciones'];
+const REQUIRED_VISIBLE_COLUMNS = ['Valor Inventario', 'Costo Total Fijo'];
+const FALLBACK_VISIBLE_COLUMNS = [
+    'Producto',
+    'Precio Venta',
+    'Costo',
+    'Valor Inventario',
+    'Costo Total Fijo',
+    'Stock',
+    'Estado',
+    'Acciones',
+];
 
 export const useProductsViewModel = () => {
     // Stores
     const {
         products: storeProducts,
+        lastUpsertedProduct,
+        productMutationVersion,
         toggleStateProduct,
         exportProducts: exportProductsAction, importProducts: importProductsAction,
         deleteProduct, deleteAllProducts, setProductImage
@@ -69,15 +81,39 @@ export const useProductsViewModel = () => {
     const farmaciaIgvDefault = esFarmaceuticoRubro
         ? { tipoAfectacionIGV: '20', afectacionNombre: 'Exonerado' }
         : {};
+    const createEmptyProductForm = (): IFormProduct => ({
+        ...initialProductForm,
+        ...farmaciaIgvDefault,
+        preciosMayorista: [],
+    });
+    const createEmptyProductErrors = () => ({
+        codigo: "",
+        descripcion: "",
+        categoriaId: 0,
+        description: "",
+        precioUnitario: "",
+        stock: "",
+        unidadMedida: "",
+    });
 
-    const tieneGestionComisiones =
-        auth?.empresa?.plan?.tieneGestionComisiones === true ||
+    const tieneGestionProvisiones =
+        auth?.empresa?.plan?.tieneGestionProvisiones === true ||
         auth?.rol === 'ADMIN_SISTEMA';
 
+    const tieneTienda =
+        auth?.empresa?.plan?.tieneTienda === true ||
+        auth?.rol === 'ADMIN_SISTEMA';
+
+    const COLUMNAS_ECOMMERCE = ['Costo Total Fijo'];
+
     const allColumns = useMemo(() => {
-        const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'];
-        return tieneGestionComisiones ? base : base.filter(c => !COLUMNAS_CORPORATIVAS.includes(c));
-    }, [tieneGestionComisiones]);
+        const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'];
+        return base.filter(c => {
+            if (COLUMNAS_CORPORATIVAS.includes(c) && !tieneGestionProvisiones) return false;
+            if (COLUMNAS_ECOMMERCE.includes(c) && !tieneTienda) return false;
+            return true;
+        });
+    }, [tieneGestionProvisiones, tieneTienda]);
 
     const initialVisibleColumns = allColumns;
 
@@ -111,17 +147,9 @@ export const useProductsViewModel = () => {
         isOpenModalDelete: false,
         isOpenModalDeleteAll: false,
         selectedDeleteId: null,
-        formValues: { ...initialProductForm, ...farmaciaIgvDefault },
+        formValues: createEmptyProductForm(),
         isEdit: false,
-        errors: {
-            codigo: "",
-            descripcion: "",
-            categoriaId: 0,
-            description: "",
-            precioUnitario: "",
-            stock: "",
-            unidadMedida: ""
-        },
+        errors: createEmptyProductErrors(),
         isHoveredExp: false,
         isHoveredImp: false,
         openAccionesId: null,
@@ -177,6 +205,11 @@ export const useProductsViewModel = () => {
                     const parsed = JSON.parse(raw);
                     if (Array.isArray(parsed)) {
                         let restored = allColumns.filter(c => parsed.includes(c));
+                        REQUIRED_VISIBLE_COLUMNS.forEach((column) => {
+                            if (allColumns.includes(column) && !restored.includes(column)) {
+                                restored = [...restored, column];
+                            }
+                        });
                         if (!restored.includes('Acciones')) restored = [...restored, 'Acciones'];
                         // Evita dejar la grilla "en blanco" por configuración inválida/corrupta.
                         if (restored.length < 2) {
@@ -271,6 +304,56 @@ export const useProductsViewModel = () => {
         });
     }, [storeProducts]);
 
+    // Inserta únicamente el producto recién creado/actualizado. La versión evita
+    // reinyectar una mutación antigua al volver a montar la pantalla.
+    const observedProductMutationRef = useRef(productMutationVersion);
+    useEffect(() => {
+        if (
+            observedProductMutationRef.current === productMutationVersion ||
+            !lastUpsertedProduct?.id
+        ) return;
+
+        observedProductMutationRef.current = productMutationVersion;
+
+        const normalizedSearch = (debounce || '').trim().toLocaleLowerCase();
+        const matchesSearch =
+            normalizedSearch.length === 0 ||
+            lastUpsertedProduct.descripcion?.toLocaleLowerCase().includes(normalizedSearch) ||
+            lastUpsertedProduct.codigo?.toLocaleLowerCase().includes(normalizedSearch);
+        const matchesBrand =
+            !state.marcaIdFilter ||
+            Number(lastUpsertedProduct.marca?.id) === Number(state.marcaIdFilter);
+        const canInsert = state.currentPage === 1 && matchesSearch && matchesBrand;
+        const alreadyVisible = products.some(product => product.id === lastUpsertedProduct.id);
+
+        setProducts(previousProducts => {
+            const existingIndex = previousProducts.findIndex(
+                product => product.id === lastUpsertedProduct.id,
+            );
+            if (existingIndex >= 0) {
+                return previousProducts.map(product =>
+                    product.id === lastUpsertedProduct.id
+                        ? ({ ...product, ...lastUpsertedProduct } as IProduct)
+                        : product
+                );
+            }
+            if (!canInsert) return previousProducts;
+            return [lastUpsertedProduct, ...previousProducts].slice(0, state.itemsPerPage);
+        });
+
+        if (!alreadyVisible && canInsert) {
+            setTotalProducts(previousTotal => previousTotal + 1);
+        }
+    }, [
+        debounce,
+        lastUpsertedProduct,
+        productMutationVersion,
+        products,
+        state.currentPage,
+        state.itemsPerPage,
+        state.marcaIdFilter,
+    ]);
+
     // Close Modals on Success — solo refresca cuando success cambia a true, no en el mount inicial
     const isMountedSuccessRef = useRef(false);
     useEffect(() => {
@@ -284,7 +367,8 @@ export const useProductsViewModel = () => {
                 ...prev,
                 isOpenModal: false,
                 isEdit: false,
-                formValues: { ...initialProductForm, ...farmaciaIgvDefault },
+                formValues: createEmptyProductForm(),
+                errors: createEmptyProductErrors(),
             }));
             // En edición no re-fetcheamos — upsertProductLocal ya actualizó el estado local
             // incluyendo la nueva imagen subida a S3. Re-fetchear pisaría esa actualización.
@@ -335,6 +419,9 @@ export const useProductsViewModel = () => {
                     precioUnitario: Number(originalProduct.precioUnitario),
                     costoUnitario: Number(originalProduct.costoUnitario || originalProduct.costoPromedio || 0),
                     costoPromedio: Number(originalProduct.costoPromedio || 0),
+                    costoFijo: Number((originalProduct as any).costoFijo || 0),
+                    comisionPorVenta: Number((originalProduct as any).comisionPorVenta || 0),
+                    comisionPorcentaje: Number((originalProduct as any).comisionPorcentaje || 0),
                     stockMinimo: originalProduct.stockMinimo || 0,
                     stockMaximo: originalProduct.stockMaximo || 0,
                     imagenUrl: (originalProduct as any)?.imagenUrl || '',
@@ -354,6 +441,26 @@ export const useProductsViewModel = () => {
                 }
             }));
         }
+    };
+
+    const openNewProduct = () => {
+        setState(prev => ({
+            ...prev,
+            isOpenModal: true,
+            isEdit: false,
+            formValues: createEmptyProductForm(),
+            errors: createEmptyProductErrors(),
+        }));
+    };
+
+    const closeProductModal = () => {
+        setState(prev => ({
+            ...prev,
+            isOpenModal: false,
+            isEdit: false,
+            formValues: createEmptyProductForm(),
+            errors: createEmptyProductErrors(),
+        }));
     };
 
     const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -450,7 +557,13 @@ export const useProductsViewModel = () => {
         setcurrentPage: (page: number) => setState(prev => ({ ...prev, currentPage: page })),
         setitemsPerPage: (items: number) => setState(prev => ({ ...prev, itemsPerPage: items })),
         setSearchClient: (e: any) => setState(prev => ({ ...prev, searchClient: e.target.value })),
-        setIsOpenModal: (v: boolean) => setState(prev => ({ ...prev, isOpenModal: v })),
+        setIsOpenModal: (v: boolean) => {
+            if (!v) {
+                closeProductModal();
+                return;
+            }
+            setState(prev => ({ ...prev, isOpenModal: true }));
+        },
         setIsOpenModalCatalog: (v: boolean) => setState(prev => ({ ...prev, isOpenModalCatalog: v })),
         setIsOpenModalCategory: (v: boolean) => setState(prev => ({ ...prev, isOpenModalCategory: v })),
         setIsOpenModalBrands: (v: boolean) => setState(prev => ({ ...prev, isOpenModalBrands: v })),
@@ -467,6 +580,8 @@ export const useProductsViewModel = () => {
         setAnchorEl: (el: HTMLElement | null) => setState(prev => ({ ...prev, anchorEl: el })),
         setUploadTarget: (t: any) => setState(prev => ({ ...prev, uploadTarget: t })),
         // Complex Actions
+        openNewProduct,
+        closeProductModal,
         handleGetProduct,
         handleUploadImage,
         handleImportExcel,
@@ -500,6 +615,7 @@ export const useProductsViewModel = () => {
         totalProducts,
         loading: productsLoading || loading,
         productsLoading,
+        emptyProductForm: createEmptyProductForm(),
         fileInputRef,
         uploadImageRef,
         isRestaurante,

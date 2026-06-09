@@ -248,6 +248,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                     serie: resp.data?.serie ?? null,
                     correlativo: resp.data?.correlativo ?? null,
                     id: resp.data?.comprobanteId ?? null,
+                    mtoImpVenta: resp.data?.mtoImpVenta != null ? Number(resp.data.mtoImpVenta) : null,
                 };
             } else {
                 useAlertStore.getState().alert(resp.error || "Error al crear el recibo", "error");
@@ -275,6 +276,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                     id: resp.data?.id ?? resp.data?.comprobanteId ?? null,
                     serie: resp.data?.serie ?? null,
                     correlativo: resp.data?.correlativo ?? null,
+                    mtoImpVenta: resp.data?.mtoImpVenta != null ? Number(resp.data.mtoImpVenta) : null,
                 };
             }
             useAlertStore.getState().alert(resp.error || 'Error al crear comprobante informal', 'error');

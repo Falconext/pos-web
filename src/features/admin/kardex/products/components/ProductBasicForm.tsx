@@ -23,13 +23,83 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
         isFarmacia, esDrogueria, esFarmaceutico, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
-        isCategorizing, tieneGestionComisiones, tieneGestionLotes,
+        isCategorizing, tieneGestionProvisiones, tieneTienda, tieneGestionLotes,
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
         setShowMedicamentoModal, setShowLotesModal, toggleGrupoSeleccionado,
         setFormValues,
     } = vm;
 
     const [modoConIgv, setModoConIgv] = useState(true);
+    const [simVentasDia, setSimVentasDia] = useState('');
+    const [simPublicidadDia, setSimPublicidadDia] = useState('');
+
+    const fixedCostFields = (
+        <div className="col-span-1 md:col-span-2 space-y-3">
+            {/* Costo fijo por venta */}
+            <div className="rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/10 p-4">
+                <div className="flex items-start gap-3 mb-3">
+                    <div className="h-9 w-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300 flex items-center justify-center">
+                        <Icon icon="solar:box-bold-duotone" width={18} />
+                    </div>
+                    <div>
+                        <h5 className="text-sm font-bold text-gray-900 dark:text-white">Costo variable fijo por venta (S/)</h5>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Envío, empaque, regalo u otros costos por unidad vendida. Se suma al costo en el P&amp;L.
+                        </p>
+                    </div>
+                </div>
+                <InputPro
+                    autocomplete="off"
+                    type="number"
+                    step="0.01"
+                    value={(formValues as any)?.costoFijo || ''}
+                    name="costoFijo"
+                    onChange={handleChange}
+                    isLabel
+                    label="Costo fijo por unidad (S/)"
+                    placeholder="0.00"
+                />
+            </div>
+            {/* Comisión por vendedor */}
+            <div className="rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/40 dark:bg-violet-950/10 p-4">
+                <div className="flex items-start gap-3 mb-3">
+                    <div className="h-9 w-9 rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 flex items-center justify-center">
+                        <Icon icon="solar:users-group-rounded-bold-duotone" width={18} />
+                    </div>
+                    <div>
+                        <h5 className="text-sm font-bold text-gray-900 dark:text-white">Comisión por vendedor</h5>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Se registra automáticamente al emitir el comprobante. Usa monto fijo <strong>o</strong> porcentaje, no ambos.
+                        </p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    <InputPro
+                        autocomplete="off"
+                        type="number"
+                        step="0.01"
+                        value={(formValues as any)?.comisionPorVenta || ''}
+                        name="comisionPorVenta"
+                        onChange={handleChange}
+                        isLabel
+                        label="Comisión fija por unidad (S/)"
+                        placeholder="0.00"
+                    />
+                    <InputPro
+                        autocomplete="off"
+                        type="number"
+                        step="0.01"
+                        value={(formValues as any)?.comisionPorcentaje || ''}
+                        name="comisionPorcentaje"
+                        onChange={handleChange}
+                        isLabel
+                        label="Comisión % sobre precio venta"
+                        placeholder="0.0"
+                    />
+                </div>
+            </div>
+        </div>
+    );
 
     if (isFarmacia) {
         return (
@@ -104,6 +174,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label="Precio Venta (S/)" />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label="Costo (S/)" placeholder="0.00" />
                     <InputPro autocomplete="off" value={(formValues as any)?.localizacion || ''} name="localizacion" onChange={handleChange} isLabel label="Ubicación / Localización" placeholder="Ej: Pasillo 3 - Estante B" />
+                    {tieneTienda && fixedCostFields}
                 </div>
             </div>
         );
@@ -437,10 +508,175 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
             <ProductStockManager vm={vm} />
 
+            {!isRestaurante && tieneTienda && fixedCostFields}
+
+            {/* ── Simulador de Rentabilidad Diaria ── */}
+            {!isRestaurante && tieneTienda && (() => {
+                const esGravado = !['20', '30'].includes((formValues as any).tipoAfectacionIGV ?? '10');
+                const precio = Number(formValues?.precioUnitario) || 0;
+                const precioNeto = esGravado ? precio / 1.18 : precio;
+                const costo = Number((formValues as any)?.costoUnitario) || 0;
+                const costoFijo = Number((formValues as any)?.costoFijo) || 0;
+                const comision = Number((formValues as any)?.comisionPorVenta) || 0;
+
+                const ventasDia = parseFloat(simVentasDia) || 0;
+                const pubDia = parseFloat(simPublicidadDia) || 0;
+
+                const gananciaXUnidad = precioNeto - costo - costoFijo - comision;
+                const gananciaXDia = ventasDia > 0
+                    ? (gananciaXUnidad * ventasDia) - pubDia
+                    : null;
+                const cpaDia = ventasDia > 0 ? pubDia / ventasDia : 0;
+                const ganaXUnidadConAds = ventasDia > 0 ? gananciaXUnidad - cpaDia : null;
+
+                const tieneBaseDatos = precioNeto > 0 && costo > 0;
+                const gana = gananciaXDia !== null && gananciaXDia > 0;
+                const empata = gananciaXDia !== null && gananciaXDia === 0;
+
+                return (
+                    <div className="col-span-1 md:col-span-2">
+                        <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/60 to-violet-50/40 dark:from-indigo-950/20 dark:to-violet-950/10 p-5 space-y-4">
+                            {/* Header */}
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm">
+                                    <Icon icon="solar:chart-bold-duotone" className="text-white" width={18} />
+                                </div>
+                                <div>
+                                    <h5 className="text-sm font-bold text-gray-900 dark:text-white">Simulador de Rentabilidad Diaria</h5>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">¿Cuánto ganarías al día si vendes X unidades con Y de publicidad?</p>
+                                </div>
+                            </div>
+
+                            {/* Inputs del simulador */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                                        Unidades vendidas por día
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={simVentasDia}
+                                        onChange={e => setSimVentasDia(e.target.value)}
+                                        placeholder="Ej: 10"
+                                        className="w-full px-3 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                                        Publicidad al día (S/)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={simPublicidadDia}
+                                        onChange={e => setSimPublicidadDia(e.target.value)}
+                                        placeholder="Ej: 100"
+                                        className="w-full px-3 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Resultado */}
+                            {!tieneBaseDatos && (
+                                <div className="flex items-center gap-2 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+                                    <Icon icon="mdi:alert-circle-outline" width={15} />
+                                    Ingresa el precio y costo del producto para activar el simulador.
+                                </div>
+                            )}
+
+                            {tieneBaseDatos && gananciaXDia === null && (
+                                <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 space-y-2 border border-indigo-100 dark:border-indigo-900/40">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-3">Desglose por unidad vendida</p>
+                                    <div className="space-y-1.5 text-sm">
+                                        {[
+                                            { label: 'Precio de venta (neto)', val: precioNeto, color: 'text-gray-700 dark:text-gray-200', sign: '' },
+                                            { label: 'Costo del producto', val: -costo, color: 'text-red-500', sign: '−' },
+                                            ...(costoFijo > 0 ? [{ label: 'Regalo / envío', val: -costoFijo, color: 'text-red-500', sign: '−' }] : []),
+                                            ...(comision > 0 ? [{ label: 'Comisión vendedor', val: -comision, color: 'text-red-500', sign: '−' }] : []),
+                                        ].map((r, i) => (
+                                            <div key={i} className="flex justify-between items-center">
+                                                <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
+                                                <span className={`font-semibold ${r.color}`}>{r.sign} S/ {Math.abs(r.val).toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="border-t border-indigo-100 dark:border-indigo-900/50 pt-2 flex justify-between items-center">
+                                            <span className="font-bold text-gray-700 dark:text-gray-200 text-sm">Ganancia sin ads</span>
+                                            <span className={`text-lg font-bold ${gananciaXUnidad >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                                S/ {gananciaXUnidad.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-indigo-400 dark:text-indigo-500 text-center pt-1">
+                                        Ingresa las unidades/día y publicidad para ver la proyección diaria
+                                    </p>
+                                </div>
+                            )}
+
+                            {tieneBaseDatos && gananciaXDia !== null && (
+                                <div className="space-y-3">
+                                    {/* Desglose diario */}
+                                    <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 border border-indigo-100 dark:border-indigo-900/40">
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-3">Desglose diario ({ventasDia} unidades)</p>
+                                        <div className="space-y-1.5 text-sm">
+                                            {[
+                                                { label: `Ingresos (${ventasDia} × S/${precioNeto.toFixed(2)})`, val: precioNeto * ventasDia, color: 'text-emerald-600 dark:text-emerald-400', sign: '' },
+                                                { label: `Costo producto (${ventasDia} × S/${costo.toFixed(2)})`, val: -(costo * ventasDia), color: 'text-red-400', sign: '−' },
+                                                ...(costoFijo > 0 ? [{ label: `Regalo/envío (${ventasDia} × S/${costoFijo.toFixed(2)})`, val: -(costoFijo * ventasDia), color: 'text-red-400', sign: '−' }] : []),
+                                                ...(comision > 0 ? [{ label: `Comisión vendedor (${ventasDia} × S/${comision.toFixed(2)})`, val: -(comision * ventasDia), color: 'text-red-400', sign: '−' }] : []),
+                                                ...(pubDia > 0 ? [{ label: 'Publicidad (TikTok / Meta)', val: -pubDia, color: 'text-amber-500', sign: '−' }] : []),
+                                            ].map((r, i) => (
+                                                <div key={i} className="flex justify-between items-center">
+                                                    <span className="text-gray-500 dark:text-gray-400 text-xs">{r.label}</span>
+                                                    <span className={`font-semibold text-sm ${r.color}`}>{r.sign} S/ {Math.abs(r.val).toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Resultado grande */}
+                                    <div className={`rounded-xl p-4 text-center border-2 ${gana ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700' : empata ? 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700' : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700'}`}>
+                                        <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${gana ? 'text-emerald-600 dark:text-emerald-400' : empata ? 'text-gray-500' : 'text-red-500'}`}>
+                                            {gana ? '¡Estás ganando!' : empata ? 'Punto de equilibrio' : 'Estás perdiendo dinero'}
+                                        </p>
+                                        <p className={`text-4xl font-black tracking-tight ${gana ? 'text-emerald-600 dark:text-emerald-400' : empata ? 'text-gray-600' : 'text-red-500'}`}>
+                                            {gana ? '+' : ''} S/ {gananciaXDia.toFixed(2)}
+                                        </p>
+                                        <p className={`text-xs mt-1 ${gana ? 'text-emerald-500' : empata ? 'text-gray-400' : 'text-red-400'}`}>
+                                            al día
+                                        </p>
+                                    </div>
+
+                                    {/* Info adicional: CPA y ganancia con ads */}
+                                    {pubDia > 0 && ventasDia > 0 && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-white/60 dark:bg-slate-800/50 rounded-xl p-3 text-center border border-indigo-100 dark:border-indigo-900/40">
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">CPA (costo por venta)</p>
+                                                <p className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">S/ {cpaDia.toFixed(2)}</p>
+                                                <p className="text-[10px] text-gray-400 mt-0.5">publicidad ÷ ventas</p>
+                                            </div>
+                                            <div className={`rounded-xl p-3 text-center border ${ganaXUnidadConAds !== null && ganaXUnidadConAds >= 0 ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40' : 'bg-red-50/60 dark:bg-red-950/20 border-red-100 dark:border-red-900/40'}`}>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Ganancia por unidad</p>
+                                                <p className={`text-base font-bold mt-0.5 ${ganaXUnidadConAds !== null && ganaXUnidadConAds >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                                    S/ {(ganaXUnidadConAds ?? 0).toFixed(2)}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 mt-0.5">incluyendo publicidad</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* Solo mayorista para NO restaurantes (súpers, tiendas, etc) */}
             {!isRestaurante && <ProductWholesalePricing vm={vm} />}
 
-            {tieneGestionComisiones && (
+            {tieneGestionProvisiones && (
             <div className="col-span-1 md:col-span-2">
                 <InputPro
                     autocomplete="off"
@@ -454,12 +690,12 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             </div>
             )}
 
-            {tieneGestionComisiones && (
+            {tieneGestionProvisiones && (
                 <div className="col-span-1 md:col-span-2">
                     <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/10">
                         <div className="col-span-2 flex items-center gap-2 mb-1">
                             <Icon icon="solar:star-bold-duotone" className="text-purple-500" width={14} />
-                            <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Gestión de comisiones</span>
+                            <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Gestión de provisiones</span>
                         </div>
                         <p className="col-span-2 text-[11px] leading-4 text-gray-500 dark:text-gray-400">
                             Venta define el máximo para despacho inmediato. Provisión define el máximo para reservas activas. Ambos porcentajes deben sumar 100%.

@@ -6,7 +6,9 @@ import { useState } from 'react';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
-    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty } = vm;
+    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword } = vm;
+    const [showActual, setShowActual] = useState(false);
+    const [showNueva, setShowNueva] = useState(false);
     const [directorInput, setDirectorInput] = useState<string | null>(null);
 
     if (loading) return <div className="flex justify-center items-center h-96"><Loading /></div>;
@@ -84,6 +86,70 @@ export default function PerfilIndex() {
                         </div>
                     </div>
                 </div>
+
+                {/* Cambiar contraseña — visible para todos los roles */}
+                <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                        <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:lock-password-bold-duotone" width="20" /></div>
+                        Cambiar Contraseña
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">Contraseña actual</label>
+                            <div className="relative">
+                                <input
+                                    type={showActual ? 'text' : 'password'}
+                                    value={passwordForm.actual}
+                                    onChange={e => setPasswordForm(p => ({ ...p, actual: e.target.value }))}
+                                    placeholder="••••••••"
+                                    className={`w-full rounded-xl border px-3 py-2.5 text-sm pr-10 outline-none transition focus:ring-2 dark:bg-slate-950 dark:text-white ${passwordErrors.actual ? 'border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30' : 'border-gray-200 dark:border-slate-700 focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30'}`}
+                                />
+                                <button type="button" onClick={() => setShowActual(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <Icon icon={showActual ? 'solar:eye-closed-bold' : 'solar:eye-bold'} width={18} />
+                                </button>
+                            </div>
+                            {passwordErrors.actual && <p className="text-xs text-red-500">{passwordErrors.actual}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">Nueva contraseña</label>
+                            <div className="relative">
+                                <input
+                                    type={showNueva ? 'text' : 'password'}
+                                    value={passwordForm.nueva}
+                                    onChange={e => setPasswordForm(p => ({ ...p, nueva: e.target.value }))}
+                                    placeholder="Mínimo 6 caracteres"
+                                    className={`w-full rounded-xl border px-3 py-2.5 text-sm pr-10 outline-none transition focus:ring-2 dark:bg-slate-950 dark:text-white ${passwordErrors.nueva ? 'border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30' : 'border-gray-200 dark:border-slate-700 focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30'}`}
+                                />
+                                <button type="button" onClick={() => setShowNueva(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <Icon icon={showNueva ? 'solar:eye-closed-bold' : 'solar:eye-bold'} width={18} />
+                                </button>
+                            </div>
+                            {passwordErrors.nueva && <p className="text-xs text-red-500">{passwordErrors.nueva}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">Confirmar contraseña</label>
+                            <input
+                                type="password"
+                                value={passwordForm.confirmar}
+                                onChange={e => setPasswordForm(p => ({ ...p, confirmar: e.target.value }))}
+                                placeholder="Repite la nueva contraseña"
+                                className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 dark:bg-slate-950 dark:text-white ${passwordErrors.confirmar ? 'border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30' : 'border-gray-200 dark:border-slate-700 focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30'}`}
+                            />
+                            {passwordErrors.confirmar && <p className="text-xs text-red-500">{passwordErrors.confirmar}</p>}
+                        </div>
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handleChangePassword}
+                            disabled={savingPassword}
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition ${theme.text.replace('text-', 'bg-').replace('dark:text-', 'dark:bg-')} bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                            {savingPassword ? <><Icon icon="solar:refresh-bold" className="animate-spin" width={16} />Guardando...</> : <><Icon icon="solar:lock-bold" width={16} />Actualizar contraseña</>}
+                        </button>
+                    </div>
+                </div>
+
                 {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
                     <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5`}>
                         <div className="flex items-center justify-between mb-4">

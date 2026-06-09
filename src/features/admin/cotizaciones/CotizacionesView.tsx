@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import moment from "moment";
+import { useNavigate } from "react-router-dom";
 import DataTable from "@/components/Datatable";
 import Pagination from "@/components/Pagination";
 import { numberToWords } from "@/utils/numberToLetters";
@@ -13,12 +14,14 @@ import ModalPaymentUnified from "@/components/ModalPaymentUnified";
 import PaymentReceipt from "@/components/PaymentReceipt";
 import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
+import Button from "@/components/Button";
 
 import { useCotizacionesViewModel } from "./useCotizacionesViewModel";
 import { IInvoices } from "@/interfaces/invoices";
 
 export default function CotizacionesView() {
     const vm = useCotizacionesViewModel();
+    const navigate = useNavigate();
 
     const productsTable = vm.invoices?.map((item: IInvoices) => {
         const rowBase: any = {
@@ -115,6 +118,10 @@ export default function CotizacionesView() {
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona y convierte tus cotizaciones en facturas</p>
                 </div>
+                <Button color="primary" onClick={() => navigate('/administrador/cotizaciones/nuevo')} className="w-full md:w-auto shadow-lg shadow-blue-500/20">
+                    <Icon icon="heroicons:plus" className="mr-2" />
+                    Nueva Cotización
+                </Button>
             </div>
 
             {/* Main Content Card */}

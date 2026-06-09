@@ -100,7 +100,7 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
         return (
             <div className="flex items-center justify-center py-8">
                 <Icon icon="mdi:loading" className="animate-spin text-blue-600" width={32} />
-                <span className="ml-2 text-gray-600">Cargando módulos...</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">Cargando módulos...</span>
             </div>
         );
     }
@@ -112,7 +112,7 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
         <div>
             <div className="flex items-center justify-between mb-3">
                 <div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                         Módulos: <strong>{selectedModulos.length}</strong> de {modulos.length}
                         {onSubModulosChange && totalSubsDisponibles > 0 && (
                             <span className="ml-3 text-indigo-600">
@@ -140,27 +140,27 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
                     const allSubsSel = subActivos.length > 0 && subActivos.every(s => selectedSubModulos.includes(s.id));
 
                     return (
-                        <div key={modulo.id} className={`border-2 rounded-xl overflow-hidden transition-all ${isSelected ? 'border-blue-400' : 'border-gray-200'}`}>
+                        <div key={modulo.id} className={`border-2 rounded-xl overflow-hidden transition-all ${isSelected ? 'border-blue-400 dark:border-blue-500' : 'border-gray-200 dark:border-slate-700'}`}>
                             {/* Fila del módulo */}
                             <div
-                                className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
                                 onClick={() => handleToggleModulo(modulo.id)}
                             >
-                                <div className={`flex-shrink-0 p-2 rounded-lg ${isSelected ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                                <div className={`flex-shrink-0 p-2 rounded-lg ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-slate-700'}`}>
                                     <Icon
                                         icon={modulo.icono || getModuleIcon(modulo.codigo)}
-                                        className={isSelected ? 'text-blue-600' : 'text-gray-600'}
+                                        className={isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}
                                         width={22}
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <h4 className={`font-semibold text-sm ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                                        <h4 className={`font-semibold text-sm ${isSelected ? 'text-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
                                             {modulo.nombre}
                                         </h4>
-                                        {isSelected && <Icon icon="mdi:check-circle" className="text-blue-600 flex-shrink-0" width={16} />}
+                                        {isSelected && <Icon icon="mdi:check-circle" className="text-blue-600 dark:text-blue-400 flex-shrink-0" width={16} />}
                                     </div>
-                                    <p className="text-xs text-gray-500 truncate">{modulo.descripcion}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{modulo.descripcion}</p>
                                     {isSelected && subActivos.length > 0 && onSubModulosChange && (
                                         <p className="text-xs text-indigo-600 mt-0.5">
                                             {subSelCount} de {subActivos.length} submódulos configurados
@@ -182,9 +182,9 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
 
                             {/* Submódulos expandibles */}
                             {isSelected && isExpanded && subActivos.length > 0 && onSubModulosChange && (
-                                <div className="border-t border-blue-100 bg-indigo-50/40 px-4 py-3">
+                                <div className="border-t border-blue-100 dark:border-blue-900/40 bg-indigo-50/40 dark:bg-indigo-900/10 px-4 py-3">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-semibold text-indigo-700 flex items-center gap-1.5">
+                                        <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
                                             <Icon icon="mdi:sitemap" width={14} />
                                             Submódulos de {modulo.nombre}
                                         </span>
@@ -202,16 +202,16 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
                                             return (
                                                 <label
                                                     key={sub.id}
-                                                    className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSubSel ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:border-indigo-200'}`}
+                                                    className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSubSel ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-500'}`}
                                                     onClick={() => handleToggleSubModulo(sub.id)}
                                                 >
-                                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSubSel ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`}>
+                                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSubSel ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300 dark:border-slate-500'}`}>
                                                         {isSubSel && <Icon icon="mdi:check" className="text-white" width={10} />}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-medium text-gray-800">{sub.nombre}</p>
-                                                        {sub.descripcion && <p className="text-[10px] text-gray-500 truncate">{sub.descripcion}</p>}
-                                                        <p className="text-[10px] font-mono text-gray-400">{sub.codigo}</p>
+                                                        <p className="text-xs font-medium text-gray-800 dark:text-gray-200">{sub.nombre}</p>
+                                                        {sub.descripcion && <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{sub.descripcion}</p>}
+                                                        <p className="text-[10px] font-mono text-gray-400 dark:text-gray-500">{sub.codigo}</p>
                                                     </div>
                                                 </label>
                                             );
@@ -225,7 +225,7 @@ export const ModuloSelector: React.FC<ModuloSelectorProps> = ({
             </div>
 
             {modulos.length === 0 && !loading && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No hay módulos disponibles
                 </div>
             )}

@@ -42,8 +42,8 @@ export const useCategoriesStore = create<ICategoriesState>()(devtools((set, _get
                 .filter(([_, value]) => value !== undefined)
                 .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
 
-            const query = new URLSearchParams(filteredParams).toString();
-            const resp: any = await get(`categoria/listar${query}`);
+            const query = new URLSearchParams(filteredParams as Record<string, string>).toString();
+            const resp: any = await get(`categoria/listar${query ? `?${query}` : ''}`);
             console.log(resp)
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });

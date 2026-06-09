@@ -32,7 +32,7 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
     return (
         <div className={cn('relative group', className)}>
             {label && (
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1">
+                <label className="block text-[12px] font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1 uppercase">
                     {label}
                 </label>
             )}
@@ -64,7 +64,7 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
                     disabled={disabled || loading}
                     autoComplete="off"
                     className={cn(
-                        "w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 font-medium dark:bg-[#131620] dark:border-slate-800 dark:text-gray-300 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-150 shadow-sm",
+                        "w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 py-2.4 text-sm text-gray-900 border-solid placeholder:text-gray-400 font-medium dark:bg-[#1E293B] dark:border-slate-800 dark:text-gray-300 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-150 shadow-sm",
                         error 
                             ? "border-red-300 focus:ring-red-100 focus:border-red-500 dark:border-red-900/50" 
                             : "focus:ring-violet-100 focus:border-violet-500 dark:focus:ring-violet-900/20 dark:focus:border-violet-500",

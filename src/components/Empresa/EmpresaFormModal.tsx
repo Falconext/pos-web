@@ -463,9 +463,9 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       <div className="grid grid-cols-1 md:grid-cols-12 min-h-[600px]">
 
         {/* Sidebar */}
-        <aside className="md:col-span-3 border-r border-gray-100 p-6 bg-slate-50/50 flex flex-col">
-          <div className="flex flex-col items-center text-center pb-5 border-b border-gray-100 mb-5">
-            <div className="h-20 w-20 rounded-full bg-white shadow-sm overflow-hidden mb-3 border border-gray-200 flex items-center justify-center">
+        <aside className="md:col-span-3 border-r border-gray-100 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col">
+          <div className="flex flex-col items-center text-center pb-5 border-b border-gray-100 dark:border-slate-700 mb-5">
+            <div className="h-20 w-20 rounded-full bg-white dark:bg-slate-700 shadow-sm overflow-hidden mb-3 border border-gray-200 dark:border-slate-600 flex items-center justify-center">
               {logoPreview ? (
                 <img src={logoPreview} className="h-full w-full object-cover" alt="Logo" />
               ) : (
@@ -474,10 +474,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 </svg>
               )}
             </div>
-            <p className="text-sm font-bold text-gray-900 leading-tight">
+            <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
               {isEdit ? (empresa?.razonSocial || '-') : 'Nueva Empresa'}
             </p>
-            <p className="text-xs text-gray-500 mt-1 font-medium bg-gray-100 px-2 py-0.5 rounded">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
               {isEdit ? empresa?.ruc : 'RUC por registrar'}
             </p>
           </div>
@@ -493,10 +493,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 className={`w-full flex items-center px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
                   activeTab === t.id
                     ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/20'
-                    : 'text-gray-600 hover:bg-white hover:text-gray-900 border border-transparent hover:border-gray-200 hover:shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-slate-600 hover:shadow-sm'
                 }`}
                 onClick={() => setActiveTab(t.id)}>
-                <svg className={`w-4 h-4 mr-2.5 shrink-0 ${activeTab === t.id ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-4 h-4 mr-2.5 shrink-0 ${activeTab === t.id ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={activeTab === t.id ? "2" : "1.5"} d={t.icon} />
                 </svg>
                 {t.label}
@@ -506,15 +506,15 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
           {/* Demo mode indicator in sidebar */}
           {currentUsaDemo && (
-            <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-2">
+            <div className="mt-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-2">
               <Icon icon="solar:test-tube-bold-duotone" width={18} className="text-amber-500 shrink-0" />
-              <span className="text-xs font-semibold text-amber-700">Modo Demo activo</span>
+              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Modo Demo activo</span>
             </div>
           )}
         </aside>
 
         {/* Content */}
-        <section className="md:col-span-9 bg-white overflow-y-auto flex flex-col">
+        <section className="md:col-span-9 bg-white dark:bg-[#111827] overflow-y-auto flex flex-col">
 
           {/* Demo Mode Banner — always visible at top */}
           <div className={`px-8 pt-6 pb-0 transition-all duration-300`}>
@@ -522,20 +522,20 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
               className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
                 currentUsaDemo
                   ? 'border-amber-400 bg-amber-50 shadow-sm shadow-amber-200'
-                  : 'border-dashed border-gray-200 hover:border-amber-300 hover:bg-amber-50/30'
+                  : 'border-dashed border-gray-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700 hover:bg-amber-50/30 dark:hover:bg-amber-900/10'
               }`}
               onClick={() => handleUsaDemoToggle(!currentUsaDemo)}
             >
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl transition-colors ${currentUsaDemo ? 'bg-amber-400' : 'bg-gray-100'}`}>
-                  <Icon icon="solar:test-tube-bold-duotone" width={20} className={currentUsaDemo ? 'text-white' : 'text-gray-400'} />
+                <div className={`p-2 rounded-xl transition-colors ${currentUsaDemo ? 'bg-amber-400' : 'bg-gray-100 dark:bg-slate-700'}`}>
+                  <Icon icon="solar:test-tube-bold-duotone" width={20} className={currentUsaDemo ? 'text-white' : 'text-gray-400 dark:text-gray-500'} />
                 </div>
                 <div>
-                  <p className={`font-bold text-sm ${currentUsaDemo ? 'text-amber-900' : 'text-gray-700'}`}>
+                  <p className={`font-bold text-sm ${currentUsaDemo ? 'text-amber-900 dark:text-amber-200' : 'text-gray-700 dark:text-gray-300'}`}>
                     Modo Demo
                     {!isEdit && currentUsaDemo && <span className="ml-2 text-xs font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Datos de prueba aplicados</span>}
                   </p>
-                  <p className={`text-xs mt-0.5 ${currentUsaDemo ? 'text-amber-700' : 'text-gray-400'}`}>
+                  <p className={`text-xs mt-0.5 ${currentUsaDemo ? 'text-amber-700 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}>
                     {currentUsaDemo
                       ? 'Los comprobantes se enviarán por QPSE demo'
                       : isEdit
@@ -557,13 +557,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
               {activeTab === 'datos' && (
                 <div className="space-y-5 animate-in fade-in duration-300">
-                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Información General</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Información General</h3>
 
                   {(isAdminSistema && (!hasNegocioScope || !hasProductoScope)) && (
                     <div>
                       {!hasNegocioScope && (
                         <>
-                          <p className="text-sm font-semibold text-gray-700 mb-2">Plataforma de destino <span className="text-red-500">*</span></p>
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Plataforma de destino <span className="text-red-500">*</span></p>
                           <div className="grid grid-cols-2 gap-3">
                             {([
                               { id: 'falconext', label: 'Falconext', icon: 'solar:rocket-bold-duotone', color: '#6366F1' },
@@ -578,9 +578,9 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                                     else setCreateData(prev => ({ ...prev, brand: p.id }));
                                     if (errors.brand) setErrors(prev => ({ ...prev, brand: '' }));
                                   }}
-                                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}>
+                                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400 shadow-sm' : 'border-gray-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-400 bg-white dark:bg-slate-800/50'}`}>
                                   <Icon icon={p.icon} width={20} style={{ color: sel ? p.color : '#9CA3AF' }} />
-                                  <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
+                                  <span className={`font-semibold text-sm ${sel ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{p.label}</span>
                                   {sel && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-blue-500" />}
                                 </button>
                               );
@@ -592,7 +592,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
                       {!hasProductoScope && (
                         <>
-                          <p className="text-sm font-semibold text-gray-700 mt-4 mb-2">Producto de destino <span className="text-red-500">*</span></p>
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2">Producto de destino <span className="text-red-500">*</span></p>
                           <div className="grid grid-cols-2 gap-3">
                             {([
                               { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
@@ -607,9 +607,9 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                                     else setCreateData(prev => ({ ...prev, producto: p.id, planId: 0 }));
                                     if (errors.producto) setErrors(prev => ({ ...prev, producto: '' }));
                                   }}
-                                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-sky-500 bg-sky-50 shadow-sm' : 'border-gray-200 hover:border-sky-300 bg-white'}`}>
+                                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${sel ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/30 dark:border-sky-400 shadow-sm' : 'border-gray-200 dark:border-slate-600 hover:border-sky-300 dark:hover:border-sky-400 bg-white dark:bg-slate-800/50'}`}>
                                   <Icon icon={p.icon} width={20} style={{ color: sel ? p.color : '#9CA3AF' }} />
-                                  <span className={`font-semibold text-sm ${sel ? 'text-gray-900' : 'text-gray-500'}`}>{p.label}</span>
+                                  <span className={`font-semibold text-sm ${sel ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{p.label}</span>
                                   {sel && <Icon icon="solar:check-circle-bold" width={16} className="ml-auto text-sky-500" />}
                                 </button>
                               );
@@ -647,17 +647,17 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       <Select value={isEdit ? `${editData.departamento} - ${editData.provincia} - ${editData.distrito}` : `${createData.departamento} - ${createData.provincia} - ${createData.distrito}`} name="ubigeo" label="Ubicación (Departamento - Provincia - Distrito)" options={ubigeosOptions} onChange={(id: any) => handleUbigeoChange(id)} error={errors.ubigeo} isSearch withLabel />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Logo de la Empresa</label>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Logo de la Empresa</label>
                       <div className="flex items-center space-x-4">
                         {logoPreview && (
-                          <div className="h-14 w-14 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 shrink-0">
+                          <div className="h-14 w-14 rounded-lg border border-gray-200 dark:border-slate-600 overflow-hidden bg-gray-50 dark:bg-slate-800 shrink-0">
                             <img src={logoPreview} alt="preview" className="h-full w-full object-cover" />
                           </div>
                         )}
-                        <label className="flex flex-col items-center justify-center w-full max-w-sm h-14 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-300 transition-colors">
+                        <label className="flex flex-col items-center justify-center w-full max-w-sm h-14 border-2 border-gray-300 dark:border-slate-600 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 hover:border-blue-300 transition-colors">
                           <div className="flex flex-row items-center justify-center space-x-2">
                             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                            <p className="text-sm text-gray-500 font-medium">Click para subir un logo</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Click para subir un logo</p>
                           </div>
                           <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         </label>
@@ -670,13 +670,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                           { key: 'usaCodigoBarrasManual', label: 'Habilitar código de barras en productos', desc: 'Fuerza la visualización del campo "Código de Barras" en productos, sin depender del rubro.' },
                           { key: 'esAgenteRetencion', label: 'Agente de Retención (SUNAT)', desc: 'Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT.' },
                         ].map(({ key, label, desc }) => (
-                          <label key={key} className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                          <label key={key} className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
                             <input type="checkbox" name={key} checked={Boolean((editData as any)[key])}
                               onChange={(e) => setEditData(prev => ({ ...prev, [key]: e.target.checked }))}
                               className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
                             <div>
-                              <span className="font-semibold text-gray-900 text-sm">{label}</span>
-                              <span className="block text-xs text-gray-500 mt-0.5">{desc}</span>
+                              <span className="font-semibold text-gray-900 dark:text-white text-sm">{label}</span>
+                              <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">{desc}</span>
                             </div>
                           </label>
                         ))}
@@ -685,13 +685,13 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
                     {!isEdit && (
                       <div className="md:col-span-2 mt-1">
-                        <label className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                        <label className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
                           <input type="checkbox" name="usaCodigoBarrasManual" checked={Boolean(createData.usaCodigoBarrasManual)}
                             onChange={(e) => setCreateData(prev => ({ ...prev, usaCodigoBarrasManual: e.target.checked }))}
                             className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
                           <div>
-                            <span className="font-semibold text-gray-900 text-sm">Habilitar código de barras en productos</span>
-                            <span className="block text-xs text-gray-500 mt-0.5">Activa el campo "Código de Barras" en productos para esta empresa desde el inicio.</span>
+                            <span className="font-semibold text-gray-900 dark:text-white text-sm">Habilitar código de barras en productos</span>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">Activa el campo "Código de Barras" en productos para esta empresa desde el inicio.</span>
                           </div>
                         </label>
                       </div>
@@ -702,7 +702,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
               {activeTab === 'suscripcion' && (
                 <div className="space-y-5 animate-in fade-in duration-300">
-                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Planes Disponibles</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Planes Disponibles</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {planesDisponibles && Array.isArray(planesDisponibles) && planesDisponibles.map((plan: any) => {
@@ -711,7 +711,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       return (
                         <div key={plan.id}
                           onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))}
-                          className={`relative p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col h-full ${selected ? 'border-blue-600 bg-blue-50/40 shadow-lg ring-1 ring-blue-600' : 'border-gray-200 hover:border-blue-300 hover:shadow-md bg-white'}`}>
+                          className={`relative p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col h-full ${selected ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-900/30 dark:border-blue-400 shadow-lg ring-1 ring-blue-600 dark:ring-blue-500' : 'border-gray-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-400 hover:shadow-md bg-white dark:bg-slate-800'}`}>
                           {selected && (
                             <div className="absolute top-3 right-3 text-blue-600">
                               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -719,15 +719,15 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                               </svg>
                             </div>
                           )}
-                          <div className="font-extrabold text-gray-900 mb-1 pr-5">{plan.nombre}</div>
-                          <div className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[32px]">{plan.descripcion || 'Plan estándar'}</div>
+                          <div className="font-extrabold text-gray-900 dark:text-white mb-1 pr-5">{plan.nombre}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 min-h-[32px]">{plan.descripcion || 'Plan estándar'}</div>
                           <div className="mt-auto">
-                            <div className="text-xl font-black text-blue-700">
-                              <span className="text-sm text-blue-600 font-bold mr-0.5">S/</span>
+                            <div className="text-xl font-black text-blue-700 dark:text-blue-400">
+                              <span className="text-sm text-blue-600 dark:text-blue-400 font-bold mr-0.5">S/</span>
                               {Number(plan.costo || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                              {plan.tipoFacturacion && <span className="text-xs font-medium text-gray-500 ml-1">/{plan.tipoFacturacion.toLowerCase()}</span>}
+                              {plan.tipoFacturacion && <span className="text-xs font-medium text-gray-500 dark:text-gray-400 ml-1">/{plan.tipoFacturacion.toLowerCase()}</span>}
                             </div>
-                            <div className="flex justify-between text-xs font-medium text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                            <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400 mt-3 pt-2 border-t border-gray-100 dark:border-slate-700">
                               {plan.limiteUsuarios ? <span>{plan.limiteUsuarios} Usu.</span> : <span />}
                               {plan.duracionDias ? <span>{plan.duracionDias} días</span> : <span />}
                             </div>
@@ -737,21 +737,21 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                     })}
                   </div>
                   {planesDisponibles.length === 0 && (
-                    <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <div className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
                       No hay planes disponibles para el producto seleccionado.
                     </div>
                   )}
 
-                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2 pt-3">Fechas de Vigencia</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2 pt-3">Fechas de Vigencia</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputPro name="fechaActivacion" label="Fecha de Activación" type="date" isLabel value={isEdit ? editData.fechaActivacion : createData.fechaActivacion} onChange={handleChange} />
                     <InputPro name="fechaExpiracion" label="Fecha de Expiración" type="date" isLabel value={isEdit ? editData.fechaExpiracion : (createData.fechaExpiracion || '')} onChange={handleChange} />
                   </div>
 
-                  <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="rounded-xl border border-blue-100 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm">Módulo de Tienda Virtual</h4>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">Módulo de Tienda Virtual</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                         {selectedPlan?.tieneTienda
                           ? <span>Este plan <strong className="text-emerald-600">incluye tienda virtual</strong>.</span>
                           : <span>Este plan no incluye módulo de tienda virtual.</span>}
@@ -759,7 +759,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                     </div>
                     {selectedPlan?.tieneTienda ? (
                       isAdminSistema ? (
-                        <div className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 text-center whitespace-nowrap">Solo admin<br/>de empresa</div>
+                        <div className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 text-xs font-medium text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">Solo admin<br/>de empresa</div>
                       ) : (
                         <Button type="button" color="secondary" className="shrink-0 text-sm"
                           disabled={isEdit ? initialEditPlanId !== undefined && initialEditPlanId !== editData.planId : true}
@@ -775,7 +775,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   {!isEdit && (
                     <label className="flex items-center w-max group cursor-pointer">
                       <input type="checkbox" checked={createData.esPrueba} onChange={handleEsPrueba} className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500" />
-                      <span className="ml-2.5 text-sm font-medium text-gray-700 group-hover:text-gray-900">Activar versión de prueba gratuita</span>
+                      <span className="ml-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">Activar versión de prueba gratuita</span>
                     </label>
                   )}
                 </div>
@@ -783,14 +783,14 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
               {activeTab === 'sunat' && (
                 <div className="space-y-5 animate-in fade-in duration-300">
-                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Credenciales SUNAT / PSE</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Credenciales SUNAT / PSE</h3>
 
-                  <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4">
+                  <div className="bg-amber-50/50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
                     <div className="flex items-start">
                       <svg className="w-4 h-4 text-amber-500 mt-0.5 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p className="text-xs text-amber-800 leading-relaxed">
+                      <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                         Emisión estándar activa con <strong>QPSE</strong>. Usa aquí las credenciales QPSE de la empresa. APISUNAT está desactivado temporalmente.
                       </p>
                     </div>
@@ -804,15 +804,15 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
               {activeTab === 'admin' && (
                 <div className="space-y-5 animate-in fade-in duration-300">
-                  <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Superusuario de la Empresa</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Superusuario de la Empresa</h3>
 
                   {isEdit && (
-                    <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-4">
+                    <div className="bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                       <div className="flex items-start">
                         <svg className="w-4 h-4 text-blue-500 mt-0.5 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p className="text-xs text-blue-800 leading-relaxed">
+                        <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
                           Puedes actualizar los datos del administrador principal. <strong>Si dejas la contraseña en blanco, se mantiene la actual.</strong>
                         </p>
                       </div>
@@ -833,7 +833,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
             </div>
 
             {/* Footer */}
-            <div className="pt-5 border-t border-gray-100 flex items-center justify-between mt-4">
+            <div className="pt-5 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between mt-4">
               <div>
                 {Object.keys(errors).length > 0 && (
                   <span className="text-xs text-red-500 font-medium flex items-center gap-1">
@@ -843,7 +843,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                 )}
               </div>
               <div className="flex gap-2.5">
-                <Button type="button" color="white" outline onClick={onClose} className="px-5 font-medium bg-white hover:bg-gray-50 border-gray-200 text-sm">
+                <Button type="button" color="white" outline onClick={onClose} className="px-5 font-medium bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-sm">
                   Cancelar
                 </Button>
                 <Button type="submit" color="secondary" disabled={isSubmitting} className="px-7 shadow-sm text-sm">

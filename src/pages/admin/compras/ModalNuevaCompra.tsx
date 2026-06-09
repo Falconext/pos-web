@@ -17,6 +17,12 @@ import apiClient from "@/utils/apiClient";
 import ModalConfirm from "@/components/ModalConfirm";
 import { usaLotesFarmaciaRubro } from "@/utils/rubro-features";
 
+const PROV_DOC_TYPES = [
+    { key: 'RUC', label: 'RUC', digits: 11 },
+    { key: 'DNI', label: 'DNI', digits: 8 },
+    { key: 'CE',  label: 'C.E.', digits: null },
+];
+
 interface ModalNuevaCompraProps {
     isOpen: boolean;
     onClose: () => void;
@@ -25,7 +31,7 @@ interface ModalNuevaCompraProps {
 
 const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps) => {
     const { crearCompra } = useComprasStore();
-    const { getAllClients, clients, resetClients } = useClientsStore();
+    const { getAllClients, clients, resetClients, getClientFromDoc } = useClientsStore();
     const { getAllProducts, products, resetProducts } = useProductsStore();
     const { alert } = useAlertStore();
     const { auth } = useAuthStore();
@@ -74,9 +80,19 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     // true = los precios ingresados YA incluyen IGV (ej: ticket de caja, proveedor informal)
     // false = los precios son NETOS sin IGV (default: factura formal de proveedor)
     const [incluyeIgv, setIncluyeIgv] = useState(false);
+    // Reset key para limpiar el Select de producto al agregar un ítem
+    const [productSelectKey, setProductSelectKey] = useState(0);
+
     const [barcodeInput, setBarcodeInput] = useState('');
     const [barcodeLoading, setBarcodeLoading] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
+
+    // Estado panel "Nuevo Proveedor" inline
+    const [showNuevoProveedor, setShowNuevoProveedor] = useState(false);
+    const [nuevoProvForm, setNuevoProvForm] = useState({ tipoDoc: 'RUC', nroDoc: '', nombre: '', direccion: '', email: '', telefono: '' });
+    const [nuevoProvErrors, setNuevoProvErrors] = useState<Record<string, string>>({});
+    const [savingProveedor, setSavingProveedor] = useState(false);
+    const [lookingUpDoc, setLookingUpDoc] = useState(false);
 
     // XML import
     const xmlInputRef = useRef<HTMLInputElement>(null);
@@ -119,6 +135,10 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             setLinkingRowIndex(null);
             setLinkProductIdByRow({});
             setShowConfirmUnlinked(false);
+            setShowNuevoProveedor(false);
+            setNuevoProvForm({ tipoDoc: 'RUC', nroDoc: '', nombre: '', direccion: '', email: '', telefono: '' });
+            setNuevoProvErrors({});
+            setProductSelectKey(k => k + 1);
         }
     }, [isOpen]);
 
@@ -314,7 +334,60 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         }
 
         setItems([...items, { ...currentItem, subtotal: currentItem.cantidad * currentItem.precioUnitario }]);
-        setCurrentItem({ ...currentItem, productoId: 0, descripcion: '', cantidad: 1, precioUnitario: 0, lote: '', fechaVencimiento: '' });
+        setCurrentItem({ productoId: 0, descripcion: '', cantidad: 1, precioUnitario: 0, lote: '', fechaVencimiento: '' });
+        // Incrementar key fuerza remount del Select y limpia la selección visual
+        setProductSelectKey(k => k + 1);
+    };
+
+    // ── Nuevo proveedor inline ────────────────────────────────────────────
+    const handleNuevoProvDocChange = async (value: string) => {
+        setNuevoProvForm(prev => ({ ...prev, nroDoc: value }));
+        const clean = value.trim();
+        const { tipoDoc } = nuevoProvForm;
+        const shouldLookup = (tipoDoc === 'RUC' && clean.length === 11) || (tipoDoc === 'DNI' && clean.length === 8);
+        if (!shouldLookup) return;
+        setLookingUpDoc(true);
+        try {
+            const result = await getClientFromDoc(clean, tipoDoc);
+            if (result) {
+                setNuevoProvForm(prev => ({
+                    ...prev,
+                    nombre:    result.nombre_completo || result.nombre_o_razon_social || prev.nombre,
+                    direccion: result.direccion || result.direccion_completa || prev.direccion,
+                }));
+            }
+        } catch { /* silent */ } finally {
+            setLookingUpDoc(false);
+        }
+    };
+
+    const guardarNuevoProveedor = async () => {
+        const errs: Record<string, string> = {};
+        if (!nuevoProvForm.nroDoc.trim()) errs.nroDoc = 'Requerido';
+        if (!nuevoProvForm.nombre.trim()) errs.nombre = 'Requerido';
+        setNuevoProvErrors(errs);
+        if (Object.keys(errs).length > 0) return;
+
+        setSavingProveedor(true);
+        try {
+            const payload = { ...nuevoProvForm, persona: 'PROVEEDOR', estado: 'ACTIVO' };
+            const res = await apiClient.post('/clientes', payload);
+            const creado = res?.data?.data || res?.data;
+            if (creado?.id) {
+                const label = `${creado.nroDoc} - ${creado.nombre}`;
+                setSupplierOptions(prev => [{ id: creado.id, value: label }, ...prev]);
+                setHeader(h => ({ ...h, proveedorId: creado.id }));
+                setSupplierDisplay(label);
+                setShowNuevoProveedor(false);
+                setNuevoProvForm({ tipoDoc: 'RUC', nroDoc: '', nombre: '', direccion: '', email: '', telefono: '' });
+                setNuevoProvErrors({});
+                alert('Proveedor creado y seleccionado.', 'success');
+            }
+        } catch (e: any) {
+            alert(e?.response?.data?.message || 'Error al crear proveedor', 'error');
+        } finally {
+            setSavingProveedor(false);
+        }
     };
 
     const removeItem = (index: number) => {
@@ -471,18 +544,109 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                     <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 mt-5">
                         <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Datos del Documento</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Select
-                                label="Proveedor"
-                                name="proveedor"
-                                options={supplierOptions}
-                                onChange={onSupplierChange}
-                                isSearch
-                                handleGetData={handleSupplierSearch}
-                                withLabel
-                                error={null}
-                                placeholder="Buscar proveedor..."
-                                value={supplierDisplay || supplierOptions.find((o: any) => Number(o.id) === Number(header.proveedorId))?.value || ''}
-                            />
+                            {/* Proveedor + botón nuevo proveedor */}
+                            <div className="md:col-span-2 space-y-2">
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <Select
+                                            label="Proveedor"
+                                            name="proveedor"
+                                            options={supplierOptions}
+                                            onChange={onSupplierChange}
+                                            isSearch
+                                            handleGetData={handleSupplierSearch}
+                                            withLabel
+                                            error={null}
+                                            placeholder="Buscar proveedor..."
+                                            value={supplierDisplay || supplierOptions.find((o: any) => Number(o.id) === Number(header.proveedorId))?.value || ''}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNuevoProveedor(v => !v)}
+                                        title="Crear nuevo proveedor"
+                                        className={`flex-shrink-0 flex items-center gap-1.5 px-3 h-[42px] rounded-xl border text-xs font-semibold transition-all ${showNuevoProveedor ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800 hover:bg-violet-50 dark:hover:bg-violet-900/20'}`}
+                                    >
+                                        <Icon icon={showNuevoProveedor ? "solar:close-circle-bold" : "solar:add-circle-bold"} width={16} />
+                                        {showNuevoProveedor ? 'Cancelar' : 'Nuevo'}
+                                    </button>
+                                </div>
+
+                                {/* Panel inline: crear nuevo proveedor */}
+                                {showNuevoProveedor && (
+                                    <div className="p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10 space-y-3">
+                                        <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wide flex items-center gap-1.5">
+                                            <Icon icon="solar:user-plus-bold-duotone" width={14} />
+                                            Nuevo Proveedor
+                                        </p>
+
+                                        {/* Tipo de documento */}
+                                        <div className="flex gap-2 flex-wrap">
+                                            {PROV_DOC_TYPES.map(dt => (
+                                                <button
+                                                    key={dt.key}
+                                                    type="button"
+                                                    onClick={() => setNuevoProvForm(p => ({ ...p, tipoDoc: dt.key, nroDoc: '' }))}
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${nuevoProvForm.tipoDoc === dt.key ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:border-violet-400'}`}
+                                                >
+                                                    {dt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div className="relative">
+                                                <InputPro
+                                                    autocomplete="off"
+                                                    label={nuevoProvForm.tipoDoc === 'RUC' ? 'RUC (11 dígitos)' : nuevoProvForm.tipoDoc === 'DNI' ? 'DNI (8 dígitos)' : 'N° Documento'}
+                                                    name="nuevoProvNroDoc"
+                                                    value={nuevoProvForm.nroDoc}
+                                                    onChange={e => handleNuevoProvDocChange(e.target.value)}
+                                                    isLabel
+                                                    error={nuevoProvErrors.nroDoc}
+                                                />
+                                                {lookingUpDoc && (
+                                                    <span className="absolute right-3 top-[34px]">
+                                                        <Icon icon="svg-spinners:270-ring-with-bg" width={14} className="text-violet-500" />
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <InputPro
+                                                    autocomplete="off"
+                                                    label="Razón Social / Nombre"
+                                                    name="nuevoProvNombre"
+                                                    value={nuevoProvForm.nombre}
+                                                    onChange={e => setNuevoProvForm(p => ({ ...p, nombre: e.target.value }))}
+                                                    isLabel
+                                                    error={nuevoProvErrors.nombre}
+                                                />
+                                            </div>
+                                            <div>
+                                                <InputPro autocomplete="off" label="Teléfono (Opc.)" name="nuevoProvTel" value={nuevoProvForm.telefono} onChange={e => setNuevoProvForm(p => ({ ...p, telefono: e.target.value }))} isLabel />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <InputPro autocomplete="off" label="Dirección (Opc.)" name="nuevoProvDir" value={nuevoProvForm.direccion} onChange={e => setNuevoProvForm(p => ({ ...p, direccion: e.target.value }))} isLabel />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end gap-2 pt-1">
+                                            <button type="button" onClick={() => { setShowNuevoProveedor(false); setNuevoProvErrors({}); }} className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 transition-colors">
+                                                Cancelar
+                                            </button>
+                                            <Button
+                                                outline
+                                                color="black"
+                                                onClick={guardarNuevoProveedor}
+                                                className="!bg-violet-600 !text-white !border-none !text-xs !py-1.5 shadow-sm"
+                                            >
+                                                {savingProveedor ? <Icon icon="svg-spinners:270-ring-with-bg" width={14} /> : <Icon icon="solar:check-circle-bold" width={14} />}
+                                                {savingProveedor ? 'Guardando...' : 'Guardar Proveedor'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             <InputPro autocomplete="off" label="Serie" name="doc_serie_compra" id="doc_serie_compra" value={header.serie} onChange={(e) => setHeader({ ...header, serie: e.target.value })} isLabel />
                             <InputPro autocomplete="off" label="Nro. Comprobante" name="doc_correlativo" id="doc_correlativo" value={header.numero} onChange={(e) => setHeader({ ...header, numero: e.target.value })} isLabel />
                             <Calendar
@@ -561,6 +725,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                         <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                             <div className="col-span-4">
                                 <Select
+                                    key={productSelectKey}
                                     label="Producto"
                                     name="producto"
                                     options={productOptions}

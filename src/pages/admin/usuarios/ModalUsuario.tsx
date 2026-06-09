@@ -36,6 +36,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [expandedModulos, setExpandedModulos] = useState<Set<string>>(new Set());
 
@@ -72,6 +73,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
       });
     }
     setErrors({});
+    setServerError('');
     setExpandedModulos(new Set());
   }, [user, isEdit, isOpen]);
 
@@ -166,10 +168,8 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
     if (!formData.email.trim()) newErrors.email = 'El email es obligatorio';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'El email no es válido';
-    if (!formData.dni.trim()) newErrors.dni = 'El DNI es obligatorio';
-    else if (!/^\d{8}$/.test(formData.dni)) newErrors.dni = 'El DNI debe tener 8 dígitos';
-    if (!formData.celular.trim()) newErrors.celular = 'El celular es obligatorio';
-    else if (!/^\d{9}$/.test(formData.celular)) newErrors.celular = 'El celular debe tener 9 dígitos';
+    if (formData.dni?.trim() && !/^\d{8}$/.test(formData.dni)) newErrors.dni = 'El DNI debe tener 8 dígitos';
+    if (formData.celular?.trim() && !/^\d{9}$/.test(formData.celular)) newErrors.celular = 'El celular debe tener 9 dígitos';
     if (!isEdit && !formData.password) newErrors.password = 'La contraseña es obligatoria';
     else if (formData.password && formData.password.length < 6) newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
     if (formData.permisos.length === 0) newErrors.permisos = 'Debe asignar al menos un permiso';
@@ -182,6 +182,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    setServerError('');
 
     try {
       if (isEdit && user) {
@@ -193,7 +194,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
       }
       onClose();
     } catch (error: any) {
-      console.error('Error al guardar usuario:', error);
+      setServerError(error.message || 'Error al guardar usuario');
     }
   };
 
@@ -425,6 +426,14 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
             })}
           </div>
         </div>
+
+        {/* Error del servidor */}
+        {serverError && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-xl text-sm text-red-700 dark:text-red-400">
+            <Icon icon="mdi:alert-circle" width={18} className="flex-shrink-0" />
+            {serverError}
+          </div>
+        )}
 
         {/* Botones */}
         <div className="flex justify-end gap-3">

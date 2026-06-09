@@ -70,7 +70,7 @@ En la sección de costos (junto a `costoUnitario`), agregar un bloque **"Gastos 
 | Costo de regalo  | costoRegalo    | number |
 | Costo de envío   | costoEnvio     | number |
 
-Prefijo `S/` en cada input. Visibles para todos los usuarios (no requieren `tieneGestionComisiones` — son campos de costo general, no de comisiones corporativas).
+Prefijo `S/` en cada input. **Solo visibles si `tieneTienda` está activo en el plan** — son campos de e-commerce (marketplace, delivery). Una ferretería o tienda física no los necesita.
 
 ### Tabla Kardex (`ProductsView.tsx`)
 
@@ -104,11 +104,16 @@ Dos entradas en `allData`:
 
 ### ViewModel (`useProductsViewModel.ts`)
 
-Agregar ambas columnas a `allColumns`:
+`Valor Inventario` se agrega para **todos** los usuarios.  
+`Costo Total Fijo` solo se agrega si `tieneTienda`:
+
 ```ts
 const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo',
-  'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización',
+  'Valor Inventario', 'Stock', 'Localización',
   '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'];
+
+// Solo con tieneTienda (e-commerce):
+if (tieneTienda) base.splice(7, 0, 'Costo Total Fijo');
 ```
 
 Ambas son toggleables desde el selector de columnas existente.
