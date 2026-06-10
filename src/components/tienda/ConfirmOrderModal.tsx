@@ -21,7 +21,7 @@ export default function ConfirmOrderModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60   transition-all animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full border border-gray-100 p-6 relative overflow-hidden">
 
                 {/* Decorative background circle */}

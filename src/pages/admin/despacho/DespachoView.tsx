@@ -66,7 +66,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50  " onClick={onClose} />
             <div className="relative w-full max-w-lg bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">

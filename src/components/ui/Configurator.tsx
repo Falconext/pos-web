@@ -34,7 +34,7 @@ export default function Configurator() {
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[90]"
+                className="fixed inset-0 bg-black/20   z-[90]"
                 onClick={closeConfigurator}
             />
 

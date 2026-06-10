@@ -856,7 +856,7 @@ const Comprobantes = () => {
 
             {/* Modal error SUNAT */}
             {errorSunatModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50  ">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg border border-orange-200 dark:border-orange-800/40">
                         <div className="flex items-center gap-3 p-5 border-b border-gray-100 dark:border-slate-800">
                             <div className="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">

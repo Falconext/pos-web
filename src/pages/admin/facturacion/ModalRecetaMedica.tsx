@@ -57,7 +57,7 @@ export const ModalRecetaMedica = ({ isOpen, item, onConfirmar, onCerrar }: Props
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCerrar} />
+            <div className="absolute inset-0 bg-black/50  " onClick={onCerrar} />
             <div className="relative bg-white dark:bg-[#1E2435] rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">

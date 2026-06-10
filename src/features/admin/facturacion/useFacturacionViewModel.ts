@@ -52,6 +52,10 @@ type EnvioDespachoFormData = {
     fechaEstimada?: string;
     costoEnvio?: number;
     pagarFlete?: 'CLIENTE' | 'NEGOCIO';
+    nombreDestinatario?: string;
+    dniDestinatario?: string;
+    contenidoPaquete?: string;
+    montoCOD?: number;
 };
 
 const cleanText = (value?: string) => String(value ?? '').trim();
@@ -95,6 +99,10 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         empaquetador: cleanText(data.empaquetador),
         observaciones: cleanText(data.observaciones),
         ...(fechaEstimada ? { fechaEstimada } : {}),
+        nombreDestinatario: cleanText(data.nombreDestinatario),
+        dniDestinatario: cleanText(data.dniDestinatario),
+        contenidoPaquete: cleanText(data.contenidoPaquete),
+        ...(Number(data.montoCOD) > 0 ? { montoCOD: Number(data.montoCOD) } : {}),
     };
 };
 
@@ -264,6 +272,10 @@ export const useFacturacionViewModel = () => {
         fechaEstimada: '',
         costoEnvio: 0,
         pagarFlete: 'NEGOCIO' as 'CLIENTE' | 'NEGOCIO',
+        nombreDestinatario: '',
+        dniDestinatario: '',
+        contenidoPaquete: '',
+        montoCOD: 0,
     });
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);

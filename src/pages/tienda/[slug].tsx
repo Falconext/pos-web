@@ -650,7 +650,7 @@ export default function TiendaPublica() {
       {/* Mobile Filters Drawer */}
       {showMobileFilters && (
         <div className="fixed inset-0 z-[999999] lg:hidden flex">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowMobileFilters(false)} />
+          <div className="absolute inset-0 bg-black/40  " onClick={() => setShowMobileFilters(false)} />
           <div className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-lg font-black">Filtros</h2>

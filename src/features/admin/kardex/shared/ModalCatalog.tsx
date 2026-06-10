@@ -382,7 +382,7 @@ export default function ModalCatalog({ isOpen, onClose, onSuccess }: Props) {
             {/* Image Preview Modal */}
             {previewImage && (
                 <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90   p-4 animate-in fade-in duration-200"
                     onClick={() => setPreviewImage(null)}
                 >
                     <div className="relative max-w-4xl max-h-[90vh] bg-transparent rounded-2xl overflow-hidden shadow-2xl">

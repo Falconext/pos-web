@@ -13,7 +13,7 @@ const Loading = () => {
     if (!mounted) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[1000001] flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-300">
+        <div className="fixed inset-0 z-[1000001] flex items-center justify-center bg-white/90   transition-all duration-300">
             <div className="flex flex-col items-center gap-4">
                 {/* Logo Animado */}
                 <div className="relative">

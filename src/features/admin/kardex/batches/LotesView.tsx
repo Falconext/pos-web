@@ -281,7 +281,7 @@ const inputCls = "w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gr
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
     return (
         <div className="fixed inset-0 top-[-30px] z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50  " onClick={onClose} />
             <div className="relative bg-white dark:bg-[#1E2435] rounded-2xl shadow-2xl w-full max-w-md z-10">
                 {children}
             </div>

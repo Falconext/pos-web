@@ -133,7 +133,7 @@ export default function SedeSelectionScreen() {
                 <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2" />
 
                 <div className="absolute top-10 left-10 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-white/20   flex items-center justify-center">
                         <Icon icon="solar:bolt-bold" className="text-white text-xl" />
                     </div>
                     <span className="text-white font-bold text-xl tracking-tight">Falconext</span>

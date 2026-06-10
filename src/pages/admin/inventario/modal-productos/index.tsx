@@ -43,7 +43,6 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
     const { categories } = useCategoriesStore();
 
     const [newWholesaleRow, setNewWholesaleRow] = useState({ cantidadMinima: '', precio: '' });
-    const [wholesaleFocused, setWholesaleFocused] = useState<'cantidadMinima' | 'precio' | null>(null);
     // true = precio que ingresa el usuario YA incluye IGV (modo informal/pequeño negocio)
     // false = precio ingresado es NETO sin IGV (modo formal)
     const [modoConIgv, setModoConIgv] = useState(true);
@@ -212,31 +211,30 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
         <>
             {isOpenModal && <Modal width="750px" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar producto" : "Nuevo producto"}>
 
-                {/* Barcode scanner — búsqueda en red global */}
+                {/* Barcode scanner */}
                 <div className="md:px-6 px-3 mt-4">
-                    <div className="flex items-center gap-2 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                            <Icon icon="solar:barcode-bold-duotone" className="text-white" width={18} />
+                    <div className="flex items-end gap-2">
+                        <div className="flex-1">
+                            <InputPro
+                                type="text"
+                                name="barcodeSearch"
+                                placeholder="EAN-13, UPC-A... auto-completa nombre e imagen"
+                                isLabel
+                                label="Código de barras"
+                                value={barcodeSearch}
+                                onChange={e => setBarcodeSearch(e.target.value.replace(/\D/g, '').slice(0, 14))}
+                                onKeyDown={e => e.key === 'Enter' && void handleBarcodeSearch()}
+                            />
                         </div>
-                        <input
-                            ref={barcodeInputRef as any}
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="Código de barras (EAN-13, UPC...)  →  auto-completar desde red global"
-                            className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
-                            value={barcodeSearch}
-                            onChange={e => setBarcodeSearch(e.target.value.replace(/\D/g, '').slice(0, 14))}
-                            onKeyDown={e => e.key === 'Enter' && void handleBarcodeSearch()}
-                        />
                         <button
                             type="button"
                             onClick={() => void handleBarcodeSearch()}
                             disabled={searchingBarcode || barcodeSearch.length < 8}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 text-xs font-semibold transition-all"
+                            className="h-10 px-4 flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 text-sm font-semibold transition-all flex-shrink-0"
                         >
                             {searchingBarcode
-                                ? <Icon icon="svg-spinners:ring-resize" width={14} />
-                                : <Icon icon="solar:global-bold-duotone" width={14} />
+                                ? <Icon icon="svg-spinners:ring-resize" width={15} />
+                                : <Icon icon="solar:global-bold-duotone" width={15} />
                             }
                             <span className="hidden sm:inline">{searchingBarcode ? 'Buscando...' : 'Buscar'}</span>
                         </button>
@@ -440,65 +438,54 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                             </div>
                         )}
 
-                        <div className={`flex gap-2 p-3 rounded-xl border transition-all ${wholesaleFocused ? 'border-blue-300 dark:border-blue-600 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/40'}`}>
+                        <div className="flex gap-2 items-end">
                             {/* Cantidad mínima */}
                             <div className="flex-1">
-                                <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-0.5">
-                                    Cant. mínima
-                                </label>
-                                <div className={`flex items-center gap-1.5 border rounded-lg px-2 py-1.5 transition-colors ${wholesaleFocused === 'cantidadMinima' ? 'border-blue-400 dark:border-blue-500' : 'border-gray-200 dark:border-slate-600'} bg-white dark:bg-slate-800`}>
-                                    <Icon icon="solar:box-minimalistic-linear" width={13} className="text-gray-400 flex-shrink-0" />
-                                    <input
-                                        type="number"
-                                        placeholder="Ej. 12"
-                                        min="1"
-                                        className="w-full focus:outline-none rounded-none text-sm bg-transparent outline-none text-gray-800 dark:text-white placeholder-gray-300 dark:placeholder-gray-600"
-                                        value={newWholesaleRow.cantidadMinima}
-                                        onFocus={() => setWholesaleFocused('cantidadMinima')}
-                                        onBlur={() => setWholesaleFocused(null)}
-                                        onChange={(e) => setNewWholesaleRow({ ...newWholesaleRow, cantidadMinima: e.target.value })}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddWholesaleRow()}
-                                    />
-                                </div>
+                                <InputPro
+                                    type="number"
+                                    name="cantidadMinima"
+                                    placeholder="Ej. 12"
+                                    isLabel
+                                    label="Cant. mínima"
+                                    value={newWholesaleRow.cantidadMinima}
+                                    onChange={e => setNewWholesaleRow({ ...newWholesaleRow, cantidadMinima: e.target.value })}
+                                    onKeyDown={e => e.key === 'Enter' && handleAddWholesaleRow()}
+                                />
                             </div>
                             {/* Precio */}
                             <div className="flex-1">
-                                <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 ml-0.5">
-                                    Precio (S/)
-                                </label>
-                                <div className={`flex items-center gap-1.5 border rounded-lg px-2 py-1.5 transition-colors ${wholesaleFocused === 'precio' ? 'border-blue-400 dark:border-blue-500' : 'border-gray-200 dark:border-slate-600'} bg-white dark:bg-slate-800`}>
-                                    <span className="text-xs font-semibold text-gray-400 flex-shrink-0">S/</span>
-                                    <input
+                                <div className="relative">
+                                    <InputPro
                                         type="number"
+                                        name="precio"
                                         placeholder="0.00"
                                         step="0.01"
-                                        className="w-full text-sm bg-transparent outline-none text-gray-800 dark:text-white placeholder-gray-300 dark:placeholder-gray-600"
+                                        isLabel
+                                        label="Precio (S/)"
                                         value={newWholesaleRow.precio}
-                                        onFocus={() => setWholesaleFocused('precio')}
-                                        onBlur={() => setWholesaleFocused(null)}
-                                        onChange={(e) => setNewWholesaleRow({ ...newWholesaleRow, precio: e.target.value })}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddWholesaleRow()}
+                                        onChange={e => setNewWholesaleRow({ ...newWholesaleRow, precio: e.target.value })}
+                                        onKeyDown={e => e.key === 'Enter' && handleAddWholesaleRow()}
                                     />
-                                    {newWholesaleRow.precio && Number(formValues?.precioUnitario) > 0 && (
-                                        <span className={`text-[10px] font-bold flex-shrink-0 ${Math.round((1 - Number(newWholesaleRow.precio) / Number(formValues.precioUnitario)) * 100) > 0 ? 'text-green-500' : 'text-red-400'}`}>
-                                            {Math.round((1 - Number(newWholesaleRow.precio) / Number(formValues.precioUnitario)) * 100) > 0 ? '-' : '+'}
-                                            {Math.abs(Math.round((1 - Number(newWholesaleRow.precio) / Number(formValues.precioUnitario)) * 100))}%
-                                        </span>
-                                    )}
+                                    {newWholesaleRow.precio && Number(formValues?.precioUnitario) > 0 && (() => {
+                                        const disc = Math.round((1 - Number(newWholesaleRow.precio) / Number(formValues.precioUnitario)) * 100);
+                                        return (
+                                            <span className={`absolute right-2 top-1/2 translate-y-1 text-[10px] font-bold ${disc > 0 ? 'text-green-500' : 'text-red-400'}`}>
+                                                {disc > 0 ? '-' : '+'}{Math.abs(disc)}%
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                             {/* Add button */}
-                            <div className="flex flex-col justify-end">
-                                <button
-                                    type="button"
-                                    onClick={handleAddWholesaleRow}
-                                    disabled={!newWholesaleRow.cantidadMinima || !newWholesaleRow.precio}
-                                    className="h-[34px] px-3 flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 dark:disabled:text-gray-500 rounded-lg text-xs font-semibold transition-all shadow-sm disabled:shadow-none mt-[22px]"
-                                >
-                                    <Icon icon="mdi:plus" width={16} />
-                                    <span className="hidden sm:inline">Agregar</span>
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={handleAddWholesaleRow}
+                                disabled={!newWholesaleRow.cantidadMinima || !newWholesaleRow.precio}
+                                className="h-10 px-4 flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 dark:disabled:text-gray-500 rounded-xl text-sm font-semibold transition-all flex-shrink-0"
+                            >
+                                <Icon icon="mdi:plus" width={16} />
+                                <span className="hidden sm:inline">Agregar</span>
+                            </button>
                         </div>
                     </div>
 

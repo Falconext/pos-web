@@ -54,7 +54,7 @@ function KpiCard({ title, value, icon, iconBg, iconColor, sub, subColor, badge, 
         return (
             <div className={`rounded-3xl p-6 shadow-sm border transition-all hover:shadow-md ${highlightColor ?? 'bg-emerald-500 border-emerald-400'}`}>
                 <div className="flex justify-between items-start mb-3">
-                    <div className="p-2.5 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="p-2.5 bg-white/20 rounded-2xl  ">
                         <Icon icon={icon} className="text-white text-xl" />
                     </div>
                     {badge && <div>{badge}</div>}

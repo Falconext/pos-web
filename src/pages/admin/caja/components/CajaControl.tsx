@@ -160,7 +160,7 @@ const CajaControl: React.FC = () => {
             >
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-6">
-                        <div className={`p-4 rounded-2xl ${isAbierta ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400'} backdrop-blur-sm`}>
+                        <div className={`p-4 rounded-2xl ${isAbierta ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}  `}>
                             <Icon
                                 icon={isAbierta ? "solar:shop-2-bold-duotone" : "solar:lock-keyhole-minimalistic-bold-duotone"}
                                 className="text-5xl"

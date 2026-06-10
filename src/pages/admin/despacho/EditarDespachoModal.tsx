@@ -166,7 +166,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50  " onClick={onClose} />
             <div className="relative w-full max-w-2xl bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
                 {/* Header */}

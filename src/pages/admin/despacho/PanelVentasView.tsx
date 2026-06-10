@@ -206,7 +206,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50  " onClick={onClose} />
             <div className="relative w-full max-w-lg bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -959,7 +959,7 @@ export default function PanelVentasView() {
 
             {/* Modal confirmación anulación */}
             {anularItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="fixed inset-0 z-[999999] top-[-30px] flex items-center justify-center bg-black/50">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
                         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">Anular comprobante</h3>
                         <p className="text-xs text-gray-600 dark:text-gray-300 mb-4">

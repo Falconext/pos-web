@@ -97,7 +97,7 @@ function ModalGasto({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewModel>
     if (!vm.showModal) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => vm.setShowModal(false)} />
+            <div className="absolute inset-0 bg-black/40  " onClick={() => vm.setShowModal(false)} />
             <div className="relative bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
                     <h3 className="text-base font-bold text-gray-900 dark:text-white">
@@ -214,7 +214,7 @@ function ModalIngreso({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewMode
     if (!vm.showModalIngreso) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => vm.setShowModalIngreso(false)} />
+            <div className="absolute inset-0 bg-black/40  " onClick={() => vm.setShowModalIngreso(false)} />
             <div className="relative bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
                     <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">

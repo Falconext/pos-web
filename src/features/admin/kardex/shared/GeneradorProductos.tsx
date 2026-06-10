@@ -163,7 +163,7 @@ export default function GeneradorProductos({ onImport, onCancel }: GeneradorProd
             <div className="flex-1 p-6 overflow-hidden flex flex-col max-w-7xl mx-auto w-full">
                 <div className="bg-white rounded-3xl shadow-xl shadow-gray-100/50 border border-gray-100 flex-1 overflow-hidden relative flex flex-col">
                     {loading && (
-                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-white/80   z-20 flex flex-col items-center justify-center">
                             <div className="relative">
                                 <div className="w-20 h-20 border-4 border-fuchsia-100 border-t-fuchsia-600 rounded-full animate-spin"></div>
                                 <div className="absolute inset-0 flex items-center justify-center">

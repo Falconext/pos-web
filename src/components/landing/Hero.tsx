@@ -50,7 +50,7 @@ const Hero = () => {
                 Empezar Gratis
                 <ChevronRight size={20} />
               </button>
-              <button className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl font-bold transition-all flex items-center gap-2 backdrop-blur-sm">
+              <button className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl font-bold transition-all flex items-center gap-2  ">
                 <Play size={20} fill="currentColor" />
                 Ver Demo
               </button>

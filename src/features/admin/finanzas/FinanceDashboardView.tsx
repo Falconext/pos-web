@@ -150,7 +150,7 @@ export default function FinanceDashboardView() {
                 <div className="space-y-6">
                     <div className={`rounded-3xl p-6 shadow-sm border border-gray-100/50 transition-all hover:shadow-md bg-indigo-600 text-white border-indigo-500 hover:shadow-indigo-200`}>
                         <div className="flex justify-between items-start mb-4">
-                            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <div className="p-2 bg-white/20 rounded-xl  ">
                                 <Icon icon="solar:wallet-money-bold-duotone" className="text-2xl" />
                             </div>
                             <span className="text-indigo-100 text-sm font-medium bg-indigo-500/30 px-2 py-1 rounded-lg">Este mes</span>

@@ -34,7 +34,7 @@ export default function ShoppingCartModal({
 
     return (
         <div className="fixed inset-0 z-[999999] flex justify-end">
-            <div className="absolute inset-0 bg-black/35 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/35   transition-opacity" onClick={onClose} />
             <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 animate-in slide-in-from-right border-l border-gray-100">
                 {/* Header */}
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-b from-white to-[#FBFBFB]">

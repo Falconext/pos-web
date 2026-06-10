@@ -134,7 +134,7 @@ export default function FalconextLoginView() {
 
                 {/* Brand Header */}
                 <div className="absolute top-10 left-10 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-white/20   flex items-center justify-center">
                         <Icon icon="solar:bolt-bold" className="text-white text-xl" />
                     </div>
                     <span className="text-white font-bold text-xl tracking-tight">{BRAND.name}</span>

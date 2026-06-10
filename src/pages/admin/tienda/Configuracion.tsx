@@ -432,7 +432,7 @@ export default function ConfiguracionTienda() {
 
               {/* Edit Banner Modal */}
               {vm.editingBanner && (
-                <div className="fixed inset-0 z-50 top-[-30px] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 top-[-30px] flex items-center justify-center bg-black/60   p-4">
                   <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] border dark:border-slate-800">
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="text-lg font-bold dark:text-white">Editar Banner</h3>

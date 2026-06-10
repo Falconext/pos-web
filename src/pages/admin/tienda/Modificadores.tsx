@@ -78,7 +78,7 @@ export default function Modificadores() {
 
       {/* Modal Grupo */}
       {vm.showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60   flex items-center justify-center z-50">
           <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border dark:border-slate-800">
             <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between">
               <h2 className="text-lg font-semibold dark:text-white">{vm.editingGrupo ? 'Editar Grupo' : 'Nuevo Grupo de Modificadores'}</h2>
@@ -118,7 +118,7 @@ export default function Modificadores() {
 
       {/* Modal Opción */}
       {vm.showOpcionModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60   flex items-center justify-center z-50">
           <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border dark:border-slate-800">
             <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between">
               <h2 className="text-lg font-semibold dark:text-white">{vm.editingOpcion ? 'Editar Opción' : 'Nueva Opción'}</h2>

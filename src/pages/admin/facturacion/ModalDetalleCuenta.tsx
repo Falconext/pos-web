@@ -27,7 +27,7 @@ const ModalDetalleCuenta = ({ comprobante, onClose }: ModalDetalleCuentaProps) =
     const estado = comprobante.estadoPago;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 z-[999999] top-[-30px] flex items-center justify-center p-4">
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl max-w-md w-full overflow-hidden max-h-[90vh] flex flex-col border dark:border-slate-800">
 
                 {/* Header */}

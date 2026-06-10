@@ -544,7 +544,7 @@ export default function RepartidoresView() {
       {/* ── Create / Edit Modal ──────────────────────────────────── */}
       {modalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModalOpen(false)} aria-label="Cerrar" />
+          <button className="absolute inset-0 bg-black/50  " onClick={() => setModalOpen(false)} aria-label="Cerrar" />
           <form onSubmit={handleSubmit} className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#111827]">
             <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
               <div className="flex items-center gap-3">
@@ -636,7 +636,7 @@ export default function RepartidoresView() {
       {/* ── Delete Confirm ───────────────────────────────────────── */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} aria-label="Cerrar" />
+          <button className="absolute inset-0 bg-black/50  " onClick={() => setConfirmDelete(null)} aria-label="Cerrar" />
           <div className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#111827]">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-900/20">
               <Icon icon="solar:trash-bin-trash-bold-duotone" width={24} />

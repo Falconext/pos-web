@@ -193,7 +193,7 @@ const ModalDetraccion = ({
     const tipoSeleccionado = tiposDetraccion.find(t => t.id === formData.tipoDetraccionId);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60   p-4">
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200 border dark:border-slate-800">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900">

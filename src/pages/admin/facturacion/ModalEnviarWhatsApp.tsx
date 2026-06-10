@@ -105,7 +105,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     const monto = `S/ ${(comprobante.total ?? 0).toFixed(2)}`;
 
     return (
-        <div className="fixed inset-0 z-[999999999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[999999] top-[-30px] flex items-center justify-center bg-black/60">
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden border dark:border-slate-800">
 
                 {/* Header */}

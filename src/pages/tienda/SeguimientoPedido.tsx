@@ -229,7 +229,7 @@ export default function SeguimientoPedido() {
                         </div>
                     </div>
 
-                    <div className={`bg-white/95 backdrop-blur-sm ${borderRadius} border border-white shadow-xl p-4 md:p-6 mb-6`}>
+                    <div className={`bg-white/95   ${borderRadius} border border-white shadow-xl p-4 md:p-6 mb-6`}>
                         <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3 md:items-center">
                             <div className={`flex-1 flex items-center gap-2 bg-[#F4F6F8] border border-gray-200 ${borderRadius} px-3 py-3`}>
                                 <Icon icon="solar:delivery-linear" className="text-[#FF9500]" width={20} />
