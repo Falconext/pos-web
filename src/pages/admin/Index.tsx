@@ -194,7 +194,7 @@ export default function AdminIndex() {
               index="date"
               categories={['total']}
               colors={['violet']}
-              valueFormatter={(number: number) => `$${number.toLocaleString()}`}
+              valueFormatter={(number: number) => `S/ ${number.toLocaleString('es-PE')}`}
               showLegend={false}
               showGridLines={true}
               curveType="monotone"
@@ -415,7 +415,7 @@ export default function AdminIndex() {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Top Products */}
         <div className="bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
           <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-5">Productos Más Vendidos</h3>
@@ -447,27 +447,6 @@ export default function AdminIndex() {
             {topProductos.length === 0 && (
               <div className="text-center text-gray-400 text-sm py-4">No hay productos vendidos</div>
             )}
-          </div>
-        </div>
-
-        {/* Map / Locations */}
-        <div className="bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col relative overflow-hidden">
-          <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-2 relative z-10">Clientes por Ubicación</h3>
-          <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full mt-2">
-            <div className="w-full flex-1 min-h-[140px] bg-[#f8fafc] dark:bg-[#0A0D14] rounded-xl border border-gray-100 dark:border-slate-800 relative flex items-center justify-center overflow-hidden">
-              <div className="absolute top-[30%] left-[20%] w-3 h-3 bg-violet-500 rounded-full shadow-[0_0_0_4px_rgba(139,92,246,0.2)] animate-pulse"></div>
-              <div className="absolute top-[40%] left-[25%] w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_0_3px_rgba(59,130,246,0.2)]"></div>
-              <div className="absolute top-[25%] right-[30%] w-4 h-4 bg-violet-600 rounded-full shadow-[0_0_0_5px_rgba(139,92,246,0.2)]"></div>
-              <div className="absolute top-[45%] right-[20%] w-2 h-2 bg-emerald-500 rounded-full"></div>
-              <div className="absolute bottom-[30%] right-[35%] w-3 h-3 bg-amber-500 rounded-full shadow-[0_0_0_4px_rgba(245,158,11,0.2)]"></div>
-              <Icon icon="lucide:globe" className="text-[180px] text-gray-200 dark:text-slate-800 stroke-[0.5]" />
-            </div>
-
-            <div className="w-full flex items-center justify-between mt-5">
-              <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Menos</span>
-              <div className="flex-1 mx-4 h-1.5 bg-gradient-to-r from-gray-200 dark:from-slate-700 via-violet-300 dark:via-violet-500/50 to-violet-600 rounded-full"></div>
-              <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Más</span>
-            </div>
           </div>
         </div>
 
