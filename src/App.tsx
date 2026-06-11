@@ -49,6 +49,7 @@ import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
 import Planes from './pages/admin/sistema/Planes'
 import ModulosPage from './pages/admin/sistema/Modulos'
 import FinanceDashboard from './pages/admin/finanzas/Dashboard'
+import MisComisionesPage from './pages/admin/mis-comisiones/MisComisionesPage'
 import Campanas from './pages/admin/marketing/Campanas'
 import ResumenNegocio from './pages/admin/ecommerce/ResumenNegocio'
 import ComprasIndex from './pages/admin/compras/Index'
@@ -136,6 +137,7 @@ function App() {
           <Route path="facturacion/nuevo" element={<Invoice />} />
           <Route path="finanzas/dashboard" element={<FinanceDashboard />} />
           <Route path="mi-negocio/marketing/finanzas" element={<FinanceDashboard />} />
+          <Route path="mis-comisiones" element={<MisComisionesPage />} />
           <Route path="mi-negocio/marketing/campanas" element={<Campanas />} />
           <Route path="mi-negocio/resumen" element={<ResumenNegocio />} />
           <Route path="kardex" element={<KardexIndex />} />

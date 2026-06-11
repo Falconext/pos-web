@@ -435,6 +435,21 @@ export default function AdminLayout() {
           </motion.nav>
         </div>
 
+        {/* Mis Comisiones — solo para vendedores (USUARIO_EMPRESA) */}
+        {auth?.rol === 'USUARIO_EMPRESA' && (
+          <div className="px-2 pb-1">
+            <NavLink
+              onClick={() => setIsSidebarOpen(false)}
+              to="/administrador/mis-comisiones"
+              className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
+              title="Mis Comisiones"
+            >
+              <Icon icon="solar:hand-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'} text-amber-500`} />
+              {!isSidebarCollapsed && <span>Mis Comisiones</span>}
+            </NavLink>
+          </div>
+        )}
+
         {/* Divider y configuración abajo */}
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">
           <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración Settings') }} to="/administrador/perfil" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Settings">
