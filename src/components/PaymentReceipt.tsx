@@ -184,7 +184,7 @@ const PaymentReceipt = ({
       </div>
 
       {/* Modal visual en pantalla */}
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 top-[-30px] bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-gray-100 dark:border-slate-700">
 
           {/* Header */}

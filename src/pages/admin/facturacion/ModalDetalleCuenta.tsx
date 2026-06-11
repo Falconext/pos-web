@@ -55,6 +55,12 @@ const ModalDetalleCuenta = ({ comprobante, onClose }: ModalDetalleCuentaProps) =
                         <Row label="RUC / DNI" value={comprobante.cliente?.nroDoc || '-'} />
                         <Row label="Fecha emisión" value={moment(comprobante.fechaEmision).format('DD/MM/YYYY')} />
                         <Row label="Forma de pago" value={comprobante.formaPagoTipo || '-'} />
+                        {comprobante.fechaVencimientoCredito && (
+                            <Row
+                                label="Fecha de vencimiento"
+                                value={moment(comprobante.fechaVencimientoCredito).format('DD/MM/YYYY')}
+                            />
+                        )}
                     </div>
 
                     {/* Montos */}

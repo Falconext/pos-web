@@ -281,6 +281,7 @@ export const useFacturacionViewModel = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [descountGlobal, _setDescountGlobal] = useState<number>(0)
     const [descuentoPctNV, setDescuentoPctNV] = useState<number>(0)
+    const [fechaVencimientoCredito, setFechaVencimientoCredito] = useState<string>('')
     const [errors, setErrors] = useState({ observaciones: "" });
     const [errorsProduct, setErrorsProduct] = useState({ codigo: "", descripcion: "", categoriaId: 0, description: "", precioUnitario: "", stock: "", unidadMedida: "" });
     const [errorsClient, setErrorsClient] = useState({ nombre: "", nroDoc: "", direccion: "", departamento: "", distrito: "", provincia: "", ubigeo: "", email: "", telefono: "", estado: "", tipoDocumentoId: 0, empresaId: 0 });
@@ -1247,6 +1248,10 @@ export const useFacturacionViewModel = () => {
             updatedFormValues.motivoId = motivo?.id;
         }
 
+        if (name === 'comprobante') {
+            setFechaVencimientoCredito('');
+        }
+
         setFormValues(updatedFormValues);
     };
 
@@ -1424,12 +1429,13 @@ export const useFacturacionViewModel = () => {
                     descuento: 0,
                 }] : []),
             ],
-            formaPagoTipo: formValues.medioPago || "Contado",
+            formaPagoTipo: formValues.medioPago === 'Crédito' ? 'Credito' : (formValues.medioPago || 'Contado'),
             formaPagoMoneda: "PEN",
             tipoMoneda: "PEN",
             descuento: finalDiscount,
             leyenda: totalInWords,
             observaciones: observacionesFinal,
+            ...(formValues.medioPago === 'Crédito' && fechaVencimientoCredito ? { fechaVencimientoCredito } : {}),
             adelanto: (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && adelanto > 0 ? adelanto : undefined,
             fechaRecojo: (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && fechaRecojoFinal ? fechaRecojoFinal : undefined,
             cotizIncluirImagenes: isQuotationRoute ? includeProductImages : undefined,
@@ -1729,6 +1735,7 @@ export const useFacturacionViewModel = () => {
         envioData, setEnvioData,
         // Descuento % y condición de pago para informales
         descuentoPctNV, setDescuentoPctNV,
+        fechaVencimientoCredito, setFechaVencimientoCredito,
         esInformal,
 
         // Farmacia: receta modal

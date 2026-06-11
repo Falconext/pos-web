@@ -280,7 +280,7 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex items-center absolute right-[-30px] z-[1024] justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
+            className="hidden md:flex items-center absolute right-[-30px] z-[20] justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
           >
             <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
           </button>
@@ -347,9 +347,7 @@ export default function AdminLayout() {
                   const isOpen = openModuleCode === modulo.codigo;
                   const isModuleActive = location.pathname === '/administrador' && modulo.codigo === 'dashboard'
                     ? location.pathname === '/administrador'
-                    : meta?.exactPath
-                      ? location.pathname === pathPrefix
-                      : location.pathname.startsWith(pathPrefix);
+                    : location.pathname.startsWith(pathPrefix);
 
                   const dbSubItems = getModuleSubItems(modulo.id ?? 0);
                   const extraItems = meta?.extraItems?.(auth) ?? [];
@@ -395,7 +393,7 @@ export default function AdminLayout() {
                         <div className="absolute left-full top-0 ml-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all">
                           <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100 dark:border-slate-700">{label}</div>
                           {allSubItems.map(item => (
-                            <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end ?? true}
+                            <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
                               className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}
                             >{item.nombre}</NavLink>
                           ))}
@@ -412,7 +410,7 @@ export default function AdminLayout() {
                             style={{ overflow: 'hidden' }}
                           >
                             {allSubItems.map(item => (
-                              <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end ?? true}
+                              <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
                                 className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}
                               >{item.nombre}</NavLink>
                             ))}
@@ -454,7 +452,7 @@ export default function AdminLayout() {
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div
-            className="print:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
+            className="print:hidden fixed inset-0 bg-black/40 z-[60] md:hidden"
             onClick={() => setIsSidebarOpen(false)}
             variants={fadeIn}
             initial="initial"

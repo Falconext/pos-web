@@ -113,7 +113,7 @@ export function usePanelVentasViewModel() {
 
     const filtrados = useMemo(() => {
         const search = busqueda.toLowerCase().trim();
-        let base = items;
+        let base = items.filter((i) => i.tipo !== 'NOTA_CREDITO');
 
         if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA');
         else if (tab === 'CON_DESPACHO') base = base.filter((i) => i.estadoDespacho !== 'NO_APLICA');
@@ -169,7 +169,9 @@ export function usePanelVentasViewModel() {
     const countDespacho = useMemo(() => items.filter((i) => i.estadoDespacho !== 'NO_APLICA').length, [items]);
     // Excluye convertidas y documentos que no son ventas finales (como Notas de Pedido)
     const TIPOS_NO_VENTA = new Set(['NOTA_PEDIDO', 'COTIZACION', 'ORDEN_TRABAJO', 'OTRO']);
-    const totalVentas = useMemo(() => filtrados.filter((i) => !i.esConvertida && !TIPOS_NO_VENTA.has(i.tipo)).reduce((s, i) => s + (i.total ?? 0), 0), [filtrados]);
+    const ventasFinales = useMemo(() => filtrados.filter((i) => !i.esConvertida && !TIPOS_NO_VENTA.has(i.tipo)), [filtrados]);
+    const totalVentas = useMemo(() => ventasFinales.reduce((s, i) => s + (i.total ?? 0), 0), [ventasFinales]);
+    const totalPorCobrar = useMemo(() => ventasFinales.reduce((s, i) => s + (i.saldo ?? 0), 0), [ventasFinales]);
 
     return {
         fecha, setFecha,
@@ -181,6 +183,7 @@ export function usePanelVentasViewModel() {
         repartidoresOpciones,
         countTodo, countVentas, countDespacho,
         totalVentas,
+        totalPorCobrar,
         actualizarEstado,
         cargar,
     };

@@ -84,7 +84,7 @@ export function ModalTrazabilidad({ comprobanteId, referencia, cliente, onClose 
     const estaDevuelto = despacho?.estado === 'DEVUELTO';
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] top-[-30px] flex items-end sm:items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50  " onClick={onClose} />
 
             <div className="relative w-full max-w-lg bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">

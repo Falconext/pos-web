@@ -13,6 +13,8 @@ export interface ICuentaPorCobrar {
   mtoImpVenta: number;
   saldo: number;
   estadoPago: string;
+  formaPagoTipo?: string;
+  fechaVencimientoCredito?: string | null;
   cliente: {
     nombre: string;
     nroDoc: string;
@@ -171,12 +173,13 @@ export const usePagosStore = create<IPagosState>()(
           if (resp.code === 1) {
             const comprobantes = resp.data?.comprobantes || resp.data || [];
 
-            // Filtrar solo los que tienen saldo > 0 y no están anulados
+            // Filtrar solo los que tienen saldo > 0, no están anulados y no son NP (pedidos preliminares)
             const pendientes = comprobantes.filter((c: any) =>
               (c.saldo ?? 0) > 0 &&
               c.estadoPago !== 'COMPLETADO' &&
               c.estadoPago !== 'ANULADO' &&
-              c.estadoEnvioSunat !== 'ANULADO'
+              c.estadoEnvioSunat !== 'ANULADO' &&
+              c.tipoDoc !== 'NP'
             );
             set({
               cuentasPorCobrar: pendientes,

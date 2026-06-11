@@ -107,7 +107,7 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
 
     // Modal de Registro de Pago
     return (
-        <div className="fixed inset-0 bg-black/60   z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 top-[-30px] z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border dark:border-slate-800">
                 {/* Header */}
                 <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">

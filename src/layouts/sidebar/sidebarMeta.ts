@@ -228,6 +228,7 @@ export const SUBMODULE_META: Record<string, SubModuleMeta> = {
   'cotizaciones:lista': { end: true },
   'compras:gestion': { end: true },
   'ventas:panel': { end: true },
+  'usuarios:gestion': { end: true },
   'kardex:productos': {
     labelOverride: (auth) => isRestaurante(auth) ? 'Platos' : undefined,
   },

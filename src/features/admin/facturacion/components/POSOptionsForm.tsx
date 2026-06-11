@@ -153,8 +153,8 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                     </div>
                 )}
 
-                {/* Botón Retención 3% */}
-                {(vm.tiposOperacion.find((op: any) => op.id === vm.formValues.tipoOperacionId)?.codigo !== "0112" && vm.totalAdjusted >= 700 && vm.auth?.empresa?.esAgenteRetencion) && (
+                {/* Botón Retención 3% — solo Boleta y Factura */}
+                {(vm.formValues?.comprobante === "BOLETA" || vm.formValues?.comprobante === "FACTURA") && (vm.tiposOperacion.find((op: any) => op.id === vm.formValues.tipoOperacionId)?.codigo !== "0112" && vm.totalAdjusted >= 700 && vm.auth?.empresa?.esAgenteRetencion) && (
                     <div className="mt-0 col-span-2 mb-0 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-lg p-3">
                         <div className="space-y-2">
                             <button
@@ -270,44 +270,64 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
             )}
 
-            {/* Descuento % y Condición de Pago — solo para comprobantes informales (NV, Ticket, etc.) */}
-            {vm.esInformal && (
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                    <div>
-                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Descuento %</label>
-                        <div className="relative">
+            {/* Descuento % y Condición de Pago — solo para informales excepto NP (pedido preliminar) */}
+            {vm.esInformal && vm.formValues?.tipoDoc !== 'NP' && (
+                <div className="mt-2 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Descuento %</label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    step={0.5}
+                                    value={vm.descuentoPctNV || ''}
+                                    onChange={e => vm.setDescuentoPctNV(Math.min(100, Math.max(0, Number(e.target.value))))}
+                                    placeholder="0"
+                                    className="w-full h-9 pl-3 pr-7 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                                />
+                                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Condición de Pago</label>
+                            <div className="flex gap-1.5">
+                                {['Contado', 'Crédito'].map(c => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => {
+                                            vm.setFormValues({ ...vm.formValues, medioPago: c });
+                                            if (c === 'Contado') vm.setFechaVencimientoCredito('');
+                                        }}
+                                        className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-all ${
+                                            (vm.formValues?.medioPago === c || (!vm.formValues?.medioPago && c === 'Contado'))
+                                                ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                                                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-violet-400'
+                                        }`}
+                                    >
+                                        {c}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {/* Fecha de vencimiento — solo cuando condición es Crédito */}
+                    {vm.formValues?.medioPago === 'Crédito' && (
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                                Fecha de Vencimiento
+                            </label>
                             <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                step={0.5}
-                                value={vm.descuentoPctNV || ''}
-                                onChange={e => vm.setDescuentoPctNV(Math.min(100, Math.max(0, Number(e.target.value))))}
-                                placeholder="0"
-                                className="w-full h-9 pl-3 pr-7 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                                type="date"
+                                value={vm.fechaVencimientoCredito || ''}
+                                min={new Date().toISOString().split('T')[0]}
+                                onChange={e => vm.setFechaVencimientoCredito(e.target.value)}
+                                className="w-full h-9 px-3 text-sm rounded-xl border border-violet-300 dark:border-violet-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-400/20 transition-all"
                             />
-                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
                         </div>
-                    </div>
-                    <div>
-                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Condición de Pago</label>
-                        <div className="flex gap-1.5">
-                            {['Contado', 'Crédito'].map(c => (
-                                <button
-                                    key={c}
-                                    type="button"
-                                    onClick={() => vm.setFormValues({ ...vm.formValues, medioPago: c })}
-                                    className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-all ${
-                                        (vm.formValues?.medioPago === c || (!vm.formValues?.medioPago && c === 'Contado'))
-                                            ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
-                                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-violet-400'
-                                    }`}
-                                >
-                                    {c}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 

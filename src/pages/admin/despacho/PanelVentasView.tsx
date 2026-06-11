@@ -205,7 +205,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
     const statuses = trackData?.statuses?.data ?? trackData?.statuses ?? null;
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 top-[-30px] z-[9999] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50  " onClick={onClose} />
             <div className="relative w-full max-w-lg bg-white dark:bg-[#111827] rounded-3xl shadow-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex items-center justify-between">
@@ -499,6 +499,14 @@ export default function PanelVentasView() {
                         <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                             S/ {vm.totalVentas.toFixed(2)}
                         </span>
+                        {vm.totalPorCobrar > 0 && (
+                            <>
+                                {' '}·{' '}
+                                <span className="font-semibold text-red-500 dark:text-red-400">
+                                    S/ {vm.totalPorCobrar.toFixed(2)} por cobrar
+                                </span>
+                            </>
+                        )}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -940,7 +948,7 @@ export default function PanelVentasView() {
                             )}
 
                             {/* — Anular — */}
-                            {it.comprobanteId && it.estadoSunat !== 'ANULADO' && (
+                            {it.comprobanteId && it.estadoSunat !== 'ANULADO' && !it.esConvertida && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-0.5" />
                                     <button type="button"

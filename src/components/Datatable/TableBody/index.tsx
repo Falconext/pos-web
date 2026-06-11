@@ -203,11 +203,11 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                     ) : key === 'estado' || key === 'tipo' || key === 'status' ? (
                                         <div
                                             className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-                                                ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present'
+                                                ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present' || cell === 'COMPLETADO'
                                                     ? 'bg-emerald-50 text-emerald-600'
                                                     : cell === 'PENDIENTE'
                                                         ? 'bg-blue-50 text-blue-600'
-                                                        : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'COMPLETADO' || cell === 'AJUSTE' || cell === 'ENVIANDO'
+                                                        : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'AJUSTE' || cell === 'ENVIANDO'
                                                             ? 'bg-amber-50 text-amber-600'
                                                             : cell === 'PARTIAL'
                                                                 ? 'bg-blue-50 text-blue-600'

@@ -8,93 +8,116 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
     const { isRestaurante, isFarmacia, formValues, isEdit, tipoAjusteStock, cantidadAjuste, stockOriginal } = vm;
 
     if (isRestaurante || isFarmacia || !(Number(formValues?.precioUnitario || 0) > 0 || Number(formValues?.costoUnitario || 0) > 0 || Number(formValues?.stock || 0) > 0)) {
-        return null; // Solo se muestra si no es restaurante ni farmacia y tiene valores
+        return null;
     }
 
     const precioUnitario = Number(formValues?.precioUnitario || 0);
     const costoUnitario = Number(formValues?.costoUnitario || 0);
-    const gananciaReunida = precioUnitario - costoUnitario;
-
-    let margen = 0;
-    if (precioUnitario > 0 && costoUnitario > 0) {
-        margen = (gananciaReunida / precioUnitario) * 100;
-    }
+    const ganancia = precioUnitario - costoUnitario;
+    const margen = precioUnitario > 0 && costoUnitario > 0 ? (ganancia / precioUnitario) * 100 : 0;
 
     const stockParaProyeccion = isEdit && tipoAjusteStock !== 'ninguno'
-        ? (tipoAjusteStock === 'reemplazar' ? cantidadAjuste :
-            tipoAjusteStock === 'sumar' ? stockOriginal + cantidadAjuste :
-                tipoAjusteStock === 'restar' ? Math.max(0, stockOriginal - cantidadAjuste) : stockOriginal)
+        ? (tipoAjusteStock === 'reemplazar' ? cantidadAjuste
+            : tipoAjusteStock === 'sumar' ? stockOriginal + cantidadAjuste
+            : tipoAjusteStock === 'restar' ? Math.max(0, stockOriginal - cantidadAjuste)
+            : stockOriginal)
         : Number(formValues?.stock || 0);
 
+    const margenColor = margen > 30
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : margen > 10
+        ? 'text-amber-500 dark:text-amber-400'
+        : 'text-red-500 dark:text-red-400';
+
+    const margenBg = margen > 30
+        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/40'
+        : margen > 10
+        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/40'
+        : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/40';
+
+    const gananciaPositiva = ganancia > 0;
+
     return (
-        <div className="hidden md:block col-span-2 mt-4 p-3 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-                <div className="p-1 bg-blue-500 rounded-lg">
-                    <Icon icon="mdi:chart-line" className="text-white" width={20} height={20} />
-                </div>
-                <h4 className="text-lg font-[400] text-gray-900 dark:text-white">Análisis Financiero</h4>
-            </div>
+        <div className="hidden md:block col-span-2 mt-4">
+            <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 dark:from-blue-950/20 dark:to-indigo-950/10 p-5 space-y-4">
 
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mb-4">
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 text-center">
-                    <div className="text-2xl font-[400] text-gray-600 dark:text-gray-300">S/ {precioUnitario.toFixed(2)}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Precio Venta</div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 text-center">
-                    <div className="text-2xl font-[400] text-gray-600 dark:text-gray-300">S/ {costoUnitario.toFixed(2)}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Costo Unitario</div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 text-center">
-                    <div className={`text-2xl font-[400] ${gananciaReunida > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                        S/ {gananciaReunida.toFixed(2)}
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shrink-0">
+                        <Icon icon="solar:chart-bold-duotone" className="text-white" width={18} />
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Ganancia/Unidad</div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-100 dark:border-slate-700 text-center">
-                    <div className={`text-2xl font-[400] ${margen > 0 ? 'text-orange-600 dark:text-orange-400' : (margen < 0 ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500')}`}>
-                        {margen.toFixed(1)}%
+                    <div>
+                        <h5 className="text-sm font-bold text-gray-900 dark:text-white">Análisis Financiero</h5>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Rentabilidad estimada por unidad</p>
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Margen</div>
                 </div>
-            </div>
 
-            {stockParaProyeccion > 0 && precioUnitario > 0 && costoUnitario > 0 && (
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-200 dark:border-slate-700">
-                    <h5 className="text-sm font-[400] text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                        <Icon icon="mdi:calculator" width={16} height={16} />
-                        Proyección con Stock {isEdit && tipoAjusteStock !== 'ninguno' ? 'Resultante' : 'Actual'}
-                    </h5>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="text-center">
-                            <div className="font-[400] text-gray-600 dark:text-gray-300">S/ {(precioUnitario * stockParaProyeccion).toFixed(2)}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Valor Total Venta</div>
+                {/* Métricas principales */}
+                <div className="grid grid-cols-4 gap-3">
+                    {/* Precio */}
+                    <div className="bg-white/80 dark:bg-slate-800/60 rounded-xl p-3 border border-blue-100 dark:border-blue-900/40 text-center">
+                        <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mx-auto mb-2">
+                            <Icon icon="solar:tag-price-bold" className="text-blue-600 dark:text-blue-400" width={14} />
                         </div>
-                        <div className="text-center">
-                            <div className="font-[400] text-green-600 dark:text-green-400">S/ {(costoUnitario * stockParaProyeccion).toFixed(2)}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Inversión Total</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="font-[400] text-blue-600 dark:text-blue-400">S/ {(gananciaReunida * stockParaProyeccion).toFixed(2)}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Ganancia Potencial</div>
-                        </div>
+                        <p className="text-base font-bold text-gray-900 dark:text-white">S/ {precioUnitario.toFixed(2)}</p>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Precio venta</p>
                     </div>
-                </div>
-            )}
 
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg">
-                <div className="flex items-start gap-2">
-                    <Icon icon="mdi:information" className="text-red-600 dark:text-red-400 mt-0.5" width={16} height={16} />
-                    <div className="text-xs text-red-800 dark:text-red-200">
-                        <p className="font-semibold mb-1">Notas importantes:</p>
-                        <ul className="space-y-1 text-xs">
-                            <li>• Al cambiar el stock se registrará automáticamente un movimiento en kardex</li>
-                            <li>• El costo unitario ayuda a calcular el margen de ganancia real</li>
-                        </ul>
+                    {/* Costo */}
+                    <div className="bg-white/80 dark:bg-slate-800/60 rounded-xl p-3 border border-blue-100 dark:border-blue-900/40 text-center">
+                        <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-2">
+                            <Icon icon="solar:box-bold" className="text-slate-500 dark:text-slate-400" width={14} />
+                        </div>
+                        <p className="text-base font-bold text-gray-900 dark:text-white">S/ {costoUnitario.toFixed(2)}</p>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Costo unit.</p>
+                    </div>
+
+                    {/* Ganancia */}
+                    <div className={`rounded-xl p-3 border text-center ${gananciaPositiva ? 'bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/40' : 'bg-red-50/80 dark:bg-red-900/20 border-red-100 dark:border-red-800/40'}`}>
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center mx-auto mb-2 ${gananciaPositiva ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-red-100 dark:bg-red-900/40'}`}>
+                            <Icon icon={gananciaPositiva ? 'solar:arrow-up-bold' : 'solar:arrow-down-bold'} className={gananciaPositiva ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'} width={14} />
+                        </div>
+                        <p className={`text-base font-bold ${gananciaPositiva ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                            {gananciaPositiva ? '+' : ''}S/ {ganancia.toFixed(2)}
+                        </p>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Ganancia</p>
+                    </div>
+
+                    {/* Margen */}
+                    <div className={`rounded-xl p-3 border text-center ${margenBg}`}>
+                        <div className="w-7 h-7 rounded-lg bg-white/60 dark:bg-slate-700/60 flex items-center justify-center mx-auto mb-2">
+                            <Icon icon="solar:pie-chart-bold" className={margenColor} width={14} />
+                        </div>
+                        <p className={`text-base font-bold ${margenColor}`}>{margen.toFixed(1)}%</p>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Margen</p>
                     </div>
                 </div>
+
+                {/* Proyección con stock */}
+                {stockParaProyeccion > 0 && precioUnitario > 0 && costoUnitario > 0 && (
+                    <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 border border-blue-100 dark:border-blue-900/40">
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <Icon icon="solar:layers-bold" width={12} />
+                            Proyección con stock {isEdit && tipoAjusteStock !== 'ninguno' ? 'resultante' : 'actual'} ({stockParaProyeccion} uds.)
+                        </p>
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center">
+                                <p className="text-sm font-bold text-gray-700 dark:text-gray-200">S/ {(precioUnitario * stockParaProyeccion).toFixed(2)}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">Valor total venta</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-sm font-bold text-red-500 dark:text-red-400">S/ {(costoUnitario * stockParaProyeccion).toFixed(2)}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">Inversión total</p>
+                            </div>
+                            <div className="text-center">
+                                <p className={`text-sm font-bold ${gananciaPositiva ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                    S/ {(ganancia * stockParaProyeccion).toFixed(2)}
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">Ganancia potencial</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
