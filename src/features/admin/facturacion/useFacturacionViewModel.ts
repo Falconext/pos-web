@@ -1119,10 +1119,10 @@ export const useFacturacionViewModel = () => {
         
         try {
             const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
-            if (resp.id) { // Backend returns product directly or error
-                handleProductClick(resp);
+            const producto = resp?.data ?? resp;
+            if (producto?.id) {
+                handleProductClick(producto);
                 setBarcodeInput('');
-                // Success beep logic could go here
             } else {
                 handleBarcodeNotFound(trimmed);
             }
@@ -1131,7 +1131,7 @@ export const useFacturacionViewModel = () => {
             handleBarcodeNotFound(trimmed);
         } finally {
             setBarcodeLoading(false);
-            barcodeRef.current?.focus();
+            setTimeout(() => barcodeRef.current?.focus(), 50);
         }
     };
 

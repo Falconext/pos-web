@@ -143,7 +143,7 @@ export default function ProductsView() {
                     <div className="flex flex-col">
                         <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight">{item?.descripcion}</span>
                         <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                            SKU:{vm.isCodigoBarrasEnabled && item?.codigoBarras ? ` ${item.codigoBarras} -` : ''} {item?.codigo}
+                            {item?.codigoBarras ? `${item.codigoBarras} · ` : ''}{item?.codigo}
                         </span>
                     </div>
                 ),

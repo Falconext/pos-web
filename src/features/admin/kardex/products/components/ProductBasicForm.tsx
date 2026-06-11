@@ -372,17 +372,15 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            {features.usaCodigoBarras && (
-                <div className="col-span-1 md:col-span-2">
-                    <BarcodeScannerInput
-                        name="codigoBarras"
-                        label="Código de Barras"
-                        value={(formValues as any)?.codigoBarras || ''}
-                        onChange={handleChange}
-                        placeholder="Escanea o escribe EAN-13 / UPC"
-                    />
-                </div>
-            )}
+            <div className="col-span-1 md:col-span-2">
+                <BarcodeScannerInput
+                    name="codigoBarras"
+                    label="Código de Barras"
+                    value={(formValues as any)?.codigoBarras || ''}
+                    onChange={handleChange}
+                    placeholder="Escanea o escribe EAN-13 / UPC"
+                />
+            </div>
 
             {features.gestionOfertas && (
                 <div className="col-span-1 md:col-span-2 border-t dark:border-slate-800 pt-4 mt-4">
