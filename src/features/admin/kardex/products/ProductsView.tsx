@@ -138,13 +138,14 @@ export default function ProductsView() {
                         <Icon icon="solar:gallery-linear" width={24} height={24} />
                     </div>
                 ),
-                'Código': item?.codigo,
+                'Código': item?.codigo?.toUpperCase(),
                 'Producto': (
                     <div className="flex flex-col">
-                        <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight">{item?.descripcion}</span>
-                        <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                            {item?.codigoBarras ? `${item.codigoBarras} · ` : ''}{item?.codigo}
-                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight uppercase">{item?.descripcion}</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 uppercase">{item?.codigo}</span>
+                        {item?.codigoBarras && (
+                            <span className="text-[10px] text-violet-400 dark:text-violet-400 mt-0.5 font-mono tracking-wide">{item.codigoBarras}</span>
+                        )}
                     </div>
                 ),
                 'Categoria': (() => {
@@ -153,13 +154,13 @@ export default function ProductsView() {
                     return (
                         <span
                             style={{ backgroundColor: c.bg, color: c.text }}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap"
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap uppercase"
                         >
                             {nombre}
                         </span>
                     );
                 })(),
-                'Marca': (item as any)?.marca?.nombre || 'Sin marca',
+                'Marca': ((item as any)?.marca?.nombre || 'Sin marca').toUpperCase(),
                 categoriaId: item?.categoriaId !== null ? "" : item?.categoria?.id,
                 unidadMedidaId: item?.unidadMedida?.id || item?.unidadMedidaId,
                 marcaId: (item as any)?.marca?.id || (item as any)?.marcaId || null,
@@ -186,11 +187,11 @@ export default function ProductsView() {
                         {stock}
                     </span>
                 ),
-                'Localización': item?.localizacion?.trim() ? item.localizacion : '-',
+                'Localización': item?.localizacion?.trim() ? item.localizacion.toUpperCase() : '-',
                 '% Venta': `${Number((item as any)?.porcentajeVenta ?? 100)}%`,
                 '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 0)}%`,
                 'Stock minimo': item?.stockMinimo ?? 0,
-                'U.M': unidadNombre,
+                'U.M': unidadNombre.toUpperCase(),
                 'Estado': item.estado,
                 'Tienda': (item as any).publicarEnTienda ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
@@ -402,16 +403,26 @@ export default function ProductsView() {
                                                 Importar desde Excel
                                             </button>
                                             <div className="mx-4 my-1 border-t border-gray-100 dark:border-slate-700"></div>
-                                            <a
-                                                href="/formatos/plantilla_productos.xlsx"
-                                                target="_blank"
-                                                download
-                                                onClick={() => setShowOptionsDropdown(false)}
+                                            <button
+                                                onClick={async () => {
+                                                    setShowOptionsDropdown(false);
+                                                    const baseUrl = (import.meta.env.VITE_API_URL as string) || '';
+                                                    const resp = await fetch(`${baseUrl}/productos/plantilla`, {
+                                                        headers: { Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}` },
+                                                    });
+                                                    const blob = await resp.blob();
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = 'plantilla_productos.xlsx';
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                }}
                                                 className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
                                             >
                                                 <Icon icon="solar:file-download-bold" className="mr-2 text-amber-500" width={18} />
                                                 Descargar Modelo (Guía)
-                                            </a>
+                                            </button>
                                         </div>
                                     )}
                                 </div>

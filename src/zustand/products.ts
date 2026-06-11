@@ -355,16 +355,20 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             if (result.code === 1) {
                 const details = result.data || {};
                 const exitosos = details.exitosos || 0;
+                const creados = details.creados ?? exitosos;
+                const actualizados = details.actualizados ?? 0;
                 const fallidos = details.fallidos || 0;
 
                 if (exitosos === 0 && fallidos > 0) {
-                    // Caso donde todo falló pero el envoltorio (wrapper) dio éxito
                     const primerError = details.detalles?.find((d: any) => d.error)?.error || 'Error desconocido';
                     useAlertStore.getState().alert(`No se importó ningún producto. ${primerError}`, 'error');
                 } else {
                     useAlertStore.setState({ success: true });
-                    useAlertStore.getState().alert(`Se importaron ${exitosos} productos correctamente.`, 'success');
-                    // Refresh list automatically to show imported items
+                    const partes: string[] = [];
+                    if (creados > 0) partes.push(`${creados} creado${creados !== 1 ? 's' : ''}`);
+                    if (actualizados > 0) partes.push(`${actualizados} actualizado${actualizados !== 1 ? 's' : ''}`);
+                    if (fallidos > 0) partes.push(`${fallidos} con error`);
+                    useAlertStore.getState().alert(`Importación completada: ${partes.join(', ')}.`, 'success');
                     await _get().getAllProducts({ page: 1, limit: 50 });
                 }
             } else {
