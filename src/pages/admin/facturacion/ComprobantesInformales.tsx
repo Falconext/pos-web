@@ -485,7 +485,7 @@ const ComprobantesInformales = () => {
 
     const [dimensions, setDimensions] = useState(() => {
         switch (printSize) {
-            case 'TICKET': return { width: 80, height: 0 }; // Ticket: alto automático según contenido
+            case 'TICKET': return { width: 80, height: 330 };
             case 'A5': return { width: 148, height: 210 }; // A5 standard size
             case 'A4': return { width: 210, height: 297 }; // A4 standard size
             default: return { width: 210, height: 297 };
@@ -496,7 +496,7 @@ const ComprobantesInformales = () => {
         console.log("hello")
         setDimensions(() => {
             switch (printSize) {
-                case 'TICKET': return { width: 80, height: 0 };
+                case 'TICKET': return { width: 80, height: 330 };
                 case 'A5': return { width: 148, height: 210 };
                 case 'A4': return { width: 210, height: 297 };
                 default: return { width: 210, height: 297 };
@@ -510,22 +510,18 @@ const ComprobantesInformales = () => {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print {
-            @page {
-              size: ${dimensions.width}mm ${dimensions.height ? `${dimensions.height}mm` : 'auto'};
-              margin: 0;
-            }
-            body {
-              width: ${dimensions.width}mm;
-              height: ${dimensions.height ? `${dimensions.height}mm` : 'auto'};
-              overflow: ${dimensions.height ? 'hidden' : 'visible'};
-            }
-            .p-5 {
-              width: 100%;
-              height: ${dimensions.height ? '100%' : 'auto'};
-              box-sizing: border-box;
-            }
-          }`,
+        pageStyle: `
+              @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap');
+              @media print {
+                @page { size: ${dimensions.width}mm ${dimensions.height}mm; margin: 0; background-color: #fff; }
+                * {
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                  font-family: ${dimensions.width <= 80 ? "'VT323', monospace" : "'Inter', system-ui, sans-serif"} !important;
+                }
+                body { width: ${dimensions.width}mm; height: ${dimensions.height}mm; overflow: hidden; background-color: #fff; }
+              }
+            `,
     });
 
     useEffect(() => {

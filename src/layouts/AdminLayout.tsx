@@ -327,7 +327,7 @@ export default function AdminLayout() {
               </motion.div>
             )}
 
-            {(auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && (
+            {auth?.rol === 'ADMIN_SISTEMA' && (
               <motion.div variants={navItemReveal} className="space-y-0.5">
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
                   <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
