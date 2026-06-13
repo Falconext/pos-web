@@ -30,6 +30,7 @@ import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
 import { useSedesStore } from "@/zustand/sedes";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
+import { useUsersStore } from "@/zustand/users";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -80,6 +81,7 @@ const Comprobantes = () => {
     const navigate = useNavigate();
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
+    const { usuarios, getAllUsers } = useUsersStore();
     const { getInvoice, invoice, resetInvoice, cancelInvoice, completePay, discardInvoice }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
     const [invoicesList, setInvoicesList] = useState<IInvoices[]>([]);
@@ -99,6 +101,7 @@ const Comprobantes = () => {
     const [fechaFin, setFechaFin] = useState<string>(moment().endOf('month').format("YYYY-MM-DD"));
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const [selectedUsuarioId, setSelectedUsuarioId] = useState<number | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
@@ -130,16 +133,31 @@ const Comprobantes = () => {
         handleCloseMenu();
         const corr = String(row.correlativo || '').padStart(8, '0');
         setPdfName(`${row.serie}-${corr}.pdf`);
-        setPdfUrl('');
-        setPdfLoading(true);
+        setPdfUrl(row.s3PdfUrl || '');
+        setPdfLoading(!row.s3PdfUrl);
         setIsOpenModalPdf(true);
+
+        if (row.s3PdfUrl) return;
 
         try {
             const res: any = await post(`comprobante/${row.id}/generar-pdf`, {});
+            if (res?.error) {
+                useAlertStore.getState().alert(res.error, 'error');
+                return;
+            }
+
             const url = res?.data?.pdfUrl || res?.pdfUrl;
-            if (url) setPdfUrl(url);
-        } catch {
-            // silencioso — el modal muestra "No hay PDF disponible"
+            if (url) {
+                setPdfUrl(url);
+                setInvoicesList(prev => prev.map(invoice => (
+                    invoice.id === row.id ? { ...invoice, s3PdfUrl: url } : invoice
+                )));
+                return;
+            }
+
+            useAlertStore.getState().alert('No se pudo obtener el enlace del PDF', 'error');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.message || 'No se pudo generar el PDF', 'error');
         } finally {
             setPdfLoading(false);
         }
@@ -187,6 +205,7 @@ const Comprobantes = () => {
 
     const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
     const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
+    const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
 
 
     useEffect(() => {
@@ -201,6 +220,12 @@ const Comprobantes = () => {
             listarSedes();
         }
     }, [canFilterBySede, listarSedes]);
+
+    useEffect(() => {
+        if (canFilterByUsuario) {
+            getAllUsers({ page: 1, limit: 200 });
+        }
+    }, [canFilterByUsuario, getAllUsers]);
 
     useEffect(() => {
         if (auth?.rol === 'ADMIN_SISTEMA' && sedeActiva?.esPrincipal && sedeActiva?.id) {
@@ -228,6 +253,7 @@ const Comprobantes = () => {
                 fechaInicio,
                 fechaFin,
                 estado: stateInvoice === "TODOS" ? "" : stateInvoice,
+                ...(canFilterByUsuario && selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
                 ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {})
             })
                 .filter(([, value]) => value !== undefined)
@@ -257,7 +283,7 @@ const Comprobantes = () => {
                 setInvoicesLoading(false);
             }
         }
-    }, [currentPage, itemsPerPage, debounce, fechaInicio, fechaFin, stateInvoice, effectiveSedeId]);
+    }, [currentPage, itemsPerPage, debounce, fechaInicio, fechaFin, stateInvoice, effectiveSedeId, selectedUsuarioId, canFilterByUsuario]);
 
     useEffect(() => {
         fetchFormalInvoices();
@@ -279,6 +305,7 @@ const Comprobantes = () => {
             document: item?.cliente?.nroDoc,
             s3PdfUrl: item?.s3PdfUrl,
             client: item?.cliente?.nombre,
+            vendedor: item?.usuario?.nombre || '-',
             total: `S/ ${item.mtoImpVenta.toFixed(2)}`,
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
@@ -477,11 +504,18 @@ const Comprobantes = () => {
         setSelectedSedeId(Number(idValue));
     }
 
+    const handleSelectUsuario = (event: ChangeEvent<HTMLSelectElement>) => {
+        const value = event.target.value;
+        setcurrentPage(1);
+        setSelectedUsuarioId(value ? Number(value) : null);
+    }
+
     const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "ANULADO" }, { id: 5, value: "RECHAZADO" }]
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
     ]
+    const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id)
@@ -501,7 +535,7 @@ const Comprobantes = () => {
     const [printSize, setPrintSize] = useState('TICKET');
     const [dimensions, setDimensions] = useState(() => {
         switch (printSize) {
-            case 'TICKET': return { width: 80, height: 297 }; // 80mm width for ticket
+            case 'TICKET': return { width: 80, height: 330 };
             case 'A5': return { width: 148, height: 210 }; // A5 standard size
             case 'A4': return { width: 210, height: 297 }; // A4 standard size
             default: return { width: 210, height: 297 };
@@ -529,23 +563,13 @@ const Comprobantes = () => {
         pageStyle: `
               @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap');
               @media print {
-                @page {
-                  size: ${dimensions.width}mm ${dimensions.height}mm;
-                  margin: 0;
-                  background-color: #fff;
-                }
+                @page { size: ${dimensions.width}mm ${dimensions.height}mm; margin: 0; background-color: #fff; }
                 * {
                   -webkit-print-color-adjust: exact;
                   print-color-adjust: exact;
-                  font-family: ${dimensions.width <= 80 ? "'VT323', Menlo, Monaco, Consolas, \"Courier New\", monospace" : "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"} !important;
+                  font-family: ${dimensions.width <= 80 ? "'VT323', monospace" : "'Inter', system-ui, sans-serif"} !important;
                 }
-                body {
-                  width: ${dimensions.width}mm;
-                  height: ${dimensions.height}mm;
-                  overflow: hidden;
-                  background-color: #fff;
-                  font-family: ${dimensions.width <= 80 ? "'VT323', Menlo, Monaco, Consolas, \"Courier New\", monospace" : "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"} !important;
-                }
+                body { width: ${dimensions.width}mm; height: ${dimensions.height}mm; overflow: hidden; background-color: #fff; }
               }
             `,
     });
@@ -672,6 +696,21 @@ const Comprobantes = () => {
                                 />
                             </div>
                         )}
+                        {canFilterByUsuario && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Vendedor</label>
+                                <select
+                                    value={selectedUsuarioId ?? ''}
+                                    onChange={handleSelectUsuario}
+                                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                >
+                                    <option value="">Todos los vendedores</option>
+                                    {vendedoresOptions.map((usuario) => (
+                                        <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <div className="flex justify-end">
                             <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
                         </div>
@@ -699,6 +738,7 @@ const Comprobantes = () => {
                                         'Doc. Afiliado',
                                         'Num doc',
                                         'Cliente',
+                                        'Vendedor',
                                         'Importe',
                                         'Estado',
                                         'Acciones'

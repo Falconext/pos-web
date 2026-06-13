@@ -26,9 +26,11 @@ export default function ClienteDetalleModal({ resellerId, clienteId, isOpen, onC
         usuarioPse: '',
         contrasenaPse: '',
         billingApiBaseUrl: '',
+        billingApiDemoBaseUrl: '',
         billingApiToken: '',
         billingApiUser: '',
         billingApiPassword: '',
+        usaDemo: true,
         adminNombre: '',
         adminEmail: '',
         adminCelular: '',
@@ -48,9 +50,11 @@ export default function ClienteDetalleModal({ resellerId, clienteId, isOpen, onC
                     usuarioPse: data?.usuarioPse || '',
                     contrasenaPse: data?.contrasenaPse || '',
                     billingApiBaseUrl: data?.billingApiBaseUrl || '',
+                    billingApiDemoBaseUrl: data?.billingApiDemoBaseUrl || '',
                     billingApiToken: data?.billingApiToken || '',
                     billingApiUser: data?.billingApiUser || '',
                     billingApiPassword: data?.billingApiPassword || '',
+                    usaDemo: Boolean(data?.usaDemo),
                     adminNombre: data?.usuarios?.[0]?.nombre || '',
                     adminEmail: data?.usuarios?.[0]?.email || '',
                     adminCelular: data?.usuarios?.[0]?.celular || '',
@@ -242,8 +246,27 @@ export default function ClienteDetalleModal({ resellerId, clienteId, isOpen, onC
 
                                     {configForm.billingProvider === 'JAMBLE' && (
                                         <>
+                                            <label className="col-span-2 flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                                                <span>
+                                                    <span className="block text-sm font-bold text-gray-800">
+                                                        {configForm.usaDemo ? 'Entorno demo' : 'Entorno producción'}
+                                                    </span>
+                                                    <span className="block text-xs text-gray-500">
+                                                        {configForm.usaDemo ? 'Usará la URL API Demo para emitir pruebas.' : 'Usará la URL API Producción para emitir comprobantes reales.'}
+                                                    </span>
+                                                </span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!configForm.usaDemo}
+                                                    onChange={(event) => setConfigForm((prev: any) => ({ ...prev, usaDemo: !event.target.checked }))}
+                                                    className="h-5 w-5 accent-indigo-600"
+                                                />
+                                            </label>
                                             <div className="col-span-2">
-                                                <InputPro isLabel label="Base URL API" name="billingApiBaseUrl" value={configForm.billingApiBaseUrl} onChange={handleConfigChange as any} placeholder="https://api.tu-proveedor.com" />
+                                                <InputPro isLabel label="URL API Producción" name="billingApiBaseUrl" value={configForm.billingApiBaseUrl} onChange={handleConfigChange as any} placeholder="https://facturas.jambleperu.com" />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <InputPro isLabel label="URL API Demo" name="billingApiDemoBaseUrl" value={configForm.billingApiDemoBaseUrl} onChange={handleConfigChange as any} placeholder="https://demo-facturas.jambleperu.com" />
                                             </div>
                                             <div className="col-span-2">
                                                 <InputPro isLabel label="Token API" name="billingApiToken" value={configForm.billingApiToken} onChange={handleConfigChange as any} placeholder="token (opcional)" />

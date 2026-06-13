@@ -52,6 +52,7 @@ type EnvioDespachoFormData = {
     fechaEstimada?: string;
     costoEnvio?: number;
     pagarFlete?: 'CLIENTE' | 'NEGOCIO';
+    aplicacionMontoCliente?: 'ITEM_ENVIO' | 'ADELANTO' | 'NEGOCIO';
     nombreDestinatario?: string;
     dniDestinatario?: string;
     contenidoPaquete?: string;
@@ -102,6 +103,9 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         nombreDestinatario: cleanText(data.nombreDestinatario),
         dniDestinatario: cleanText(data.dniDestinatario),
         contenidoPaquete: cleanText(data.contenidoPaquete),
+        costoEnvio: Number(data.costoEnvio) || 0,
+        pagarFlete: data.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
+        aplicacionMontoCliente: data.aplicacionMontoCliente ?? ((Number(data.costoEnvio) > 0 && data.pagarFlete === 'CLIENTE') ? 'ITEM_ENVIO' : 'NEGOCIO'),
         ...(Number(data.montoCOD) > 0 ? { montoCOD: Number(data.montoCOD) } : {}),
     };
 };
@@ -271,7 +275,8 @@ export const useFacturacionViewModel = () => {
         observaciones: '',
         fechaEstimada: '',
         costoEnvio: 0,
-        pagarFlete: 'NEGOCIO' as 'CLIENTE' | 'NEGOCIO',
+        pagarFlete: 'CLIENTE' as 'CLIENTE' | 'NEGOCIO',
+        aplicacionMontoCliente: 'ADELANTO' as 'ITEM_ENVIO' | 'ADELANTO' | 'NEGOCIO',
         nombreDestinatario: '',
         dniDestinatario: '',
         contenidoPaquete: '',
@@ -1395,6 +1400,12 @@ export const useFacturacionViewModel = () => {
             ? 'MIXTO'
             : paymentMethod;
 
+        const esDocumentoInformal = tiposInformales.includes(formValues.tipoDoc);
+        const aplicacionMontoEnvio =
+            envioData.aplicacionMontoCliente === 'ADELANTO' && !esDocumentoInformal
+                ? 'ITEM_ENVIO'
+                : (envioData.aplicacionMontoCliente ?? (esDocumentoInformal ? 'ADELANTO' : 'ITEM_ENVIO'));
+
         const baseData = {
             tipoOperacionId: formValues.tipoOperacionId || 1,
             fechaEmision,
@@ -1420,8 +1431,8 @@ export const useFacturacionViewModel = () => {
                     // Fraccionamiento: unidad de venta cuando difiere de la unidad base
                     ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
                 })) ?? []),
-                // Costo de envío como línea en el comprobante (solo cuando cliente paga)
-                ...(envioActivo && Number(envioData.costoEnvio) > 0 && envioData.pagarFlete === 'CLIENTE' ? [{
+                // Monto cobrado como item de envío: aumenta el total del comprobante.
+                ...(envioActivo && Number(envioData.costoEnvio) > 0 && aplicacionMontoEnvio === 'ITEM_ENVIO' ? [{
                     productoId: null,
                     descripcion: `Servicio de envío${envioData.transportista ? ` (${COURIERS.find((c) => c.value === envioData.transportista)?.label ?? envioData.transportista})` : ''}`,
                     cantidad: 1,
@@ -1436,7 +1447,14 @@ export const useFacturacionViewModel = () => {
             leyenda: totalInWords,
             observaciones: observacionesFinal,
             ...(formValues.medioPago === 'Crédito' && fechaVencimientoCredito ? { fechaVencimientoCredito } : {}),
-            adelanto: (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && adelanto > 0 ? adelanto : undefined,
+            adelanto: (() => {
+                const envioAdelanto = esDocumentoInformal && envioActivo && Number(envioData.costoEnvio) > 0 && aplicacionMontoEnvio === 'ADELANTO'
+                    ? Number(envioData.costoEnvio)
+                    : 0;
+                const manualAdelanto = (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && adelanto > 0 ? adelanto : 0;
+                const adelantoFinal = envioAdelanto > 0 ? envioAdelanto : manualAdelanto;
+                return adelantoFinal > 0 ? adelantoFinal : undefined;
+            })(),
             fechaRecojo: (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && fechaRecojoFinal ? fechaRecojoFinal : undefined,
             cotizIncluirImagenes: isQuotationRoute ? includeProductImages : undefined,
             cotizDescuento: isQuotationRoute ? quotationDiscount : undefined,
@@ -1498,7 +1516,7 @@ export const useFacturacionViewModel = () => {
                 if (isCompleteEnvioDespacho(envioData)) {
                     const despachoResult = await patch(
                         `envio-despacho/comprobante/${comprobanteId}/upsert`,
-                        buildEnvioDespachoPayload(envioData),
+                        buildEnvioDespachoPayload({ ...envioData, aplicacionMontoCliente: aplicacionMontoEnvio }),
                     );
                     if (despachoResult.success === false || despachoResult.error) {
                         useAlertStore.getState().alert(

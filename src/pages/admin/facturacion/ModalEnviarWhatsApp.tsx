@@ -39,11 +39,13 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     useEffect(() => {
         if (!isOpen) return;
         setTab(defaultTab);
-        setPdfUrl(undefined);
+        setPdfUrl(comprobante.pdfUrl);
         setNumeroDestino(comprobante.clienteCelular || '');
         setEmailDestino(comprobante.clienteEmail || '');
-        generarPdf();
-    }, [isOpen, comprobante.id, defaultTab]);
+        if (!comprobante.pdfUrl) {
+            generarPdf();
+        }
+    }, [isOpen, comprobante.id, comprobante.pdfUrl, defaultTab]);
 
     const generarPdf = async () => {
         setGenerando(true);
@@ -52,8 +54,20 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                 `/comprobante/${comprobante.id}/generar-pdf`,
                 {},
             );
-            const url = (res as any)?.data?.pdfUrl;
-            if (url) setPdfUrl(url);
+            const error = (res as any)?.error;
+            const url = (res as any)?.data?.pdfUrl || (res as any)?.pdfUrl;
+
+            if (error) {
+                alert(error, 'error');
+                return;
+            }
+
+            if (url) {
+                setPdfUrl(url);
+                return;
+            }
+
+            alert('No se pudo obtener el enlace del PDF', 'error');
         } finally {
             setGenerando(false);
         }

@@ -67,10 +67,45 @@ const staticBrands: Record<string, BrandConfig> = {
     },
     dashboardUrl: 'https://app.krezka.com',
   },
+  'jamble-peru': {
+    key: 'jamble-peru',
+    authBrand: 'falconext',
+    isWhiteLabel: true,
+    name: 'Jamble Perú',
+    legalName: 'Jamble Perú',
+    website: 'https://jambleperu.com',
+    email: 'ventas@jambleperu.com',
+    phone: '+51 932 332 556',
+    whatsapp: '51932332556',
+    logo: '/assets/fnlogo.png',
+    logoWhite: '/assets/logofalconwhite.png',
+    favicon: '/assets/logofalconext.png',
+    primaryColor: '#111827',
+    secondaryColor: '#3E2BC7',
+    socials: {
+      facebook: '#',
+      instagram: '#',
+    },
+    dashboardUrl: 'http://app.jamble.peru:5174',
+  },
 };
 
-const envDefaultBrandKey = (import.meta.env.VITE_PUBLIC_BRAND || 'krezka').toLowerCase();
+const getHostDefaultBrandKey = (): string => {
+  if (typeof window === 'undefined') return '';
+  const host = window.location.hostname.toLowerCase();
+  if (host.includes('jamble')) return 'jamble-peru';
+  if (host.includes('krezka')) return 'krezka';
+  if (host.includes('falconext')) return 'falconext';
+  return '';
+};
+
+const envDefaultBrandKey = (
+  getHostDefaultBrandKey() ||
+  import.meta.env.VITE_PUBLIC_BRAND ||
+  'krezka'
+).toLowerCase();
 const envDefaultBrand = staticBrands[envDefaultBrandKey] || staticBrands.krezka;
+const hostDefaultIsWhiteLabel = Boolean(getHostDefaultBrandKey()) && envDefaultBrand.isWhiteLabel;
 const isPublicBrandingFetchDisabled =
   String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true';
 
@@ -85,11 +120,12 @@ const getRuntimeBranding = (): BrandConfig | null => {
 
   const host = window.location.host;
   const hostStorageKey = `${LOCAL_STORAGE_KEY}:${host}`;
-  const cached = localStorage.getItem(hostStorageKey) || localStorage.getItem(LOCAL_STORAGE_KEY);
+  const cached = localStorage.getItem(hostStorageKey);
   if (!cached) return null;
   try {
     const parsed = JSON.parse(cached);
     if (parsed && typeof parsed === 'object' && parsed.name) {
+      if (hostDefaultIsWhiteLabel && !parsed.isWhiteLabel) return envDefaultBrand;
       return { ...envDefaultBrand, ...parsed };
     }
   } catch {

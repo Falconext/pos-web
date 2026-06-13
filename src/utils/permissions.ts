@@ -12,10 +12,7 @@ export interface IUserPermissions {
   }
 }
 
-const PERM_MAP: Record<string, string> = {
-  ventas: 'comprobantes',
-  productos: 'kardex',
-};
+const PERM_MAP: Record<string, string> = {};
 
 const MODULE_ALIASES: Record<string, string[]> = {
   reportes: ['reportes', 'contabilidad'],

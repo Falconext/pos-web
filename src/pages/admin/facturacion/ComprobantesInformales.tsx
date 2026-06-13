@@ -28,6 +28,7 @@ import ModalEnviarWhatsApp from "./ModalEnviarWhatsApp";
 import Modal from "@/components/Modal";
 import { useSedesStore } from "@/zustand/sedes";
 import { useNavigate } from "react-router-dom";
+import { useUsersStore } from "@/zustand/users";
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -46,6 +47,7 @@ const ComprobantesInformales = () => {
     const navigate = useNavigate();
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
+    const { usuarios, getAllUsers } = useUsersStore();
     const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
     const paymentFlow = usePaymentFlow();
@@ -61,6 +63,7 @@ const ComprobantesInformales = () => {
     const [fechaFin, setFechaFin] = useState<string>(moment().endOf('month').format("YYYY-MM-DD"));
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const [selectedUsuarioId, setSelectedUsuarioId] = useState<number | null>(null);
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
     const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
@@ -80,6 +83,7 @@ const ComprobantesInformales = () => {
 
     const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
     const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
+    const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
 
 
     useEffect(() => {
@@ -94,6 +98,12 @@ const ComprobantesInformales = () => {
             listarSedes();
         }
     }, [canFilterBySede, listarSedes]);
+
+    useEffect(() => {
+        if (canFilterByUsuario) {
+            getAllUsers({ page: 1, limit: 200 });
+        }
+    }, [canFilterByUsuario, getAllUsers]);
 
     useEffect(() => {
         if (auth?.rol === 'ADMIN_SISTEMA' && sedeActiva?.esPrincipal && sedeActiva?.id) {
@@ -123,6 +133,7 @@ const ComprobantesInformales = () => {
             documentoAfiliado: item?.numDocAfectado || item.numeroOrdenTrabajo,
             document: item?.cliente?.nroDoc,
             client: item?.cliente?.nombre,
+            vendedor: item?.usuario?.nombre || '-',
             s3PdfUrl: item?.s3PdfUrl,
             total: `S/ ${item.mtoImpVenta.toFixed(2)}`,
             saldo: `S/ ${item?.saldo?.toFixed(2) || (0).toFixed(2)}`,
@@ -224,7 +235,7 @@ const ComprobantesInformales = () => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    navigate(`/administrador/despacho?fecha=${despachoFecha}&comprobanteId=${item.id}`);
+                                    navigate(`/administrador/ventas?fecha=${despachoFecha}&comprobanteId=${item.id}`);
                                     setOpenAccionesId(null);
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30"
@@ -414,6 +425,7 @@ const ComprobantesInformales = () => {
                 fechaInicio: fechaInicio,
                 fechaFin: fechaFin,
                 estadoPago: stateInvoice !== "TODOS" ? stateInvoice : "",
+                ...(canFilterByUsuario && selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
                 ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {})
             });
         }, 300);
@@ -427,13 +439,14 @@ const ComprobantesInformales = () => {
             search: debounce,
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
+            ...(canFilterByUsuario && selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
             ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {}),
         };
         if (stateInvoice !== "TODOS") {
             params.estadoPago = stateInvoice;
         }
         getAllInvoices(params);
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, effectiveSedeId]);
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, effectiveSedeId, selectedUsuarioId, canFilterByUsuario]);
 
     const ruc = "204812192919";
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
@@ -472,7 +485,7 @@ const ComprobantesInformales = () => {
 
     const [dimensions, setDimensions] = useState(() => {
         switch (printSize) {
-            case 'TICKET': return { width: 80, height: 297 }; // 80mm width for ticket
+            case 'TICKET': return { width: 80, height: 0 }; // Ticket: alto automático según contenido
             case 'A5': return { width: 148, height: 210 }; // A5 standard size
             case 'A4': return { width: 210, height: 297 }; // A4 standard size
             default: return { width: 210, height: 297 };
@@ -483,7 +496,7 @@ const ComprobantesInformales = () => {
         console.log("hello")
         setDimensions(() => {
             switch (printSize) {
-                case 'TICKET': return { width: 80, height: 297 };
+                case 'TICKET': return { width: 80, height: 0 };
                 case 'A5': return { width: 148, height: 210 };
                 case 'A4': return { width: 210, height: 297 };
                 default: return { width: 210, height: 297 };
@@ -499,17 +512,17 @@ const ComprobantesInformales = () => {
         contentRef: componentRef,
         pageStyle: `@media print {
             @page {
-              size: ${dimensions.width}mm ${dimensions.height}mm;
+              size: ${dimensions.width}mm ${dimensions.height ? `${dimensions.height}mm` : 'auto'};
               margin: 0;
             }
             body {
               width: ${dimensions.width}mm;
-              height: ${dimensions.height}mm;
-              overflow: hidden;
+              height: ${dimensions.height ? `${dimensions.height}mm` : 'auto'};
+              overflow: ${dimensions.height ? 'hidden' : 'visible'};
             }
             .p-5 {
               width: 100%;
-              height: 100%;
+              height: ${dimensions.height ? '100%' : 'auto'};
               box-sizing: border-box;
             }
           }`,
@@ -556,11 +569,18 @@ const ComprobantesInformales = () => {
         setSelectedSedeId(Number(idValue));
     }
 
+    const handleSelectUsuario = (event: ChangeEvent<HTMLSelectElement>) => {
+        const value = event.target.value;
+        setcurrentPage(1);
+        setSelectedUsuarioId(value ? Number(value) : null);
+    }
+
     const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "COMPLETADO" }, { id: 3, value: "PENDIENTE_PAGO" }, { id: 4, value: "ANULADO" }]
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
     ]
+    const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id)
@@ -646,6 +666,21 @@ const ComprobantesInformales = () => {
                                 />
                             </div>
                         )}
+                        {canFilterByUsuario && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Vendedor</label>
+                                <select
+                                    value={selectedUsuarioId ?? ''}
+                                    onChange={handleSelectUsuario}
+                                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                >
+                                    <option value="">Todos los vendedores</option>
+                                    {vendedoresOptions.map((usuario) => (
+                                        <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <div className="">
                             <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
                         </div>
@@ -668,6 +703,7 @@ const ComprobantesInformales = () => {
                                         'Doc. Afiliado',
                                         'Num doc',
                                         'Cliente',
+                                        'Vendedor',
                                         'Importe',
                                         'Saldo',
                                         'Estado',

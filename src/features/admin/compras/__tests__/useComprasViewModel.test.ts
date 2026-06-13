@@ -33,6 +33,31 @@ const mockCompras = [
     },
 ];
 
+const mockComprasConSaldoNegativo = [
+    {
+        id: 3,
+        fechaEmision: '2026-06-03',
+        proveedor: { nombre: 'Proveedor Test', nroDoc: '20999999999' },
+        serie: 'F001',
+        numero: '1111',
+        total: 330.00,
+        saldo: -0.00,
+        estado: 'REGISTRADO',
+        estadoPago: 'COMPLETADO',
+    },
+    {
+        id: 4,
+        fechaEmision: '2026-06-13',
+        proveedor: { nombre: 'Proveedor Test', nroDoc: '20999999999' },
+        serie: 'F001',
+        numero: '0005',
+        total: 445.00,
+        saldo: -0.01,
+        estado: 'REGISTRADO',
+        estadoPago: 'COMPLETADO',
+    },
+];
+
 describe('useComprasViewModel', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -69,6 +94,52 @@ describe('useComprasViewModel', () => {
         expect(result.current.totalPorPagar).toBe(500);
     });
 
+    // ─── Bug fix: saldo negativo por redondeo de punto flotante ───────────────
+
+    describe('negative saldo clamping (float rounding bug)', () => {
+        beforeEach(() => {
+            (useComprasStore as unknown as jest.Mock).mockReturnValue({
+                listarCompras: mockListarCompras,
+                compras: mockComprasConSaldoNegativo,
+                totalCompras: 2,
+            });
+        });
+
+        it('should clamp saldo -0.00 to S/ 0.00 in table display', () => {
+            const { result } = renderHook(() => useComprasViewModel());
+            const table = result.current.tableData;
+            expect(table![0]['Saldo']).toBe('S/ 0.00');
+        });
+
+        it('should clamp saldo -0.01 to S/ 0.00 in table display', () => {
+            const { result } = renderHook(() => useComprasViewModel());
+            const table = result.current.tableData;
+            expect(table![1]['Saldo']).toBe('S/ 0.00');
+        });
+
+        it('should not include negative saldo in totalPorPagar stat', () => {
+            const { result } = renderHook(() => useComprasViewModel());
+            // Both compras have negative saldo → total should be 0, not negative
+            expect(result.current.totalPorPagar).toBe(0);
+        });
+
+        it('should never show negative totalPorPagar even with mixed data', () => {
+            const mixed = [
+                ...mockComprasConSaldoNegativo,
+                { ...mockCompras[0], saldo: 200 },
+            ];
+            (useComprasStore as unknown as jest.Mock).mockReturnValue({
+                listarCompras: mockListarCompras,
+                compras: mixed,
+                totalCompras: 3,
+            });
+            const { result } = renderHook(() => useComprasViewModel());
+            expect(result.current.totalPorPagar).toBe(200);
+        });
+    });
+
+    // ─── Modals ───────────────────────────────────────────────────────────────
+
     it('should open and close detalle modal', () => {
         const { result } = renderHook(() => useComprasViewModel());
         act(() => { result.current.actions.openDetalle(1); });
@@ -91,7 +162,7 @@ describe('useComprasViewModel', () => {
         const { result } = renderHook(() => useComprasViewModel());
         act(() => { result.current.actions.setSearch('Proveedor'); });
         expect(result.current.filters.search).toBe('Proveedor');
-        expect(result.current.currentPage).toBe(1); // reset on search
+        expect(result.current.currentPage).toBe(1);
     });
 
     it('should update estadoPago filter', () => {
@@ -117,5 +188,31 @@ describe('useComprasViewModel', () => {
         expect(result.current.currentPage).toBe(2);
         act(() => { result.current.actions.setitemsPerPage(25); });
         expect(result.current.itemsPerPage).toBe(25);
+    });
+
+    // ─── Saldo display edge cases ─────────────────────────────────────────────
+
+    it('should display saldo 0.00 for completed payments', () => {
+        const { result } = renderHook(() => useComprasViewModel());
+        const table = result.current.tableData;
+        expect(table![1]['Saldo']).toBe('S/ 0.00');
+    });
+
+    it('should display correct saldo for partial payments', () => {
+        const { result } = renderHook(() => useComprasViewModel());
+        const table = result.current.tableData;
+        expect(table![0]['Saldo']).toBe('S/ 500.00');
+    });
+
+    it('should handle null/undefined saldo gracefully', () => {
+        const withNullSaldo = [{ ...mockCompras[0], saldo: null }];
+        (useComprasStore as unknown as jest.Mock).mockReturnValue({
+            listarCompras: mockListarCompras,
+            compras: withNullSaldo,
+            totalCompras: 1,
+        });
+        const { result } = renderHook(() => useComprasViewModel());
+        expect(result.current.tableData![0]['Saldo']).toBe('S/ 0.00');
+        expect(result.current.totalPorPagar).toBe(0);
     });
 });

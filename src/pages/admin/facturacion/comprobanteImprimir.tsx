@@ -91,59 +91,59 @@ const ComprobantePrintPage = ({
         >
             <div
                 ref={componentRef || localComponentRef}
-                className={`px-5 bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'pt-10 pb-10' : 'pt-5 pb-10'}`}
+                className={`bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'px-3 pt-3 pb-2' : 'px-5 pt-5 pb-10'}`}
                 style={{
-                    width: size === 'TICKET' ? undefined : (size === 'A5' ? '148mm' : '210mm'),
-                    margin: size === 'TICKET' ? undefined : '0 auto',
-                    minHeight: size === 'TICKET' ? undefined : (size === 'A5' ? '210mm' : '297mm'),
+                    width: size === 'TICKET' ? '80mm' : (size === 'A5' ? '148mm' : '210mm'),
+                    margin: '0 auto',
+                    minHeight: size === 'TICKET' ? '330mm' : (size === 'A5' ? '210mm' : '297mm'),
                     fontFamily:
                         size === 'TICKET'
                             ? 'VT323, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
                             : 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                    lineHeight: size === 'TICKET' ? 1.2 : undefined,
-                    letterSpacing: size === 'TICKET' ? '0.2px' : undefined
+                    lineHeight: size === 'TICKET' ? 1.05 : undefined,
+                    letterSpacing: size === 'TICKET' ? '0.1px' : undefined
                 }}
             >
                 {size === 'TICKET' ? (
                     <div className="">
-                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-[150px] h-[150px] mb-3 object-contain" />}
-                        <p className={`text-center ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>
+                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-[96px] h-[96px] mb-1 object-contain" />}
+                        <p className={`text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
                             DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br />
                             <span className="">RUC: {company?.empresa?.ruc}</span>
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
+                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div>
-                            <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">FECHA/HORA:</span> {moment(formValues?.fechaEmision).format('DD/MM/YYYY HH:mm:ss')}</p>
-                            <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">RAZON SOCIAL:</span> {selectedClient?.nombre?.toUpperCase() || ''}</p>
-                            <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">NÚMERO DE DOCUMENTO:</span> {selectedClient?.nroDoc || ''}</p>
-                            <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">DIRECCION:</span> {selectedClient?.direccion?.toUpperCase() || ''}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">FECHA/HORA:</span> {moment(formValues?.fechaEmision).format('DD/MM/YYYY HH:mm:ss')}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">RAZON SOCIAL:</span> {selectedClient?.nombre?.toUpperCase() || ''}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">NÚMERO DE DOCUMENTO:</span> {selectedClient?.nroDoc || ''}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">DIRECCION:</span> {selectedClient?.direccion?.toUpperCase() || ''}</p>
                         </div>
                         {/* Información de Detracción - ANTES de productos */}
                         {formValues?.tipoDetraccion && (
                             <>
                                 <hr className="my-1 border-dashed border-[#222]" />
                                 <div className="">
-                                    <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold mb-1`}>OPERACIÓN SUJETA A DETRACCIÓN</p>
+                                    <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold mb-1`}>OPERACIÓN SUJETA A DETRACCIÓN</p>
                                     <div className="space-y-0.5">
                                         <div className="flex justify-between">
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Tipo Detracción:</span>
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>Tipo Detracción:</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Monto Detracción:</span>
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>Monto Detracción:</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Cuenta BN:</span>
-                                            <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.cuentaBancoNacion || '-'}</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>Cuenta BN:</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{formValues.cuentaBancoNacion || '-'}</span>
                                         </div>
                                         {formValues.medioPagoDetraccion && (
                                             <div className="flex justify-between">
-                                                <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>Medio de Pago:</span>
-                                                <span className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>{formValues.medioPagoDetraccion?.codigo} - {formValues.medioPagoDetraccion?.descripcion}</span>
+                                                <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>Medio de Pago:</span>
+                                                <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{formValues.medioPagoDetraccion?.codigo} - {formValues.medioPagoDetraccion?.descripcion}</span>
                                             </div>
                                         )}
                                     </div>
@@ -153,57 +153,57 @@ const ComprobantePrintPage = ({
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div className="">
                             <div className="flex text-center">
-                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>CANT.</span>
-                                <span className={`w-3/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>DESCRIPCION</span>
-                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>P.U.</span>
-                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}>IMP.</span>
+                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>CANT.</span>
+                                <span className={`w-3/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>DESCRIPCION</span>
+                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>P.U.</span>
+                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>IMP.</span>
                             </div>
                             {productsInvoice?.map((item: any, i: any) => (
                                 <div key={i} className="flex">
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>{item?.cantidad || 0}</span>
-                                    <span className={`w-3/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>{item?.cantidad || 0}</span>
+                                    <span className={`w-3/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>
                                         {item?.descripcion?.toUpperCase() || ''}
                                         {item?.lotes && item.lotes.length > 0 && (
                                             <div className="flex flex-col mt-0.5">
                                                 {item.lotes.map((l: any, idx: number) => (
-                                                    <span key={idx} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[9px]'}`}>Lote: {l.lote} Venc: {moment(l.fechaVencimiento).format('DD/MM/YYYY')}</span>
+                                                    <span key={idx} className={`${size === 'TICKET' ? 'text-[12px]' : 'text-[9px]'}`}>Lote: {l.lote} Venc: {moment(l.fechaVencimiento).format('DD/MM/YYYY')}</span>
                                                 ))}
                                             </div>
                                         )}
                                         {/* Lote directo desde DetalleComprobante (farmacia POS) */}
                                         {!item?.lotes?.length && item?.lote && (
-                                            <div className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[9px]'} mt-0.5`}>
+                                            <div className={`${size === 'TICKET' ? 'text-[12px]' : 'text-[9px]'} mt-0.5`}>
                                                 Lote: {item.lote.lote}{item.lote.fechaVencimiento ? ` Venc: ${moment(item.lote.fechaVencimiento).format('DD/MM/YYYY')}` : ''}
                                             </div>
                                         )}
                                         {/* Datos de receta médica */}
                                         {item?.numeroReceta && (
-                                            <div className={`${size === 'TICKET' ? 'text-[13px]' : 'text-[9px]'} mt-0.5 text-gray-600`}>
+                                            <div className={`${size === 'TICKET' ? 'text-[12px]' : 'text-[9px]'} mt-0.5 text-gray-600`}>
                                                 Receta: {item.numeroReceta}
                                                 {item.medicoNombre ? ` — Dr. ${item.medicoNombre}` : ''}
                                                 {item.dniPaciente ? ` — Pac. DNI: ${item.dniPaciente}` : ''}
                                             </div>
                                         )}
                                     </span>
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-left`}>{Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} text-right`}>{Number(item?.total || (Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0) * item?.cantidad)).toFixed(2)}</span>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>{Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
+                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-right`}>{Number(item?.total || (Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0) * item?.cantidad)).toFixed(2)}</span>
                                 </div>
                             ))}
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18)).toFixed(2)}</div></label>
-                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18))).toFixed(2)}</div></label>
-                        <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{Number(formValues?.mtoImpVenta ?? totalReceipt).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18)).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18))).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{Number(formValues?.mtoImpVenta ?? totalReceipt).toFixed(2)}</div></label>
                         {
                             shouldShowRetention && (
                                 <>
-                                    <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}>
+                                    <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                                         <div className="">RETENCIÓN (3%):</div>
                                         <div>{displayRetencionMonto.toFixed(2)}</div>
                                     </label>
-                                    <label className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between font-bold`}>
+                                    <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between font-bold`}>
                                         <div className="">IMPORTE NETO:</div>
                                         <div>{Number(totalReceipt - displayRetencionMonto).toFixed(2)}</div>
                                     </label>
@@ -211,12 +211,12 @@ const ComprobantePrintPage = ({
                             )
                         }
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</p>
                         {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
                             <div className="mt-1 mb-1">
-                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
+                                <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
                                 {formValues.cuotas.map((cuota: any, idx: number) => (
-                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
+                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'}`}>
                                         Cuota {idx + 1}: {moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}
                                     </p>
                                 ))}
@@ -224,22 +224,22 @@ const ComprobantePrintPage = ({
                         )}
                         {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                             <div>
-                                <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
                                 {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
-                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'} flex justify-between`}>
+                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                                         <span>{sp.method?.toUpperCase()}:</span>
                                         <span>S/ {Number(sp.amount).toFixed(2)}</span>
                                     </p>
                                 ))}
                             </div>
                         ) : (
-                            <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
                         )}
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">VUELTO: </span> S/ {formValues?.vuelto?.toFixed(2) || (0).toFixed(2)}</p>
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">PAGADO: </span>S/ {Number(totalPrices).toFixed(2)}</p>
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">VUELTO: </span> S/ {formValues?.vuelto?.toFixed(2) || (0).toFixed(2)}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">PAGADO: </span>S/ {Number(totalPrices).toFixed(2)}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[18px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
                         <div className="uppercase">
                             {(() => {
                                 const reseller = company?.empresa?.reseller;
@@ -248,16 +248,16 @@ const ComprobantePrintPage = ({
                                 const brandWebsite = reseller?.whiteLabelWebsite || BRAND.website;
                                 return (
                                     <>
-                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center mt-10`}>
+                                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center mt-4`}>
                                             Sistema punto de venta - {brandName}.</p>
-                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>Desarrollado por {developerName}.</p>
-                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{brandWebsite}.</p>
+                                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>Desarrollado por {developerName}.</p>
+                                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>{brandWebsite}.</p>
                                     </>
                                 );
                             })()}
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>
+                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>
                         <hr className="my-1 border-dashed border-[#222]" />
                     </div>
                 ) : (

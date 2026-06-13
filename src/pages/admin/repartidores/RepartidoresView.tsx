@@ -336,7 +336,7 @@ export default function RepartidoresView() {
   };
 
   const handleViewDespachos = (item: Repartidor) => {
-    navigate(`/administrador/despacho?fecha=${moment().format('YYYY-MM-DD')}&repartidorId=${item.id}`);
+    navigate(`/administrador/ventas?fecha=${moment().format('YYYY-MM-DD')}&repartidorId=${item.id}`);
   };
 
   const globalTasa = globalDespacho.total > 0 ? Math.round((globalDespacho.entregado / globalDespacho.total) * 100) : 0;

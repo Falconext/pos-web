@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { get as httpGet, post, patch } from '../utils/fetch';
+import { del, get as httpGet, post, patch } from '../utils/fetch';
 import useAlertStore from './alert';
 
 export interface ResellerDashboardStats {
@@ -83,9 +83,13 @@ export interface IResellerPanelState {
     getPlanes: () => Promise<void>;
     createCliente: (resellerId: number, data: any) => Promise<{ success: boolean; error?: string }>;
     toggleEstadoCliente: (resellerId: number, clienteId: number, nuevoEstado: 'ACTIVO' | 'INACTIVO') => Promise<{ success: boolean; error?: string }>;
+    deleteDemoCliente: (resellerId: number, clienteId: number) => Promise<{ success: boolean; error?: string }>;
     getClienteDetalle: (resellerId: number, clienteId: number) => Promise<any>;
     updateClienteConfig: (resellerId: number, clienteId: number, data: any) => Promise<{ success: boolean; error?: string }>;
     updateCliente: (resellerId: number, clienteId: number, data: any) => Promise<{ success: boolean; error?: string }>;
+    consultarDocumento: (resellerId: number, tipo: 'DNI' | 'RUC', numero: string) => Promise<any>;
+    getClienteSeries: (resellerId: number, clienteId: number) => Promise<any[]>;
+    updateClienteSeries: (resellerId: number, clienteId: number, series: any[]) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useResellerPanelStore = create<IResellerPanelState>((set, get) => ({
@@ -142,7 +146,7 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
             const resp: any = await httpGet(`resellers/${resellerId}`);
             if (resp.code === 1) {
                 set({
-                    clientes: resp.data.empresas || [],
+                    clientes: (resp.data.empresas || []).filter((cliente: any) => cliente.estado !== 'ELIMINADO'),
                     recargas: resp.data.recargas || []
                 });
             }
@@ -269,6 +273,28 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
         }
     },
 
+    deleteDemoCliente: async (resellerId: number, clienteId: number) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await del(`resellers/${resellerId}/clientes/${clienteId}`);
+            useAlertStore.setState({ loading: false });
+
+            if (resp.code === 1) {
+                useAlertStore.getState().alert('Cliente demo eliminado correctamente', 'success');
+                await get().getClientes(resellerId);
+                await get().getDashboard(resellerId);
+                return { success: true };
+            }
+
+            useAlertStore.getState().alert(resp.error || 'No se pudo eliminar el cliente', 'error');
+            return { success: false, error: resp.error };
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al eliminar cliente', 'error');
+            return { success: false, error: error.message };
+        }
+    },
+
     getClienteDetalle: async (resellerId: number, clienteId: number) => {
         try {
             const resp: any = await httpGet(`resellers/${resellerId}/clientes/${clienteId}`);
@@ -317,6 +343,40 @@ export const useResellerPanelStore = create<IResellerPanelState>((set, get) => (
         } catch (error: any) {
             useAlertStore.setState({ loading: false });
             useAlertStore.getState().alert(error.message || 'Error al actualizar configuración del cliente', 'error');
+            return { success: false, error: error.message };
+        }
+    },
+
+    consultarDocumento: async (resellerId: number, tipo: 'DNI' | 'RUC', numero: string) => {
+        const params = new URLSearchParams({ tipo, numero });
+        const resp: any = await httpGet(`resellers/${resellerId}/consultar-documento?${params.toString()}`);
+        if (resp.code === 1) return resp.data;
+        throw new Error(resp.error || 'No se pudo consultar el documento');
+    },
+
+    getClienteSeries: async (resellerId: number, clienteId: number) => {
+        try {
+            const resp: any = await httpGet(`resellers/${resellerId}/clientes/${clienteId}/series`);
+            return resp.code === 1 ? (resp.data || []) : [];
+        } catch {
+            return [];
+        }
+    },
+
+    updateClienteSeries: async (resellerId: number, clienteId: number, series: any[]) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const resp: any = await patch(`resellers/${resellerId}/clientes/${clienteId}/series`, { series });
+            useAlertStore.setState({ loading: false });
+            if (resp.code === 1) {
+                useAlertStore.getState().alert('Series actualizadas correctamente', 'success');
+                return { success: true };
+            }
+            useAlertStore.getState().alert(resp.error || 'Error al guardar series', 'error');
+            return { success: false, error: resp.error };
+        } catch (error: any) {
+            useAlertStore.setState({ loading: false });
+            useAlertStore.getState().alert(error.message || 'Error al guardar series', 'error');
             return { success: false, error: error.message };
         }
     },

@@ -271,7 +271,7 @@ export default function PedidosTienda() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/administrador/despacho?fecha=${pedido.creadoEn.slice(0, 10)}&pedidoId=${pedido.id}`);
+                navigate(`/administrador/ventas?fecha=${pedido.creadoEn.slice(0, 10)}&pedidoId=${pedido.id}`);
               }}
               className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500 text-white transition hover:bg-indigo-600"
               title="Ver en despacho"

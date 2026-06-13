@@ -7,6 +7,29 @@ import './index.css'
 const BRANDING_STORAGE_KEY = 'PUBLIC_BRANDING_CONFIG'
 type BrandConfig = { name?: string; favicon?: string; [key: string]: unknown }
 
+const getLocalWhiteLabelBrand = (host: string): Partial<BrandConfig> | null => {
+  const normalized = host.toLowerCase().replace(/:\d+$/, '')
+  if (!normalized.includes('jamble')) return null
+
+  return {
+    key: 'jamble-peru',
+    authBrand: 'falconext',
+    isWhiteLabel: true,
+    name: 'Jamble Perú',
+    legalName: 'Jamble Perú',
+    website: 'https://jambleperu.com',
+    email: 'ventas@jambleperu.com',
+    phone: '+51 932 332 556',
+    whatsapp: '51932332556',
+    logo: '/assets/fnlogo.png',
+    logoWhite: '/assets/logofalconwhite.png',
+    favicon: '/assets/logofalconext.png',
+    primaryColor: '#111827',
+    secondaryColor: '#3E2BC7',
+    dashboardUrl: `http://${host}`,
+  }
+}
+
 const inferDefaultBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL
@@ -61,26 +84,39 @@ const bootstrapBranding = async () => {
   if (String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true') return
   const host = window.location.host
   const hostStorageKey = `${BRANDING_STORAGE_KEY}:${host}`
+  const localWhiteLabelBrand = getLocalWhiteLabelBrand(host)
   try {
     const baseUrl = inferDefaultBaseUrl()
     const resp = await fetch(`${baseUrl}/branding/public?host=${encodeURIComponent(host)}`)
     const data = await resp.json()
-    const brand = data?.data || data
+    let brand = data?.data || data
+    if (localWhiteLabelBrand && brand && typeof brand === 'object' && !brand.isWhiteLabel) {
+      brand = localWhiteLabelBrand
+    }
     if (brand && typeof brand === 'object' && brand.name) {
       ;(window as any).__FALCONEXT_PUBLIC_BRAND__ = brand
       localStorage.setItem(hostStorageKey, JSON.stringify(brand))
       applyBrandToDocument(brand)
     }
   } catch {
-    const cached = localStorage.getItem(hostStorageKey) || localStorage.getItem(BRANDING_STORAGE_KEY)
+    const cached = localStorage.getItem(hostStorageKey)
     if (cached) {
       try {
         const brand = JSON.parse(cached)
+        if (localWhiteLabelBrand && brand && typeof brand === 'object' && !brand.isWhiteLabel) {
+          throw new Error('Ignoring non white-label cache for custom host')
+        }
         ;(window as any).__FALCONEXT_PUBLIC_BRAND__ = brand
         applyBrandToDocument(brand)
+        return
       } catch {
         // ignore malformed cache
       }
+    }
+    if (localWhiteLabelBrand?.name) {
+      ;(window as any).__FALCONEXT_PUBLIC_BRAND__ = localWhiteLabelBrand
+      localStorage.setItem(hostStorageKey, JSON.stringify(localWhiteLabelBrand))
+      applyBrandToDocument(localWhiteLabelBrand)
     }
   }
 }

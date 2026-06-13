@@ -69,7 +69,7 @@ export interface RepartidorOpcion {
 }
 
 export function usePanelVentasViewModel() {
-    const { sedeActiva } = useAuthStore();
+    const { auth, sedeActiva } = useAuthStore();
     const { alert } = useAlertStore();
 
     const [fecha, setFecha] = useState(() => moment().format('YYYY-MM-DD'));
@@ -78,12 +78,15 @@ export function usePanelVentasViewModel() {
     const [tab, setTab] = useState<TabVentas>('TODO');
     const [busqueda, setBusqueda] = useState('');
     const [filtroRepartidorId, setFiltroRepartidorId] = useState<number | null | undefined>(undefined);
+    const [filtroUsuarioId, setFiltroUsuarioId] = useState<number | null>(null);
+    const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
 
     const cargar = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({ fecha });
             if (sedeActiva?.id) params.set('sedeId', String(sedeActiva.id));
+            if (canFilterByUsuario && filtroUsuarioId) params.set('usuarioId', String(filtroUsuarioId));
             const { data } = await apiClient.get<any>(`/ventas/panel?${params}`);
             const raw = data?.data?.data ?? data?.data ?? [];
             setItems(Array.isArray(raw) ? raw : []);
@@ -92,7 +95,7 @@ export function usePanelVentasViewModel() {
         } finally {
             setLoading(false);
         }
-    }, [fecha, sedeActiva?.id, alert]);
+    }, [fecha, sedeActiva?.id, filtroUsuarioId, canFilterByUsuario, alert]);
 
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -180,6 +183,8 @@ export function usePanelVentasViewModel() {
         tab, setTab,
         busqueda, setBusqueda,
         filtroRepartidorId, setFiltroRepartidorId,
+        filtroUsuarioId, setFiltroUsuarioId,
+        canFilterByUsuario,
         repartidoresOpciones,
         countTodo, countVentas, countDespacho,
         totalVentas,

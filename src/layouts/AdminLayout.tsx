@@ -324,6 +324,11 @@ export default function AdminLayout() {
                   <Icon icon="solar:shop-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Catálogo Web</span>}
                 </NavLink>
+              </motion.div>
+            )}
+
+            {(auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && (
+              <motion.div variants={navItemReveal} className="space-y-0.5">
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
                   <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Finanzas</span>}

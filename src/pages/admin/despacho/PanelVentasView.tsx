@@ -20,6 +20,7 @@ import ModalRegistrarPago from '@/pages/admin/facturacion/ModalRegistrarPago';
 import ModalHistorialPagos from '@/pages/admin/facturacion/ModalHistorialPagos';
 import ModalDetalleCuenta from '@/pages/admin/facturacion/ModalDetalleCuenta';
 import TableActionMenu from '@/components/TableActionMenu';
+import { useUsersStore } from '@/zustand/users';
 
 // ─── Config badges ────────────────────────────────────────────────────────────
 
@@ -316,6 +317,7 @@ export default function PanelVentasView() {
     const vm = usePanelVentasViewModel();
     const navigate = useNavigate();
     const { alert } = useAlertStore();
+    const { usuarios, getAllUsers } = useUsersStore();
 
     const [detalleId, setDetalleId] = useState<number | null>(null);
     const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
@@ -329,6 +331,12 @@ export default function PanelVentasView() {
     const [shalomTracking, setShalomTracking] = useState<{ orderNumber: string; orderCode: string; item: VentaPanelItem } | null>(null);
     const [anularItem, setAnularItem] = useState<VentaPanelItem | null>(null);
     const { cancelInvoice } = useInvoiceStore((s) => s);
+
+    useEffect(() => {
+        if (vm.canFilterByUsuario) {
+            getAllUsers({ page: 1, limit: 200 });
+        }
+    }, [vm.canFilterByUsuario, getAllUsers]);
 
     const handleOpenMenu = (e: React.MouseEvent<HTMLElement>, item: VentaPanelItem) => {
         e.stopPropagation();
@@ -487,6 +495,7 @@ export default function PanelVentasView() {
         { key: 'VENTAS',       label: 'Ventas',       count: vm.countVentas },
         { key: 'CON_DESPACHO', label: 'Con despacho', count: vm.countDespacho },
     ];
+    const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -565,6 +574,18 @@ export default function PanelVentasView() {
                                 .map((r) => (
                                     <option key={r.id} value={String(r.id)}>{r.nombre}</option>
                                 ))}
+                        </select>
+                    )}
+                    {vm.canFilterByUsuario && (
+                        <select
+                            value={vm.filtroUsuarioId ?? ''}
+                            onChange={(e) => vm.setFiltroUsuarioId(e.target.value ? Number(e.target.value) : null)}
+                            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        >
+                            <option value="">Todos los vendedores</option>
+                            {vendedoresOptions.map((usuario) => (
+                                <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
+                            ))}
                         </select>
                     )}
                     {/* Búsqueda */}

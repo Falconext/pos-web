@@ -9,7 +9,8 @@ export default defineConfig({
   },
   server: {
     port: 5174,
-    open: true,
+    host: '0.0.0.0',
+    open: 'http://app.jamble.peru:5174/login',
     strictPort: true,
     allowedHosts: ['app.jamble.peru'],
   },

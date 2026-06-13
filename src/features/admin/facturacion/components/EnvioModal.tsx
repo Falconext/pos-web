@@ -95,6 +95,21 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
     const esPropio = envioData.transportista === 'PROPIOS';
     const inputClass = (field: keyof EnvioValidationErrors) => `${inp} ${errors[field] ? invalidInp : ''}`;
+    const esInformal = Boolean(vm.esInformal);
+    const opcionesMontoCliente = esInformal
+        ? [
+            { value: 'ADELANTO', label: 'Adelanto' },
+            { value: 'ITEM_ENVIO', label: 'Item envío' },
+            { value: 'NEGOCIO', label: 'Negocio absorbe' },
+        ]
+        : [
+            { value: 'ITEM_ENVIO', label: 'Item envío' },
+            { value: 'NEGOCIO', label: 'Negocio absorbe' },
+        ];
+    const aplicacionMontoCliente =
+        !esInformal && envioData.aplicacionMontoCliente === 'ADELANTO'
+            ? 'ITEM_ENVIO'
+            : (envioData.aplicacionMontoCliente ?? (esInformal ? 'ADELANTO' : 'ITEM_ENVIO'));
 
     const validate = () => {
         const next: EnvioValidationErrors = {};
@@ -216,8 +231,8 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                     <Field label="Clave de envío">
                                         <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío Shalom" />
                                     </Field>
-                                    <Field label="Clave de orden">
-                                        <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="Clave orden Shalom" />
+                                    <Field label="Código Shalom">
+                                        <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="37N7" />
                                     </Field>
                                 </div>
 
@@ -414,14 +429,14 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                             placeholder="Instrucciones especiales de embalaje o entrega..." className={inp} />
                     </Field>
 
-                    {/* Costo de envío */}
+                    {/* Monto cobrado al cliente */}
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                             <Icon icon="solar:wallet-money-bold-duotone" className="text-indigo-400" />
-                            Costo de envío
+                            Monto cobrado al cliente
                         </p>
                         <div className={`grid gap-3 ${Number(envioData.costoEnvio) > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                            <Field label="Monto cobrado al cliente (S/)">
+                            <Field label="Monto cobrado / adelanto (S/)">
                                 <input
                                     type="number"
                                     min={0}
@@ -433,18 +448,18 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 />
                             </Field>
                             {Number(envioData.costoEnvio) > 0 && (
-                                <Field label="¿Quién paga el flete?">
+                                <Field label="Aplicar como">
                                     <div className="flex gap-2 w-full">
-                                        {[
-                                            { value: 'CLIENTE', label: 'Cliente paga' },
-                                            { value: 'NEGOCIO', label: 'Negocio absorbe' },
-                                        ].map(opt => (
-                                            <button key={opt.value} type="button"
-                                                onClick={() => set('pagarFlete', opt.value)}
-                                                className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${(envioData.pagarFlete ?? 'NEGOCIO') === opt.value
-                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
-                                                    : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
-                                                }`}>
+                                            {opcionesMontoCliente.map(opt => (
+                                                <button key={opt.value} type="button"
+                                                    onClick={() => {
+                                                        set('aplicacionMontoCliente', opt.value);
+                                                        set('pagarFlete', opt.value === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE');
+                                                    }}
+                                                    className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${aplicacionMontoCliente === opt.value
+                                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                                                        : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
+                                                    }`}>
                                                 {opt.label}
                                             </button>
                                         ))}
@@ -452,10 +467,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 </Field>
                             )}
                         </div>
-                        {Number(envioData.costoEnvio) > 0 && (envioData.pagarFlete ?? 'NEGOCIO') === 'CLIENTE' && (
+                        {Number(envioData.costoEnvio) > 0 && aplicacionMontoCliente === 'ITEM_ENVIO' && (
                             <p className="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                                 <Icon icon="solar:bill-check-bold-duotone" className="text-base" />
                                 S/ {Number(envioData.costoEnvio).toFixed(2)} se agregará como línea en el comprobante
+                            </p>
+                        )}
+                        {Number(envioData.costoEnvio) > 0 && aplicacionMontoCliente === 'ADELANTO' && (
+                            <p className="mt-2 text-[11px] font-semibold text-blue-600 dark:text-blue-300 flex items-center gap-1">
+                                <Icon icon="solar:card-recive-bold-duotone" className="text-base" />
+                                S/ {Number(envioData.costoEnvio).toFixed(2)} se registrará como adelanto y quedará saldo pendiente en la venta.
                             </p>
                         )}
                     </div>
@@ -472,7 +493,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 {envioData.establecimiento ? ` · ${envioData.establecimiento}` : ''}
                                 {esShalom && envioData.nroOrden ? ` · Orden: ${envioData.nroOrden}` : ''}
                                 {envioData.transportista === 'SHALOM_COD' && Number(envioData.montoCOD) > 0 ? ` · COD S/ ${Number(envioData.montoCOD).toFixed(2)}` : ''}
-                                {Number(envioData.costoEnvio) > 0 ? ` · S/ ${Number(envioData.costoEnvio).toFixed(2)} flete (${(envioData.pagarFlete ?? 'NEGOCIO') === 'CLIENTE' ? 'cliente' : 'negocio'})` : ''}
+                                {Number(envioData.costoEnvio) > 0 ? ` · S/ ${Number(envioData.costoEnvio).toFixed(2)} (${aplicacionMontoCliente === 'ADELANTO' ? 'adelanto' : (aplicacionMontoCliente === 'ITEM_ENVIO' ? 'item de envío' : 'negocio')})` : ''}
                             </p>
                         </div>
                     )}

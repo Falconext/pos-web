@@ -61,7 +61,7 @@ export const useComprasViewModel = () => {
             'Proveedor': item.proveedor?.nombre || item.proveedor?.nroDoc || 'Sin nombre',
             'Comprobante': `${item.serie}-${item.numero}`,
             'Total': `S/ ${Number(item.total).toFixed(2)}`,
-            'Saldo': `S/ ${Number(item.saldo || 0).toFixed(2)}`,
+            'Saldo': `S/ ${Math.max(0, Number(item.saldo || 0)).toFixed(2)}`,
             'Días Venc.': diasVencidos > 0 ? diasVencidos : 0,
             'Estado': item.estado,
             'Pago': estadoLabel,
@@ -70,7 +70,7 @@ export const useComprasViewModel = () => {
     });
 
     // Stats derived from current page
-    const totalPorPagar = compras?.reduce((sum: number, item: any) => sum + Number(item.saldo || 0), 0) || 0;
+    const totalPorPagar = compras?.reduce((sum: number, item: any) => sum + Math.max(0, Number(item.saldo || 0)), 0) || 0;
     const totalVencidos = compras?.filter((item: any) => calcularDiasVencidos(item.fechaVencimiento, item.fechaEmision) > 0).length || 0;
 
     // Actions

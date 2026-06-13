@@ -81,7 +81,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         empaquetador: '',
         fechaEstimada: '',
         costoEnvio: 0,
-        pagarFlete: 'NEGOCIO' as 'CLIENTE' | 'NEGOCIO',
+        pagarFlete: 'CLIENTE' as 'CLIENTE' | 'NEGOCIO',
+        aplicacionMontoCliente: 'ADELANTO' as 'ITEM_ENVIO' | 'ADELANTO' | 'NEGOCIO',
         montoCOD: 0,
     });
     const [esNV, setEsNV] = useState(false);
@@ -102,9 +103,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const payload = data?.data ?? data;
                 const comprobantePayload = comprobanteResp?.data?.data ?? comprobanteResp?.data ?? null;
                 const vendedorNombre = comprobantePayload?.usuario?.nombre ?? '';
-                const tipoComp = comprobantePayload?.tipoComprobante ?? comprobantePayload?.tipo ?? '';
+                const tipoComp = comprobantePayload?.tipoDoc ?? comprobantePayload?.tipoComprobante ?? comprobantePayload?.tipo ?? '';
                 const FORMALES = ['01', '03', '07', '08'];
                 setEsNV(!FORMALES.includes(tipoComp) || tipoComp === '');
+                const adelantoComprobante = Number(comprobantePayload?.adelanto ?? 0);
                 if (payload) {
                     setEnvioData({
                         transportista: payload.transportista || '',
@@ -124,8 +126,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         repartidor: payload.repartidor || '',
                         empaquetador: payload.empaquetador || vendedorNombre || '',
                         fechaEstimada: payload.fechaEstimada ? moment(payload.fechaEstimada).format('YYYY-MM-DD') : '',
-                        costoEnvio: payload.costoEnvio ?? 0,
-                        pagarFlete: payload.pagarFlete ?? 'NEGOCIO',
+                        costoEnvio: payload.costoEnvio ?? adelantoComprobante ?? 0,
+                        pagarFlete: payload.pagarFlete ?? (adelantoComprobante > 0 ? 'CLIENTE' : 'NEGOCIO'),
+                        aplicacionMontoCliente: payload.aplicacionMontoCliente ?? (adelantoComprobante > 0 ? 'ADELANTO' : 'NEGOCIO'),
                         montoCOD: payload.montoCOD ?? 0,
                     });
                 }
@@ -151,6 +154,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         try {
             const payload = {
                 ...envioData,
+                pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
                 repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
                 repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
             };
@@ -442,15 +446,15 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             placeholder="Instrucciones especiales de embalaje o entrega..." className={inp} />
                     </Field>
 
-                    {/* Costo de envío — solo editable en NV (informales) */}
+                    {/* Monto cobrado al cliente — solo editable en NV (informales) */}
                     {esNV && (
                         <div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                 <Icon icon="solar:wallet-money-bold-duotone" className="text-indigo-400" />
-                                Costo de envío
+                                Monto cobrado al cliente
                             </p>
                             <div className={`grid gap-3 ${Number(envioData.costoEnvio) > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                                <Field label="Monto cobrado al cliente (S/)">
+                                <Field label="Monto cobrado / adelanto (S/)">
                                     <input
                                         type="number"
                                         min={0}
@@ -462,15 +466,19 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                     />
                                 </Field>
                                 {Number(envioData.costoEnvio) > 0 && (
-                                    <Field label="¿Quién paga el flete?">
+                                    <Field label="Aplicar como">
                                         <div className="flex gap-2 w-full">
                                             {[
-                                                { value: 'CLIENTE', label: 'Cliente paga' },
+                                                { value: 'ADELANTO', label: 'Adelanto' },
+                                                { value: 'ITEM_ENVIO', label: 'Item envío' },
                                                 { value: 'NEGOCIO', label: 'Negocio absorbe' },
                                             ].map(opt => (
                                                 <button key={opt.value} type="button"
-                                                    onClick={() => set('pagarFlete', opt.value)}
-                                                    className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${(envioData.pagarFlete ?? 'NEGOCIO') === opt.value
+                                                    onClick={() => {
+                                                        set('aplicacionMontoCliente', opt.value);
+                                                        set('pagarFlete', opt.value === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE');
+                                                    }}
+                                                    className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${(envioData.aplicacionMontoCliente ?? 'ADELANTO') === opt.value
                                                         ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
                                                         : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
                                                     }`}>
@@ -481,6 +489,18 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                     </Field>
                                 )}
                             </div>
+                            {Number(envioData.costoEnvio) > 0 && (envioData.aplicacionMontoCliente ?? 'ADELANTO') === 'ADELANTO' && (
+                                <p className="mt-2 text-[11px] font-semibold text-blue-600 dark:text-blue-300 flex items-center gap-1">
+                                    <Icon icon="solar:card-recive-bold-duotone" className="text-base" />
+                                    Se registrará como adelanto y el panel mostrará el saldo pendiente.
+                                </p>
+                            )}
+                            {Number(envioData.costoEnvio) > 0 && envioData.aplicacionMontoCliente === 'ITEM_ENVIO' && (
+                                <p className="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                    <Icon icon="solar:bill-check-bold-duotone" className="text-base" />
+                                    Este monto queda como cobro de envío, no como pago adelantado.
+                                </p>
+                            )}
                         </div>
                     )}
 

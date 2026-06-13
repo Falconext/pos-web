@@ -210,7 +210,7 @@ function App() {
           <Route
             path="sistema/finanzas"
             element={
-              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA", "ADMIN_EMPRESA"]} fallbackPath="/administrador">
                 <SistemaFinanzas />
               </RoleRoute>
             }

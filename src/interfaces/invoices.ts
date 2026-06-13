@@ -20,6 +20,10 @@ export type IInvoices = {
   sede: {
     nombre: string
   },
+  usuario?: {
+    id: number
+    nombre: string
+  } | null
   numeroOrdenTrabajo: string
   mtoDescuentoGlobal: number
   mtoOperGravadas: number

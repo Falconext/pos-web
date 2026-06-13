@@ -28,6 +28,7 @@ interface Empresa {
   contrasenaPse?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
   billingApiBaseUrl?: string;
+  billingApiDemoBaseUrl?: string;
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
@@ -98,6 +99,7 @@ interface CreateEmpresaDto {
   contrasenaPse?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
   billingApiBaseUrl?: string;
+  billingApiDemoBaseUrl?: string;
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
@@ -144,6 +146,7 @@ interface UpdateEmpresaDto {
   contrasenaPse?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
   billingApiBaseUrl?: string;
+  billingApiDemoBaseUrl?: string;
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;

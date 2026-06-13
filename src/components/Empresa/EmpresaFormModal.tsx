@@ -43,6 +43,7 @@ interface CreateFormData {
   providerToken?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
   billingApiBaseUrl?: string;
+  billingApiDemoBaseUrl?: string;
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
@@ -81,6 +82,7 @@ interface EditFormData {
   providerToken?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
   billingApiBaseUrl?: string;
+  billingApiDemoBaseUrl?: string;
   billingApiToken?: string;
   billingApiUser?: string;
   billingApiPassword?: string;
@@ -151,6 +153,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     providerToken: '',
     billingProvider: 'QPSE',
     billingApiBaseUrl: '',
+    billingApiDemoBaseUrl: '',
     billingApiToken: '',
     billingApiUser: '',
     billingApiPassword: '',
@@ -181,6 +184,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     providerToken: '',
     billingProvider: 'QPSE',
     billingApiBaseUrl: '',
+    billingApiDemoBaseUrl: '',
     billingApiToken: '',
     billingApiUser: '',
     billingApiPassword: '',
@@ -243,6 +247,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         providerToken: (empresa as any).providerToken || '',
         billingProvider: (empresa as any).billingProvider === 'JAMBLE' ? 'JAMBLE' : 'QPSE',
         billingApiBaseUrl: (empresa as any).billingApiBaseUrl || '',
+        billingApiDemoBaseUrl: (empresa as any).billingApiDemoBaseUrl || '',
         billingApiToken: (empresa as any).billingApiToken || '',
         billingApiUser: (empresa as any).billingApiUser || '',
         billingApiPassword: (empresa as any).billingApiPassword || '',
