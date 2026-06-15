@@ -55,7 +55,7 @@ export interface VentaPanelItem {
     productos: { nombre: string; cantidad: number; precioUnitario: number; unidad: string }[];
 }
 
-export type TabVentas = 'TODO' | 'VENTAS' | 'CON_DESPACHO';
+export type TabVentas = 'TODO' | 'VENTAS' | 'CON_DESPACHO' | 'POR_COBRAR';
 
 const DESPACHO_TO_PEDIDO: Record<string, { estadoEntrega: string; estadoEnvio: string }> = {
     PREPARANDO: { estadoEntrega: 'CONFIRMADO',           estadoEnvio: 'POR_COORDINAR' },
@@ -122,6 +122,7 @@ export function usePanelVentasViewModel() {
 
         if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA');
         else if (tab === 'CON_DESPACHO') base = base.filter((i) => i.estadoDespacho !== 'NO_APLICA');
+        else if (tab === 'POR_COBRAR') base = base.filter((i) => (i.saldo ?? 0) > 0);
 
         if (filtroRepartidorId !== undefined) {
             base = base.filter((i) =>
@@ -172,6 +173,7 @@ export function usePanelVentasViewModel() {
     const countTodo = items.length;
     const countVentas = useMemo(() => items.filter((i) => i.estadoDespacho === 'NO_APLICA').length, [items]);
     const countDespacho = useMemo(() => items.filter((i) => i.estadoDespacho !== 'NO_APLICA').length, [items]);
+    const countPorCobrar = useMemo(() => items.filter((i) => (i.saldo ?? 0) > 0).length, [items]);
     // Excluye convertidas y documentos que no son ventas finales (como Notas de Pedido)
     const TIPOS_NO_VENTA = new Set(['NOTA_PEDIDO', 'COTIZACION', 'ORDEN_TRABAJO', 'OTRO']);
     const ventasFinales = useMemo(() => filtrados.filter((i) => !i.esConvertida && !TIPOS_NO_VENTA.has(i.tipo)), [filtrados]);
@@ -188,7 +190,7 @@ export function usePanelVentasViewModel() {
         filtroUsuarioId, setFiltroUsuarioId,
         canFilterByUsuario,
         repartidoresOpciones,
-        countTodo, countVentas, countDespacho,
+        countTodo, countVentas, countDespacho, countPorCobrar,
         totalVentas,
         totalPorCobrar,
         actualizarEstado,

@@ -79,21 +79,26 @@ function Badge({ label, cls }: { label: string; cls: string }) {
     );
 }
 
-function TabBtn({ active, onClick, label, count }: {
+function TabBtn({ active, onClick, label, count, variant = 'blue' }: {
     active: boolean; onClick: () => void; label: string; count: number;
+    variant?: 'blue' | 'orange';
 }) {
+    const activeCls = variant === 'orange'
+        ? '!bg-orange-500 text-white shadow-md shadow-orange-200/50 dark:shadow-orange-900/30 border-none'
+        : '!bg-blue-500 text-white shadow-md shadow-blue-200/50 border-none';
+    const activeBadgeCls = variant === 'orange' ? 'bg-white text-orange-600' : 'bg-white text-blue-600';
     return (
         <button
             onClick={onClick}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
                 active
-                    ? '!bg-blue-500 text-white shadow-md shadow-blue-200/50 border-none'
+                    ? activeCls
                     : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
             }`}
         >
             {label}
             <span className={`min-w-[22px] h-5 px-1.5 flex items-center justify-center rounded-full text-xs font-bold ${
-                active ? 'bg-white text-blue-600' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400'
+                active ? activeBadgeCls : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400'
             }`}>
                 {count}
             </span>
@@ -500,10 +505,11 @@ export default function PanelVentasView() {
         });
     }, [navigate]);
 
-    const TABS: { key: TabVentas; label: string; count: number }[] = [
+    const TABS: { key: TabVentas; label: string; count: number; variant?: 'blue' | 'orange' }[] = [
         { key: 'TODO',         label: 'Todo',         count: vm.countTodo },
         { key: 'VENTAS',       label: 'Ventas',       count: vm.countVentas },
         { key: 'CON_DESPACHO', label: 'Con despacho', count: vm.countDespacho },
+        { key: 'POR_COBRAR',   label: 'Por cobrar',   count: vm.countPorCobrar, variant: 'orange' },
     ];
     const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
 
@@ -561,7 +567,7 @@ export default function PanelVentasView() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                     {TABS.map((t) => (
-                        <TabBtn key={t.key} active={vm.tab === t.key} onClick={() => vm.setTab(t.key)} label={t.label} count={t.count} />
+                        <TabBtn key={t.key} active={vm.tab === t.key} onClick={() => vm.setTab(t.key)} label={t.label} count={t.count} variant={t.variant} />
                     ))}
                 </div>
                 <div className="flex gap-2 flex-wrap ml-auto">
