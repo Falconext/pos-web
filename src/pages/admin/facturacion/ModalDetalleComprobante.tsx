@@ -11,6 +11,7 @@ import { useAuthStore } from '@/zustand/auth';
 import useAlertStore from '@/zustand/alert';
 import ComprobantePrintPage from './comprobanteImprimir';
 import { numberToWords } from '@/utils/numberToLetters';
+import { hasPlanFeature } from '@/utils/permissions';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -86,8 +87,7 @@ const getDetalleSubtotal = (detalle: any) => Number(
 );
 
 const planPermiteDespacho = (auth: any) => {
-    const plan = String(auth?.empresa?.plan?.nombre || '').toUpperCase();
-    return plan.includes('NEGOCIO') || plan.includes('CORPORAT') || auth?.rol === 'ADMIN_SISTEMA';
+    return hasPlanFeature(auth, 'tieneDeliveryGPS');
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────

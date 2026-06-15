@@ -16,6 +16,7 @@ import { Calendar } from "@/components/Date";
 import apiClient from "@/utils/apiClient";
 import ModalConfirm from "@/components/ModalConfirm";
 import { usaLotesFarmaciaRubro } from "@/utils/rubro-features";
+import { hasPlanFeature } from "@/utils/permissions";
 
 const PROV_DOC_TYPES = [
     { key: 'RUC', label: 'RUC', digits: 11 },
@@ -37,9 +38,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const { auth } = useAuthStore();
     const rubroNombre = (auth as any)?.empresa?.rubro?.nombre;
     const esRubroFarmaceutico = usaLotesFarmaciaRubro(rubroNombre);
-    const tieneGestionLotes = (auth as any)?.empresa?.plan?.tieneGestionLotes === true
-        || auth?.rol === 'ADMIN_SISTEMA'
-        || esRubroFarmaceutico;
+    const tieneGestionLotes = hasPlanFeature(auth as any, 'tieneGestionLotes') || esRubroFarmaceutico;
 
     // Data states
     const [supplierOptions, setSupplierOptions] = useState<any[]>([]);

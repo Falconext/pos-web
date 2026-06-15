@@ -3,7 +3,7 @@ import { Icon } from '@iconify/react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, type IAuthState } from '@/zustand/auth'
 import NotificacionesCampana from '@/components/NotificacionesCampana'
-import { hasPermission, hasSubPermission, getRedirectPath } from '@/utils/permissions'
+import { hasPermission, hasPlanFeature, hasSubPermission, getRedirectPath } from '@/utils/permissions'
 import { useThemeStore } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
 import { BRAND, getBrandByKey } from '@/lib/branding'
@@ -639,7 +639,7 @@ export default function AdminLayout() {
                         Perfil
                       </button>
                     </li>
-                    {(auth?.empresa?.slugTienda || auth?.empresa?.plan?.tieneTienda) && (
+                    {(auth?.empresa?.slugTienda || hasPlanFeature(auth, 'tieneTienda')) && (
                       <li>
                         <button
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"

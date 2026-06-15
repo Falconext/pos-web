@@ -1,7 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Icon } from '@iconify/react';
 import { get, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
+
+interface ComisionDetalle {
+    id: number;
+    comprobante: { tipoDoc: string; serie: string; correlativo: number; fechaEmision: string };
+    descripcion: string | null;
+    cantidad: number;
+    montoComision: number;
+    estado: 'PENDIENTE' | 'PAGADO';
+}
 
 interface VendedorComision {
     vendedor: { id: number; nombre: string; rol: string; dni: string };
@@ -9,14 +18,7 @@ interface VendedorComision {
     totalPagado: number;
     totalPendiente: number;
     cantidadVentas: number;
-    comisiones: Array<{
-        id: number;
-        comprobante: { tipoDoc: string; serie: string; correlativo: number; fechaEmision: string };
-        descripcion: string | null;
-        cantidad: number;
-        montoComision: number;
-        estado: 'PENDIENTE' | 'PAGADO';
-    }>;
+    comisiones: ComisionDetalle[];
 }
 
 interface ResumenMensual {
@@ -27,9 +29,23 @@ interface ResumenMensual {
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-function formatCurrency(n: number) {
-    return `S/ ${n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function formatCurrency(n: number | string) {
+    return `S/ ${parseFloat(String(n || 0)).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+function toISODate(d: Date) {
+    return d.toISOString().slice(0, 10);
+}
+
+function firstDayOfMonth(mes: number, anio: number) {
+    return toISODate(new Date(anio, mes - 1, 1));
+}
+
+function lastDayOfMonth(mes: number, anio: number) {
+    return toISODate(new Date(anio, mes, 0));
+}
+
+type Preset = 'mes' | 'q1' | 'q2' | 'hoy';
 
 export default function ComisionesView() {
     const now = new Date();
@@ -41,6 +57,31 @@ export default function ComisionesView() {
     const [pagandoId, setPagandoId] = useState<number | null>(null);
     const alertFn = useAlertStore(s => s.alert);
 
+    // ── Filtros ───────────────────────────────────────────────────────────────
+    const [filtroVendedor, setFiltroVendedor] = useState<number | null>(null);
+    const [desde, setDesde] = useState(() => firstDayOfMonth(now.getMonth() + 1, now.getFullYear()));
+    const [hasta, setHasta] = useState(() => lastDayOfMonth(now.getMonth() + 1, now.getFullYear()));
+    const [preset, setPreset] = useState<Preset>('mes');
+
+    // Sincroniza rango cuando cambia mes/año
+    useEffect(() => {
+        applyPreset(preset, mes, anio);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mes, anio]);
+
+    function applyPreset(p: Preset, m = mes, a = anio) {
+        setPreset(p);
+        const lastDay = new Date(a, m, 0).getDate();
+        const today = toISODate(now);
+        switch (p) {
+            case 'mes': setDesde(firstDayOfMonth(m, a)); setHasta(lastDayOfMonth(m, a)); break;
+            case 'q1':  setDesde(`${a}-${String(m).padStart(2,'0')}-01`); setHasta(`${a}-${String(m).padStart(2,'0')}-15`); break;
+            case 'q2':  setDesde(`${a}-${String(m).padStart(2,'0')}-16`); setHasta(lastDayOfMonth(m, a)); break;
+            case 'hoy': setDesde(today); setHasta(today); break;
+        }
+    }
+
+    // ── Fetch ─────────────────────────────────────────────────────────────────
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -63,8 +104,41 @@ export default function ComisionesView() {
         setMes(m);
         setAnio(a);
         setExpandedId(null);
+        setFiltroVendedor(null);
     };
 
+    // ── Datos filtrados ───────────────────────────────────────────────────────
+    const vendedoresFiltrados = useMemo<VendedorComision[]>(() => {
+        if (!data?.vendedores) return [];
+
+        return data.vendedores
+            .filter(v => filtroVendedor === null || v.vendedor.id === filtroVendedor)
+            .map(v => {
+                const comisionesFiltradas = v.comisiones.filter(c => {
+                    const fechaStr = c.comprobante.fechaEmision.slice(0, 10);
+                    return fechaStr >= desde && fechaStr <= hasta;
+                });
+
+                const totalComision  = comisionesFiltradas.reduce((s, c) => s + parseFloat(String(c.montoComision || 0)), 0);
+                const totalPagado    = comisionesFiltradas.filter(c => c.estado === 'PAGADO').reduce((s, c) => s + parseFloat(String(c.montoComision || 0)), 0);
+                const totalPendiente = comisionesFiltradas.filter(c => c.estado === 'PENDIENTE').reduce((s, c) => s + parseFloat(String(c.montoComision || 0)), 0);
+
+                return {
+                    ...v,
+                    comisiones: comisionesFiltradas,
+                    totalComision,
+                    totalPagado,
+                    totalPendiente,
+                    cantidadVentas: new Set(comisionesFiltradas.map(c => `${c.comprobante.serie}-${c.comprobante.correlativo}`)).size,
+                };
+            })
+            .filter(v => v.comisiones.length > 0);
+    }, [data, filtroVendedor, desde, hasta]);
+
+    const totalGeneral   = useMemo(() => vendedoresFiltrados.reduce((s, v) => s + v.totalComision, 0), [vendedoresFiltrados]);
+    const totalPendiente = useMemo(() => vendedoresFiltrados.reduce((s, v) => s + v.totalPendiente, 0), [vendedoresFiltrados]);
+
+    // ── Acciones ─────────────────────────────────────────────────────────────
     const marcarPagado = async (vendedorId: number) => {
         setPagandoId(vendedorId);
         try {
@@ -81,8 +155,12 @@ export default function ComisionesView() {
     const exportarCSV = async () => {
         try {
             const res = await get<any[]>(`/comisiones/exportar?mes=${mes}&anio=${anio}`);
-            const rows = res.data ?? [];
-            if (!rows.length) { alertFn('Sin datos para exportar', 'warning'); return; }
+            const rows = (res.data ?? []).filter((r: any) => {
+                const fecha = (r.fechaVenta ?? '').slice(0, 10);
+                const matchVendedor = filtroVendedor === null || r.vendedorId === filtroVendedor;
+                return matchVendedor && fecha >= desde && fecha <= hasta;
+            });
+            if (!rows.length) { alertFn('Sin datos para exportar con los filtros actuales', 'warning'); return; }
             const headers = ['Vendedor', 'DNI', 'Comprobante', 'Tipo', 'Fecha', 'Total Venta', 'Producto', 'Cantidad', 'Comisión', 'Estado'];
             const csvRows = [
                 headers.join(','),
@@ -95,7 +173,7 @@ export default function ComisionesView() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Comisiones_${MESES[mes - 1]}_${anio}.csv`;
+            a.download = `Comisiones_${desde}_${hasta}.csv`;
             a.click();
             URL.revokeObjectURL(url);
         } catch {
@@ -103,18 +181,15 @@ export default function ComisionesView() {
         }
     };
 
-    const totalGeneral = data?.vendedores.reduce((acc, v) => acc + v.totalComision, 0) ?? 0;
-    const totalPendiente = data?.vendedores.reduce((acc, v) => acc + v.totalPendiente, 0) ?? 0;
+    const todosLosVendedores = data?.vendedores ?? [];
+    const hayFiltrosActivos = filtroVendedor !== null || desde !== firstDayOfMonth(mes, anio) || hasta !== lastDayOfMonth(mes, anio);
 
     return (
         <div className="space-y-5">
-            {/* Controls */}
+            {/* ── Fila 1: navegación mes + export ── */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2 bg-white dark:bg-[#111827] rounded-2xl px-3 py-2 border border-gray-100/50 dark:border-slate-800 shadow-sm">
-                    <button
-                        onClick={() => navegarMes(-1)}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                    >
+                    <button onClick={() => navegarMes(-1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                         <Icon icon="solar:alt-arrow-left-bold" className="text-gray-600 dark:text-gray-300" />
                     </button>
                     <span className="text-sm font-bold text-gray-900 dark:text-white px-2 min-w-[100px] text-center">
@@ -134,16 +209,117 @@ export default function ComisionesView() {
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm"
                 >
                     <Icon icon="solar:file-download-bold-duotone" />
-                    Exportar Excel
+                    Exportar CSV
                 </button>
             </div>
 
-            {/* KPI Cards */}
+            {/* ── Fila 2: filtros ── */}
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100/50 dark:border-slate-800 shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="solar:filter-bold-duotone" className="text-indigo-500 text-base" />
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Filtros</span>
+                    {hayFiltrosActivos && (
+                        <button
+                            onClick={() => { setFiltroVendedor(null); applyPreset('mes'); }}
+                            className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+                        >
+                            <Icon icon="solar:restart-bold" className="text-xs" />
+                            Limpiar filtros
+                        </button>
+                    )}
+                </div>
+
+                <div className="flex flex-wrap gap-3 items-end">
+                    {/* Presets de período */}
+                    <div>
+                        <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Período rápido</p>
+                        <div className="flex gap-1.5">
+                            {([
+                                { key: 'mes', label: 'Mes completo', icon: 'solar:calendar-bold-duotone' },
+                                { key: 'q1',  label: '1ra quincena', icon: 'solar:calendar-minimalistic-bold-duotone' },
+                                { key: 'q2',  label: '2da quincena', icon: 'solar:calendar-minimalistic-bold-duotone' },
+                                { key: 'hoy', label: 'Hoy',          icon: 'solar:sun-bold-duotone' },
+                            ] as { key: Preset; label: string; icon: string }[]).map(p => (
+                                <button
+                                    key={p.key}
+                                    onClick={() => applyPreset(p.key)}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap ${
+                                        preset === p.key
+                                            ? 'bg-indigo-600 text-white shadow-sm'
+                                            : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    <Icon icon={p.icon} className="text-xs" />
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Rango manual */}
+                    <div>
+                        <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Rango personalizado</p>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={desde}
+                                min={firstDayOfMonth(mes, anio)}
+                                max={hasta}
+                                onChange={e => { setDesde(e.target.value); setPreset('mes'); }}
+                                className="px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            />
+                            <Icon icon="solar:arrow-right-linear" className="text-gray-400 text-sm flex-shrink-0" />
+                            <input
+                                type="date"
+                                value={hasta}
+                                min={desde}
+                                max={lastDayOfMonth(mes, anio)}
+                                onChange={e => { setHasta(e.target.value); setPreset('mes'); }}
+                                className="px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Filtro por vendedor */}
+                    {todosLosVendedores.length > 1 && (
+                        <div>
+                            <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Vendedor</p>
+                            <select
+                                value={filtroVendedor ?? ''}
+                                onChange={e => setFiltroVendedor(e.target.value ? Number(e.target.value) : null)}
+                                className="px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 min-w-[160px]"
+                            >
+                                <option value="">Todos los vendedores</option>
+                                {todosLosVendedores.map(v => (
+                                    <option key={v.vendedor.id} value={v.vendedor.id}>{v.vendedor.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
+
+                {/* Resumen del período activo */}
+                {hayFiltrosActivos && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center gap-2 text-[11px] text-gray-500 dark:text-slate-400">
+                        <Icon icon="solar:calendar-search-bold-duotone" className="text-indigo-400 text-base flex-shrink-0" />
+                        <span>
+                            Mostrando <strong className="text-gray-700 dark:text-gray-200">{desde === hasta ? desde : `${desde} → ${hasta}`}</strong>
+                            {filtroVendedor !== null && (
+                                <> · vendedor: <strong className="text-indigo-600 dark:text-indigo-400">
+                                    {todosLosVendedores.find(v => v.vendedor.id === filtroVendedor)?.vendedor.nombre}
+                                </strong></>
+                            )}
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* ── KPI Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                     { label: 'Total Comisiones', value: totalGeneral, icon: 'solar:dollar-minimalistic-bold-duotone', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
                     { label: 'Pendiente de Pago', value: totalPendiente, icon: 'solar:clock-circle-bold-duotone', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-                    { label: 'Vendedores Activos', value: data?.vendedores.length ?? 0, icon: 'solar:users-group-rounded-bold-duotone', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20', isCurrency: false },
+                    { label: 'Vendedores', value: vendedoresFiltrados.length, icon: 'solar:users-group-rounded-bold-duotone', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20', isCurrency: false },
                 ].map((kpi, i) => (
                     <div key={i} className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-gray-100/50 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center gap-3 mb-3">
@@ -159,22 +335,28 @@ export default function ComisionesView() {
                 ))}
             </div>
 
-            {/* Vendedores */}
+            {/* ── Lista vendedores ── */}
             {isLoading ? (
                 <div className="flex items-center justify-center py-16">
                     <Icon icon="mdi:loading" className="animate-spin text-3xl text-indigo-500" />
                 </div>
-            ) : !data?.vendedores.length ? (
+            ) : !vendedoresFiltrados.length ? (
                 <div className="bg-white dark:bg-[#111827] rounded-3xl p-12 border border-gray-100/50 dark:border-slate-800 text-center">
                     <Icon icon="solar:hand-money-bold-duotone" className="text-5xl text-gray-300 dark:text-slate-600 mx-auto mb-3" />
-                    <p className="text-sm text-gray-400 dark:text-gray-500">Sin comisiones registradas para {MESES[mes - 1]} {anio}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Asigna comisiones por producto en Kardex → Productos → campo "Comisión por vendedor"
+                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                        {hayFiltrosActivos
+                            ? 'Sin comisiones para los filtros seleccionados'
+                            : `Sin comisiones registradas para ${MESES[mes - 1]} ${anio}`}
                     </p>
+                    {!hayFiltrosActivos && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            Asigna comisiones por producto en Kardex → Productos → campo "Comisión por vendedor"
+                        </p>
+                    )}
                 </div>
             ) : (
                 <div className="space-y-3">
-                    {data.vendedores.map((v) => {
+                    {vendedoresFiltrados.map((v) => {
                         const isExpanded = expandedId === v.vendedor.id;
                         const allPaid = v.totalPendiente === 0;
                         return (
@@ -256,7 +438,9 @@ export default function ComisionesView() {
                                                         <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                                             <td className="px-4 py-2.5 text-gray-600 dark:text-gray-300 font-mono">
                                                                 {c.comprobante.serie}-{String(c.comprobante.correlativo).padStart(8, '0')}
-                                                                <span className="text-gray-400 ml-1">· {new Date(c.comprobante.fechaEmision).toLocaleDateString('es-PE')}</span>
+                                                                <span className="text-gray-400 ml-1">
+                                                                    · {new Date(c.comprobante.fechaEmision).toLocaleDateString('es-PE')}
+                                                                </span>
                                                             </td>
                                                             <td className="px-4 py-2.5 text-gray-700 dark:text-gray-200 max-w-[200px] truncate">
                                                                 {c.descripcion ?? '—'}

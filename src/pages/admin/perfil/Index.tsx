@@ -2,6 +2,7 @@ import { usePerfilViewModel } from '@/features/admin/perfil/usePerfilViewModel';
 import { Icon } from '@iconify/react';
 import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
+import { hasPlanFeature } from '@/utils/permissions';
 import { useState } from 'react';
 
 export default function PerfilIndex() {
@@ -24,7 +25,7 @@ export default function PerfilIndex() {
     };
     const limiteRaw = Number(usageStats?.limiteMaximo ?? 0);
     const comprobantesIlimitados = !!usageStats && (!Number.isFinite(limiteRaw) || limiteRaw <= 0);
-    const fefoPermitidoPorPlan = perfil?.empresa?.plan?.tieneGestionLotes === true;
+    const fefoPermitidoPorPlan = hasPlanFeature(perfil as any, 'tieneGestionLotes');
 
     if (perfil?.rol === 'ADMIN_SISTEMA') {
         return (
@@ -388,7 +389,7 @@ export default function PerfilIndex() {
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white">Usar precio por lote FEFO en facturación</p>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Cuando esté activo, el precio sugerido al agregar productos en comprobantes se tomará del costo del lote FEFO activo.</p>
                                         {!fefoPermitidoPorPlan && (
-                                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Disponible solo para planes Negocio y Corporativo.</p>
+                                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Disponible solo si la característica de lotes está activa en el plan.</p>
                                         )}
                                         {savingFefoPriceConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                     </div>

@@ -6,6 +6,7 @@ export interface IUserPermissions {
   subModulos?: { id: number; codigo: string; nombre: string; moduloId: number; ruta?: string | null; orden?: number }[];
   empresa?: {
     plan?: {
+      [key: string]: any;
       modulosAsignados?: { modulo: { id?: number; codigo: string; nombre?: string; icono?: string | null; ruta?: string | null; orden?: number } }[];
       subModulosAsignados?: { subModulo: { id: number; codigo: string; nombre?: string; moduloId: number; ruta?: string | null; orden?: number } }[];
     }
@@ -60,6 +61,17 @@ export const hasPermission = (user: IUserPermissions | null, modulo: string): bo
 
   const normalized = normalizePerms(user.permisos);
   return moduloCandidates.some((candidate) => normalized.includes(candidate));
+};
+
+export const hasPlanFeature = (user: IUserPermissions | null, featureKey: string): boolean => {
+  if (!user) return false;
+  if (user.rol === 'ADMIN_SISTEMA') return true;
+  const plan = user.empresa?.plan;
+  const features = plan?.features;
+  if (features && typeof features === 'object' && !Array.isArray(features)) {
+    return Boolean(features[featureKey]);
+  }
+  return Boolean(plan?.[featureKey]);
 };
 
 /**

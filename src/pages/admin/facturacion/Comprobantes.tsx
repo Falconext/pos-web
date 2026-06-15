@@ -577,17 +577,22 @@ const Comprobantes = () => {
     useEffect(() => {
         if (!shouldPrint || !invoice) return;
 
-        const timer = setTimeout(() => {
-            if (componentRef?.current) {
-                console.log("Componente imprimible encontrado, iniciando impresión");
-                printFn();
-            } else {
-                console.error("No se encontró contenido imprimible, revisa el renderizado de InvoicePrint");
-            }
+        const doPrint = () => {
+            if (componentRef?.current) printFn();
             setShouldPrint(false);
             resetInvoice();
-        }, 500);
+        };
 
+        // Esperar a que la imagen del logo esté cargada antes de imprimir
+        const logoImg = (componentRef.current as HTMLElement | null)?.querySelector('img[alt="logo"]') as HTMLImageElement | null;
+        if (logoImg && !logoImg.complete) {
+            const fallback = setTimeout(doPrint, 2500);
+            logoImg.onload = () => { clearTimeout(fallback); doPrint(); };
+            logoImg.onerror = () => { clearTimeout(fallback); doPrint(); };
+            return () => { clearTimeout(fallback); logoImg.onload = null; logoImg.onerror = null; };
+        }
+
+        const timer = setTimeout(doPrint, 500);
         return () => clearTimeout(timer);
     }, [invoice, shouldPrint, printFn, resetInvoice])
 

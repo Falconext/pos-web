@@ -106,7 +106,7 @@ const ComprobantePrintPage = ({
             >
                 {size === 'TICKET' ? (
                     <div className="">
-                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-[96px] h-[96px] mb-1 object-contain" />}
+                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-[96px] h-[96px] mb-1 object-contain" style={{ width: 96, height: 96, objectFit: 'contain', display: 'block', margin: '0 auto 4px' }} />}
                         <p className={`text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
                             DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br />
@@ -267,7 +267,7 @@ const ComprobantePrintPage = ({
                                 {/* Header with Emisor and Cliente Boxes */}
                                 {/* RESTORED: Header with Logo and Company Info */}
                                 <div className="flex justify-between items-start mb-4">
-                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" />}
+                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" style={{ width: 150, height: 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
                                         <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />CELULAR: {company?.celular}<br />EMAIL: {company?.email}</p>
@@ -477,7 +477,7 @@ const ComprobantePrintPage = ({
                             /* Standard invoice footer (Existing Logic for non-quotation) */
                             <div className="w-full">
                                 <div className="flex justify-between items-start">
-                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" />}
+                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" style={{ width: 150, height: 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
                                         <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />CELULAR: {company?.celular}<br />EMAIL: {company?.email}</p>

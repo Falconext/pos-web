@@ -7,6 +7,7 @@ import { useSedesStore } from '@/zustand/sedes';
 import useAlertStore from '@/zustand/alert';
 import apiClient from '@/utils/apiClient';
 import { get } from '@/utils/fetch';
+import { hasPlanFeature, type IUserPermissions } from '@/utils/permissions';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
 
@@ -96,13 +97,9 @@ export const useProductsViewModel = () => {
         unidadMedida: "",
     });
 
-    const tieneGestionProvisiones =
-        auth?.empresa?.plan?.tieneGestionProvisiones === true ||
-        auth?.rol === 'ADMIN_SISTEMA';
-
-    const tieneTienda =
-        auth?.empresa?.plan?.tieneTienda === true ||
-        auth?.rol === 'ADMIN_SISTEMA';
+    const userPermissions = auth ? (auth as unknown as IUserPermissions) : null;
+    const tieneGestionProvisiones = hasPlanFeature(userPermissions, 'tieneGestionProvisiones');
+    const tieneTienda = hasPlanFeature(userPermissions, 'tieneTienda');
 
     const COLUMNAS_ECOMMERCE = ['Costo Total Fijo'];
 

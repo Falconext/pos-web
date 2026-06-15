@@ -1,4 +1,5 @@
 import { esRubroFabricacion } from '@/utils/rubro-features';
+import { hasPlanFeature } from '@/utils/permissions';
 
 export interface SidebarSubItem {
   codigo: string;
@@ -194,7 +195,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   tienda: {
-    condition: (auth) => !!auth?.empresa?.plan?.tieneTienda,
+    condition: (auth) => hasPlanFeature(auth, 'tieneTienda'),
     navRoute: () => '/administrador/tienda/pedidos',
     pathPrefix: () => '/administrador/tienda',
   },

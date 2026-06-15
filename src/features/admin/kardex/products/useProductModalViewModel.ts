@@ -7,7 +7,7 @@ import useAlertStore from "@/zustand/alert";
 import { useBrandsStore } from "@/zustand/brands";
 import { useModificadoresStore } from "@/zustand/modificadores";
 import { esRubroFabricacion, useRubroFeatures } from "@/utils/rubro-features";
-import { hasSubPermission, type IUserPermissions } from "@/utils/permissions";
+import { hasPlanFeature, hasSubPermission, type IUserPermissions } from "@/utils/permissions";
 import apiClient from "@/utils/apiClient";
 import {
   IPropsProducts,
@@ -93,15 +93,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     userPermissions,
     "kardex:reservas",
   );
-  const tieneGestionProvisiones =
-    auth?.empresa?.plan?.tieneGestionProvisiones === true ||
-    auth?.rol === "ADMIN_SISTEMA";
-  const tieneTienda =
-    auth?.empresa?.plan?.tieneTienda === true ||
-    auth?.rol === "ADMIN_SISTEMA";
-  const tieneGestionLotes =
-    auth?.empresa?.plan?.tieneGestionLotes === true ||
-    auth?.rol === "ADMIN_SISTEMA";
+  const tieneGestionProvisiones = hasPlanFeature(userPermissions, "tieneGestionProvisiones");
+  const tieneTienda = hasPlanFeature(userPermissions, "tieneTienda");
+  const tieneGestionLotes = hasPlanFeature(userPermissions, "tieneGestionLotes");
 
   const labels = {
     titulo: isRestaurante

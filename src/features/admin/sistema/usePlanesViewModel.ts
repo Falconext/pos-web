@@ -14,9 +14,27 @@ export interface Plan {
     tieneTienda: boolean; tieneBanners: boolean; tieneGaleria: boolean;
     tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
     tieneGestionLotes: boolean; tieneGestionProvisiones: boolean;
+    features?: Record<string, boolean>;
     _count?: { empresas: number };
     modulosAsignados?: { modulo: { id: number; codigo: string; nombre: string; descripcion: string; icono: string; } }[];
     subModulosAsignados?: { subModulo: { id: number; codigo: string; nombre: string; moduloId: number } }[];
+}
+
+export interface PlanFeatureCatalogItem {
+    key: keyof Pick<Plan,
+        'esPrueba' | 'tieneTienda' | 'tieneBanners' | 'tieneGaleria' | 'tieneCulqi' |
+        'tieneDeliveryGPS' | 'tieneTicketera' | 'tieneGestionLotes' | 'tieneGestionProvisiones'
+    >;
+    label: string;
+    description: string;
+    group: 'general' | 'tienda' | 'ventas' | 'operaciones' | 'inventario';
+    icon: string;
+    dependsOn?: PlanFeatureCatalogItem['key'];
+    limits?: Array<{
+        key: keyof Pick<Plan, 'maxBanners' | 'maxImagenesProducto' | 'maxComprobantes' | 'maxSedes' | 'limiteUsuarios'>;
+        label: string;
+        hint?: string;
+    }>;
 }
 
 const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number[] } = {
@@ -32,6 +50,7 @@ const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number
 
 export const usePlanesViewModel = () => {
     const [planes, setPlanes] = useState<Plan[]>([]);
+    const [featureCatalog, setFeatureCatalog] = useState<PlanFeatureCatalogItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -60,6 +79,19 @@ export const usePlanesViewModel = () => {
     useEffect(() => {
         loadPlanes();
     }, [productoFiltro, productoScope, plataformaFiltro, plataformaScope]);
+
+    useEffect(() => {
+        loadFeatureCatalog();
+    }, []);
+
+    const loadFeatureCatalog = async () => {
+        try {
+            const { data } = await apiClient.get('/plan/features/catalog');
+            setFeatureCatalog(Array.isArray(data) ? data : (data.data || []));
+        } catch {
+            setFeatureCatalog([]);
+        }
+    };
 
     const loadPlanes = async () => {
         try {
@@ -107,6 +139,10 @@ export const usePlanesViewModel = () => {
             setLoading(true);
             const payload = {
                 ...form,
+                features: (featureCatalog.length ? featureCatalog : []).reduce((acc, feature) => {
+                    acc[feature.key] = Boolean((form as any)[feature.key]);
+                    return acc;
+                }, {} as Record<string, boolean>),
                 plataforma: (plataformaScope || form.plataforma || 'falconext') as 'falconext' | 'krezka',
                 producto: (productoScope || form.producto || 'facturacion') as 'facturacion' | 'hotel',
                 costo: Number(form.costo),
@@ -142,7 +178,7 @@ export const usePlanesViewModel = () => {
     };
 
     return {
-        planes, loading,
+        planes, loading, featureCatalog,
         plataformaFiltro, setPlataformaFiltro,
         productoFiltro, setProductoFiltro,
         isModalOpen, setIsModalOpen, isEdit, form, setForm,

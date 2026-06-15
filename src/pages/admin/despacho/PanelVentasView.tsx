@@ -319,6 +319,16 @@ export default function PanelVentasView() {
     const { alert } = useAlertStore();
     const { usuarios, getAllUsers } = useUsersStore();
 
+    const [mostrarProductos, setMostrarProductos] = useState<boolean>(
+        () => localStorage.getItem('panel_mostrar_productos') !== 'false',
+    );
+    const toggleProductos = () => {
+        setMostrarProductos((prev) => {
+            localStorage.setItem('panel_mostrar_productos', String(!prev));
+            return !prev;
+        });
+    };
+
     const [detalleId, setDetalleId] = useState<number | null>(null);
     const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
     const [trazabilidadItem, setTrazabilidadItem] = useState<VentaPanelItem | null>(null);
@@ -588,6 +598,19 @@ export default function PanelVentasView() {
                             ))}
                         </select>
                     )}
+                    {/* Toggle productos */}
+                    <button
+                        onClick={toggleProductos}
+                        title={mostrarProductos ? 'Ocultar columna productos' : 'Mostrar columna productos'}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${
+                            mostrarProductos
+                                ? 'bg-violet-100 border-violet-200 text-violet-700 dark:bg-violet-900/30 dark:border-violet-800 dark:text-violet-300'
+                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                        }`}
+                    >
+                        <Icon icon={mostrarProductos ? 'solar:box-bold-duotone' : 'solar:box-linear'} className="text-base" />
+                        Productos
+                    </button>
                     {/* Búsqueda */}
                     <div className="relative">
                         <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
@@ -616,6 +639,14 @@ export default function PanelVentasView() {
                                 <th className="px-3 py-3 text-right text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Saldo</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">M.Pago</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Pago</th>
+                                {mostrarProductos && (
+                                    <th className="px-3 py-3 text-left text-[11px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wide whitespace-nowrap">
+                                        <span className="flex items-center gap-1">
+                                            <Icon icon="solar:box-bold-duotone" className="text-sm" />
+                                            Productos
+                                        </span>
+                                    </th>
+                                )}
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">SUNAT</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Despacho</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Turno</th>
@@ -630,14 +661,14 @@ export default function PanelVentasView() {
                         <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
                             {vm.loading ? (
                                 <tr>
-                                    <td colSpan={17} className="py-16 text-center text-gray-400 dark:text-slate-500">
+                                    <td colSpan={mostrarProductos ? 18 : 17} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="eos-icons:loading" className="text-3xl animate-spin mx-auto mb-2" />
                                         <p className="text-sm">Cargando ventas...</p>
                                     </td>
                                 </tr>
                             ) : vm.filtrados.length === 0 ? (
                                 <tr>
-                                    <td colSpan={17} className="py-16 text-center text-gray-400 dark:text-slate-500">
+                                    <td colSpan={mostrarProductos ? 18 : 17} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="solar:sad-square-linear" className="text-4xl mx-auto mb-2 opacity-40" />
                                         <p className="text-sm">No hay ventas para este día</p>
                                     </td>
@@ -703,6 +734,31 @@ export default function PanelVentasView() {
                                             <td className="px-3 py-2.5">
                                                 <Badge label={pagoConf.label} cls={pagoConf.cls} />
                                             </td>
+                                            {mostrarProductos && (
+                                                <td className="px-3 py-2.5 max-w-[220px]">
+                                                    {item.productos && item.productos.length > 0 ? (
+                                                        <div className="space-y-1">
+                                                            {item.productos.slice(0, 3).map((prod, idx) => (
+                                                                <div key={idx} className="flex items-center gap-1.5">
+                                                                    <span className="flex-shrink-0 min-w-[22px] h-[18px] flex items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30 text-[9px] font-black text-violet-600 dark:text-violet-400 px-1">
+                                                                        {prod.cantidad}x
+                                                                    </span>
+                                                                    <span className="text-[10px] text-gray-700 dark:text-gray-300 truncate leading-tight" title={prod.nombre}>
+                                                                        {prod.nombre}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            {item.productos.length > 3 && (
+                                                                <span className="text-[9px] text-slate-400 dark:text-slate-500 pl-0.5">
+                                                                    +{item.productos.length - 3} más
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-300 dark:text-slate-600 text-xs">—</span>
+                                                    )}
+                                                </td>
+                                            )}
                                             <td className="px-3 py-2.5">
                                                 <Badge label={sunatConf.label} cls={sunatConf.cls} />
                                             </td>

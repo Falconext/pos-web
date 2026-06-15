@@ -51,6 +51,8 @@ export interface VentaPanelItem {
     porcentajeDetraccion: number;
     cuotas: any;
     observaciones: string | null;
+    // Productos vendidos
+    productos: { nombre: string; cantidad: number; precioUnitario: number; unidad: string }[];
 }
 
 export type TabVentas = 'TODO' | 'VENTAS' | 'CON_DESPACHO';

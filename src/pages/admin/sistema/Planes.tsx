@@ -300,22 +300,49 @@ const Planes = () => {
             <Modal isOpenModal={vm.showFeaturesModal} closeModal={() => vm.setShowFeaturesModal(false)} title="Características del Plan" position="right" width="500px" backdropClassName="bg-black/20">
                 <div className="p-6">
                     <div className="space-y-1 dark:bg-transparent">
-                        <Toggle label="Plan de Prueba (Gratuito)" value={vm.form.esPrueba || false} onChange={v => vm.setForm({ ...vm.form, esPrueba: v })} />
-                        <Toggle label="Tienda Virtual" value={vm.form.tieneTienda || false} onChange={v => vm.setForm({ ...vm.form, tieneTienda: v })} />
-                        {vm.form.tieneTienda && (
-                            <div className="ml-4 pl-4 border-l-2 border-gray-100 dark:border-slate-700 mb-2 space-y-2 bg-gray-50 dark:bg-slate-800/30 p-3 rounded-r-lg">
-                                <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Configuración Tienda</h5>
-                                <InputPro isLabel label="Máx. Banners" name="maxBanners" type="number" value={vm.form.maxBanners} onChange={(e) => vm.setForm({ ...vm.form, maxBanners: Number(e.target.value) })} />
-                                <InputPro isLabel label="Máx. Img/Producto" name="maxImagenesProducto" type="number" value={vm.form.maxImagenesProducto} onChange={(e) => vm.setForm({ ...vm.form, maxImagenesProducto: Number(e.target.value) })} />
-                            </div>
-                        )}
-                        <Toggle label="Banners Publicitarios" value={vm.form.tieneBanners || false} onChange={v => vm.setForm({ ...vm.form, tieneBanners: v })} />
-                        <Toggle label="Galería de Imágenes" value={vm.form.tieneGaleria || false} onChange={v => vm.setForm({ ...vm.form, tieneGaleria: v })} />
-                        <Toggle label="Pasarela Pagos (Culqi)" value={vm.form.tieneCulqi || false} onChange={v => vm.setForm({ ...vm.form, tieneCulqi: v })} />
-                        <Toggle label="Delivery GPS Tracker" value={vm.form.tieneDeliveryGPS || false} onChange={v => vm.setForm({ ...vm.form, tieneDeliveryGPS: v })} />
-                        <Toggle label="Ticketera (Impresión Térmica)" value={vm.form.tieneTicketera || false} onChange={v => vm.setForm({ ...vm.form, tieneTicketera: v })} />
-                        <Toggle label="Gestión de Lotes" value={vm.form.tieneGestionLotes || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionLotes: v })} />
-                        <Toggle label="Gestión de Provisiones" value={vm.form.tieneGestionProvisiones || false} onChange={v => vm.setForm({ ...vm.form, tieneGestionProvisiones: v })} />
+                        {(vm.featureCatalog.length ? vm.featureCatalog : [
+                            { key: 'esPrueba', label: 'Plan de Prueba (Gratuito)' },
+                            { key: 'tieneTienda', label: 'Tienda Virtual' },
+                            { key: 'tieneBanners', label: 'Banners Publicitarios', dependsOn: 'tieneTienda' },
+                            { key: 'tieneGaleria', label: 'Galería de Imágenes', dependsOn: 'tieneTienda' },
+                            { key: 'tieneCulqi', label: 'Pasarela Pagos (Culqi)', dependsOn: 'tieneTienda' },
+                            { key: 'tieneDeliveryGPS', label: 'Delivery GPS Tracker' },
+                            { key: 'tieneTicketera', label: 'Ticketera (Impresión Térmica)' },
+                            { key: 'tieneGestionLotes', label: 'Gestión de Lotes' },
+                            { key: 'tieneGestionProvisiones', label: 'Gestión de Provisiones' },
+                        ] as any[]).map((feature: any) => {
+                            const disabled = feature.dependsOn && !Boolean((vm.form as any)[feature.dependsOn]);
+                            const value = Boolean((vm.form as any)[feature.key]);
+
+                            return (
+                                <div key={feature.key} className={disabled ? 'opacity-50 pointer-events-none' : ''}>
+                                    <Toggle
+                                        label={feature.label}
+                                        value={value}
+                                        onChange={v => vm.setForm({ ...vm.form, [feature.key]: v })}
+                                    />
+                                    {feature.description && (
+                                        <p className="text-[11px] text-gray-400 dark:text-slate-500 -mt-2 mb-2 px-1">{feature.description}</p>
+                                    )}
+                                    {value && Array.isArray(feature.limits) && feature.limits.length > 0 && (
+                                        <div className="ml-4 pl-4 border-l-2 border-gray-100 dark:border-slate-700 mb-2 space-y-2 bg-gray-50 dark:bg-slate-800/30 p-3 rounded-r-lg">
+                                            <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Límites de {feature.label}</h5>
+                                            {feature.limits.map((limit: any) => (
+                                                <InputPro
+                                                    key={limit.key}
+                                                    isLabel
+                                                    label={limit.label}
+                                                    name={limit.key}
+                                                    type="number"
+                                                    value={(vm.form as any)[limit.key]}
+                                                    onChange={(e) => vm.setForm({ ...vm.form, [limit.key]: Number(e.target.value) })}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-end"><Button onClick={() => vm.setShowFeaturesModal(false)} color="black">Listo</Button></div>
                 </div>
