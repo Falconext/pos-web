@@ -1,7 +1,0 @@
-{
-  "version": "5.1.0",
-  "organization": "Jesse Vincent / obra",
-  "source": "https://github.com/obra/superpowers",
-  "license": "MIT",
-  "abstract": "Brainstorming skill that guides the agent through a structured design process before any implementation. Forces design-first thinking: explores context, asks clarifying questions one at a time, proposes 2-3 approaches with trade-offs, writes a spec to docs/superpowers/specs/, self-reviews it, then transitions to writing-plans. Includes optional visual companion for browser-based mockups and diagrams."
-}

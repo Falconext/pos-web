@@ -422,7 +422,7 @@ export default function AdminLayout() {
                   }
 
                   return (
-                    <div key={modulo.id ?? modulo.codigo} className="relative group/submenu">
+                    <div key={modulo.id ?? modulo.codigo} className="relative group">
                       <button
                         onClick={() => {
                           if (isSidebarCollapsed) { navigate(navRoute); }
@@ -442,7 +442,7 @@ export default function AdminLayout() {
                       </button>
                       {/* Collapsed popover */}
                       {isSidebarCollapsed && (
-                        <div className="absolute left-full top-0 ml-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl w-48 py-2 z-50 opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all">
+                        <div className="absolute left-full top-0 ml-1 bg-white dark:bg-slate-900 rounded-xl shadow-xl w-48 py-2 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                           <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100 dark:border-slate-700">{label}</div>
                           {allSubItems.map(item => (
                             <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
