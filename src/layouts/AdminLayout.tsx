@@ -4,7 +4,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, type IAuthState } from '@/zustand/auth'
 import NotificacionesCampana from '@/components/NotificacionesCampana'
 import { hasPermission, hasPlanFeature, hasSubPermission, getRedirectPath } from '@/utils/permissions'
-import { useThemeStore } from '@/zustand/theme'
+import { useThemeStore, ZOOM_OPTIONS, type ZoomLevel } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
 import { BRAND, getBrandByKey } from '@/lib/branding'
 import { esRubroFabricacion } from '@/utils/rubro-features'
@@ -17,7 +17,7 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { auth, sedeActiva, selectSede }: IAuthState = useAuthStore()
-  const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact, isDarkMode, toggleDarkMode, initTheme } = useThemeStore()
+  const { sidebarColor, sidebarType, sidebarCollapsed, setSidebarCollapsed, navbarFixed, toggleConfigurator, zoomLevel, setZoomLevel, isDarkMode, toggleDarkMode, initTheme } = useThemeStore()
 
   // Detectar si el rubro es restaurante para cambiar nombres del menú
   const isRestaurante = useMemo(() => {
@@ -35,12 +35,12 @@ export default function AdminLayout() {
   const toggleModule = (codigo: string) => setOpenModuleCode(prev => prev === codigo ? null : codigo)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const autoCollapsePaths = ['/administrador/ventas', '/administrador/tienda/pedidos']
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
-    autoCollapsePaths.some(p => window.location.pathname.startsWith(p))
-  )
+  const isSidebarCollapsed = sidebarCollapsed || autoCollapsePaths.some(p => location.pathname.startsWith(p))
   const [isSedeMenuOpen, setIsSedeMenuOpen] = useState(false)
+  const [isZoomMenuOpen, setIsZoomMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
   const sedeMenuRef = useRef<HTMLDivElement | null>(null)
+  const zoomMenuRef = useRef<HTMLDivElement | null>(null)
   const mainRef = useRef<HTMLElement | null>(null)
   const scrollYRef = useRef(0)
   const defaultProfileLogo = 'https://icons.veryicon.com/png/o/miscellaneous/two-color-icon-library/user-286.png'
@@ -63,6 +63,7 @@ export default function AdminLayout() {
       if (!userMenuRef.current) return
       if (!userMenuRef.current.contains(e.target as Node)) setIsUserMenuOpen(false)
       if (sedeMenuRef.current && !sedeMenuRef.current.contains(e.target as Node)) setIsSedeMenuOpen(false)
+      if (zoomMenuRef.current && !zoomMenuRef.current.contains(e.target as Node)) setIsZoomMenuOpen(false)
     }
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { setIsUserMenuOpen(false); setIsSedeMenuOpen(false) }
@@ -135,20 +136,6 @@ export default function AdminLayout() {
     }
   }, [isSidebarOpen])
 
-  // Auto-colapsar sidebar solo al ENTRAR a rutas de Despacho/Pedidos desde otra ruta
-  const prevPathRef = useRef(location.pathname)
-  useEffect(() => {
-    const prev = prevPathRef.current
-    const curr = location.pathname
-    prevPathRef.current = curr
-    const wasAutoCollapse = autoCollapsePaths.some(p => prev.startsWith(p))
-    const isAutoCollapse = autoCollapsePaths.some(p => curr.startsWith(p))
-    // Solo forzar colapso al entrar desde una ruta que no era auto-collapse
-    if (isAutoCollapse && !wasAutoCollapse) setIsSidebarCollapsed(true)
-    // Expandir al salir de esas rutas
-    if (!isAutoCollapse && wasAutoCollapse) setIsSidebarCollapsed(false)
-  }, [location.pathname])
-
   const logout = () => {
     useAuthStore.getState().logout()
     navigate('/login', { replace: true })
@@ -167,25 +154,32 @@ export default function AdminLayout() {
     return auth?.empresa?.plan?.subModulosAsignados ?? [];
   }, [auth?.empresa?.plan?.subModulosAsignados]);
 
-  const getModuleSubItems = (moduloId: number): SidebarSubItem[] => {
-    return (planSubModulesAll as any[])
+  const mapSubModuleToSidebarItem = (subModulo: any): SidebarSubItem | null => {
+    if (!hasSubPermission(auth, subModulo.codigo)) return null;
+    const smMeta = SUBMODULE_META[subModulo.codigo];
+    if (smMeta?.condition && !smMeta.condition(auth)) return null;
+    return {
+      codigo: subModulo.codigo,
+      nombre: smMeta?.labelOverride?.(auth) ?? subModulo.nombre ?? subModulo.codigo,
+      ruta: subModulo.ruta ?? LEGACY_SUBMODULE_ROUTES[subModulo.codigo] ?? '#',
+      end: smMeta?.end,
+    } as SidebarSubItem;
+  };
+
+  const getModuleSubItems = (modulo: any): SidebarSubItem[] => {
+    const moduloId = modulo.id ?? 0;
+    const assignedSubModules = (planSubModulesAll as any[])
       .filter((psm: any) => psm.subModulo.moduloId === moduloId)
       .sort((a: any, b: any) => (a.subModulo.orden ?? 0) - (b.subModulo.orden ?? 0))
-      .filter(({ subModulo }: any) => {
-        if (!hasSubPermission(auth, subModulo.codigo)) return false;
-        const smMeta = SUBMODULE_META[subModulo.codigo];
-        if (smMeta?.condition && !smMeta.condition(auth)) return false;
-        return true;
-      })
-      .map(({ subModulo }: any) => {
-        const smMeta = SUBMODULE_META[subModulo.codigo];
-        return {
-          codigo: subModulo.codigo,
-          nombre: smMeta?.labelOverride?.(auth) ?? subModulo.nombre ?? subModulo.codigo,
-          ruta: subModulo.ruta ?? LEGACY_SUBMODULE_ROUTES[subModulo.codigo] ?? '#',
-          end: smMeta?.end,
-        } as SidebarSubItem;
-      });
+      .map(({ subModulo }: any) => subModulo);
+
+    const sourceSubModules = assignedSubModules.length > 0
+      ? assignedSubModules
+      : [...(modulo.subModulos ?? [])].sort((a: any, b: any) => (a.orden ?? 0) - (b.orden ?? 0));
+
+    return sourceSubModules
+      .map(mapSubModuleToSidebarItem)
+      .filter(Boolean) as SidebarSubItem[];
   };
 
   // Para ADMIN_SISTEMA con sistemaNegocio asignado, usar branding de su plataforma
@@ -213,45 +207,86 @@ export default function AdminLayout() {
     }
   };
 
-  // Theme adaptado al diseño de referencia (sidebar blanco + ítem activo azul sólido)
+  // Theme adaptado al diseño de referencia
+  const getActiveItemColor = () => {
+    switch (sidebarColor) {
+      case 'primary': return 'bg-fuchsia-600 shadow-[0_4px_12px_rgba(192,38,211,0.35)]';
+      case 'dark': return 'bg-gray-800 shadow-[0_4px_12px_rgba(31,41,55,0.35)] dark:bg-gray-700';
+      case 'info': return 'bg-blue-600 shadow-[0_4px_12px_rgba(37,99,235,0.35)]';
+      case 'success': return 'bg-emerald-600 shadow-[0_4px_12px_rgba(5,150,105,0.35)]';
+      case 'warning': return 'bg-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.35)]';
+      case 'error': return 'bg-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.35)]';
+      default: return 'bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.35)]';
+    }
+  };
+
+  const getSubmenuActiveColor = () => {
+    switch (sidebarColor) {
+      case 'primary': return 'text-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-900/30';
+      case 'dark': return 'text-gray-800 bg-gray-100 dark:bg-gray-800/50 dark:text-gray-200';
+      case 'info': return 'text-blue-600 bg-blue-50 dark:bg-blue-900/30';
+      case 'success': return 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30';
+      case 'warning': return 'text-orange-600 bg-orange-50 dark:bg-orange-900/30';
+      case 'error': return 'text-red-600 bg-red-50 dark:bg-red-900/30';
+      default: return 'text-violet-600 bg-violet-50 dark:bg-violet-900/30';
+    }
+  };
+
   const theme = {
     mainPadding: 'p-5',
-    sidebarBg: 'bg-white dark:bg-[#0A0D14]',
-    sidebarBorder: 'border-none',
 
-    // Item activo: pill violeta sólido, texto blanco
-    get activeLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.35)] transition-all duration-200 group`;
+    get sidebarBg() {
+      switch (sidebarType) {
+        case 'dark': return 'bg-gray-900 border-r border-gray-800 shadow-[2px_0_20px_rgba(0,0,0,0.2)] text-white';
+        case 'transparent': return 'bg-transparent border-r border-transparent text-gray-800 dark:text-white dark:border-slate-800';
+        case 'white':
+        default: return 'bg-white border-r border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] text-gray-900 dark:text-white';
+      }
     },
-    // Item inactivo: texto gris oscuro, hover sutil
+
+    get sidebarText() {
+      return sidebarType === 'dark' ? 'text-white' : 'text-gray-900 dark:text-white';
+    },
+
+    get sidebarTextMuted() {
+      return sidebarType === 'dark' ? 'text-gray-400' : 'text-gray-400 dark:text-slate-500';
+    },
+
+    // Item activo
+    get activeLink() {
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white ${getActiveItemColor()} transition-all duration-200 group`;
+    },
+    // Item inactivo
     get inactiveLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all duration-150 group`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium ${sidebarType === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800'} transition-all duration-150 group`;
     },
     // Accordion activo e inactivo
     get accordionActive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.35)] transition-all text-left`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white ${getActiveItemColor()} transition-all text-left`;
     },
     get accordionInactive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all text-left`;
+      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium ${sidebarType === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800'} transition-all text-left`;
     },
     // Submenu links
-    submenuBorder: 'border-gray-200 dark:border-slate-800',
+    get submenuBorder() {
+      return sidebarType === 'dark' ? 'border-gray-700' : 'border-gray-200 dark:border-slate-800';
+    },
     get submenuActiveLink() {
-      return `flex items-center px-3.5 py-2 text-[13px] font-semibold text-violet-600 bg-violet-50 dark:bg-violet-900/30 rounded-lg transition-all`;
+      return `flex items-center px-3.5 py-2 text-[13px] font-semibold ${getSubmenuActiveColor()} rounded-lg transition-all`;
     },
     get submenuInactiveLink() {
-      return `flex items-center px-3.5 py-2 text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg transition-all`;
+      return `flex items-center px-3.5 py-2 text-[13px] font-medium ${sidebarType === 'dark' ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800'} rounded-lg transition-all`;
     },
-    primaryBorder: 'border-gray-200 dark:border-slate-800',
-  }
+  };
+
 
   return (
     <motion.div
       className="flex overflow-hidden bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300"
       style={{
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        zoom: isCompact ? '0.9' : '1',
-        height: isCompact ? '110vh' : '100vh'
+        zoom: String(ZOOM_OPTIONS[zoomLevel]?.zoom ?? 1),
+        height: ZOOM_OPTIONS[zoomLevel]?.height ?? '100vh'
       }}
       variants={fadeIn}
       initial="initial"
@@ -260,32 +295,33 @@ export default function AdminLayout() {
 
       {/* Sidebar/Drawer */}
       <motion.aside
-        className={`print:hidden fixed inset-y-0 left-0 bg-white dark:bg-[#0A0D14] dark:border-r dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
+        className={`print:hidden fixed inset-y-0 left-0 ${theme.sidebarBg} flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
         variants={slideRight}
         initial="initial"
         animate={reduceMotion ? { opacity: 1, x: 0 } : 'animate'}
       >
         {/* Logo area */}
-        <div className={`flex items-center relative mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
+        <div className={`flex items-center w-full relative mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
           <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-            <div className="flex items-center justify-center w-10 h-10">
-              <img src={sidebarBrand.logoWhite} alt={sidebarBrand.name} className="w-10 h-10 object-contain rounded-full" />
+            <div className="flex items-center justify-center w-10 h-10 overflow-hidden rounded-full">
+              <img src={sidebarBrand.logoWhite} alt={sidebarBrand.name} className={`object-contain ${isSidebarCollapsed ? 'w-10 h-10 scale-150 object-left' : 'w-10 h-10 rounded-full'}`} />
             </div>
             {!isSidebarCollapsed && (
-              <div>
-                <h2 className="text-[15px] font-bold tracking-tight leading-none text-gray-900 dark:text-white">{sidebarBrand.name.toUpperCase()}</h2>
-                <p className="text-[9px] text-gray-400 font-semibold tracking-widest mt-0.5 uppercase">Panel Administrativo</p>
+              <div className="min-w-0">
+                <h2 className={`text-[15px] font-bold tracking-tight leading-none truncate ${theme.sidebarText}`}>{sidebarBrand.name.toUpperCase()}</h2>
+                <p className={`text-[9px] font-semibold tracking-widest mt-0.5 uppercase truncate ${theme.sidebarTextMuted}`}>Panel Administrativo</p>
               </div>
             )}
           </div>
           <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex items-center absolute right-[-30px] z-[20] justify-center w-7 h-7 bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
+            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+            className={`hidden md:flex items-center absolute top-1/2 -translate-y-1/2 z-[80] justify-center w-9 h-9 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700 shadow-xl shadow-gray-950/10 transition-all cursor-pointer ${isSidebarCollapsed ? '-right-[26px]' : '-right-[18px]'}`}
+            title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
           >
             <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
           </button>
         </div>
-      <div className={`flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full scrollbar-none [&::-webkit-scrollbar]:hidden' : 'pr-1 custom-scrollbar'}`}>
+      <div className={`flex-1 space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full overflow-visible' : 'pr-1 overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
           <motion.nav
             className="space-y-0.5 w-full"
             variants={navStagger}
@@ -324,6 +360,14 @@ export default function AdminLayout() {
                   <Icon icon="solar:shop-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Catálogo Web</span>}
                 </NavLink>
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/rubros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Rubros de Negocio">
+                  <Icon icon="solar:buildings-3-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Rubros</span>}
+                </NavLink>
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/disenos-tienda" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Diseño de Tiendas">
+                  <Icon icon="solar:palette-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Diseño Tiendas</span>}
+                </NavLink>
               </motion.div>
             )}
 
@@ -354,7 +398,7 @@ export default function AdminLayout() {
                     ? location.pathname === '/administrador'
                     : location.pathname.startsWith(pathPrefix);
 
-                  const dbSubItems = getModuleSubItems(modulo.id ?? 0);
+                  const dbSubItems = getModuleSubItems(modulo);
                   const extraItems = meta?.extraItems?.(auth) ?? [];
                   const allSubItems = [...dbSubItems, ...extraItems];
 
@@ -399,7 +443,10 @@ export default function AdminLayout() {
                           <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100 dark:border-slate-700">{label}</div>
                           {allSubItems.map(item => (
                             <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
-                              className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}
+                              className={() => {
+                                const active = item.end ? location.pathname === item.ruta : location.pathname.startsWith(item.ruta);
+                                return active ? theme.submenuActiveLink : theme.submenuInactiveLink;
+                              }}
                             >{item.nombre}</NavLink>
                           ))}
                         </div>
@@ -411,12 +458,15 @@ export default function AdminLayout() {
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            className={'ml-4 pl-4 border-l-2 ' + theme.primaryBorder + ' space-y-1 mt-1'}
+                            className={'ml-4 pl-4 border-l-2 ' + theme.submenuBorder + ' space-y-1 mt-1'}
                             style={{ overflow: 'hidden' }}
                           >
                             {allSubItems.map(item => (
                               <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
-                                className={({ isActive }) => isActive ? theme.submenuActiveLink : theme.submenuInactiveLink}
+                                className={() => {
+                                  const active = item.end ? location.pathname === item.ruta : location.pathname.startsWith(item.ruta);
+                                  return active ? theme.submenuActiveLink : theme.submenuInactiveLink;
+                                }}
                               >{item.nombre}</NavLink>
                             ))}
                           </motion.div>
@@ -483,8 +533,12 @@ export default function AdminLayout() {
       </AnimatePresence>
 
       {/* Main content */}
-      <main ref={mainRef} className="flex-1 overflow-y-auto print:overflow-visible bg-[#F9FAFC] dark:bg-[#0A0D14]">
-        <motion.header className={`print:hidden z-10 flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`} variants={fadeUp} initial="initial" animate="animate">
+      <main
+        ref={mainRef}
+        className="flex-1 min-h-0 flex flex-col min-w-0 overflow-y-auto print:overflow-visible bg-[#F9FAFC] dark:bg-[#0A0D14]"
+      >
+        <div className={`shrink-0 z-[50] transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
+          <motion.header className="print:hidden flex items-center justify-between px-6 py-3.5 bg-white/90 backdrop-blur-md border-b border-gray-100 dark:bg-[#0A0D14]/90 dark:border-slate-800 transition-all duration-300" variants={fadeUp} initial="initial" animate="animate">
           <div className="flex items-center gap-4">
             <motion.button
               className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -561,16 +615,51 @@ export default function AdminLayout() {
               </button>
             </div>
 
-            {/* Compact toggle */}
-            <div className="hidden md:block">
+            {/* Zoom selector */}
+            <div className="relative hidden md:block" ref={zoomMenuRef}>
               <button
-                onClick={toggleCompact}
-                className={`p-2 rounded-lg transition-colors ${isCompact ? 'text-violet-600 bg-violet-50 dark:bg-violet-900/20' : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800'
-                  }`}
-                title={isCompact ? 'Desactivar Vista Compacta' : 'Activar Vista Compacta'}
+                onClick={() => setIsZoomMenuOpen(o => !o)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors text-xs font-bold ${
+                  zoomLevel > 0
+                    ? 'text-violet-600 bg-violet-50 dark:bg-violet-900/20'
+                    : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800'
+                }`}
+                title="Ajustar nivel de zoom"
               >
-                <Icon icon={isCompact ? 'solar:minimize-square-3-bold' : 'solar:maximize-square-3-linear'} width="20" />
+                <Icon icon="solar:minimize-square-3-bold" width="16" />
+                <span>{ZOOM_OPTIONS[zoomLevel]?.label}</span>
               </button>
+
+              {isZoomMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 z-50 w-44 rounded-xl border border-gray-100 bg-white dark:bg-slate-900 dark:border-slate-700 shadow-xl py-1.5 overflow-hidden">
+                  <p className="px-3 pb-1.5 pt-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-700 mb-1">
+                    Nivel de zoom
+                  </p>
+                  {ZOOM_OPTIONS.map(opt => (
+                    <button
+                      key={opt.level}
+                      onClick={() => { setZoomLevel(opt.level as ZoomLevel); setIsZoomMenuOpen(false); }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
+                        zoomLevel === opt.level
+                          ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 font-bold'
+                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon
+                          icon={opt.level === 0 ? 'solar:maximize-square-3-linear' : 'solar:minimize-square-3-bold'}
+                          width="15"
+                          className={zoomLevel === opt.level ? 'text-violet-500' : 'text-gray-400'}
+                        />
+                        {opt.level === 0 ? 'Normal' : opt.level === 1 ? 'Compacto' : opt.level === 2 ? 'Más compacto' : 'Mínimo'}
+                      </span>
+                      <span className={`text-xs font-mono ${zoomLevel === opt.level ? 'text-violet-500' : 'text-gray-400'}`}>
+                        {opt.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Configurator */}
@@ -666,10 +755,11 @@ export default function AdminLayout() {
               )}
               </AnimatePresence>
             </div>
-          </div>
-        </motion.header>
+            </div>
+          </motion.header>
+        </div>
 
-        <div className={`${theme.mainPadding} transition-all duration-300`}>
+        <div className={`flex-1 ${theme.mainPadding} transition-all duration-300`}>
           <Outlet />
         </div>
       </main>

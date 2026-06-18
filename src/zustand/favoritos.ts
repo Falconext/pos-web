@@ -15,6 +15,7 @@ interface FavoritosStore {
     isFavorito: (productoId: number, slug: string) => boolean;
     getFavoritosBySlug: (slug: string) => FavoritoItem[];
     removeFavorito: (productoId: number, slug: string) => void;
+    refreshImagenes: (updates: Array<{ id: number; slug: string; imagenUrl: string }>) => void;
 }
 
 export const useFavoritosStore = create<FavoritosStore>()(
@@ -35,6 +36,15 @@ export const useFavoritosStore = create<FavoritosStore>()(
                 get().favoritos.filter(f => f.slug === slug),
             removeFavorito: (productoId, slug) =>
                 set({ favoritos: get().favoritos.filter(f => !(f.id === productoId && f.slug === slug)) }),
+            refreshImagenes: (updates) => {
+                const map = new Map(updates.map(u => [`${u.id}:${u.slug}`, u.imagenUrl]));
+                set({
+                    favoritos: get().favoritos.map(f => {
+                        const newUrl = map.get(`${f.id}:${f.slug}`);
+                        return newUrl ? { ...f, imagenUrl: newUrl } : f;
+                    }),
+                });
+            },
         }),
         { name: 'tienda-favoritos', version: 1 }
     )

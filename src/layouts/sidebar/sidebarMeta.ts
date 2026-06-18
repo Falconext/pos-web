@@ -1,4 +1,4 @@
-import { esRubroFabricacion } from '@/utils/rubro-features';
+import { detectarFuncionesRubro, esRubroFabricacion } from '@/utils/rubro-features';
 import { hasPlanFeature } from '@/utils/permissions';
 
 export interface SidebarSubItem {
@@ -67,6 +67,7 @@ export const LEGACY_SUBMODULE_ROUTES: Record<string, string> = {
   'kardex:combos': '/administrador/kardex/combos',
   'kardex:movimientos': '/administrador/kardex',
   'kardex:reservas': '/administrador/reservas',
+  'kardex:series-garantias': '/administrador/kardex/series-garantias',
   'comprobantes:lista': '/administrador/facturacion/comprobantes',
   'comprobantes:emitir': '/administrador/facturacion/nuevo',
   'comprobantes:informales': '/administrador/facturacion/comprobantes-informales',
@@ -80,6 +81,7 @@ export const LEGACY_SUBMODULE_ROUTES: Record<string, string> = {
   'contabilidad:sire-ventas': '/administrador/sire/ventas',
   'contabilidad:sire-compras': '/administrador/sire/compras',
   'tienda:pedidos': '/administrador/tienda/pedidos',
+  'tienda:reviews': '/administrador/tienda/reviews',
   'tienda:modificadores': '/administrador/tienda/modificadores',
   'tienda:configuracion': '/administrador/tienda/configuracion',
   'usuarios:gestion': '/administrador/usuarios',
@@ -104,11 +106,14 @@ export const MODULE_META: Record<string, ModuleMeta> = {
     navRoute: () => '/administrador/kardex/productos',
     pathPrefix: () => '/administrador/kardex',
     extraItems: (auth) => {
-      if (!isFarmacia(auth)) return [];
-      return [
-        { codigo: 'kardex:lotes', nombre: 'Lotes', ruta: '/administrador/kardex/lotes' },
-        { codigo: 'kardex:libro-control', nombre: '💊 Libro Control', ruta: '/administrador/kardex/libro-control' },
-      ];
+      const items: SidebarSubItem[] = [];
+      if (isFarmacia(auth)) {
+        items.push(
+          { codigo: 'kardex:lotes', nombre: 'Lotes', ruta: '/administrador/kardex/lotes' },
+          { codigo: 'kardex:libro-control', nombre: '💊 Libro Control', ruta: '/administrador/kardex/libro-control' },
+        );
+      }
+      return items;
     },
   },
 
@@ -198,6 +203,9 @@ export const MODULE_META: Record<string, ModuleMeta> = {
     condition: (auth) => hasPlanFeature(auth, 'tieneTienda'),
     navRoute: () => '/administrador/tienda/pedidos',
     pathPrefix: () => '/administrador/tienda',
+    extraItems: () => [
+      { codigo: 'tienda:reviews', nombre: 'Comentarios y rating', ruta: '/administrador/tienda/reviews' },
+    ],
   },
 
   usuarios: {
@@ -209,6 +217,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
 export const SUBMODULE_META: Record<string, SubModuleMeta> = {
   'comprobantes:lista': {
     condition: (auth) => auth?.empresa?.tipoEmpresa === 'FORMAL',
+    end: true,
   },
   'reportes:formal': {
     condition: (auth) => auth?.empresa?.tipoEmpresa === 'FORMAL',
@@ -230,7 +239,11 @@ export const SUBMODULE_META: Record<string, SubModuleMeta> = {
   'compras:gestion': { end: true },
   'ventas:panel': { end: true },
   'usuarios:gestion': { end: true },
+  'usuarios:usuarios': { end: true },
   'kardex:productos': {
     labelOverride: (auth) => isRestaurante(auth) ? 'Platos' : undefined,
+  },
+  'kardex:series-garantias': {
+    condition: (auth) => detectarFuncionesRubro(auth?.empresa?.rubro).controlSeriesGarantia,
   },
 };

@@ -7,6 +7,8 @@ import Footer from '@/components/tienda/Footer';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
+import GadgetsCheckout from './GadgetsCheckout';
+import { clearTiendaCart, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -148,7 +150,7 @@ export default function Checkout() {
     useEffect(() => {
         if ((!carritoState || carritoState.length === 0) && slug) {
             try {
-                const saved = localStorage.getItem(`tienda:${slug}:carrito`);
+                const saved = localStorage.getItem(tiendaCartKey(slug));
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     if (Array.isArray(parsed) && parsed.length > 0) {
@@ -181,8 +183,7 @@ export default function Checkout() {
     useEffect(() => {
         if (!isLoaded || !slug) return;
         try {
-            if (Array.isArray(carritoState) && carritoState.length > 0) localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(carritoState));
-            else localStorage.removeItem(`tienda:${slug}:carrito`);
+            persistTiendaCart(slug, carritoState);
         } catch { }
     }, [slug, carritoState, isLoaded]);
 
@@ -290,6 +291,7 @@ export default function Checkout() {
         if (!validarFormulario()) { document.querySelector('.border-red-300')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         setEnviando(true);
         try {
+            const totalPedido = calcularTotal();
             let culqiTokenPayload: CulqiTokenResult | null = null;
             if (formData.medioPago === 'TARJETA') {
                 if (configPago?.culqiBackendReady === false) {
@@ -302,12 +304,12 @@ export default function Checkout() {
             const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, {
                 ...formData,
                 items,
-                total: calcularTotal(),
+                total: totalPedido,
                 culqiToken: culqiTokenPayload?.token,
                 culqiEmail: culqiTokenPayload?.email || formData.clienteEmail,
             });
             const orderData = data.data || data;
-            setPedidoCreado(orderData);
+            setPedidoCreado({ ...orderData, total: Number(orderData.total ?? totalPedido) });
 
             // Mejora 2: guardar datos del cliente para la próxima compra
             try {
@@ -327,7 +329,7 @@ export default function Checkout() {
                 setShowPaymentModal(true);
             }
             setCarritoState([]);
-            localStorage.removeItem(`tienda:${slug}:carrito`);
+            clearTiendaCart(slug || '');
         } catch (error: any) {
             alert(error.response?.data?.message || 'Error al crear pedido');
         } finally { setEnviando(false); }
@@ -428,6 +430,54 @@ export default function Checkout() {
     };
 
     const diseno = tienda?.diseno || {};
+
+    // ── Gadgets template checkout ──
+    if (diseno.plantillaId === 'gadgets') {
+        return (
+            <>
+                <GadgetsCheckout
+                    slug={slug || ''}
+                    tienda={tienda}
+                    carrito={carritoState}
+                    formData={formData}
+                    erroresForm={erroresForm}
+                    configPago={configPago}
+                    configEnvio={configEnvio}
+                    enviando={enviando}
+                    suggestedProducts={suggestedProducts}
+                    search={search}
+                    searchResults={searchResults}
+                    setSearch={setSearch}
+                    handleChange={handleChange}
+                    updateQuantity={updateQuantity}
+                    removeItem={removeItem}
+                    calcularSubtotal={calcularSubtotal}
+                    calcularCostoEnvio={calcularCostoEnvio}
+                    calcularTotal={calcularTotal}
+                    onSubmit={() => { if (validarFormulario()) setShowConfirmModal(true); }}
+                    onAddToCart={(producto) => {
+                        const item = { ...producto, id: producto.id, productoId: producto.id, cantidad: 1, modificadores: [] };
+                        const existe = carritoState.find((i: any) => i.id === producto.id && !i.modificadores?.length);
+                        if (existe) setCarritoState(carritoState.map((i: any) => i.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i));
+                        else setCarritoState([...carritoState, item]);
+                    }}
+                    freeDeliveryThreshold={freeDeliveryThreshold}
+                    freeDeliveryRemaining={freeDeliveryRemaining}
+                    freeDeliveryProgress={freeDeliveryProgress}
+                />
+                {pedidoCreado && (
+                    <PaymentConfirmationModal
+                        isOpen={showPaymentModal}
+                        onClose={() => { setShowPaymentModal(false); window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`; }}
+                        orderData={{ id: pedidoCreado.id, codigoSeguimiento: pedidoCreado.codigoSeguimiento, total: pedidoCreado.total || calcularTotal(), medioPago: formData.medioPago, tipoEntrega: formData.tipoEntrega, clienteNombre: formData.clienteNombre }}
+                        paymentConfig={configPago ? { yapeQR: configPago.yapeQR || configPago.yapeQrUrl || undefined, plinQR: configPago.plinQR || configPago.plinQrUrl || undefined, yapeNumero: configPago.yapeNumero || undefined, plinNumero: configPago.plinNumero || undefined, whatsappTienda: configPago.whatsappTienda || undefined } : undefined}
+                        storeSlug={slug || ''}
+                    />
+                )}
+                <ConfirmOrderModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={enviarPedido} total={calcularTotal()} loading={enviando} tiendaColor={tienda?.diseno?.colorPrimario || '#6A6CFF'} />
+            </>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#F6F6F6]" style={{ fontFamily: '"Mona Sans", Inter, sans-serif' }}>

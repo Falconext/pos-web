@@ -5,6 +5,15 @@ import { io, Socket } from 'socket.io-client';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4001');
 
+export interface NotificacionMetaData {
+  comprobanteId?: number;
+  guiaId?: number;
+  serie?: string | null;
+  correlativo?: number | null;
+  tipoDoc?: string | null;
+  errorMsg?: string | null;
+}
+
 export interface Notificacion {
   id: number;
   usuarioId: number;
@@ -14,6 +23,7 @@ export interface Notificacion {
   mensaje: string;
   leida: boolean;
   creadoEn: string;
+  metaData?: NotificacionMetaData | null;
 }
 
 interface NotificacionesState {

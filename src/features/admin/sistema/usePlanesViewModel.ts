@@ -13,7 +13,7 @@ export interface Plan {
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
     tieneTienda: boolean; tieneBanners: boolean; tieneGaleria: boolean;
     tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
-    tieneGestionLotes: boolean; tieneGestionProvisiones: boolean;
+    tieneGestionLotes: boolean; tieneGestionProvisiones: boolean; tieneDescripcionRica: boolean;
     features?: Record<string, boolean>;
     _count?: { empresas: number };
     modulosAsignados?: { modulo: { id: number; codigo: string; nombre: string; descripcion: string; icono: string; } }[];
@@ -23,7 +23,7 @@ export interface Plan {
 export interface PlanFeatureCatalogItem {
     key: keyof Pick<Plan,
         'esPrueba' | 'tieneTienda' | 'tieneBanners' | 'tieneGaleria' | 'tieneCulqi' |
-        'tieneDeliveryGPS' | 'tieneTicketera' | 'tieneGestionLotes' | 'tieneGestionProvisiones'
+        'tieneDeliveryGPS' | 'tieneTicketera' | 'tieneGestionLotes' | 'tieneGestionProvisiones' | 'tieneDescripcionRica'
     >;
     label: string;
     description: string;
@@ -44,7 +44,7 @@ const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number
     limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
     tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false,
-    tieneGestionLotes: false, tieneGestionProvisiones: false,
+    tieneGestionLotes: false, tieneGestionProvisiones: false, tieneDescripcionRica: false,
     moduloIds: [], subModuloIds: [],
 };
 
@@ -103,7 +103,9 @@ export const usePlanesViewModel = () => {
             if (plataforma) params.set('plataforma', plataforma);
             const qs = params.toString() ? `?${params.toString()}` : '';
             const { data } = await apiClient.get(`/plan${qs}`);
-            setPlanes(Array.isArray(data) ? data : (data.data || []));
+            const raw: Plan[] = Array.isArray(data) ? data : (data.data || []);
+            const seen = new Set<number>();
+            setPlanes(raw.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; }));
         } catch { alert('Error al cargar planes', 'error'); }
         finally { setLoading(false); }
     };

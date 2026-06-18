@@ -112,6 +112,7 @@ export default function ProductsView() {
             const costo = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
             const precio = Number(item?.precioUnitario || 0);
             const stock = Number(item?.stock || 0);
+            const esServicio = String(itemAny?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
             const costoFijo = Number(itemAny?.costoFijo || 0);
             const costoFijoUnitario = costo + costoFijo;
             const valorInventario = stock * costo;
@@ -121,10 +122,10 @@ export default function ProductsView() {
 
             const allData: any = {
                 productoId: item?.id,
-                'Img': (item as any)?.imagenUrl ? (
+                'Img': ((item as any)?.imagenUrlDisplay || (item as any)?.imagenUrl) ? (
                     <div className="h-[43px] w-[43px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden flex items-center justify-center p-1">
                         <img
-                            src={(item as any).imagenUrl}
+                            src={(item as any).imagenUrlDisplay || (item as any).imagenUrl}
                             alt={item?.descripcion}
                             className="h-full w-full object-contain"
                             onError={(e) => {
@@ -167,8 +168,8 @@ export default function ProductsView() {
                 marcaNombre: (item as any)?.marca?.nombre || "",
                 'Precio Venta': `S/ ${precio.toFixed(2)}`,
                 'Costo': costo > 0 ? `S/ ${costo.toFixed(2)}` : '-',
-                'Valor Inventario': valorInventario > 0 ? `S/ ${formatMoney(valorInventario)}` : '-',
-                'Costo Total Fijo': costoTotalFijo > 0 ? (
+                'Valor Inventario': esServicio ? '-' : valorInventario > 0 ? `S/ ${formatMoney(valorInventario)}` : '-',
+                'Costo Total Fijo': !esServicio && costoTotalFijo > 0 ? (
                     <div className="flex flex-col">
                         <span className="font-semibold text-gray-800 dark:text-gray-100">S/ {formatMoney(costoTotalFijo)}</span>
                         <span className="text-[10px] text-gray-400">Unit. S/ {formatMoney(costoFijoUnitario)}</span>
@@ -179,18 +180,18 @@ export default function ProductsView() {
                 'Stock': (
                     <span
                         style={{
-                            backgroundColor: stock <= 0 ? '#F43F5F' : stock <= 10 ? '#F49D0D' : '#0BB980',
+                            backgroundColor: esServicio ? '#7C3AED' : stock <= 0 ? '#F43F5F' : stock <= 10 ? '#F49D0D' : '#0BB980',
                             color: '#ffffff',
                         }}
                         className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
                     >
-                        {stock}
+                        {esServicio ? 'Servicio' : stock}
                     </span>
                 ),
                 'Localización': item?.localizacion?.trim() ? item.localizacion.toUpperCase() : '-',
                 '% Venta': `${Number((item as any)?.porcentajeVenta ?? 100)}%`,
                 '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 0)}%`,
-                'Stock minimo': item?.stockMinimo ?? 0,
+                'Stock minimo': esServicio ? '-' : item?.stockMinimo ?? 0,
                 'U.M': unidadNombre.toUpperCase(),
                 'Estado': item.estado,
                 'Tienda': (item as any).publicarEnTienda ? (
@@ -470,20 +471,22 @@ export default function ProductsView() {
                             if (!rowBase) return null;
                             return (
                                 <>
-                                    <button type="button" onClick={() => { actions.handleGetProduct({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => { actions.handleGetProduct({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
                                         <Icon icon="material-symbols:edit" width={16} height={16} /> <span>Editar</span>
                                     </button>
-                                    <button type="button" onClick={() => { actions.setUploadTarget({ id: rowBase.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => { actions.setUploadTarget({ id: rowBase.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
                                         <Icon icon="solar:upload-minimalistic-bold" width={16} height={16} /> <span>Subir imagen</span>
                                     </button>
-                                    <button type="button" onClick={() => { actions.handleToggleClientState({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => { actions.handleToggleClientState({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
                                         <Icon icon="mdi:power" width={16} height={16} /> <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
                                     </button>
-                                    <button type="button" onClick={() => { actions.togglePublicarTienda(rowBase); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                        <Icon icon={(rowBase as any).publicarEnTienda ? 'mdi:store-off' : 'mdi:store'} width={16} height={16} className={(rowBase as any).publicarEnTienda ? 'text-orange-500' : 'text-emerald-500'} />
-                                        <span>{(rowBase as any).publicarEnTienda ? 'Quitar de tienda' : 'Publicar en tienda'}</span>
-                                    </button>
-                                    <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
+                                    {vm.tieneTienda && (
+                                        <button type="button" onClick={() => { actions.togglePublicarTienda(rowBase); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                            <Icon icon={(rowBase as any).publicarEnTienda ? 'mdi:store-off' : 'mdi:store'} width={16} height={16} className={(rowBase as any).publicarEnTienda ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-500 dark:text-emerald-400'} />
+                                            <span>{(rowBase as any).publicarEnTienda ? 'Quitar de tienda' : 'Publicar en tienda'}</span>
+                                        </button>
+                                    )}
+                                    <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
                                         <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
                                     </button>
                                 </>

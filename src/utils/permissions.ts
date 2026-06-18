@@ -110,7 +110,13 @@ export const hasSubPermission = (user: IUserPermissions | null, subModuloCodigo:
 
   if (Array.isArray(planSubModulosRaw)) {
     const planSubModulos = planSubModulosRaw.map((s) => s.subModulo.codigo);
-    if (!subModuloCandidates.some((candidate) => planSubModulos.includes(candidate))) return false;
+    const planHasTargetModuleSubModules = planSubModulos.some((code) =>
+      targetModuleCodes.includes(String(code).split(':')[0])
+    );
+    if (
+      planHasTargetModuleSubModules &&
+      !subModuloCandidates.some((candidate) => planSubModulos.includes(candidate))
+    ) return false;
   }
 
   if (user.rol === 'ADMIN_EMPRESA') return true;

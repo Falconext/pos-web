@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { BarcodeScannerInput } from '@/components/BarcodeScannerInput';
 import { Icon } from '@iconify/react';
 import Select from '@/components/Select';
@@ -21,7 +23,7 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 
 export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
-        isFarmacia, esDrogueria, esFarmaceutico, isFabricacion, isRestaurante, isMobile, isEdit, features, labels,
+        isFarmacia, esDrogueria, esFarmaceutico, isFabricacion, isRestaurante, isMobile, isEdit, features, productSections, labels,
         formValues, errors, unitOfMeasure, categories, brands, gruposModificadores, gruposSeleccionados,
         isCategorizing, tieneGestionProvisiones, tieneTienda, tieneGestionLotes,
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
@@ -32,6 +34,178 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const [modoConIgv, setModoConIgv] = useState(true);
     const [simVentasDia, setSimVentasDia] = useState('');
     const [simPublicidadDia, setSimPublicidadDia] = useState('');
+    const [descTiendaOpen, setDescTiendaOpen] = useState(false);
+    const esServicio = String(((formValues as any)?.atributosTecnicos || {})?.tipoProducto || '').toUpperCase() === 'SERVICIO';
+
+    const setAtributoTecnico = (key: string, value: string) => {
+        setFormValues({
+            ...formValues,
+            atributosTecnicos: {
+                ...((formValues as any)?.atributosTecnicos || {}),
+                [key]: value,
+            },
+        });
+    };
+
+    const getAtributoTecnico = (key: string) => String(((formValues as any)?.atributosTecnicos || {})[key] || '');
+    const getAtributoTecnicoBool = (key: string) => Boolean(((formValues as any)?.atributosTecnicos || {})[key]);
+
+    const technicalFields = Array.isArray((vm as any).technicalTemplate?.campos)
+        ? [...((vm as any).technicalTemplate.campos as any[])].sort((a, b) => Number(a?.orden || 0) - Number(b?.orden || 0))
+        : [];
+
+    const setAtributoTecnicoValue = (key: string, value: any) => {
+        setFormValues({
+            ...formValues,
+            atributosTecnicos: {
+                ...((formValues as any)?.atributosTecnicos || {}),
+                [key]: value,
+            },
+        });
+    };
+
+    const setTipoProducto = (tipoProducto: 'PRODUCTO' | 'SERVICIO') => {
+        const nextAtributos = {
+            ...((formValues as any)?.atributosTecnicos || {}),
+            tipoProducto,
+        };
+        if (tipoProducto === 'PRODUCTO') delete (nextAtributos as any).tipoProducto;
+        delete (nextAtributos as any).controlSeries;
+
+        setFormValues({
+            ...formValues,
+            stock: tipoProducto === 'SERVICIO' ? 0 : formValues.stock,
+            stockMinimo: tipoProducto === 'SERVICIO' ? 0 : formValues.stockMinimo,
+            stockMaximo: tipoProducto === 'SERVICIO' ? 0 : formValues.stockMaximo,
+            atributosTecnicos: nextAtributos,
+        } as any);
+    };
+
+    const renderTechnicalInput = (field: any) => {
+        const key = String(field?.key || '');
+        if (!key) return null;
+        if (key === 'marca') {
+            return (
+                <InputPro
+                    key={key}
+                    autocomplete="off"
+                    value={(formValues as any)?.marcaNombre || getAtributoTecnico(key)}
+                    name={`ficha-${key}`}
+                    onChange={(e: any) => setAtributoTecnicoValue(key, e.target.value)}
+                    isLabel
+                    label={field.label || 'Marca'}
+                    placeholder="Ej: Logitech"
+                />
+            );
+        }
+        if (field?.tipo === 'booleano') {
+            const active = getAtributoTecnicoBool(key);
+            return (
+                <button
+                    key={key}
+                    type="button"
+                    onClick={() => setAtributoTecnicoValue(key, active ? '' : 'true')}
+                    className={`h-[52px] rounded-xl border px-4 text-left transition-all ${active
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300'
+                        : 'border-gray-200 bg-white text-gray-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'
+                        }`}
+                >
+                    <span className="flex items-center justify-between gap-3">
+                        <span>
+                            <span className="block text-[11px] font-black uppercase tracking-wide opacity-70">{field.label}</span>
+                            <span className="block text-sm font-bold">{active ? 'Sí' : 'No'}</span>
+                        </span>
+                        <Icon icon={active ? 'solar:check-circle-bold' : 'solar:close-circle-linear'} width={20} />
+                    </span>
+                </button>
+            );
+        }
+        if (field?.tipo === 'textarea') {
+            return (
+                <label key={key} className="block">
+                    <span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {field.label || key}
+                    </span>
+                    <textarea
+                        value={getAtributoTecnico(key)}
+                        name={`ficha-${key}`}
+                        onChange={(e: any) => setAtributoTecnicoValue(key, e.target.value)}
+                        rows={2}
+                        placeholder={field.placeholder || 'Completar característica'}
+                        className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-100 dark:focus:border-sky-700 dark:focus:ring-sky-950/40"
+                    />
+                </label>
+            );
+        }
+        return (
+            <InputPro
+                key={key}
+                autocomplete="off"
+                type={field?.tipo === 'numero' ? 'number' : 'text'}
+                value={getAtributoTecnico(key)}
+                name={`ficha-${key}`}
+                onChange={(e: any) => setAtributoTecnicoValue(key, e.target.value)}
+                isLabel
+                label={`${field.label || key}${field.unidad ? ` (${field.unidad})` : ''}`}
+                placeholder={field.placeholder || 'Completar característica'}
+            />
+        );
+    };
+
+    const groupedTechnicalFields = technicalFields.reduce((acc: Record<string, any[]>, field: any) => {
+        const group = field?.grupo || 'Características';
+        acc[group] = acc[group] || [];
+        acc[group].push(field);
+        return acc;
+    }, {});
+
+    const fichaTecnicaComputo = productSections.fichaComputo ? (
+        <div className="col-span-1 md:col-span-2 rounded-2xl border border-sky-100 dark:border-sky-900/40 bg-sky-50/60 dark:bg-sky-950/10 p-4">
+            <div className="flex items-start gap-3 mb-4">
+                <div className="h-10 w-10 rounded-2xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 flex items-center justify-center">
+                    <Icon icon="solar:document-text-bold-duotone" width={20} />
+                </div>
+                <div>
+                    <h5 className="text-sm font-black text-gray-900 dark:text-white">Ficha técnica del producto</h5>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {((vm as any).technicalTemplate?.nombre || 'Campos técnicos por rubro/categoría')}. Se mostrará en la tienda virtual tipo ficha técnica.
+                    </p>
+                </div>
+            </div>
+            {!esServicio && productSections.seriesGarantia && (
+                <button
+                    type="button"
+                    onClick={() => setAtributoTecnico('controlSeries', getAtributoTecnicoBool('controlSeries') ? '' : 'true')}
+                    className={`w-full mb-4 px-4 py-3 rounded-xl border flex items-center justify-between text-left transition-all ${getAtributoTecnicoBool('controlSeries')
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-800 dark:text-emerald-300'
+                        : 'bg-white/80 border-gray-200 text-gray-600 dark:bg-slate-900/40 dark:border-slate-700 dark:text-slate-300'
+                        }`}
+                >
+                    <span>
+                        <span className="block text-sm font-black">Controlar series y garantía al vender</span>
+                        <span className="block text-xs opacity-80">Exigirá una serie por cada unidad vendida.</span>
+                    </span>
+                    <Icon icon={getAtributoTecnicoBool('controlSeries') ? 'solar:check-circle-bold' : 'solar:shield-check-linear'} width={22} />
+                </button>
+            )}
+            {technicalFields.length > 0 ? (
+                <div className="space-y-4">
+                    {Object.entries(groupedTechnicalFields).map(([group, fields]) => (
+                        <div key={group} className="rounded-2xl border border-white/70 bg-white/70 p-3 dark:border-slate-800 dark:bg-slate-950/20">
+                            <h6 className="mb-3 text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{group}</h6>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {(fields as any[]).map(renderTechnicalInput)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="rounded-xl border border-dashed border-sky-200 bg-white/70 p-4 text-sm text-slate-500 dark:border-sky-900 dark:bg-slate-950/20 dark:text-slate-400">
+                    Aún no hay plantilla técnica para esta categoría. Puedes guardar el producto sin ficha por ahora.
+                </div>
+            )}
+        </div>
+    ) : null;
 
     const fixedCostFields = (
         <div className="col-span-1 md:col-span-2 space-y-3">
@@ -174,7 +348,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label="Precio Venta (S/)" />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label="Costo (S/)" placeholder="0.00" />
                     <InputPro autocomplete="off" value={(formValues as any)?.localizacion || ''} name="localizacion" onChange={handleChange} isLabel label="Ubicación / Localización" placeholder="Ej: Pasillo 3 - Estante B" />
-                    {tieneTienda && fixedCostFields}
+                    {productSections.ecommerce && fixedCostFields}
                 </div>
             </div>
         );
@@ -225,6 +399,49 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 )}
             </div>
 
+            {productSections.fichaComputo && (
+                <div className="col-span-1 md:col-span-2 rounded-2xl border border-violet-100 bg-white p-3 dark:border-violet-900/40 dark:bg-slate-950/20">
+                    <div className="mb-3 flex items-start gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                            <Icon icon="solar:layers-bold-duotone" width={18} />
+                        </div>
+                        <div>
+                            <h5 className="text-sm font-black text-gray-900 dark:text-white">Tipo de ítem</h5>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Los servicios no manejan stock, lotes ni series.</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {[
+                            { id: 'PRODUCTO', title: 'Producto físico', desc: 'Descuenta inventario y usa stock.' },
+                            { id: 'SERVICIO', title: 'Servicio técnico', desc: 'Instalación, formateo, soporte.' },
+                        ].map((option) => {
+                            const active = option.id === 'SERVICIO' ? esServicio : !esServicio;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => setTipoProducto(option.id as 'PRODUCTO' | 'SERVICIO')}
+                                    className={`rounded-xl border px-4 py-3 text-left transition-all ${active
+                                        ? 'border-violet-300 bg-violet-50 text-violet-800 dark:border-violet-700 dark:bg-violet-950/30 dark:text-violet-200'
+                                        : 'border-gray-200 bg-gray-50/70 text-gray-600 hover:bg-white dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'
+                                        }`}
+                                >
+                                    <span className="flex items-center justify-between gap-3">
+                                        <span>
+                                            <span className="block text-sm font-black">{option.title}</span>
+                                            <span className="block text-xs opacity-75">{option.desc}</span>
+                                        </span>
+                                        <Icon icon={active ? 'solar:check-circle-bold' : 'solar:circle-linear'} width={20} />
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {fichaTecnicaComputo}
+
             {isFabricacion && (
                 <>
                     <div className="col-span-1 md:col-span-2 rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 p-3">
@@ -247,7 +464,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </>
             )}
 
-            {tieneGestionLotes && !isFabricacion && (
+            {!esServicio && productSections.lotes && (
                 <div className="col-span-1 md:col-span-2">
                     <button type="button" onClick={() => setShowLotesModal(true)} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1E2435] hover:border-indigo-400 hover:shadow-md transition-all group text-left">
                         <div className="flex items-center gap-3">
@@ -264,7 +481,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            {features.gestionLotes && isFarmacia && (
+            {productSections.farmacia && isFarmacia && (
                 <>
                     <div className="col-span-1 md:col-span-1">
                         <InputPro autocomplete="off" value={(formValues as any)?.principioActivo || ''} name="principioActivo" onChange={handleChange} isLabel label="Principio Activo" placeholder="Ej: Paracetamol" />
@@ -282,7 +499,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             )}
 
             {/* Campos regulatorios para cualquier rubro farmacéutico (farmacia, botica, droguería) */}
-            {esFarmaceutico && (
+            {productSections.farmacia && (
                 <div className="col-span-1 md:col-span-2 border-t dark:border-slate-800 pt-4 mt-2">
                     <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <Icon icon="solar:medical-kit-bold-duotone" width={16} className="text-violet-500" />
@@ -358,7 +575,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            {features.permiteFraccionamiento && (
+            {productSections.fraccionamiento && (
                 <div className="col-span-1 md:col-span-2 border-t dark:border-slate-800 pt-4 mt-4">
                     <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <Icon icon="solar:box-minimalistic-bold-duotone" width={16} />
@@ -372,17 +589,19 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            <div className="col-span-1 md:col-span-2">
-                <BarcodeScannerInput
-                    name="codigoBarras"
-                    label="Código de Barras"
-                    value={(formValues as any)?.codigoBarras || ''}
-                    onChange={handleChange}
-                    placeholder="Escanea o escribe EAN-13 / UPC"
-                />
-            </div>
+            {productSections.codigos && (
+                <div className="col-span-1 md:col-span-2">
+                    <BarcodeScannerInput
+                        name="codigoBarras"
+                        label="Código de Barras"
+                        value={(formValues as any)?.codigoBarras || ''}
+                        onChange={handleChange}
+                        placeholder="Escanea o escribe EAN-13 / UPC"
+                    />
+                </div>
+            )}
 
-            {features.gestionOfertas && (
+            {productSections.ofertas && (
                 <div className="col-span-1 md:col-span-2 border-t dark:border-slate-800 pt-4 mt-4">
                     <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <Icon icon="solar:tag-price-bold-duotone" width={16} />
@@ -504,12 +723,12 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 })()}
             </div>
 
-            <ProductStockManager vm={vm} />
+            {!esServicio && productSections.inventario && <ProductStockManager vm={vm} />}
 
-            {!isRestaurante && tieneTienda && fixedCostFields}
+            {!isRestaurante && productSections.ecommerce && fixedCostFields}
 
             {/* ── Simulador de Rentabilidad Diaria ── */}
-            {!isRestaurante && tieneTienda && (() => {
+            {!isRestaurante && productSections.ecommerce && (() => {
                 const esGravado = !['20', '30'].includes((formValues as any).tipoAfectacionIGV ?? '10');
                 const precio = Number(formValues?.precioUnitario) || 0;
                 const precioNeto = esGravado ? precio / 1.18 : precio;
@@ -672,9 +891,9 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             })()}
 
             {/* Solo mayorista para NO restaurantes (súpers, tiendas, etc) */}
-            {!isRestaurante && <ProductWholesalePricing vm={vm} />}
+            {productSections.mayorista && <ProductWholesalePricing vm={vm} />}
 
-            {tieneGestionProvisiones && (
+            {productSections.provisiones && (
             <div className="col-span-1 md:col-span-2">
                 <InputPro
                     autocomplete="off"
@@ -688,7 +907,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             </div>
             )}
 
-            {tieneGestionProvisiones && (
+            {productSections.provisiones && (
                 <div className="col-span-1 md:col-span-2">
                     <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/10">
                         <div className="col-span-2 flex items-center gap-2 mb-1">
@@ -776,6 +995,83 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                 </div>
                             );
                         })()}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Descripción para la Tienda Online (superpoder ecommerce) ── */}
+            {productSections.descripcionRica && (
+                <div className="col-span-1 md:col-span-2">
+                    <div className={`rounded-2xl border transition-all duration-200 overflow-hidden ${descTiendaOpen ? 'border-rose-200 dark:border-rose-900/40' : 'border-gray-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-900/50 hover:shadow-sm'}`}>
+                        <button
+                            type="button"
+                            onClick={() => setDescTiendaOpen(o => !o)}
+                            className="w-full flex items-center justify-between p-4 text-left group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg transition-colors ${descTiendaOpen ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 group-hover:text-rose-600 dark:group-hover:text-rose-400'}`}>
+                                    <Icon icon="solar:document-text-bold-duotone" width={20} />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Descripción para la Tienda Online</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        {(formValues as any)?.descripcionLarga
+                                            ? 'Rich text activo · Fichas técnicas, specs, detalles'
+                                            : 'Agrega contenido rico · Se muestra en la página de tu producto'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                {(formValues as any)?.descripcionLarga && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400">
+                                        Activo
+                                    </span>
+                                )}
+                                <Icon
+                                    icon="solar:alt-arrow-down-bold"
+                                    width={16}
+                                    className={`text-gray-400 transition-transform duration-200 ${descTiendaOpen ? 'rotate-180' : ''}`}
+                                />
+                            </div>
+                        </button>
+
+                        {descTiendaOpen && (
+                            <div className="px-4 pb-4 border-t border-rose-100 dark:border-rose-900/30 pt-4 bg-rose-50/30 dark:bg-rose-950/5">
+                                <div className="quill-container rounded-xl overflow-hidden">
+                                    <ReactQuill
+                                        theme="snow"
+                                        value={(formValues as any)?.descripcionLarga || ''}
+                                        onChange={(value: string) => setFormValues({ ...formValues, descripcionLarga: value } as any)}
+                                        placeholder="Escribe la descripción completa del producto: especificaciones, garantía, compatibilidad, características..."
+                                        className="bg-white dark:bg-slate-800"
+                                        modules={{
+                                            toolbar: [
+                                                [{ header: [2, 3, false] }],
+                                                ['bold', 'italic', 'underline'],
+                                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                                ['link', 'clean'],
+                                            ],
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between mt-3">
+                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                                        <Icon icon="solar:info-circle-linear" width={13} />
+                                        Visible en la página de detalle del producto en tu tienda virtual.
+                                    </p>
+                                    {(formValues as any)?.descripcionLarga && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormValues({ ...formValues, descripcionLarga: '' } as any)}
+                                            className="text-[11px] text-red-400 hover:text-red-600 transition-colors flex items-center gap-1"
+                                        >
+                                            <Icon icon="solar:trash-bin-minimalistic-linear" width={12} />
+                                            Limpiar
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

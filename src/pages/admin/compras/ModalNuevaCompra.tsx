@@ -400,8 +400,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const subtotal = incluyeIgv
         ? parseFloat((totalConIgvBruto / 1.18).toFixed(2))
         : totalConIgvBruto;
-    const igv = parseFloat((subtotal * 0.18).toFixed(2));
-    const total = parseFloat((subtotal + igv).toFixed(2));
+    const total = incluyeIgv
+        ? parseFloat(totalConIgvBruto.toFixed(2))
+        : parseFloat((subtotal * 1.18).toFixed(2));
+    const igv = incluyeIgv
+        ? parseFloat((total - subtotal).toFixed(2))
+        : parseFloat((subtotal * 0.18).toFixed(2));
 
     const guardarCompra = async () => {
         let proveedorId = Number(header.proveedorId || 0);

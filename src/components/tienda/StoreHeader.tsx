@@ -49,6 +49,8 @@ export default function StoreHeader({
     useEscapeKey(() => setIsAdminOpen(false), isAdminOpen);
     useEscapeKey(() => setIsFavoritosOpen(false), isFavoritosOpen);
 
+    const cp = tienda?.diseno?.colorPrimario || '#FF9500';
+
     const handleSearchTrigger = () => { if (onSearch) onSearch(); };
 
     return (
@@ -66,7 +68,7 @@ export default function StoreHeader({
                     {tienda.logo ? (
                         <img src={tienda.logo} alt={tienda.nombreComercial} className="w-9 h-9 object-contain" />
                     ) : (
-                        <div className="w-9 h-9 rounded-full bg-[#FF9500] flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: cp }}>
                             <Icon icon="solar:shop-bold" className="text-white" width={20} />
                         </div>
                     )}
@@ -78,7 +80,8 @@ export default function StoreHeader({
                 {/* Deals Pill */}
                 <button
                     onClick={() => document.getElementById('productos-populares')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="hidden md:flex items-center gap-1.5 bg-[#FF9500] text-white text-sm font-bold px-4 py-2 rounded-full flex-shrink-0 hover:bg-[#E08500] transition-colors"
+                    className="hidden md:flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2 rounded-full flex-shrink-0 transition-colors"
+                    style={{ background: cp }}
                 >
                     <Icon icon="solar:tag-bold" width={16} />
                     Deals
@@ -86,7 +89,7 @@ export default function StoreHeader({
 
                 {/* Search Bar */}
                 <div className="flex-1 relative">
-                    <div className="flex items-center focus:outline-none gap-2 bg-[#F5F5F5] rounded-full px-4 border border-transparent focus-within:border-[#FF9500]/30 transition-colors">
+                    <div className="flex items-center focus:outline-none gap-2 bg-[#F5F5F5] rounded-full px-4 border border-transparent transition-colors">
                         <Icon icon="solar:magnifer-linear" className="text-[#999] flex-shrink-0" width={18} />
                         <input
                             type="text"
@@ -116,7 +119,7 @@ export default function StoreHeader({
                                             <div className="w-10 h-10 rounded-xl bg-[#FAF6F1] flex items-center justify-center flex-shrink-0">
                                                 <img src={item.imagenUrl || ''} className="w-full h-full object-contain rounded-xl p-1" alt="" />
                                             </div>
-                                            <span className="text-xs font-semibold text-[#1A1A1A] truncate group-hover:text-[#FF9500] transition-colors">
+                                            <span className="text-xs font-semibold text-[#1A1A1A] truncate transition-colors">
                                                 {item.descripcion}
                                             </span>
                                         </a>
@@ -132,12 +135,13 @@ export default function StoreHeader({
                     {/* Favorites */}
                     <button
                         onClick={() => setIsFavoritosOpen(o => !o)}
-                        className="relative p-2 text-[#FF9500] hover:bg-[#FFF3E0] rounded-full transition-colors"
+                        className="relative p-2 hover:bg-black/5 rounded-full transition-colors"
+                        style={{ color: cp }}
                         title="Mis favoritos"
                     >
                         <Icon icon={favoritos.length > 0 ? 'solar:heart-bold' : 'solar:heart-linear'} width={24} />
                         {favoritos.length > 0 && (
-                            <span className="absolute top-0 right-0 bg-[#FF9500] text-white text-[9px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white">
+                            <span className="absolute top-0 right-0 text-white text-[9px] font-black w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white" style={{ background: cp }}>
                                 {favoritos.length > 9 ? '9+' : favoritos.length}
                             </span>
                         )}
@@ -147,11 +151,12 @@ export default function StoreHeader({
                     {!hideCart && (
                         <button
                             onClick={onToggleCart}
-                            className="relative p-2 text-[#FF9500] hover:bg-[#FFF3E0] rounded-full transition-colors"
+                            className="relative p-2 hover:bg-black/5 rounded-full transition-colors"
+                            style={{ color: cp }}
                         >
                             <Icon icon="solar:cart-large-2-linear" width={24} />
                             {carritoCount > 0 && (
-                                <span className="absolute top-0 right-0 bg-[#FF9500] text-white text-[9px] font-black w-4.5 h-4.5 w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white">
+                                <span className="absolute top-0 right-0 text-white text-[9px] font-black w-4.5 h-4.5 w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white" style={{ background: cp }}>
                                     {carritoCount > 9 ? '9+' : carritoCount}
                                 </span>
                             )}
@@ -161,7 +166,8 @@ export default function StoreHeader({
                     {/* Track Order */}
                     <button
                         onClick={() => navigate(`/tienda/${slug}/seguimiento`)}
-                        className="p-2 text-[#FF9500] hover:bg-[#FFF3E0] rounded-full transition-colors hidden md:block"
+                        className="p-2 hover:bg-black/5 rounded-full transition-colors hidden md:block"
+                        style={{ color: cp }}
                         title="Rastrear pedido"
                     >
                         <Icon icon="solar:delivery-linear" width={24} />
@@ -170,7 +176,7 @@ export default function StoreHeader({
                     {/* Admin */}
                     {isLoggedIn && (
                         <div className="relative" onClick={() => setIsAdminOpen(!isAdminOpen)} ref={adminMenuRef}>
-                            <button className="p-2 text-[#FF9500] hover:bg-[#FFF3E0] rounded-full transition-colors">
+                            <button className="p-2 hover:bg-black/5 rounded-full transition-colors" style={{ color: cp }}>
                                 <Icon icon="solar:user-circle-linear" width={24} />
                             </button>
                             {isAdminOpen && (
@@ -183,7 +189,7 @@ export default function StoreHeader({
                                     </div>
                                     <ul className="py-1">
                                         {[
-                                            { icon: 'solar:bag-check-bold', label: 'Ver Pedidos', color: '#FF9500', path: '/administrador/tienda/pedidos' },
+                                            { icon: 'solar:bag-check-bold', label: 'Ver Pedidos', color: cp, path: '/administrador/tienda/pedidos' },
                                             { icon: 'solar:shop-bold', label: 'Config. Tienda', color: '#22C55E', path: '/administrador/tienda/configuracion' },
                                             { icon: 'solar:box-bold', label: 'Productos', color: '#7C3AED', path: '/administrador/kardex/productos' },
                                             { icon: 'solar:bill-list-bold', label: 'Facturación', color: '#2563EB', path: '/administrador' },
@@ -255,7 +261,7 @@ export default function StoreHeader({
                                             onClick={() => { onSelectCategory(''); setIsCatDropdownOpen(false); }}
                                             className="w-full text-left px-4 py-2.5 hover:bg-[#FAF6F1] flex items-center gap-2.5 text-sm text-[#1A1A1A] font-medium"
                                         >
-                                            <Icon icon="solar:widget-bold" width={16} className="text-[#FF9500]" />
+                                            <Icon icon="solar:widget-bold" width={16} style={{ color: cp }} />
                                             Todos los productos
                                         </button>
                                     </li>
@@ -267,7 +273,7 @@ export default function StoreHeader({
                                                     onClick={() => { onSelectCategory(name); setIsCatDropdownOpen(false); }}
                                                     className="w-full text-left px-4 py-2.5 hover:bg-[#FAF6F1] flex items-center gap-2.5 text-sm text-[#1A1A1A] font-medium"
                                                 >
-                                                    <Icon icon="solar:tag-bold" width={16} className="text-[#FF9500]" />
+                                                    <Icon icon="solar:tag-bold" width={16} style={{ color: cp }} />
                                                     {name}
                                                 </button>
                                             </li>
@@ -289,10 +295,10 @@ export default function StoreHeader({
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                         <div className="flex items-center gap-2">
-                            <Icon icon="solar:heart-bold" width={20} className="text-[#FF9500]" />
+                            <Icon icon="solar:heart-bold" width={20} style={{ color: cp }} />
                             <span className="font-bold text-[#1A1A1A]">Mis Favoritos</span>
                             {favoritos.length > 0 && (
-                                <span className="bg-[#FF9500] text-white text-[10px] font-black px-2 py-0.5 rounded-full">{favoritos.length}</span>
+                                <span className="text-white text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: cp }}>{favoritos.length}</span>
                             )}
                         </div>
                         <button onClick={() => setIsFavoritosOpen(false)} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
@@ -327,7 +333,7 @@ export default function StoreHeader({
                                             onClick={() => { navigate(`/tienda/${slug}/producto/${item.id}`); setIsFavoritosOpen(false); }}
                                         >
                                             <p className="text-xs font-semibold text-[#1A1A1A] leading-tight line-clamp-2">{item.descripcion}</p>
-                                            <p className="text-sm font-black text-[#FF9500] mt-1">S/ {Number(item.precioUnitario).toFixed(2)}</p>
+                                            <p className="text-sm font-black mt-1" style={{ color: cp }}>S/ {Number(item.precioUnitario).toFixed(2)}</p>
                                         </div>
                                         <button
                                             onClick={() => removeFavorito(item.id, slug)}

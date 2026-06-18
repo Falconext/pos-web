@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useState } from 'react';
+import ProductCardActions from '@/components/tienda/ProductCardActions';
 
 interface ProductCardProps {
     producto: any;
@@ -9,7 +10,7 @@ interface ProductCardProps {
     onClick?: () => void;
 }
 
-export default function ProductCardEmox({ producto, diseno, onAddToCart, onClick }: ProductCardProps) {
+export default function ProductCardEmox({ producto, slug, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     return (
@@ -19,13 +20,10 @@ export default function ProductCardEmox({ producto, diseno, onAddToCart, onClick
         >
             {/* Image Container */}
             <div className="relative w-full aspect-square bg-[#F4F6F8] rounded-2xl mb-4 overflow-hidden flex items-center justify-center p-4">
-                {/* Wishlist Button */}
-                <button
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shadow-sm z-10"
-                    onClick={(e) => { e.stopPropagation(); /* Add to wishlist logic */ }}
-                >
-                    <Icon icon="solar:heart-linear" className="w-5 h-5" />
-                </button>
+                {/* Action buttons */}
+                <div className="absolute top-3 right-3 z-10">
+                  <ProductCardActions producto={producto} slug={slug} cp={diseno?.colorPrimario || '#000'} />
+                </div>
 
                 {producto.imagenUrl ? (
                     <img

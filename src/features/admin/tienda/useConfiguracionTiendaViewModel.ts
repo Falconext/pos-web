@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
+import { resolveTemplate, SLIDER_MAX_COUNT, SLIDER_BANNER_SLOTS } from '@/components/tienda/resolveTemplate';
 
 const defaultForm = {
     slugTienda: '', descripcionTienda: '', whatsappTienda: '',
@@ -14,6 +15,13 @@ const defaultForm = {
 
 export const useConfiguracionTiendaViewModel = (): any => {
     const [config, setConfig] = useState<any>(null);
+
+    // Derived from config: banner slots for the active plantilla
+    const templateCfg = resolveTemplate(config?.diseno?.plantillaId);
+    // bannerIsSlider: user preference in diseno overrides template default
+    const bannerIsSlider: boolean = config?.diseno?.bannerIsSlider ?? templateCfg.bannerIsSlider;
+    const bannerSlots = bannerIsSlider ? SLIDER_BANNER_SLOTS : templateCfg.bannerSlots;
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({ ...defaultForm });
@@ -222,15 +230,32 @@ export const useConfiguracionTiendaViewModel = (): any => {
         catch { } finally { setLoadingBanners(false); }
     };
 
+    const canUploadBanner = bannerIsSlider ? banners.length < SLIDER_MAX_COUNT : banners.length < 6;
+
+    const toggleBannerIsSlider = async (value: boolean) => {
+        try {
+            await apiClient.patch('/tienda/diseno', { bannerIsSlider: value });
+            setConfig((prev: any) => ({
+                ...prev,
+                diseno: { ...(prev?.diseno || {}), bannerIsSlider: value },
+            }));
+            alert(value ? 'Modo carrusel activado' : 'Modo clásico activado', 'success');
+        } catch (e: any) {
+            alert(e.response?.data?.message || 'Error al guardar', 'error');
+        }
+    };
+
     const subirBanner = async (file: File) => {
+        if (!canUploadBanner) { alert(`Límite alcanzado: máximo ${bannerIsSlider ? SLIDER_MAX_COUNT : 6} banners para esta plantilla`, 'warning'); return; }
         if (file.size > 2.5 * 1024 * 1024) { alert('El archivo es demasiado grande. Máximo 2.5MB', 'error'); return; }
         const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
         if (!allowed.includes(file.type)) { alert('Tipo de archivo no permitido. Solo JPG, PNG o WebP', 'error'); return; }
         setUploadingBanner(true);
         try {
+            const autoOrden = bannerIsSlider ? banners.length : banners.length;
             const fd = new FormData(); fd.append('file', file); fd.append('titulo', newBannerTitle || '');
             fd.append('subtitulo', newBannerSubtitle || ''); fd.append('linkUrl', newBannerLink || '');
-            fd.append('orden', String(newBannerOrden !== '' ? newBannerOrden : banners.length));
+            fd.append('orden', String(newBannerOrden !== '' ? newBannerOrden : autoOrden));
             await apiClient.post('/banners/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert('Banner subido exitosamente', 'success');
             cargarBanners(); setNewBannerTitle(''); setNewBannerSubtitle(''); setNewBannerLink(''); setNewBannerOrden(''); setProductSearch(''); setProductResults([]);
@@ -282,6 +307,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
         config, loading, saving, formData, handleChange, handleSubmit, abrirTienda, slugify,
         logoFile, setLogoFile, logoUploading, previewLogoUrl, subirLogo, eliminarLogo,
         yapeFile, setYapeFile, plinFile, setPlinFile, yapeUploading, plinUploading, previewYapeUrl, previewPlinUrl, subirQr, eliminarQr, showConfirmDelete, setShowConfirmDelete, confirmarEliminarQr, deleteQrType,
+        bannerSlots, bannerIsSlider, canUploadBanner, toggleBannerIsSlider,
         banners, loadingBanners, uploadingBanner, newBannerTitle, setNewBannerTitle, newBannerSubtitle, setNewBannerSubtitle, newBannerLink, setNewBannerLink, newBannerOrden, setNewBannerOrden,
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,
         editingBanner, setEditingBanner, editBannerTitle, setEditBannerTitle, editBannerSubtitle, setEditBannerSubtitle, editBannerLink, setEditBannerLink, editBannerOrden, setEditBannerOrden,

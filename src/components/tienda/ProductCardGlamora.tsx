@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useState } from 'react';
+import ProductCardActions from '@/components/tienda/ProductCardActions';
 
 interface ProductCardProps {
     producto: any;
@@ -35,6 +36,10 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
             >
                 {/* Image Area - Centered & Clean */}
                 <div className="p-6 pb-4 flex items-center justify-center relative w-full">
+                    {/* Action buttons */}
+                    <div className="absolute top-2 right-2 z-10" onClick={e => e.stopPropagation()}>
+                        <ProductCardActions producto={producto} slug={slug} cp={diseno?.colorPrimario || '#1E1B4B'} />
+                    </div>
                     {producto.imagenUrl ? (
                         <img
                             src={producto.imagenUrl}

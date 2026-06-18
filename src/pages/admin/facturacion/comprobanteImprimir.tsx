@@ -91,7 +91,7 @@ const ComprobantePrintPage = ({
         >
             <div
                 ref={componentRef || localComponentRef}
-                className={`bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'px-3 pt-3 pb-2' : 'px-5 pt-5 pb-10'}`}
+                className={`bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'px-4 pt-3 pb-2' : 'px-5 pt-5 pb-10'}`}
                 style={{
                     width: size === 'TICKET' ? '80mm' : (size === 'A5' ? '148mm' : '210mm'),
                     margin: '0 auto',
@@ -153,15 +153,15 @@ const ComprobantePrintPage = ({
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div className="">
                             <div className="flex text-center">
-                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>CANT.</span>
-                                <span className={`w-3/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>DESCRIPCION</span>
-                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>P.U.</span>
-                                <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>IMP.</span>
+                                <span className={`basis-[16%] shrink-0 text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>CANT.</span>
+                                <span className={`basis-[44%] shrink-0 text-left ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>DESCRIPCION</span>
+                                <span className={`basis-[20%] shrink-0 text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>P.U.</span>
+                                <span className={`basis-[20%] shrink-0 text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>IMP.</span>
                             </div>
                             {productsInvoice?.map((item: any, i: any) => (
                                 <div key={i} className="flex">
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>{item?.cantidad || 0}</span>
-                                    <span className={`w-3/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>
+                                    <span className={`basis-[16%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{item?.cantidad || 0}</span>
+                                    <span className={`basis-[44%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>
                                         {item?.descripcion?.toUpperCase() || ''}
                                         {item?.lotes && item.lotes.length > 0 && (
                                             <div className="flex flex-col mt-0.5">
@@ -185,8 +185,8 @@ const ComprobantePrintPage = ({
                                             </div>
                                         )}
                                     </span>
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>{Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
-                                    <span className={`w-1/5 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-right`}>{Number(item?.total || (Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0) * item?.cantidad)).toFixed(2)}</span>
+                                    <span className={`basis-[20%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0).toFixed(2)}</span>
+                                    <span className={`basis-[20%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{Number(item?.total || (Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || item?.precioUnitario || 0) * item?.cantidad)).toFixed(2)}</span>
                                 </div>
                             ))}
                         </div>

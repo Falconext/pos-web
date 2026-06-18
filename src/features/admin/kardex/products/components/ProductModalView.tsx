@@ -28,7 +28,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                 title={vm.isEdit ? `Editar ${vm.labels.titulo}` : `Nuevo ${vm.labels.titulo}`}
                 icon="solar:box-minimalistic-bold-duotone"
             >
-                {!vm.isFabricacion && (
+                {vm.productSections.codigos && !vm.isFabricacion && (
                     <div className="px-4 pt-4 pb-1">
                         <div className="flex items-center gap-2 p-2.5 rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/60 dark:bg-violet-950/20">
                             <Icon icon="solar:barcode-bold-duotone" className="text-violet-500 flex-shrink-0" width={20} />

@@ -20,6 +20,7 @@ import ModalRegistrarPago from '@/pages/admin/facturacion/ModalRegistrarPago';
 import ModalHistorialPagos from '@/pages/admin/facturacion/ModalHistorialPagos';
 import ModalDetalleCuenta from '@/pages/admin/facturacion/ModalDetalleCuenta';
 import TableActionMenu from '@/components/TableActionMenu';
+import ModalConfirm from '@/components/ModalConfirm';
 import { useUsersStore } from '@/zustand/users';
 
 // ─── Config badges ────────────────────────────────────────────────────────────
@@ -336,6 +337,7 @@ export default function PanelVentasView() {
 
     const [detalleId, setDetalleId] = useState<number | null>(null);
     const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
+    const [confirmDespachoItem, setConfirmDespachoItem] = useState<VentaPanelItem | null>(null);
     const [trazabilidadItem, setTrazabilidadItem] = useState<VentaPanelItem | null>(null);
     const [waItem, setWaItem] = useState<VentaPanelItem | null>(null);
     const [pagoItem, setPagoItem] = useState<VentaPanelItem | null>(null);
@@ -822,6 +824,19 @@ export default function PanelVentasView() {
                     onSuccess={() => { setEditDespachoId(null); vm.cargar(); }}
                 />
             )}
+            <ModalConfirm
+                isOpenModal={confirmDespachoItem !== null}
+                setIsOpenModal={(v) => { if (!v) setConfirmDespachoItem(null); }}
+                title="Este pedido ya fue entregado"
+                information={`"${confirmDespachoItem?.referencia ?? ''}" tiene estado Entregado. Editar el despacho podría modificar información de un pedido ya cerrado. ¿Deseas continuar de todos modos?`}
+                confirmText="Sí, editar despacho"
+                confirmSubmit={() => {
+                    if (confirmDespachoItem?.comprobanteId) {
+                        setEditDespachoId(confirmDespachoItem.comprobanteId);
+                    }
+                    setConfirmDespachoItem(null);
+                }}
+            />
             {trazabilidadItem?.comprobanteId && (
                 <ModalTrazabilidad
                     comprobanteId={trazabilidadItem.comprobanteId}
@@ -908,11 +923,28 @@ export default function PanelVentasView() {
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-0.5" />
                                     <button type="button"
-                                        onClick={() => { setEditDespachoId(it.comprobanteId); handleCloseMenu(); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                        onClick={() => {
+                                            handleCloseMenu();
+                                            if (it.estadoDespacho === 'ENTREGADO') {
+                                                setConfirmDespachoItem(it);
+                                            } else {
+                                                setEditDespachoId(it.comprobanteId);
+                                            }
+                                        }}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${
+                                            it.estadoDespacho === 'ENTREGADO'
+                                                ? 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                                        }`}
                                     >
-                                        <Icon icon="solar:delivery-bold-duotone" width={15} />
-                                        <span>Editar despacho</span>
+                                        <Icon
+                                            icon={it.estadoDespacho === 'ENTREGADO' ? 'solar:lock-unlocked-bold-duotone' : 'solar:delivery-bold-duotone'}
+                                            width={15}
+                                        />
+                                        <span>
+                                            Editar despacho
+                                            {it.estadoDespacho === 'ENTREGADO' && <span className="ml-1 text-[10px] opacity-70">(entregado)</span>}
+                                        </span>
                                     </button>
                                     <button type="button"
                                         onClick={() => { setTrazabilidadItem(it); handleCloseMenu(); }}

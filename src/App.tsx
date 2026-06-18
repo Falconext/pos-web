@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Alert from './components/Alert'
 import LoginPage from './pages/Login'
+import StorePreviewPage from './pages/StorePreviewPage'
 // import DashboardPage from './pages/Dashboard' 
 import { ProtectedRoute } from './app/ProtectedRoute'
 import { RoleRoute } from './app/RoleRoute'
@@ -26,12 +27,14 @@ import KardexProductos from './pages/admin/kardex/Productos'
 import KardexTraslados from './pages/admin/kardex/Traslados'
 import Lotes from './pages/admin/kardex/Lotes'
 import LibroControl from './pages/admin/kardex/LibroControl'
+import SeriesGarantias from './pages/admin/kardex/SeriesGarantias'
 import UsuariosIndex from './pages/admin/usuarios/Index'
 import VendedoresView from './features/admin/users/VendedoresView'
 import SedesIndex from './pages/admin/sedes/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
+import ReviewsTienda from './pages/admin/tienda/Reviews'
 import PanelVentasView from './pages/admin/despacho/PanelVentasView'
 import DespachoConfigPage from './pages/admin/despacho/DespachoConfigPage'
 import RepartidoresView from './pages/admin/repartidores/RepartidoresView'
@@ -39,6 +42,7 @@ import CombosTienda from './pages/admin/tienda/Combos'
 import ModificadoresTienda from './pages/admin/tienda/Modificadores'
 import TiendaPublica from './pages/tienda/[slug]'
 import ProductoDetalle from './pages/tienda/ProductoDetalle'
+import ProductoDetalleRouter from './pages/tienda/ProductoDetalleRouter'
 import Checkout from './pages/tienda/Checkout'
 import Catalogo from './pages/tienda/Catalogo'
 import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
@@ -61,6 +65,8 @@ import AdminResellers from './pages/admin/sistema/Resellers'
 import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
 import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
 import SistemaFinanzas from './pages/admin/sistema/SistemaFinanzas'
+import SistemaRubros from './pages/admin/sistema/SistemaRubros'
+import DisenoRubroPage from './pages/admin/sistema/DisenoRubroPage'
 import ResellerLayout from './layouts/ResellerLayout'
 import ResellerDashboard from './pages/reseller/Dashboard'
 import ResellerClientes from './pages/reseller/Clientes'
@@ -145,6 +151,7 @@ function App() {
           <Route path="kardex/traslados" element={<KardexTraslados />} />
           <Route path="kardex/lotes" element={<Lotes />} />
           <Route path="kardex/libro-control" element={<LibroControl />} />
+          <Route path="kardex/series-garantias" element={<SeriesGarantias />} />
           <Route path="reservas" element={<ReservasPage />} />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
@@ -173,6 +180,7 @@ function App() {
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
+          <Route path="tienda/reviews" element={<ReviewsTienda />} />
           <Route path="ventas" element={<PanelVentasView />} />
           <Route path="despacho/config" element={<DespachoConfigPage />} />
           <Route path="repartidores" element={<RepartidoresView />} />
@@ -180,8 +188,24 @@ function App() {
           <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
           {/* Rutas de ADMIN_SISTEMA */}
 
+          <Route
+            path="sistema/rubros"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <SistemaRubros />
+              </RoleRoute>
+            }
+          />
           <Route path="sistema/catalogo-global" element={<CatalogoGlobal />} />
           <Route path="sistema/planes" element={<Planes />} />
+          <Route
+            path="sistema/disenos-tienda"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <DisenoRubroPage />
+              </RoleRoute>
+            }
+          />
           <Route path="sistema/modulos" element={<ModulosPage />} />
           <Route
             path="sistema/resellers"
@@ -235,11 +259,12 @@ function App() {
         </Route>
         {/* Rutas de tienda */}
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}
+        <Route path="/diseno-preview" element={<StorePreviewPage />} />
         <Route path="/tienda/home" element={<TiendaHome />} />
         {/* Rutas públicas de tienda para clientes finales */}
         <Route path="/tienda/:slug" element={<TiendaPublica />} />
         <Route path="/tienda/:slug/catalogo" element={<Catalogo />} />
-        <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalle />} />
+        <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalleRouter />} />
         <Route path="/tienda/:slug/checkout" element={<Checkout />} />
         <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
         {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}

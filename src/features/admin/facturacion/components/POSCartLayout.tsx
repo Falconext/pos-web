@@ -3,6 +3,7 @@ import { useState } from "react";
 
 const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
     const [localValue, setLocalValue] = useState<string>(String(item.cantidad));
+    const esServicio = String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
     const commit = (raw: string) => {
         const parsed = parseFloat(raw);
@@ -10,7 +11,7 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
             setLocalValue(String(item.cantidad));
             return;
         }
-        if (item.stock !== undefined && item.stock < parsed) {
+        if (!esServicio && item.stock !== undefined && item.stock < parsed) {
             setLocalValue(String(item.cantidad));
             return;
         }
@@ -43,6 +44,12 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
 
 export const POSCartLayout = ({ vm }: { vm: any }) => {
     const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+    const requiereSerie = (item: any) => {
+        const attrs = item?.atributosTecnicos || {};
+        const control = String(attrs.controlSeries ?? attrs.requiereSerie ?? '').toLowerCase();
+        return attrs.controlSeries === true || attrs.requiereSerie === true || ['true', 'si', 'sí', '1'].includes(control);
+    };
+    const esServicio = (item: any) => String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
@@ -97,7 +104,21 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                     {vm.isFarmaciaRetail && item.datosReceta && !item.pendienteReceta && (
                                         <span className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">✅ Receta OK</span>
                                     )}
+                                    {requiereSerie(item) && (
+                                        <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">Serie obligatoria</span>
+                                    )}
+                                    {esServicio(item) && (
+                                        <span className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">Servicio</span>
+                                    )}
                                 </div>
+                                {requiereSerie(item) && (
+                                    <textarea
+                                        value={item.numerosSerie || ''}
+                                        onChange={(e) => vm.updateProductInvoice(index, { numerosSerie: e.target.value })}
+                                        placeholder={`Series (${Number(item.cantidad || 0)}): una por línea o separadas por coma`}
+                                        className="mt-2 w-full min-h-[42px] rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/10 dark:border-emerald-900/50 px-3 py-2 text-xs font-semibold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-300"
+                                    />
+                                )}
                             </div>
                             {/* Mobile Only Delete Button */}
                             <button onClick={() => vm.handleDeleteProduct(item)} className="md:hidden text-gray-400 dark:text-gray-500 hover:text-red-500 p-1 -mt-1 -mr-1">
@@ -127,7 +148,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                 <button
                                     onClick={() => {
                                         const newQty = Math.round((Number(item.cantidad) + 1) * 1000) / 1000;
-                                        if (item.stock !== undefined && item.stock < newQty) return;
+                                        if (!esServicio(item) && item.stock !== undefined && item.stock < newQty) return;
                                         vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
                                     }}
                                     className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"

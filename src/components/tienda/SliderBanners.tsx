@@ -11,6 +11,7 @@ export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
     const navigate = useNavigate();
     const { slug } = useParams();
     const [imgLoaded, setImgLoaded] = useState<Record<string, boolean>>({});
+    const cp = diseno?.colorPrimario || '#FF9500';
 
     const handleBannerClick = (url?: string) => {
         if (!url) return;
@@ -68,7 +69,8 @@ export default function SliderBanners({ tienda, diseno }: SliderBannersProps) {
 
                 {/* ── Main Hero Banner ── */}
                 <div
-                    className="lg:col-span-9 relative rounded-3xl overflow-hidden cursor-pointer group h-[340px] lg:h-full bg-[#FF9500]"
+                    className="lg:col-span-9 relative rounded-3xl overflow-hidden cursor-pointer group h-[340px] lg:h-full"
+                    style={{ background: cp }}
                     onClick={() => handleBannerClick(mainBanner.linkUrl)}
                 >
                     {!isSoloImagen && (

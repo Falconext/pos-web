@@ -7,6 +7,7 @@ interface FooterProps {
 
 export default function Footer({ tienda, diseno }: FooterProps) {
     const year = new Date().getFullYear();
+    const cp = diseno?.colorPrimario || '#FF9500';
 
     const socialLinks = [
         { key: 'instagramUrl', icon: 'mdi:instagram' },
@@ -31,7 +32,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                                 <img src={tienda.logo} alt={tienda.nombreComercial} className="h-10 w-auto object-contain" />
                             ) : (
                                 <>
-                                    <div className="w-9 h-9 rounded-full bg-[#FF9500] flex items-center justify-center">
+                                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: cp }}>
                                         <Icon icon="solar:shop-bold" className="text-white" width={18} />
                                     </div>
                                     <span className="text-xl font-black text-[#1A1A1A]">
@@ -50,9 +51,10 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                                         href={tienda[key]}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="w-9 h-9 rounded-full bg-[#FFF3E0] flex items-center justify-center hover:bg-[#FF9500] transition-colors group"
+                                        className="w-9 h-9 rounded-full flex items-center justify-center transition-colors group"
+                                        style={{ background: `${cp}18` }}
                                     >
-                                        <Icon icon={icon} width={18} className="text-[#FF9500] group-hover:text-white transition-colors" />
+                                        <Icon icon={icon} width={18} style={{ color: cp }} />
                                     </a>
                                 ) : null
                             )}
@@ -60,8 +62,8 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                             {!socialLinks.some(s => tienda[s.key]) && (
                                 <>
                                     {['mdi:instagram', 'ic:baseline-facebook', 'mdi:youtube'].map(icon => (
-                                        <div key={icon} className="w-9 h-9 rounded-full bg-[#FFF3E0] flex items-center justify-center">
-                                            <Icon icon={icon} width={18} className="text-[#FF9500]" />
+                                        <div key={icon} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: `${cp}18` }}>
+                                            <Icon icon={icon} width={18} style={{ color: cp }} />
                                         </div>
                                     ))}
                                 </>
@@ -75,7 +77,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                         <ul className="space-y-3">
                             {['Sobre Nosotros', 'Contacto', 'Delivery y Pagos'].map(link => (
                                 <li key={link}>
-                                    <a href="#" className="text-sm text-[#333] hover:text-[#FF9500] transition-colors">{link}</a>
+                                    <a href="#" className="text-sm text-[#333] transition-colors">{link}</a>
                                 </li>
                             ))}
                         </ul>
@@ -87,7 +89,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                         <ul className="space-y-3">
                             {['Devoluciones', 'Preguntas Frecuentes', 'Privacidad', 'Términos'].map(link => (
                                 <li key={link}>
-                                    <a href="#" className="text-sm text-[#333] hover:text-[#FF9500] transition-colors">{link}</a>
+                                    <a href="#" className="text-sm text-[#333] transition-colors">{link}</a>
                                 </li>
                             ))}
                         </ul>
@@ -99,7 +101,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                         <ul className="space-y-3">
                             {['Nuevos Ingresos', 'Más Vendidos', 'Ofertas', 'Kits & Combos', 'Por Mayor'].map(link => (
                                 <li key={link}>
-                                    <a href="#" className="text-sm text-[#333] hover:text-[#FF9500] transition-colors">{link}</a>
+                                    <a href="#" className="text-sm text-[#333] transition-colors">{link}</a>
                                 </li>
                             ))}
                         </ul>
@@ -115,7 +117,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                                         href={`https://wa.me/${tienda.whatsappTienda.replace(/\D/g, '')}`}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="text-sm text-[#333] hover:text-[#FF9500] transition-colors"
+                                        className="text-sm text-[#333] transition-colors"
                                     >
                                         {tienda.whatsappTienda}
                                     </a>
@@ -123,7 +125,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                             )}
                             {tienda.correo || tienda.email ? (
                                 <li>
-                                    <a href={`mailto:${tienda.correo || tienda.email}`} className="text-sm text-[#333] hover:text-[#FF9500] transition-colors break-all">
+                                    <a href={`mailto:${tienda.correo || tienda.email}`} className="text-sm text-[#333] transition-colors break-all">
                                         {tienda.correo || tienda.email}
                                     </a>
                                 </li>
@@ -135,7 +137,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                             )}
                             {tienda.horarioAtencion && (
                                 <li className="flex items-start gap-2 pt-1">
-                                    <Icon icon="mdi:clock-outline" width={15} className="text-[#FF9500] mt-0.5 flex-shrink-0" />
+                                    <Icon icon="mdi:clock-outline" width={15} className="mt-0.5 flex-shrink-0" style={{ color: cp }} />
                                     <span className="text-sm text-[#333] whitespace-pre-line">{tienda.horarioAtencion}</span>
                                 </li>
                             )}
@@ -149,7 +151,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                         &copy; {tienda.nombreComercial || 'Mi Tienda'} {year} — porque tus clientes merecen lo mejor 🐾
                     </p>
                     <p className="text-xs text-[#BBB]">
-                        Powered by <span className="font-bold text-[#FF9500]">Falconext</span>
+                        Powered by <span className="font-bold" style={{ color: cp }}>Falconext</span>
                     </p>
                 </div>
             </div>

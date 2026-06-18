@@ -7,7 +7,7 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const { isRestaurante, isFarmacia, formValues, isEdit, tipoAjusteStock, cantidadAjuste, stockOriginal } = vm;
 
-    if (isRestaurante || isFarmacia || !(Number(formValues?.precioUnitario || 0) > 0 || Number(formValues?.costoUnitario || 0) > 0 || Number(formValues?.stock || 0) > 0)) {
+    if (isRestaurante || isFarmacia) {
         return null;
     }
 
@@ -38,7 +38,7 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
     const gananciaPositiva = ganancia > 0;
 
     return (
-        <div className="hidden md:block col-span-2 mt-4">
+        <div className="block col-span-2 mt-4">
             <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 dark:from-blue-950/20 dark:to-indigo-950/10 p-5 space-y-4">
 
                 {/* Header */}

@@ -9,7 +9,10 @@ export interface RubroFeatures {
     usaCodigoBarras: boolean;        // Bodega/Supermarket
     permiteFraccionamiento: boolean; // Farmacia
     gestionOfertas: boolean;         // Supermarket
+    fichaTecnicaComputo: boolean;    // Accesorios/repuestos de cómputo
+    controlSeriesGarantia: boolean;  // Cómputo/electrónica
     controlStock: boolean;           // Todos (siempre true)
+    descripcionRica: boolean;        // Cualquier rubro con tienda virtual
 }
 
 /**
@@ -55,19 +58,98 @@ export function esRubroFabricacion(
     );
 }
 
+export function esRubroComputo(nombreRubro: string | null | undefined): boolean {
+    if (!nombreRubro) return false;
+    const nombre = nombreRubro.toLowerCase();
+    return (
+        nombre.includes('computo') ||
+        nombre.includes('cómputo') ||
+        nombre.includes('computadora') ||
+        nombre.includes('computadoras') ||
+        nombre.includes('informatica') ||
+        nombre.includes('informática') ||
+        nombre.includes('tecnologia') ||
+        nombre.includes('tecnología') ||
+        nombre.includes('repuesto') ||
+        nombre.includes('accesorio') ||
+        nombre.includes('hardware') ||
+        nombre.includes('laptop') ||
+        nombre.includes('pc ')
+    );
+}
+
 type FeatureOverrides = {
     usaCodigoBarrasManual?: boolean | null;
 };
+
+type RubroFeatureMap = Partial<Record<keyof RubroFeatures, boolean>>;
+
+type RubroInput =
+    | string
+    | null
+    | undefined
+    | {
+        nombre?: string | null;
+        features?: RubroFeatureMap | Array<{ featureKey: string; enabledByDefault?: boolean; enabled?: boolean }>;
+    };
+
+function getRubroNombre(input: RubroInput): string | null | undefined {
+    return typeof input === 'string' ? input : input?.nombre;
+}
+
+function getConfiguredFeatures(input: RubroInput): RubroFeatureMap {
+    if (!input || typeof input === 'string') return {};
+    const features = input.features;
+    if (!features) return {};
+    if (Array.isArray(features)) {
+        return features.reduce<RubroFeatureMap>((acc, feature) => {
+            acc[feature.featureKey as keyof RubroFeatures] = Boolean(feature.enabledByDefault ?? feature.enabled);
+            return acc;
+        }, {});
+    }
+    return features;
+}
+
+function hasConfiguredFeatures(input: RubroInput): boolean {
+    if (!input || typeof input === 'string') return false;
+    const features = input.features;
+    if (!features) return false;
+    return Array.isArray(features) ? features.length > 0 : Object.keys(features).length > 0;
+}
+
+function applyConfiguredFeatures(base: RubroFeatures, input: RubroInput): RubroFeatures {
+    if (hasConfiguredFeatures(input)) {
+        return {
+            gestionLotes: false,
+            requiereVencimientos: false,
+            usaCodigoBarras: false,
+            permiteFraccionamiento: false,
+            gestionOfertas: false,
+            fichaTecnicaComputo: false,
+            controlSeriesGarantia: false,
+            controlStock: true,
+            descripcionRica: false,
+            ...getConfiguredFeatures(input),
+        };
+    }
+
+    return {
+        ...base,
+        ...getConfiguredFeatures(input),
+        controlStock: getConfiguredFeatures(input).controlStock ?? base.controlStock,
+    };
+}
 
 /**
  * Detecta automáticamente las funcionalidades según el nombre del rubro
  */
 export function detectarFuncionesRubro(
-    nombreRubro: string | null | undefined,
+    rubro: RubroInput,
     overrides?: FeatureOverrides,
 ): RubroFeatures {
+    const nombreRubro = getRubroNombre(rubro);
     if (!nombreRubro) {
-        return {
+        return applyConfiguredFeatures({
             gestionLotes: false,
             requiereVencimientos: false,
             usaCodigoBarras:
@@ -76,8 +158,11 @@ export function detectarFuncionesRubro(
                     : false,
             permiteFraccionamiento: false,
             gestionOfertas: false,
+            fichaTecnicaComputo: false,
+            controlSeriesGarantia: false,
             controlStock: true,
-        };
+            descripcionRica: false,
+        }, rubro);
     }
 
     const nombre = nombreRubro.toLowerCase();
@@ -106,13 +191,14 @@ export function detectarFuncionesRubro(
 
     // FABRICACIÓN / MANUFACTURA
     const esFabricacion = esRubroFabricacion(nombreRubro);
+    const esComputo = esRubroComputo(nombreRubro);
 
     const usaCodigoBarras =
         typeof overrides?.usaCodigoBarrasManual === 'boolean'
             ? overrides.usaCodigoBarrasManual
             : esBodega;
 
-    return {
+    return applyConfiguredFeatures({
         // Lotes: Farmacia, droguería y fabricación
         gestionLotes: esFarmacia || esFabricacion || esDrogueria,
 
@@ -128,19 +214,26 @@ export function detectarFuncionesRubro(
         // Ofertas/Promociones: Supermarket
         gestionOfertas: esBodega,
 
+        // Cómputo: ficha técnica y trazabilidad por serie/garantía
+        fichaTecnicaComputo: esComputo,
+        controlSeriesGarantia: esComputo,
+
         // Control de stock: TODOS
         controlStock: true,
-    };
+
+        // Descripción rica: activado por configuración de rubro (default false)
+        descripcionRica: false,
+    }, rubro);
 }
 
 /**
  * Hook para usar en componentes de React
  */
 export function useRubroFeatures(
-    nombreRubro: string | null | undefined,
+    rubro: RubroInput,
     overrides?: FeatureOverrides,
 ): RubroFeatures {
-    return detectarFuncionesRubro(nombreRubro, overrides);
+    return detectarFuncionesRubro(rubro, overrides);
 }
 
 /**
@@ -164,4 +257,6 @@ export const RubroHelpers = {
         if (!nombreRubro) return false;
         return nombreRubro.toLowerCase().includes('restaurante');
     },
+
+    esComputo: esRubroComputo,
 };

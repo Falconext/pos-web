@@ -76,6 +76,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
         return Math.max(0, Math.min(...stockByItem));
     };
+    const esServicio = (item: any) => String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
     return (
         <>
@@ -146,10 +147,10 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                     {vm.catalogItems?.map((item: any, itemIndex: number) => (
                         <div
                             key={`${item.__catalogType}-${item.id}-${itemIndex}`}
-                            className="group bg-white dark:bg-[#1E2435] rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-slate-800 flex flex-col"
+                            className="group bg-white dark:bg-[#1E2435] rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300 dark:border-slate-700 shadow-sm flex flex-col"
                         >
                             <div
-                                className="aspect-[4/3] bg-[#F3F4F6] dark:bg-slate-800/50 rounded-xl mb-2 overflow-hidden relative flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity active:scale-95"
+                                className="aspect-[4/3] bg-white dark:bg-slate-800/50 rounded-xl mb-2 overflow-hidden relative flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity active:scale-95"
                                 onClick={() => {
                                     const isExpired = vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && item?.loteFefo?.diasAlVencimiento !== undefined && item?.loteFefo?.diasAlVencimiento < 0;
                                     if (isExpired) return;
@@ -231,8 +232,8 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                             })()}
                                         </p>
                                         <div className="text-[10px] leading-tight font-medium space-y-0.5">
-                                            <p className="text-emerald-600 dark:text-emerald-400">
-                                                Disponible: {item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}
+                                            <p className={esServicio(item) ? "text-violet-600 dark:text-violet-400" : "text-emerald-600 dark:text-emerald-400"}>
+                                                {esServicio(item) ? "Servicio técnico" : `Disponible: ${item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}`}
                                             </p>
                                         </div>
                                     </div>

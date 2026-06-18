@@ -40,7 +40,7 @@ const NotificacionesCampana: React.FC = () => {
   } = useNotificacionesStore();
 
   const { auth } = useAuthStore();
-  const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
+  const features = useRubroFeatures(auth?.empresa?.rubro, {
     usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
   });
 
@@ -113,20 +113,21 @@ const NotificacionesCampana: React.FC = () => {
     }
   };
 
-  const getTipoEstilos = (tipo: string) => {
+  const getTipoEstilos = (tipo: string, titulo?: string) => {
+    const isSunat = titulo?.toLowerCase().includes('sunat') || titulo?.toLowerCase().includes('rechazado') || titulo?.toLowerCase().includes('pendiente');
     switch (tipo) {
       case 'CRITICAL':
       case 'ERROR':
       case 'LOTE_VENCIDO':
         return {
-          icon: 'mdi:alert-circle',
+          icon: isSunat ? 'mdi:file-document-alert' : 'mdi:alert-circle',
           color: 'text-red-600',
           bgColor: 'bg-red-50'
         };
       case 'WARNING':
       case 'LOTE_POR_VENCER':
         return {
-          icon: 'mdi:alert',
+          icon: isSunat ? 'mdi:file-document-remove' : 'mdi:alert',
           color: 'text-orange-500',
           bgColor: 'bg-orange-50'
         };
@@ -139,7 +140,7 @@ const NotificacionesCampana: React.FC = () => {
       case 'INFO':
       default:
         return {
-          icon: 'mdi:information',
+          icon: isSunat ? 'mdi:file-document-clock' : 'mdi:information',
           color: 'text-blue-600',
           bgColor: 'bg-blue-50'
         };
@@ -299,10 +300,56 @@ const NotificacionesCampana: React.FC = () => {
               </div>
             ) : (
               notificaciones?.slice(0, 5).map((notificacion) => {
-                const styles = getTipoEstilos(notificacion.tipo || 'INFO'); // Fallback a INFO
+                const styles = getTipoEstilos(notificacion.tipo || 'INFO', notificacion.titulo);
 
                 // Limpiar emojis del título (Caja, Alerta, Check, Info)
                 const cleanTitle = notificacion.titulo.replace(/📦|⚠️|❗|✅/g, '').trim();
+
+                const meta = notificacion.metaData as any;
+                const sunatLink = meta?.comprobanteId
+                  ? `/administrador/facturacion/comprobantes`
+                  : meta?.guiaId
+                  ? `/administrador/guia-remision`
+                  : null;
+
+                const cardContent = (
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full ${styles.bgColor} flex items-center justify-center mt-0.5`}>
+                      <Icon icon={styles.icon} className={`${styles.color}`} width={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-0.5">
+                        <h4 className={`text-[14px] font-bold text-gray-900 leading-tight ${!notificacion.leida ? 'font-extrabold' : ''}`}>
+                          {cleanTitle}
+                        </h4>
+                        <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                          {formatFecha(notificacion.creadoEn)}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-gray-500 leading-snug line-clamp-2">
+                        {notificacion.mensaje}
+                      </p>
+                      {sunatLink && (
+                        <span className="text-[11px] font-semibold mt-1 inline-block" style={{ color: styles.color.includes('red') ? '#dc2626' : styles.color.includes('orange') ? '#ea580c' : '#2563eb' }}>
+                          Ver comprobante →
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+
+                if (sunatLink) {
+                  return (
+                    <Link
+                      key={notificacion.id}
+                      to={sunatLink}
+                      onClick={() => { handleNotificacionClick(notificacion); cerrarPanel(); }}
+                      className={`block bg-white p-3 rounded-xl shadow-sm border hover:border-gray-300 transition-all relative group ${!notificacion.leida ? 'border-red-200' : 'border-transparent'}`}
+                    >
+                      {cardContent}
+                    </Link>
+                  );
+                }
 
                 return (
                   <div
@@ -310,26 +357,7 @@ const NotificacionesCampana: React.FC = () => {
                     onClick={() => handleNotificacionClick(notificacion)}
                     className={`bg-white p-3 rounded-xl shadow-sm border border-transparent hover:border-gray-200 transition-all cursor-pointer relative group`}
                   >
-                    <div className="flex items-start gap-3">
-                      {/* Icono Circular Reducido con Fondo Sólido */}
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full ${styles.bgColor} flex items-center justify-center mt-0.5`}>
-                        <Icon icon={styles.icon} className={`${styles.color}`} width={18} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-0.5">
-                          <h4 className={`text-[14px] font-bold text-gray-900 leading-tight ${!notificacion.leida ? 'font-extrabold' : ''}`}>
-                            {cleanTitle}
-                          </h4>
-                          <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                            {formatFecha(notificacion.creadoEn)}
-                          </span>
-                        </div>
-                        <p className="text-[12px] text-gray-500 leading-snug line-clamp-2">
-                          {notificacion.mensaje}
-                        </p>
-                      </div>
-                    </div>
+                    {cardContent}
                   </div>
                 );
               })

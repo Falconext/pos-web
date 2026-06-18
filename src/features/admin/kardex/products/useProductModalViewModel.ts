@@ -82,7 +82,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   const isFabricacion = esRubroFabricacion(auth?.empresa?.rubro?.nombre);
 
-  const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
+  const features = useRubroFeatures(auth?.empresa?.rubro, {
     usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
   });
 
@@ -96,6 +96,23 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const tieneGestionProvisiones = hasPlanFeature(userPermissions, "tieneGestionProvisiones");
   const tieneTienda = hasPlanFeature(userPermissions, "tieneTienda");
   const tieneGestionLotes = hasPlanFeature(userPermissions, "tieneGestionLotes");
+  const tieneDescripcionRica = hasPlanFeature(userPermissions, "tieneDescripcionRica");
+  const productSections = {
+    imagen: true,
+    precios: true,
+    mayorista: !isRestaurante,
+    inventario: features.controlStock,
+    codigos: features.usaCodigoBarras,
+    lotes: tieneGestionLotes && features.gestionLotes && !isFabricacion,
+    farmacia: features.gestionLotes && esFarmaceutico,
+    fraccionamiento: features.permiteFraccionamiento,
+    ofertas: features.gestionOfertas,
+    fichaComputo: features.fichaTecnicaComputo,
+    seriesGarantia: features.controlSeriesGarantia,
+    ecommerce: tieneTienda,
+    descripcionRica: tieneDescripcionRica || features.descripcionRica,
+    provisiones: tieneGestionProvisiones,
+  };
 
   const labels = {
     titulo: isRestaurante
@@ -141,6 +158,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   // --- Form State ---
   const [loading, setLoading] = useState(false);
+  const [technicalTemplate, setTechnicalTemplate] = useState<any | null>(null);
   const [creationLote, setCreationLote] = useState<ICreationLote>({
     lote: "",
     fechaVencimiento: "",
@@ -157,6 +175,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [searchingBarcode, setSearchingBarcode] = useState(false);
   const [autoImageOnSave, setAutoImageOnSave] = useState(false);
   const [imageCandidates, setImageCandidates] = useState<string[]>([]);
+  const originalImageUrlRef = useRef<string | null>(null);
 
   const autoImagePrefKey = `producto:autoImageOnSave:${auth?.empresaId ?? "default"}:${auth?.id ?? "user"}`;
 
@@ -264,9 +283,15 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   useEffect(() => {
     if (!isOpenModal) return;
-    if (isEdit && (formValues as any)?.imagenUrl && !previewPrincipal) {
-      setPreviewPrincipal((formValues as any).imagenUrl);
+    const displayImage =
+      (formValues as any)?.imagenUrlDisplay || (formValues as any)?.imagenUrl;
+    if (isEdit && displayImage && !previewPrincipal) {
+      setPreviewPrincipal(displayImage);
     }
+    originalImageUrlRef.current =
+      isEdit && typeof (formValues as any)?.imagenUrl === "string"
+        ? (formValues as any).imagenUrl.trim() || null
+        : null;
     if (isEdit && formValues?.productoId) {
       cargarGruposAsignados(formValues.productoId);
     }
@@ -283,6 +308,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       setNewWholesaleOption({ cantidadMinima: "", precio: "" });
       setBarcodeQuery("");
       setSearchingBarcode(false);
+      originalImageUrlRef.current = null;
       setTipoAjusteStock("ninguno");
       setCantidadAjuste(0);
       setShowMedicamentoModal(false);
@@ -312,6 +338,30 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
   }, [productCode]);
 
+  useEffect(() => {
+    if (!isOpenModal || !productSections.fichaComputo) {
+      setTechnicalTemplate(null);
+      return;
+    }
+
+    const loadTechnicalTemplate = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (formValues?.categoriaId) params.set("categoriaId", String(formValues.categoriaId));
+        if (formValues?.descripcion) params.set("descripcion", String(formValues.descripcion));
+        if ((formValues as any)?.atributosTecnicos?.tipoProducto) {
+          params.set("tipoProducto", String((formValues as any).atributosTecnicos.tipoProducto));
+        }
+        const { data } = await apiClient.get(`/productos/ficha-tecnica/plantilla?${params.toString()}`);
+        setTechnicalTemplate(data?.data || data || null);
+      } catch {
+        setTechnicalTemplate(null);
+      }
+    };
+
+    loadTechnicalTemplate();
+  }, [isOpenModal, productSections.fichaComputo, formValues?.categoriaId, formValues?.descripcion, (formValues as any)?.atributosTecnicos?.tipoProducto]);
+
   // --- Form Handlers ---
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -335,6 +385,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   };
 
   const validateForm = () => {
+    const esServicio = String((formValues as any)?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
     const newErrors: any = {
       descripcion:
         formValues?.descripcion && formValues?.descripcion.trim() !== ""
@@ -344,7 +395,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         formValues?.precioUnitario && Number(formValues?.precioUnitario) > 0
           ? ""
           : "El producto debe tener un precio",
-      stock: !isEdit
+      stock: !esServicio && !isEdit
         ? formValues?.stock && Number(formValues?.stock) > 0
           ? ""
           : "El producto debe tener un stock"
@@ -653,6 +704,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           typeof formValues.imagenUrl === "string" && formValues.imagenUrl.trim()
             ? formValues.imagenUrl
             : undefined;
+        const originalImageUrl = originalImageUrlRef.current?.trim() || undefined;
+        const imagePatch = hasRemovedImage
+          ? { imagenUrl: null, removerImagen: true }
+          : {};
         const stockPayload =
           tipoAjusteStock !== "ninguno"
             ? stockFinal
@@ -703,7 +758,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 precio: Number(p.precio),
               }))
             : [],
-          imagenUrl: hasRemovedImage ? null : currentImageUrl,
+          ...imagePatch,
         });
 
         try {
@@ -721,7 +776,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
         let imagenUrlFinal: string | null | undefined = hasRemovedImage
           ? null
-          : previewPrincipal || currentImageUrl || updatedProduct?.imagenUrl || undefined;
+          : originalImageUrl || previewPrincipal || currentImageUrl || updatedProduct?.imagenUrl || undefined;
+        let imagenUrlDisplayFinal: string | null | undefined = hasRemovedImage
+          ? null
+          : (formValues as any)?.imagenUrlDisplay || previewPrincipal || imagenUrlFinal;
 
         try {
           // Upload Image flow
@@ -735,19 +793,24 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             );
             const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
             const nuevaUrl =
-              signed ||
               resp?.data?.data?.url ||
               resp?.data?.url ||
               resp?.data?.data?.imagenUrl ||
               resp?.data?.imagenUrl ||
               null;
             if (nuevaUrl) {
-              setProductImage(Number(formValues.productoId), nuevaUrl);
+              setProductImage(Number(formValues.productoId), nuevaUrl, signed || nuevaUrl);
               imagenUrlFinal = nuevaUrl;
+              imagenUrlDisplayFinal = signed || nuevaUrl;
             }
-          } else {
+          } else if (!hasRemovedImage) {
             const externalUrl = previewPrincipal || currentImageUrl;
-            if (externalUrl && !externalUrl.includes("amazonaws.com")) {
+            const changedExternalUrl = Boolean(
+              externalUrl &&
+                currentImageUrl &&
+                currentImageUrl !== originalImageUrl,
+            );
+            if (changedExternalUrl && externalUrl && !externalUrl.includes("amazonaws.com")) {
               const resp = await apiClient.post(
                 `/productos/${formValues.productoId}/imagen-url`,
                 { url: externalUrl },
@@ -755,10 +818,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               const signed =
                 resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
               const s3Url =
-                signed || resp?.data?.data?.url || resp?.data?.url || null;
+                resp?.data?.data?.url || resp?.data?.url || null;
               if (s3Url) {
-                setProductImage(Number(formValues.productoId), s3Url);
+                setProductImage(Number(formValues.productoId), s3Url, signed || s3Url);
                 imagenUrlFinal = s3Url;
+                imagenUrlDisplayFinal = signed || s3Url;
               }
             }
           }
@@ -779,6 +843,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           costoFijo: Number((formValues as any).costoFijo || 0),
           comisionPorVenta: Number((formValues as any).comisionPorVenta || 0),
           comisionPorcentaje: Number((formValues as any).comisionPorcentaje || 0),
+          atributosTecnicos: (formValues as any)?.atributosTecnicos ?? (updatedProduct as any)?.atributosTecnicos,
           stock:
             tipoAjusteStock !== "ninguno"
               ? Number(stockFinal)
@@ -813,6 +878,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           imagenUrl: hasRemovedImage
             ? null
             : imagenUrlFinal ?? currentImageUrl ?? updatedProduct?.imagenUrl ?? undefined,
+          imagenUrlDisplay: hasRemovedImage
+            ? null
+            : imagenUrlDisplayFinal ?? imagenUrlFinal ?? currentImageUrl ?? updatedProduct?.imagenUrl ?? undefined,
         });
 
         setFilePrincipal(null);
@@ -888,6 +956,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         try {
           const newId = product?.data?.id;
           let urlFinal: string | null = null;
+          let urlFinalDisplay: string | null = null;
 
           if (newId && filePrincipal) {
             const fd = new FormData();
@@ -900,12 +969,12 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             const signed =
               resp2?.data?.signedUrl || resp2?.data?.data?.signedUrl;
             urlFinal =
-              signed ||
               resp2?.data?.data?.url ||
               resp2?.data?.url ||
               resp2?.data?.data?.imagenUrl ||
               resp2?.data?.imagenUrl ||
               null;
+            urlFinalDisplay = signed || urlFinal;
           } else if (newId && imageToSave) {
             try {
               const resp3 = await apiClient.post(
@@ -915,9 +984,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               const signed =
                 resp3?.data?.signedUrl || resp3?.data?.data?.signedUrl;
               const s3Url =
-                signed || resp3?.data?.data?.url || resp3?.data?.url || null;
+                resp3?.data?.data?.url || resp3?.data?.url || null;
               if (s3Url) {
                 urlFinal = s3Url;
+                urlFinalDisplay = signed || s3Url;
               }
             } catch (imgError) {}
           }
@@ -998,6 +1068,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 }
               : undefined,
             imagenUrl: urlFinal || imageToSave || product?.data?.imagenUrl || undefined,
+            imagenUrlDisplay: urlFinalDisplay || urlFinal || imageToSave || product?.data?.imagenUrlDisplay || product?.data?.imagenUrl || undefined,
             estado: "ACTIVO",
           });
 
@@ -1041,10 +1112,12 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     esFarmaceutico,
     isFabricacion,
     features,
+    productSections,
     labels,
     tieneGestionProvisiones,
     tieneTienda,
     tieneGestionLotes,
+    technicalTemplate,
     isOpenModal,
     isEdit,
     formValues,

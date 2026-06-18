@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import React from 'react';
+import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { useComprasStore, ICompra } from '@/zustand/compras';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -45,27 +47,59 @@ export const useComprasViewModel = () => {
 
     const refresh = () => listarCompras(buildParams());
 
+    const normalizeEstadoPago = (item: ICompra) => {
+        const saldo = Math.max(0, Number(item.saldo || 0));
+        const total = Number(item.total || 0);
+        if (saldo <= 0.01) return 'COMPLETADO';
+        if (saldo < total - 0.01) return 'PAGO_PARCIAL';
+        return 'PENDIENTE_PAGO';
+    };
+
+    const renderPagoBadge = (estadoPago: string) => {
+        const config: Record<string, { label: string; icon: string; className: string }> = {
+            COMPLETADO: {
+                label: 'Pagado',
+                icon: 'solar:check-circle-bold-duotone',
+                className: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20',
+            },
+            PAGO_PARCIAL: {
+                label: 'Pago parcial',
+                icon: 'solar:clock-circle-bold-duotone',
+                className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/20',
+            },
+            PENDIENTE_PAGO: {
+                label: 'Pendiente',
+                icon: 'solar:danger-triangle-bold-duotone',
+                className: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-400/20',
+            },
+        };
+        const cfg = config[estadoPago] || config.PENDIENTE_PAGO;
+        return React.createElement(
+            'span',
+            {
+                className: `inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wide ${cfg.className}`,
+            },
+            React.createElement(Icon, { icon: cfg.icon, className: 'text-sm' }),
+            cfg.label,
+        );
+    };
+
     // Table data
     const tableData = compras?.map((item: ICompra) => {
         const diasVencidos = calcularDiasVencidos(item.fechaVencimiento, item.fechaEmision);
-        let estadoLabel = 'PENDIENTE';
-        switch (item.estadoPago) {
-            case 'PAGO_PARCIAL': estadoLabel = 'PAGO PARCIAL'; break;
-            case 'PENDIENTE_PAGO': estadoLabel = 'PENDIENTE DE PAGO'; break;
-            case 'COMPLETADO': estadoLabel = 'PAGADO'; break;
-            default: estadoLabel = item.estadoPago;
-        }
+        const saldoNormalizado = Math.max(0, Number(item.saldo || 0));
+        const estadoPagoNormalizado = normalizeEstadoPago(item);
         return {
             id: item.id,
             'Fecha': moment(item.fechaEmision).format('DD/MM/YYYY'),
             'Proveedor': item.proveedor?.nombre || item.proveedor?.nroDoc || 'Sin nombre',
             'Comprobante': `${item.serie}-${item.numero}`,
             'Total': `S/ ${Number(item.total).toFixed(2)}`,
-            'Saldo': `S/ ${Math.max(0, Number(item.saldo || 0)).toFixed(2)}`,
+            'Saldo': `S/ ${saldoNormalizado.toFixed(2)}`,
             'Días Venc.': diasVencidos > 0 ? diasVencidos : 0,
             'Estado': item.estado,
-            'Pago': estadoLabel,
-            _raw: item,
+            'Pago': renderPagoBadge(estadoPagoNormalizado),
+            _raw: { ...item, saldo: saldoNormalizado, estadoPago: estadoPagoNormalizado },
         };
     });
 

@@ -29,8 +29,8 @@ export const FacturacionNuevoView = () => {
     const handleOpenNewTab = (vista: string) => { printFn(); };
 
     return (
-        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 dark:text-gray-200 bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
-            style={{ height: !vm.isMobile ? (vm.isCompact ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
+        <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 dark:text-gray-200 transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
+            style={{ height: !vm.isMobile ? (vm.zoomLevel > 0 ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
         >
             {/* Hidden Print Component - Off-screen but with real dimensions for print engine */}
             <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
@@ -97,7 +97,7 @@ export const FacturacionNuevoView = () => {
             )}
 
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full md:overflow-y-auto bg-white dark:bg-[#111827] rounded-[24px] md:rounded-[32px] shadow-sm md:shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-white dark:border-slate-800 ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
+            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full md:overflow-y-auto bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 overflow-hidden border border-white dark:border-slate-800 ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
                 <POSOptionsForm vm={vm} />
                 <POSCartLayout vm={vm} />
                 <POSCalculations vm={vm} printFn={printFn} handleOpenNewTab={handleOpenNewTab} />

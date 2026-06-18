@@ -60,7 +60,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     };
 
     return (
-        <div className="p-3 pt-2 md:p-5 md:pb-8 bg-gray-50 dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
+        <div className="p-3 pt-2 md:p-5 md:pb-8 bg-white dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
             <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
                 <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>Op. Gravada</span>
@@ -139,11 +139,10 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         <button
                             type="button"
                             onClick={() => vm.setIsMixedPayment(!vm.isMixedPayment)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all border ${
-                                vm.isMixedPayment
-                                    ? 'bg-violet-500 text-white border-violet-500'
-                                    : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-violet-400'
-                            }`}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all border ${vm.isMixedPayment
+                                ? 'bg-violet-500 text-white border-violet-500'
+                                : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-violet-400'
+                                }`}
                         >
                             <Icon icon="solar:card-2-bold-duotone" width={13} />
                             Pago Mixto
@@ -157,11 +156,10 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                 <button
                                     key={m}
                                     onClick={() => vm.setPaymentMethod(m)}
-                                    className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${
-                                        vm.paymentMethod === m
-                                            ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50'
-                                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
-                                    }`}
+                                    className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m
+                                        ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50'
+                                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                        }`}
                                 >
                                     {m}
                                 </button>
@@ -247,7 +245,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 )}
                 <button
                     onClick={() => handleOpenNewTab("vista previa")}
-                    className="flex-1 py-2.5 md:py-3 !bg-blue-500 text-white border-none rounded-xl font-bold shadow-md shadow-blue-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm"
+                    className="flex-1 py-2.5 md:py-3 !bg-blue-500 text-white border-none rounded-xl font-bold shadow-blue-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm"
                 >
                     <Icon icon="solar:eye-linear" className="text-lg" />
                     PREVIA
@@ -265,11 +263,10 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 <button
                     onClick={vm.addInvoiceReceipt}
                     disabled={(vm.isMixedPayment && !splitValid) || hayRecetasPendientes}
-                    className={`flex-1 py-2.5 md:py-3 text-white border-none rounded-xl font-bold shadow-md hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm ${
-                        (vm.isMixedPayment && !splitValid) || hayRecetasPendientes
-                            ? 'bg-gray-400 shadow-gray-200 cursor-not-allowed'
-                            : '!bg-violet-600 shadow-violet-200'
-                    }`}
+                    className={`flex-1 py-2.5 md:py-3 text-white border-none rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm ${(vm.isMixedPayment && !splitValid) || hayRecetasPendientes
+                        ? 'bg-gray-400 shadow-gray-200 cursor-not-allowed'
+                        : '!bg-violet-600 shadow-violet-200'
+                        }`}
                 >
                     <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} className="text-lg" />
                     {vm.isEditMode ? "ACTUALIZAR" : "EMITIR"}

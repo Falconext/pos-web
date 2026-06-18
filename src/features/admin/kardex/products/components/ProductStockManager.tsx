@@ -7,10 +7,12 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 
 export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
-        isEdit, isRestaurante, isFarmacia, isFabricacion, tipoAjusteStock, cantidadAjuste, stockOriginal,
+        isEdit, isRestaurante, isFarmacia, isFabricacion, tipoAjusteStock, cantidadAjuste, stockOriginal, productSections,
         formValues, errors, isMobile,
         setTipoAjusteStock, setCantidadAjuste, handleChange
     } = vm;
+
+    if (!productSections.inventario) return null;
 
     return (
         <div className={isRestaurante ? 'col-span-2' : 'col-span-2'}>

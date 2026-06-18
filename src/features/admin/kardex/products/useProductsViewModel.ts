@@ -70,7 +70,7 @@ export const useProductsViewModel = () => {
         return rubroNombre.includes('restaurante') || rubroNombre.includes('comida') || rubroNombre.includes('alimento');
     }, [auth?.empresa?.rubro?.nombre]);
 
-    const features = useRubroFeatures(auth?.empresa?.rubro?.nombre, {
+    const features = useRubroFeatures(auth?.empresa?.rubro, {
         usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
     });
     const isCodigoBarrasEnabled = features.usaCodigoBarras;
@@ -101,10 +101,10 @@ export const useProductsViewModel = () => {
     const tieneGestionProvisiones = hasPlanFeature(userPermissions, 'tieneGestionProvisiones');
     const tieneTienda = hasPlanFeature(userPermissions, 'tieneTienda');
 
-    const COLUMNAS_ECOMMERCE = ['Costo Total Fijo'];
+    const COLUMNAS_ECOMMERCE = ['Costo Total Fijo', 'Tienda'];
 
     const allColumns = useMemo(() => {
-        const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Acciones'];
+        const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Tienda', 'Acciones'];
         return base.filter(c => {
             if (COLUMNAS_CORPORATIVAS.includes(c) && !tieneGestionProvisiones) return false;
             if (COLUMNAS_ECOMMERCE.includes(c) && !tieneTienda) return false;
@@ -204,6 +204,12 @@ export const useProductsViewModel = () => {
                         let restored = allColumns.filter(c => parsed.includes(c));
                         REQUIRED_VISIBLE_COLUMNS.forEach((column) => {
                             if (allColumns.includes(column) && !restored.includes(column)) {
+                                restored = [...restored, column];
+                            }
+                        });
+                        // Auto-include new columns that exist in allColumns but weren't in saved prefs
+                        allColumns.forEach((column) => {
+                            if (!parsed.includes(column) && !restored.includes(column) && column !== 'Acciones') {
                                 restored = [...restored, column];
                             }
                         });
@@ -360,6 +366,7 @@ export const useProductsViewModel = () => {
         }
         if (success === true) {
             const wasEdit = state.isEdit;
+            if (wasEdit) return;
             setState(prev => ({
                 ...prev,
                 isOpenModal: false,
@@ -422,6 +429,7 @@ export const useProductsViewModel = () => {
                     stockMinimo: originalProduct.stockMinimo || 0,
                     stockMaximo: originalProduct.stockMaximo || 0,
                     imagenUrl: (originalProduct as any)?.imagenUrl || '',
+                    imagenUrlDisplay: (originalProduct as any)?.imagenUrlDisplay || (originalProduct as any)?.imagenUrl || '',
                     principioActivo: (originalProduct as any).principioActivo || '',
                     concentracion: (originalProduct as any).concentracion || '',
                     presentacion: (originalProduct as any).presentacion || '',
@@ -471,9 +479,9 @@ export const useProductsViewModel = () => {
             const resp = await apiClient.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             useAlertStore.getState().alert('Imagen subida correctamente', 'success');
             const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
-            const nuevaUrl = signed || resp?.data?.data?.url || resp?.data?.url || resp?.data?.data?.imagenUrl || resp?.data?.imagenUrl || undefined;
+            const nuevaUrl = resp?.data?.data?.url || resp?.data?.url || resp?.data?.data?.imagenUrl || resp?.data?.imagenUrl || undefined;
             if (nuevaUrl) {
-                setProductImage(state.uploadTarget!.id, nuevaUrl);
+                setProductImage(state.uploadTarget!.id, nuevaUrl, signed || nuevaUrl);
             } else {
                 useAlertStore.getState().alert('No se recibió la URL de imagen.', 'warning');
             }
@@ -626,6 +634,7 @@ export const useProductsViewModel = () => {
         selectedSedeName,
         sedesOptions,
         handleSelectSede,
+        tieneTienda,
         // Computed
         indexOfFirstItem: (state.currentPage - 1) * state.itemsPerPage,
         indexOfLastItem: state.currentPage * state.itemsPerPage,

@@ -113,29 +113,6 @@ body {
   background-color: #F0F2FA;
 }
 
-.slick-slide {
-  padding: 10px;
-}
-
-.slick-slider button {
-  display: none !important;
-}
-
-/* @media (max-width: 600px) {
-  .slick-slider button {
-    display: none !important;
-  }
-
-  .slick-list {
-    overflow: visible !important;
-    left: -10px;
-  }
-
-  .slick-slide {
-    padding: 10px 25px 10px 15px;
-  }
-} */
-
 .tr-shadow {
   box-shadow: none !important;
   border: none !important;
@@ -177,6 +154,38 @@ body {
 
 .animate-slide-out-right {
   animation: slideOutRight 0.3s ease-out forwards;
+}
+
+/* ─── SCROLLBAR GLOBAL ─────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* slate-400 */
+}
+
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-900 */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* slate-600 */
 }
 
 /* ─── PRINT: compatibilidad iOS/iPadOS Safari ────────────────────────────────

@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useState } from 'react';
-import { useFavoritosStore } from '@/zustand/favoritos';
+import ProductCardActions from '@/components/tienda/ProductCardActions';
 
 interface ProductCardProps {
     producto: any;
@@ -13,15 +13,13 @@ interface ProductCardProps {
 export default function ProductCardPio({ producto, slug, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [added, setAdded] = useState(false);
-    const { toggleFavorito, isFavorito } = useFavoritosStore();
-    const wished = isFavorito(producto.id, slug);
+    const cp = diseno?.colorPrimario || '#FF9500';
 
     const price = Number(producto.precioUnitario || 0);
     const originalPrice = Number(producto.precioOriginal || 0);
     const hasDiscount = originalPrice > price;
     const discountPct = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
-    // Mock deterministic flags based on product id
     const isVetApproved = (producto.id % 3 === 0);
     const isSpecialDeal = hasDiscount && (producto.id % 2 === 0);
 
@@ -30,17 +28,6 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
         onAddToCart(producto);
         setAdded(true);
         setTimeout(() => setAdded(false), 1200);
-    };
-
-    const handleWish = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        toggleFavorito({
-            id: producto.id,
-            descripcion: producto.descripcion,
-            precioUnitario: Number(producto.precioUnitario || 0),
-            imagenUrl: producto.imagenUrl,
-            slug,
-        });
     };
 
     return (
@@ -53,7 +40,7 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
 
                 {/* Top Seller Badge */}
                 <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1">
-                    <span className="bg-[#FF9500] text-white text-[9px] font-black px-2.5 py-1 rounded-full">
+                    <span className="text-white text-[9px] font-black px-2.5 py-1 rounded-full" style={{ background: cp }}>
                         Top Seller
                     </span>
                     {isVetApproved && (
@@ -64,18 +51,10 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
                     )}
                 </div>
 
-                {/* Heart */}
-                <button
-                    onClick={handleWish}
-                    className="absolute top-2.5 right-2.5 z-10 w-7 h-7 flex items-center justify-center"
-                    title="Favorito"
-                >
-                    <Icon
-                        icon={wished ? 'solar:heart-bold' : 'solar:heart-linear'}
-                        width={20}
-                        className={wished ? 'text-[#FF9500]' : 'text-[#BBBBB0]'}
-                    />
-                </button>
+                {/* Action buttons */}
+                <div className="absolute top-2.5 right-2.5 z-10">
+                    <ProductCardActions producto={producto} slug={slug} cp={cp} />
+                </div>
 
                 {/* Product Image */}
                 {producto.imagenUrl ? (
@@ -103,7 +82,7 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
                             -{discountPct}%
                         </span>
                         {isSpecialDeal && (
-                            <span className="bg-[#FF9500] text-white text-[9px] font-black px-2 py-0.5 rounded flex items-center gap-0.5">
+                            <span className="text-white text-[9px] font-black px-2 py-0.5 rounded flex items-center gap-0.5" style={{ background: cp }}>
                                 <Icon icon="solar:fire-bold" width={9} />
                                 Oferta
                             </span>
@@ -144,10 +123,10 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
             <div className='p-3'>
                 <button
                     onClick={handleAdd}
-                    className={`w-full rounded-xl flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors ${added
-                        ? 'bg-[#22C55E] text-white'
-                        : 'bg-[#FEF0DC] text-[#FF9503] hover:bg-[#FF9503] hover:text-white'
-                        }`}
+                    className="w-full rounded-xl flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors"
+                    style={added
+                        ? { background: '#22C55E', color: '#fff' }
+                        : { background: `${cp}18`, color: cp }}
                 >
                     <Icon icon={added ? 'solar:check-circle-bold' : 'solar:cart-large-2-bold'} width={18} />
                     {added ? '¡Añadido!' : 'Comprar'}

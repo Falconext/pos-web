@@ -3,16 +3,28 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import SliderBanners from '@/components/tienda/SliderBanners';
+import CarouselBanners from '@/components/tienda/CarouselBanners';
 import Footer from '@/components/tienda/Footer';
 import StoreHeader from '@/components/tienda/StoreHeader';
 import CategoryCircles from '@/components/tienda/CategoryCircles';
 import ComboCard from '@/components/tienda/ComboCard';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
+import ProductCardEmox from '@/components/tienda/ProductCardEmox';
+import ProductCardGlamora from '@/components/tienda/ProductCardGlamora';
+import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
+import ProductCardXtra from '@/components/tienda/ProductCardXtra';
+import XtraHero from '@/components/tienda/XtraHero';
+import XtraHeader from '@/components/tienda/XtraHeader';
+import GadgetsLayout from '@/components/tienda/GadgetsLayout';
+import { resolveTemplate } from '@/components/tienda/resolveTemplate';
 import StoreSidebar from '@/components/tienda/StoreSidebar';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 import PromoBanners from '@/components/tienda/PromoBanners';
 import MembershipBanner from '@/components/tienda/MembershipBanner';
+import { useCompareStore } from '@/zustand/compare';
+import { useFavoritosStore } from '@/zustand/favoritos';
+import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -46,6 +58,9 @@ export default function TiendaPublica() {
   const [modificadoresProducto, setModificadoresProducto] = useState<any[]>([]);
   const [loadingModificadores, setLoadingModificadores] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const { getBySlug, clear: clearCompare } = useCompareStore();
+  const { refreshImagenes } = useFavoritosStore();
 
 
   useEffect(() => {
@@ -62,7 +77,7 @@ export default function TiendaPublica() {
 
     // rehidratar carrito persistido
     try {
-      const saved = localStorage.getItem(`tienda:${slug}:carrito`);
+      const saved = localStorage.getItem(tiendaCartKey(slug || ''));
       if (saved) {
         const carritoGuardado = JSON.parse(saved);
         setCarrito(carritoGuardado);
@@ -71,6 +86,14 @@ export default function TiendaPublica() {
       }
     } catch { }
     setIsCartLoaded(true);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    return onTiendaCartCleared(slug, () => {
+      setCarrito([]);
+      setMostrarCarrito(false);
+    });
   }, [slug]);
 
 
@@ -134,9 +157,7 @@ export default function TiendaPublica() {
   // Persistir carrito solo cuando ya se haya cargado inicialmente
   useEffect(() => {
     if (!isCartLoaded) return;
-    try {
-      localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(carrito));
-    } catch { }
+    persistTiendaCart(slug || '', carrito);
   }, [carrito, slug, isCartLoaded]);
 
   const cargarProductosMayoristas = async () => {
@@ -263,8 +284,16 @@ export default function TiendaPublica() {
       setTotal(totalItems || 0);
       setPage(currentPage || p);
 
-      if (reset) setProductos(items || []);
-      else setProductos((prev) => [...prev, ...(items || [])]);
+      if (reset) {
+        setProductos(items || []);
+        // Refrescar URLs de imágenes en favoritos con datos frescos de la API
+        const updates = (items || [])
+          .filter((p: any) => p.id && p.imagenUrl)
+          .map((p: any) => ({ id: p.id, slug: slug!, imagenUrl: p.imagenUrl }));
+        if (updates.length > 0) refreshImagenes(updates);
+      } else {
+        setProductos((prev) => [...prev, ...(items || [])]);
+      }
     } catch (error) {
       console.error('Error al cargar productos:', error);
     } finally {
@@ -420,6 +449,19 @@ export default function TiendaPublica() {
   }
 
   const diseno = tienda.diseno || {};
+  const cp = diseno.colorPrimario || '#FF9500';
+  const template = resolveTemplate(diseno?.plantillaId);
+  const bannerIsSlider: boolean = diseno?.bannerIsSlider ?? template.bannerIsSlider;
+  const hasBanners = template.bannerSlots.length > 0;
+
+  const CARD_MAP: Record<string, React.ComponentType<any>> = {
+    ProductCardPio,
+    ProductCardEmox,
+    ProductCardGlamora,
+    ProductCardGromuse,
+    ProductCardXtra,
+  };
+  const ProductCard = CARD_MAP[template.cardComponent] ?? ProductCardPio;
 
   // Section header with brand filter pills
   const SectionHeader = ({
@@ -432,25 +474,31 @@ export default function TiendaPublica() {
     <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-2xl md:text-3xl font-black text-[#1A1A1A]">{title}</h2>
-        {/* Filter pills */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setSelectedCategories([])}
-            className={`flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${selectedCategories.length === 0 ? 'bg-[#FF9500] text-white' : 'border border-[#2D2D2D] text-[#2D2D2D] hover:bg-[#2D2D2D] hover:text-white'}`}
+            className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors"
+            style={selectedCategories.length === 0
+              ? { background: cp, color: '#fff' }
+              : { border: '1px solid #2D2D2D', color: '#2D2D2D' }}
           >
             <Icon icon="solar:widget-bold" width={12} />
             Todos
           </button>
           {allCategories.slice(0, 5).map((category: any) => {
             const name = typeof category === 'string' ? category : category.nombre;
+            const isActive = selectedCategories.includes(name);
             return (
               <button
                 key={name}
                 onClick={() => {
-                  if (selectedCategories.includes(name)) setSelectedCategories(selectedCategories.filter(b => b !== name));
+                  if (isActive) setSelectedCategories(selectedCategories.filter(b => b !== name));
                   else setSelectedCategories([name]);
                 }}
-                className={`flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${selectedCategories.includes(name) ? 'bg-[#FF9500] text-white' : 'border border-[#2D2D2D] text-[#2D2D2D] hover:bg-[#2D2D2D] hover:text-white'}`}
+                className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors"
+                style={isActive
+                  ? { background: cp, color: '#fff' }
+                  : { border: '1px solid #2D2D2D', color: '#2D2D2D' }}
               >
                 <Icon icon="solar:tag-bold" width={12} />
                 {name}
@@ -459,16 +507,15 @@ export default function TiendaPublica() {
           })}
         </div>
       </div>
-      {/* Right: arrows + More */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center hover:border-[#FF9500] hover:text-[#FF9500] transition-colors text-gray-400">
+        <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center transition-colors text-gray-400">
           <Icon icon="solar:alt-arrow-left-linear" width={14} />
         </button>
-        <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center hover:border-[#FF9500] hover:text-[#FF9500] transition-colors text-gray-400">
+        <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center transition-colors text-gray-400">
           <Icon icon="solar:alt-arrow-right-linear" width={14} />
         </button>
         {onMore && (
-          <button onClick={onMore} className="text-sm font-bold text-[#FF9500] hover:underline flex items-center gap-1">
+          <button onClick={onMore} className="text-sm font-bold hover:underline flex items-center gap-1" style={{ color: cp }}>
             Más <Icon icon="solar:alt-arrow-right-bold" width={14} />
           </button>
         )}
@@ -478,10 +525,10 @@ export default function TiendaPublica() {
 
   // Skeleton grid
   const SkeletonGrid = () => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+    <div className={`grid ${template.gridCols} gap-3 md:gap-4`}>
       {Array.from({ length: 10 }).map((_, i) => (
         <div key={i} className="animate-pulse bg-white rounded-2xl overflow-hidden">
-          <div className="bg-[#FAF6F1] aspect-square w-full" />
+          <div className={`bg-[#FAF6F1] ${template.imageAspect} w-full`} />
           <div className="p-3 space-y-2">
             <div className="h-4 bg-gray-100 w-1/2 rounded" />
             <div className="h-3 bg-gray-100 w-3/4 rounded" />
@@ -494,9 +541,9 @@ export default function TiendaPublica() {
 
   // Product grid
   const ProductGrid = ({ items }: { items: any[] }) => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+    <div className={`grid ${template.gridCols} gap-3 md:gap-4`}>
       {items.map((producto: any) => (
-        <ProductCardPio
+        <ProductCard
           key={producto.id}
           producto={producto}
           slug={slug || ''}
@@ -507,6 +554,27 @@ export default function TiendaPublica() {
       ))}
     </div>
   );
+
+  // ── Gadgets template: fully isolated layout ──────────────────────────────────
+  if (diseno.plantillaId === 'gadgets') {
+    return (
+      <GadgetsLayout
+        tienda={tienda}
+        slug={slug || ''}
+        productos={productos}
+        allCategories={allCategories}
+        cp={cp}
+        diseno={diseno}
+        carrito={carrito}
+        setCarrito={setCarrito}
+        mostrarCarrito={mostrarCarrito}
+        setMostrarCarrito={setMostrarCarrito}
+        agregarAlCarrito={agregarAlCarrito}
+        actualizarCantidad={actualizarCantidad}
+        loading={loading}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F6F6]" style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'Inter, sans-serif') }}>
@@ -538,9 +606,14 @@ export default function TiendaPublica() {
       <main className="pt-[116px] md:pt-[116px] pb-12">
 
         {/* ── Hero Banner ── */}
-        <div className="pt-6 mb-2">
-          <SliderBanners tienda={tienda} diseno={diseno} />
-        </div>
+        {hasBanners && (
+          <div className="pt-6 mb-2">
+            {bannerIsSlider
+              ? <CarouselBanners tienda={tienda} diseno={diseno} />
+              : <SliderBanners tienda={tienda} diseno={diseno} />
+            }
+          </div>
+        )}
 
         {/* ── Popular Section ── */}
         <section id="productos-populares" className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10 scroll-mt-32">
@@ -554,7 +627,8 @@ export default function TiendaPublica() {
               <p className="text-sm text-gray-500 mb-4">Intenta ajustar tus filtros.</p>
               <button
                 onClick={() => { setSearch(''); setSelectedCategories([]); }}
-                className="text-sm font-bold text-[#FF9500] border border-[#FF9500] px-5 py-2 rounded-full hover:bg-[#FF9500] hover:text-white transition-all"
+                className="text-sm font-bold px-5 py-2 rounded-full transition-all"
+                style={{ color: cp, borderColor: cp, border: `1px solid ${cp}` }}
               >
                 Limpiar Filtros
               </button>
@@ -579,7 +653,9 @@ export default function TiendaPublica() {
           )}
         </section>
         {/* ── Membership Banner ── */}
-        <MembershipBanner tienda={tienda} />
+        {hasBanners && !bannerIsSlider && template.bannerSlots.some((s: any) => s.tipo === 'membership') && (
+          <MembershipBanner tienda={tienda} />
+        )}
 
         {productos.length > 10 && (
           <section className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">
@@ -589,7 +665,9 @@ export default function TiendaPublica() {
         )}
 
         {/* ── Promo Banners Row 1 ── */}
-        <PromoBanners tienda={tienda} />
+        {hasBanners && !bannerIsSlider && template.bannerSlots.some((s: any) => s.tipo === 'promo') && (
+          <PromoBanners tienda={tienda} />
+        )}
 
         {/* ── Categories Bento ── */}
         {/* <CategoryCircles
@@ -602,7 +680,7 @@ export default function TiendaPublica() {
         /> */}
 
         {/* ── Special Deals (Combos) ── */}
-        {combos.length > 0 && (
+        {template.showCombos && combos.length > 0 && (
           <section className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10">
             <SectionHeader title="Ofertas Especiales" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -647,6 +725,79 @@ export default function TiendaPublica() {
         onConfirm={handleConfirmarPersonalizacion}
       />
 
+      {/* Compare modal */}
+      {showCompareModal && (() => {
+        const compareItems = getBySlug(slug || '');
+        return (
+          <div className="fixed inset-0 z-[998] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowCompareModal(false)}>
+            <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-3xl overflow-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100">
+                <h3 className="font-black text-gray-900 text-base sm:text-lg">Comparar productos</h3>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => clearCompare(slug || '')} className="text-xs text-red-500 hover:text-red-700">Limpiar</button>
+                  <button onClick={() => setShowCompareModal(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="#374151" strokeWidth="2" strokeLinecap="round"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <td className="p-4 font-semibold text-gray-500 text-xs uppercase">Detalle</td>
+                      {compareItems.map(item => (
+                        <td key={item.id} className="p-4 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            {item.imagenUrl && <img src={item.imagenUrl} alt={item.descripcion} className="w-16 h-16 object-contain" />}
+                            <span className="text-xs font-bold text-gray-800 line-clamp-2 text-center">{item.descripcion}</span>
+                            <button onClick={() => { setShowCompareModal(false); navigate(`/tienda/${slug}/producto/${item.id}`); }} className="text-[11px] font-bold text-white px-3 py-1 rounded-full" style={{ background: cp }}>Ver producto</button>
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: 'Precio', fn: (i: any) => `S/ ${Number(i.precioUnitario).toFixed(2)}` },
+                      { label: 'Categoría', fn: (i: any) => i.categoria || '—' },
+                      { label: 'Marca', fn: (i: any) => i.marca || '—' },
+                      { label: 'Stock', fn: (i: any) => i.stock ?? '—' },
+                    ].map(({ label, fn }) => (
+                      <tr key={label} className="border-b border-gray-50 hover:bg-gray-50">
+                        <td className="p-4 text-xs font-semibold text-gray-500">{label}</td>
+                        {compareItems.map(item => (
+                          <td key={item.id} className="p-4 text-center text-sm text-gray-700">{fn(item)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Floating compare bar */}
+      {getBySlug(slug || '').length > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+          <div className="bg-gray-900 text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
+            <div className="flex -space-x-2">
+              {getBySlug(slug || '').map(item => (
+                <div key={item.id} className="w-8 h-8 rounded-full border-2 border-gray-800 overflow-hidden bg-white">
+                  {item.imagenUrl ? <img src={item.imagenUrl} alt="" className="w-full h-full object-contain" /> : <div className="w-full h-full bg-gray-200" />}
+                </div>
+              ))}
+            </div>
+            <span className="text-sm font-semibold">{getBySlug(slug || '').length} producto{getBySlug(slug || '').length > 1 ? 's' : ''}</span>
+            <button onClick={() => setShowCompareModal(true)} className="px-4 py-1.5 rounded-xl font-bold text-sm text-white" style={{ background: cp }}>Comparar</button>
+            <button onClick={() => clearCompare(slug || '')} className="text-gray-400 hover:text-white transition-colors">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Filters Drawer */}
       {showMobileFilters && (
         <div className="fixed inset-0 z-[999999] lg:hidden flex">
@@ -676,7 +827,8 @@ export default function TiendaPublica() {
             <div className="p-4 border-t bg-gray-50">
               <button
                 onClick={() => setShowMobileFilters(false)}
-                className="w-full bg-[#FF9500] text-white py-3 font-bold rounded-full"
+                className="w-full text-white py-3 font-bold rounded-full"
+                style={{ background: cp }}
               >
                 Ver {filteredProductos.length} Resultados
               </button>

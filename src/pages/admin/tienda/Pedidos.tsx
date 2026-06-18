@@ -260,6 +260,18 @@ export default function PedidosTienda() {
               <Icon icon="mdi:whatsapp" className="h-4 w-4" />
             </a>
           )}
+          {vm.buildReviewWhatsappUrl(pedido) && (
+            <a
+              href={vm.buildReviewWhatsappUrl(pedido) || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400 text-white transition hover:bg-amber-500"
+              title="Solicitar reseña"
+            >
+              <Icon icon="solar:star-bold" className="h-4 w-4" />
+            </a>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); setSelectedPedido(pedido); }}
             className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300"

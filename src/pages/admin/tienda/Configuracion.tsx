@@ -306,215 +306,314 @@ export default function ConfiguracionTienda() {
               <Icon icon="solar:gallery-bold-duotone" className="text-xl text-[#FF9500]" />
               Banners de Tienda Virtual
             </h3>
-            <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 font-bold px-3 py-1 rounded-full">{vm.banners.length} / 6</span>
+            {vm.bannerSlots.length > 0 && (
+              <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 font-bold px-3 py-1 rounded-full">
+                {vm.banners.length} / {vm.bannerIsSlider ? 3 : 6}
+              </span>
+            )}
           </div>
 
-          {/* Visual guide */}
-          <div className="mb-6 bg-[#FFF8F0] dark:bg-[#FF9500]/5 border border-[#FF9500]/20 rounded-2xl p-5">
-            <p className="text-sm font-bold text-[#FF9500] mb-3 flex items-center gap-2">
-              <Icon icon="solar:info-circle-bold" width={16} />
-              ¿Cómo se usan los banners en la tienda?
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              {/* Hero layout preview */}
-              <div className="md:col-span-2 bg-white dark:bg-[#0A0D14] rounded-xl border border-gray-200 dark:border-slate-800 p-3">
-                <p className="font-bold text-gray-700 dark:text-gray-300 mb-2 text-[11px] uppercase tracking-wider">Sección Hero (arriba)</p>
-                <div className="flex gap-2 h-24">
-                  <div className="flex-1 bg-[#FF9500]/15 rounded-lg flex items-center justify-center border border-[#FF9500]/30">
-                    <div className="text-center">
-                      <span className="text-[10px] font-black text-[#FF9500] bg-[#FF9500]/20 px-2 py-0.5 rounded-full">Orden 0</span>
-                      <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1">Banner principal</p>
-                      <p className="text-[9px] text-gray-400 dark:text-gray-500">Título + Subtítulo + Imagen</p>
-                    </div>
-                  </div>
-                  <div className="w-20 flex flex-col gap-2">
-                    <div className="flex-1 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 dark:border-amber-900/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">Orden 1</span>
-                        <p className="text-[8px] text-gray-500 dark:text-gray-400 mt-0.5">Tarjeta derecha sup.</p>
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 dark:border-amber-900/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">Orden 2</span>
-                        <p className="text-[8px] text-gray-500 dark:text-gray-400 mt-0.5">Tarjeta derecha inf.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {/* Toggle modo carrusel — solo visible si la plantilla soporta banners */}
+          {vm.bannerSlots.length > 0 && (
+            <div className="flex items-center justify-between mb-5 p-4 bg-gray-50 dark:bg-slate-900/30 rounded-xl border border-gray-200 dark:border-slate-800">
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                  <Icon icon="solar:play-circle-bold-duotone" className="text-[#FF9500]" width={18} />
+                  Modo carrusel
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {vm.bannerIsSlider
+                    ? 'Las imágenes rotan automáticamente como slider (máx. 3 slides)'
+                    : 'Layout clásico con hero, tarjetas laterales y banners promo'}
+                </p>
               </div>
-
-              {/* Promo banners */}
-              <div className="bg-white dark:bg-[#0A0D14] rounded-xl border border-gray-200 dark:border-slate-800 p-3">
-                <p className="font-bold text-gray-700 dark:text-gray-300 mb-2 text-[11px] uppercase tracking-wider">Banners Promo (medio)</p>
-                <div className="space-y-2">
-                  <div className="bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-900/30 p-2 flex items-center gap-2">
-                    <span className="text-[9px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">Orden 3</span>
-                    <p className="text-[9px] text-gray-500 dark:text-gray-400">Promo izquierda (verde)</p>
-                  </div>
-                  <div className="bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-900/30 p-2 flex items-center gap-2">
-                    <span className="text-[9px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">Orden 4</span>
-                    <p className="text-[9px] text-gray-500 dark:text-gray-400">Promo derecha (naranja)</p>
-                  </div>
-                </div>
-                <p className="text-[9px] text-gray-400 mt-2">Aparecen 2 veces en la página</p>
-              </div>
-
-              <div className="bg-white dark:bg-[#0A0D14] rounded-xl border border-gray-200 dark:border-slate-800 p-3 md:col-span-3">
-                <p className="font-bold text-gray-700 dark:text-gray-300 mb-2 text-[11px] uppercase tracking-wider">Banner Membresía (antes de "También te podría interesar")</p>
-                <div className="bg-[#FFF8F0] dark:bg-[#FF9500]/5 rounded-lg border border-[#FF9500]/20 p-2 flex items-center gap-2">
-                  <span className="text-[9px] font-black text-[#FF9500] bg-[#FF9500]/15 px-1.5 py-0.5 rounded-full whitespace-nowrap">Orden 5</span>
-                  <p className="text-[9px] text-gray-500 dark:text-gray-400">Banner ancho horizontal (alto corto), ideal para campaña o membresía</p>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => vm.toggleBannerIsSlider(!vm.bannerIsSlider)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${vm.bannerIsSlider ? 'bg-[#FF9500]' : 'bg-gray-300 dark:bg-slate-600'}`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${vm.bannerIsSlider ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
             </div>
+          )}
 
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-6 gap-2 text-[10px] text-gray-600 dark:text-gray-400">
-              {[
-                { orden: 0, recomendado: '1200×500px', desc: 'Hero naranja — título grande + imagen producto' },
-                { orden: 1, recomendado: '600×250px', desc: 'Tarjeta superior derecha — categoría/producto' },
-                { orden: 2, recomendado: '600×250px', desc: 'Tarjeta inferior derecha — categoría/producto' },
-                { orden: 3, recomendado: '700×280px', desc: 'Promo banner izquierdo (fondo verde)' },
-                { orden: 4, recomendado: '700×280px', desc: 'Promo banner derecho (fondo naranja)' },
-                { orden: 5, recomendado: '1400×360px', desc: 'Banner membresía ancho (encima de También te podría interesar)' },
-              ].map(({ orden, recomendado, desc }) => (
-                <div key={orden} className="bg-white dark:bg-[#0A0D14] rounded-lg border border-gray-100 dark:border-slate-800 p-2">
-                  <p className="font-black text-gray-800 dark:text-white">Orden {orden}</p>
-                  <p className="text-gray-500">{desc}</p>
-                  <p className="text-[#FF9500] font-medium mt-1">📐 {recomendado}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {vm.loadingBanners ? (
-            <div className="flex items-center justify-center py-12">
-              <Icon icon="eos-icons:loading" className="w-8 h-8 text-gray-400" />
+          {/* Sin banners para esta plantilla */}
+          {vm.bannerSlots.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Icon icon="solar:gallery-minimalistic-bold-duotone" className="text-5xl text-gray-300 dark:text-gray-700 mb-3" />
+              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Esta plantilla no usa banners</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Cambia la plantilla desde Diseño de Tienda para activar esta sección.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Banner Grid */}
-              {vm.banners.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                  {[...vm.banners].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map((banner, index) => {
-                    const ordenLabels: Record<number, { label: string; color: string }> = {
-                      0: { label: 'Hero principal', color: 'bg-[#FF9500]' },
-                      1: { label: 'Tarjeta sup.', color: 'bg-amber-500' },
-                      2: { label: 'Tarjeta inf.', color: 'bg-amber-600' },
-                      3: { label: 'Promo izq.', color: 'bg-green-600' },
-                      4: { label: 'Promo der.', color: 'bg-orange-600' },
-                      5: { label: 'Membresía', color: 'bg-indigo-600' },
-                    };
-                    const meta = ordenLabels[banner.orden] || { label: `Banner ${index + 1}`, color: 'bg-gray-500' };
-                    return (
-                      <div key={banner.id} className="relative group">
-                        <div className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-slate-800 aspect-video">
-                          <img src={banner.imagenUrl} alt={banner.titulo || `Banner ${index + 1}`} className="w-full h-full object-cover" />
-                        </div>
-                        <div className={`absolute top-2 left-2 ${meta.color} text-white text-[9px] font-black px-2 py-0.5 rounded-full`}>
-                          {meta.label}
-                        </div>
-                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button type="button" onClick={() => vm.openEditModal(banner)} className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-1.5 shadow-lg hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
-                            <Icon icon="solar:pen-bold" className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" onClick={() => vm.eliminarBanner(banner.id)} className="bg-white dark:bg-slate-800 text-red-500 rounded-full p-1.5 shadow-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors">
-                            <Icon icon="mdi:delete" className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <p className="mt-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 truncate px-1">{banner.titulo || `Banner ${index + 1}`}</p>
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate px-1">{banner.subtitulo}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <>
+              {/* Guía visual dinámica */}
+              <div className="mb-6 bg-[#FFF8F0] dark:bg-[#FF9500]/5 border border-[#FF9500]/20 rounded-2xl p-5">
+                <p className="text-sm font-bold text-[#FF9500] mb-3 flex items-center gap-2">
+                  <Icon icon="solar:info-circle-bold" width={16} />
+                  {vm.bannerIsSlider ? 'Carrusel de slides — se rotan automáticamente en la tienda' : '¿Cómo se usan los banners en la tienda?'}
+                </p>
 
-              {/* Edit Banner Modal */}
-              {vm.editingBanner && (
-                <div className="fixed inset-0 z-50 top-[-30px] flex items-center justify-center bg-black/60   p-4">
-                  <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] border dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="text-lg font-bold dark:text-white">Editar Banner</h3>
-                      <button type="button" onClick={() => vm.setEditingBanner(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400">
-                        <Icon icon="mdi:close" width={20} />
-                      </button>
-                    </div>
-
-                    {/* Orden indicator */}
-                    <div className="mb-4 bg-[#FFF8F0] dark:bg-[#FF9500]/5 border border-[#FF9500]/20 rounded-xl p-3 text-sm text-gray-600 dark:text-gray-400">
-                      <Icon icon="solar:info-circle-bold" className="inline text-[#FF9500] mr-1" width={14} />
-                      Este banner tiene <strong>orden {vm.editingBanner.orden}</strong>.{' '}
-                      {vm.editingBanner.orden === 0 && 'Es el hero principal (naranja, 1200×500px recomendado).'}
-                      {vm.editingBanner.orden === 1 && 'Es la tarjeta superior derecha (600×250px recomendado).'}
-                      {vm.editingBanner.orden === 2 && 'Es la tarjeta inferior derecha (600×250px recomendado).'}
-                      {vm.editingBanner.orden === 3 && 'Es el promo banner izquierdo (700×280px recomendado).'}
-                      {vm.editingBanner.orden === 4 && 'Es el promo banner derecho (700×280px recomendado).'}
-                      {vm.editingBanner.orden === 5 && 'Es el banner de membresía, ubicado encima de "También te podría interesar" (1400×360px recomendado).'}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Imagen del Banner</label>
-                        <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-slate-800 hover:border-[#FF9500] transition-colors cursor-pointer bg-gray-50 dark:bg-slate-900/50 flex items-center justify-center group/edit-img">
-                          <input type="file" accept="image/*" className="absolute inset-0 opacity-0 z-10 cursor-pointer" onChange={(e) => vm.setEditBannerFile(e.target.files?.[0] || null)} />
-                          {vm.editBannerFile ? (
-                            <img src={URL.createObjectURL(vm.editBannerFile)} className="w-full h-full object-cover" alt="Preview" />
-                          ) : vm.editingBanner.imagenUrl ? (
-                            <img src={vm.editingBanner.imagenUrl} className="w-full h-full object-cover" alt="Current" />
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-600">Clic para subir imagen</span>
-                          )}
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/edit-img:opacity-100 transition-opacity pointer-events-none">
-                            <Icon icon="solar:camera-bold" className="text-white text-3xl" />
+                {vm.bannerIsSlider ? (
+                  <div className="space-y-2">
+                    {vm.bannerSlots.map((slot: any) => {
+                      const uploaded = vm.banners.find((b: any) => b.orden === slot.orden);
+                      return (
+                        <div key={slot.orden} className="flex items-center gap-3 bg-white dark:bg-[#0A0D14] rounded-xl border border-gray-200 dark:border-slate-800 p-3">
+                          <span className="w-7 h-7 rounded-full bg-[#FF9500] text-white text-xs font-black flex items-center justify-center flex-shrink-0">{slot.orden + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-white">{slot.label}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">{slot.description} · {slot.recomendado}</p>
                           </div>
+                          {uploaded ? (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <img src={uploaded.imagenUrl} className="w-14 h-9 object-cover rounded-lg border border-gray-200 dark:border-slate-700" alt="" />
+                              <div className="flex flex-col gap-1">
+                                <button type="button" onClick={() => vm.openEditModal(uploaded)} className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg p-1 hover:bg-blue-100 transition-colors">
+                                  <Icon icon="solar:pen-bold" className="w-3.5 h-3.5" />
+                                </button>
+                                <button type="button" onClick={() => vm.eliminarBanner(uploaded.id)} className="bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg p-1 hover:bg-red-100 transition-colors">
+                                  <Icon icon="mdi:delete" className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">Sin imagen</span>
+                          )}
                         </div>
-                        {vm.editBannerFile && <p className="text-xs text-green-600 mt-1">✓ Nueva imagen: {vm.editBannerFile.name}</p>}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px] text-gray-600 dark:text-gray-400">
+                    {vm.bannerSlots.map((slot: any) => (
+                      <div key={slot.orden} className="bg-white dark:bg-[#0A0D14] rounded-lg border border-gray-100 dark:border-slate-800 p-2">
+                        <p className="font-black text-gray-800 dark:text-white text-[11px]">Orden {slot.orden} — {slot.label}</p>
+                        <p className="text-gray-500 dark:text-gray-400 mt-0.5">{slot.description}</p>
+                        <p className="text-[#FF9500] font-medium mt-1">📐 {slot.recomendado}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {vm.loadingBanners ? (
+                <div className="flex items-center justify-center py-12">
+                  <Icon icon="eos-icons:loading" className="w-8 h-8 text-gray-400" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Banner Grid (solo plantillas clásicas) */}
+                  {!vm.bannerIsSlider && vm.banners.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                      {[...vm.banners].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map((banner, index) => {
+                        const slot = vm.bannerSlots.find((s: any) => s.orden === banner.orden);
+                        const label = slot?.label || `Banner ${index + 1}`;
+                        return (
+                          <div key={banner.id} className="relative group">
+                            <div className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-slate-800 aspect-video">
+                              <img src={banner.imagenUrl} alt={banner.titulo || label} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="absolute top-2 left-2 bg-[#FF9500] text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                              {label}
+                            </div>
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button type="button" onClick={() => vm.openEditModal(banner)} className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-1.5 shadow-lg hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
+                                <Icon icon="solar:pen-bold" className="w-3.5 h-3.5" />
+                              </button>
+                              <button type="button" onClick={() => vm.eliminarBanner(banner.id)} className="bg-white dark:bg-slate-800 text-red-500 rounded-full p-1.5 shadow-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors">
+                                <Icon icon="mdi:delete" className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <p className="mt-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 truncate px-1">{banner.titulo || label}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Edit Banner Modal */}
+                  {vm.editingBanner && (
+                    <div className="fixed inset-0 z-50 top-[-30px] flex items-center justify-center bg-black/60 p-4">
+                      <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] border dark:border-slate-800">
+                        <div className="flex items-center justify-between mb-5">
+                          <h3 className="text-lg font-bold dark:text-white">Editar Banner</h3>
+                          <button type="button" onClick={() => vm.setEditingBanner(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400">
+                            <Icon icon="mdi:close" width={20} />
+                          </button>
+                        </div>
+
+                        <div className="mb-4 bg-[#FFF8F0] dark:bg-[#FF9500]/5 border border-[#FF9500]/20 rounded-xl p-3 text-sm text-gray-600 dark:text-gray-400">
+                          <Icon icon="solar:info-circle-bold" className="inline text-[#FF9500] mr-1" width={14} />
+                          {vm.bannerSlots.find((s: any) => s.orden === vm.editingBanner.orden)?.description || `Orden ${vm.editingBanner.orden}`}
+                          {' · '}
+                          <strong>{vm.bannerSlots.find((s: any) => s.orden === vm.editingBanner.orden)?.recomendado}</strong>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Imagen del Banner</label>
+                            <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-slate-800 hover:border-[#FF9500] transition-colors cursor-pointer bg-gray-50 dark:bg-slate-900/50 flex items-center justify-center group/edit-img">
+                              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 z-10 cursor-pointer" onChange={(e) => vm.setEditBannerFile(e.target.files?.[0] || null)} />
+                              {vm.editBannerFile ? (
+                                <img src={URL.createObjectURL(vm.editBannerFile)} className="w-full h-full object-cover" alt="Preview" />
+                              ) : vm.editingBanner.imagenUrl ? (
+                                <img src={vm.editingBanner.imagenUrl} className="w-full h-full object-cover" alt="Current" />
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-600">Clic para subir imagen</span>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/edit-img:opacity-100 transition-opacity pointer-events-none">
+                                <Icon icon="solar:camera-bold" className="text-white text-3xl" />
+                              </div>
+                            </div>
+                            {vm.editBannerFile && <p className="text-xs text-green-600 mt-1">✓ Nueva imagen: {vm.editBannerFile.name}</p>}
+                          </div>
+
+                          <InputPro label="Título (Opcional)" name="titulo" value={vm.editBannerTitle} onChange={(e: any) => vm.setEditBannerTitle(e.target.value)} placeholder="Ej: Gran Liquidación" />
+                          <InputPro label="Subtítulo (Opcional)" name="subtitulo" value={vm.editBannerSubtitle} onChange={(e: any) => vm.setEditBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% de descuento" />
+
+                          <div className="relative">
+                            <InputPro label="Enlace (URL o ruta)" name="link" value={vm.editBannerLink} onChange={(e: any) => vm.setEditBannerLink(e.target.value)} placeholder="/tienda/producto/xyz" />
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O vincula al catálogo por categoría:</label>
+                            <select
+                              value=""
+                              onChange={(e) => { const v = e.target.value; if (!v) return; vm.setEditBannerLink(vm.generarLinkCatalogoCategoria(v)); e.currentTarget.value = ''; }}
+                              className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
+                            >
+                              <option value="">Seleccionar categoría...</option>
+                              {vm.storeCategories.map((cat: any, idx: number) => {
+                                const name = vm.getCategoryLabel(cat);
+                                if (!name) return null;
+                                return <option key={`${name}-${idx}`} value={name}>{name}</option>;
+                              })}
+                            </select>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O busca un producto:</label>
+                            <input
+                              type="text"
+                              value={vm.editSearch}
+                              onChange={(e) => vm.setEditSearch(e.target.value)}
+                              placeholder="Buscar producto..."
+                              className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
+                            />
+                            {vm.editSearch.length > 2 && (
+                              <div className="absolute top-full left-0 right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 shadow-xl rounded-b-xl z-10 max-h-48 overflow-y-auto mt-1">
+                                {vm.searchingEdit ? (
+                                  <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Buscando...</div>
+                                ) : vm.editResults.length > 0 ? (
+                                  vm.editResults.map((p: any) => (
+                                    <div key={p.id} onClick={() => { vm.setEditBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); vm.setEditSearch(''); }} className="p-3 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-sm border-b dark:border-slate-800 last:border-0 flex items-center gap-3">
+                                      {p.imagenUrl && <img src={p.imagenUrl} className="w-8 h-8 object-contain rounded" alt="" />}
+                                      <div>
+                                        <div className="font-medium truncate dark:text-white">{p.descripcion}</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500">S/ {p.precioUnitario}</div>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-3 text-center text-xs text-gray-500">Sin resultados</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {!vm.bannerIsSlider && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden / Posición</label>
+                              <select
+                                value={vm.editBannerOrden}
+                                onChange={(e) => vm.setEditBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-full rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] text-sm dark:text-white"
+                              >
+                                <option value="">Sin orden</option>
+                                {vm.bannerSlots.map((slot: any) => (
+                                  <option key={slot.orden} value={slot.orden}>{slot.orden} — {slot.label} ({slot.recomendado})</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-6">
+                          <Button type="button" color="secondary" onClick={() => vm.setEditingBanner(null)}>Cancelar</Button>
+                          <Button type="button" onClick={vm.handleUpdateBanner} disabled={saving}>
+                            {saving ? 'Guardando...' : 'Guardar Cambios'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subir nuevo banner */}
+                  {vm.canUploadBanner && (
+                    <div className="bg-gray-50 dark:bg-slate-900/30 border border-gray-200 dark:border-slate-800 rounded-xl p-5">
+                      <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-1">
+                        {vm.bannerIsSlider ? `Agregar slide (${vm.banners.length} / 3)` : 'Subir Nuevo Banner'}
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                        {vm.bannerIsSlider
+                          ? `Se asignará como Slide ${vm.banners.length + 1}. Recomendado: ${vm.bannerSlots[0]?.recomendado || '1400×500px'}`
+                          : 'Elige el orden según la posición que quieres en la tienda (ver guía arriba)'}
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <InputPro label="Título (Opcional)" name="tituloNew" value={vm.newBannerTitle} onChange={(e: any) => vm.setNewBannerTitle(e.target.value)} placeholder="Ej: Ofertas Especiales" />
+                        <InputPro label="Subtítulo (Opcional)" name="subtituloNew" value={vm.newBannerSubtitle} onChange={(e: any) => vm.setNewBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% off" />
+
+                        {!vm.bannerIsSlider && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden / Posición</label>
+                            <select
+                              value={vm.newBannerOrden}
+                              onChange={(e: any) => vm.setNewBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
+                              className="w-full rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] text-sm dark:text-white"
+                            >
+                              <option value="">Automático</option>
+                              {vm.bannerSlots.map((slot: any) => (
+                                <option key={slot.orden} value={slot.orden}>{slot.orden} — {slot.label} ({slot.recomendado})</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="relative">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enlace (Opcional)</label>
+                          <input
+                            type="text"
+                            value={vm.newBannerLink}
+                            onChange={(e: any) => vm.setNewBannerLink(e.target.value)}
+                            placeholder="/tienda/mi-tienda/producto/123"
+                            className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
+                          />
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O por categoría:</label>
+                          <select
+                            value=""
+                            onChange={(e) => { const v = e.target.value; if (!v) return; vm.setNewBannerLink(vm.generarLinkCatalogoCategoria(v)); e.currentTarget.value = ''; }}
+                            className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
+                          >
+                            <option value="">Seleccionar categoría...</option>
+                            {vm.storeCategories.map((cat: any, idx: number) => {
+                              const name = vm.getCategoryLabel(cat);
+                              if (!name) return null;
+                              return <option key={`${name}-${idx}`} value={name}>{name}</option>;
+                            })}
+                          </select>
+                        </div>
                       </div>
 
-                       <InputPro label="Título (Opcional)" name="titulo" value={vm.editBannerTitle} onChange={(e: any) => vm.setEditBannerTitle(e.target.value)} placeholder="Ej: Gran Liquidación" />
-                      <InputPro label="Subtítulo (Opcional)" name="subtitulo" value={vm.editBannerSubtitle} onChange={(e: any) => vm.setEditBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% de descuento" />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">💡 <span className="font-semibold text-gray-700 dark:text-gray-300">Tip:</span> Si dejas el título y subtítulo en blanco (o habilitas "Solo Imagen"), la imagen ocupará todo el ancho del hero banner sin el bloque de texto naranja.</p>
-
-                       <div className="relative">
-                        <InputPro label="Enlace (URL o ruta)" name="link" value={vm.editBannerLink} onChange={(e: any) => vm.setEditBannerLink(e.target.value)} placeholder="/tienda/producto/xyz" />
-                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O vincula al catálogo por categoría:</label>
-                        <select
-                          value=""
-                          onChange={(e) => {
-                            const selected = e.target.value;
-                            if (!selected) return;
-                            vm.setEditBannerLink(vm.generarLinkCatalogoCategoria(selected));
-                            e.currentTarget.value = '';
-                          }}
-                          className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                        >
-                          <option value="">Seleccionar categoría...</option>
-                          {vm.storeCategories.map((cat: any, idx: number) => {
-                            const name = vm.getCategoryLabel(cat);
-                            if (!name) return null;
-                            return <option key={`${name}-${idx}`} value={name}>{name}</option>;
-                          })}
-                        </select>
-                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O busca un producto:</label>
+                      <div className="relative mb-4">
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">O busca un producto para el enlace:</label>
                         <input
                           type="text"
-                          value={vm.editSearch}
-                          onChange={(e) => vm.setEditSearch(e.target.value)}
+                          value={vm.productSearch}
+                          onChange={(e) => vm.setProductSearch(e.target.value)}
                           placeholder="Buscar producto..."
-                          className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
+                          className="w-full text-sm border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] rounded-lg focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
                         />
-                        {vm.editSearch.length > 2 && (
+                        {vm.productSearch.length > 2 && (
                           <div className="absolute top-full left-0 right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 shadow-xl rounded-b-xl z-10 max-h-48 overflow-y-auto mt-1">
-                            {vm.searchingEdit ? (
+                            {vm.searchingProducts ? (
                               <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Buscando...</div>
-                            ) : vm.editResults.length > 0 ? (
-                              vm.editResults.map((p: any) => (
-                                <div
-                                  key={p.id}
-                                  onClick={() => { vm.setEditBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); vm.setEditSearch(''); }}
-                                  className="p-3 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-sm border-b dark:border-slate-800 last:border-0 flex items-center gap-3"
-                                >
+                            ) : vm.productResults.length > 0 ? (
+                              vm.productResults.map((p: any) => (
+                                <div key={p.id} onClick={() => { vm.setNewBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); vm.setProductSearch(''); }} className="p-3 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-sm border-b dark:border-slate-800 last:border-0 flex items-center gap-3">
                                   {p.imagenUrl && <img src={p.imagenUrl} className="w-8 h-8 object-contain rounded" alt="" />}
                                   <div>
                                     <div className="font-medium truncate dark:text-white">{p.descripcion}</div>
@@ -523,157 +622,34 @@ export default function ConfiguracionTienda() {
                                 </div>
                               ))
                             ) : (
-                              <div className="p-3 text-center text-xs text-gray-500">Sin resultados</div>
+                              <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Sin resultados</div>
                             )}
                           </div>
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
-                        <select
-                          value={vm.editBannerOrden}
-                          onChange={(e) => vm.setEditBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
-                          className="w-full rounded-lg border-gray-300 focus:ring-[#FF9500] focus:border-[#FF9500] text-sm"
-                        >
-                          <option value="">Sin orden</option>
-                          <option value="0">0 — Hero principal (naranja)</option>
-                          <option value="1">1 — Tarjeta derecha superior</option>
-                          <option value="2">2 — Tarjeta derecha inferior</option>
-                          <option value="3">3 — Promo izquierdo</option>
-                          <option value="4">4 — Promo derecho</option>
-                          <option value="5">5 — Banner membresía (ancho)</option>
-                        </select>
-                      </div>
+                      <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 dark:border-slate-800 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-[#FFF8F0] dark:hover:bg-[#FF9500]/10 hover:border-[#FF9500] transition-colors">
+                        <div className="flex flex-col items-center justify-center py-4">
+                          {vm.uploadingBanner ? (
+                            <>
+                              <Icon icon="eos-icons:loading" className="w-10 h-10 text-[#FF9500] mb-2 animate-spin" />
+                              <p className="text-sm text-gray-500 font-semibold">Subiendo...</p>
+                            </>
+                          ) : (
+                            <>
+                              <Icon icon="solar:cloud-upload-bold-duotone" className="w-10 h-10 text-gray-400 dark:text-gray-600 mb-2" />
+                              <p className="text-sm text-gray-600 dark:text-gray-400"><span className="font-bold">Clic para subir</span> o arrastra la imagen</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG o WEBP · máx 2.5MB</p>
+                            </>
+                          )}
+                        </div>
+                        <input type="file" className="hidden" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={vm.handleBannerFileChange} disabled={vm.uploadingBanner} />
+                      </label>
                     </div>
-
-                    <div className="flex justify-end gap-2 mt-6">
-                      <Button type="button" color="secondary" onClick={() => vm.setEditingBanner(null)}>Cancelar</Button>
-                      <Button type="button" onClick={vm.handleUpdateBanner} disabled={saving}>
-                        {saving ? 'Guardando...' : 'Guardar Cambios'}
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
-
-               {/* Subir nuevo banner */}
-              {vm.banners.length < 6 && (
-                <div className="bg-gray-50 dark:bg-slate-900/30 border border-gray-200 dark:border-slate-800 rounded-xl p-5">
-                  <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-1">Subir Nuevo Banner</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Elige el orden según la posición que quieres en la tienda (ver guía arriba)</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                     <InputPro label="Título (Opcional)" name="tituloNew" value={vm.newBannerTitle} onChange={(e: any) => vm.setNewBannerTitle(e.target.value)} placeholder="Ej: Ofertas Especiales" />
-                    <InputPro label="Subtítulo (Opcional)" name="subtituloNew" value={vm.newBannerSubtitle} onChange={(e: any) => vm.setNewBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% off" />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 col-span-1 md:col-span-2 -mt-2 mb-2">💡 <span className="font-semibold text-gray-700 dark:text-gray-300">Tip:</span> Si dejas el título y subtítulo en blanco (o habilitas "Solo Imagen"), la imagen ocupará todo el ancho del hero banner sin el bloque de texto naranja.</p>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden / Posición</label>
-                      <select
-                        value={vm.newBannerOrden}
-                        onChange={(e: any) => vm.setNewBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] text-sm dark:text-white"
-                      >
-                        <option value="">Automático</option>
-                        <option value="0">0 — Hero principal (naranja, título + imagen)</option>
-                        <option value="1">1 — Tarjeta derecha superior (título + foto)</option>
-                        <option value="2">2 — Tarjeta derecha inferior (título + foto)</option>
-                        <option value="3">3 — Promo izquierdo (fondo verde)</option>
-                        <option value="4">4 — Promo derecho (fondo naranja)</option>
-                        <option value="5">5 — Banner membresía (ancho, encima de También te podría interesar)</option>
-                      </select>
-                    </div>
-                     <div className="relative">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enlace (Opcional)</label>
-                      <input
-                        type="text"
-                        value={vm.newBannerLink}
-                        onChange={(e: any) => vm.setNewBannerLink(e.target.value)}
-                        placeholder="/tienda/mi-tienda/producto/123"
-                        className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                      />
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O vincula al catálogo por categoría:</label>
-                      <select
-                        value=""
-                        onChange={(e) => {
-                          const selected = e.target.value;
-                          if (!selected) return;
-                          vm.setNewBannerLink(vm.generarLinkCatalogoCategoria(selected));
-                          e.currentTarget.value = '';
-                        }}
-                        className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                      >
-                        <option value="">Seleccionar categoría...</option>
-                        {vm.storeCategories.map((cat: any, idx: number) => {
-                          const name = vm.getCategoryLabel(cat);
-                          if (!name) return null;
-                          return <option key={`${name}-${idx}`} value={name}>{name}</option>;
-                        })}
-                      </select>
-                    </div>
-                  </div>
-
-                   {/* Product search */}
-                  <div className="relative mb-4">
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">O busca un producto para el enlace:</label>
-                    <input
-                      type="text"
-                      value={vm.productSearch}
-                      onChange={(e) => vm.setProductSearch(e.target.value)}
-                      placeholder="Buscar producto..."
-                      className="w-full text-sm border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] rounded-lg focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                    />
-                    {vm.productSearch.length > 2 && (
-                      <div className="absolute top-full left-0 right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 shadow-xl rounded-b-xl z-10 max-h-48 overflow-y-auto mt-1">
-                        {vm.searchingProducts ? (
-                          <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Buscando...</div>
-                        ) : vm.productResults.length > 0 ? (
-                          vm.productResults.map((p: any) => (
-                            <div
-                              key={p.id}
-                              onClick={() => { vm.setNewBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); vm.setProductSearch(''); }}
-                              className="p-3 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-sm border-b dark:border-slate-800 last:border-0 flex items-center gap-3"
-                            >
-                               {p.imagenUrl && <img src={p.imagenUrl} className="w-8 h-8 object-contain rounded" alt="" />}
-                              <div>
-                                <div className="font-medium truncate dark:text-white">{p.descripcion}</div>
-                                <div className="text-xs text-gray-400 dark:text-gray-500">S/ {p.precioUnitario}</div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Sin resultados</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* File upload */}
-                  <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 dark:border-slate-800 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-[#FFF8F0] dark:hover:bg-[#FF9500]/10 hover:border-[#FF9500] transition-colors">
-                    <div className="flex flex-col items-center justify-center py-4">
-                      {vm.uploadingBanner ? (
-                        <>
-                          <Icon icon="eos-icons:loading" className="w-10 h-10 text-[#FF9500] mb-2 animate-spin" />
-                          <p className="text-sm text-gray-500 font-semibold">Subiendo banner...</p>
-                        </>
-                      ) : (
-                        <>
-                          <Icon icon="solar:cloud-upload-bold-duotone" className="w-10 h-10 text-gray-400 dark:text-gray-600 mb-2" />
-                          <p className="text-sm text-gray-600 dark:text-gray-400"><span className="font-bold">Clic para subir</span> o arrastra la imagen</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG o WEBP · máx 2.5MB</p>
-                        </>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/png,image/jpeg,image/jpg,image/webp"
-                      onChange={vm.handleBannerFileChange}
-                      disabled={vm.uploadingBanner}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
+            </>
           )}
         </div>
 

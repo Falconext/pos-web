@@ -29,6 +29,7 @@ export type IProduct = {
   comisionPorVenta?: number
   comisionPorcentaje?: number
   imagenUrl?: string | null
+  imagenUrlDisplay?: string | null
   imagenesExtra?: string[]
   unidadMedida: {
     id: number
@@ -60,6 +61,8 @@ export type IProduct = {
   fechaFinOferta?: string | Date
   // Precios por Mayorista
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
+  atributosTecnicos?: Record<string, string | number | boolean | null>
+  descripcionLarga?: string | null
 }
 
 
@@ -106,4 +109,6 @@ export type IFormProduct = {
   fechaFinOferta?: string | Date
   // Precios por Mayorista
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
+  atributosTecnicos?: Record<string, string | number | boolean | null>
+  descripcionLarga?: string | null
 }

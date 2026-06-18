@@ -4,7 +4,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuthStore, type IAuthState } from '@/zustand/auth'
 import NotificacionesCampana from '@/components/NotificacionesCampana'
 import { hasPermission, getRedirectPath } from '@/utils/permissions'
-import { useThemeStore } from '@/zustand/theme'
+import { useThemeStore, ZOOM_OPTIONS } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
 import { BRAND } from '@/lib/branding'
 
@@ -12,7 +12,7 @@ export default function ResellerLayout() {
     const navigate = useNavigate()
     const location = useLocation()
     const { auth, logout: authLogout }: IAuthState = useAuthStore()
-    const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, isCompact, toggleCompact } = useThemeStore()
+    const { sidebarColor, sidebarType, navbarFixed, toggleConfigurator, zoomLevel } = useThemeStore()
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -33,8 +33,8 @@ export default function ResellerLayout() {
             className="flex overflow-hidden bg-[#F0F2FA] transition-all duration-300"
             style={{
                 fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                zoom: isCompact ? '0.9' : '1',
-                height: isCompact ? '110vh' : '100vh'
+                zoom: String(ZOOM_OPTIONS[zoomLevel]?.zoom ?? 1),
+                height: ZOOM_OPTIONS[zoomLevel]?.height ?? '100vh'
             }}
         >
 

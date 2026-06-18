@@ -64,6 +64,7 @@ interface ProductoPedido {
     codigo?: string | null;
     descripcion?: string | null;
     imagenUrl?: string | null;
+    atributosTecnicos?: Record<string, any> | null;
 }
 
 export interface PedidoItemTienda {
@@ -162,6 +163,7 @@ const normalizarItem = (raw: unknown): PedidoItemTienda => {
             codigo: asString(producto.codigo, ''),
             descripcion: asString(producto.descripcion, 'Producto'),
             imagenUrl: asString(producto.imagenUrl, ''),
+            atributosTecnicos: isRecord(producto.atributosTecnicos) ? producto.atributosTecnicos : undefined,
         } : null,
     };
 };
@@ -379,6 +381,21 @@ export const usePedidosViewModel = () => {
         return `https://wa.me/${telefono}?text=${msg}`;
     };
 
+    const buildReviewWhatsappUrl = (pedido: PedidoTiendaAdmin) => {
+        const digits = (pedido.clienteTelefono || '').replace(/\D/g, '');
+        const firstProduct = pedido.items.find((item) => Number(item.productoId || item.producto?.id) > 0);
+        const productoId = Number(firstProduct?.productoId || firstProduct?.producto?.id || 0);
+        const slug = auth?.empresa?.slugTienda;
+        if (!digits || !slug || !productoId) return null;
+        const telefono = digits.startsWith('51') ? digits : `51${digits}`;
+        const reviewUrl = `${window.location.origin}/tienda/${slug}/producto/${productoId}?review=1&codigo=${encodeURIComponent(pedido.codigoSeguimiento)}&telefono=${encodeURIComponent(pedido.clienteTelefono || '')}&nombre=${encodeURIComponent(pedido.clienteNombre || '')}`;
+        const productoNombre = firstProduct?.producto?.descripcion || 'tu producto';
+        const msg = encodeURIComponent(
+            `Hola ${pedido.clienteNombre}, gracias por tu compra 🙌\n¿Nos ayudas dejando una reseña de ${productoNombre}?\n${reviewUrl}`
+        );
+        return `https://wa.me/${telefono}?text=${msg}`;
+    };
+
     const estadisticas = useMemo(() => ESTADOS_ENTREGA.slice(0, 5).map((estado) => ({
         ...estado,
         count: pedidos.filter((pedido) => pedido.estadoEntrega === estado.value).length,
@@ -416,5 +433,6 @@ export const usePedidosViewModel = () => {
         getEstadoInfo, getEntregaInfo, getAgenciaInfo, getEnvioInfo,
         toggleOrderExpanded,
         buildWhatsappUrl,
+        buildReviewWhatsappUrl,
     };
 };

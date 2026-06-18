@@ -61,6 +61,9 @@ type EnvioDespachoFormData = {
 
 const cleanText = (value?: string) => String(value ?? '').trim();
 
+const esServicioTecnico = (item: any) =>
+    String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
+
 const isCompleteEnvioDespacho = (data: EnvioDespachoFormData) => {
     const celular = cleanText(data.celularDest).replace(/\D/g, '');
     return Boolean(
@@ -112,7 +115,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
 
 export const useFacturacionViewModel = () => {
     const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation }: IInvoicesState = useInvoiceStore();
-    const { isCompact } = useThemeStore();
+    const { zoomLevel } = useThemeStore();
     const { auth, sedeActiva } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
     const { getAllClients, clients }: IClientsState = useClientsStore();
@@ -642,7 +645,8 @@ export const useFacturacionViewModel = () => {
                             cantidadToInvoice: d.cantidad,
                             discount: 0,
                             cantidad: d.cantidad,
-                            precioBase: 0
+                            precioBase: 0,
+                            atributosTecnicos: d.producto?.atributosTecnicos || undefined,
                         } as any);
                     });
 
@@ -703,6 +707,7 @@ export const useFacturacionViewModel = () => {
                             tipoAfectacionIGV: '10',
                             stock: 999,
                             estado: 'ACTIVO',
+                            atributosTecnicos: item.producto?.atributosTecnicos || undefined,
                         } as any);
                     });
                 }
@@ -737,6 +742,7 @@ export const useFacturacionViewModel = () => {
                         tipoAfectacionIGV: '10',
                         stock: 999,
                         estado: 'ACTIVO',
+                        atributosTecnicos: d.producto?.atributosTecnicos || undefined,
                     });
                 });
             }
@@ -944,7 +950,7 @@ export const useFacturacionViewModel = () => {
 
             const qtyActualEnCarrito = getCartQtyByProductId(Number(producto.id));
             const stockDisponible = Number(producto?.stock || 0);
-            if (qtyActualEnCarrito + qtyRequerida > stockDisponible) {
+            if (!esServicioTecnico(producto) && qtyActualEnCarrito + qtyRequerida > stockDisponible) {
                 return useAlertStore.getState().alert(
                     `Stock insuficiente para ${String(producto.descripcion || "producto").toUpperCase()} al agregar el kit`,
                     "warning",
@@ -966,8 +972,9 @@ export const useFacturacionViewModel = () => {
     };
 
     const handleProductClick = (product: any) => {
+        const esServicio = esServicioTecnico(product);
         // Farmacia: el stock siempre viene de lotes activos (FEFO/trazabilidad)
-        if (usaLotesFarmacia) {
+        if (!esServicio && usaLotesFarmacia) {
             const loteFefo = product?.loteFefo;
             if (!loteFefo) {
                 return useAlertStore.getState().alert("Este producto no tiene lotes registrados. Ingresa un lote en Kardex antes de vender.", "warning");
@@ -999,7 +1006,7 @@ export const useFacturacionViewModel = () => {
         // ── Multi-lote FEFO: una línea de carrito por lote ─────────────────────
         // Cuando usarPrecioLoteFefo está activo y el producto tiene lotes con costoUnitario,
         // cada lote genera su propia línea en el comprobante con su precio real.
-        if (usarPrecioLoteFefo && (product?.lotesDisponibles?.length ?? 0) > 0) {
+        if (!esServicio && usarPrecioLoteFefo && (product?.lotesDisponibles?.length ?? 0) > 0) {
             type LoteDisponible = { loteId: number; loteNumero: string; stockActual: number; costoUnitario: number | null; fechaVencimiento: string };
             const lotesActivos = [...(product.lotesDisponibles as LoteDisponible[])]
                 .filter((l) => l.stockActual > 0)
@@ -1077,7 +1084,7 @@ export const useFacturacionViewModel = () => {
             const stockDisponible = usaLotesFarmacia
                 ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
                 : product.stock;
-            if (stockDisponible < newQty) {
+            if (!esServicio && stockDisponible < newQty) {
                 return useAlertStore.getState().alert("Stock insuficiente", "warning");
             }
             updateProductInvoice(existingIndex, calculateLineItem(currentItem, newQty));
@@ -1085,7 +1092,7 @@ export const useFacturacionViewModel = () => {
             const stockDisponible = usaLotesFarmacia
                 ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
                 : product.stock;
-            if (stockDisponible < 1) {
+            if (!esServicio && stockDisponible < 1) {
                 return useAlertStore.getState().alert("Sin stock", "warning");
             }
             const base = precioBaseSeleccionado;
@@ -1357,6 +1364,24 @@ export const useFacturacionViewModel = () => {
             }
         }
 
+        // Series y garantía: validar que cada ítem con controlSeries tenga las series ingresadas
+        const itemsConSerieFaltante = productsInvoice.filter((item: any) => {
+            const attrs = item?.atributosTecnicos || {};
+            const control = String(attrs.controlSeries ?? attrs.requiereSerie ?? '').toLowerCase();
+            const requiere = attrs.controlSeries === true || attrs.requiereSerie === true || ['true', 'si', 'sí', '1'].includes(control);
+            if (!requiere) return false;
+            const cantidad = Number(item.cantidad || 1);
+            const series = String(item.numerosSerie || '').split(/[\n,]+/).map((s: string) => s.trim()).filter(Boolean);
+            return series.length < cantidad;
+        });
+        if (itemsConSerieFaltante.length > 0) {
+            const nombres = itemsConSerieFaltante.map((i: any) => i.descripcion).join(', ');
+            return useAlertStore.getState().alert(
+                `Debes ingresar los números de serie para: ${nombres}. Se requiere una serie por unidad.`,
+                "error"
+            );
+        }
+
         // Fecha de emisión: usar la fecha seleccionada por el usuario (con hora Lima actual)
         const [fyear, fmonth, fday] = fechaEmisionManual.split('-').map(Number);
         const fechaEmisionDate = new Date(fyear, fmonth - 1, fday, new Date().getHours(), new Date().getMinutes(), new Date().getSeconds());
@@ -1428,6 +1453,7 @@ export const useFacturacionViewModel = () => {
                     ...(item.datosReceta?.dniPaciente ? { dniPaciente: item.datosReceta.dniPaciente } : {}),
                     ...(item.datosReceta?.nombrePaciente ? { nombrePaciente: item.datosReceta.nombrePaciente } : {}),
                     ...(item.datosReceta?.medicoNombre ? { medicoNombre: item.datosReceta.medicoNombre } : {}),
+                    ...(item.numerosSerie ? { numerosSerie: item.numerosSerie } : {}),
                     // Fraccionamiento: unidad de venta cuando difiere de la unidad base
                     ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
                 })) ?? []),
@@ -1686,7 +1712,7 @@ export const useFacturacionViewModel = () => {
         authWithBranding,
         resellerBranding,
         isMobile,
-        isCompact,
+        zoomLevel,
         isQuotationRoute,
         productsInvoice,
 

@@ -26,7 +26,7 @@ export interface IProductsState {
     importProducts: (file: File) => Promise<void>;
     deleteProduct: (productoId: number) => Promise<void>;
     deleteAllProducts: (sedeId?: number) => Promise<void>;
-    setProductImage: (productoId: number, imagenUrl: string) => void;
+    setProductImage: (productoId: number, imagenUrl: string, imagenUrlDisplay?: string) => void;
     upsertProductLocal: (product: Partial<IProduct> & Pick<IProduct, 'id'>) => void;
 }
 
@@ -119,10 +119,10 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             useAlertStore.setState({ loading: false });
         }
     },
-    setProductImage: (productoId: number, imagenUrl: string) => {
+    setProductImage: (productoId: number, imagenUrl: string, imagenUrlDisplay?: string) => {
         set((state) => ({
             products: state.products.map((p: IProduct) =>
-                p.id === productoId ? { ...p, imagenUrl } as any : p
+                p.id === productoId ? { ...p, imagenUrl, imagenUrlDisplay: imagenUrlDisplay || imagenUrl } as any : p
             ),
         }), false, 'SET_PRODUCT_IMAGE');
     },

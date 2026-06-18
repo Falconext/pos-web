@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useState } from 'react';
+import ProductCardActions from '@/components/tienda/ProductCardActions';
 
 interface ProductCardProps {
     producto: any;
@@ -9,7 +10,7 @@ interface ProductCardProps {
     onClick?: () => void;
 }
 
-export default function ProductCardGromuse({ producto, diseno, onAddToCart, onClick }: ProductCardProps) {
+export default function ProductCardGromuse({ producto, slug, diseno, onAddToCart, onClick }: ProductCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     // Parse price to separate integer and decimal for styling
@@ -25,6 +26,10 @@ export default function ProductCardGromuse({ producto, diseno, onAddToCart, onCl
         >
             {/* Image Container */}
             <div className="relative w-full aspect-[4/3] mb-4 overflow-hidden flex items-center justify-center">
+                {/* Action buttons */}
+                <div className="absolute top-0 right-0 z-10">
+                    <ProductCardActions producto={producto} slug={slug} cp={colorPrimario} />
+                </div>
                 {producto.imagenUrl ? (
                     <img
                         src={producto.imagenUrl}

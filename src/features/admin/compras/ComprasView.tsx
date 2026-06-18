@@ -50,7 +50,7 @@ export default function ComprasView() {
             tooltip: 'Registrar Pago',
             className: 'payment',
             onClick: (row: any) => actions.openPago(row._raw),
-            hide: (row: any) => row._raw?.estadoPago === 'COMPLETADO',
+            hide: (row: any) => Number(row._raw?.saldo || 0) <= 0.01 || row._raw?.estadoPago === 'COMPLETADO',
         },
         {
             icon: <Icon icon="solar:eye-bold" />,
