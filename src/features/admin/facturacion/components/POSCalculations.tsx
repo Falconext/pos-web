@@ -62,11 +62,11 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     return (
         <div className="p-3 pt-2 md:p-5 md:pb-8 bg-white dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
             <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
-                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
                     <span>Op. Gravada</span>
                     <span>S/ {vm.opGravadaAdjusted.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
                     <span>IGV (18%)</span>
                     <span>S/ {vm.igvAdjusted.toFixed(2)}</span>
                 </div>
@@ -133,7 +133,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 <div className="mb-3 md:mb-4">
                     {/* Toggle simple / mixto */}
                     <div className="flex items-center justify-between mb-2">
-                        <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">
+                        <label className="text-[10px] md:text-xs font-bold text-gray-500 dark:text-white uppercase tracking-wider">
                             Método de Pago
                         </label>
                         <button
@@ -245,10 +245,10 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 )}
                 <button
                     onClick={() => handleOpenNewTab("vista previa")}
-                    className="flex-1 py-2.5 md:py-3 !bg-blue-500 text-white border-none rounded-xl font-bold shadow-blue-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm"
+                    className="flex-1 py-2.5 md:py-3 bg-blue-500 text-white border border-blue-600 rounded-xl font-bold hover:bg-blue-600 transition-all flex items-center justify-center gap-2 text-xs md:text-sm shadow-sm"
                 >
-                    <Icon icon="solar:eye-linear" className="text-lg" />
-                    PREVIA
+                    <Icon icon="solar:eye-linear" className="text-lg text-white" />
+                    <span className="text-white">PREVIA</span>
                 </button>
                 {/* Farmacia: indicador de recetas pendientes */}
                 {hayRecetasPendientes && (
@@ -263,13 +263,13 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 <button
                     onClick={vm.addInvoiceReceipt}
                     disabled={(vm.isMixedPayment && !splitValid) || hayRecetasPendientes}
-                    className={`flex-1 py-2.5 md:py-3 text-white border-none rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm ${(vm.isMixedPayment && !splitValid) || hayRecetasPendientes
-                        ? 'bg-gray-400 shadow-gray-200 cursor-not-allowed'
-                        : '!bg-violet-600 shadow-violet-200'
+                    className={`flex-1 py-2.5 md:py-3 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm ${(vm.isMixedPayment && !splitValid) || hayRecetasPendientes
+                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                        : 'bg-violet-600 shadow-sm border border-violet-700 text-white'
                         }`}
                 >
-                    <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} className="text-lg" />
-                    {vm.isEditMode ? "ACTUALIZAR" : "EMITIR"}
+                    <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} className="text-lg text-white" />
+                    <span className="text-white">{vm.isEditMode ? "ACTUALIZAR" : "EMITIR"}</span>
                 </button>
             </div>
         </div>

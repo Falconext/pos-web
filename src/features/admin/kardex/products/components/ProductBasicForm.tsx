@@ -11,6 +11,7 @@ import { GrupoModificador } from '@/zustand/modificadores';
 import { useProductModalViewModel } from '../useProductModalViewModel';
 import { ProductStockManager } from './ProductStockManager';
 import { ProductWholesalePricing } from './ProductWholesalePricing';
+import { ProductVariantsManager } from './ProductVariantsManager';
 
 const afectaciones = [
     { id: "10", value: "Gravado - Operación Onerosa" },
@@ -1075,6 +1076,8 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     </div>
                 </div>
             )}
+
+            <ProductVariantsManager vm={vm} />
 
             {isRestaurante && gruposModificadores && gruposModificadores.length > 0 && (
                 <div className="col-span-1 md:col-span-2 mt-4">

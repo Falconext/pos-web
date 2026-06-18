@@ -295,7 +295,7 @@ export default function AdminLayout() {
 
       {/* Sidebar/Drawer */}
       <motion.aside
-        className={`print:hidden fixed inset-y-0 left-0 ${theme.sidebarBg} flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:static ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
+        className={`print:hidden fixed inset-y-0 left-0 ${theme.sidebarBg} flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:relative ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-1 md:translate-x-0'}`}
         variants={slideRight}
         initial="initial"
         animate={reduceMotion ? { opacity: 1, x: 0 } : 'animate'}
@@ -313,15 +313,18 @@ export default function AdminLayout() {
               </div>
             )}
           </div>
-          <button
-            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-            className={`hidden md:flex items-center absolute top-1/2 -translate-y-1/2 z-[80] justify-center w-9 h-9 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700 shadow-xl shadow-gray-950/10 transition-all cursor-pointer ${isSidebarCollapsed ? '-right-[26px]' : '-right-[18px]'}`}
-            title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
-          >
-            <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
-          </button>
         </div>
-      <div className={`flex-1 space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full overflow-visible' : 'pr-1 overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
+
+        {/* Toggle Button */}
+        <button
+          onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+          className={`hidden md:flex items-center absolute top-7 -translate-y-1/2 z-[80] justify-center w-8 h-8 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700 shadow-xl shadow-gray-950/10 transition-all cursor-pointer -right-4`}
+          title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+        >
+          <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
+        </button>
+
+      <div className={`flex-1 space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full overflow-visible mt-2' : 'pr-1 overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
           <motion.nav
             className="space-y-0.5 w-full"
             variants={navStagger}

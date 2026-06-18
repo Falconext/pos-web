@@ -13,6 +13,7 @@ import { onTiendaCartCleared } from '@/utils/tiendaCart';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
+import ProductVariantsShopify from '@/components/tienda/ProductVariantsShopify';
 
 const PROSE_CLASSES = [
   'text-sm text-gray-600 leading-relaxed break-words overflow-hidden w-full',
@@ -147,6 +148,10 @@ export default function ProductoDetalle() {
   const [modificadoresProducto, setModificadoresProducto] = useState<any[]>([]);
   const [selecciones, setSelecciones] = useState<Record<number, number[]>>({});
 
+  // Estados para variantes (Shopify style)
+  const [varianteSelecciones, setVarianteSelecciones] = useState<Record<string, string>>({});
+  const [varianteActiva, setVarianteActiva] = useState<any>(null);
+
   // Admin Menu Logic
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement | null>(null);
@@ -172,6 +177,14 @@ export default function ProductoDetalle() {
         setProducto(prod);
         setTienda(tiendaRes.data.data || tiendaRes.data);
         if (prod.imagenUrl) setSelectedImage(prod.imagenUrl);
+
+        // Preseleccionar primera variante si existe
+        if (prod.opcionesAtributos && prod.variantes && prod.variantes.length > 0) {
+          const firstVariant = prod.variantes[0];
+          setVarianteActiva(firstVariant);
+          setVarianteSelecciones(firstVariant.valoresAtributos || {});
+          if (firstVariant.imagenUrl) setSelectedImage(firstVariant.imagenUrl);
+        }
 
         try {
           const reviewsRes = await axios.get(`${BASE_URL}/public/store/${slug}/products/${prod.id}/reviews`);
@@ -263,7 +276,26 @@ export default function ProductoDetalle() {
     return total + grupoExtra;
   }, 0);
 
-  const precioFinal = (Number(producto?.precioUnitario || 0) + precioExtra);
+  const precioBaseActual = varianteActiva ? Number(varianteActiva.precioUnitario || 0) : Number(producto?.precioUnitario || 0);
+  const stockActual = varianteActiva ? (varianteActiva.stock || 0) : (producto?.stock || 0);
+  const precioFinal = precioBaseActual + precioExtra;
+
+  const handleVarianteChange = (nombre: string, valor: string) => {
+    const nextSelections = { ...varianteSelecciones, [nombre]: valor };
+    setVarianteSelecciones(nextSelections);
+
+    if (producto?.variantes) {
+      const match = producto.variantes.find((v: any) => {
+        return Object.keys(nextSelections).every(k => v.valoresAtributos && v.valoresAtributos[k] === nextSelections[k]);
+      });
+      if (match) {
+        setVarianteActiva(match);
+        if (match.imagenUrl) setSelectedImage(match.imagenUrl);
+      } else {
+        setVarianteActiva(null);
+      }
+    }
+  };
 
   const enviarReview = async () => {
     if (!slug || !producto?.id) return;
@@ -336,11 +368,15 @@ export default function ProductoDetalle() {
       });
     });
 
-    agregarAlCarritoDirecto(producto, cantidad, modificadoresSeleccionados);
+    agregarAlCarritoDirecto(varianteActiva || producto, cantidad, modificadoresSeleccionados);
   };
 
   const agregarAlCarritoDirecto = (prodToAdd: any, quantity: number, modificadores?: any[]) => {
     const qty = Math.max(1, Math.min(Number(quantity) || 1, prodToAdd?.stock || 1));
+
+    // Si es variante, heredamos detalles del padre para el UI del carrito
+    const nombreDisplay = varianteActiva ? `${producto.descripcion} - ${Object.values(varianteActiva.valoresAtributos || {}).join(' ')}` : prodToAdd.descripcion;
+    const prodImg = prodToAdd.imagenUrl || producto.imagenUrl;
 
     // ID único si tiene modificadores
     const itemId = modificadores?.length
@@ -351,8 +387,11 @@ export default function ProductoDetalle() {
 
     const item = {
       ...prodToAdd,
+      descripcion: nombreDisplay,
+      imagenUrl: prodImg,
       id: itemId,
       productoId: prodToAdd.id,
+      padreId: varianteActiva ? producto.id : undefined,
       cantidad: qty,
       precioBase: prodToAdd.precioUnitario,
       precioUnitario: Number(prodToAdd.precioUnitario) + pExtra,
@@ -426,7 +465,8 @@ export default function ProductoDetalle() {
 
   const agregarYRedirigir = () => {
     // Re-implement simplified add for redirection
-    const qty = Math.max(1, Math.min(Number(cantidad) || 1, producto?.stock || 1));
+    const targetProd = varianteActiva || producto;
+    const qty = Math.max(1, Math.min(Number(cantidad) || 1, targetProd?.stock || 1));
     const pExtra = modificadoresProducto.reduce((total, grupo) => {
       const selectedIds = selecciones[grupo.id] || [];
       const grupoExtra = grupo.opciones
@@ -452,15 +492,20 @@ export default function ProductoDetalle() {
       });
     });
 
-    const itemId = modificadoresSeleccionados.length ? `${producto.id}-${Date.now()}` : producto.id;
+    const nombreDisplay = varianteActiva ? `${producto.descripcion} - ${Object.values(varianteActiva.valoresAtributos || {}).join(' ')}` : producto.descripcion;
+    const prodImg = targetProd.imagenUrl || producto.imagenUrl;
+    const itemId = modificadoresSeleccionados.length ? `${targetProd.id}-${Date.now()}` : targetProd.id;
 
     const item = {
-      ...producto,
+      ...targetProd,
+      descripcion: nombreDisplay,
+      imagenUrl: prodImg,
       id: itemId,
-      productoId: producto.id,
+      productoId: targetProd.id,
+      padreId: varianteActiva ? producto.id : undefined,
       cantidad: qty,
-      precioBase: producto.precioUnitario,
-      precioUnitario: Number(producto.precioUnitario) + pExtra,
+      precioBase: targetProd.precioUnitario,
+      precioUnitario: Number(targetProd.precioUnitario) + pExtra,
       modificadores: modificadoresSeleccionados
     };
 
@@ -673,7 +718,7 @@ export default function ProductoDetalle() {
           <div className="flex flex-col pt-1 bg-white border border-gray-100 rounded-3xl p-5 md:p-7 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#FFF3E0] text-[#FF9500] font-bold">Disponible</span>
-              <span className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-bold">Stock: {producto.stock ?? 0}</span>
+              <span className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-bold">Stock: {stockActual}</span>
             </div>
 
             <p className="text-gray-500 text-sm mb-1 font-medium">{tienda?.nombreComercial || 'Mi Tienda'}</p>
@@ -710,6 +755,13 @@ export default function ProductoDetalle() {
               </div>
             </div> */}
 
+            <ProductVariantsShopify
+              opciones={producto.opcionesAtributos}
+              variantes={producto.variantes}
+              selecciones={varianteSelecciones}
+              onChange={handleVarianteChange}
+            />
+
             <ProductModifiersSelector
               modifiers={modificadoresProducto}
               selections={selecciones}
@@ -720,7 +772,7 @@ export default function ProductoDetalle() {
               <div className="w-full md:flex-1 flex items-center justify-between bg-[#F3F4F6] rounded-xl px-4 py-2.5 order-1 md:order-none">
                 <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">-</button>
                 <span className="font-bold text-sm text-gray-900">{cantidad}</span>
-                <button onClick={() => setCantidad(Math.min(producto.stock || 99, cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">+</button>
+                <button onClick={() => setCantidad(Math.min(stockActual || 99, cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">+</button>
               </div>
 
               <div className="flex gap-3 md:contents w-full order-2 md:order-none">

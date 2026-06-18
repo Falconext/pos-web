@@ -63,6 +63,10 @@ export type IProduct = {
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
   atributosTecnicos?: Record<string, string | number | boolean | null>
   descripcionLarga?: string | null
+  opcionesAtributos?: any
+  valoresAtributos?: any
+  productoPadreId?: number | null
+  variantes?: IProduct[]
 }
 
 
@@ -111,4 +115,7 @@ export type IFormProduct = {
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
   atributosTecnicos?: Record<string, string | number | boolean | null>
   descripcionLarga?: string | null
+  opcionesAtributos?: any
+  valoresAtributos?: any
+  productoPadreId?: number | null
 }
