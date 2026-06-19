@@ -22,7 +22,20 @@ interface DisenoRubro {
   vistaProductos: string;
 }
 
-const TIPOGRAFIAS = ['Inter', 'Poppins', 'Lato', 'Roboto', 'Playfair Display', 'Montserrat'];
+const TIPOGRAFIAS = [
+  'Inter', 
+  'Poppins', 
+  'Outfit',
+  'Plus Jakarta Sans',
+  'Montserrat', 
+  'Lato', 
+  'Roboto', 
+  'Space Grotesk',
+  'Oswald',
+  'Nunito',
+  'Quicksand',
+  'Playfair Display'
+];
 
 const ColorPicker = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
   <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">

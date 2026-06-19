@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import ModalConfirm from '@/components/ModalConfirm';
+import { ALL_PLANTILLAS, type PlantillaId } from '@/components/tienda/resolveTemplate';
 
 export default function ConfiguracionTienda() {
   const vm = useConfiguracionTiendaViewModel();
@@ -76,6 +77,63 @@ export default function ConfiguracionTienda() {
               <InputPro label="Descripción" name="descripcionTienda" value={formData.descripcionTienda} onChange={handleChange} placeholder="Breve descripción de tu negocio" type="textarea" rows={3} isLabel />
             </div>
             <InputPro label="Horario de atención" name="horarioAtencion" value={formData.horarioAtencion} onChange={handleChange} />
+          </div>
+        </div>
+
+        {/* ── Plantilla de Tienda ── */}
+        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+            <Icon icon="solar:shop-2-bold-duotone" className="text-xl text-indigo-500" />
+            Plantilla de Tienda
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+            Elige el diseño base de tu tienda virtual. Algunas plantillas requieren un plan superior.
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {ALL_PLANTILLAS.map(plantilla => {
+              const isOn = vm.config?.diseno?.plantillaId === plantilla.id;
+              
+              // Determine if this template is allowed for the user's plan
+              const requiredPlans = plantilla.planesPermitidos || [];
+              const userPlan = vm.config?.plan?.nombre?.toUpperCase() || '';
+              // Simple check: if there are no required plans OR the user's plan is in the required list
+              const isAllowed = requiredPlans.length === 0 || requiredPlans.includes(userPlan) || userPlan.includes('CORPORATIVO');
+
+              return (
+                <button
+                  key={plantilla.id}
+                  type="button"
+                  disabled={!isAllowed}
+                  onClick={() => vm.actualizarDiseno({ plantillaId: plantilla.id })}
+                  className={`relative text-left p-4 rounded-xl border-2 transition-all flex flex-col 
+                    ${!isAllowed ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800' : 
+                      isOn ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm' : 
+                      'border-gray-100 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'}`}
+                >
+                  {isOn && (
+                    <span className="absolute top-2 right-2">
+                      <Icon icon="solar:check-circle-bold" className="text-indigo-600 text-sm" />
+                    </span>
+                  )}
+                  
+                  {!isAllowed && (
+                    <span className="absolute top-2 right-2" title={`Requiere plan: ${requiredPlans.join(', ')}`}>
+                      <Icon icon="solar:lock-bold" className="text-gray-400 text-sm" />
+                    </span>
+                  )}
+
+                  <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center flex-shrink-0" style={{ backgroundColor: plantilla.accentColor + '18' }}>
+                    <Icon icon={plantilla.icon} className="text-xl" style={{ color: plantilla.accentColor }} />
+                  </div>
+                  
+                  <p className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-1">{plantilla.label}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                    {!isAllowed ? `Requiere plan ${requiredPlans.join(' o ')}` : plantilla.description}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -652,6 +710,62 @@ export default function ConfiguracionTienda() {
             </>
           )}
         </div>
+
+        {/* Configuración Especial Autopartes */}
+        {vm.config?.diseno?.plantillaId === 'autopartes' && (
+          <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+              <Icon icon="solar:wheel-bold" className="text-xl text-red-600" />
+              Configuración Especial Autopartes
+            </h3>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 border-b dark:border-slate-800 pb-2">Hero Section</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputPro 
+                    label="Título del Banner Principal" 
+                    name="heroTitle" 
+                    value={vm.config?.diseno?.heroTitle || ''} 
+                    onChange={(e: any) => vm.actualizarDiseno({ heroTitle: e.target.value })} 
+                    placeholder="Catálogo de Productos" 
+                    isLabel
+                  />
+                  <InputPro 
+                    label="Subtítulo del Banner Principal" 
+                    name="heroSubtitle" 
+                    value={vm.config?.diseno?.heroSubtitle || ''} 
+                    onChange={(e: any) => vm.actualizarDiseno({ heroSubtitle: e.target.value })} 
+                    placeholder="Encuentra los mejores repuestos..." 
+                    isLabel
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 border-b dark:border-slate-800 pb-2">Sección Comunidad</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputPro 
+                    label="Título de la Comunidad" 
+                    name="comunidadTitle" 
+                    value={vm.config?.diseno?.comunidadTitle || ''} 
+                    onChange={(e: any) => vm.actualizarDiseno({ comunidadTitle: e.target.value })} 
+                    placeholder="Sé parte de nuestra comunidad" 
+                    isLabel
+                  />
+                  <InputPro 
+                    label="Texto descriptivo" 
+                    name="comunidadText" 
+                    value={vm.config?.diseno?.comunidadText || ''} 
+                    onChange={(e: any) => vm.actualizarDiseno({ comunidadText: e.target.value })} 
+                    placeholder="Únete para ofertas exclusivas" 
+                    isLabel
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Actions ── */}
         <div className="flex justify-end gap-3 pt-2">

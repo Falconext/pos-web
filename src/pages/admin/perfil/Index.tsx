@@ -394,6 +394,28 @@ export default function PerfilIndex() {
                                         {savingFefoPriceConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Icon icon="solar:printer-bold-duotone" width={14} />
+                                        Tamaño del Logo en Ticket (Comprobante)
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <select
+                                            disabled={vm.savingTicketLogoSize}
+                                            value={perfil.empresa.ticketLogoSize ?? 96}
+                                            onChange={(e) => vm.handleTicketLogoSizeChange(Number(e.target.value))}
+                                            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value={64}>Pequeño (64px)</option>
+                                            <option value={96}>Normal (96px)</option>
+                                            <option value={128}>Grande (128px)</option>
+                                            <option value={160}>Extra Grande (160px)</option>
+                                            <option value={192}>Máximo (192px)</option>
+                                        </select>
+                                        {vm.savingTicketLogoSize && <span className="text-xs text-blue-600 dark:text-blue-400">Guardando...</span>}
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ajusta qué tan grande se imprime el logo de tu empresa en los tickets térmicos de 80mm.</p>
+                                </div>
                                 {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
                                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                         <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">

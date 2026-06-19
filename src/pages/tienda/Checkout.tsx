@@ -8,6 +8,7 @@ import ProductCardPio from '@/components/tienda/ProductCardPio';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import GadgetsCheckout from './GadgetsCheckout';
+import AutopartesCheckout from './AutopartesCheckout';
 import { clearTiendaCart, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
@@ -476,6 +477,44 @@ export default function Checkout() {
                 )}
                 <ConfirmOrderModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={enviarPedido} total={calcularTotal()} loading={enviando} tiendaColor={tienda?.diseno?.colorPrimario || '#6A6CFF'} />
             </>
+        );
+    }
+
+    // ── Autopartes Checkout ──────────────────────────────────────────────────────────
+    if (diseno.plantillaId === 'autopartes') {
+        return (
+            <AutopartesCheckout
+                slug={slug || ''}
+                tienda={tienda}
+                carrito={carritoState}
+                formData={formData}
+                erroresForm={erroresForm}
+                configPago={configPago}
+                configEnvio={configEnvio}
+                enviando={enviando}
+                suggestedProducts={suggestedProducts}
+                search={search}
+                searchResults={searchResults}
+                setSearch={setSearch}
+                handleChange={handleChange}
+                updateQuantity={updateQuantity}
+                removeItem={removeItem}
+                calcularSubtotal={calcularSubtotal}
+                calcularCostoEnvio={calcularCostoEnvio}
+                calcularTotal={calcularTotal}
+                onSubmit={enviarPedido}
+                onAddToCart={(prod) => {
+                    const existe = carritoState.find(x => x.id === prod.id);
+                    if (existe) {
+                        updateQuantity(prod.id, existe.cantidad + 1);
+                    } else {
+                        setCarritoState([...carritoState, { ...prod, cantidad: 1 }]);
+                    }
+                }}
+                freeDeliveryThreshold={configEnvio?.montoEnvioGratis || 0}
+                freeDeliveryRemaining={freeDeliveryRemaining}
+                freeDeliveryProgress={freeDeliveryProgress}
+            />
         );
     }
 

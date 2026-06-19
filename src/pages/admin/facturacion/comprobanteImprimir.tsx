@@ -124,7 +124,7 @@ const ComprobantePrintPage = ({
             >
                 {size === 'TICKET' ? (
                     <div className="">
-                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto w-[96px] h-[96px] mb-1 object-contain" style={{ width: 96, height: 96, objectFit: 'contain', display: 'block', margin: '0 auto 4px' }} />}
+                        {logoDataUrl && <img src={logoDataUrl} alt="logo" className="mx-auto mb-1 object-contain" style={{ width: company?.empresa?.ticketLogoSize ?? 96, height: company?.empresa?.ticketLogoSize ?? 96, objectFit: 'contain', display: 'block', margin: '0 auto 4px' }} />}
                         <p className={`text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
                             DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br />

@@ -16,6 +16,7 @@ import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import XtraHero from '@/components/tienda/XtraHero';
 import XtraHeader from '@/components/tienda/XtraHeader';
 import GadgetsLayout from '@/components/tienda/GadgetsLayout';
+import AutopartesLayout from '@/components/tienda/AutopartesLayout';
 import { resolveTemplate } from '@/components/tienda/resolveTemplate';
 import StoreSidebar from '@/components/tienda/StoreSidebar';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
@@ -589,6 +590,27 @@ export default function TiendaPublica() {
   if (diseno.plantillaId === 'gadgets') {
     return (
       <GadgetsLayout
+        tienda={tienda}
+        slug={slug || ''}
+        productos={productos}
+        allCategories={allCategories}
+        cp={cp}
+        diseno={diseno}
+        carrito={carrito}
+        setCarrito={setCarrito}
+        mostrarCarrito={mostrarCarrito}
+        setMostrarCarrito={setMostrarCarrito}
+        agregarAlCarrito={agregarAlCarrito}
+        actualizarCantidad={actualizarCantidad}
+        loading={loading}
+      />
+    );
+  }
+
+  // ── Autopartes template: fully isolated layout ───────────────────────────────
+  if (diseno.plantillaId === 'autopartes') {
+    return (
+      <AutopartesLayout
         tienda={tienda}
         slug={slug || ''}
         productos={productos}

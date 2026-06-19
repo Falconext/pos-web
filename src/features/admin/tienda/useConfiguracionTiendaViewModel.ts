@@ -245,6 +245,22 @@ export const useConfiguracionTiendaViewModel = (): any => {
         }
     };
 
+    const actualizarDiseno = async (campos: Record<string, any>) => {
+        try {
+            setSaving(true);
+            await apiClient.patch('/tienda/diseno', campos);
+            setConfig((prev: any) => ({
+                ...prev,
+                diseno: { ...(prev?.diseno || {}), ...campos },
+            }));
+            alert('Configuración de diseño guardada', 'success');
+        } catch (e: any) {
+            alert(e.response?.data?.message || 'Error al guardar diseño', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const subirBanner = async (file: File) => {
         if (!canUploadBanner) { alert(`Límite alcanzado: máximo ${bannerIsSlider ? SLIDER_MAX_COUNT : 6} banners para esta plantilla`, 'warning'); return; }
         if (file.size > 2.5 * 1024 * 1024) { alert('El archivo es demasiado grande. Máximo 2.5MB', 'error'); return; }
@@ -312,6 +328,6 @@ export const useConfiguracionTiendaViewModel = (): any => {
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,
         editingBanner, setEditingBanner, editBannerTitle, setEditBannerTitle, editBannerSubtitle, setEditBannerSubtitle, editBannerLink, setEditBannerLink, editBannerOrden, setEditBannerOrden,
         editBannerFile, setEditBannerFile, editSearch, setEditSearch, editResults, searchingEdit, openEditModal, handleUpdateBanner,
-        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria,
+        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno,
     };
 };

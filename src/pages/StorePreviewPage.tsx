@@ -2,6 +2,19 @@ import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import ProductCardCatalog from '@/components/tienda/ProductCardCatalog';
+import AutopartesHeader from '@/components/tienda/AutopartesHeader';
+import AutopartesHero from '@/components/tienda/AutopartesHero';
+import AutopartesFeaturedCategories from '@/components/tienda/AutopartesFeaturedCategories';
+import AutopartesPromoBanners from '@/components/tienda/AutopartesPromoBanners';
+import ProductCardAutopartes from '@/components/tienda/ProductCardAutopartes';
+import AutopartesTrendingProducts from '@/components/tienda/AutopartesTrendingProducts';
+import AutopartesDealsOfTheWeek from '@/components/tienda/AutopartesDealsOfTheWeek';
+import AutopartesBrands from '@/components/tienda/AutopartesBrands';
+import AutopartesTopSelling from '@/components/tienda/AutopartesTopSelling';
+import AutopartesFooter from '@/components/tienda/AutopartesFooter';
+import AutopartesCatalog from '@/components/tienda/AutopartesCatalog';
+import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
+import AutopartesCheckout from '@/pages/tienda/AutopartesCheckout';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 
 interface PreviewConfig {
@@ -13,7 +26,7 @@ interface PreviewConfig {
   rubroNombre?: string;
 }
 
-type PreviewPage = 'home' | 'catalogo' | 'producto';
+type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout';
 
 
 // ─── Shared Header ─────────────────────────────────────────────────────────────
@@ -341,7 +354,11 @@ function HomePage({ demo, cp, diseno, onNav, onProduct, onAddToCart }: { demo: R
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {related.slice(0, 8).map((p, i) => (
-              <ProductCardXtra key={`${p.id}-r${i}`} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
+              diseno.plantillaId === 'autopartes' ? (
+                <ProductCardGromuse key={`${p.id}-r${i}`} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
+              ) : (
+                <ProductCardXtra key={`${p.id}-r${i}`} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
+              )
             ))}
           </div>
         </div>
@@ -548,7 +565,8 @@ export default function StorePreviewPage() {
   const [demo, setDemo] = useState<RubroDemo>(getRubroDemo(''));
   const [page, setPage] = useState<PreviewPage>('home');
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
-  const [cartCount, setCartCount] = useState(0);
+  const [carrito, setCarrito] = useState<any[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todos');
 
   useEffect(() => {
@@ -579,6 +597,16 @@ export default function StorePreviewPage() {
     } catch { }
   }, []);
 
+  useEffect(() => {
+    const handleNav = (e: Event) => {
+      const targetPage = (e as CustomEvent).detail;
+      setPage(targetPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    window.addEventListener('preview-nav', handleNav);
+    return () => window.removeEventListener('preview-nav', handleNav);
+  }, []);
+
   const cp = config.colorPrimario ?? demo.colorDefault ?? '#6A6CFF';
   const cs = config.colorSecundario ?? '#ffffff';
   const ca = config.colorAccento ?? '#FF6B6B';
@@ -596,7 +624,24 @@ export default function StorePreviewPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const addToCart = () => setCartCount(c => c + 1);
+  const addToCart = (p: DemoProduct) => {
+    setCarrito(prev => {
+      const existing = prev.find(item => item.id === p.id);
+      if (existing) {
+        return prev.map(item => item.id === p.id ? { ...item, cantidad: item.cantidad + 1 } : item);
+      }
+      return [...prev, { ...p, cantidad: 1 }];
+    });
+    setIsCartOpen(true);
+  };
+  
+  const actualizarCantidad = (id: number | string, cantidad: number) => {
+    if (cantidad <= 0) {
+      setCarrito(prev => prev.filter(item => item.id !== id));
+    } else {
+      setCarrito(prev => prev.map(item => item.id === id ? { ...item, cantidad } : item));
+    }
+  };
 
   return (
     <div style={{ fontFamily: `'${tf}', sans-serif`, background: cs, minHeight: '100vh', color: '#111' }}>
@@ -612,7 +657,7 @@ export default function StorePreviewPage() {
           <span className="opacity-40">Plantilla: {config.plantillaId ?? 'gadgets'}</span>
           <span className="opacity-30">·</span>
           <span className="px-2 py-0.5 rounded bg-white/10 text-white/80">
-            {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : 'Detalle de Producto'}
+            {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : page === 'checkout' ? 'Checkout' : 'Detalle de Producto'}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -630,20 +675,167 @@ export default function StorePreviewPage() {
       </div>
 
       <div style={{ paddingTop: 36 }}>
-        <PreviewHeader demo={demo} cp={cp} cartCount={cartCount} currentPage={page} onNav={goToPage} activeCategory={activeCategory} onSelectCategory={setActiveCategory} />
-
-        {page === 'home' && (
-          <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={addToCart} />
+        {config.plantillaId === 'autopartes' ? (
+          page !== 'checkout' ? (
+            <AutopartesHeader 
+              tienda={{ nombre: demo.storeName, logo: '' }} 
+              slug="preview" 
+              cp={cp} 
+              carritoSize={carrito.reduce((sum, item) => sum + item.cantidad, 0)} 
+              onOpenCart={() => setIsCartOpen(true)} 
+              searchQuery="" 
+              setSearchQuery={() => {}} 
+              onSearchSubmit={(e) => { e.preventDefault(); goToPage('catalogo'); }} 
+              allCategories={demo.categories.filter(c => c !== 'Todos')} 
+            />
+          ) : null
+        ) : (
+          <PreviewHeader demo={demo} cp={cp} cartCount={carrito.reduce((sum, item) => sum + item.cantidad, 0)} currentPage={page} onNav={goToPage} activeCategory={activeCategory} onSelectCategory={setActiveCategory} />
         )}
+
+        {isCartOpen && (
+          <AutopartesCartModal 
+            isOpen={isCartOpen}
+            cp={cp} 
+            carrito={carrito} 
+            setCarrito={setCarrito}
+            onClose={() => setIsCartOpen(false)} 
+            actualizarCantidad={actualizarCantidad} 
+            onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }} 
+          />
+        )}
+
+        {page === 'home' && config.plantillaId === 'autopartes' ? (
+          <div className="bg-[#FAF5F5]">
+            <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-8 md:py-10">
+              <AutopartesHero cp={cp} slug="preview" diseno={diseno} productos={demo.products.slice(0, 3)} />
+              <AutopartesFeaturedCategories cp={cp} slug="preview" />
+              <div className="mt-8 mb-16">
+                <AutopartesPromoBanners cp={cp} slug="preview" />
+              </div>
+            </div>
+            <section className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-16">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex gap-[3px]">
+                      <div className="w-4 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+                      <div className="w-4 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+                    </div>
+                    <span className="text-sm font-bold" style={{ color: cp }}>Producto Destacado</span>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
+                    Productos por Categoría
+                  </h2>
+                </div>
+                
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-3">
+                  <div className="flex flex-col flex-1 min-w-[160px]">
+                    <span className="text-[10px] text-gray-500 font-bold mb-1 ml-1">Categoría Principal</span>
+                    <div className="bg-white border border-gray-200 rounded px-3 py-2 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-colors">
+                      <span className="text-xs font-bold text-gray-700">Motor y Rendimiento</span>
+                      <Icon icon="solar:alt-arrow-down-linear" className="text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-[140px]">
+                    <span className="text-[10px] text-gray-500 font-bold mb-1 ml-1">Sub Categoría</span>
+                    <div className="bg-white border border-gray-200 rounded px-3 py-2 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-colors">
+                      <span className="text-xs font-bold text-gray-700">Todas las Piezas</span>
+                      <Icon icon="solar:alt-arrow-down-linear" className="text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-end mt-2 md:mt-0 md:h-[50px] w-full md:w-auto">
+                     <button className="h-[34px] bg-[#1A1A1A] text-white px-5 rounded text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-black transition-colors md:mt-auto">
+                       <Icon icon="solar:magnifer-linear" />
+                       Buscar
+                     </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {demo.products.slice(0, 8).map(product => (
+                  <ProductCardAutopartes 
+                    key={product.id} 
+                    producto={product} 
+                    slug="preview" 
+                    diseno={diseno} 
+                    onAddToCart={() => {
+                      addToCart(product);
+                    }} 
+                  />
+                ))}
+              </div>
+            </section>
+            
+            <section className="w-full max-w-7xl mx-auto px-4 xl:px-8 pb-16">
+              <AutopartesTrendingProducts 
+                cp={cp} 
+                slug="preview" 
+                productos={[...demo.products].reverse()} 
+                diseno={diseno} 
+                onAddToCart={(p) => {
+                  addToCart(p);
+                }} 
+              />
+            </section>
+
+            <AutopartesDealsOfTheWeek cp={cp} slug="preview" productos={demo.products} />
+            <AutopartesBrands cp={cp} slug="preview" />
+
+            <div className="bg-[#FAF5F5]">
+              <AutopartesTopSelling cp={cp} />
+            </div>
+          </div>
+        ) : page === 'home' ? (
+          <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={addToCart} />
+        ) : null}
         {page === 'catalogo' && (
-          <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
+          config.plantillaId === 'autopartes' ? (
+            <AutopartesCatalog demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
+          ) : (
+            <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
+          )
         )}
         {page === 'producto' && selectedProduct && (
           <ProductoPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={addToCart} />
         )}
+        {page === 'checkout' && (
+          config.plantillaId === 'autopartes' ? (
+            <AutopartesCheckout 
+                slug="preview"
+                tienda={{ nombre: demo.storeName, diseno }}
+                carrito={carrito}
+                formData={{}}
+                erroresForm={{}}
+                configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+                configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+                enviando={false}
+                search=""
+                setSearch={() => {}}
+                searchResults={[]}
+                suggestedProducts={[]}
+                handleChange={() => {}}
+                updateQuantity={actualizarCantidad}
+                removeItem={(id) => actualizarCantidad(id, 0)}
+                calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+                calcularCostoEnvio={() => 15}
+                calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+                onSubmit={() => alert('¡Compra completada en modo demo!')}
+                onAddToCart={addToCart}
+                freeDeliveryThreshold={0}
+                freeDeliveryRemaining={0}
+                freeDeliveryProgress={0}
+              />
+          ) : (
+            <div className="py-20 text-center font-bold text-gray-500">Checkout Preview (Generic)</div>
+          )
+        )}
 
         {/* Footer on home/catalogo pages */}
-        {page !== 'producto' && (
+        {config.plantillaId === 'autopartes' ? (
+          page !== 'checkout' && <AutopartesFooter tienda={null} slug="preview" diseno={diseno} />
+        ) : page !== 'producto' && (
           <footer className="py-10 border-t border-gray-100" style={{ background: '#fafafa' }}>
             <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">

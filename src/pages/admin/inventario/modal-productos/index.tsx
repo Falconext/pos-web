@@ -489,10 +489,11 @@ const ModalProduct = ({ setSelectProduct, isInvoice, initialForm, formValues, se
                         </div>
                     </div>
 
-                    <div className="flex gap-5 justify-end mt-6 mb-5 md:pr-0 pt-0">
-                        <Button color="black" outline onClick={() => setIsOpenModal(false)}>Cancelar</Button>
-                        <Button color="secondary" onClick={handleSubmitProduct}>{isEdit ? "Editar" : "Guardar"}</Button>
-                    </div>
+                </div>
+
+                <div className="sticky bottom-0 z-10 flex gap-5 justify-end px-6 py-4 border-t border-gray-100 dark:border-slate-700/60 bg-white dark:bg-[#111827]">
+                    <Button color="black" outline onClick={() => setIsOpenModal(false)}>Cancelar</Button>
+                    <Button color="secondary" onClick={handleSubmitProduct}>{isEdit ? "Editar" : "Guardar"}</Button>
                 </div>
             </Modal>
             }

@@ -112,11 +112,35 @@ export default function GadgetsLayout({
 
       <main className="pt-20 pb-16 max-w-screen-xl mx-auto">
 
-        {hasBanners ? (
+        {loading ? (
+          <section className="mx-4 lg:mx-8 my-4 rounded-3xl overflow-hidden relative" style={{ background: '#0B1340', minHeight: 480 }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 22px, rgba(255,255,255,0.025) 22px, rgba(255,255,255,0.025) 23px)' }} />
+            <div className="relative grid grid-cols-1 lg:grid-cols-2 items-center min-h-[480px]">
+              <div className="px-8 lg:px-16 py-12 lg:py-20 flex flex-col justify-center">
+                <div className="w-48 h-6 rounded-full bg-white/10 animate-pulse mb-6" />
+                <div className="w-full max-w-md h-16 rounded-xl bg-white/10 animate-pulse mb-3" />
+                <div className="w-3/4 max-w-sm h-16 rounded-xl bg-white/10 animate-pulse mb-6" />
+                <div className="w-full max-w-sm h-4 rounded bg-white/10 animate-pulse mb-3" />
+                <div className="w-2/3 max-w-xs h-4 rounded bg-white/10 animate-pulse mb-8" />
+                <div className="flex gap-4">
+                  <div className="w-40 h-12 rounded-full bg-white/10 animate-pulse" />
+                  <div className="w-40 h-12 rounded-full bg-white/10 animate-pulse" />
+                </div>
+              </div>
+              <div className="relative flex items-center justify-center h-64 lg:h-auto lg:min-h-[480px] px-8 lg:px-12 pb-8 lg:pb-0">
+                <div className="absolute w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none animate-pulse" style={{ background: cp, right: '5%', top: '15%' }} />
+                <div className="absolute w-52 h-52 rounded-full blur-2xl opacity-10 pointer-events-none animate-pulse" style={{ background: 'radial-gradient(circle, #e879f9 0%, #f97316 100%)', right: '20%', top: '20%' }} />
+                <div className="w-64 h-64 lg:w-80 lg:h-80 rounded-2xl bg-white/5 animate-pulse border border-white/10" />
+                <div className="absolute bottom-10 -right-4 lg:-right-0 w-48 h-16 bg-white/10 rounded-2xl animate-pulse backdrop-blur-md border border-white/20" />
+              </div>
+            </div>
+          </section>
+        ) : hasBanners ? (
           <GadgetsHeroBanner tienda={tienda} diseno={diseno} />
         ) : (
-          <XtraHero
+          <XtraHero 
             tienda={tienda}
+            diseno={diseno}
             productos={productos}
             cp={cp}
             onExplore={() => document.getElementById('g-populares')?.scrollIntoView({ behavior: 'smooth' })}

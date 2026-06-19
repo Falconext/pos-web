@@ -7,7 +7,8 @@ export type PlantillaId =
   | 'mercado'
   | 'salud'
   | 'menu'
-  | 'gadgets';
+  | 'gadgets'
+  | 'autopartes';
 
 export interface BannerSlotDef {
   orden: number;
@@ -46,6 +47,10 @@ export interface TemplateConfig {
   accentColor: string;
   /** Icon for admin UI */
   icon: string;
+  /** Restricted to specific subscription plans. If undefined or empty, allowed for all plans. */
+  planesPermitidos?: string[];
+  /** Restricted to specific rubros (by name). If undefined or empty, allowed for all rubros. */
+  rubrosPermitidos?: string[];
 }
 
 const CLASSIC_BANNER_SLOTS: BannerSlotDef[] = [
@@ -191,6 +196,24 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Cards con ticker de oferta, rating y badges animados. Ideal para tecnología, accesorios y cómputo.',
     accentColor: '#1E3A5F',
     icon: 'solar:cpu-bold',
+  },
+  autopartes: {
+    cardComponent: 'ProductCardPio', // We can use Pio or Gadgets, let's stick to Pio or Gromuse for now
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [], // Handled by AutopartesHero directly
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Autopartes',
+    description: 'Diseño oscuro e industrial con selector de vehículos. Ideal para repuestos y accesorios.',
+    accentColor: '#D92D20',
+    icon: 'solar:wheel-bold',
+    planesPermitidos: ['CORPORATIVO', 'VIP'],
+    rubrosPermitidos: ['Automotriz y repuestos'],
   },
 };
 

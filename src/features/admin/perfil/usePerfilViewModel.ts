@@ -112,6 +112,28 @@ export const usePerfilViewModel = () => {
         }
     };
 
+    const [savingTicketLogoSize, setSavingTicketLogoSize] = useState(false);
+    const logoSizeRef = useRef(false);
+
+    const handleTicketLogoSizeChange = async (size: number) => {
+        if (logoSizeRef.current) return;
+        try {
+            logoSizeRef.current = true;
+            setSavingTicketLogoSize(true);
+            await useEmpresasStore.getState().actualizarMiEmpresa({ ticketLogoSize: size });
+            setPerfil((prev: any) => {
+                if (!prev) return prev;
+                return { ...prev, empresa: { ...prev.empresa, ticketLogoSize: size } };
+            });
+            useAlertStore.getState().alert('Tamaño de logo actualizado', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || 'Error al actualizar tamaño', 'error');
+        } finally {
+            logoSizeRef.current = false;
+            setSavingTicketLogoSize(false);
+        }
+    };
+
     const cargarUsageStats = async () => {
         try {
             const response: any = await get('comprobante/usage');
@@ -279,5 +301,5 @@ export const usePerfilViewModel = () => {
         }
     };
 
-    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado };
+    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize };
 };

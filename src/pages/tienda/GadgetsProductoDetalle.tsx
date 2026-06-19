@@ -428,21 +428,52 @@ export default function GadgetsProductoDetalle() {
           </div>
         </div>
         <main className="pt-8 pb-16 max-w-screen-xl mx-auto px-5 md:px-8">
-          <div className="animate-pulse bg-gray-100 rounded w-48 h-4 mb-8" />
+          {/* Breadcrumb Skeleton */}
+          <div className="flex items-center gap-2 mb-8">
+            <div className="animate-pulse bg-gray-100 rounded w-16 h-4" />
+            <div className="animate-pulse bg-gray-100 rounded w-4 h-4" />
+            <div className="animate-pulse bg-gray-100 rounded w-20 h-4" />
+            <div className="animate-pulse bg-gray-100 rounded w-4 h-4" />
+            <div className="animate-pulse bg-gray-100 rounded w-32 h-4" />
+          </div>
+
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 rounded-[2rem] border border-gray-100 bg-white p-4 md:p-6 lg:p-8 shadow-sm">
             {/* Image Skeleton */}
-            <div className="animate-pulse bg-gray-100 rounded-[2rem] aspect-square" />
+            <div className="flex flex-col gap-4">
+              <div className="animate-pulse bg-gray-50 rounded-[2rem] aspect-square flex items-center justify-center border border-gray-100">
+                <Icon icon="solar:gallery-bold-duotone" className="text-gray-200 text-6xl" />
+              </div>
+              <div className="flex gap-3 justify-center">
+                <div className="animate-pulse bg-gray-50 rounded-xl w-16 h-16 border border-gray-100" />
+                <div className="animate-pulse bg-gray-50 rounded-xl w-16 h-16 border border-gray-100" />
+                <div className="animate-pulse bg-gray-50 rounded-xl w-16 h-16 border border-gray-100" />
+              </div>
+            </div>
+
             {/* Info Skeleton */}
             <div className="flex flex-col pt-4">
-              <div className="animate-pulse bg-gray-100 rounded w-24 h-5 mb-4" />
-              <div className="animate-pulse bg-gray-100 rounded w-3/4 h-10 mb-4" />
-              <div className="animate-pulse bg-gray-100 rounded w-1/2 h-4 mb-6" />
-              <div className="animate-pulse bg-gray-100 rounded w-1/3 h-10 mb-8" />
-              <div className="animate-pulse bg-gray-100 rounded-xl w-full h-14 mb-4" />
-              <div className="animate-pulse bg-gray-100 rounded-xl w-full h-14 mb-8" />
-              <div className="grid grid-cols-2 gap-3 mt-auto">
-                <div className="animate-pulse bg-gray-100 rounded-xl h-16" />
-                <div className="animate-pulse bg-gray-100 rounded-xl h-16" />
+              <div className="flex items-center gap-2 mb-4">
+                <div className="animate-pulse bg-gray-100 rounded-full w-24 h-6" />
+                <div className="animate-pulse bg-gray-100 rounded-full w-16 h-6" />
+              </div>
+              <div className="animate-pulse bg-gray-100 rounded-2xl w-3/4 h-12 mb-4" />
+              <div className="animate-pulse bg-gray-100 rounded-2xl w-1/2 h-12 mb-6" />
+              <div className="flex gap-2 mb-6">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="animate-pulse bg-gray-100 rounded-full w-5 h-5" />
+                ))}
+              </div>
+              <div className="animate-pulse bg-gray-100 rounded-xl w-1/3 h-10 mb-8" />
+              <div className="animate-pulse bg-gray-50 rounded-xl w-full h-24 mb-8 border border-gray-100" />
+              
+              <div className="flex gap-4 mb-6">
+                <div className="animate-pulse bg-gray-100 rounded-xl w-32 h-14" />
+                <div className="animate-pulse bg-gray-100 rounded-xl flex-1 h-14" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-6 border-t border-gray-100">
+                <div className="animate-pulse bg-gray-50 rounded-xl h-16 border border-gray-100" />
+                <div className="animate-pulse bg-gray-50 rounded-xl h-16 border border-gray-100" />
               </div>
             </div>
           </div>

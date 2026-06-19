@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import axios from 'axios';
 import ProductoDetalle from './ProductoDetalle';
 import GadgetsProductoDetalle from './GadgetsProductoDetalle';
+import AutopartesProductoDetalle from './AutopartesProductoDetalle';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -32,5 +33,6 @@ export default function ProductoDetalleRouter() {
   }
 
   if (plantillaId === 'gadgets') return <GadgetsProductoDetalle />;
+  if (plantillaId === 'autopartes') return <AutopartesProductoDetalle />;
   return <ProductoDetalle />;
 }
