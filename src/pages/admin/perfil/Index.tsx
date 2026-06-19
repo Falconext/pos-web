@@ -406,11 +406,14 @@ export default function PerfilIndex() {
                                             onChange={(e) => vm.handleTicketLogoSizeChange(Number(e.target.value))}
                                             className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
-                                            <option value={64}>Pequeño (64px)</option>
-                                            <option value={96}>Normal (96px)</option>
-                                            <option value={128}>Grande (128px)</option>
-                                            <option value={160}>Extra Grande (160px)</option>
-                                            <option value={192}>Máximo (192px)</option>
+                                            <option value={64}>Extra Pequeño (64px)</option>
+                                            <option value={96}>Pequeño (96px)</option>
+                                            <option value={128}>Normal (128px)</option>
+                                            <option value={160}>Grande (160px)</option>
+                                            <option value={192}>Extra Grande (192px)</option>
+                                            <option value={256}>Enorme (256px)</option>
+                                            <option value={320}>Gigante (320px)</option>
+                                            <option value={384}>Máximo Ancho (384px)</option>
                                         </select>
                                         {vm.savingTicketLogoSize && <span className="text-xs text-blue-600 dark:text-blue-400">Guardando...</span>}
                                     </div>

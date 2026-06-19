@@ -22,11 +22,11 @@ interface PerfilData {
 }
 
 const whatsappFormFromPerfil = (perfil: PerfilData): WhatsAppSettingsForm => ({
-    provider: perfil.empresa.whatsappProvider || 'PLATFORM',
-    phoneNumberId: perfil.empresa.whatsappPhoneNumberId || '',
-    businessId: perfil.empresa.whatsappBusinessId || '',
+    provider: perfil.empresa?.whatsappProvider || 'PLATFORM',
+    phoneNumberId: perfil.empresa?.whatsappPhoneNumberId || '',
+    businessId: perfil.empresa?.whatsappBusinessId || '',
     apiToken: '',
-    activo: perfil.empresa.whatsappActivo ?? true,
+    activo: perfil.empresa?.whatsappActivo ?? true,
 });
 
 export const usePerfilViewModel = () => {
@@ -190,7 +190,7 @@ export const usePerfilViewModel = () => {
     };
 
     const whatsappConfigDirty = useMemo(() => {
-        if (!perfil) return false;
+        if (!perfil || !perfil.empresa) return false;
         const initial = whatsappFormFromPerfil(perfil);
         return (
             whatsAppForm.provider !== initial.provider ||

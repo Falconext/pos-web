@@ -4,9 +4,17 @@ import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import ModalConfirm from '@/components/ModalConfirm';
 import { ALL_PLANTILLAS, type PlantillaId } from '@/components/tienda/resolveTemplate';
+import { useAuthStore } from '@/zustand/auth';
 
 export default function ConfiguracionTienda() {
   const vm = useConfiguracionTiendaViewModel();
+  const auth = useAuthStore(s => s.auth);
+  const rubroNombre = auth?.empresa?.rubro?.nombre || '';
+
+  const plantillasVisibles = ALL_PLANTILLAS.filter(p => {
+    if (!p.rubrosPermitidos || p.rubrosPermitidos.length === 0) return true;
+    return p.rubrosPermitidos.includes(rubroNombre);
+  });
 
   if (vm.loading) {
     return (
@@ -91,7 +99,7 @@ export default function ConfiguracionTienda() {
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {ALL_PLANTILLAS.map(plantilla => {
+            {plantillasVisibles.map(plantilla => {
               const isOn = vm.config?.diseno?.plantillaId === plantilla.id;
               
               // Determine if this template is allowed for the user's plan
