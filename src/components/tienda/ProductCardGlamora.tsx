@@ -17,6 +17,7 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
     const price = Number(producto.precioUnitario || 0);
     const priceInt = Math.floor(price);
     const priceDec = price.toFixed(2).split('.')[1];
+    const isOutOfStock = Number(producto.stock) <= 0;
 
     // Determine category name and unit safely
     const categoryName = producto.categoria && typeof producto.categoria === 'object'
@@ -41,16 +42,30 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
                         <ProductCardActions producto={producto} slug={slug} cp={diseno?.colorPrimario || '#1E1B4B'} />
                     </div>
                     {producto.imagenUrl ? (
-                        <img
-                            src={producto.imagenUrl}
-                            alt={producto.descripcion}
-                            onLoad={() => setImageLoaded(true)}
-                            className={`w-32 h-32 object-contain transition-transform duration-500 group-hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                            loading="lazy"
-                        />
+                        <>
+                            <img
+                                src={producto.imagenUrl}
+                                alt={producto.descripcion}
+                                onLoad={() => setImageLoaded(true)}
+                                className={`w-32 h-32 object-contain transition-transform duration-500 group-hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'} ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
+                                loading="lazy"
+                            />
+                            {isOutOfStock && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <span className="bg-red-500/90 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                        Agotado
+                                    </span>
+                                </div>
+                            )}
+                        </>
                     ) : (
-                        <div className="w-32 h-32 flex items-center justify-center text-gray-200">
+                        <div className="w-32 h-32 flex items-center justify-center text-gray-200 relative">
                             <Icon icon="solar:box-linear" className="w-12 h-12" />
+                            {isOutOfStock && (
+                                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500/90 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                    Agotado
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>
@@ -89,17 +104,18 @@ export default function ProductCardGlamora({ producto, slug, diseno, onAddToCart
             {/* Bottom Button Area - Add to Cart */}
             <div className="relative w-full">
                 {/* Background section */}
-                <div className="bg-[#EDE9E3] h-14 w-full relative flex items-center justify-center rounded-b-xl">
+                <div className={`h-14 w-full relative flex items-center justify-center rounded-b-xl ${isOutOfStock ? 'bg-gray-100' : 'bg-[#EDE9E3]'}`}>
                     <button
+                        disabled={isOutOfStock}
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            onAddToCart(producto);
+                            if (!isOutOfStock) onAddToCart(producto);
                         }}
-                        className="w-full h-full flex items-center justify-center hover:bg-[#e8ede3] transition-colors rounded-b-xl cursor-pointer"
-                        aria-label="Agregar al carrito"
+                        className={`w-full h-full flex items-center justify-center transition-colors rounded-b-xl ${isOutOfStock ? 'cursor-not-allowed' : 'hover:bg-[#e8ede3] cursor-pointer'}`}
+                        aria-label={isOutOfStock ? "Agotado" : "Agregar al carrito"}
                     >
-                        <Icon icon="mdi:plus" className="w-8 h-8 text-[#2d6a6d] group-hover/btn:scale-110 transition-transform font-bold" />
+                        <Icon icon={isOutOfStock ? "mdi:close" : "mdi:plus"} className={`w-8 h-8 font-bold ${isOutOfStock ? 'text-gray-400' : 'text-[#2d6a6d] group-hover/btn:scale-110 transition-transform'}`} />
                     </button>
                 </div>
             </div>

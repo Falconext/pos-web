@@ -1,8 +1,11 @@
 import { Icon } from '@iconify/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useEscapeKey from '@/hooks/useEscapeKey';
 import { useFavoritosStore } from '@/zustand/favoritos';
+import axios from 'axios';
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 interface StoreHeaderProps {
     tienda: any;
@@ -50,6 +53,33 @@ export default function StoreHeader({
     useEscapeKey(() => setIsFavoritosOpen(false), isFavoritosOpen);
 
     const cp = tienda?.diseno?.colorPrimario || '#FF9500';
+
+    const [liveResults, setLiveResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Búsqueda en vivo al backend
+    useEffect(() => {
+        const term = search.trim();
+        if (!term) {
+            setLiveResults([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, {
+                    params: { search: term, limit: 8 }
+                });
+                const items = Array.isArray(data) ? data : data?.data?.data || data?.data || [];
+                setLiveResults(items);
+            } catch (e) {
+                console.error('Error fetching live search', e);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [search, slug]);
 
     const handleSearchTrigger = () => { if (onSearch) onSearch(); };
 
@@ -104,30 +134,44 @@ export default function StoreHeader({
                     </div>
 
                     {/* Search Dropdown */}
-                    {isSearchFocused && recommendedProducts.length > 0 && (
+                    {isSearchFocused && search.trim() && (
                         <>
                             <div className="fixed inset-0 z-30" onClick={() => setIsSearchFocused(false)} />
                             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-[60] p-4">
-                                <p className="text-[10px] font-bold text-[#999] uppercase tracking-widest mb-3">Productos destacados</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {recommendedProducts.slice(0, 6).map((item, i) => (
-                                        <a
-                                            href={`/tienda/${slug}/producto/${item.id}`}
-                                            key={i}
-                                            className="flex items-center gap-3 p-2 hover:bg-[#FAF6F1] rounded-xl group"
-                                        >
-                                            <div className="w-10 h-10 rounded-xl bg-[#FAF6F1] flex items-center justify-center flex-shrink-0">
-                                                <img src={item.imagenUrl || ''} className="w-full h-full object-contain rounded-xl p-1" alt="" />
-                                            </div>
-                                            <span className="text-xs font-semibold text-[#1A1A1A] truncate transition-colors">
-                                                {item.descripcion}
-                                            </span>
-                                        </a>
-                                    ))}
+                                <div className="flex justify-between items-center mb-3">
+                                    <p className="text-[10px] font-bold text-[#999] uppercase tracking-widest">Resultados de búsqueda</p>
+                                    <button onClick={handleSearchTrigger} className="text-[11px] font-black text-gray-800 hover:opacity-80">Ver todos</button>
                                 </div>
+                                {isSearching ? (
+                                    <div className="py-8 flex justify-center">
+                                        <Icon icon="eos-icons:loading" className="text-gray-300 text-2xl" />
+                                    </div>
+                                ) : liveResults.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {liveResults.map((item, i) => (
+                                            <a
+                                                href={`/tienda/${slug}/producto/${item.id}`}
+                                                key={i}
+                                                className="flex items-center gap-3 p-2 hover:bg-[#FAF6F1] rounded-xl group"
+                                            >
+                                                <div className="w-10 h-10 rounded-xl bg-[#FAF6F1] flex items-center justify-center flex-shrink-0">
+                                                    <img src={item.imagenUrl || ''} className="w-full h-full object-contain rounded-xl p-1" alt="" />
+                                                </div>
+                                                <span className="text-xs font-semibold text-[#1A1A1A] truncate transition-colors">
+                                                    {item.descripcion}
+                                                </span>
+                                            </a>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-xl bg-gray-50 px-4 py-5 text-center">
+                                        <p className="text-xs font-bold text-gray-600">No encontramos productos con "{search.trim()}"</p>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
+
                 </div>
 
                 {/* Right Icons */}

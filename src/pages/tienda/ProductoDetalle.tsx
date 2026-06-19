@@ -278,6 +278,7 @@ export default function ProductoDetalle() {
 
   const precioBaseActual = varianteActiva ? Number(varianteActiva.precioUnitario || 0) : Number(producto?.precioUnitario || 0);
   const stockActual = varianteActiva ? (varianteActiva.stock || 0) : (producto?.stock || 0);
+  const isOutOfStock = stockActual <= 0;
   const precioFinal = precioBaseActual + precioExtra;
 
   const handleVarianteChange = (nombre: string, valor: string) => {
@@ -777,20 +778,23 @@ export default function ProductoDetalle() {
 
               <div className="flex gap-3 md:contents w-full order-2 md:order-none">
                 <button
+                  disabled={isOutOfStock}
                   onClick={handleAgregarProducto}
-                  className="flex-1 bg-[#1A1A1A] hover:bg-black text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors w-full md:w-auto"
+                  className={`flex-1 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#1A1A1A] hover:bg-black text-white'}`}
                 >
-                  <Icon icon="solar:cart-large-minimalistic-linear" width={20} />
-                  <span className="hidden sm:inline">Agregar</span>
-                  <span className="sm:hidden">Agregar</span>
+                  <Icon icon={isOutOfStock ? "solar:close-circle-bold" : "solar:cart-large-minimalistic-linear"} width={20} />
+                  <span className="hidden sm:inline">{isOutOfStock ? 'Agotado' : 'Agregar'}</span>
+                  <span className="sm:hidden">{isOutOfStock ? 'Agotado' : 'Agregar'}</span>
                 </button>
 
-                <button
-                  onClick={irACheckout}
-                  className="flex-1 bg-[#FF9500] hover:bg-[#E08500] text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
-                >
-                  Comprar ahora
-                </button>
+                {!isOutOfStock && (
+                  <button
+                    onClick={irACheckout}
+                    className="flex-1 bg-[#FF9500] hover:bg-[#E08500] text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm w-full md:w-auto"
+                  >
+                    Comprar ahora
+                  </button>
+                )}
               </div>
             </div>
 

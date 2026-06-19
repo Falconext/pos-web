@@ -8,6 +8,22 @@ import ProductCardXtra from './ProductCardXtra';
 import Footer from './Footer';
 import GadgetsCartModal from './GadgetsCartModal';
 import { useCompareStore } from '@/zustand/compare';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 function SectionHeader({ title, count, cp, onMore }: { title: string; count?: number; cp: string; onMore?: () => void }) {
   return (
@@ -118,7 +134,15 @@ export default function GadgetsLayout({
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-72" />
+                <div key={i} className="bg-white rounded-[1.5rem] border border-gray-100 p-4 h-[340px] flex flex-col shadow-sm">
+                  <div className="animate-pulse bg-gray-100 rounded-xl w-full h-48 mb-4" />
+                  <div className="animate-pulse bg-gray-100 rounded w-3/4 h-4 mb-2" />
+                  <div className="animate-pulse bg-gray-100 rounded w-1/2 h-3 mb-4" />
+                  <div className="mt-auto flex justify-between items-end">
+                    <div className="animate-pulse bg-gray-100 rounded w-1/3 h-6" />
+                    <div className="animate-pulse bg-gray-100 rounded-full w-9 h-9" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : popular.length === 0 ? (
@@ -127,18 +151,25 @@ export default function GadgetsLayout({
               <p className="text-sm">Sin productos en esta categoría</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-50px" }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+            >
               {popular.map(p => (
-                <ProductCardXtra
-                  key={p.id}
-                  producto={p}
-                  slug={slug}
-                  diseno={diseno}
-                  onAddToCart={() => agregarAlCarrito(p)}
-                  onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)}
-                />
+                <motion.div key={p.id} variants={itemVariants}>
+                  <ProductCardXtra
+                    producto={p}
+                    slug={slug}
+                    diseno={diseno}
+                    onAddToCart={() => agregarAlCarrito(p)}
+                    onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </section>
 
@@ -152,18 +183,25 @@ export default function GadgetsLayout({
                 cp={cp}
                 onMore={() => navigate(`/tienda/${slug}/catalogo`)}
               />
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: "-50px" }}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+              >
                 {related.map((p, i) => (
-                  <ProductCardXtra
-                    key={`${p.id}-rel-${i}`}
-                    producto={p}
-                    slug={slug}
-                    diseno={diseno}
-                    onAddToCart={() => agregarAlCarrito(p)}
-                    onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)}
-                  />
+                  <motion.div key={`${p.id}-rel-${i}`} variants={itemVariants}>
+                    <ProductCardXtra
+                      producto={p}
+                      slug={slug}
+                      diseno={diseno}
+                      onAddToCart={() => agregarAlCarrito(p)}
+                      onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </div>
           </section>
         )}

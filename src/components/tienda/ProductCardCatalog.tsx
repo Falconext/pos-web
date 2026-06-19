@@ -26,6 +26,7 @@ export default function ProductCardCatalog({ producto, slug, cp, onAddToCart, on
   const hasDiscount = !!(originalPrice && originalPrice > price);
   const ratingCount = Number(producto.ratingCount || 0);
   const ratingAvg = ratingCount > 0 ? Number(producto.ratingAvg || 0) : 0;
+  const isOutOfStock = Number(producto.stock) <= 0;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group" onClick={onClick}>
@@ -34,11 +35,31 @@ export default function ProductCardCatalog({ producto, slug, cp, onAddToCart, on
         <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
           <ProductCardActions producto={producto} slug={slug} cp={cp} />
         </div>
-        <img
-          src={producto.imagenUrl}
-          alt={producto.descripcion}
-          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-200"
-        />
+        {producto.imagenUrl ? (
+          <>
+            <img
+              src={producto.imagenUrl}
+              alt={producto.descripcion}
+              className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-200 ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
+            />
+            {isOutOfStock && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="bg-red-500/90 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                  Agotado
+                </span>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="relative w-full h-full flex items-center justify-center">
+            <Icon icon="solar:box-linear" className="text-gray-300 w-16 h-16" />
+            {isOutOfStock && (
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500/90 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                Agotado
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Info */}
@@ -74,11 +95,12 @@ export default function ProductCardCatalog({ producto, slug, cp, onAddToCart, on
             <span className="text-[10px] text-gray-400 flex-shrink-0">Sin reseñas</span>
           )}
           <button
-            className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-white flex-shrink-0 hover:opacity-80 transition-opacity"
-            style={{ background: cp }}
-            onClick={e => { e.stopPropagation(); onAddToCart?.(); }}
+            disabled={isOutOfStock}
+            className={`ml-auto w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-opacity ${isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'text-white hover:opacity-80'}`}
+            style={isOutOfStock ? undefined : { background: cp }}
+            onClick={e => { e.stopPropagation(); if (!isOutOfStock) onAddToCart?.(); }}
           >
-            <Icon icon="solar:bag-2-bold" className="text-xs" />
+            <Icon icon={isOutOfStock ? "solar:close-circle-bold" : "solar:bag-2-bold"} className="text-xs" />
           </button>
         </div>
       </div>

@@ -15,7 +15,12 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     const splitTotal = (vm.splitPayments as { method: string; amount: number }[])
         .reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const splitRemaining = Math.max(0, total - splitTotal);
-    const splitValid = Math.abs(splitTotal - total) < 0.01;
+    const splitExcess = Math.max(0, splitTotal - total);
+    const splitCashTotal = (vm.splitPayments as { method: string; amount: number }[])
+        .filter((p) => String(p.method).trim().toUpperCase() === 'EFECTIVO')
+        .reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const splitValid = Math.abs(splitTotal - total) < 0.01 || (splitExcess > 0 && splitCashTotal + 0.01 >= splitExcess);
+    const splitChange = splitValid ? Number(splitExcess.toFixed(2)) : 0;
 
     const updateSplitAmount = (idx: number, value: number) => {
         vm.setSplitPayments((curr: { method: string; amount: number }[]) => {
@@ -151,19 +156,51 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
 
                     {!vm.isMixedPayment ? (
                         /* Modo simple — un solo método */
-                        <div className="grid grid-cols-4 gap-2">
-                            {METODOS.map((m) => (
-                                <button
-                                    key={m}
-                                    onClick={() => vm.setPaymentMethod(m)}
-                                    className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m
-                                        ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50'
-                                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
-                                        }`}
-                                >
-                                    {m}
-                                </button>
-                            ))}
+                        <div className="space-y-2">
+                            <div className="grid grid-cols-4 gap-2">
+                                {METODOS.map((m) => (
+                                    <button
+                                        key={m}
+                                        onClick={() => vm.setPaymentMethod(m)}
+                                        className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m
+                                            ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50'
+                                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                            }`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {vm.isCashPayment && (
+                                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                                    <div className="relative">
+                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">S/</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={vm.pay || ''}
+                                            onChange={(e) => vm.setPay(Number(e.target.value) || 0)}
+                                            placeholder={`Recibido ${total.toFixed(2)}`}
+                                            className="w-full pl-7 pr-16 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-800 text-xs font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-300"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => vm.setPay(Number(total.toFixed(2)))}
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-[9px] font-black text-emerald-700 dark:text-emerald-300"
+                                        >
+                                            Exacto
+                                        </button>
+                                    </div>
+                                    <div className={`min-w-[88px] rounded-lg px-2.5 py-1.5 text-right ${vm.vueltoCalculado > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-gray-50 dark:bg-slate-800'}`}>
+                                        <p className="text-[9px] font-black uppercase text-gray-400">Vuelto</p>
+                                        <p className={`text-xs font-black ${vm.vueltoCalculado > 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-400'}`}>
+                                            S/ {vm.vueltoCalculado.toFixed(2)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         /* Modo mixto — múltiples métodos con montos */
@@ -222,10 +259,10 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                 </button>
                                 <div className={`text-[11px] font-bold ${splitValid ? 'text-emerald-600' : splitRemaining > 0 ? 'text-orange-500' : 'text-red-500'}`}>
                                     {splitValid
-                                        ? '✓ Completo'
+                                        ? splitChange > 0 ? `Vuelto S/ ${splitChange.toFixed(2)}` : '✓ Completo'
                                         : splitRemaining > 0
                                             ? `Falta S/ ${splitRemaining.toFixed(2)}`
-                                            : `Excede S/ ${(splitTotal - total).toFixed(2)}`}
+                                            : `Excede S/ ${splitExcess.toFixed(2)} sin efectivo para vuelto`}
                                 </div>
                             </div>
                         </div>

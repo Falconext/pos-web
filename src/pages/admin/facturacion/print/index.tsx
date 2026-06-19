@@ -239,6 +239,25 @@ const PrintPDF = ({
     const mtoIcbper = Number(formValues?.icbper ?? formValues?.mtoIcbper ?? 0);
     const mtoIgv = Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18)));
     const mtoImpVenta = Number(formValues?.mtoImpVenta ?? totalReceipt);
+    const formatCantidad = (value: any): string => {
+        const cantidad = Number(value || 0);
+        if (!Number.isFinite(cantidad)) return '0';
+        if (Number.isInteger(cantidad)) return String(cantidad);
+        return cantidad.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    };
+    const displayVuelto = Number(formValues?.vuelto || 0);
+    const splitPaidTotal = formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments)
+        ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + Number(sp.amount || 0), 0)
+        : 0;
+    const displayPagado = splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto;
+    const vendedorNombre = (formValues?.vendedor || company?.nombre || 'ADMIN').toString().toUpperCase();
+    const empresaNumero = (
+        company?.empresa?.celular ||
+        company?.empresa?.telefono ||
+        company?.celular ||
+        company?.telefono ||
+        ''
+    ).toString().trim();
 
     function round2(n: number): number {
         return parseFloat(n?.toFixed(2)) || 0;
@@ -274,6 +293,7 @@ const PrintPDF = ({
                                     {'\n'}
                                     DIRECCION: {company?.empresa?.direccion.toUpperCase()}
                                     {'\n'}
+                                    {empresaNumero ? `CELULAR: ${empresaNumero}\n` : ''}
                                     RUC: {company?.empresa?.ruc.toUpperCase()}
                                     {'\n'}
                                 </Text>
@@ -333,7 +353,7 @@ const PrintPDF = ({
                                 </View>
                                 {productsInvoice?.map((item, index) => (
                                     <View style={styles.tableRow} key={index}>
-                                        <Text style={styles.tableCell}>{item?.cantidad || 0}</Text>
+                                        <Text style={styles.tableCell}>{formatCantidad(item?.cantidad)}</Text>
                                         <Text style={styles.tableCell}>{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || item?.producto?.unidadMedida?.codigo?.toUpperCase() || ''}</Text>
                                         <Text style={styles.tableCellDescription}>{item?.descripcion?.toUpperCase() || ''}</Text>
                                         <Text style={styles.tableCellNumber}>{Number(item?.precioUnitario || item?.mtoPrecioUnitario || 0).toFixed(2)}</Text>
@@ -365,6 +385,18 @@ const PrintPDF = ({
                                         <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
                                     </View>
                                 )}
+                                <View style={styles.infoRow}>
+                                    <Text style={styles.label}>VUELTO:</Text>
+                                    <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
+                                </View>
+                                <View style={styles.infoRow}>
+                                    <Text style={styles.label}>PAGADO:</Text>
+                                    <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
+                                </View>
+                                <View style={styles.infoRow}>
+                                    <Text style={styles.label}>VENDEDOR:</Text>
+                                    <Text style={styles.value}>{vendedorNombre}</Text>
+                                </View>
                             </>
                             <View style={styles.section}>
                                 <Text style={styles.bold}>SON: {totalInWords || ''}</Text>
@@ -467,8 +499,7 @@ const PrintPDF = ({
                                         {'\n'}
                                         RAZON SOCIAL: {company?.empresa?.razonSocial || ''}
                                         {'\n'}
-                                        CELULAR: {company?.celular || ''}
-                                        {'\n'}
+                                        {empresaNumero ? `CELULAR: ${empresaNumero}\n` : ''}
                                         EMAIL: {company?.email || ''}
                                     </Text>
                                 </View>
@@ -543,6 +574,18 @@ const PrintPDF = ({
                                                     <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
                                                 </View>
                                             )}
+                                            <View style={styles.infoRow}>
+                                                <Text style={styles.label}>VUELTO</Text>
+                                                <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
+                                            </View>
+                                            <View style={styles.infoRow}>
+                                                <Text style={styles.label}>PAGADO</Text>
+                                                <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
+                                            </View>
+                                            <View style={styles.infoRow}>
+                                                <Text style={styles.label}>VENDEDOR</Text>
+                                                <Text style={styles.value}>{vendedorNombre}</Text>
+                                            </View>
                                         </>
                                     )}
                                 </View>
@@ -576,7 +619,7 @@ const PrintPDF = ({
                                 </View>
                                 {productsInvoice?.map((item, index) => (
                                     <View style={styles.tableRow} key={index}>
-                                        <Text style={styles.tableCell}>{item?.cantidad || 0}</Text>
+                                        <Text style={styles.tableCell}>{formatCantidad(item?.cantidad)}</Text>
                                         <Text style={styles.tableCell}>{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || item?.producto?.unidadMedida?.codigo?.toUpperCase() || ''}</Text>
                                         <View style={styles.tableCellDescription}>
                                             <Text>{item?.descripcion?.toUpperCase() || ''}</Text>

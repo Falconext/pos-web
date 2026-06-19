@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import ProductCardActions from '@/components/tienda/ProductCardActions';
+import { motion } from 'framer-motion';
 
 interface Props {
   producto: {
@@ -35,6 +36,7 @@ export default function ProductCardXtra({ producto, slug, diseno, onClick, onAdd
   const rating = ratingCount > 0 ? Number(producto.ratingAvg || 0) : 0;
   const fullStars = Math.floor(rating);
   const hasHalf = rating % 1 !== 0;
+  const isOutOfStock = Number(producto.stock) <= 0;
 
   const tickerText = `⚡ HOT SALE ${discountPct}% OFF `;
 
@@ -77,8 +79,15 @@ export default function ProductCardXtra({ producto, slug, diseno, onClick, onAdd
           <img
             src={producto.imagenUrl}
             alt={producto.descripcion}
-            className="w-full h-52 object-contain p-5 group-hover:scale-105 transition-transform duration-300"
+            className={`w-full h-52 object-contain p-5 group-hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
           />
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="bg-red-500/90 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                Agotado
+              </span>
+            </div>
+          )}
 
           {/* HOT SALE ticker */}
           {hasDiscount && (
@@ -126,16 +135,29 @@ export default function ProductCardXtra({ producto, slug, diseno, onClick, onAdd
             </span>
           </div>
 
-          {/* Price */}
-          <div className="flex items-baseline gap-2">
-            {hasDiscount && (
-              <span className="text-sm text-gray-400 line-through">
-                S/ {originalPrice.toFixed(2)}
+          {/* Price & Add */}
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex flex-col">
+              {hasDiscount && (
+                <span className="text-[11px] text-gray-400 line-through leading-tight">
+                  S/ {originalPrice.toFixed(2)}
+                </span>
+              )}
+              <span className="font-bold text-gray-900 text-base leading-tight">
+                S/ {price.toFixed(2)}
               </span>
-            )}
-            <span className="font-bold text-gray-900 text-base">
-              S/ {price.toFixed(2)}
-            </span>
+            </div>
+            
+            <motion.button
+              whileTap={isOutOfStock ? undefined : { scale: 0.85 }}
+              disabled={isOutOfStock}
+              onClick={(e: any) => { e.stopPropagation(); if (!isOutOfStock) onAddToCart(producto); }}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${isOutOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white hover:bg-black hover:scale-105 shadow-sm'}`}
+              title={isOutOfStock ? 'Agotado' : 'Agregar al carrito'}
+              style={isOutOfStock ? undefined : { background: cp }}
+            >
+              <Icon icon={isOutOfStock ? "solar:close-circle-bold" : "solar:cart-plus-bold"} width={16} />
+            </motion.button>
           </div>
         </div>
       </div>

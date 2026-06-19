@@ -429,10 +429,40 @@ export default function TiendaPublica() {
   };
 
   if (loading && !tienda) {
-    // First load
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <Icon icon="eos-icons:loading" className="w-12 h-12 text-gray-300" />
+      <div className="min-h-screen bg-white">
+        {/* Header Skeleton */}
+        <div className="h-20 border-b border-gray-100 flex items-center justify-between px-8 bg-white">
+          <div className="animate-pulse bg-gray-100 rounded-lg w-32 h-8" />
+          <div className="flex gap-4">
+            <div className="animate-pulse bg-gray-100 rounded-full w-10 h-10" />
+            <div className="animate-pulse bg-gray-100 rounded-full w-10 h-10" />
+          </div>
+        </div>
+        {/* Banner Skeleton */}
+        <div className="max-w-screen-xl mx-auto px-5 md:px-8 mt-8 mb-12">
+          <div className="animate-pulse bg-gray-100 rounded-[2.5rem] w-full h-[300px] md:h-[450px]" />
+        </div>
+        {/* Grid Skeleton */}
+        <div className="max-w-screen-xl mx-auto px-5 md:px-8 pb-10">
+          <div className="flex justify-between items-center mb-6">
+            <div className="animate-pulse bg-gray-100 rounded-lg w-48 h-8" />
+            <div className="animate-pulse bg-gray-100 rounded-lg w-24 h-5" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-[1.5rem] border border-gray-100 p-4 h-[340px] flex flex-col shadow-sm">
+                <div className="animate-pulse bg-gray-100 rounded-xl w-full h-48 mb-4" />
+                <div className="animate-pulse bg-gray-100 rounded w-3/4 h-4 mb-2" />
+                <div className="animate-pulse bg-gray-100 rounded w-1/2 h-3 mb-4" />
+                <div className="mt-auto flex justify-between items-end">
+                  <div className="animate-pulse bg-gray-100 rounded w-1/3 h-6" />
+                  <div className="animate-pulse bg-gray-100 rounded-full w-9 h-9" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

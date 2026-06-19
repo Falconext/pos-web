@@ -64,6 +64,13 @@ const cleanText = (value?: string) => String(value ?? '').trim();
 const esServicioTecnico = (item: any) =>
     String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
+const crearEstadoItemLibre = () => ({
+    descripcion: '',
+    cantidad: '1',
+    precioUnitario: '',
+    tipo: 'SERVICIO' as 'SERVICIO' | 'PRODUCTO',
+});
+
 const isCompleteEnvioDespacho = (data: EnvioDespachoFormData) => {
     const celular = cleanText(data.celularDest).replace(/\D/g, '');
     return Boolean(
@@ -331,6 +338,8 @@ export const useFacturacionViewModel = () => {
     const [hasOpenedConfigModal, setHasOpenedConfigModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editQuotationId, setEditQuotationId] = useState<number | null>(null);
+    const [showFreeQuoteItemForm, setShowFreeQuoteItemForm] = useState(false);
+    const [freeQuoteItem, setFreeQuoteItem] = useState(crearEstadoItemLibre);
 
     const debounceSerie = useDebounce(serie, 200);
     const debounceCorrelative = useDebounce(correlative, 200);
@@ -1108,6 +1117,46 @@ export const useFacturacionViewModel = () => {
         }
     }
 
+    const handleAddFreeQuoteItem = () => {
+        if (!isQuotationRoute) return;
+
+        const descripcion = cleanText(freeQuoteItem.descripcion);
+        const cantidad = Number(freeQuoteItem.cantidad);
+        const precioUnitario = Number(freeQuoteItem.precioUnitario);
+
+        if (!descripcion) {
+            return useAlertStore.getState().alert("Describe el producto o servicio a cotizar", "warning");
+        }
+        if (!Number.isFinite(cantidad) || cantidad <= 0) {
+            return useAlertStore.getState().alert("La cantidad debe ser mayor a cero", "warning");
+        }
+        if (!Number.isFinite(precioUnitario) || precioUnitario < 0) {
+            return useAlertStore.getState().alert("El precio debe ser válido", "warning");
+        }
+
+        addProductsInvoice({
+            productoId: null,
+            id: null,
+            descripcion,
+            cantidadInicial: cantidad,
+            precioUnitario,
+            precioBase: precioUnitario,
+            descuento: 0,
+            stock: 999999,
+            unidadMedida: freeQuoteItem.tipo === 'SERVICIO' ? 'SERVICIO' : 'UNIDAD',
+            unidadMedidaNombre: freeQuoteItem.tipo === 'SERVICIO' ? 'SERVICIO' : 'UNIDAD',
+            unidadMedidaCodigo: freeQuoteItem.tipo === 'SERVICIO' ? 'ZZ' : 'NIU',
+            tipoAfectacionIGV: '10',
+            afectacionNombre: 'Gravado – Operación Onerosa',
+            estado: 'ACTIVO',
+            esItemLibre: true,
+            atributosTecnicos: { tipoProducto: freeQuoteItem.tipo },
+        } as any);
+
+        setFreeQuoteItem(crearEstadoItemLibre());
+        setShowFreeQuoteItemForm(false);
+    };
+
     // Farmacia: confirmar datos de receta para un ítem del carrito
     const handleConfirmarReceta = (itemIndex: number, datos: IDatosReceta) => {
         const item = productsInvoice[itemIndex];
@@ -1295,6 +1344,15 @@ export const useFacturacionViewModel = () => {
     const totalAdjusted = isDiscountGlobalApplicable
         ? Math.max(totalOriginal - descountGlobal, 0)
         : Math.max(totalOriginal - montoDescuentoNV, 0);
+    const normalizePaymentMethod = (value?: string) => String(value ?? '').trim().toUpperCase();
+    const isCashPayment = normalizePaymentMethod(paymentMethod) === 'EFECTIVO';
+    const splitPaymentTotal = splitPayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const montoRecibido = isMixedPayment
+        ? Number(splitPaymentTotal.toFixed(2))
+        : isCashPayment && pay > 0
+            ? Number(pay.toFixed(2))
+            : Number(totalAdjusted.toFixed(2));
+    const vueltoCalculado = Number(Math.max(0, montoRecibido - totalAdjusted).toFixed(2));
 
     useEffect(() => {
         if (porcentajeDetraccion > 0 && totalAdjusted > 0) {
@@ -1324,9 +1382,9 @@ export const useFacturacionViewModel = () => {
     useEffect(() => {
         setFormValues((prev) => ({
             ...prev,
-            vuelto: totalAdjusted <= pay ? Number(Math.abs(totalAdjusted - pay).toFixed(2)) : 0,
+            vuelto: vueltoCalculado,
         }));
-    }, [pay, totalAdjusted]);
+    }, [vueltoCalculado]);
 
     const validateForm = () => {
         const newErrors: any = {
@@ -1436,7 +1494,7 @@ export const useFacturacionViewModel = () => {
             fechaEmision,
             medioPago: effectiveMedioPago,
             ...(origenComprobanteId != null ? { comprobanteOrigenId: origenComprobanteId } : {}),
-            vuelto: formValues?.vuelto,
+            vuelto: vueltoCalculado,
             clienteId: Number(formValues?.clienteId) || invoiceData?.cliente?.id,
             clienteName: selectedClient?.nombre,
             tipoDoc: formValues?.tipoDoc,
@@ -1456,6 +1514,7 @@ export const useFacturacionViewModel = () => {
                     ...(item.numerosSerie ? { numerosSerie: item.numerosSerie } : {}),
                     // Fraccionamiento: unidad de venta cuando difiere de la unidad base
                     ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
+                    ...(item.esItemLibre && item.unidadMedidaCodigo ? { unidadVenta: item.unidadMedidaCodigo } : {}),
                 })) ?? []),
                 // Monto cobrado como item de envío: aumenta el total del comprobante.
                 ...(envioActivo && Number(envioData.costoEnvio) > 0 && aplicacionMontoEnvio === 'ITEM_ENVIO' ? [{
@@ -1715,6 +1774,8 @@ export const useFacturacionViewModel = () => {
         zoomLevel,
         isQuotationRoute,
         productsInvoice,
+        showFreeQuoteItemForm, setShowFreeQuoteItemForm,
+        freeQuoteItem, setFreeQuoteItem,
 
         // Form & Selections
         formValues, setFormValues,
@@ -1790,6 +1851,7 @@ export const useFacturacionViewModel = () => {
 
         // Handlers
         handleProductClick,
+        handleAddFreeQuoteItem,
         handleComboClick,
         handleDeleteProduct,
         handleSaveEdit,
@@ -1818,6 +1880,7 @@ export const useFacturacionViewModel = () => {
         // Derived Logic
         totalAdjusted, total, productDiscount, hasDiscount,
         opGravadaAdjusted, igvAdjusted, finalDiscount, totalInWords,
+        montoRecibido, vueltoCalculado, isCashPayment,
 
         // References & Inputs
         serie, setSerie,

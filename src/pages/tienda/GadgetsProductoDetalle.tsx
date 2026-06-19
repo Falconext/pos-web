@@ -418,8 +418,35 @@ export default function GadgetsProductoDetalle() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Icon icon="eos-icons:loading" className="w-12 h-12 text-gray-300 animate-spin" />
+      <div className="min-h-screen bg-white">
+        {/* Header Skeleton */}
+        <div className="h-20 border-b border-gray-100 flex items-center justify-between px-8 bg-white">
+          <div className="animate-pulse bg-gray-100 rounded-lg w-32 h-8" />
+          <div className="flex gap-4">
+            <div className="animate-pulse bg-gray-100 rounded-full w-10 h-10" />
+            <div className="animate-pulse bg-gray-100 rounded-full w-10 h-10" />
+          </div>
+        </div>
+        <main className="pt-8 pb-16 max-w-screen-xl mx-auto px-5 md:px-8">
+          <div className="animate-pulse bg-gray-100 rounded w-48 h-4 mb-8" />
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 rounded-[2rem] border border-gray-100 bg-white p-4 md:p-6 lg:p-8 shadow-sm">
+            {/* Image Skeleton */}
+            <div className="animate-pulse bg-gray-100 rounded-[2rem] aspect-square" />
+            {/* Info Skeleton */}
+            <div className="flex flex-col pt-4">
+              <div className="animate-pulse bg-gray-100 rounded w-24 h-5 mb-4" />
+              <div className="animate-pulse bg-gray-100 rounded w-3/4 h-10 mb-4" />
+              <div className="animate-pulse bg-gray-100 rounded w-1/2 h-4 mb-6" />
+              <div className="animate-pulse bg-gray-100 rounded w-1/3 h-10 mb-8" />
+              <div className="animate-pulse bg-gray-100 rounded-xl w-full h-14 mb-4" />
+              <div className="animate-pulse bg-gray-100 rounded-xl w-full h-14 mb-8" />
+              <div className="grid grid-cols-2 gap-3 mt-auto">
+                <div className="animate-pulse bg-gray-100 rounded-xl h-16" />
+                <div className="animate-pulse bg-gray-100 rounded-xl h-16" />
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -441,6 +468,7 @@ export default function GadgetsProductoDetalle() {
   const hasDiscount = !!(originalPrice && originalPrice > price);
   const discountPct = hasDiscount ? Math.round((1 - price / originalPrice) * 100) : 0;
   const finalPrice = price + precioExtra;
+  const isOutOfStock = Number(producto?.stock || 0) <= 0;
   const esServicio = String(producto?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
   const ratingCount = reviewSummary.ratingCount || Number(producto.ratingCount || 0);
   const starRating = ratingCount > 0 ? Number(reviewSummary.ratingAvg || producto.ratingAvg || 0) : 0;
@@ -608,22 +636,25 @@ export default function GadgetsProductoDetalle() {
                   <button onClick={() => setCantidad(esServicio ? cantidad + 1 : Math.min(producto.stock || 99, cantidad + 1))} className="text-gray-500 hover:text-gray-900 font-bold text-lg w-6 h-6 flex items-center justify-center">+</button>
                 </div>
                 <button
+                  disabled={isOutOfStock}
                   onClick={handleAgregarProducto}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-                  style={{ background: cp }}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-opacity ${isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'text-white hover:opacity-90'}`}
+                  style={isOutOfStock ? undefined : { background: cp }}
                 >
-                  <Icon icon="solar:cart-large-2-bold" width={18} />
-                  Agregar al carrito
+                  <Icon icon={isOutOfStock ? "solar:close-circle-bold" : "solar:cart-large-2-bold"} width={18} />
+                  {isOutOfStock ? 'Agotado' : 'Agregar al carrito'}
                 </button>
               </div>
 
-              <button
-                onClick={irACheckout}
-                className="w-full py-3 rounded-xl font-bold text-sm text-white bg-gray-900 hover:bg-black flex items-center justify-center gap-2 transition-colors mb-6"
-              >
-                <Icon icon="solar:lightning-bolt-bold" width={16} />
-                Comprar ahora
-              </button>
+              {!isOutOfStock && (
+                <button
+                  onClick={irACheckout}
+                  className="w-full py-3 rounded-xl font-bold text-sm text-white bg-gray-900 hover:bg-black flex items-center justify-center gap-2 transition-colors mb-6"
+                >
+                  <Icon icon="solar:lightning-bolt-bold" width={16} />
+                  Comprar ahora
+                </button>
+              )}
 
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {[

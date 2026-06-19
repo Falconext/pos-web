@@ -1,8 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import useEscapeKey from '@/hooks/useEscapeKey';
 import { useFavoritosStore } from '@/zustand/favoritos';
+import axios from 'axios';
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 
 interface XtraHeaderProps {
@@ -59,17 +62,33 @@ export default function XtraHeader({
   const wordRest = storeName.split(' ').slice(1).join(' ');
   const categoryNames = categories.map((cat) => typeof cat === 'string' ? cat : cat.nombre).filter(Boolean);
   const searchTerm = search.trim().toLowerCase();
-  const searchResults = searchTerm
-    ? recommendedProducts
-      .filter((item: any) => {
-        const category = typeof item.categoria === 'object' ? item.categoria?.nombre : item.categoria;
-        const brand = typeof item.marca === 'object' ? item.marca?.nombre : item.marca;
-        return [item.descripcion, item.codigo, category, brand]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(searchTerm));
-      })
-      .slice(0, 8)
-    : [];
+  
+  const [liveResults, setLiveResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Búsqueda en vivo al backend
+  useEffect(() => {
+    const term = search.trim();
+    if (!term) {
+      setLiveResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, {
+          params: { search: term, limit: 8 }
+        });
+        const items = Array.isArray(data) ? data : data?.data?.data || data?.data || [];
+        setLiveResults(items);
+      } catch (e) {
+        console.error('Error fetching live search', e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search, slug]);
 
   return (
     <>
@@ -183,9 +202,13 @@ export default function XtraHeader({
                       Ver todos
                     </button>
                   </div>
-                  {searchResults.length > 0 ? (
+                  {isSearching ? (
+                    <div className="py-8 flex justify-center">
+                      <Icon icon="eos-icons:loading" className="text-gray-300 text-2xl" />
+                    </div>
+                  ) : liveResults.length > 0 ? (
                     <div className="grid grid-cols-1 gap-1">
-                      {searchResults.map((item: any) => (
+                      {liveResults.map((item: any) => (
                       <button
                         key={item.id}
                         onClick={() => { navigate(`/tienda/${slug}/producto/${item.id}`); setIsSearchFocused(false); }}

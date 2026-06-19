@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   isOpen: boolean;
@@ -15,17 +16,29 @@ interface Props {
 export default function GadgetsCartModal({
   isOpen, onClose, carrito, tienda, actualizarCantidad, onCheckout, slug, setCarrito, cp,
 }: Props) {
-  if (!isOpen) return null;
-
   const subtotal = carrito.reduce((sum, item) => sum + Number(item.precioUnitario) * Number(item.cantidad || 1), 0);
 
   return (
-    <div className="fixed inset-0 z-[999999] flex justify-end">
-      <div className="absolute inset-0 bg-black/35 transition-opacity" onClick={onClose} />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[999999] flex justify-end">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/35" 
+            onClick={onClose} 
+          />
 
-      <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right border-l border-gray-100">
+          <motion.div 
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-gray-100"
+          >
 
-        {/* Header */}
+            {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-b from-white to-[#FBFBFB]">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">Tu bolsa</p>
@@ -57,58 +70,68 @@ export default function GadgetsCartModal({
             </div>
           ) : (
             <div className="space-y-2.5">
-              {carrito.map((item) => (
-                <div key={item.id} className="flex gap-3 p-3 rounded-2xl border border-gray-100 bg-white">
-                  {/* Image */}
-                  <div className="relative w-[68px] h-[68px] bg-[#FAFBFC] rounded-xl flex-shrink-0 overflow-hidden border border-gray-100">
-                    <button
-                      onClick={() => {
-                        if (setCarrito) setCarrito(carrito.filter(i => i.id !== item.id));
-                        else actualizarCantidad(item.id, 0);
-                      }}
-                      className="absolute -top-1.5 -left-1.5 bg-white rounded-full p-0.5 shadow-sm border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-600 z-10 transition-all"
-                    >
-                      <Icon icon="mdi:close" width={12} />
-                    </button>
-                    {item.imagenUrl
-                      ? <img src={item.imagenUrl} className="w-full h-full object-contain p-1" alt={item.descripcion} />
-                      : <div className="w-full h-full flex items-center justify-center"><Icon icon="mdi:image-off" className="text-gray-300 w-8 h-8" /></div>
-                    }
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 flex flex-col justify-between min-w-0">
-                    <h3 className="text-[13px] font-bold text-[#1A1A1A] line-clamp-2 leading-tight mb-0.5 uppercase">
-                      {item.descripcion}
-                    </h3>
-                    {item.modificadores?.length > 0 && item.modificadores[0]?.opcionNombre && (
-                      <p className="text-xs text-gray-500 line-clamp-1">
-                        {item.modificadores.filter((m: any) => m?.opcionNombre).map((m: any) => m.opcionNombre).join(', ')}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center gap-1.5 bg-[#F5F6F8] rounded-lg px-1.5 py-1">
-                        <button
-                          onClick={() => actualizarCantidad(item.id, (item.cantidad || 1) - 1)}
-                          className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600"
-                        >
-                          <Icon icon="mdi:minus" width={12} />
-                        </button>
-                        <span className="text-xs w-5 text-center font-bold text-gray-900">{item.cantidad || 1}</span>
-                        <button
-                          onClick={() => actualizarCantidad(item.id, (item.cantidad || 1) + 1)}
-                          className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600"
-                        >
-                          <Icon icon="mdi:plus" width={12} />
-                        </button>
-                      </div>
-                      <span className="text-sm font-black text-[#1A1A1A]">
-                        S/ {(Number(item.precioUnitario) * (item.cantidad || 1)).toFixed(2)}
-                      </span>
+              <AnimatePresence initial={false}>
+                {carrito.map((item) => (
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0, x: 50, height: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, x: 0, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, x: -50, height: 0, scale: 0.9, overflow: 'hidden' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    key={item.id} 
+                    className="flex gap-3 p-3 rounded-2xl border border-gray-100 bg-white"
+                  >
+                    {/* Image */}
+                    <div className="relative w-[68px] h-[68px] bg-[#FAFBFC] rounded-xl flex-shrink-0 overflow-hidden border border-gray-100">
+                      <button
+                        onClick={() => {
+                          if (setCarrito) setCarrito(carrito.filter(i => i.id !== item.id));
+                          else actualizarCantidad(item.id, 0);
+                        }}
+                        className="absolute -top-1.5 -left-1.5 bg-white rounded-full p-0.5 shadow-sm border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-600 z-10 transition-all"
+                      >
+                        <Icon icon="mdi:close" width={12} />
+                      </button>
+                      {item.imagenUrl
+                        ? <img src={item.imagenUrl} className="w-full h-full object-contain p-1" alt={item.descripcion} />
+                        : <div className="w-full h-full flex items-center justify-center"><Icon icon="mdi:image-off" className="text-gray-300 w-8 h-8" /></div>
+                      }
                     </div>
-                  </div>
-                </div>
-              ))}
+
+                    {/* Info */}
+                    <div className="flex-1 flex flex-col justify-between min-w-0">
+                      <h3 className="text-[13px] font-bold text-[#1A1A1A] line-clamp-2 leading-tight mb-0.5 uppercase">
+                        {item.descripcion}
+                      </h3>
+                      {item.modificadores?.length > 0 && item.modificadores[0]?.opcionNombre && (
+                        <p className="text-xs text-gray-500 line-clamp-1">
+                          {item.modificadores.filter((m: any) => m?.opcionNombre).map((m: any) => m.opcionNombre).join(', ')}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center gap-1.5 bg-[#F5F6F8] rounded-lg px-1.5 py-1">
+                          <button
+                            onClick={() => actualizarCantidad(item.id, (item.cantidad || 1) - 1)}
+                            className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600"
+                          >
+                            <Icon icon="mdi:minus" width={12} />
+                          </button>
+                          <span className="text-xs w-5 text-center font-bold text-gray-900">{item.cantidad || 1}</span>
+                          <button
+                            onClick={() => actualizarCantidad(item.id, (item.cantidad || 1) + 1)}
+                            className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-600"
+                          >
+                            <Icon icon="mdi:plus" width={12} />
+                          </button>
+                        </div>
+                        <span className="text-sm font-black text-[#1A1A1A]">
+                          S/ {(Number(item.precioUnitario) * (item.cantidad || 1)).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -135,7 +158,9 @@ export default function GadgetsCartModal({
             </p>
           </div>
         )}
+      </motion.div>
       </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

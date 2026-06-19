@@ -47,6 +47,11 @@ const ComprobantePrintPage = ({
         const parsed = Number(normalized);
         return Number.isFinite(parsed) ? parsed : fallback;
     };
+    const formatCantidad = (value: any): string => {
+        const cantidad = parseAmount(value, 0);
+        if (Number.isInteger(cantidad)) return String(cantidad);
+        return cantidad.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    };
 
     console.log(formValues)
     console.log(company)
@@ -78,6 +83,19 @@ const ComprobantePrintPage = ({
     const mtoIcbper = parseAmount(formValues?.icbper ?? formValues?.mtoIcbper, 0);
     const mtoIgv = parseAmount(formValues?.mtoIGV, totalReceipt - (totalReceipt / 1.18));
     const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, totalReceipt);
+    const displayVuelto = parseAmount(formValues?.vuelto, 0);
+    const splitPaidTotal = formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments)
+        ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + parseAmount(sp.amount, 0), 0)
+        : 0;
+    const displayPagado = splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto;
+    const vendedorNombre = (formValues?.vendedor || company?.nombre || 'ADMIN').toString().toUpperCase();
+    const empresaNumero = (
+        company?.empresa?.celular ||
+        company?.empresa?.telefono ||
+        company?.celular ||
+        company?.telefono ||
+        ''
+    ).toString().trim();
 
     console.log(formValues)
 
@@ -110,6 +128,7 @@ const ComprobantePrintPage = ({
                         <p className={`text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
                             DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br />
+                            {empresaNumero && <>CELULAR: {empresaNumero}<br /></>}
                             <span className="">RUC: {company?.empresa?.ruc}</span>
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
@@ -235,9 +254,18 @@ const ComprobantePrintPage = ({
                         ) : (
                             <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
                         )}
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">VUELTO: </span> S/ {formValues?.vuelto?.toFixed(2) || (0).toFixed(2)}</p>
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">PAGADO: </span>S/ {Number(totalPrices).toFixed(2)}</p>
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">VENDEDOR: </span>{formValues?.vendedor?.toUpperCase()}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                            <span>VUELTO:</span>
+                            <span>S/ {displayVuelto.toFixed(2)}</span>
+                        </p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                            <span>PAGADO:</span>
+                            <span>S/ {displayPagado.toFixed(2)}</span>
+                        </p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                            <span>VENDEDOR:</span>
+                            <span className="text-right">{vendedorNombre}</span>
+                        </p>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>
                         <div className="uppercase">
@@ -270,7 +298,7 @@ const ComprobantePrintPage = ({
                                     {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" style={{ width: 150, height: 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />CELULAR: {company?.celular}<br />EMAIL: {company?.email}</p>
+                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}</p>
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
@@ -357,7 +385,7 @@ const ComprobantePrintPage = ({
                                         return (
                                             <div key={i} className="flex border-b border-l border-r border-gray-300 text-xs">
                                                 <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{cant.toFixed(3)}</div>
+                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
                                                 {includeProductImages && (
                                                     <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">
@@ -480,7 +508,7 @@ const ComprobantePrintPage = ({
                                     {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" style={{ width: 150, height: 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />CELULAR: {company?.celular}<br />EMAIL: {company?.email}</p>
+                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}</p>
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
@@ -547,6 +575,15 @@ const ComprobantePrintPage = ({
                                                             <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(totalPrices).toFixed(2)}</span>
                                                         </>
                                                     )}
+
+                                                    <span className="font-bold text-xs">VUELTO:</span>
+                                                    <span className="text-xs">S/ {displayVuelto.toFixed(2)}</span>
+
+                                                    <span className="font-bold text-xs">PAGADO:</span>
+                                                    <span className="text-xs">S/ {displayPagado.toFixed(2)}</span>
+
+                                                    <span className="font-bold text-xs">VENDEDOR:</span>
+                                                    <span className="text-xs">{vendedorNombre}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -611,7 +648,7 @@ const ComprobantePrintPage = ({
                                         return (
                                             <div key={i} className="flex border-b border-l border-r border-gray-300 text-xs">
                                                 <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{cant.toFixed(3)}</div>
+                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
                                                 {includeProductImages && (
                                                     <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">

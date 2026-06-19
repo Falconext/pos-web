@@ -52,6 +52,8 @@ export const FacturacionNuevoView = () => {
                     quotationAdvance={vm.quotationAdvance}
                     formValues={{
                         ...vm.formValues,
+                        vuelto: vm.vueltoCalculado,
+                        vendedor: vm.auth?.nombre,
                         serie: vm.dataReceipt?.serie,
                         correlativo: vm.dataReceipt?.correlativo,
                         numDocAfectado: `${vm.serie}-${vm.correlative}`,
@@ -116,7 +118,7 @@ export const FacturacionNuevoView = () => {
                     client={vm.snapshotClient ?? vm.selectedClient}
                     company={vm.authWithBranding}
                     productsInvoice={vm.productsInvoice}
-                    formValues={vm.formValues}
+                    formValues={{ ...vm.formValues, vuelto: vm.vueltoCalculado, vendedor: vm.auth?.nombre }}
                     observation={vm.formValues?.observaciones}
                     isPendiente={vm.isComprobantePendiente}
                     hasDespacho={vm.despachoCreado}

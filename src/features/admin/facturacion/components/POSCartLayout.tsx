@@ -110,6 +110,9 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                     {esServicio(item) && (
                                         <span className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">Servicio</span>
                                     )}
+                                    {item.esItemLibre && (
+                                        <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">Ítem libre</span>
+                                    )}
                                 </div>
                                 {requiereSerie(item) && (
                                     <textarea

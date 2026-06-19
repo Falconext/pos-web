@@ -22,9 +22,12 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
 
     const isVetApproved = (producto.id % 3 === 0);
     const isSpecialDeal = hasDiscount && (producto.id % 2 === 0);
+    
+    const isOutOfStock = Number(producto.stock) <= 0;
 
     const handleAdd = (e: React.MouseEvent) => {
         e.stopPropagation();
+        if (isOutOfStock) return;
         onAddToCart(producto);
         setAdded(true);
         setTimeout(() => setAdded(false), 1200);
@@ -40,14 +43,22 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
 
                 {/* Top Seller Badge */}
                 <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1">
-                    <span className="text-white text-[9px] font-black px-2.5 py-1 rounded-full" style={{ background: cp }}>
-                        Top Seller
-                    </span>
-                    {isVetApproved && (
-                        <span className="bg-[#22C55E] text-white text-[9px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
-                            <Icon icon="solar:check-circle-bold" width={10} />
-                            Garantizado
+                    {isOutOfStock ? (
+                        <span className="bg-red-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            Agotado
                         </span>
+                    ) : (
+                        <>
+                            <span className="text-white text-[9px] font-black px-2.5 py-1 rounded-full" style={{ background: cp }}>
+                                Top Seller
+                            </span>
+                            {isVetApproved && (
+                                <span className="bg-[#22C55E] text-white text-[9px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
+                                    <Icon icon="solar:check-circle-bold" width={10} />
+                                    Garantizado
+                                </span>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -62,7 +73,7 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
                         src={producto.imagenUrl}
                         alt={producto.descripcion}
                         onLoad={() => setImageLoaded(true)}
-                        className={`w-full h-full object-contain bg-[#fff] p-6 transition-transform duration-500 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className={`w-full h-full object-contain bg-[#fff] p-6 transition-transform duration-500 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'} ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
                         loading="lazy"
                     />
                 ) : (
@@ -123,13 +134,14 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
             <div className='p-3'>
                 <button
                     onClick={handleAdd}
-                    className="w-full rounded-xl flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors"
-                    style={added
+                    disabled={isOutOfStock}
+                    className={`w-full rounded-xl flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors ${isOutOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                    style={!isOutOfStock ? (added
                         ? { background: '#22C55E', color: '#fff' }
-                        : { background: `${cp}18`, color: cp }}
+                        : { background: `${cp}18`, color: cp }) : undefined}
                 >
-                    <Icon icon={added ? 'solar:check-circle-bold' : 'solar:cart-large-2-bold'} width={18} />
-                    {added ? '¡Añadido!' : 'Comprar'}
+                    <Icon icon={isOutOfStock ? 'solar:close-circle-bold' : (added ? 'solar:check-circle-bold' : 'solar:cart-large-2-bold')} width={18} />
+                    {isOutOfStock ? 'Agotado' : (added ? '¡Añadido!' : 'Comprar')}
                 </button>
             </div>
         </div>

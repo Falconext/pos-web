@@ -103,6 +103,17 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                         <Icon icon="solar:add-circle-bold" className="text-xl" />
                         <span className="hidden md:inline">Producto</span>
                     </button>
+
+                    {vm.isQuotationRoute && (
+                        <button
+                            onClick={() => vm.setShowFreeQuoteItemForm((open: boolean) => !open)}
+                            className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-semibold shadow-md transition-all"
+                            title="Cotizar sin registrar en inventario"
+                        >
+                            <Icon icon="solar:document-add-bold-duotone" className="text-xl" />
+                            <span className="hidden md:inline">Ítem libre</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Barcode scanner — auto-adds to cart on Enter */}
@@ -115,6 +126,66 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                     loading={vm.barcodeLoading}
                     error={vm.barcodeError}
                 />
+
+                {vm.isQuotationRoute && vm.showFreeQuoteItemForm && (
+                    <div className="mb-4 rounded-2xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/70 dark:bg-violet-950/10 p-3">
+                        <div className="flex flex-col lg:flex-row gap-2">
+                            <div className="flex rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-1">
+                                {(['SERVICIO', 'PRODUCTO'] as const).map((tipo) => (
+                                    <button
+                                        key={tipo}
+                                        type="button"
+                                        onClick={() => vm.setFreeQuoteItem((prev: any) => ({ ...prev, tipo }))}
+                                        className={`px-3 py-2 rounded-lg text-xs font-black transition-all ${vm.freeQuoteItem.tipo === tipo ? 'bg-violet-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+                                    >
+                                        {tipo === 'SERVICIO' ? 'Servicio' : 'Producto'}
+                                    </button>
+                                ))}
+                            </div>
+                            <input
+                                value={vm.freeQuoteItem.descripcion}
+                                onChange={(e) => vm.setFreeQuoteItem((prev: any) => ({ ...prev, descripcion: e.target.value }))}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') vm.handleAddFreeQuoteItem();
+                                }}
+                                placeholder="Ej: Instalación de Windows, mantenimiento, producto a pedido..."
+                                className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-300"
+                            />
+                            <input
+                                type="number"
+                                min="0.001"
+                                step="0.001"
+                                value={vm.freeQuoteItem.cantidad}
+                                onChange={(e) => vm.setFreeQuoteItem((prev: any) => ({ ...prev, cantidad: e.target.value }))}
+                                placeholder="Cant."
+                                className="w-full lg:w-24 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-300"
+                            />
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={vm.freeQuoteItem.precioUnitario}
+                                onChange={(e) => vm.setFreeQuoteItem((prev: any) => ({ ...prev, precioUnitario: e.target.value }))}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') vm.handleAddFreeQuoteItem();
+                                }}
+                                placeholder="P. Unit."
+                                className="w-full lg:w-32 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-300"
+                            />
+                            <button
+                                type="button"
+                                onClick={vm.handleAddFreeQuoteItem}
+                                className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Icon icon="solar:cart-plus-bold-duotone" className="text-lg" />
+                                Agregar
+                            </button>
+                        </div>
+                        <p className="mt-2 text-xs text-violet-700/80 dark:text-violet-300/80 font-semibold">
+                            No se creará en inventario ni descontará stock; solo quedará como línea de esta cotización.
+                        </p>
+                    </div>
+                )}
 
                 <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
                     <button
