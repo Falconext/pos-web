@@ -4,8 +4,10 @@ import { useRentabilidadViewModel } from './rentabilidad/useRentabilidadViewMode
 import RentabilidadView from './rentabilidad/RentabilidadView';
 import FinanceDashboardView from './FinanceDashboardView';
 import ComisionesView from './comisiones/ComisionesView';
+import CategoriasView from './categorias/CategoriasView';
+import MetodosPagoView from './metodos-pago/MetodosPagoView';
 
-type TabId = 'rentabilidad' | 'flujo' | 'comisiones';
+type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'metodosPago';
 
 interface Tab {
     id: TabId;
@@ -32,6 +34,18 @@ const TABS: Tab[] = [
         label: 'Comisiones',
         icon: 'solar:users-group-rounded-bold-duotone',
         description: 'Comisiones por vendedor',
+    },
+    {
+        id: 'categorias',
+        label: 'Categorías',
+        icon: 'solar:tag-bold-duotone',
+        description: 'Ganancia por categoría de producto',
+    },
+    {
+        id: 'metodosPago',
+        label: 'Métodos de pago',
+        icon: 'solar:card-2-bold-duotone',
+        description: 'Cobros por método, voucher y cuenta',
     },
 ];
 
@@ -109,6 +123,18 @@ export default function FinanzasTabs() {
             {activeTab === 'comisiones' && (
                 <div className="px-6 pb-6">
                     <ComisionesView />
+                </div>
+            )}
+
+            {activeTab === 'categorias' && (
+                <div className="px-6 pb-6">
+                    <CategoriasView />
+                </div>
+            )}
+
+            {activeTab === 'metodosPago' && (
+                <div className="px-6 pb-6">
+                    <MetodosPagoView />
                 </div>
             )}
         </div>

@@ -81,6 +81,22 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const esFarmaceutico = isFarmacia || esDrogueria;
 
   const isFabricacion = esRubroFabricacion(auth?.empresa?.rubro?.nombre);
+  const isModaRubro = (() => {
+    const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || "";
+    return [
+      "moda",
+      "ropa",
+      "textil",
+      "confeccion",
+      "confección",
+      "calzado",
+      "zapateria",
+      "zapatería",
+      "cartera",
+      "boutique",
+      "variantes avanzadas",
+    ].some((keyword) => rubroNombre.includes(keyword));
+  })();
 
   const features = useRubroFeatures(auth?.empresa?.rubro, {
     usaCodigoBarrasManual: auth?.empresa?.usaCodigoBarrasManual,
@@ -145,6 +161,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [previewPrincipal, setPreviewPrincipal] = useState<string | null>(null);
   const [loadingImage, setLoadingImage] = useState(false);
   const filePrincipalInputRef = useRef<HTMLInputElement | null>(null);
+  const [variantImageFiles, setVariantImageFiles] = useState<Record<string, File>>({});
+  const [variantImagePreviews, setVariantImagePreviews] = useState<Record<string, string>>({});
 
   // --- Stock State ---
   const [tipoAjusteStock, setTipoAjusteStock] =
@@ -176,6 +194,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [autoImageOnSave, setAutoImageOnSave] = useState(false);
   const [imageCandidates, setImageCandidates] = useState<string[]>([]);
   const originalImageUrlRef = useRef<string | null>(null);
+  const originalImageProductIdRef = useRef<number | null>(null);
 
   const autoImagePrefKey = `producto:autoImageOnSave:${auth?.empresaId ?? "default"}:${auth?.id ?? "user"}`;
 
@@ -233,11 +252,16 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 categoriaNombre: product.categoria.nombre,
               }
             : {};
-          setFormValues({
-            ...formValues,
+          setFormValues((prev: any) => ({
+            ...prev,
             descripcion: product.descripcion,
             codigoBarras: code,
-            ...(product.imagenUrl ? { imagenUrl: product.imagenUrl } : {}),
+            ...(product.imagenUrl
+              ? {
+                  imagenUrl: product.imagenUrl,
+                  imagenUrlDisplay: product.imagenUrlDisplay || product.imagenUrl,
+                }
+              : {}),
             ...brandUpdate,
             ...categoryUpdate,
             // Campos farmacéuticos — se rellenan si vienen de OpenFDA
@@ -246,8 +270,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             ...(product.presentacion ? { presentacion: product.presentacion } : {}),
             ...(product.concentracion ? { concentracion: product.concentracion } : {}),
             ...(product.tipoAfectacionIGV ? { tipoAfectacionIGV: product.tipoAfectacionIGV } : {}),
-          });
-          if (product.imagenUrl) setPreviewPrincipal(product.imagenUrl);
+          }));
+          if (product.imagenUrl) {
+            setPreviewPrincipal(product.imagenUrlDisplay || product.imagenUrl);
+          }
           filled = true;
         }
       } catch {}
@@ -288,14 +314,23 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     if (isEdit && displayImage && !previewPrincipal) {
       setPreviewPrincipal(displayImage);
     }
-    originalImageUrlRef.current =
-      isEdit && typeof (formValues as any)?.imagenUrl === "string"
-        ? (formValues as any).imagenUrl.trim() || null
-        : null;
-    if (isEdit && formValues?.productoId) {
+    const productId = Number(formValues?.productoId || 0);
+    if (isEdit && productId && originalImageProductIdRef.current !== productId) {
+      originalImageProductIdRef.current = productId;
+      originalImageUrlRef.current =
+        typeof (formValues as any)?.imagenUrl === "string"
+          ? (formValues as any).imagenUrl.trim() || null
+          : null;
       cargarGruposAsignados(formValues.productoId);
     }
-  }, [isOpenModal, isEdit]);
+  }, [
+    isOpenModal,
+    isEdit,
+    formValues?.productoId,
+    (formValues as any)?.imagenUrl,
+    (formValues as any)?.imagenUrlDisplay,
+    previewPrincipal,
+  ]);
 
   useEffect(() => {
     if (!isOpenModal) {
@@ -309,6 +344,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       setBarcodeQuery("");
       setSearchingBarcode(false);
       originalImageUrlRef.current = null;
+      originalImageProductIdRef.current = null;
       setTipoAjusteStock("ninguno");
       setCantidadAjuste(0);
       setShowMedicamentoModal(false);
@@ -587,7 +623,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       setImageCandidates(candidates);
       if (result?.success && result?.url) {
         setPreviewPrincipal(result.url);
-        setFormValues({ ...formValues, imagenUrl: result.url });
+        setFormValues((prev: any) => ({
+          ...prev,
+          imagenUrl: result.url,
+          imagenUrlDisplay: result.url,
+        }));
         useAlertStore.getState().alert("Imagen encontrada", "success");
       } else if (candidates.length > 0) {
         useAlertStore
@@ -672,6 +712,86 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
   };
 
+  const resolveColorOptionName = () => {
+    const opciones = Array.isArray((formValues as any)?.opcionesAtributos)
+      ? (formValues as any).opcionesAtributos
+      : [];
+    const colorOption = opciones.find((option: any) =>
+      String(option?.nombre || "").toLowerCase().includes("color"),
+    );
+    return colorOption?.nombre || opciones[0]?.nombre || "Color";
+  };
+
+  const uploadVariantColorImages = async (variantes: any[] = []) => {
+    const entries = Object.entries(variantImageFiles);
+    if (entries.length === 0 || variantes.length === 0) return variantes;
+
+    const colorOptionName = resolveColorOptionName();
+    const updatedById = new Map<number, any>(
+      variantes.map((variant) => [Number(variant.id), variant]),
+    );
+
+    for (const [colorValue, file] of entries) {
+      const matchingVariants = variantes.filter(
+        (variant) =>
+          String(variant?.valoresAtributos?.[colorOptionName] || "") === colorValue,
+      );
+
+      for (const variant of matchingVariants) {
+        if (!variant?.id) continue;
+        const fd = new FormData();
+        fd.append("file", file);
+        const resp = await apiClient.post(`/productos/${variant.id}/imagen`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
+        const nuevaUrl =
+          resp?.data?.data?.url ||
+          resp?.data?.url ||
+          resp?.data?.data?.imagenUrl ||
+          resp?.data?.imagenUrl ||
+          null;
+        if (nuevaUrl) {
+          updatedById.set(Number(variant.id), {
+            ...variant,
+            imagenUrl: nuevaUrl,
+            imagenUrlDisplay: signed || nuevaUrl,
+          });
+        }
+      }
+    }
+
+    return Array.from(updatedById.values());
+  };
+
+  const persistExternalProductImage = (productoId: number, externalUrl: string) => {
+    if (!productoId || !externalUrl || externalUrl.includes("amazonaws.com")) return;
+
+    void apiClient
+      .post(`/productos/${productoId}/imagen-url`, { url: externalUrl })
+      .then((resp) => {
+        const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
+        const s3Url =
+          resp?.data?.data?.url ||
+          resp?.data?.url ||
+          resp?.data?.data?.imagenUrl ||
+          resp?.data?.imagenUrl ||
+          null;
+
+        if (!s3Url) return;
+        const displayUrl = signed || s3Url;
+        setProductImage(productoId, s3Url, displayUrl);
+        upsertProductLocal({
+          id: productoId,
+          imagenUrl: s3Url,
+          imagenUrlDisplay: displayUrl,
+        } as any);
+      })
+      .catch(() => {
+        // La URL externa ya quedó visible; la copia a S3 se reintentará en otra edición.
+      });
+  };
+
   // --- Main Submit handler ---
   const handleSubmitProduct = async () => {
     if (!validateForm()) return;
@@ -712,7 +832,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           tipoAjusteStock !== "ninguno"
             ? stockFinal
             : Number(formValues?.stock ?? 0);
-        const updatedProduct = await editProduct({
+        const fechaInicioOfertaPayload = formValues.fechaInicioOferta || null;
+        const fechaFinOfertaPayload = formValues.fechaFinOferta || null;
+        let updatedProduct = await editProduct({
           ...formValues,
           unidadMedidaId: Number(formValues?.unidadMedidaId),
           categoriaId:
@@ -758,8 +880,18 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 precio: Number(p.precio),
               }))
             : [],
+          precioOferta: formValues.precioOferta
+            ? Number(formValues.precioOferta)
+            : null,
+          fechaInicioOferta: fechaInicioOfertaPayload,
+          fechaFinOferta: fechaFinOfertaPayload,
           ...imagePatch,
         });
+
+        if (!updatedProduct) {
+          setLoading(false);
+          return;
+        }
 
         try {
           const allGroups = gruposSeleccionados.map((id, idx) => ({
@@ -774,12 +906,38 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           console.error("Error al asignar modificadores:", e);
         }
 
+        const displayImageUrl =
+          typeof (formValues as any)?.imagenUrlDisplay === "string" &&
+          (formValues as any).imagenUrlDisplay.trim()
+            ? (formValues as any).imagenUrlDisplay.trim()
+            : undefined;
+        const previewImageUrl =
+          typeof previewPrincipal === "string" && previewPrincipal.trim()
+            ? previewPrincipal.trim()
+            : undefined;
+        const previewIsCurrentDisplay = Boolean(
+          previewImageUrl &&
+            displayImageUrl &&
+            previewImageUrl === displayImageUrl &&
+            currentImageUrl === originalImageUrl,
+        );
+        const selectedImageUrl =
+          previewImageUrl && !previewIsCurrentDisplay
+            ? previewImageUrl
+            : currentImageUrl;
+        const hasSelectedDifferentImage = Boolean(
+          selectedImageUrl && selectedImageUrl !== originalImageUrl,
+        );
+
         let imagenUrlFinal: string | null | undefined = hasRemovedImage
           ? null
-          : originalImageUrl || previewPrincipal || currentImageUrl || updatedProduct?.imagenUrl || undefined;
+          : selectedImageUrl || updatedProduct?.imagenUrl || originalImageUrl || undefined;
         let imagenUrlDisplayFinal: string | null | undefined = hasRemovedImage
           ? null
-          : (formValues as any)?.imagenUrlDisplay || previewPrincipal || imagenUrlFinal;
+          : hasSelectedDifferentImage
+            ? selectedImageUrl
+            : (formValues as any)?.imagenUrlDisplay || selectedImageUrl || imagenUrlFinal;
+        let externalImageToPersist: string | null = null;
 
         try {
           // Upload Image flow
@@ -804,33 +962,46 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               imagenUrlDisplayFinal = signed || nuevaUrl;
             }
           } else if (!hasRemovedImage) {
-            const externalUrl = previewPrincipal || currentImageUrl;
+            const externalUrl = selectedImageUrl;
             const changedExternalUrl = Boolean(
               externalUrl &&
-                currentImageUrl &&
-                currentImageUrl !== originalImageUrl,
+                externalUrl !== originalImageUrl,
             );
             if (changedExternalUrl && externalUrl && !externalUrl.includes("amazonaws.com")) {
-              const resp = await apiClient.post(
-                `/productos/${formValues.productoId}/imagen-url`,
-                { url: externalUrl },
-              );
-              const signed =
-                resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
-              const s3Url =
-                resp?.data?.data?.url || resp?.data?.url || null;
-              if (s3Url) {
-                setProductImage(Number(formValues.productoId), s3Url, signed || s3Url);
-                imagenUrlFinal = s3Url;
-                imagenUrlDisplayFinal = signed || s3Url;
-              }
+              externalImageToPersist = externalUrl;
+              imagenUrlFinal = externalUrl;
+              imagenUrlDisplayFinal = externalUrl;
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          if (!hasRemovedImage && selectedImageUrl) {
+            imagenUrlFinal = selectedImageUrl;
+            imagenUrlDisplayFinal = selectedImageUrl;
+          }
+        }
 
         const imagenFinalAprobada = imagenUrlFinal || previewPrincipal || null;
         if (imagenFinalAprobada) {
           void aprobarImagenReferencia(imagenFinalAprobada);
+        }
+
+        try {
+          const variantesActualizadas = await uploadVariantColorImages(
+            (updatedProduct as any)?.variantes || [],
+          );
+          if (variantesActualizadas.length > 0) {
+            updatedProduct = {
+              ...(updatedProduct || {}),
+              variantes: variantesActualizadas,
+            };
+          }
+        } catch {
+          useAlertStore
+            .getState()
+            .alert(
+              "Producto guardado, pero no se pudieron subir algunas imágenes de variantes",
+              "warning",
+            );
         }
 
         upsertProductLocal({
@@ -881,10 +1052,23 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           imagenUrlDisplay: hasRemovedImage
             ? null
             : imagenUrlDisplayFinal ?? imagenUrlFinal ?? currentImageUrl ?? updatedProduct?.imagenUrl ?? undefined,
+          variantes: (updatedProduct as any)?.variantes || (formValues as any)?.variantes || [],
+          precioOferta: formValues.precioOferta ? Number(formValues.precioOferta) : undefined,
+          fechaInicioOferta: formValues.fechaInicioOferta || undefined,
+          fechaFinOferta: formValues.fechaFinOferta || undefined,
         });
+
+        if (externalImageToPersist) {
+          persistExternalProductImage(
+            Number(formValues.productoId),
+            externalImageToPersist,
+          );
+        }
 
         setFilePrincipal(null);
         setPreviewPrincipal(null);
+        setVariantImageFiles({});
+        setVariantImagePreviews({});
         setFormValues(initialForm);
         closeModal();
       } else {
@@ -897,7 +1081,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           if (autoUrl) {
             imageToSave = autoUrl;
             setPreviewPrincipal(autoUrl);
-            setFormValues({ ...formValues, imagenUrl: autoUrl });
+            setFormValues((prev: any) => ({
+              ...prev,
+              imagenUrl: autoUrl,
+              imagenUrlDisplay: autoUrl,
+            }));
           }
         }
         const product = await addProduct(
@@ -1022,6 +1210,21 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             }
           }
 
+          let variantesFinales = product?.data?.variantes || [];
+          try {
+            variantesFinales = await uploadVariantColorImages(variantesFinales);
+            if (product?.data && variantesFinales.length > 0) {
+              product.data.variantes = variantesFinales;
+            }
+          } catch {
+            useAlertStore
+              .getState()
+              .alert(
+                "Producto creado, pero no se pudieron subir algunas imágenes de variantes",
+                "warning",
+              );
+          }
+
           if (newId) upsertProductLocal({
             ...(product?.data || {}),
             id: Number(newId),
@@ -1069,6 +1272,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               : undefined,
             imagenUrl: urlFinal || imageToSave || product?.data?.imagenUrl || undefined,
             imagenUrlDisplay: urlFinalDisplay || urlFinal || imageToSave || product?.data?.imagenUrlDisplay || product?.data?.imagenUrl || undefined,
+            variantes: variantesFinales,
             estado: "ACTIVO",
           });
 
@@ -1094,6 +1298,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
         setFilePrincipal(null);
         setPreviewPrincipal(null);
+        setVariantImageFiles({});
+        setVariantImagePreviews({});
         closeModal();
       }
     } catch (error) {
@@ -1111,6 +1317,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     esDrogueria,
     esFarmaceutico,
     isFabricacion,
+    isModaRubro,
     features,
     productSections,
     labels,
@@ -1132,6 +1339,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     previewPrincipal,
     loadingImage,
     filePrincipalInputRef,
+    variantImageFiles,
+    variantImagePreviews,
     tipoAjusteStock,
     cantidadAjuste,
     stockOriginal,
@@ -1148,6 +1357,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     setFilePrincipal,
     setPreviewPrincipal,
     setLoadingImage,
+    setVariantImageFiles,
+    setVariantImagePreviews,
     setTipoAjusteStock,
     setCantidadAjuste,
     setShowMedicamentoModal,

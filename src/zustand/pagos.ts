@@ -38,7 +38,7 @@ export interface IPagosState {
   resetPagos: () => void;
   // Nuevos métodos para Cuentas por Cobrar
   getCuentasPorCobrar: (params: any) => Promise<{ success: boolean; error?: string }>;
-  registrarPagoComprobante: (comprobanteId: number, data: { monto: number; medioPago: string; observacion?: string; referencia?: string }) => Promise<{ success: boolean; pago?: any; nuevoSaldo?: number; nuevoEstado?: string; error?: string }>;
+  registrarPagoComprobante: (comprobanteId: number, data: { monto: number; medioPago: string; observacion?: string; referencia?: string; cuentaBancariaId?: number }) => Promise<{ success: boolean; pago?: any; nuevoSaldo?: number; nuevoEstado?: string; error?: string }>;
   getHistorialPagos: (comprobanteId: number) => Promise<{ success: boolean; pagos?: any[]; totalPagado?: number; error?: string }>;
 }
 

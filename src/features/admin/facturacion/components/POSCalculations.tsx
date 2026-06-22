@@ -1,9 +1,18 @@
+import { useEffect } from "react";
 import { Icon } from "@iconify/react";
+import { useCuentasBancariasStore } from "@/zustand/cuentasBancarias";
+import type { PaymentLine } from "../useFacturacionViewModel";
 
 const METODOS = ['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'];
 
 export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, printFn: any, handleOpenNewTab: any }) => {
     const total: number = vm.totalAdjusted ?? 0;
+    const { cuentas, listar } = useCuentasBancariasStore();
+    const cuentasActivas = cuentas.filter((cuenta) => cuenta.activo !== false);
+
+    useEffect(() => {
+        listar();
+    }, [listar]);
 
     // Farmacia: ítems con receta pendiente
     const recetasPendientes = vm.isFarmaciaRetail
@@ -12,18 +21,18 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     const hayRecetasPendientes = recetasPendientes > 0;
 
     // Split payment helpers
-    const splitTotal = (vm.splitPayments as { method: string; amount: number }[])
+    const splitTotal = (vm.splitPayments as PaymentLine[])
         .reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const splitRemaining = Math.max(0, total - splitTotal);
     const splitExcess = Math.max(0, splitTotal - total);
-    const splitCashTotal = (vm.splitPayments as { method: string; amount: number }[])
+    const splitCashTotal = (vm.splitPayments as PaymentLine[])
         .filter((p) => String(p.method).trim().toUpperCase() === 'EFECTIVO')
         .reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const splitValid = Math.abs(splitTotal - total) < 0.01 || (splitExcess > 0 && splitCashTotal + 0.01 >= splitExcess);
     const splitChange = splitValid ? Number(splitExcess.toFixed(2)) : 0;
 
     const updateSplitAmount = (idx: number, value: number) => {
-        vm.setSplitPayments((curr: { method: string; amount: number }[]) => {
+        vm.setSplitPayments((curr: PaymentLine[]) => {
             const next = [...curr];
             next[idx] = { ...next[idx], amount: value };
             return next;
@@ -31,15 +40,24 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     };
 
     const updateSplitMethod = (idx: number, method: string) => {
-        vm.setSplitPayments((curr: { method: string; amount: number }[]) => {
+        vm.setSplitPayments((curr: PaymentLine[]) => {
             const next = [...curr];
-            next[idx] = { ...next[idx], method };
+            const cuentaId = method === 'Transferencia' ? (cuentasActivas[0]?.id || null) : null;
+            next[idx] = { ...next[idx], method, referencia: '', cuentaBancariaId: cuentaId, cuentaBancariaLabel: accountLabel(cuentaId), tarjetaMarca: '', tarjetaTipo: method === 'Tarjeta' ? 'Débito' : '', tarjetaUltimos4: '' };
+            return next;
+        });
+    };
+
+    const updateSplitDetail = (idx: number, patch: Partial<PaymentLine>) => {
+        vm.setSplitPayments((curr: PaymentLine[]) => {
+            const next = [...curr];
+            next[idx] = { ...next[idx], ...patch };
             return next;
         });
     };
 
     const addSplitRow = () => {
-        vm.setSplitPayments((curr: { method: string; amount: number }[]) => {
+        vm.setSplitPayments((curr: PaymentLine[]) => {
             if (curr.length >= 5) return curr;
             const usedMethods = curr.map((p) => p.method);
             const nextMethod = METODOS.find(m => !usedMethods.includes(m)) ?? 'Efectivo';
@@ -48,20 +66,89 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     };
 
     const removeSplitRow = (idx: number) => {
-        vm.setSplitPayments((curr: { method: string; amount: number }[]) => {
+        vm.setSplitPayments((curr: PaymentLine[]) => {
             if (curr.length <= 2) return curr;
             return curr.filter((_: any, i: number) => i !== idx);
         });
     };
 
     const handleFillRemaining = (idx: number) => {
-        vm.setSplitPayments((curr: { method: string; amount: number }[]) => {
+        vm.setSplitPayments((curr: PaymentLine[]) => {
             const otherTotal = curr.reduce((s, p, i) => i === idx ? s : s + (Number(p.amount) || 0), 0);
             const fill = parseFloat(Math.max(0, total - otherTotal).toFixed(2));
             const next = [...curr];
             next[idx] = { ...next[idx], amount: fill };
             return next;
         });
+    };
+
+    const needsReference = (method?: string) => ['TRANSFERENCIA', 'TARJETA'].includes(String(method || '').toUpperCase());
+    const needsBankAccount = (method?: string) => String(method || '').toUpperCase() === 'TRANSFERENCIA';
+    const accountLabel = (id?: number | null) => {
+        const cuenta = cuentasActivas.find((item) => item.id === Number(id));
+        if (!cuenta) return '';
+        return `${cuenta.alias || cuenta.banco} ${cuenta.numeroCuenta?.slice(-4) || ''}`.trim();
+    };
+    const selectedCuentaId = vm.paymentDetail?.cuentaBancariaId || (needsBankAccount(vm.paymentMethod) ? cuentasActivas[0]?.id : null);
+
+    useEffect(() => {
+        if (needsBankAccount(vm.paymentMethod) && !vm.paymentDetail?.cuentaBancariaId && cuentasActivas[0]?.id) {
+            vm.setPaymentDetail((curr: PaymentLine) => ({ ...curr, cuentaBancariaId: cuentasActivas[0].id, cuentaBancariaLabel: accountLabel(cuentasActivas[0].id) }));
+        }
+    }, [vm.paymentMethod, cuentasActivas[0]?.id]);
+
+    const renderPaymentTraceFields = (
+        line: PaymentLine,
+        onChange: (patch: Partial<PaymentLine>) => void,
+        dense = false,
+    ) => {
+        if (!needsReference(line.method)) return null;
+        const inputClass = `${dense ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 font-semibold text-gray-800 dark:text-white outline-none focus:ring-1 focus:ring-emerald-400`;
+        return (
+            <div className={`${dense ? 'grid grid-cols-2 gap-1.5' : 'grid grid-cols-2 gap-2'} ${dense ? 'mt-1' : ''}`}>
+                {needsBankAccount(line.method) && (
+                    <select
+                        value={line.cuentaBancariaId || selectedCuentaId || ''}
+                        onChange={(e) => {
+                            const id = Number(e.target.value) || null;
+                            onChange({ cuentaBancariaId: id, cuentaBancariaLabel: accountLabel(id) });
+                        }}
+                        className={inputClass}
+                    >
+                        <option value="">Cuenta destino</option>
+                        {cuentasActivas.map((cuenta) => (
+                            <option key={cuenta.id} value={cuenta.id}>
+                                {(cuenta.alias || cuenta.banco)} {cuenta.numeroCuenta?.slice(-4)}
+                            </option>
+                        ))}
+                    </select>
+                )}
+                {String(line.method || '').toUpperCase() === 'TARJETA' && (
+                    <select
+                        value={line.tarjetaTipo || 'Débito'}
+                        onChange={(e) => onChange({ tarjetaTipo: e.target.value })}
+                        className={inputClass}
+                    >
+                        <option value="Débito">Débito</option>
+                        <option value="Crédito">Crédito</option>
+                    </select>
+                )}
+                <input
+                    value={line.referencia || ''}
+                    onChange={(e) => onChange({ referencia: e.target.value })}
+                    placeholder={line.method?.toUpperCase() === 'TARJETA' ? 'N° voucher / operación' : 'N° operación'}
+                    className={inputClass}
+                />
+                {String(line.method || '').toUpperCase() === 'TARJETA' && (
+                    <input
+                        value={line.tarjetaUltimos4 || ''}
+                        onChange={(e) => onChange({ tarjetaUltimos4: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                        placeholder="Últimos 4"
+                        className={inputClass}
+                    />
+                )}
+            </div>
+        );
     };
 
     return (
@@ -161,7 +248,18 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                 {METODOS.map((m) => (
                                     <button
                                         key={m}
-                                        onClick={() => vm.setPaymentMethod(m)}
+                                        onClick={() => {
+                                            vm.setPaymentMethod(m);
+                                            vm.setPaymentDetail((curr: PaymentLine) => ({
+                                                ...curr,
+                                                method: m,
+                                                cuentaBancariaId: m === 'Transferencia' ? (curr.cuentaBancariaId || cuentasActivas[0]?.id || null) : null,
+                                                cuentaBancariaLabel: m === 'Transferencia' ? accountLabel(curr.cuentaBancariaId || cuentasActivas[0]?.id) : '',
+                                                referencia: '',
+                                                tarjetaTipo: m === 'Tarjeta' ? (curr.tarjetaTipo || 'Débito') : '',
+                                                tarjetaUltimos4: '',
+                                            }));
+                                        }}
                                         className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m
                                             ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50'
                                             : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
@@ -201,48 +299,56 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                     </div>
                                 </div>
                             )}
+
+                            {renderPaymentTraceFields(
+                                { ...vm.paymentDetail, method: vm.paymentMethod, amount: total },
+                                (patch) => vm.setPaymentDetail((curr: PaymentLine) => ({ ...curr, ...patch })),
+                            )}
                         </div>
                     ) : (
                         /* Modo mixto — múltiples métodos con montos */
                         <div className="space-y-2">
-                            {(vm.splitPayments as { method: string; amount: number }[]).map((sp, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5">
-                                    <select
-                                        value={sp.method}
-                                        onChange={(e) => updateSplitMethod(idx, e.target.value)}
-                                        className="flex-1 min-w-0 text-xs py-1.5 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-violet-400"
-                                    >
-                                        {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
-                                    </select>
-                                    <div className="relative w-24">
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">S/</span>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            value={sp.amount || ''}
-                                            onChange={(e) => updateSplitAmount(idx, parseFloat(e.target.value) || 0)}
-                                            placeholder="0.00"
-                                            className="w-full pl-7 pr-2 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-violet-400"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        title="Completar con el resto"
-                                        onClick={() => handleFillRemaining(idx)}
-                                        className="p-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 transition-colors"
-                                    >
-                                        <Icon icon="solar:arrow-down-bold-duotone" width={13} />
-                                    </button>
-                                    {vm.splitPayments.length > 2 && (
+                            {(vm.splitPayments as PaymentLine[]).map((sp, idx) => (
+                                <div key={idx} className="rounded-xl border border-gray-100 dark:border-slate-800 p-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <select
+                                            value={sp.method}
+                                            onChange={(e) => updateSplitMethod(idx, e.target.value)}
+                                            className="flex-1 min-w-0 text-xs py-1.5 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-violet-400"
+                                        >
+                                            {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
+                                        </select>
+                                        <div className="relative w-24">
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">S/</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={sp.amount || ''}
+                                                onChange={(e) => updateSplitAmount(idx, parseFloat(e.target.value) || 0)}
+                                                placeholder="0.00"
+                                                className="w-full pl-7 pr-2 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-violet-400"
+                                            />
+                                        </div>
                                         <button
                                             type="button"
-                                            onClick={() => removeSplitRow(idx)}
-                                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                            title="Completar con el resto"
+                                            onClick={() => handleFillRemaining(idx)}
+                                            className="p-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 transition-colors"
                                         >
-                                            <Icon icon="solar:close-circle-bold" width={13} />
+                                            <Icon icon="solar:arrow-down-bold-duotone" width={13} />
                                         </button>
-                                    )}
+                                        {vm.splitPayments.length > 2 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSplitRow(idx)}
+                                                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                            >
+                                                <Icon icon="solar:close-circle-bold" width={13} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {renderPaymentTraceFields(sp, (patch) => updateSplitDetail(idx, patch), true)}
                                 </div>
                             ))}
 

@@ -12,6 +12,7 @@ export interface IPayment {
   fecha?: Date;
   observacion?: string;
   referencia?: string;
+  cuentaBancariaId?: number;
 }
 
 export interface IPaymentFlowState {
@@ -102,7 +103,7 @@ export const usePaymentFlow = () => {
   const processPayment = useCallback(async (
     payment: IPayment,
     comprobante: any,
-    processPaymentFn: (data: any, medioPago: string, monto: number, observacion?: string, referencia?: string) => Promise<any>
+    processPaymentFn: (data: any, medioPago: string, monto: number, observacion?: string, referencia?: string, cuentaBancariaId?: number) => Promise<any>
   ) => {
     const error = validatePayment(payment, comprobante.saldo, comprobante.mtoImpVenta);
     if (error) {
@@ -113,7 +114,7 @@ export const usePaymentFlow = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const result = await processPaymentFn(comprobante, payment.medioPago, payment.monto, payment.observacion, payment.referencia);
+      const result = await processPaymentFn(comprobante, payment.medioPago, payment.monto, payment.observacion, payment.referencia, payment.cuentaBancariaId);
       
       // Determinar el ID del comprobante correcto
       const comprobanteId = result?.pago?.comprobanteId || comprobante.id;

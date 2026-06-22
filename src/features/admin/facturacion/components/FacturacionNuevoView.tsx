@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Icon } from "@iconify/react";
 import { useFacturacionViewModel } from "../useFacturacionViewModel";
@@ -20,13 +20,38 @@ export const FacturacionNuevoView = () => {
     const vm = useFacturacionViewModel();
     const componentRef = useRef(null);
 
+    const [localPrintSize, setLocalPrintSize] = useState<string>(vm.printSize ?? 'TICKET');
+    const [pendingPrint, setPendingPrint] = useState(false);
+    const printSizes = useMemo(() => new Set(['A4', 'A5', 'TICKET']), []);
+
+    const localDimensions = useMemo(() => {
+        switch (localPrintSize) {
+            case 'A4': return { width: 210, height: 297 };
+            case 'A5': return { width: 148, height: 210 };
+            default:   return { width: 80,  height: 330 };
+        }
+    }, [localPrintSize]);
+
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print { @page { size: ${vm.dimensions.width}mm ${vm.dimensions.height}mm; margin: 0; } body { margin: 0; width: ${vm.dimensions.width}mm; } }`,
+        pageStyle: `@media print { @page { size: ${localDimensions.width}mm ${localDimensions.height}mm; margin: 0; } body { margin: 0; width: ${localDimensions.width}mm; } }`,
     });
 
-    const handleOpenNewTab = (vista: string) => { printFn(); };
+    useEffect(() => {
+        if (!pendingPrint) return;
+        const timer = window.setTimeout(() => {
+            printFn();
+            setPendingPrint(false);
+        }, 0);
+        return () => window.clearTimeout(timer);
+    }, [pendingPrint, printFn, localPrintSize]);
+
+    const handleOpenNewTab = (size?: string) => {
+        const nextSize = size && printSizes.has(size) ? size : (vm.printSize ?? localPrintSize);
+        setLocalPrintSize(nextSize);
+        setPendingPrint(true);
+    };
 
     return (
         <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 dark:text-gray-200 transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
@@ -39,10 +64,10 @@ export const FacturacionNuevoView = () => {
                     company={vm.authWithBranding}
                     qrCodeDataUrl={vm.qrCodeDataUrl}
                     productsInvoice={vm.productsInvoice}
-                    total={vm.total}
+                    total={vm.totalAdjusted}
                     mode={"vista previa"}
                     componentRef={componentRef}
-                    size={vm.printSize}
+                    size={localPrintSize}
                     includeProductImages={vm.includeProductImages}
                     quotationDiscount={vm.quotationDiscount}
                     quotationValidity={vm.quotationValidity}
@@ -59,6 +84,13 @@ export const FacturacionNuevoView = () => {
                         numDocAfectado: `${vm.serie}-${vm.correlative}`,
                         medioPago: vm.formValues?.comprobante === "NOTA DE PEDIDO" ? "" : (vm.isMixedPayment ? 'MIXTO' : vm.paymentMethod),
                         splitPayments: vm.isMixedPayment ? vm.splitPayments : undefined,
+                        paymentDetails: vm.buildPaymentDetails?.(),
+                        mtoOperGravadas: vm.opGravadaAdjusted,
+                        mtoIGV: vm.igvAdjusted,
+                        mtoImpVenta: vm.totalAdjusted,
+                        mtoDescuentoGlobal: vm.finalDiscount,
+                        totalDescuentos: vm.finalDiscount,
+                        subTotal: vm.opGravadaAdjusted,
                         ...(vm.tipoDetraccionId ? {
                             tipoDetraccion: vm.tiposDetraccion.find((t: any) => t.id === vm.tipoDetraccionId),
                             montoDetraccion: vm.montoDetraccion,
@@ -99,8 +131,10 @@ export const FacturacionNuevoView = () => {
             )}
 
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full md:overflow-y-auto bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 overflow-hidden border border-white dark:border-slate-800 ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
-                <POSOptionsForm vm={vm} />
+            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full overflow-hidden bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 border border-white dark:border-slate-800 ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
+                <div className="flex-shrink-0 overflow-y-auto max-h-[30%] scrollbar-thin">
+                    <POSOptionsForm vm={vm} />
+                </div>
                 <POSCartLayout vm={vm} />
                 <POSCalculations vm={vm} printFn={printFn} handleOpenNewTab={handleOpenNewTab} />
             </div>
@@ -108,7 +142,7 @@ export const FacturacionNuevoView = () => {
             {/* Modals */}
             {vm.IsOpenModalSuccessInvoice && (
                 <ModalReponseInvoice
-                    handleOpenNewTab={() => handleOpenNewTab("")}
+                    handleOpenNewTab={handleOpenNewTab}
                     closeModal={vm.closeModalResponse}
                     isLoading={vm.isLoading}
                     comprobante={vm.formValues?.comprobante}

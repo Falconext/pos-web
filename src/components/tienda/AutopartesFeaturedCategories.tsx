@@ -5,15 +5,17 @@ import { useNavigate } from 'react-router-dom';
 interface AutopartesFeaturedCategoriesProps {
   cp: string;
   slug: string;
+  diseno?: any;
 }
 
-export default function AutopartesFeaturedCategories({ cp, slug }: AutopartesFeaturedCategoriesProps) {
+export default function AutopartesFeaturedCategories({ cp, slug, diseno }: AutopartesFeaturedCategoriesProps) {
   const navigate = useNavigate();
+  const categoryImage = diseno?.autopartesCategoryImageUrl || '/assets/autopartes/producto.png';
 
   const categories = [
     {
       title: 'Motor y Rendimiento',
-      image: '/assets/autopartes/producto.png',
+      image: categoryImage,
       items: [
         'Aceite de Motor',
         'Componentes y Ensamblaje',
@@ -24,7 +26,7 @@ export default function AutopartesFeaturedCategories({ cp, slug }: AutopartesFea
     },
     {
       title: 'Llantas y Ruedas',
-      image: '/assets/autopartes/producto.png',
+      image: categoryImage,
       items: [
         'Rodamientos de Rueda',
         'Llantas por Velocidad',
@@ -35,7 +37,7 @@ export default function AutopartesFeaturedCategories({ cp, slug }: AutopartesFea
     },
     {
       title: 'Frenos y Suspensión',
-      image: '/assets/autopartes/producto.png',
+      image: categoryImage,
       items: [
         'Eje de Transmisión y Junta CV',
         'Bujes y Relacionados',

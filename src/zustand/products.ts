@@ -161,7 +161,8 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                     ...resp.data,
                     id: Number(resp.data?.id),
                     codigo: data?.codigo || resp.data?.codigo,
-                    imagenUrl: data.imagenUrl,
+                    imagenUrl: resp.data?.imagenUrl ?? data.imagenUrl,
+                    imagenUrlDisplay: resp.data?.imagenUrlDisplay ?? data.imagenUrlDisplay ?? data.imagenUrl,
                     categoria: {
                         ...(resp.data?.categoria || {}),
                         nombre: data.categoriaNombre || resp.data?.categoria?.nombre,
@@ -208,35 +209,62 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
                     ? (data as any).preciosMayorista
                     : undefined;
 
+                const prodId = Number(data?.productoId || data?.id);
+
+                // Construye el producto actualizado fusionando: producto previo (si existe en
+                // el store) + payload enviado + respuesta del API. Se calcula aquí para poder
+                // devolverlo SIEMPRE, incluso cuando el store local está vacío (la pantalla de
+                // productos carga su lista en estado local, no en este store).
+                const buildUpdatedProduct = (product: Partial<IProduct> = {}): IProduct => {
+                    const nextImagenUrl =
+                        data.removerImagen
+                            ? null
+                            : data.imagenUrl ??
+                                (updatedFromApi as any).imagenUrl ??
+                                (product as any).imagenUrl;
+                    const nextImagenUrlDisplay =
+                        data.removerImagen
+                            ? null
+                            : data.imagenUrlDisplay ??
+                                data.imagenUrl ??
+                                (updatedFromApi as any).imagenUrlDisplay ??
+                                (updatedFromApi as any).imagenUrl ??
+                                (product as any).imagenUrlDisplay ??
+                                (product as any).imagenUrl;
+                    return {
+                        ...product,
+                        ...data,
+                        ...updatedFromApi,
+                        id: prodId,
+                        imagenUrl: nextImagenUrl,
+                        imagenUrlDisplay: nextImagenUrlDisplay,
+                        stock: Number((updatedFromApi as any).stock ?? data.stock ?? (product as any).stock ?? 0),
+                        stockBase: Number((updatedFromApi as any).stockBase ?? data.stock ?? (product as any).stockBase ?? (product as any).stock ?? 0),
+                        preciosMayorista: preciosMayorista ?? (product as any).preciosMayorista ?? [],
+                        unidadMedida: (updatedFromApi as any).unidadMedida ?? (data.unidadMedidaNombre ? { ...(product as any).unidadMedida, nombre: data.unidadMedidaNombre } : (product as any).unidadMedida),
+                        categoria: (updatedFromApi as any).categoria ?? (data.categoriaNombre ? { ...(product as any).categoria, nombre: data.categoriaNombre } : (product as any).categoria),
+                        marca: (updatedFromApi as any).marca ?? (data.marcaId ? {
+                            id: Number(data.marcaId),
+                            nombre: data.marcaNombre
+                        } : undefined),
+                    } as any;
+                };
+
+                const existingProduct = (_get().products ?? []).find((p: IProduct) => p.id === prodId);
+                const nextProduct = buildUpdatedProduct(existingProduct);
+
                 useAlertStore.setState({ success: true });
                 set((state) => ({
-                    products: (state.products ?? []).map((product: IProduct) => {
-                        if (product.id === data?.productoId) {
-                            return {
-                                ...product,
-                                ...data,
-                                ...updatedFromApi,
-                                stock: Number((updatedFromApi as any).stock ?? data.stock ?? product.stock ?? 0),
-                                stockBase: Number((updatedFromApi as any).stockBase ?? data.stock ?? product.stockBase ?? product.stock ?? 0),
-                                preciosMayorista: preciosMayorista ?? (product as any).preciosMayorista ?? [],
-                                unidadMedida: (updatedFromApi as any).unidadMedida ?? (data.unidadMedidaNombre ? { ...product.unidadMedida, nombre: data.unidadMedidaNombre } : product.unidadMedida),
-                                categoria: (updatedFromApi as any).categoria ?? (data.categoriaNombre ? { ...product.categoria, nombre: data.categoriaNombre } : product.categoria),
-                                marca: (updatedFromApi as any).marca ?? (data.marcaId ? {
-                                    id: Number(data.marcaId),
-                                    nombre: data.marcaNombre
-                                } : undefined),
-                            } as any
-                        }
-                        return product
-                    }
+                    products: (state.products ?? []).map((product: IProduct) =>
+                        product.id === prodId ? nextProduct : product
                     ),
                 }), false, "UPDATE_PRODUCT");
                 useAlertStore.setState({ loading: false })
                 useAlertStore.getState().alert("Se actualizó el producto correctamente", "success");
-                return _get().products.find((p: IProduct) => p.id === data.productoId) ?? null;
+                return nextProduct;
             } else {
                 useAlertStore.setState({ loading: false })
-                useAlertStore.getState().alert("Error al editar el producto", "error");
+                useAlertStore.getState().alert((resp as any)?.error || (resp as any)?.message || "Error al editar el producto", "error");
                 return null;
             }
         } catch (error: any) {

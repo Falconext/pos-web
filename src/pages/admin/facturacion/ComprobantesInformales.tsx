@@ -374,13 +374,14 @@ const ComprobantesInformales = () => {
         setIsOpenModalPagoParcial(true);
     }
 
-    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string) => {
+    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string, cuentaBancariaId?: number) => {
         const payment = {
             tipo: 'PAGO_PARCIAL' as PaymentType,
             monto,
             medioPago: medioPago as any,
             observacion,
-            referencia
+            referencia,
+            cuentaBancariaId,
         };
 
         const comprobante = {
@@ -396,11 +397,12 @@ const ComprobantesInformales = () => {
         const result = await paymentFlow.processPayment(
             payment,
             comprobante,
-            async (comprobante: any, medioPago: string, monto: number, observacion?: string, referencia?: string) => {
+            async (comprobante: any, medioPago: string, monto: number, observacion?: string, referencia?: string, cbId?: number) => {
                 const pagoData = {
                     ...formValues,
                     observacion: observacion || '',
-                    referencia: referencia || ''
+                    referencia: referencia || '',
+                    cuentaBancariaId: cbId ?? cuentaBancariaId,
                 };
                 return await completePay(pagoData, medioPago, monto);
             }

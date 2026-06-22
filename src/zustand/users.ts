@@ -150,18 +150,7 @@ export const useUsersStore = create<IUsersState>()(
           const response: any = await put(`usuario/${id}`, data);
 
           if (response.code === 1) {
-            // Actualizar el usuario en el estado local
-            const usuarioActualizado = {
-              ...response.data,
-              permisos: safeParsePermisos(response.data.permisos),
-            };
-
-            set((state) => ({
-              usuarios: state.usuarios.map((user) =>
-                user.id === id ? { ...user, ...usuarioActualizado } : user
-              ),
-            }));
-
+            await _get().getAllUsers({ page: 1, limit: 50 });
             useAlertStore.getState().alert('Usuario actualizado exitosamente', 'success');
           } else {
             useAlertStore.getState().alert(response.message || 'Error al actualizar usuario', 'error');

@@ -100,20 +100,6 @@ interface EditFormData {
   };
 }
 
-const DEMO_FILL = {
-  ruc: '20999999999',
-  razonSocial: 'EMPRESA DEMO S.A.C.',
-  nombreComercial: 'Empresa Demo',
-  direccion: 'Av. Las Pruebas Nro. 123',
-  tipoEmpresa: 'FORMAL' as const,
-  usuario: {
-    nombre: 'Administrador Demo',
-    email: 'admin@demo.com',
-    password: 'Demo@1234',
-    dni: '00000001',
-    celular: '999000001',
-  },
-};
 
 export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSaved }: EmpresaFormModalProps) {
   const isEdit = mode === 'edit';
@@ -310,23 +296,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       setEditData(prev => ({ ...prev, usaDemo: enabled }));
       return;
     }
-    if (enabled) {
-      const firstRubro = (rubrosOptions as any[])[0];
-      const firstUbigeo = (ubigeos as any[])[0];
-      setCreateData(prev => ({
-        ...prev,
-        usaDemo: true,
-        ...DEMO_FILL,
-        rubroId: firstRubro?.id || prev.rubroId,
-        ubigeo: firstUbigeo?.codigo || prev.ubigeo,
-        departamento: firstUbigeo?.departamento || prev.departamento,
-        provincia: firstUbigeo?.provincia || prev.provincia,
-        distrito: firstUbigeo?.distrito || prev.distrito,
-      }));
-      setErrors({});
-    } else {
-      setCreateData(prev => ({ ...prev, usaDemo: false }));
-    }
+    setCreateData(prev => ({ ...prev, usaDemo: enabled }));
+    if (enabled) setErrors({});
   };
 
   const handleSelect = (id: any, _value: string, name: string) => {
@@ -392,29 +363,34 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     img.src = URL.createObjectURL(file);
   };
 
-  const handleRucBlur = async () => {
-    if (!createData.ruc || createData.ruc.length !== 11) return;
+  const searchRuc = async () => {
+    const ruc = isEdit ? editData.ruc : createData.ruc;
+    if (!ruc || ruc.length !== 11) return;
     setSearchingRuc(true);
     try {
-      const response: any = await getClientFromDoc(createData.ruc);
+      const response: any = await getClientFromDoc(ruc);
       if (response) {
         const razonSocial = response.nombre_o_razon_social || response.razonSocial || '';
         const direccion = response.direccion_completa || response.direccion || '';
         const departamento = response.departamento || '';
         const provincia = response.provincia || '';
         const distrito = response.distrito || '';
-        const ubigeo = response.ubigeo_sunat || '';
-        const selected: any = ubigeos.find((u: any) => u.codigo === ubigeo);
-        setCreateData(prev => ({
-          ...prev, razonSocial, nombreComercial: razonSocial, direccion,
-          departamento, provincia, distrito, ubigeo: selected?.codigo || ubigeo || '',
-        }));
+        const ubigeoCode = response.ubigeo_sunat || '';
+        const selected: any = ubigeos.find((u: any) => u.codigo === ubigeoCode);
+        const updates = {
+          razonSocial, nombreComercial: razonSocial, direccion,
+          departamento, provincia, distrito, ubigeo: selected?.codigo || ubigeoCode || '',
+        };
+        if (isEdit) setEditData(prev => ({ ...prev, ...updates }));
+        else setCreateData(prev => ({ ...prev, ...updates }));
         setErrors(prev => ({ ...prev, razonSocial: '', nombreComercial: '', direccion: '', ubigeo: '' }));
       }
     } catch { /* ignore */ } finally {
       setSearchingRuc(false);
     }
   };
+
+  const handleRucBlur = () => { void searchRuc(); };
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
@@ -627,16 +603,24 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative">
-                      <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} handleOnBlur={!isEdit ? () => handleRucBlur() : undefined} error={errors.ruc} maxLength={11} />
-                      {searchingRuc && (
-                        <div className="absolute right-3 top-9">
-                          <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
+                    <div>
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <InputPro name="ruc" label="RUC" isLabel value={isEdit ? editData.ruc : createData.ruc} onChange={handleChange} error={errors.ruc} maxLength={11} />
                         </div>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => void searchRuc()}
+                          disabled={searchingRuc || (isEdit ? editData.ruc : createData.ruc).length !== 11}
+                          className="h-10 px-3 flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white disabled:text-gray-400 dark:disabled:text-gray-500 text-xs font-semibold transition-all flex-shrink-0"
+                        >
+                          {searchingRuc
+                            ? <Icon icon="svg-spinners:ring-resize" width={13} />
+                            : <Icon icon="solar:magnifer-bold" width={13} />
+                          }
+                          <span className="hidden sm:inline">{searchingRuc ? 'Buscando...' : 'Buscar'}</span>
+                        </button>
+                      </div>
                     </div>
                     <InputPro name="razonSocial" label="Razón Social" isLabel value={isEdit ? editData.razonSocial : createData.razonSocial} onChange={handleChange} error={errors.razonSocial} />
                     <InputPro name="nombreComercial" label="Nombre Comercial" isLabel value={isEdit ? editData.nombreComercial : createData.nombreComercial} onChange={handleChange} error={errors.nombreComercial} />

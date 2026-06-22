@@ -16,9 +16,26 @@ export interface ChartData {
     egresos: number;
 }
 
+export interface MetodoPagoResumen {
+    metodo: string;
+    total: number;
+    cantidad: number;
+    referencias: number;
+    explicacion: string;
+}
+
+export interface ConciliacionResumen {
+    fuentePrincipal: string;
+    pagosRegistrados: number;
+    comprobantesRespaldo: number;
+    totalPorMetodo: number;
+}
+
 export interface IFinanzasState {
     kpis: KPI | null;
     chartData: ChartData[];
+    metodosPago: MetodoPagoResumen[];
+    conciliacion: ConciliacionResumen | null;
     getResumenFinanciero: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void;
     isLoading: boolean;
 }
@@ -26,6 +43,8 @@ export interface IFinanzasState {
 export const useFinanzasStore = create<IFinanzasState>()(devtools((set) => ({
     kpis: null,
     chartData: [],
+    metodosPago: [],
+    conciliacion: null,
     isLoading: false,
     getResumenFinanciero: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
         try {
@@ -40,19 +59,25 @@ export const useFinanzasStore = create<IFinanzasState>()(devtools((set) => ({
                 const data = resp.data || resp; // Fallback if data wrapper is different
                 set({
                     kpis: data.kpis,
-                    chartData: data.chartData
+                    chartData: data.chartData,
+                    metodosPago: data.metodosPago || [],
+                    conciliacion: data.conciliacion || null,
                 });
             } else {
                 set({
                     kpis: null,
-                    chartData: []
+                    chartData: [],
+                    metodosPago: [],
+                    conciliacion: null,
                 });
             }
         } catch (error) {
             console.error(error);
             set({
                 kpis: null,
-                chartData: []
+                chartData: [],
+                metodosPago: [],
+                conciliacion: null,
             });
         } finally {
             set({ isLoading: false });

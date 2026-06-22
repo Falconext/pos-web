@@ -33,6 +33,7 @@ import VendedoresView from './features/admin/users/VendedoresView'
 import SedesIndex from './pages/admin/sedes/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
+import TemplateTienda from './pages/admin/tienda/Template'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
 import ReviewsTienda from './pages/admin/tienda/Reviews'
 import PanelVentasView from './pages/admin/despacho/PanelVentasView'
@@ -179,6 +180,7 @@ function App() {
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
+          <Route path="tienda/template" element={<TemplateTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
           <Route path="tienda/reviews" element={<ReviewsTienda />} />
           <Route path="ventas" element={<PanelVentasView />} />

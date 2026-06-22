@@ -129,7 +129,11 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
               onClick={() => {
                 setFilePrincipal(null);
                 setPreviewPrincipal(null);
-                setFormValues({ ...formValues, imagenUrl: null });
+                setFormValues((prev: any) => ({
+                  ...prev,
+                  imagenUrl: null,
+                  imagenUrlDisplay: null,
+                }));
                 setImageCandidates([]);
               }}
               className="text-xs text-red-600 hover:text-red-700 underline"
@@ -190,7 +194,11 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     onClick={() => {
                       setFilePrincipal(null);
                       setPreviewPrincipal(url);
-                      setFormValues({ ...formValues, imagenUrl: url });
+                      setFormValues((prev: any) => ({
+                        ...prev,
+                        imagenUrl: url,
+                        imagenUrlDisplay: url,
+                      }));
                       void aprobarImagenReferencia(url, true);
                     }}
                     className={`relative h-24 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? "border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-900" : "border-transparent hover:border-indigo-300"}`}

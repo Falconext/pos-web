@@ -27,19 +27,71 @@ const QUILL_PROSE = [
   '[&_th]:border [&_th]:border-gray-800 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-[#1A1A1A] [&_th]:font-bold [&_th]:text-white',
 ].join(' ');
 
-export default function AutopartesProductoDetalle({
-    tienda,
-    carrito,
-    setCarrito,
-    mostrarCarrito,
-    setMostrarCarrito,
-    agregarAlCarrito,
-    actualizarCantidad,
-    isCartLoaded,
-    allCategories,
-}: any) {
-    const { slug, productoId } = useParams();
+export default function AutopartesProductoDetalle() {
+    const { slug, id } = useParams();
     const navigate = useNavigate();
+
+    const [tienda, setTienda] = useState<any>(null);
+    const [carrito, setCarrito] = useState<any[]>([]);
+    const [mostrarCarrito, setMostrarCarrito] = useState(false);
+    const [allCategories, setAllCategories] = useState<any[]>([]);
+
+
+
+    useEffect(() => {
+        if (!slug) return;
+        const loadTienda = async () => {
+            try {
+                const res = await axios.get(`${BASE_URL}/public/store/${slug}`);
+                const data = res.data.data || res.data;
+                setTienda(data);
+                
+                // Categories
+                const catRes = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
+                setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        loadTienda();
+
+        // Restore cart
+        try {
+            const saved = localStorage.getItem(`tienda:${slug}:carrito`);
+            if (saved) setCarrito(JSON.parse(saved));
+        } catch {}
+    }, [slug]);
+
+    // Save cart when it changes
+    useEffect(() => {
+        if (carrito.length > 0) {
+            localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(carrito));
+        }
+    }, [carrito, slug]);
+
+    const agregarAlCarrito = (item: any) => {
+        const exist = carrito.find(i => i.productoId === item.productoId || i.id === item.id);
+        let newCart = [];
+        if (exist) {
+            newCart = carrito.map(i => (i.productoId === item.productoId || i.id === item.id) ? { ...i, cantidad: i.cantidad + item.cantidad } : i);
+        } else {
+            newCart = [...carrito, { ...item, id: item.id || item.productoId, productoId: item.productoId || item.id }];
+        }
+        setCarrito(newCart);
+        localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(newCart));
+    };
+
+    const actualizarCantidad = (productoId: number | string, cantidad: number) => {
+        if (cantidad <= 0) {
+            const newCart = carrito.filter(item => item.id !== productoId);
+            setCarrito(newCart);
+            localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(newCart));
+        } else {
+            const newCart = carrito.map(item => item.id === productoId ? { ...item, cantidad } : item);
+            setCarrito(newCart);
+            localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(newCart));
+        }
+    };
 
     const [producto, setProducto] = useState<any>(null);
     const [related, setRelated] = useState<any[]>([]);
@@ -51,9 +103,9 @@ export default function AutopartesProductoDetalle({
     const cp = tienda?.diseno?.colorPrimario || '#D92D20';
 
     useEffect(() => {
-        if (!slug || !productoId) return;
+        if (!slug || !id) return;
         cargarProducto();
-    }, [slug, productoId]);
+    }, [slug, id]);
 
     useEffect(() => {
         if (!slug) return;
@@ -66,7 +118,7 @@ export default function AutopartesProductoDetalle({
     const cargarProducto = async () => {
         setLoading(true);
         try {
-            const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${productoId}`);
+            const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`);
             setProducto(data.data || data);
 
             // Fetch related
@@ -76,7 +128,7 @@ export default function AutopartesProductoDetalle({
                     params: { category, limit: 4 }
                 });
                 const arr = Array.isArray(res.data?.data?.data) ? res.data.data.data : Array.isArray(res.data?.data) ? res.data.data : [];
-                setRelated(arr.filter((p: any) => p.id !== Number(productoId)).slice(0, 4));
+                setRelated(arr.filter((p: any) => p.id !== Number(id)).slice(0, 4));
             }
         } catch {
             navigate(`/tienda/${slug}`);
@@ -118,16 +170,16 @@ export default function AutopartesProductoDetalle({
                 onOpenCart={() => setMostrarCarrito(!mostrarCarrito)}
                 searchQuery={search}
                 setSearchQuery={setSearch}
-                onSearchSubmit={(e) => { e.preventDefault(); if(search.trim()) navigate(`/tienda/${slug}/catalogo?q=${encodeURIComponent(search.trim())}`); }}
-                allCategories={allCategories}
+                onSearchSubmit={(e, value) => { e.preventDefault(); if(value?.trim()) navigate(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`); }}
+                allCategories={[]}
             />
 
-            <main className="container mx-auto px-4 xl:px-8 py-10">
+            <main className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-10">
                 {/* Breadcrumbs */}
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-400 mb-8 uppercase tracking-wider">
-                    <button onClick={() => navigate(`/tienda/${slug}`)} className="hover:text-gray-900 transition-colors">Home</button>
+                    <button onClick={() => navigate(`/tienda/${slug}`)} className="hover:text-gray-900 transition-colors">Inicio</button>
                     <Icon icon="solar:alt-arrow-right-linear" />
-                    <button onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="hover:text-gray-900 transition-colors">Catalog</button>
+                    <button onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="hover:text-gray-900 transition-colors">Catálogo</button>
                     <Icon icon="solar:alt-arrow-right-linear" />
                     <span className="text-gray-900 truncate max-w-[200px]">{producto.descripcion}</span>
                 </div>
@@ -180,7 +232,7 @@ export default function AutopartesProductoDetalle({
                         <div className="flex flex-wrap items-center gap-4 mt-4 pb-6 border-b border-gray-200">
                             <div className="flex items-center gap-2 bg-gray-100 rounded border border-gray-200 px-3 py-1.5">
                                 <Icon icon="solar:tag-bold" className="text-gray-400 text-sm" />
-                                <span className="text-xs font-bold text-gray-500 uppercase">Part Number:</span>
+                                <span className="text-xs font-bold text-gray-500 uppercase">Código:</span>
                                 <span className="text-sm font-mono font-black text-gray-900">{producto.partNumber || producto.codigo || 'N/A'}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded">
@@ -205,7 +257,7 @@ export default function AutopartesProductoDetalle({
                         {/* Actions */}
                         <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col sm:flex-row gap-4 items-end">
                             <div className="w-full sm:w-auto">
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Quantity</label>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Cantidad</label>
                                 <div className="flex items-center bg-[#F8F9FA] rounded-md border border-gray-200 h-[52px]">
                                     <button 
                                         onClick={() => setQty(Math.max(1, qty - 1))}
@@ -232,7 +284,7 @@ export default function AutopartesProductoDetalle({
                                 style={{ backgroundColor: isOutOfStock ? '#9CA3AF' : cp }}
                             >
                                 <Icon icon={isOutOfStock ? "solar:close-circle-bold" : "solar:cart-large-minimalistic-bold"} width={20} />
-                                {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                                {isOutOfStock ? 'Agotado' : 'Agregar al Carrito'}
                             </button>
                         </div>
 
@@ -240,12 +292,12 @@ export default function AutopartesProductoDetalle({
                         {(producto.compatibilidad || producto.caracteristicas?.length > 0) && (
                             <div className="mt-8 bg-[#1A1A1A] rounded-2xl p-6 border border-gray-800 text-white">
                                 <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                    <Icon icon="solar:settings-bold" /> Technical Specifications
+                                    <Icon icon="solar:settings-bold" /> Especificaciones Técnicas
                                 </h3>
                                 <div className="space-y-3 text-sm">
                                     {producto.compatibilidad && (
                                         <div className="flex">
-                                            <span className="w-32 font-bold text-gray-500">Compatibility</span>
+                                            <span className="w-32 font-bold text-gray-500">Compatibilidad</span>
                                             <span className="flex-1 text-gray-300 font-medium">{producto.compatibilidad}</span>
                                         </div>
                                     )}
@@ -277,7 +329,7 @@ export default function AutopartesProductoDetalle({
                         {producto.descripcionLarga ? (
                             <div className={`prose max-w-none text-gray-600 ${QUILL_PROSE}`} dangerouslySetInnerHTML={{ __html: producto.descripcionLarga }} />
                         ) : (
-                            <p className="text-gray-500 italic">No description available for this part.</p>
+                            <p className="text-gray-500 italic">No hay descripción disponible para este producto.</p>
                         )}
                      </div>
                 </div>
@@ -286,7 +338,7 @@ export default function AutopartesProductoDetalle({
                 {related.length > 0 && (
                     <div className="mt-20">
                         <h2 className="text-2xl font-black text-gray-900 uppercase tracking-widest mb-8 border-l-4 pl-4" style={{ borderColor: cp }}>
-                            Related Parts
+                            Productos Relacionados
                         </h2>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                             {related.map(p => (

@@ -257,7 +257,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                     total={total.toFixed(2)}
                     mode="off"
                     qrCodeDataUrl={undefined}
-                    discount={comprobante.discount ?? null}
+                    discount={comprobante.mtoDescuentoGlobal ? comprobante.mtoDescuentoGlobal.toString() : null}
                     receipt={comprobanteLabel}
                     selectedClient={comprobante.cliente}
                     totalInWords={numberToWords(total) + ' SOLES'}

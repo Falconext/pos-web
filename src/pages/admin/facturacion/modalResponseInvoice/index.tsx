@@ -176,22 +176,40 @@ const ModalReponseInvoice = ({ isLoading, dataReceipt, auth, client, comprobante
 
                         {/* Acciones secundarias */}
                         <div className="px-6 pt-3 pb-6 flex flex-col gap-2">
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    onClick={handleOpenNewTab}
-                                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-sm font-medium transition-colors ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    <Icon icon="mingcute:print-line" className={`text-base ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
-                                    Imprimir
-                                </button>
-                                <button
-                                    onClick={goListInvoice}
-                                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-sm font-medium transition-colors ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    <Icon icon="solar:list-bold-duotone" className={`text-base ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
-                                    Ver lista
-                                </button>
+                            {/* Formatos de impresión */}
+                            <div>
+                                <p className={`text-[10px] uppercase tracking-[0.2em] font-medium mb-2 text-center ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    Formato de impresión
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { size: 'A4',     icon: 'solar:document-bold-duotone',     label: 'A4',     sub: '210×297mm' },
+                                        { size: 'A5',     icon: 'solar:file-bold-duotone',          label: 'A5',     sub: '148×210mm' },
+                                        { size: 'TICKET', icon: 'solar:receipt-bold-duotone',       label: 'Ticket', sub: '80mm' },
+                                    ].map(({ size, icon, label, sub }) => (
+                                        <button
+                                            key={size}
+                                            onClick={() => handleOpenNewTab(size)}
+                                            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border transition-all active:scale-95 ${
+                                                isDarkMode
+                                                    ? 'border-slate-700 bg-slate-800/50 hover:bg-slate-700 text-slate-200'
+                                                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                            }`}
+                                        >
+                                            <Icon icon={icon} className={`text-xl ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
+                                            <span className="text-xs font-bold">{label}</span>
+                                            <span className={`text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>{sub}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
+                            <button
+                                onClick={goListInvoice}
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-sm font-medium transition-colors ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                            >
+                                <Icon icon="solar:list-bold-duotone" className={`text-base ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
+                                Ver lista
+                            </button>
                             {hasDespacho && (
                                 <button
                                     onClick={goDespacho}

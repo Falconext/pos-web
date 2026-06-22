@@ -290,13 +290,14 @@ export function useCotizacionesViewModel() {
         setIsOpenModalPagoParcial(true);
     };
 
-    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string) => {
+    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string, cuentaBancariaId?: number) => {
         const payment = {
             tipo: 'PAGO_PARCIAL' as PaymentType,
             monto,
             medioPago: medioPago as any,
             observacion,
             referencia,
+            cuentaBancariaId,
         };
 
         const pagoData: any = {
@@ -304,6 +305,7 @@ export function useCotizacionesViewModel() {
             serie: formValues.serie,
             correlativo: formValues.correlativo,
             client: formValues.client,
+            cuentaBancariaId,
         };
 
         const result = await paymentFlow.processPayment(
@@ -316,7 +318,7 @@ export function useCotizacionesViewModel() {
                 mtoImpVenta: parseFloat((formValues?.total || '').toString().replace('S/ ', '') || '0'),
                 saldo: parseFloat((formValues?.saldo || '').toString().replace('S/ ', '') || '0') || undefined,
             },
-            async (_comprobante: any, _medioPago: string, _monto: number, _observacion?: string, _referencia?: string) => {
+            async (_comprobante: any, _medioPago: string, _monto: number, _observacion?: string, _referencia?: string, _cuentaBancariaId?: number) => {
                 return await completePay(pagoData, medioPago, monto);
             }
         );

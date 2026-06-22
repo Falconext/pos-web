@@ -45,13 +45,13 @@ export default function Catalogo() {
     const [isAdminOpen, setIsAdminOpen] = useState(false);
     const adminMenuRef = useRef<HTMLDivElement | null>(null);
 
-    const [allBrands, setAllBrands] = useState<any[]>([]);
-    const [allCategories, setAllCategories] = useState<any[]>([]);
-    const [selectedBrands, setSelectedBrands] = useState<string[]>(() => {
+    const [allMarcas, setAllMarcas] = useState<any[]>([]);
+    const [allCategorías, setAllCategorías] = useState<any[]>([]);
+    const [selectedMarcas, setSelectedMarcas] = useState<string[]>(() => {
         const b = searchParams.get('brand');
         return b ? [b] : [];
     });
-    const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    const [selectedCategorías, setSelectedCategorías] = useState<string[]>(() => {
         const c = searchParams.get('category');
         return c ? [c] : [];
     });
@@ -102,21 +102,21 @@ export default function Catalogo() {
             cargarProductos(1, true);
         }, 350);
         return () => clearTimeout(t);
-    }, [search, selectedBrands, selectedCategories, priceRange, wholesaleOnly]);
+    }, [search, selectedMarcas, selectedCategorías, priceRange, wholesaleOnly]);
 
     useEffect(() => {
         const params = new URLSearchParams();
         const normalizedSearch = search.trim();
 
         if (normalizedSearch) params.set('search', normalizedSearch);
-        if (selectedBrands.length > 0) params.set('brand', selectedBrands.join(','));
-        if (selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
+        if (selectedMarcas.length > 0) params.set('brand', selectedMarcas.join(','));
+        if (selectedCategorías.length > 0) params.set('category', selectedCategorías.join(','));
         if (priceRange[0] !== minPrice) params.set('minPrice', String(priceRange[0]));
         if (priceRange[1] !== maxPrice) params.set('maxPrice', String(priceRange[1]));
         if (sortBy !== 'relevance') params.set('sort', sortBy);
 
         setSearchParams(params, { replace: true });
-    }, [search, selectedBrands, selectedCategories, priceRange, minPrice, maxPrice, sortBy, setSearchParams]);
+    }, [search, selectedMarcas, selectedCategorías, priceRange, minPrice, maxPrice, sortBy, setSearchParams]);
 
     const cargarTienda = async () => {
         try {
@@ -128,14 +128,14 @@ export default function Catalogo() {
     const cargarMarcas = async () => {
         try {
             const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/brands`);
-            setAllBrands(Array.isArray(data?.data) ? data.data : []);
+            setAllMarcas(Array.isArray(data?.data) ? data.data : []);
         } catch { }
     };
 
     const cargarCategorias = async () => {
         try {
             const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
-            setAllCategories(Array.isArray(data?.data) ? data.data : []);
+            setAllCategorías(Array.isArray(data?.data) ? data.data : []);
         } catch { }
     };
 
@@ -153,8 +153,8 @@ export default function Catalogo() {
                 params: {
                     page: p, limit,
                     search: search.trim() || undefined,
-                    brand: selectedBrands.length > 0 ? selectedBrands.join(',') : undefined,
-                    category: selectedCategories.length > 0 ? selectedCategories.join(',') : undefined,
+                    brand: selectedMarcas.length > 0 ? selectedMarcas.join(',') : undefined,
+                    category: selectedCategorías.length > 0 ? selectedCategorías.join(',') : undefined,
                     minPrice: priceRange[0] !== minPrice ? priceRange[0] : undefined,
                     maxPrice: priceRange[1] !== maxPrice ? priceRange[1] : undefined,
                     wholesale: wholesaleOnly ? 'true' : undefined,
@@ -205,10 +205,10 @@ export default function Catalogo() {
     const irACheckout = () => navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } });
 
     const toggleSection = (section: keyof typeof openSections) => setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-    const toggleBrand = (name: string) => setSelectedBrands(prev => prev.includes(name) ? prev.filter(b => b !== name) : [...prev, name]);
-    const toggleCategory = (name: string) => setSelectedCategories(prev => prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]);
+    const toggleBrand = (name: string) => setSelectedMarcas(prev => prev.includes(name) ? prev.filter(b => b !== name) : [...prev, name]);
+    const toggleCategory = (name: string) => setSelectedCategorías(prev => prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]);
 
-    const filteredBrands = allBrands.filter(b => {
+    const filteredMarcas = allMarcas.filter(b => {
         const name = typeof b === 'string' ? b : b.nombre;
         return !brandSearch || name.toLowerCase().includes(brandSearch.toLowerCase());
     });
@@ -231,8 +231,8 @@ export default function Catalogo() {
         return list;
     }, [productos, sortBy]);
 
-    const hasActiveFilters = selectedBrands.length > 0 || selectedCategories.length > 0 || priceRange[0] !== minPrice || priceRange[1] !== maxPrice;
-    const pageTitle = selectedCategories[0] || selectedBrands[0] || 'Todos los productos';
+    const hasActiveFilters = selectedMarcas.length > 0 || selectedCategorías.length > 0 || priceRange[0] !== minPrice || priceRange[1] !== maxPrice;
+    const pageTitle = selectedCategorías[0] || selectedMarcas[0] || 'Todos los productos';
     const diseno = tienda?.diseno || {};
     const cp = diseno.colorPrimario || '#6A6CFF';
     const { getBySlug, clear: clearCompare } = useCompareStore();
@@ -275,8 +275,8 @@ export default function Catalogo() {
 
     const FilterSidebar = () => (
         <div className="bg-white rounded-2xl p-4 space-y-1">
-            {/* Categories */}
-            {allCategories.length > 0 && (
+            {/* Categorías */}
+            {allCategorías.length > 0 && (
                 <div className="border-b border-gray-100 pb-4 mb-1">
                     <button onClick={() => toggleSection('categories')} className="w-full flex items-center justify-between py-2 text-sm font-bold text-[#1A1A1A]">
                         Categorías
@@ -284,12 +284,12 @@ export default function Catalogo() {
                     </button>
                     {openSections.categories && (
                         <div className="mt-2 space-y-2.5">
-                            {allCategories.map((cat, i) => {
+                            {allCategorías.map((cat, i) => {
                                 const name = typeof cat === 'string' ? cat : cat.nombre;
                                 return (
                                     <label key={i} className="flex items-center gap-3 cursor-pointer group" onClick={() => toggleCategory(name)}>
-                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedCategories.includes(name) ? 'border-[#FF9500]' : 'border-gray-300 group-hover:border-[#FF9500]'}`}>
-                                            {selectedCategories.includes(name) && <div className="w-2 h-2 rounded-full bg-[#FF9500]" />}
+                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedCategorías.includes(name) ? 'border-[#FF9500]' : 'border-gray-300 group-hover:border-[#FF9500]'}`}>
+                                            {selectedCategorías.includes(name) && <div className="w-2 h-2 rounded-full bg-[#FF9500]" />}
                                         </div>
                                         <span className="text-sm text-[#1A1A1A]">{name}</span>
                                     </label>
@@ -335,8 +335,8 @@ export default function Catalogo() {
                 )}
             </div>
 
-            {/* Brands */}
-            {allBrands.length > 0 && (
+            {/* Marcas */}
+            {allMarcas.length > 0 && (
                 <div className="pb-2">
                     <button onClick={() => toggleSection('brands')} className="w-full flex items-center justify-between py-2 text-sm font-bold text-[#1A1A1A]">
                         Marcas
@@ -355,12 +355,12 @@ export default function Catalogo() {
                                 />
                             </div>
                             <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
-                                {filteredBrands.map((brand, i) => {
+                                {filteredMarcas.map((brand, i) => {
                                     const name = typeof brand === 'string' ? brand : brand.nombre;
                                     return (
                                         <label key={i} className="flex items-center gap-3 cursor-pointer group" onClick={() => toggleBrand(name)}>
-                                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedBrands.includes(name) ? 'border-[#FF9500]' : 'border-gray-300 group-hover:border-[#FF9500]'}`}>
-                                                {selectedBrands.includes(name) && <div className="w-2 h-2 rounded-full bg-[#FF9500]" />}
+                                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedMarcas.includes(name) ? 'border-[#FF9500]' : 'border-gray-300 group-hover:border-[#FF9500]'}`}>
+                                                {selectedMarcas.includes(name) && <div className="w-2 h-2 rounded-full bg-[#FF9500]" />}
                                             </div>
                                             <span className="text-sm text-[#1A1A1A]">{name}</span>
                                         </label>
@@ -374,7 +374,7 @@ export default function Catalogo() {
 
             {hasActiveFilters && (
                 <button
-                    onClick={() => { setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
+                    onClick={() => { setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
                     className="w-full mt-3 py-2 text-xs font-bold text-[#FF9500] border border-[#FF9500] rounded-full hover:bg-[#FF9500] hover:text-white transition-colors"
                 >
                     Limpiar filtros
@@ -390,17 +390,17 @@ export default function Catalogo() {
         const GadgetsFilterSidebar = () => (
             <aside className="w-52 flex-shrink-0 space-y-6 text-sm hidden lg:block">
                 <h3 className="font-bold text-gray-900 text-base">Filtros</h3>
-                {allCategories.length > 0 && (
+                {allCategorías.length > 0 && (
                     <div>
                         <p className="font-semibold text-gray-700 mb-2.5">Categorías</p>
                         <div className="space-y-2">
-                            {allCategories.map((cat, i) => {
+                            {allCategorías.map((cat, i) => {
                                 const name = typeof cat === 'string' ? cat : cat.nombre;
                                 return (
                                     <label key={i} className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            checked={selectedCategories.includes(name)}
+                                            checked={selectedCategorías.includes(name)}
                                             onChange={() => toggleCategory(name)}
                                             className="rounded border-gray-300"
                                             style={{ accentColor: cp }}
@@ -413,17 +413,17 @@ export default function Catalogo() {
                     </div>
                 )}
 
-                {allBrands.length > 0 && (
+                {allMarcas.length > 0 && (
                     <div>
                         <p className="font-semibold text-gray-700 mb-2.5">Marcas</p>
                         <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                            {filteredBrands.map((brand, i) => {
+                            {filteredMarcas.map((brand, i) => {
                                 const name = typeof brand === 'string' ? brand : brand.nombre;
                                 return (
                                     <label key={i} className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            checked={selectedBrands.includes(name)}
+                                            checked={selectedMarcas.includes(name)}
                                             onChange={() => toggleBrand(name)}
                                             className="rounded border-gray-300"
                                             style={{ accentColor: cp }}
@@ -468,7 +468,7 @@ export default function Catalogo() {
 
                 {hasActiveFilters && (
                     <button
-                        onClick={() => { setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
+                        onClick={() => { setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
                         className="w-full py-2 text-xs font-bold rounded-full border transition-all"
                         style={{ color: cp, borderColor: cp }}
                     >
@@ -490,10 +490,10 @@ export default function Catalogo() {
                     adminMenuRef={adminMenuRef}
                     search={search}
                     setSearch={setSearch}
-                    categories={allCategories}
+                    categories={allCategorías}
                     onSelectCategory={(cat) => {
-                        if (cat === '') setSelectedCategories([]);
-                        else setSelectedCategories([cat]);
+                        if (cat === '') setSelectedCategorías([]);
+                        else setSelectedCategorías([cat]);
                     }}
                     recommendedProducts={productos}
                     cp={cp}
@@ -507,9 +507,9 @@ export default function Catalogo() {
                             <p className="text-xs sm:text-sm text-gray-600 min-w-0 truncate">
                                 <span className="font-medium">{sortedProductos.length}</span>
                                 {total > sortedProductos.length && <> de <span className="font-medium">{total}</span></>} resultados
-                                {(selectedCategories[0] || selectedBrands[0] || search) && (
+                                {(selectedCategorías[0] || selectedMarcas[0] || search) && (
                                     <span className="font-semibold hidden sm:inline" style={{ color: cp }}>
-                                        {' "}' + (selectedCategories[0] || selectedBrands[0] || search) + '"'}
+                                        {' "}' + (selectedCategorías[0] || selectedMarcas[0] || search) + '"'}
                                     </span>
                                 )}
                             </p>
@@ -547,7 +547,7 @@ export default function Catalogo() {
                                             <span className="font-black text-gray-900">Filtros</span>
                                             {hasActiveFilters && (
                                                 <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: cp }}>
-                                                    {selectedCategories.length + selectedBrands.length}
+                                                    {selectedCategorías.length + selectedMarcas.length}
                                                 </span>
                                             )}
                                         </div>
@@ -556,13 +556,13 @@ export default function Catalogo() {
                                         </button>
                                     </div>
                                     <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
-                                        {allCategories.length > 0 && (
+                                        {allCategorías.length > 0 && (
                                             <div>
                                                 <p className="font-bold text-gray-800 mb-2.5 text-sm">Categorías</p>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {allCategories.map((cat, i) => {
+                                                    {allCategorías.map((cat, i) => {
                                                         const name = typeof cat === 'string' ? cat : cat.nombre;
-                                                        const active = selectedCategories.includes(name);
+                                                        const active = selectedCategorías.includes(name);
                                                         return (
                                                             <button key={i} onClick={() => toggleCategory(name)}
                                                                 className="px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all"
@@ -574,13 +574,13 @@ export default function Catalogo() {
                                                 </div>
                                             </div>
                                         )}
-                                        {filteredBrands.length > 0 && (
+                                        {filteredMarcas.length > 0 && (
                                             <div>
                                                 <p className="font-bold text-gray-800 mb-2.5 text-sm">Marcas</p>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {filteredBrands.map((brand, i) => {
+                                                    {filteredMarcas.map((brand, i) => {
                                                         const name = typeof brand === 'string' ? brand : brand.nombre;
-                                                        const active = selectedBrands.includes(name);
+                                                        const active = selectedMarcas.includes(name);
                                                         return (
                                                             <button key={i} onClick={() => toggleBrand(name)}
                                                                 className="px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all"
@@ -605,7 +605,7 @@ export default function Catalogo() {
                                     </div>
                                     <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
                                         {hasActiveFilters && (
-                                            <button onClick={() => { setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
+                                            <button onClick={() => { setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
                                                 className="flex-1 py-3 rounded-2xl text-sm font-bold border-2 transition-all"
                                                 style={{ color: cp, borderColor: cp }}>
                                                 Limpiar
@@ -622,9 +622,9 @@ export default function Catalogo() {
                         )}
 
                         {/* Active filter chips */}
-                        {(selectedCategories.length > 0 || selectedBrands.length > 0) && (
+                        {(selectedCategorías.length > 0 || selectedMarcas.length > 0) && (
                             <div className="flex items-center gap-2 mb-5 flex-wrap">
-                                {[...selectedCategories, ...selectedBrands].map(chip => (
+                                {[...selectedCategorías, ...selectedMarcas].map(chip => (
                                     <span
                                         key={chip}
                                         onClick={() => { toggleCategory(chip); toggleBrand(chip); }}
@@ -637,7 +637,7 @@ export default function Catalogo() {
                             </div>
                         )}
 
-                        <div className="flex gap-8 items-start">
+                        <div className="flex gap-6 items-start">
                             <GadgetsFilterSidebar />
 
                             <div className="flex-1 min-w-0">
@@ -653,7 +653,7 @@ export default function Catalogo() {
                                         <h3 className="font-bold text-gray-800 mb-2">Sin resultados</h3>
                                         <p className="text-sm text-gray-500 mb-4">Intenta ajustar los filtros.</p>
                                         <button
-                                            onClick={() => { setSearch(''); setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
+                                            onClick={() => { setSearch(''); setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
                                             className="text-sm font-bold px-5 py-2 rounded-full border transition-all"
                                             style={{ color: cp, borderColor: cp }}
                                         >
@@ -783,27 +783,27 @@ export default function Catalogo() {
         const [priceMin, setPriceMin] = [priceRange[0], (v: number) => setPriceRange([v, priceRange[1]])];
 
         const AutopartesFilterSidebar = () => (
-            <aside className="w-64 flex-shrink-0 space-y-6 text-sm hidden lg:block bg-black rounded-xl border border-gray-800 p-5 h-fit sticky top-24">
-                <h3 className="font-black text-white text-lg tracking-wide uppercase border-b border-gray-800 pb-3 mb-4">Filters</h3>
+            <aside className="w-64 flex-shrink-0 space-y-6 text-sm hidden lg:block bg-white rounded-xl border border-gray-100 p-5 h-fit sticky top-24 shadow-sm">
+                <h3 className="font-black text-gray-900 text-lg tracking-wide uppercase border-b border-gray-100 pb-3 mb-4">Filters</h3>
                 
-                {allCategories.length > 0 && (
+                {allCategorías.length > 0 && (
                     <div className="mb-6">
-                        <p className="font-bold text-gray-400 mb-3 text-xs uppercase tracking-wider">Categories</p>
+                        <p className="font-bold text-gray-400 mb-3 text-xs uppercase tracking-wider">Categorías</p>
                         <div className="space-y-3">
-                            {allCategories.map((cat, i) => {
+                            {allCategorías.map((cat, i) => {
                                 const name = typeof cat === 'string' ? cat : cat.nombre;
                                 return (
                                     <label key={i} className="flex items-center gap-3 cursor-pointer group">
-                                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors ${selectedCategories.includes(name) ? 'border-red-500 bg-red-500' : 'border-gray-600 bg-[#1A1A1A] group-hover:border-gray-400'}`}>
-                                            {selectedCategories.includes(name) && <Icon icon="mdi:check" width={12} className="text-white" />}
+                                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors ${selectedCategorías.includes(name) ? 'border-red-500 bg-red-500' : 'border-gray-600 bg-[#1A1A1A] group-hover:border-gray-400'}`}>
+                                            {selectedCategorías.includes(name) && <Icon icon="mdi:check" width={12} className="text-white" />}
                                         </div>
                                         <input
                                             type="checkbox"
-                                            checked={selectedCategories.includes(name)}
+                                            checked={selectedCategorías.includes(name)}
                                             onChange={() => toggleCategory(name)}
                                             className="hidden"
                                         />
-                                        <span className={`text-sm ${selectedCategories.includes(name) ? 'text-white font-bold' : 'text-gray-400 group-hover:text-gray-300'}`}>{name}</span>
+                                        <span className={`text-sm ${selectedCategorías.includes(name) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover:text-gray-800'}`}>{name}</span>
                                     </label>
                                 );
                             })}
@@ -811,24 +811,24 @@ export default function Catalogo() {
                     </div>
                 )}
 
-                {allBrands.length > 0 && (
+                {allMarcas.length > 0 && (
                     <div className="mb-6">
-                        <p className="font-bold text-gray-400 mb-3 text-xs uppercase tracking-wider">Brands</p>
+                        <p className="font-bold text-gray-400 mb-3 text-xs uppercase tracking-wider">Marcas</p>
                         <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {filteredBrands.map((brand, i) => {
+                            {filteredMarcas.map((brand, i) => {
                                 const name = typeof brand === 'string' ? brand : brand.nombre;
                                 return (
                                     <label key={i} className="flex items-center gap-3 cursor-pointer group">
-                                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors ${selectedBrands.includes(name) ? 'border-red-500 bg-red-500' : 'border-gray-600 bg-[#1A1A1A] group-hover:border-gray-400'}`}>
-                                            {selectedBrands.includes(name) && <Icon icon="mdi:check" width={12} className="text-white" />}
+                                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors ${selectedMarcas.includes(name) ? 'border-red-500 bg-red-500' : 'border-gray-600 bg-[#1A1A1A] group-hover:border-gray-400'}`}>
+                                            {selectedMarcas.includes(name) && <Icon icon="mdi:check" width={12} className="text-white" />}
                                         </div>
                                         <input
                                             type="checkbox"
-                                            checked={selectedBrands.includes(name)}
+                                            checked={selectedMarcas.includes(name)}
                                             onChange={() => toggleBrand(name)}
                                             className="hidden"
                                         />
-                                        <span className={`text-sm ${selectedBrands.includes(name) ? 'text-white font-bold' : 'text-gray-400 group-hover:text-gray-300'}`}>{name}</span>
+                                        <span className={`text-sm ${selectedMarcas.includes(name) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover:text-gray-800'}`}>{name}</span>
                                     </label>
                                 );
                             })}
@@ -838,15 +838,15 @@ export default function Catalogo() {
 
                 <div>
                     <div className="flex items-center justify-between mb-3">
-                        <p className="font-bold text-gray-400 text-xs uppercase tracking-wider">Min Price</p>
-                        <span className="text-xs font-black text-white px-2 py-1 rounded bg-[#1A1A1A] border border-gray-800">
+                        <p className="font-bold text-gray-400 text-xs uppercase tracking-wider">Precio Mínimo</p>
+                        <span className="text-xs font-black text-white px-2 py-1 rounded bg-gray-100 border border-gray-200">
                             S/ {priceMin}
                         </span>
                     </div>
                     <input
                         type="range" min={minPrice} max={maxPrice} value={priceRange[0]}
                         onChange={e => setPriceMin(Number(e.target.value))}
-                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-800"
+                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200"
                         style={{ accentColor: cp }}
                     />
                     <div className="flex justify-between text-[10px] text-gray-500 mt-2 font-mono">
@@ -856,10 +856,10 @@ export default function Catalogo() {
 
                 {hasActiveFilters && (
                     <button
-                        onClick={() => { setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
-                        className="w-full mt-6 py-2.5 text-xs font-bold rounded-md bg-[#1A1A1A] text-gray-300 hover:text-white hover:bg-gray-800 transition-colors border border-gray-700"
+                        onClick={() => { setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
+                        className="w-full mt-6 py-2.5 text-xs font-bold rounded-md bg-[#1A1A1A] text-gray-300 hover:text-white hover:bg-gray-200 transition-colors border border-gray-700"
                     >
-                        Clear Filters
+                        Limpiar Filtros
                     </button>
                 )}
             </aside>
@@ -875,19 +875,25 @@ export default function Catalogo() {
                     onOpenCart={() => setMostrarCarrito(!mostrarCarrito)}
                     searchQuery={search}
                     setSearchQuery={setSearch}
-                    onSearchSubmit={(e) => { e.preventDefault(); /* triggers via effect */ }}
-                    allCategories={allCategories}
+                    onSearchSubmit={(e, value) => { 
+                        e.preventDefault(); 
+                        setSearch(value);
+                        setSelectedCategorías([]);
+                        setSelectedMarcas([]);
+                        setPriceRange([minPrice, maxPrice]);
+                    }}
+                    allCategorías={allCategorías}
                 />
 
-                <main className="container mx-auto px-4 xl:px-8 py-8">
+                <main className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-8">
                     {/* Header info */}
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h1 className="text-3xl font-black text-gray-900 mb-1">Catalog</h1>
+                            <h1 className="text-3xl font-black text-gray-900 mb-1">Catálogo</h1>
                             <p className="text-sm text-gray-500">
-                                Showing <span className="font-bold text-gray-900">{sortedProductos.length}</span> of {total} results
-                                {(selectedCategories[0] || selectedBrands[0] || search) && (
-                                    <span> for "{selectedCategories[0] || selectedBrands[0] || search}"</span>
+                                Mostrando <span className="font-bold text-gray-900">{sortedProductos.length}</span> de {total} resultados
+                                {(selectedCategorías[0] || selectedMarcas[0] || search) && (
+                                    <span> for "{selectedCategorías[0] || selectedMarcas[0] || search}"</span>
                                 )}
                             </p>
                         </div>
@@ -898,15 +904,15 @@ export default function Catalogo() {
                                 onChange={e => setSortBy(e.target.value)}
                                 className="text-sm font-bold text-gray-700 border-2 border-gray-200 rounded-md px-4 py-2 bg-white cursor-pointer focus:outline-none hover:border-gray-300 transition-colors"
                             >
-                                <option value="relevance">Sort by Relevance</option>
-                                <option value="price-asc">Price (Low to High)</option>
-                                <option value="price-desc">Price (High to Low)</option>
-                                <option value="name-asc">Alphabetical (A-Z)</option>
+                                <option value="relevance">Ordenar por Relevancia</option>
+                                <option value="price-asc">Precio (Menor a Mayor)</option>
+                                <option value="price-desc">Precio (Mayor a Menor)</option>
+                                <option value="name-asc">Alfabético (A-Z)</option>
                             </select>
                         </div>
                     </div>
 
-                    <div className="flex gap-8 items-start">
+                    <div className="flex gap-6 items-start">
                         <AutopartesFilterSidebar />
 
                         <div className="flex-1 min-w-0">
@@ -919,14 +925,14 @@ export default function Catalogo() {
                             ) : sortedProductos.length === 0 ? (
                                 <div className="bg-white rounded-xl border border-gray-100 p-16 text-center shadow-sm">
                                     <Icon icon="solar:box-minimalistic-broken" className="text-6xl mx-auto mb-4 text-gray-300" />
-                                    <h3 className="font-black text-gray-900 text-xl mb-2">No parts found</h3>
-                                    <p className="text-gray-500 mb-6">Try adjusting your filters or search terms.</p>
+                                    <h3 className="font-black text-gray-900 text-xl mb-2">No se encontraron productos</h3>
+                                    <p className="text-gray-500 mb-6">Intenta ajustar los filtros o el término de búsqueda.</p>
                                     <button
-                                        onClick={() => { setSearch(''); setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
+                                        onClick={() => { setSearch(''); setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
                                         className="text-sm font-bold px-6 py-3 rounded-md text-white transition-colors hover:opacity-90"
                                         style={{ backgroundColor: cp }}
                                     >
-                                        Clear Filters
+                                        Limpiar Filtros
                                     </button>
                                 </div>
                             ) : (
@@ -997,10 +1003,10 @@ export default function Catalogo() {
                 adminMenuRef={adminMenuRef}
                 search={search}
                 setSearch={setSearch}
-                categories={allCategories}
+                categories={allCategorías}
                 onSelectCategory={(cat) => {
-                    if (cat === '') setSelectedCategories([]);
-                    else setSelectedCategories([cat]);
+                    if (cat === '') setSelectedCategorías([]);
+                    else setSelectedCategorías([cat]);
                 }}
                 recommendedProducts={productos.slice(0, 10)}
                 onSearch={() => { }}
@@ -1015,13 +1021,13 @@ export default function Catalogo() {
                             <Icon icon="solar:alt-arrow-left-linear" width={16} />
                             Inicio
                         </button>
-                        {selectedCategories.map((c, i) => (
+                        {selectedCategorías.map((c, i) => (
                             <span key={i} className="flex items-center gap-1.5">
                                 <span className="text-gray-300">/</span>
                                 <span className="text-[#1A1A1A] font-medium">{c}</span>
                             </span>
                         ))}
-                        {selectedBrands.map((b, i) => (
+                        {selectedMarcas.map((b, i) => (
                             <span key={i} className="flex items-center gap-1.5">
                                 <span className="text-gray-300">/</span>
                                 <span className="text-[#1A1A1A] font-medium">{b}</span>
@@ -1118,7 +1124,7 @@ export default function Catalogo() {
                                     <h3 className="font-black text-[#1A1A1A] mb-2">Sin resultados</h3>
                                     <p className="text-sm text-gray-500 mb-4">Intenta ajustar tus filtros.</p>
                                     <button
-                                        onClick={() => { setSearch(''); setSelectedBrands([]); setSelectedCategories([]); setPriceRange([minPrice, maxPrice]); }}
+                                        onClick={() => { setSearch(''); setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
                                         className="text-sm font-bold text-[#FF9500] border border-[#FF9500] px-5 py-2 rounded-full hover:bg-[#FF9500] hover:text-white transition-all"
                                     >
                                         Limpiar Filtros

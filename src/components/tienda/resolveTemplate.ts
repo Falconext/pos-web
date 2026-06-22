@@ -8,7 +8,8 @@ export type PlantillaId =
   | 'salud'
   | 'menu'
   | 'gadgets'
-  | 'autopartes';
+  | 'autopartes'
+  | 'moda';
 
 export interface BannerSlotDef {
   orden: number;
@@ -84,6 +85,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Tarjetas grandes con imagen destacada. Ideal para tiendas generales y retail.',
     accentColor: '#6A6CFF',
     icon: 'solar:shop-2-bold',
+    rubrosPermitidos: ['Retail y comercio', 'Comercio minorista', 'Artesanía y decoración', 'Librería y Papelería', 'Otros servicios', 'Venta de materiales de construcción'],
   },
   minimal: {
     cardComponent: 'ProductCardEmox',
@@ -100,6 +102,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Diseño limpio y compacto. Más productos visibles, menos distracción.',
     accentColor: '#18181B',
     icon: 'solar:minimalistic-magnifer-bold',
+    rubrosPermitidos: ['Retail y comercio', 'Comercio minorista', 'Artesanía y decoración', 'Belleza y cuidado personal', 'Textil y confección', 'Textil y confecciones'],
   },
   elegante: {
     cardComponent: 'ProductCardGlamora',
@@ -116,6 +119,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Foco en imagen vertical tipo lookbook. Perfecto para ropa, belleza y joyería.',
     accentColor: '#D4A0C5',
     icon: 'solar:star-bold',
+    rubrosPermitidos: ['Textil y confección', 'Textil y confecciones', 'Belleza y cuidado personal', 'Artesanía y decoración'],
   },
   tecnica: {
     cardComponent: 'ProductCardGromuse',
@@ -132,6 +136,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Especificaciones técnicas visibles. Ideal para tecnología, ferretería y repuestos.',
     accentColor: '#1E3A5F',
     icon: 'solar:cpu-bold',
+    rubrosPermitidos: ['Ferretería', 'Tecnología y software', 'Ventas de accesorios y repuestos de cómputo', 'Tecnologías de la información', 'Automotriz y repuestos', 'Construcción y obras', 'Venta de materiales de construcción'],
   },
   mercado: {
     cardComponent: 'ProductCardGromuse',
@@ -148,6 +153,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Grid denso tipo supermercado. Ideal para bodegas, abarrotes y mayoristas.',
     accentColor: '#16A34A',
     icon: 'solar:cart-large-2-bold',
+    rubrosPermitidos: ['Bodega y Abarrotes', 'Supermarket', 'Minimarket', 'Comercio minorista'],
   },
   salud: {
     cardComponent: 'ProductCardPio',
@@ -164,6 +170,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Búsqueda prominente, filtros por laboratorio y presentación. Para farmacias y boticas.',
     accentColor: '#0EA5E9',
     icon: 'solar:pill-bold',
+    rubrosPermitidos: ['Farmacia', 'Botica', 'Farmacia Veterinaria', 'Salud y bienestar'],
   },
   menu: {
     cardComponent: 'ProductCardPio',
@@ -180,6 +187,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Vista tipo carta de restaurante. Categorías como secciones, orden por mesa o delivery.',
     accentColor: '#EA580C',
     icon: 'solar:cup-hot-bold',
+    rubrosPermitidos: ['Restaurante y alimentos', 'Restaurantes y comida', 'Panadería y Pastelería'],
   },
   gadgets: {
     cardComponent: 'ProductCardXtra',
@@ -196,15 +204,16 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Cards con ticker de oferta, rating y badges animados. Ideal para tecnología, accesorios y cómputo.',
     accentColor: '#1E3A5F',
     icon: 'solar:cpu-bold',
+    rubrosPermitidos: ['Tecnología y software', 'Ventas de accesorios y repuestos de cómputo', 'Tecnologías de la información'],
   },
   autopartes: {
-    cardComponent: 'ProductCardPio', // We can use Pio or Gadgets, let's stick to Pio or Gromuse for now
+    cardComponent: 'ProductCardPio',
     gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
     showDiscount: true,
     showStock: true,
     showCategoryCircles: false,
     bannerIsSlider: false,
-    bannerSlots: [], // Handled by AutopartesHero directly
+    bannerSlots: [],
     showCombos: false,
     showSidebar: true,
     imageAspect: 'aspect-square',
@@ -214,6 +223,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     icon: 'solar:wheel-bold',
     planesPermitidos: ['CORPORATIVO', 'VIP'],
     rubrosPermitidos: ['Automotriz y repuestos'],
+  },
+  moda: {
+    cardComponent: 'ProductCardPio', // We can update this later if we create a specific card for moda
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: true,
+    showSidebar: true,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Moda',
+    description: 'Diseño ultra limpio, estética editorial, tipografías finas. Ideal para ropa y alta costura.',
+    accentColor: '#B58863',
+    icon: 'solar:hanger-bold',
+    rubrosPermitidos: ['Textil y confección', 'Textil y confecciones'],
   },
 };
 

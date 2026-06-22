@@ -23,6 +23,12 @@ interface Props {
 export default function ProductVariantsShopify({ opciones, variantes, selecciones, onChange }: Props) {
   if (!opciones || opciones.length === 0) return null;
 
+  const matchesSelection = (variant: Variant, selection: Record<string, string>) =>
+    Object.entries(selection).every(([key, value]) => !value || variant.valoresAtributos?.[key] === value);
+
+  const getValueImage = (optionName: string, value: string) =>
+    variantes?.find((variant) => variant.valoresAtributos?.[optionName] === value && variant.imagenUrl)?.imagenUrl || null;
+
   return (
     <div className="mb-6 space-y-4">
       {opciones.map((op, idx) => (
@@ -34,17 +40,26 @@ export default function ProductVariantsShopify({ opciones, variantes, seleccione
           <div className="flex flex-wrap gap-2">
             {op.valores.map((val) => {
               const isSelected = selecciones[op.nombre] === val;
-              // Opcional: verificar si la variante existe para deshabilitar botones
+              const nextSelection = { ...selecciones, [op.nombre]: val };
+              const available = !variantes?.length || variantes.some((variant) => matchesSelection(variant, nextSelection) && Number(variant.stock || 0) > 0);
+              const image = getValueImage(op.nombre, val);
+              const isColorOption = op.nombre.toLowerCase().includes('color');
               return (
                 <button
                   key={val}
                   onClick={() => onChange(op.nombre, val)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                  disabled={!available}
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${
                     isSelected
                       ? 'border-black bg-black text-white shadow-md'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                      : available
+                        ? 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                        : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
                   }`}
                 >
+                  {isColorOption && image && (
+                    <img src={image} alt={val} className="h-7 w-7 rounded-lg object-cover bg-white" />
+                  )}
                   {val}
                 </button>
               );

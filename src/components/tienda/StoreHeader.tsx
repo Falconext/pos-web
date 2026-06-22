@@ -235,6 +235,7 @@ export default function StoreHeader({
                                         {[
                                             { icon: 'solar:bag-check-bold', label: 'Ver Pedidos', color: cp, path: '/administrador/tienda/pedidos' },
                                             { icon: 'solar:shop-bold', label: 'Config. Tienda', color: '#22C55E', path: '/administrador/tienda/configuracion' },
+                                            { icon: 'solar:palette-round-bold', label: 'Diseño Template', color: '#7C3AED', path: '/administrador/tienda/template' },
                                             { icon: 'solar:box-bold', label: 'Productos', color: '#7C3AED', path: '/administrador/kardex/productos' },
                                             { icon: 'solar:bill-list-bold', label: 'Facturación', color: '#2563EB', path: '/administrador' },
                                         ].map(({ icon, label, color, path }) => (

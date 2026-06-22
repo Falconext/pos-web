@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom';
 interface Props {
   cp: string;
   slug: string;
+  diseno?: any;
 }
 
-export default function AutopartesBrands({ cp, slug }: Props) {
+export default function AutopartesBrands({ cp, slug, diseno }: Props) {
   const navigate = useNavigate();
+  const brandsImage = diseno?.autopartesBrandsImageUrl || '/assets/autopartes/marcas.png';
 
   const brands = [
     { name: 'AYD', logo: '/assets/autopartes/producto.png' },
@@ -37,7 +39,7 @@ export default function AutopartesBrands({ cp, slug }: Props) {
           
           {/* Background Image */}
           <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-            <img src="/assets/autopartes/marcas.png" alt="Mechanic" className="w-full h-full object-cover" />
+            <img src={brandsImage} alt="Mecánico" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-black/90 z-10"></div>
           </div>
           
@@ -66,19 +68,18 @@ export default function AutopartesBrands({ cp, slug }: Props) {
 
         {/* Right: Brands Grid */}
         <div className="flex-1 bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="flex gap-[3px]">
-                  <div className="w-4 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
-                  <div className="w-4 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
-                </div>
-                <span className="text-sm font-bold text-gray-500">Marcas</span>
-              </div>
-              <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                Nuestras Marcas de Confianza
-              </h2>
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex gap-[3px]">
+              <div className="w-3 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+              <div className="w-3 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
             </div>
+            <span className="text-sm font-bold" style={{ color: cp }}>Nuestras Marcas</span>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
+              Comprar por Marcas
+            </h2>
             
             <button className="px-5 py-2.5 border border-red-600 text-red-600 rounded text-sm font-bold flex items-center gap-2 hover:bg-red-50 transition-colors">
               Más Marcas

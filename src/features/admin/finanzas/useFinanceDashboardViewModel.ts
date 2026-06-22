@@ -15,7 +15,7 @@ export const valueFormatter = (number: number) =>
     })}`;
 
 export function useFinanceDashboardViewModel() {
-    const { kpis, chartData, getResumenFinanciero, isLoading } = useFinanzasStore();
+    const { kpis, chartData, metodosPago, conciliacion, getResumenFinanciero, isLoading } = useFinanzasStore();
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
 
@@ -117,6 +117,8 @@ export function useFinanceDashboardViewModel() {
         fechaFin,
         isLoading,
         kpis,
+        metodosPago,
+        conciliacion,
         formattedChartData,
 
         // Sede filtering

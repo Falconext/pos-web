@@ -14,6 +14,10 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
 
   const heroTitle = diseno?.heroTitle || "Frenos de Motor\nAlta Calidad";
   const heroSubtitle = diseno?.heroSubtitle || "Instalación de repuestos en los servicios de nuestros socios. Por tiempo limitado para clientes nuevos, obtén envío gratis en tus pedidos.";
+  const heroImage = diseno?.autopartesHeroImageUrl || '/assets/autopartes/banner1.png';
+  const sideTopImage = diseno?.autopartesSideTopImageUrl || '/assets/autopartes/banner2.png';
+  const sideBottomImage = diseno?.autopartesSideBottomImageUrl || '/assets/autopartes/banner3.png';
+  const vehicleImage = diseno?.autopartesVehicleImageUrl || '/assets/autopartes/banner4.png';
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -49,7 +53,7 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
 
                 style={{ backgroundColor: cp }}
               >
-                Agregar al Carrito
+                Ver catálogo
               </button>
               <div className="flex flex-col">
                 <span className="text-gray-500 text-sm line-through font-bold">$95.00</span>
@@ -60,7 +64,7 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
           
           {/* Image background for left banner */}
           <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-            <img src="/assets/autopartes/banner1.png" alt="Motor Parts" className="w-full h-full object-cover" />
+            <img src={heroImage} alt="Repuestos para Motor" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
           </div>
 
@@ -78,7 +82,7 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
           {/* Top Right Banner */}
           <div className="flex-1 bg-black rounded-2xl overflow-hidden relative min-h-[190px] p-6 flex flex-col justify-center border border-gray-800">
             <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-              <img src="/assets/autopartes/banner2.png" alt="Fluids" className="w-full h-full object-cover" />
+              <img src={sideTopImage} alt="Fluids" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent"></div>
             </div>
             
@@ -103,7 +107,7 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
           {/* Bottom Right Banner */}
           <div className="flex-1 bg-black rounded-2xl overflow-hidden relative min-h-[190px] p-6 flex flex-col justify-center border border-gray-800">
              <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-              <img src="/assets/autopartes/banner3.png" alt="Suspension" className="w-full h-full object-cover" />
+              <img src={sideBottomImage} alt="Suspension" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent"></div>
             </div>
              <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-sm px-3 py-1 rounded text-xs font-bold text-yellow-500 border border-white/10 z-10">
@@ -130,7 +134,7 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
         
         {/* Background Image Banner 4 */}
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-          <img src="/assets/autopartes/banner4.png" alt="Vehicle Background" className="w-full h-full object-cover opacity-60 mix-blend-luminosity" />
+          <img src={vehicleImage} alt="Vehicle Background" className="w-full h-full object-cover opacity-60 mix-blend-luminosity" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40"></div>
         </div>
         

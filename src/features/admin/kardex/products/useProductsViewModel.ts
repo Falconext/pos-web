@@ -443,6 +443,26 @@ export const useProductsViewModel = () => {
                     preciosMayorista: Array.isArray((originalProduct as any).preciosMayorista)
                         ? (originalProduct as any).preciosMayorista
                         : [],
+                    opcionesAtributos: Array.isArray((originalProduct as any).opcionesAtributos)
+                        ? (originalProduct as any).opcionesAtributos
+                        : [],
+                    valoresAtributos: (originalProduct as any).valoresAtributos || {},
+                    variantes: Array.isArray((originalProduct as any).variantes)
+                        ? (originalProduct as any).variantes
+                        : [],
+                    variantesConfig: Array.isArray((originalProduct as any).variantes)
+                        ? (originalProduct as any).variantes.map((variante: any) => ({
+                            id: variante.id,
+                            valoresAtributos: variante.valoresAtributos || {},
+                            codigo: variante.codigo || '',
+                            precioUnitario: Number(variante.precioUnitario || originalProduct.precioUnitario || 0),
+                            stock: Number(variante.stock || 0),
+                            imagenUrl: variante.imagenUrl || '',
+                            imagenUrlDisplay: variante.imagenUrlDisplay || variante.imagenUrl || '',
+                            codigoBarras: variante.codigoBarras || '',
+                            estado: variante.estado || 'ACTIVO',
+                        }))
+                        : [],
                 }
             }));
         }
@@ -577,7 +597,10 @@ export const useProductsViewModel = () => {
         setIsOpenModalDeleteAll: (v: boolean) => setState(prev => ({ ...prev, isOpenModalDeleteAll: v })),
         setIsEdit: (v: boolean) => setState(prev => ({ ...prev, isEdit: v })),
         setErrors: (errors: any) => setState(prev => ({ ...prev, errors })),
-        setFormValues: (values: any) => setState(prev => ({ ...prev, formValues: values })),
+        setFormValues: (values: any) => setState(prev => ({
+            ...prev,
+            formValues: typeof values === 'function' ? values(prev.formValues) : values,
+        })),
         setIsHoveredExp: (v: boolean) => setState(prev => ({ ...prev, isHoveredExp: v })),
         setIsHoveredImp: (v: boolean) => setState(prev => ({ ...prev, isHoveredImp: v })),
         setVistaActual: (v: any) => setState(prev => ({ ...prev, vistaActual: v })),

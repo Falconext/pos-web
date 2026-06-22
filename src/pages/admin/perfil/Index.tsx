@@ -4,6 +4,7 @@ import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
 import { hasPlanFeature } from '@/utils/permissions';
 import { useState } from 'react';
+import CuentasBancariasConfig from '@/pages/admin/empresa/CuentasBancariasConfig';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
@@ -151,65 +152,8 @@ export default function PerfilIndex() {
                     </div>
                 </div>
 
-                {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
-                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5`}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <div className={`p-2 rounded-lg ${usageStats.limiteAlcanzado ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
-                                    <Icon icon="solar:document-bold-duotone" width="20" />
-                                </div>
-                                Uso de Comprobantes SUNAT
-                            </h2>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">{usageStats.mesActual}</span>
-                        </div>
-                        <div className="mb-4">
-                            <div className="flex justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {usageStats.comprobantesEmitidos} / {comprobantesIlimitados ? 'Ilimitado' : usageStats.limiteMaximo} comprobantes
-                                </span>
-                                {!comprobantesIlimitados && (
-                                    <span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>{usageStats.porcentajeUso}%</span>
-                                )}
-                            </div>
-                            {!comprobantesIlimitados && (
-                                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
-                                    <div className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}></div>
-                                </div>
-                            )}
-                            {(usageStats.facturasYBoletas !== undefined || usageStats.guiasRemision !== undefined) && (
-                                <div className="flex gap-4 mt-2">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">Facturas/Boletas: <span className="font-semibold text-gray-700 dark:text-gray-200">{usageStats.facturasYBoletas ?? 0}</span></span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">Guías de Remisión: <span className="font-semibold text-gray-700 dark:text-gray-200">{usageStats.guiasRemision ?? 0}</span></span>
-                                </div>
-                            )}
-                        </div>
-                        {!comprobantesIlimitados && usageStats.limiteAlcanzado && (
-                            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-4 flex items-start gap-3">
-                                <Icon icon="solar:danger-triangle-bold" className="text-red-500 text-xl flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-bold text-red-700 dark:text-red-400">Límite de comprobantes alcanzado</p>
-                                    <p className="text-sm text-red-600 dark:text-red-500 mt-1">Has alcanzado el máximo de {usageStats.limiteMaximo} comprobantes de tu plan "{usageStats.plan}". Para continuar emitiendo, contacta a soporte.</p>
-                                </div>
-                            </div>
-                        )}
-                        {!comprobantesIlimitados && usageStats.alerta80 && !usageStats.limiteAlcanzado && (
-                            <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-xl p-4 flex items-start gap-3">
-                                <Icon icon="solar:bell-bold" className="text-orange-500 text-xl flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-bold text-orange-700 dark:text-orange-400">Atención: 80% del límite utilizado</p>
-                                    <p className="text-sm text-orange-600 dark:text-orange-500 mt-1">Te quedan {usageStats.restantes} comprobantes disponibles este mes.</p>
-                                </div>
-                            </div>
-                        )}
-                        {comprobantesIlimitados ? (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Plan sin límite de comprobantes este mes.</p>
-                        ) : (
-                            !usageStats.alerta80 && !usageStats.limiteAlcanzado && (<p className="text-sm text-gray-500 dark:text-gray-400">Te quedan <span className="font-bold text-blue-600 dark:text-blue-400">{usageStats.restantes}</span> comprobantes disponibles este mes.</p>)
-                        )}
-                    </div>
-                )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-1">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:user-id-bold-duotone" width="20" /></div>Información Personal</h2>
                         <div className="space-y-4">
                             <Field label="Nombre completo"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.nombre}</p></Field>
@@ -219,7 +163,7 @@ export default function PerfilIndex() {
                             <Field label="Estado"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.estado === 'ACTIVO' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>{perfil.estado}</span></Field>
                         </div>
                     </div>
-                    <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827]">
+                    <div className="lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827]">
                         <div className="relative border-b border-emerald-100/70 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 dark:border-emerald-900/30 dark:from-emerald-950/30 dark:via-[#111827] dark:to-sky-950/20">
                             <div className="absolute right-5 top-5 hidden rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-slate-900/70 dark:text-emerald-300 sm:inline-flex">
                                 WhatsApp Cloud API
@@ -348,7 +292,7 @@ export default function PerfilIndex() {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
                         <div className="space-y-4">
                             <Field label="Razón Social"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.empresa.razonSocial}</p></Field>
@@ -447,7 +391,64 @@ export default function PerfilIndex() {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4">
+                    {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
+                        <div className={`lg:order-4 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <div className={`p-2 rounded-lg ${usageStats.limiteAlcanzado ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
+                                        <Icon icon="solar:document-bold-duotone" width="20" />
+                                    </div>
+                                    Uso de Comprobantes SUNAT
+                                </h2>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{usageStats.mesActual}</span>
+                            </div>
+                            <div className="mb-4">
+                                <div className="flex justify-between mb-2">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        {usageStats.comprobantesEmitidos} / {comprobantesIlimitados ? 'Ilimitado' : usageStats.limiteMaximo} comprobantes
+                                    </span>
+                                    {!comprobantesIlimitados && (
+                                        <span className={`text-sm font-bold ${usageStats.limiteAlcanzado ? 'text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>{usageStats.porcentajeUso}%</span>
+                                    )}
+                                </div>
+                                {!comprobantesIlimitados && (
+                                    <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
+                                        <div className={`h-3 rounded-full transition-all duration-500 ${usageStats.limiteAlcanzado ? 'bg-red-500' : usageStats.alerta80 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(usageStats.porcentajeUso, 100)}%` }}></div>
+                                    </div>
+                                )}
+                                {(usageStats.facturasYBoletas !== undefined || usageStats.guiasRemision !== undefined) && (
+                                    <div className="flex gap-4 mt-2">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">Facturas/Boletas: <span className="font-semibold text-gray-700 dark:text-gray-200">{usageStats.facturasYBoletas ?? 0}</span></span>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">Guías de Remisión: <span className="font-semibold text-gray-700 dark:text-gray-200">{usageStats.guiasRemision ?? 0}</span></span>
+                                    </div>
+                                )}
+                            </div>
+                            {!comprobantesIlimitados && usageStats.limiteAlcanzado && (
+                                <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-4 flex items-start gap-3">
+                                    <Icon icon="solar:danger-triangle-bold" className="text-red-500 text-xl flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-bold text-red-700 dark:text-red-400">Límite de comprobantes alcanzado</p>
+                                        <p className="text-sm text-red-600 dark:text-red-500 mt-1">Has alcanzado el máximo de {usageStats.limiteMaximo} comprobantes de tu plan "{usageStats.plan}". Para continuar emitiendo, contacta a soporte.</p>
+                                    </div>
+                                </div>
+                            )}
+                            {!comprobantesIlimitados && usageStats.alerta80 && !usageStats.limiteAlcanzado && (
+                                <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-xl p-4 flex items-start gap-3">
+                                    <Icon icon="solar:bell-bold" className="text-orange-500 text-xl flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-bold text-orange-700 dark:text-orange-400">Atención: 80% del límite utilizado</p>
+                                        <p className="text-sm text-orange-600 dark:text-orange-500 mt-1">Te quedan {usageStats.restantes} comprobantes disponibles este mes.</p>
+                                    </div>
+                                </div>
+                            )}
+                            {comprobantesIlimitados ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Plan sin límite de comprobantes este mes.</p>
+                            ) : (
+                                !usageStats.alerta80 && !usageStats.limiteAlcanzado && (<p className="text-sm text-gray-500 dark:text-gray-400">Te quedan <span className="font-bold text-blue-600 dark:text-blue-400">{usageStats.restantes}</span> comprobantes disponibles este mes.</p>)
+                            )}
+                        </div>
+                    )}
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-5">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:card-bold-duotone" width="20" /></div>Plan Actual</h2>
                         <div className="space-y-4">
                             <Field label="Nombre del Plan"><p className={`${theme.text} font-bold text-sm`}>{perfil.empresa.plan.nombre}</p></Field>
@@ -457,13 +458,17 @@ export default function PerfilIndex() {
                             <Field label="Tipo de Plan"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.empresa.plan.esPrueba ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'}`}>{perfil.empresa.plan.esPrueba ? 'Versión de Prueba' : 'Plan Premium'}</span></Field>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4">
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-6">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:calendar-mark-bold-duotone" width="20" /></div>Suscripción Actual</h2>
                         <div className="space-y-4">
                             {perfil.empresa.fechaActivacion && <Field label="Fecha de Activación"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{vm.formatearFechaSolo(perfil.empresa.fechaActivacion)}</p></Field>}
                             {perfil.empresa.fechaExpiracion && <Field label="Fecha de Expiración"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{vm.formatearFechaSolo(perfil.empresa.fechaExpiracion)}</p></Field>}
                             <Field label="Estado actual"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${vm.obtenerColorEstado()}`}>{vm.obtenerEstadoSuscripcion()}</span></Field>
                         </div>
+                    </div>
+                    {/* Cuentas Bancarias — al lado de Suscripción Actual */}
+                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:order-7">
+                        <CuentasBancariasConfig />
                     </div>
                 </div>
             </div>

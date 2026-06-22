@@ -619,6 +619,28 @@ export default function PanelVentasView() {
                         <Icon icon={mostrarProductos ? 'solar:box-bold-duotone' : 'solar:box-linear'} className="text-base" />
                         Productos
                     </button>
+                    {/* Filtro Serie Garantía */}
+                    <div className="relative">
+                        <Icon icon="solar:shield-check-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+                        <input
+                            type="text"
+                            placeholder="N° serie garantía"
+                            value={vm.filtroSerie}
+                            onChange={(e) => vm.setFiltroSerie(e.target.value.toUpperCase())}
+                            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-40"
+                        />
+                    </div>
+                    {/* Filtro DNI */}
+                    <div className="relative">
+                        <Icon icon="solar:card-2-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+                        <input
+                            type="text"
+                            placeholder="DNI / RUC"
+                            value={vm.filtroDni}
+                            onChange={(e) => vm.setFiltroDni(e.target.value)}
+                            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-36"
+                        />
+                    </div>
                     {/* Búsqueda */}
                     <div className="relative">
                         <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
@@ -642,6 +664,9 @@ export default function PanelVentasView() {
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Fecha</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Referencia</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Tipo</th>
+                                {vm.esPrincipalAdmin && (
+                                    <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Sede</th>
+                                )}
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Cliente</th>
                                 <th className="px-3 py-3 text-right text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Total</th>
                                 <th className="px-3 py-3 text-right text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Saldo</th>
@@ -669,14 +694,14 @@ export default function PanelVentasView() {
                         <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
                             {vm.loading ? (
                                 <tr>
-                                    <td colSpan={mostrarProductos ? 18 : 17} className="py-16 text-center text-gray-400 dark:text-slate-500">
+                                    <td colSpan={mostrarProductos ? 18 + (vm.esPrincipalAdmin ? 1 : 0) : 17 + (vm.esPrincipalAdmin ? 1 : 0)} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="eos-icons:loading" className="text-3xl animate-spin mx-auto mb-2" />
                                         <p className="text-sm">Cargando ventas...</p>
                                     </td>
                                 </tr>
                             ) : vm.filtrados.length === 0 ? (
                                 <tr>
-                                    <td colSpan={mostrarProductos ? 18 : 17} className="py-16 text-center text-gray-400 dark:text-slate-500">
+                                    <td colSpan={mostrarProductos ? 18 + (vm.esPrincipalAdmin ? 1 : 0) : 17 + (vm.esPrincipalAdmin ? 1 : 0)} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="solar:sad-square-linear" className="text-4xl mx-auto mb-2 opacity-40" />
                                         <p className="text-sm">No hay ventas para este día</p>
                                     </td>
@@ -719,6 +744,11 @@ export default function PanelVentasView() {
                                                     )}
                                                 </div>
                                             </td>
+                                            {vm.esPrincipalAdmin && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap max-w-[100px] truncate" title={item.sede}>
+                                                    {item.sede}
+                                                </td>
+                                            )}
                                             <td className="px-3 py-2.5 text-xs text-gray-800 dark:text-gray-200 max-w-[140px] truncate" title={item.cliente}>
                                                 {item.cliente}
                                             </td>

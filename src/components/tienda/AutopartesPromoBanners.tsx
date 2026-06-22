@@ -5,10 +5,13 @@ import { useNavigate } from 'react-router-dom';
 interface AutopartesPromoBannersProps {
   cp: string;
   slug: string;
+  diseno?: any;
 }
 
-export default function AutopartesPromoBanners({ cp, slug }: AutopartesPromoBannersProps) {
+export default function AutopartesPromoBanners({ cp, slug, diseno }: AutopartesPromoBannersProps) {
   const navigate = useNavigate();
+  const promoLeftImage = diseno?.autopartesPromoLeftImageUrl || '/assets/autopartes/llantas.png';
+  const promoRightImage = diseno?.autopartesPromoRightImageUrl || '/assets/autopartes/luces.png';
 
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -16,7 +19,7 @@ export default function AutopartesPromoBanners({ cp, slug }: AutopartesPromoBann
       {/* Left Banner */}
       <div className="bg-black rounded-2xl overflow-hidden relative min-h-[360px] flex items-center p-8 md:p-12 border border-gray-800">
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-          <img src="/assets/autopartes/llantas.png" alt="Mechanic changing tyre" className="w-full h-full object-cover" />
+          <img src={promoLeftImage} alt="Mecánico cambiando llanta" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10"></div>
         </div>
         
@@ -47,7 +50,7 @@ export default function AutopartesPromoBanners({ cp, slug }: AutopartesPromoBann
       {/* Right Banner */}
       <div className="bg-black rounded-2xl overflow-hidden relative min-h-[360px] flex items-center p-8 md:p-12 border border-gray-800">
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-          <img src="/assets/autopartes/luces.png" alt="Black car lights" className="w-full h-full object-cover" />
+          <img src={promoRightImage} alt="Luces de auto" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10"></div>
         </div>
         

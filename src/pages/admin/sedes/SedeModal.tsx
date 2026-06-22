@@ -5,7 +5,7 @@ import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
-import { Sede } from '@/interfaces/Sede';
+import { Sede, TipoSede } from '@/interfaces/Sede';
 
 interface Props {
     isOpen: boolean;
@@ -19,15 +19,18 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
     const { auth } = useAuthStore();
 
     // Leer maxSedes desde el plan del usuario autenticado
-    // Aseguramos fallback a 1 por seguridad, pero si tiene plan (MEGA-ANUAL) debería tomarlo
-    const maxSedes = (auth as any)?.empresa?.plan?.maxSedes || 1;
+    // Usamos ?? para que si es 0 (ilimitado) no se reemplace por 1
+    const planMaxSedes = (auth as any)?.empresa?.plan?.maxSedes;
+    const maxSedes = planMaxSedes ?? 1;
+    const isUnlimited = maxSedes === 0;
     const currentSedes = sedes.filter(s => (s as any).activo !== false).length;
-    const canCreate = isEdit || currentSedes < maxSedes;
+    const canCreate = isEdit || isUnlimited || currentSedes < maxSedes;
 
     const [formData, setFormData] = useState({
         nombre: '',
         direccion: '',
-        codigoSunat: '',
+        codigo: '',
+        tipo: 'PUNTO_DE_VENTA' as TipoSede,
         esPrincipal: false,
     });
 
@@ -38,14 +41,16 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
             setFormData({
                 nombre: sede.nombre,
                 direccion: sede.direccion || '',
-                codigoSunat: sede.codigoSunat || '',
+                codigo: sede.codigo || '',
+                tipo: sede.tipo ?? 'PUNTO_DE_VENTA',
                 esPrincipal: sede.esPrincipal,
             });
         } else {
             setFormData({
                 nombre: '',
                 direccion: '',
-                codigoSunat: '',
+                codigo: '',
+                tipo: 'PUNTO_DE_VENTA',
                 esPrincipal: false,
             });
         }
@@ -137,14 +142,53 @@ const SedeModal: React.FC<Props> = ({ isOpen, onClose, sede, isEdit }) => {
 
                         <InputPro
                             type="text"
-                            name="codigoSunat"
-                            value={formData.codigoSunat}
+                            name="codigo"
+                            value={formData.codigo}
                             onChange={handleInputChange}
                             label="Código SUNAT (Anexo)"
                             isLabel
                             placeholder="0000"
                             maxLength={4}
                         />
+
+                        {/* Tipo de sede */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Tipo de sede</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {([
+                                    { value: 'PUNTO_DE_VENTA', label: 'Punto de Venta', desc: 'Vende, factura y cobra', icon: 'solar:shop-bold-duotone', color: 'blue' },
+                                    { value: 'ALMACEN', label: 'Almacén', desc: 'Gestiona stock, abastece', icon: 'solar:box-bold-duotone', color: 'amber' },
+                                ] as const).map(opt => {
+                                    const active = formData.tipo === opt.value;
+                                    return (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, tipo: opt.value }))}
+                                            className={`flex flex-col items-center gap-1.5 p-3.5 rounded-xl border-2 transition-all text-center ${
+                                                active
+                                                    ? opt.color === 'blue'
+                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                                        : 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                                                    : 'border-gray-100 dark:border-slate-700 hover:border-gray-200 dark:hover:border-slate-600'
+                                            }`}
+                                        >
+                                            <Icon
+                                                icon={opt.icon}
+                                                className={active
+                                                    ? opt.color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'
+                                                    : 'text-gray-400 dark:text-gray-500'}
+                                                width={26}
+                                            />
+                                            <span className={`text-xs font-bold ${active
+                                                ? opt.color === 'blue' ? 'text-blue-700 dark:text-blue-300' : 'text-amber-700 dark:text-amber-300'
+                                                : 'text-gray-600 dark:text-gray-400'}`}>{opt.label}</span>
+                                            <span className="text-[10px] text-gray-400 dark:text-gray-500">{opt.desc}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
                         <div className="flex items-center space-x-2 mt-4 bg-gray-50/50 dark:bg-slate-900/30 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                             <input

@@ -31,6 +31,7 @@ interface PaymentConfig {
     whatsappTienda?: string | null;
     whatsapp?: string | null;
     telefono?: string | null;
+    cuentasBancarias?: any[];
 }
 
 interface CulqiTokenResult {
@@ -209,6 +210,8 @@ export default function Checkout() {
                 setFormData(p => ({ ...p, medioPago: 'PLIN' }));
             } else if (normalizedConfig.aceptaTarjeta) {
                 setFormData(p => ({ ...p, medioPago: 'TARJETA' }));
+            } else if (normalizedConfig.cuentasBancarias && normalizedConfig.cuentasBancarias.length > 0) {
+                setFormData(p => ({ ...p, medioPago: 'TRANSFERENCIA' }));
             }
         } catch { }
     };
@@ -483,38 +486,50 @@ export default function Checkout() {
     // ── Autopartes Checkout ──────────────────────────────────────────────────────────
     if (diseno.plantillaId === 'autopartes') {
         return (
-            <AutopartesCheckout
-                slug={slug || ''}
-                tienda={tienda}
-                carrito={carritoState}
-                formData={formData}
-                erroresForm={erroresForm}
-                configPago={configPago}
-                configEnvio={configEnvio}
-                enviando={enviando}
-                suggestedProducts={suggestedProducts}
-                search={search}
-                searchResults={searchResults}
-                setSearch={setSearch}
-                handleChange={handleChange}
-                updateQuantity={updateQuantity}
-                removeItem={removeItem}
-                calcularSubtotal={calcularSubtotal}
-                calcularCostoEnvio={calcularCostoEnvio}
-                calcularTotal={calcularTotal}
-                onSubmit={enviarPedido}
-                onAddToCart={(prod) => {
-                    const existe = carritoState.find(x => x.id === prod.id);
-                    if (existe) {
-                        updateQuantity(prod.id, existe.cantidad + 1);
-                    } else {
-                        setCarritoState([...carritoState, { ...prod, cantidad: 1 }]);
-                    }
-                }}
-                freeDeliveryThreshold={configEnvio?.montoEnvioGratis || 0}
-                freeDeliveryRemaining={freeDeliveryRemaining}
-                freeDeliveryProgress={freeDeliveryProgress}
-            />
+            <>
+                <AutopartesCheckout
+                    slug={slug || ''}
+                    tienda={tienda}
+                    carrito={carritoState}
+                    formData={formData}
+                    erroresForm={erroresForm}
+                    configPago={configPago}
+                    configEnvio={configEnvio}
+                    enviando={enviando}
+                    suggestedProducts={suggestedProducts}
+                    search={search}
+                    searchResults={searchResults}
+                    setSearch={setSearch}
+                    handleChange={handleChange}
+                    updateQuantity={updateQuantity}
+                    removeItem={removeItem}
+                    calcularSubtotal={calcularSubtotal}
+                    calcularCostoEnvio={calcularCostoEnvio}
+                    calcularTotal={calcularTotal}
+                    onSubmit={() => { if (validarFormulario()) setShowConfirmModal(true); }}
+                    onAddToCart={(prod) => {
+                        const existe = carritoState.find(x => x.id === prod.id);
+                        if (existe) {
+                            updateQuantity(prod.id, existe.cantidad + 1);
+                        } else {
+                            setCarritoState([...carritoState, { ...prod, cantidad: 1 }]);
+                        }
+                    }}
+                    freeDeliveryThreshold={configEnvio?.envioGratisDesdeSoles || configEnvio?.montoEnvioGratis || 0}
+                    freeDeliveryRemaining={freeDeliveryRemaining}
+                    freeDeliveryProgress={freeDeliveryProgress}
+                />
+                {pedidoCreado && (
+                    <PaymentConfirmationModal
+                        isOpen={showPaymentModal}
+                        onClose={() => { setShowPaymentModal(false); window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`; }}
+                        orderData={{ id: pedidoCreado.id, codigoSeguimiento: pedidoCreado.codigoSeguimiento, total: pedidoCreado.total || calcularTotal(), medioPago: formData.medioPago, tipoEntrega: formData.tipoEntrega, clienteNombre: formData.clienteNombre }}
+                        paymentConfig={configPago ? { yapeQR: configPago.yapeQR || configPago.yapeQrUrl || undefined, plinQR: configPago.plinQR || configPago.plinQrUrl || undefined, yapeNumero: configPago.yapeNumero || undefined, plinNumero: configPago.plinNumero || undefined, whatsappTienda: configPago.whatsappTienda || undefined } : undefined}
+                        storeSlug={slug || ''}
+                    />
+                )}
+                <ConfirmOrderModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={enviarPedido} total={calcularTotal()} loading={enviando} tiendaColor={tienda?.diseno?.colorPrimario || '#D92D20'} />
+            </>
         );
     }
 

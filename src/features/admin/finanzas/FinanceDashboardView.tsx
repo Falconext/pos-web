@@ -144,6 +144,69 @@ export default function FinanceDashboardView() {
                             <p className="text-xs text-gray-400 mt-2">Pendiente de pago a proveedores</p>
                         </div>
                     </div>
+
+                    <div className={cardClass}>
+                        <div className="flex items-start justify-between gap-4 mb-5">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Ingresos por método de pago</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    Total cobrado según pagos reales del periodo.
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[11px] uppercase font-black text-gray-400">Conciliado</p>
+                                <p className="text-lg font-black text-gray-900 dark:text-white">{vm.valueFormatter(vm.conciliacion?.totalPorMetodo || 0)}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            {(vm.metodosPago || []).length === 0 ? (
+                                <div className="rounded-2xl bg-gray-50 dark:bg-slate-800/50 p-4 text-sm text-gray-500 dark:text-gray-400">
+                                    Aún no hay pagos registrados en este rango.
+                                </div>
+                            ) : (
+                                vm.metodosPago.map((item: any) => {
+                                    const maxTotal = Math.max(...vm.metodosPago.map((m: any) => Number(m.total || 0)), 1);
+                                    const width = Math.max(8, Math.round((Number(item.total || 0) / maxTotal) * 100));
+                                    const colorByMethod: Record<string, string> = {
+                                        EFECTIVO: 'bg-emerald-500',
+                                        YAPE: 'bg-violet-500',
+                                        PLIN: 'bg-sky-500',
+                                        TRANSFERENCIA: 'bg-blue-600',
+                                        TARJETA: 'bg-amber-500',
+                                    };
+                                    return (
+                                        <div key={item.metodo} className="rounded-2xl border border-gray-100 dark:border-slate-800 p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-black text-gray-900 dark:text-white">{item.metodo}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.explicacion}</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-sm font-black text-gray-900 dark:text-white">{vm.valueFormatter(item.total)}</p>
+                                                    <p className="text-[11px] text-gray-400">{item.cantidad} pago(s)</p>
+                                                </div>
+                                            </div>
+                                            <div className="h-2 bg-gray-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
+                                                <div className={`h-full rounded-full ${colorByMethod[item.metodo] || 'bg-gray-500'}`} style={{ width: `${width}%` }} />
+                                            </div>
+                                            {['TRANSFERENCIA', 'TARJETA'].includes(item.metodo) && (
+                                                <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mt-2">
+                                                    {item.referencias}/{item.cantidad} con operación o voucher registrado.
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {vm.conciliacion?.comprobantesRespaldo > 0 && (
+                            <div className="mt-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/40 p-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                Incluye {vm.conciliacion.comprobantesRespaldo} comprobante(s) antiguo(s) sin pago separado para no perder el monto en el reporte.
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right Col: Summary Cards (Vertical Stack like "Detail Transactions") */}

@@ -12,9 +12,9 @@ import AutopartesDealsOfTheWeek from './AutopartesDealsOfTheWeek';
 import AutopartesBrands from './AutopartesBrands';
 import AutopartesTopSelling from './AutopartesTopSelling';
 import AutopartesFooter from './AutopartesFooter';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -24,7 +24,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
 };
@@ -62,6 +62,7 @@ export default function AutopartesLayout({
 }: AutopartesLayoutProps) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const carritoTotal = carrito.reduce((total, item) => total + Number(item.precioUnitario || 0) * Number(item.cantidad || 1), 0);
 
   // Slicing for homepage grids
   const featured = productos.slice(0, 8);
@@ -69,10 +70,11 @@ export default function AutopartesLayout({
 
   const irACheckout = () => navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } });
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent, value?: string) => {
     e.preventDefault();
-    if (search.trim()) {
-      slug === "preview" ? window.dispatchEvent(new CustomEvent("preview-nav", { detail: "catalogo" })) : navigate(`/tienda/${slug}/catalogo?q=${encodeURIComponent(search.trim())}`);
+    const q = value || search;
+    if (q.trim()) {
+      slug === "preview" ? window.dispatchEvent(new CustomEvent("preview-nav", { detail: "catalogo" })) : navigate(`/tienda/${slug}/catalogo?search=${encodeURIComponent(q.trim())}`);
     }
   };
 
@@ -84,6 +86,7 @@ export default function AutopartesLayout({
         slug={slug}
         cp={cp}
         carritoSize={carrito.length}
+        carritoTotal={carritoTotal}
         onOpenCart={() => setMostrarCarrito(!mostrarCarrito)}
         searchQuery={search}
         setSearchQuery={setSearch}
@@ -95,15 +98,15 @@ export default function AutopartesLayout({
         
         {/* Hero Section */}
         <div className="mb-4">
-          <AutopartesHero cp={cp} slug={slug} />
+          <AutopartesHero cp={cp} slug={slug} diseno={diseno} productos={productos} />
         </div>
 
         {/* Featured Categories Area */}
-        <AutopartesFeaturedCategories cp={cp} slug={slug} />
+        <AutopartesFeaturedCategories cp={cp} slug={slug} diseno={diseno} />
 
         {/* Promo Banners Area */}
         <div className="mt-8 mb-16">
-          <AutopartesPromoBanners cp={cp} slug={slug} />
+          <AutopartesPromoBanners cp={cp} slug={slug} diseno={diseno} />
         </div>
 
         {/* Featured Products */}
@@ -190,14 +193,20 @@ export default function AutopartesLayout({
       </main>
 
       {/* Full width deals section */}
-      <AutopartesDealsOfTheWeek cp={cp} slug={slug} productos={productos} />
+      <AutopartesDealsOfTheWeek
+        cp={cp}
+        slug={slug}
+        productos={productos}
+        diseno={diseno}
+        onAddToCart={agregarAlCarrito}
+      />
 
       {/* Brands Banner */}
-      <AutopartesBrands cp={cp} slug={slug} />
+      <AutopartesBrands cp={cp} slug={slug} diseno={diseno} />
 
       {/* Top Selling section */}
       <div className="bg-[#FAF5F5]">
-        <AutopartesTopSelling cp={cp} />
+        <AutopartesTopSelling cp={cp} diseno={diseno} />
       </div>
 
       <AutopartesFooter tienda={tienda} slug={slug} diseno={diseno} />

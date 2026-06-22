@@ -84,6 +84,7 @@ export const LEGACY_SUBMODULE_ROUTES: Record<string, string> = {
   'tienda:reviews': '/administrador/tienda/reviews',
   'tienda:modificadores': '/administrador/tienda/modificadores',
   'tienda:configuracion': '/administrador/tienda/configuracion',
+  'tienda:template': '/administrador/tienda/template',
   'usuarios:gestion': '/administrador/usuarios',
   'usuarios:repartidores': '/administrador/usuarios/repartidores',
   'usuarios:clientes': '/administrador/usuarios/clientes',
@@ -205,6 +206,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
     pathPrefix: () => '/administrador/tienda',
     extraItems: () => [
       { codigo: 'tienda:reviews', nombre: 'Comentarios y rating', ruta: '/administrador/tienda/reviews' },
+      { codigo: 'tienda:template', nombre: 'Diseño y template', ruta: '/administrador/tienda/template' },
     ],
   },
 

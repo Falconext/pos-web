@@ -25,11 +25,46 @@ export const useAuthStore = create<IAuthState>()(
   devtools((set, _get) => {
     const AUTH_ME_TIMEOUT_MS = 10_000;
     const AUTH_BOOTSTRAP_MAX_WAIT_MS = 12_000;
+    const ACCESS_TOKEN_KEY = "ACCESS_TOKEN";
+    const REFRESH_TOKEN_KEY = "REFRESH_TOKEN";
+    const SEDE_ACTIVA_KEY = "SEDE_ACTIVA";
+    const PENDING_SEDE_TOKEN_KEY = "PENDING_SEDE_TOKEN";
+    const PENDING_SEDES_KEY = "PENDING_SEDES";
+    const PENDING_SEDE_USER_KEY = "PENDING_SEDE_USER";
 
     const getTokenSafe = (): string | null => {
       try {
-        return localStorage.getItem("ACCESS_TOKEN");
+        return localStorage.getItem(ACCESS_TOKEN_KEY);
       } catch {
+        return null;
+      }
+    };
+
+    const clearPendingSedeSelection = () => {
+      localStorage.removeItem(PENDING_SEDE_TOKEN_KEY);
+      localStorage.removeItem(PENDING_SEDES_KEY);
+      localStorage.removeItem(PENDING_SEDE_USER_KEY);
+    };
+
+    const clearSessionStorage = () => {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(SEDE_ACTIVA_KEY);
+    };
+
+    const restorePendingSedeSelection = () => {
+      const tempToken = localStorage.getItem(PENDING_SEDE_TOKEN_KEY);
+      const sedesRaw = localStorage.getItem(PENDING_SEDES_KEY);
+      const userRaw = localStorage.getItem(PENDING_SEDE_USER_KEY);
+      if (!tempToken || !sedesRaw || !userRaw) return null;
+
+      try {
+        const pendingSedes = JSON.parse(sedesRaw) as ISede[];
+        const auth = JSON.parse(userRaw) as IUser;
+        if (!Array.isArray(pendingSedes) || pendingSedes.length === 0) return null;
+        return { auth, pendingSedes };
+      } catch {
+        clearPendingSedeSelection();
         return null;
       }
     };
@@ -54,11 +89,28 @@ export const useAuthStore = create<IAuthState>()(
 
     const initAuth = async () => {
       const token = getTokenSafe();
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
       useAlertStore.setState({ loading: false });
       if (!token) {
-        localStorage.removeItem("REFRESH_TOKEN");
-        localStorage.removeItem("SEDE_ACTIVA");
+        const pending = restorePendingSedeSelection();
+        if (pending && window.location.pathname === "/sede-seleccion") {
+          set({
+            auth: pending.auth,
+            pendingSedes: pending.pendingSedes,
+            success: false,
+            isLoading: false,
+            bootstrapDone: true,
+            sedeActiva: null,
+          });
+          return;
+        }
+        clearSessionStorage();
         set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
+        return;
+      }
+      if (!refreshToken) {
+        clearSessionStorage();
+        set({ auth: null, success: false, isLoading: false, bootstrapDone: true, pendingSedes: null, sedeActiva: null });
         return;
       }
 
@@ -73,7 +125,7 @@ export const useAuthStore = create<IAuthState>()(
       try {
         const resp: any = await withTimeout(get(`auth/me`), AUTH_ME_TIMEOUT_MS);
         if (resp.code === 1) {
-          const sedeActivaStr = localStorage.getItem("SEDE_ACTIVA");
+          const sedeActivaStr = localStorage.getItem(SEDE_ACTIVA_KEY);
           const sedeActiva: ISede | null = sedeActivaStr ? JSON.parse(sedeActivaStr) : null;
           set({ auth: resp.data, success: true, isLoading: false, sedeActiva, bootstrapDone: true });
         } else {
@@ -94,7 +146,7 @@ export const useAuthStore = create<IAuthState>()(
       let lastRefreshAt = 0;
       const refreshOnVisibility = () => {
         if (document.visibilityState !== 'visible') return;
-        const token = localStorage.getItem('ACCESS_TOKEN');
+        const token = localStorage.getItem(ACCESS_TOKEN_KEY);
         if (!token) return;
 
         const now = Date.now();
@@ -126,18 +178,25 @@ export const useAuthStore = create<IAuthState>()(
 
             // Caso multi-sede: necesita seleccionar sede
             if (loginData.requiresSedeSelection) {
-              localStorage.setItem("ACCESS_TOKEN", loginData.tempToken);
+              clearSessionStorage();
+              localStorage.setItem(PENDING_SEDE_TOKEN_KEY, loginData.tempToken);
+              localStorage.setItem(PENDING_SEDES_KEY, JSON.stringify(loginData.sedes || []));
+              localStorage.setItem(PENDING_SEDE_USER_KEY, JSON.stringify(loginData.usuario));
               set({
                 auth: loginData.usuario,
                 pendingSedes: loginData.sedes,
                 success: false,
+                isLoading: false,
+                bootstrapDone: true,
+                sedeActiva: null,
               });
               return;
             }
 
             // Caso normal: 1 sede (ya incluida en token) o admin
-            localStorage.setItem("ACCESS_TOKEN", loginData.accessToken);
-            localStorage.setItem("REFRESH_TOKEN", loginData.refreshToken);
+            clearPendingSedeSelection();
+            localStorage.setItem(ACCESS_TOKEN_KEY, loginData.accessToken);
+            localStorage.setItem(REFRESH_TOKEN_KEY, loginData.refreshToken);
 
             let sedeActiva: ISede | null = null;
             const sedes = loginData.usuario?.sedes || [];
@@ -147,9 +206,9 @@ export const useAuthStore = create<IAuthState>()(
               sedeActiva = sedes.find((s: ISede) => s.esPrincipal) || sedes[0];
             }
             if (sedeActiva) {
-              localStorage.setItem("SEDE_ACTIVA", JSON.stringify(sedeActiva));
+              localStorage.setItem(SEDE_ACTIVA_KEY, JSON.stringify(sedeActiva));
             } else {
-              localStorage.removeItem("SEDE_ACTIVA");
+              localStorage.removeItem(SEDE_ACTIVA_KEY);
             }
 
             set({
@@ -186,9 +245,10 @@ export const useAuthStore = create<IAuthState>()(
 
           if (resp.code === 1) {
             const { accessToken, refreshToken, usuario, sede } = resp.data;
-            localStorage.setItem("ACCESS_TOKEN", accessToken);
-            localStorage.setItem("REFRESH_TOKEN", refreshToken);
-            localStorage.setItem("SEDE_ACTIVA", JSON.stringify(sede));
+            clearPendingSedeSelection();
+            localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+            localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+            localStorage.setItem(SEDE_ACTIVA_KEY, JSON.stringify(sede));
 
             useAlertStore.setState({ loading: false });
             useAlertStore.getState().alert(`Entrando a ${sede.nombre}`, "success");
@@ -220,7 +280,7 @@ export const useAuthStore = create<IAuthState>()(
         try {
           const resp: any = await withTimeout(get(`auth/me`), AUTH_ME_TIMEOUT_MS);
           if (resp.code === 1) {
-            const sedeActivaStr = localStorage.getItem("SEDE_ACTIVA");
+            const sedeActivaStr = localStorage.getItem(SEDE_ACTIVA_KEY);
             const sedeActiva: ISede | null = sedeActivaStr ? JSON.parse(sedeActivaStr) : null;
             set({ auth: resp.data, success: true, sedeActiva });
           } else {
@@ -238,15 +298,14 @@ export const useAuthStore = create<IAuthState>()(
       },
 
       setSedeActiva: (sede: ISede) => {
-        localStorage.setItem("SEDE_ACTIVA", JSON.stringify(sede));
+        localStorage.setItem(SEDE_ACTIVA_KEY, JSON.stringify(sede));
         set({ sedeActiva: sede }, false, "SET_SEDE_ACTIVA");
         useAlertStore.getState().alert(`Sede cambiada a ${sede.nombre}`, "success");
       },
 
       logout: () => {
-        localStorage.removeItem("ACCESS_TOKEN");
-        localStorage.removeItem("REFRESH_TOKEN");
-        localStorage.removeItem("SEDE_ACTIVA");
+        clearSessionStorage();
+        clearPendingSedeSelection();
         useAlertStore.setState({ loading: false });
         set({ auth: null, success: false, isLoading: false, bootstrapDone: true, pendingSedes: null, sedeActiva: null }, false, "LOGOUT");
       },

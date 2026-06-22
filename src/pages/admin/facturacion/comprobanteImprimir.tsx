@@ -71,23 +71,56 @@ const ComprobantePrintPage = ({
     const displayRetencionMonto = retencionData ? Number(retencionData.montoDetraccion || 0) : calculatedRetention;
     const shouldShowRetention = retencionData || (hasRetentionText && calculatedRetention > 0);
     const isDocumentoFiscal = ['01', '03', '07', '08'].includes(String(formValues?.tipoDoc || ''));
+    const explicitDiscount = parseAmount(
+        formValues?.mtoDescuentoGlobal ??
+        formValues?.totalDescuentos ??
+        discount,
+        0
+    );
+    const netTotalFallback = Math.max(0, totalReceipt - explicitDiscount);
     const totalDescuentos = parseAmount(
         formValues?.totalDescuentos ??
         formValues?.mtoDescuentos ??
+        formValues?.mtoDescuentoGlobal ??
+        discount ??
         (totalPrices > totalReceipt ? totalPrices - totalReceipt : 0)
     );
-    const mtoOperGravadas = parseAmount(formValues?.mtoOperGravadas, totalReceipt / 1.18);
+    const mtoOperGravadas = parseAmount(formValues?.mtoOperGravadas, netTotalFallback / 1.18);
     const mtoOperGratuitas = parseAmount(formValues?.mtoOperGratuitas, 0);
     const mtoOperInafectas = parseAmount(formValues?.mtoOperInafectas, 0);
     const mtoOperExoneradas = parseAmount(formValues?.mtoOperExoneradas, 0);
     const mtoIcbper = parseAmount(formValues?.icbper ?? formValues?.mtoIcbper, 0);
-    const mtoIgv = parseAmount(formValues?.mtoIGV, totalReceipt - (totalReceipt / 1.18));
-    const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, totalReceipt);
+    const mtoIgv = parseAmount(formValues?.mtoIGV, netTotalFallback - (netTotalFallback / 1.18));
+    const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, netTotalFallback);
     const displayVuelto = parseAmount(formValues?.vuelto, 0);
     const splitPaidTotal = formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments)
         ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + parseAmount(sp.amount, 0), 0)
         : 0;
     const displayPagado = splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto;
+    const paymentDetails = formValues?.paymentDetails || {};
+    const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
+        ? paymentDetails.splitPayments
+        : (Array.isArray(formValues?.splitPayments) ? formValues.splitPayments : []);
+    const singlePaymentDetail = paymentDetails?.mode === 'SIMPLE' ? paymentDetails : {
+        method: formValues?.medioPago,
+        amount: mtoImpVenta,
+        referencia: paymentDetails?.referencia,
+        cuentaBancariaLabel: paymentDetails?.cuentaBancariaLabel,
+        tarjetaTipo: paymentDetails?.tarjetaTipo,
+        tarjetaMarca: paymentDetails?.tarjetaMarca,
+        tarjetaUltimos4: paymentDetails?.tarjetaUltimos4,
+    };
+    const formatPaymentExtra = (payment: any) => {
+        const extras = [];
+        if (payment?.cuentaBancariaLabel) extras.push(`Cuenta: ${payment.cuentaBancariaLabel}`);
+        if (payment?.referencia) extras.push(`Op/Voucher: ${payment.referencia}`);
+        const method = (payment?.method || '').toUpperCase();
+        if (method === 'TARJETA') {
+            const tarjeta = [payment?.tarjetaMarca, payment?.tarjetaTipo, payment?.tarjetaUltimos4 ? `****${payment.tarjetaUltimos4}` : ''].filter(Boolean).join(' ');
+            if (tarjeta) extras.push(`Tarjeta: ${tarjeta}`);
+        }
+        return extras;
+    };
     const vendedorNombre = (formValues?.vendedor || company?.nombre || 'ADMIN').toString().toUpperCase();
     const empresaNumero = (
         company?.empresa?.celular ||
@@ -212,9 +245,15 @@ const ComprobantePrintPage = ({
                         <hr className="my-1 border-dashed border-[#222]" />
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18)).toFixed(2)}</div></label>
-                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18))).toFixed(2)}</div></label>
-                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{Number(formValues?.mtoImpVenta ?? totalReceipt).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{round2(mtoOperGravadas).toFixed(2)}</div></label>
+                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{round2(mtoIgv).toFixed(2)}</div></label>
+                        {totalDescuentos > 0 && (
+                            <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                <div className="">DESCUENTO:</div>
+                                <div>- {round2(totalDescuentos).toFixed(2)}</div>
+                            </label>
+                        )}
+                        <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{round2(mtoImpVenta).toFixed(2)}</div></label>
                         {
                             shouldShowRetention && (
                                 <>
@@ -224,7 +263,7 @@ const ComprobantePrintPage = ({
                                     </label>
                                     <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between font-bold`}>
                                         <div className="">IMPORTE NETO:</div>
-                                        <div>{Number(totalReceipt - displayRetencionMonto).toFixed(2)}</div>
+                                        <div>{Number(mtoImpVenta - displayRetencionMonto).toFixed(2)}</div>
                                     </label>
                                 </>
                             )
@@ -244,15 +283,28 @@ const ComprobantePrintPage = ({
                         {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                             <div>
                                 <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
-                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
-                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                                        <span>{sp.method?.toUpperCase()}:</span>
-                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
-                                    </p>
-                                ))}
+                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                    const detail = splitPaymentDetails[idx] || sp;
+                                    return (
+                                        <div key={idx} className="mb-0.5">
+                                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                                <span>{sp.method?.toUpperCase()}:</span>
+                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                            </p>
+                                            {formatPaymentExtra(detail).map((line) => (
+                                                <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'} text-left`}>{line}</p>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                            <>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                    <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
+                                ))}
+                            </>
                         )}
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>VUELTO:</span>
@@ -435,7 +487,7 @@ const ComprobantePrintPage = ({
                                         <div className="w-1/3 text-right space-y-1">
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. GRAVADAS:</span>
-                                                <span>S/ {Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18)).toFixed(2)}</span>
+                                                <span>S/ {round2(mtoOperGravadas).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. EXONERADAS:</span>
@@ -451,19 +503,19 @@ const ComprobantePrintPage = ({
                                             </div>
                                             <div className="flex justify-between font-bold">
                                                 <span>SUB TOTAL:</span>
-                                                <span>S/ {Number(formValues?.mtoOperGravadas ?? formValues?.subTotal ?? (totalReceipt / 1.18)).toFixed(2)}</span>
+                                                <span>S/ {round2(mtoOperGravadas).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>DESCUENTOS TOTAL:</span>
-                                                <span>S/ 0.00</span>
+                                                <span>S/ {round2(totalDescuentos).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">IGV 18%:</span>
-                                                <span>S/ {Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18))).toFixed(2)}</span>
+                                                <span>S/ {round2(mtoIgv).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between text-lg font-bold border-t border-black pt-1 mt-1">
                                                 <span>MONTO TOTAL:</span>
-                                                <span>S/ {Number(formValues?.mtoImpVenta ?? totalReceipt).toFixed(2)}</span>
+                                                <span>S/ {round2(mtoImpVenta).toFixed(2)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -561,18 +613,31 @@ const ComprobantePrintPage = ({
                                                         <>
                                                             <span className="font-bold text-xs">MEDIOS PAGO:</span>
                                                             <span className="text-xs">
-                                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
-                                                                    <span key={idx} className="flex justify-between">
-                                                                        <span>{sp.method?.toUpperCase()}:</span>
-                                                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
-                                                                    </span>
-                                                                ))}
+                                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                                    const detail = splitPaymentDetails[idx] || sp;
+                                                                    return (
+                                                                        <span key={idx} className="block">
+                                                                            <span className="flex justify-between">
+                                                                                <span>{sp.method?.toUpperCase()}:</span>
+                                                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                                            </span>
+                                                                            {formatPaymentExtra(detail).map((line) => (
+                                                                                <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                            ))}
+                                                                        </span>
+                                                                    );
+                                                                })}
                                                             </span>
                                                         </>
                                                     ) : (
                                                         <>
                                                             <span className="font-bold text-xs">MEDIO PAGO:</span>
-                                                            <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(totalPrices).toFixed(2)}</span>
+                                                            <span className="text-xs">
+                                                                {formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(mtoImpVenta).toFixed(2)}
+                                                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                                    <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                ))}
+                                                            </span>
                                                         </>
                                                     )}
 
@@ -716,6 +781,12 @@ const ComprobantePrintPage = ({
                                                     <div className="flex justify-between"><span>DESCUENTOS TOTAL:</span><span>S/ {round2(totalDescuentos).toFixed(2)}</span></div>
                                                     <div className="flex justify-between"><span className="font-bold">IGV 18%:</span><span>S/ {round2(mtoIgv).toFixed(2)}</span></div>
                                                 </>
+                                            )}
+                                            {!isDocumentoFiscal && totalDescuentos > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span>DESCUENTO:</span>
+                                                    <span>- S/ {round2(totalDescuentos).toFixed(2)}</span>
+                                                </div>
                                             )}
                                             <div className="flex justify-between text-md font-bold border-t border-black pt-1 mt-1">
                                                 <span>MONTO TOTAL:</span>

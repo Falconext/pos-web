@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import { BRAND } from '@/lib/branding';
 import { TOUR_STEPS } from './useWelcomeTour';
@@ -208,7 +209,7 @@ export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPr
     // Si aún está buscando objetivo, no renderiza nada.
     if (!rect && !targetMissing) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[9998]" style={{ pointerEvents: 'none' }}>
 
             {/* Overlay */}
@@ -325,6 +326,7 @@ export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPr
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

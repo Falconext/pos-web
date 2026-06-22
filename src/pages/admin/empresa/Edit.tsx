@@ -568,9 +568,9 @@ const EditEmpresa = () => {
             </div>
           </div>
 
-          {/* Información Bancaria */}
+          {/* Información Bancaria (legacy — una sola cuenta para cotizaciones) */}
           <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Información Bancaria (Para Cotizaciones)</h2>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Datos bancarios en cotizaciones</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <InputPro

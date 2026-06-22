@@ -7,6 +7,7 @@ import AutopartesHero from '@/components/tienda/AutopartesHero';
 import AutopartesFeaturedCategories from '@/components/tienda/AutopartesFeaturedCategories';
 import AutopartesPromoBanners from '@/components/tienda/AutopartesPromoBanners';
 import ProductCardAutopartes from '@/components/tienda/ProductCardAutopartes';
+import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
 import AutopartesTrendingProducts from '@/components/tienda/AutopartesTrendingProducts';
 import AutopartesDealsOfTheWeek from '@/components/tienda/AutopartesDealsOfTheWeek';
 import AutopartesBrands from '@/components/tienda/AutopartesBrands';
@@ -15,6 +16,13 @@ import AutopartesFooter from '@/components/tienda/AutopartesFooter';
 import AutopartesCatalog from '@/components/tienda/AutopartesCatalog';
 import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
 import AutopartesCheckout from '@/pages/tienda/AutopartesCheckout';
+import ModaHeader from '@/components/tienda/ModaHeader';
+import ModaHero from '@/components/tienda/ModaHero';
+import ModaFeaturedCollections from '@/components/tienda/ModaFeaturedCollections';
+import ModaBestSelling from '@/components/tienda/ModaBestSelling';
+import ModaNewArrivals from '@/components/tienda/ModaNewArrivals';
+import ModaPromoBanner from '@/components/tienda/ModaPromoBanner';
+import ModaFooter from '@/components/tienda/ModaFooter';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 
 interface PreviewConfig {
@@ -685,6 +693,20 @@ export default function StorePreviewPage() {
               onOpenCart={() => setIsCartOpen(true)} 
               searchQuery="" 
               setSearchQuery={() => {}} 
+              onSearchSubmit={(e, value) => { e.preventDefault(); goToPage('catalogo'); }} 
+              allCategories={demo.categories.filter(c => c !== 'Todos')} 
+            />
+          ) : null
+        ) : config.plantillaId === 'moda' ? (
+          page !== 'checkout' ? (
+            <ModaHeader 
+              tienda={{ nombre: demo.storeName, logo: '' }} 
+              slug="preview" 
+              cp={cp} 
+              carritoSize={carrito.reduce((sum, item) => sum + item.cantidad, 0)} 
+              onOpenCart={() => setIsCartOpen(true)} 
+              searchQuery="" 
+              setSearchQuery={() => {}} 
               onSearchSubmit={(e) => { e.preventDefault(); goToPage('catalogo'); }} 
               allCategories={demo.categories.filter(c => c !== 'Todos')} 
             />
@@ -787,6 +809,16 @@ export default function StorePreviewPage() {
               <AutopartesTopSelling cp={cp} />
             </div>
           </div>
+        ) : page === 'home' && config.plantillaId === 'moda' ? (
+          <div className="bg-[#FAF9F6] w-full">
+            <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-8 md:py-10">
+              <ModaHero cp={cp} slug="preview" diseno={diseno} productos={demo.products.slice(0, 3)} />
+              <ModaFeaturedCollections slug="preview" />
+              <ModaBestSelling slug="preview" cp={cp} productos={demo.products} />
+              <ModaNewArrivals slug="preview" productos={demo.products} />
+              <ModaPromoBanner slug="preview" />
+            </div>
+          </div>
         ) : page === 'home' ? (
           <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={addToCart} />
         ) : null}
@@ -835,6 +867,8 @@ export default function StorePreviewPage() {
         {/* Footer on home/catalogo pages */}
         {config.plantillaId === 'autopartes' ? (
           page !== 'checkout' && <AutopartesFooter tienda={null} slug="preview" diseno={diseno} />
+        ) : config.plantillaId === 'moda' ? (
+          page !== 'checkout' && <ModaFooter tiendaNombre={demo.storeName} />
         ) : page !== 'producto' && (
           <footer className="py-10 border-t border-gray-100" style={{ background: '#fafafa' }}>
             <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">

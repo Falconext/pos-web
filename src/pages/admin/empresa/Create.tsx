@@ -40,24 +40,15 @@ interface FormErrors {
   [key: string]: string;
 }
 
+const REQUIRED_EMPRESA = ['ruc', 'razonSocial', 'nombreComercial', 'direccion', 'rubroId', 'ubigeo', 'planId'];
+const REQUIRED_USUARIO = ['usuario.nombre', 'usuario.email', 'usuario.password', 'usuario.dni', 'usuario.celular'];
+
 const CreateEmpresa = () => {
   const navigate = useNavigate();
   const { success } = useAlertStore();
-  const {
-    loading,
-    error,
-    crearEmpresa
-  } = useEmpresasStore();
-  const {
-    planes,
-    rubros,
-    ubigeos,
-    getRubros,
-    getUbigeos,
-    getPlanes
-  } = useExtentionsStore();
+  const { loading, error, crearEmpresa } = useEmpresasStore();
+  const { planes, rubros, ubigeos, getRubros, getUbigeos, getPlanes } = useExtentionsStore();
 
-  // Estado del formulario
   const [formData, setFormData] = useState<FormData>({
     ruc: '',
     razonSocial: '',
@@ -73,13 +64,7 @@ const CreateEmpresa = () => {
     nombreComercial: '',
     fechaActivacion: new Date().toISOString().split('T')[0],
     fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    usuario: {
-      nombre: '',
-      email: '',
-      password: '',
-      dni: '',
-      celular: ''
-    }
+    usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -87,493 +72,485 @@ const CreateEmpresa = () => {
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [searchingRuc, setSearchingRuc] = useState(false);
   const [ubigeoSelected, setUbigeoSelected] = useState<any>('');
-  // Cargar catálogos desde extensiones al montar el componente
-  useEffect(() => {
-    getRubros();
-    getUbigeos();
-    getPlanes();
-  }, [getRubros, getUbigeos, getPlanes]);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  console.log(rubros)
-  // Funciones de clientes
+  useEffect(() => { getRubros(); getUbigeos(); getPlanes(); }, [getRubros, getUbigeos, getPlanes]);
+
   const { getClientFromDoc } = useClientsStore();
 
-  // Redirigir cuando se cree exitosamente
   useEffect(() => {
-    if (success === true && !isSubmitting) {
-      navigate('/administrador/empresas');
-    }
+    if (success === true && !isSubmitting) navigate('/administrador/empresas');
   }, [success, navigate, isSubmitting]);
 
-  // Validar formulario
+  // ── Validación completa ──────────────────────────────────────────────────
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const e: FormErrors = {};
 
-    // Validar empresa
-    if (!formData.ruc) newErrors.ruc = 'RUC es requerido';
-    if (!formData.razonSocial) newErrors.razonSocial = 'Razón social es requerida';
-    if (!formData.direccion) newErrors.direccion = 'Dirección es requerida';
-    if (!formData.rubroId) newErrors.rubroId = 'Rubro es requerido';
-    if (!formData.nombreComercial) newErrors.nombreComercial = 'Nombre comercial es requerido';
-    if (!formData.ubigeo) newErrors.ubigeo = 'Ubigeo es requerido';
-
-    // Validar usuario administrador
-    if (!formData.usuario.nombre) newErrors['usuario.nombre'] = 'Nombre del administrador es requerido';
-    if (!formData.usuario.email) newErrors['usuario.email'] = 'Email del administrador es requerido';
-    if (!formData.usuario.password) newErrors['usuario.password'] = 'Contraseña es requerida';
-    if (!formData.usuario.dni) newErrors['usuario.dni'] = 'DNI del administrador es requerido';
-    if (!formData.usuario.celular) newErrors['usuario.celular'] = 'Celular del administrador es requerido';
-
-    // Validar formato email
-    if (formData.usuario.email && !/\S+@\S+\.\S+/.test(formData.usuario.email)) {
-      newErrors['usuario.email'] = 'Email inválido';
+    // RUC
+    if (!formData.ruc) {
+      e.ruc = 'El RUC es obligatorio';
+    } else if (!/^\d{11}$/.test(formData.ruc)) {
+      e.ruc = 'El RUC debe tener exactamente 11 dígitos numéricos';
+    } else if (!formData.ruc.startsWith('10') && !formData.ruc.startsWith('20')) {
+      e.ruc = 'El RUC debe comenzar con 10 (persona natural) o 20 (empresa)';
     }
 
-    // Validar RUC (11 dígitos)
-    if (formData.ruc && formData.ruc.length !== 11) {
-      newErrors.ruc = 'RUC debe tener 11 dígitos';
+    // Datos empresa
+    if (!formData.razonSocial.trim()) e.razonSocial = 'La razón social es obligatoria';
+    if (!formData.nombreComercial.trim()) e.nombreComercial = 'El nombre comercial es obligatorio';
+    if (!formData.direccion.trim()) e.direccion = 'La dirección es obligatoria';
+    if (!formData.rubroId || formData.rubroId <= 0) e.rubroId = 'Debes seleccionar un rubro';
+    if (!formData.ubigeo) e.ubigeo = 'Debes seleccionar la ubicación (ubigeo)';
+    if (!formData.planId || formData.planId <= 0) e.planId = 'Debes seleccionar un plan';
+
+    // Fechas
+    if (formData.fechaExpiracion && formData.fechaActivacion) {
+      if (new Date(formData.fechaExpiracion) <= new Date(formData.fechaActivacion)) {
+        e.fechaExpiracion = 'La fecha de expiración debe ser posterior a la fecha de activación';
+      }
     }
 
-    // Validar DNI (8 dígitos)
-    if (formData.usuario.dni && formData.usuario.dni.length !== 8) {
-      newErrors['usuario.dni'] = 'DNI debe tener 8 dígitos';
+    // Administrador
+    if (!formData.usuario.nombre.trim()) {
+      e['usuario.nombre'] = 'El nombre del administrador es obligatorio';
+    } else if (formData.usuario.nombre.trim().split(/\s+/).length < 2) {
+      e['usuario.nombre'] = 'Ingresa nombre y apellido del administrador';
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!formData.usuario.email) {
+      e['usuario.email'] = 'El email es obligatorio';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.usuario.email)) {
+      e['usuario.email'] = 'El formato del email no es válido';
+    }
+
+    if (!formData.usuario.password) {
+      e['usuario.password'] = 'La contraseña es obligatoria';
+    } else if (formData.usuario.password.length < 6) {
+      e['usuario.password'] = 'La contraseña debe tener al menos 6 caracteres';
+    }
+
+    if (!formData.usuario.dni) {
+      e['usuario.dni'] = 'El DNI es obligatorio';
+    } else if (!/^\d{8}$/.test(formData.usuario.dni)) {
+      e['usuario.dni'] = 'El DNI debe tener exactamente 8 dígitos numéricos';
+    }
+
+    if (!formData.usuario.celular) {
+      e['usuario.celular'] = 'El celular es obligatorio';
+    } else if (!/^9\d{8}$/.test(formData.usuario.celular)) {
+      e['usuario.celular'] = 'El celular debe tener 9 dígitos y comenzar con 9';
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  // Manejar cambios en inputs
+  // Errores por sección (para badges)
+  const empresaErrorCount = REQUIRED_EMPRESA.filter(k => errors[k]).length +
+    (errors.fechaExpiracion ? 1 : 0);
+  const usuarioErrorCount = REQUIRED_USUARIO.filter(k => errors[k]).length;
+  const totalErrors = Object.keys(errors).length;
+
+  // ── Handlers ────────────────────────────────────────────────────────────
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-
     if (name.startsWith('usuario.')) {
       const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        usuario: {
-          ...prev.usuario,
-          [field]: value
-        }
-      }));
+      setFormData(prev => ({ ...prev, usuario: { ...prev.usuario, [field]: value } }));
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
-
-    // Limpiar error si existe
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  // Manejar cambio de tipo de empresa
-  const handleTipoEmpresaChange = (id: any, value: string) => {
+  const handleTipoEmpresaChange = (id: any) => {
     setFormData(prev => ({
       ...prev,
       tipoEmpresa: id as 'FORMAL' | 'INFORMAL',
-      fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, id, prev.planId)
+      fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, id, prev.planId),
     }));
   };
 
-  // Manejar cambio de versión de prueba
   const handleEsPruebaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const esPrueba = e.target.checked;
     setFormData(prev => ({
       ...prev,
       esPrueba,
-      fechaExpiracion: recalcularFechaExpiracion(esPrueba, prev.tipoEmpresa, prev.planId)
+      fechaExpiracion: recalcularFechaExpiracion(esPrueba, prev.tipoEmpresa, prev.planId),
     }));
   };
 
-  // Manejar selección de plan
   const handlePlanSelect = (planId: number) => {
     setFormData(prev => ({
       ...prev,
       planId,
-      fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, prev.tipoEmpresa, planId)
+      fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, prev.tipoEmpresa, planId),
     }));
-
-    if (errors.planId) {
-      setErrors(prev => ({
-        ...prev,
-        planId: ''
-      }));
-    }
+    if (errors.planId) setErrors(prev => ({ ...prev, planId: '' }));
   };
 
-  // Manejar selects
-  const handleSelectChange = (id: any, value: string, name: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: parseInt(id) || 0
-    }));
-
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+  const handleSelectChange = (id: any, _value: string, name: string) => {
+    const val = parseInt(id) || 0;
+    setFormData(prev => ({ ...prev, [name]: val }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  // Manejar cambio de ubigeo
-  const handleUbigeoChange = (id: any, value: string) => {
-    const selectedUbigeo: any = ubigeos.find((u: any) => u.codigo === id);
-
-    if (selectedUbigeo) {
+  const handleUbigeoChange = (id: any) => {
+    const found: any = ubigeos.find((u: any) => u.codigo === id);
+    if (found) {
+      setUbigeoSelected(found);
       setFormData(prev => ({
         ...prev,
-        ubigeo: selectedUbigeo.codigo,
-        departamento: selectedUbigeo.departamento,
-        provincia: selectedUbigeo.provincia,
-        distrito: selectedUbigeo.distrito
+        ubigeo: found.codigo,
+        departamento: found.departamento,
+        provincia: found.provincia,
+        distrito: found.distrito,
       }));
+      if (errors.ubigeo) setErrors(prev => ({ ...prev, ubigeo: '' }));
     }
   };
 
-  // Manejar archivo de logo
   const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-
-      img.onload = () => {
-        const maxWidth = 300;
-        const maxHeight = 300;
-        let { width, height } = img;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height;
-            height = maxHeight;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        ctx?.clearRect(0, 0, width, height);
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        const base64String = canvas.toDataURL('image/png');
-        setLogoPreview(base64String);
-        setFormData(prev => ({
-          ...prev,
-          logo: base64String
-        }));
-      };
-
-      img.src = URL.createObjectURL(file);
-    }
+    if (!file) return;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      const max = 300;
+      let { width, height } = img;
+      if (width > height) { if (width > max) { height = (height * max) / width; width = max; } }
+      else { if (height > max) { width = (width * max) / height; height = max; } }
+      canvas.width = width; canvas.height = height;
+      ctx?.clearRect(0, 0, width, height);
+      ctx?.drawImage(img, 0, 0, width, height);
+      const b64 = canvas.toDataURL('image/png');
+      setLogoPreview(b64);
+      setFormData(prev => ({ ...prev, logo: b64 }));
+    };
+    img.src = URL.createObjectURL(file);
   };
 
-  // Buscar empresa por RUC
   const handleRucBlur = async () => {
     if (formData.ruc && formData.ruc.length === 11) {
       setSearchingRuc(true);
       try {
         const response = await getClientFromDoc(formData.ruc);
         if (response) {
-          // Mapear datos de RENIEC al formulario
           const razonSocial = response.nombre_o_razon_social || response.razonSocial || '';
           const direccion = response.direccion_completa || response.direccion || '';
-          const departamento = response.departamento || '';
-          const provincia = response.provincia || '';
-          const distrito = response.distrito || '';
           const ubigeo = response.ubigeo_sunat || '';
-
-          // Buscar ubigeo en la lista para asignarlo
-          const ubigeoEncontrado: any = ubigeos.find((u: any) => u.codigo === ubigeo);
-          setUbigeoSelected(ubigeoEncontrado);
+          const found: any = ubigeos.find((u: any) => u.codigo === ubigeo);
+          setUbigeoSelected(found);
           setFormData(prev => ({
-            ...prev,
-            razonSocial,
-            nombreComercial: razonSocial,
-            direccion,
-            departamento,
-            provincia,
-            distrito,
-            ubigeo: ubigeoEncontrado?.codigo || ubigeo || '',
+            ...prev, razonSocial, nombreComercial: razonSocial, direccion,
+            departamento: response.departamento || '',
+            provincia: response.provincia || '',
+            distrito: response.distrito || '',
+            ubigeo: found?.codigo || ubigeo || '',
             fechaActivacion: new Date().toISOString().split('T')[0],
-            fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, prev.tipoEmpresa, prev.planId)
+            fechaExpiracion: recalcularFechaExpiracion(prev.esPrueba, prev.tipoEmpresa, prev.planId),
           }));
-
-          // Limpiar errores de estos campos
-          setErrors(prev => ({
-            ...prev,
-            razonSocial: '',
-            nombreComercial: '',
-            direccion: '',
-            ubigeo: ''
-          }));
+          setErrors(prev => ({ ...prev, ruc: '', razonSocial: '', nombreComercial: '', direccion: '', ubigeo: '' }));
         }
-      } catch (error) {
-        console.log('No se encontró información del RUC en RENIEC');
+      } catch {
+        // No se encontró RUC en SUNAT — el usuario llena manualmente
       } finally {
         setSearchingRuc(false);
       }
     }
   };
 
-  // Recalcular fecha de expiración usando duración del plan seleccionado
   const recalcularFechaExpiracion = (esPrueba: boolean, tipoEmpresa: string, planId?: number) => {
     const ahora = new Date();
-    let diasExpiracion = 30; // default
-
-    if (planId && planes && Array.isArray(planes)) {
-      const planSeleccionado: any = planes.find((p: any) => p.id === planId);
-      if (planSeleccionado?.duracionDias) {
-        diasExpiracion = planSeleccionado.duracionDias;
-      }
+    let dias = 30;
+    if (planId && Array.isArray(planes)) {
+      const plan: any = planes.find((p: any) => p.id === planId);
+      if (plan?.duracionDias) dias = plan.duracionDias;
     } else {
-      // Fallback a lógica anterior si no hay plan seleccionado
-      if (esPrueba) {
-        diasExpiracion = 15;
-      } else if (tipoEmpresa === 'INFORMAL') {
-        diasExpiracion = 30;
-      } else {
-        diasExpiracion = 30; // Ahora todos son mensuales por defecto
-      }
+      if (esPrueba) dias = 15;
+      else if (tipoEmpresa === 'INFORMAL') dias = 30;
     }
-
-    const fechaExpiracion = new Date(ahora.getTime() + diasExpiracion * 24 * 60 * 60 * 1000);
-    return fechaExpiracion.toISOString().split('T')[0];
+    return new Date(ahora.getTime() + dias * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   };
 
-  // Enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
-
+    setSubmitAttempted(true);
+    if (!validateForm()) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setIsSubmitting(true);
     try {
       await crearEmpresa(formData);
-    } catch (error) {
-      console.error('Error al crear empresa:', error);
+    } catch (err) {
+      console.error('Error al crear empresa:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Preparar opciones para selects
-  // Rubros viene ya formateado desde extensiones
   const rubrosOptions = rubros && Array.isArray(rubros) ? rubros : [];
-
-  const ubigeosOptions = ubigeos.map((ubigeo: any) => ({
-    id: ubigeo.codigo,
-    value: `${ubigeo.departamento} - ${ubigeo.provincia} - ${ubigeo.distrito}`
+  const ubigeosOptions = ubigeos.map((u: any) => ({
+    id: u.codigo,
+    value: `${u.departamento} - ${u.provincia} - ${u.distrito}`,
   }));
 
-  console.log(ubigeoSelected)
+  // ── UI helpers ───────────────────────────────────────────────────────────
+  const SectionBadge = ({ count }: { count: number }) =>
+    count > 0 ? (
+      <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold">
+        {count}
+      </span>
+    ) : null;
+
+  const sectionClass = (hasError: boolean) =>
+    `p-6 rounded-2xl border transition-colors ${hasError
+      ? 'bg-red-50/60 dark:bg-red-900/10 border-red-200 dark:border-red-800/40'
+      : 'bg-gray-50 dark:bg-slate-900/50 border-gray-100 dark:border-slate-800'}`;
 
   return (
     <div className="px-0 py-0 md:px-0 md:py-4 bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
       <div className="md:p-10 px-4 pt-0 z-0 md:px-8 bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
+
         {/* Header */}
         <div className="flex items-center mb-6 pt-5 md:pt-0">
-          <Button
-            variant="outline-secondary"
-            onClick={() => navigate('/administrador/empresas')}
-            className="mr-4"
-          >
+          <Button variant="outline-secondary" onClick={() => navigate('/administrador/empresas')} className="mr-4">
             <Icon icon="material-symbols:arrow-back" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 ml-4">Nueva Empresa</h1>
-            <p className="text-gray-600 dark:text-gray-400 ml-4">Registra una nueva empresa en el sistema</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-1 ml-4">Nueva Empresa</h1>
+            <p className="text-gray-500 dark:text-gray-400 ml-4 text-sm">Completa todos los campos obligatorios <span className="text-red-500">*</span></p>
           </div>
         </div>
 
-        {/* Mostrar error si existe */}
+        {/* Error global del servidor */}
         {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl flex items-start gap-3">
+            <Icon icon="solar:danger-triangle-bold" className="text-xl mt-0.5 flex-shrink-0" />
+            <span className="text-sm font-medium">{error}</span>
+          </div>
+        )}
+
+        {/* Resumen de errores al intentar enviar */}
+        {submitAttempted && totalErrors > 0 && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon icon="solar:close-circle-bold" className="text-red-500 text-lg" />
+              <p className="text-sm font-bold text-red-700 dark:text-red-400">
+                Hay {totalErrors} campo{totalErrors !== 1 ? 's' : ''} con error. Corrígelos antes de continuar.
+              </p>
+            </div>
+            <ul className="space-y-1 pl-6 list-disc">
+              {Object.entries(errors).map(([, msg]) => (
+                <li key={msg} className="text-xs text-red-600 dark:text-red-400">{msg}</li>
+              ))}
+            </ul>
           </div>
         )}
 
         <div className="max-w-8xl mx-auto bg-white dark:bg-[#0A0D14] rounded-3xl border border-gray-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Ingresa los datos de la empresa</h2>
+          <form onSubmit={handleSubmit} className="space-y-8" noValidate>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Datos de la Empresa */}
-            <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Datos de la Empresa</h2>
+            {/* ── Datos de la Empresa ── */}
+            <div className={sectionClass(empresaErrorCount > 0)}>
+              <div className="flex items-center mb-5">
+                <Icon icon="solar:buildings-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl mr-2" />
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Datos de la Empresa
+                </h2>
+                <SectionBadge count={empresaErrorCount} />
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* RUC */}
                 <div>
                   <InputPro
                     name="ruc"
-                    label="RUC"
+                    label="RUC *"
                     value={formData.ruc}
                     onChange={handleInputChange}
                     handleOnBlur={handleRucBlur}
                     error={errors.ruc}
                     isLabel
                     maxLength={11}
+                    placeholder="20XXXXXXXXX"
                   />
                   {searchingRuc && (
-                    <p className="text-sm text-blue-600 mt-1">Buscando información...</p>
+                    <p className="text-xs text-blue-500 mt-1 flex items-center gap-1">
+                      <Icon icon="mdi:loading" className="animate-spin" /> Consultando SUNAT...
+                    </p>
+                  )}
+                  {!errors.ruc && formData.ruc.length === 11 && !searchingRuc && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                      <Icon icon="solar:check-circle-bold" /> RUC válido
+                    </p>
                   )}
                 </div>
 
+                {/* Razón Social */}
                 <div>
                   <InputPro
                     name="razonSocial"
-                    label="Razón Social"
+                    label="Razón Social *"
                     value={formData.razonSocial}
                     onChange={handleInputChange}
                     error={errors.razonSocial}
                     isLabel
+                    placeholder="Nombre legal de la empresa"
                   />
                 </div>
 
+                {/* Nombre Comercial */}
                 <div>
                   <InputPro
                     name="nombreComercial"
-                    label="Nombre Comercial"
+                    label="Nombre Comercial *"
                     value={formData.nombreComercial}
                     onChange={handleInputChange}
                     error={errors.nombreComercial}
                     isLabel
+                    placeholder="Nombre que aparece al cliente"
                   />
                 </div>
 
+                {/* Rubro */}
                 <div>
                   <Select
                     name="rubroId"
-                    label="Rubro"
+                    label="Rubro *"
                     options={rubrosOptions}
                     onChange={handleSelectChange}
                     error={errors.rubroId}
                     withLabel
                   />
+                  {!errors.rubroId && formData.rubroId > 0 && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                      <Icon icon="solar:check-circle-bold" /> Rubro seleccionado
+                    </p>
+                  )}
                 </div>
 
+                {/* Tipo de Empresa */}
                 <div>
                   <Select
                     name="tipoEmpresa"
-                    label="Tipo de Empresa"
+                    label="Tipo de Empresa *"
                     options={[
-                      { id: 'FORMAL', value: 'Empresa Formal' },
-                      { id: 'INFORMAL', value: 'Empresa Informal' }
+                      { id: 'FORMAL', value: 'Empresa Formal (emite comprobantes SUNAT)' },
+                      { id: 'INFORMAL', value: 'Empresa Informal (sin comprobantes SUNAT)' },
                     ]}
-                    value={formData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal'}
+                    value={formData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal (emite comprobantes SUNAT)' : 'Empresa Informal (sin comprobantes SUNAT)'}
                     onChange={handleTipoEmpresaChange}
                     error={errors.tipoEmpresa}
                     withLabel
                   />
                 </div>
 
+                {/* Dirección */}
                 <div className="md:col-span-2">
                   <InputPro
                     name="direccion"
-                    label="Dirección"
+                    label="Dirección *"
                     value={formData.direccion}
                     onChange={handleInputChange}
                     error={errors.direccion}
                     isLabel
+                    placeholder="Av. / Jr. / Calle + número + urbanización"
                   />
                 </div>
 
+                {/* Ubigeo */}
                 <div className="md:col-span-2">
                   <Select
                     name="ubigeo"
-                    label="Ubicación (Departamento - Provincia - Distrito)"
+                    label="Ubicación: Departamento — Provincia — Distrito *"
                     options={ubigeosOptions}
                     onChange={handleUbigeoChange}
                     error={errors.ubigeo}
                     isSearch
                     withLabel
                   />
+                  {ubigeoSelected && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                      <Icon icon="solar:check-circle-bold" />
+                      {ubigeoSelected.departamento} → {ubigeoSelected.provincia} → {ubigeoSelected.distrito}
+                    </p>
+                  )}
                 </div>
 
+                {/* Plan */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Plan</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Plan *
+                    </label>
+                    {errors.planId && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <Icon icon="solar:danger-circle-bold" /> {errors.planId}
+                      </span>
+                    )}
+                  </div>
+                  <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${errors.planId ? 'rounded-xl ring-2 ring-red-300 dark:ring-red-700 p-1' : ''}`}>
                     {planes && Array.isArray(planes) && planes.map((plan: any) => (
                       <div
                         key={plan.id}
                         onClick={() => handlePlanSelect(plan.id)}
                         className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${formData.planId === plan.id
-                          ? 'border-blue-500 dark:border-indigo-500 bg-blue-50 dark:bg-indigo-900/20 shadow-md shadow-indigo-500/10'
+                          ? 'border-blue-500 dark:border-indigo-500 bg-blue-50 dark:bg-indigo-900/20 shadow-md shadow-indigo-500/10 ring-2 ring-blue-200 dark:ring-indigo-800'
                           : 'border-gray-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-slate-700 bg-white dark:bg-slate-900/50'
-                          }`}
+                        }`}
                       >
-                        <div className="font-bold text-gray-800 dark:text-white">{plan.nombre}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{plan.descripcion || ''}</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-gray-800 dark:text-white">{plan.nombre}</span>
+                          {formData.planId === plan.id && (
+                            <Icon icon="solar:check-circle-bold" className="text-blue-500 text-lg" />
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{plan.descripcion || ''}</div>
                         <div className="text-xl font-bold text-blue-600 dark:text-indigo-400 mt-3">
                           S/ {plan.costo?.toString()}
                           {plan.tipoFacturacion && (
-                            <span className="text-xs text-gray-500 dark:text-gray-500 ml-1 font-normal">/ {plan.tipoFacturacion.toLowerCase()}</span>
+                            <span className="text-xs text-gray-500 ml-1 font-normal">/ {plan.tipoFacturacion.toLowerCase()}</span>
                           )}
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 mt-1 font-medium">
+                        <div className="flex justify-between text-xs text-gray-500 mt-1 font-medium">
                           {plan.limiteUsuarios && <span>Usuarios: {plan.limiteUsuarios}</span>}
                           {plan.duracionDias && <span>{plan.duracionDias} días</span>}
                         </div>
                         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800 space-y-1">
-                          {plan.tieneTienda && (
-                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
-                              <span className="text-green-500 mr-1">✓</span> Tienda Virtual
-                            </div>
-                          )}
-                          {plan.tieneCulqi && (
-                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
-                              <span className="text-green-500 mr-1">✓</span> Pagos con Culqi
-                            </div>
-                          )}
-                          {plan.tieneDeliveryGPS && (
-                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
-                              <span className="text-green-500 mr-1">✓</span> Delivery con GPS
-                            </div>
-                          )}
-                          {plan.tieneGaleria && (
-                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
-                              <span className="text-green-500 mr-1">✓</span> Galería de Imágenes
-                            </div>
-                          )}
-                          {plan.tieneBanners && (
-                            <div className="flex items-center text-xs text-gray-700 dark:text-gray-400">
-                              <span className="text-green-500 mr-1">✓</span> Banners Promocionales
-                            </div>
-                          )}
+                          {plan.tieneTienda && <div className="flex items-center text-xs text-gray-700 dark:text-gray-400"><span className="text-green-500 mr-1">✓</span> Tienda Virtual</div>}
+                          {plan.tieneCulqi && <div className="flex items-center text-xs text-gray-700 dark:text-gray-400"><span className="text-green-500 mr-1">✓</span> Pagos con Culqi</div>}
+                          {plan.tieneDeliveryGPS && <div className="flex items-center text-xs text-gray-700 dark:text-gray-400"><span className="text-green-500 mr-1">✓</span> Delivery con GPS</div>}
+                          {plan.tieneGaleria && <div className="flex items-center text-xs text-gray-700 dark:text-gray-400"><span className="text-green-500 mr-1">✓</span> Galería de Imágenes</div>}
+                          {plan.tieneBanners && <div className="flex items-center text-xs text-gray-700 dark:text-gray-400"><span className="text-green-500 mr-1">✓</span> Banners Promocionales</div>}
                         </div>
                       </div>
                     ))}
                   </div>
-                  {errors.planId && <p className="text-red-600 text-sm mt-2">{errors.planId}</p>}
                 </div>
 
+                {/* Versión prueba */}
                 <div className="md:col-span-2">
-                  <label className="flex items-center cursor-pointer group">
+                  <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900/40 transition-colors">
                     <input
                       type="checkbox"
                       checked={formData.esPrueba}
                       onChange={handleEsPruebaChange}
                       className="w-5 h-5 text-blue-600 dark:text-indigo-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Esto es una versión de prueba (sin costo)</span>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Versión de prueba (sin costo)</span>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Duración de 15 días. El cliente puede actualizar al plan completo en cualquier momento.</p>
+                    </div>
                   </label>
                 </div>
 
+                {/* Logo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Logo (Opcional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Logo (Opcional)</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -585,23 +562,14 @@ const CreateEmpresa = () => {
                   )}
                 </div>
 
+                {/* Fechas */}
                 <div>
-                  <InputPro
-                    name="fechaActivacion"
-                    label="Fecha de Activación"
-                    type="date"
-                    value={formData.fechaActivacion}
-                    onChange={handleInputChange}
-                    error={errors.fechaActivacion}
-                    isLabel
-                    disabled
-                  />
+                  <InputPro name="fechaActivacion" label="Fecha de Activación" type="date" value={formData.fechaActivacion} onChange={handleInputChange} isLabel disabled />
                 </div>
-
                 <div>
                   <InputPro
                     name="fechaExpiracion"
-                    label="Fecha de Expiración (Auto-calculada)"
+                    label="Fecha de Expiración (auto-calculada)"
                     type="date"
                     value={formData.fechaExpiracion || ''}
                     onChange={handleInputChange}
@@ -612,125 +580,146 @@ const CreateEmpresa = () => {
               </div>
             </div>
 
-            {/* Integración SUNAT - Solo para empresas FORMALES */}
+            {/* ── Integración SUNAT ── */}
             {formData.tipoEmpresa === 'FORMAL' && !formData.esPrueba && (
               <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Integración SUNAT (Opcional)</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Estos datos se obtienen del proveedor SUNAT después del registro. Puedes agregarlos más tarde.
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon icon="solar:document-bold-duotone" className="text-blue-600 text-xl" />
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Integración SUNAT</h2>
+                  <span className="text-xs font-medium text-blue-500 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">Opcional</span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Credenciales del proveedor de facturación electrónica (QPSE). Puedes agregarlas después del registro desde la configuración de la empresa.
                 </p>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <InputPro
-                      name="usuarioPse"
-                      label="Usuario PSE (QPSE)"
-                      value={formData.usuarioPse || ''}
-                      onChange={handleInputChange}
-                      error={errors.usuarioPse}
-                      isLabel
-                      placeholder="Ej. 0HGRQ55B"
-                    />
-                  </div>
-
-                  <div>
-                    <InputPro
-                      name="contrasenaPse"
-                      label="Contraseña PSE (QPSE)"
-                      type="password"
-                      value={formData.contrasenaPse || ''}
-                      onChange={handleInputChange}
-                      error={errors.contrasenaPse}
-                      isLabel
-                      placeholder="Ej. R8101ZBD"
-                    />
-                  </div>
+                  <InputPro name="usuarioPse" label="Usuario PSE (QPSE)" value={formData.usuarioPse || ''} onChange={handleInputChange} isLabel placeholder="Ej. 0HGRQ55B" />
+                  <InputPro name="contrasenaPse" label="Contraseña PSE (QPSE)" type="password" value={formData.contrasenaPse || ''} onChange={handleInputChange} isLabel placeholder="Ej. R8101ZBD" />
                 </div>
               </div>
             )}
 
-            {/* Datos del Administrador */}
-            <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Administrador de la Empresa</h2>
+            {/* ── Administrador ── */}
+            <div className={sectionClass(usuarioErrorCount > 0)}>
+              <div className="flex items-center mb-5">
+                <Icon icon="solar:user-bold-duotone" className="text-violet-600 dark:text-violet-400 text-xl mr-2" />
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Administrador de la Empresa
+                </h2>
+                <SectionBadge count={usuarioErrorCount} />
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Este usuario tendrá acceso total a la empresa. Asegúrate de que los datos sean correctos.
+              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="md:col-span-2">
                   <InputPro
                     name="usuario.nombre"
-                    label="Nombre Completo"
+                    label="Nombre Completo *"
                     value={formData.usuario.nombre}
                     onChange={handleInputChange}
                     error={errors['usuario.nombre']}
                     isLabel
+                    placeholder="Ej. Juan Pérez García"
                   />
                 </div>
 
                 <div>
                   <InputPro
                     name="usuario.dni"
-                    label="DNI"
+                    label="DNI *"
                     value={formData.usuario.dni}
                     onChange={handleInputChange}
                     error={errors['usuario.dni']}
                     isLabel
                     maxLength={8}
+                    placeholder="12345678"
                   />
-                </div>
-
-                <div>
-                  <InputPro
-                    name="usuario.email"
-                    label="Email"
-                    type="email"
-                    value={formData.usuario.email}
-                    onChange={handleInputChange}
-                    error={errors['usuario.email']}
-                    isLabel
-                  />
+                  {!errors['usuario.dni'] && /^\d{8}$/.test(formData.usuario.dni) && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1"><Icon icon="solar:check-circle-bold" /> DNI válido</p>
+                  )}
                 </div>
 
                 <div>
                   <InputPro
                     name="usuario.celular"
-                    label="Celular"
+                    label="Celular *"
                     value={formData.usuario.celular}
                     onChange={handleInputChange}
                     error={errors['usuario.celular']}
                     isLabel
+                    maxLength={9}
+                    placeholder="9XXXXXXXX"
+                  />
+                  {!errors['usuario.celular'] && /^9\d{8}$/.test(formData.usuario.celular) && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1"><Icon icon="solar:check-circle-bold" /> Celular válido</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <InputPro
+                    name="usuario.email"
+                    label="Email *"
+                    type="email"
+                    value={formData.usuario.email}
+                    onChange={handleInputChange}
+                    error={errors['usuario.email']}
+                    isLabel
+                    placeholder="admin@empresa.com"
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <InputPro
                     name="usuario.password"
-                    label="Contraseña"
+                    label="Contraseña *"
                     type="password"
                     value={formData.usuario.password}
                     onChange={handleInputChange}
                     error={errors['usuario.password']}
                     isLabel
+                    placeholder="Mínimo 6 caracteres"
                   />
+                  {formData.usuario.password.length > 0 && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className={`h-1 w-8 rounded-full transition-colors ${
+                            formData.usuario.password.length >= i * 3
+                              ? i <= 1 ? 'bg-red-400' : i <= 2 ? 'bg-amber-400' : i <= 3 ? 'bg-blue-400' : 'bg-emerald-500'
+                              : 'bg-gray-200 dark:bg-slate-700'
+                          }`} />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {formData.usuario.password.length < 6 ? 'Muy corta' :
+                         formData.usuario.password.length < 9 ? 'Aceptable' :
+                         formData.usuario.password.length < 12 ? 'Buena' : 'Fuerte'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Botones */}
-            <div className="flex justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline-secondary"
-                onClick={() => navigate('/administrador/empresas')}
-              >
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+              <Button type="button" variant="outline-secondary" onClick={() => navigate('/administrador/empresas')}>
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                variant="secondary"
-                disabled={loading || isSubmitting}
-              >
-                {isSubmitting ? 'Creando...' : 'Crear Empresa'}
+              <Button type="submit" variant="secondary" disabled={loading || isSubmitting}>
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Icon icon="mdi:loading" className="animate-spin" /> Creando empresa...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Icon icon="solar:add-circle-bold" /> Crear Empresa
+                  </span>
+                )}
               </Button>
             </div>
+
           </form>
         </div>
       </div>

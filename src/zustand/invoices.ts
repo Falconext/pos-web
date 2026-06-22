@@ -446,7 +446,8 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
             const payload: any = {
                 medioPago,
                 observacion: data.observacion || '',
-                referencia: data.referencia || ''
+                referencia: data.referencia || '',
+                cuentaBancariaId: data.cuentaBancariaId ?? null,
             };
             // Si viene un monto específico (pago parcial), incluirlo
             if (montoPagado !== undefined && montoPagado > 0) {

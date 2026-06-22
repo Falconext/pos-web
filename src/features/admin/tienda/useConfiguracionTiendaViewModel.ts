@@ -63,6 +63,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
     const [editResults, setEditResults] = useState<any[]>([]);
     const [searchingEdit, setSearchingEdit] = useState(false);
     const [storeCategories, setStoreCategories] = useState<any[]>([]);
+    const [uploadingTemplateImageField, setUploadingTemplateImageField] = useState('');
 
     useEffect(() => { cargarConfiguracion(); cargarBanners(); }, []);
 
@@ -261,6 +262,29 @@ export const useConfiguracionTiendaViewModel = (): any => {
         }
     };
 
+    const subirImagenTemplate = async (campo: string, file: File) => {
+        if (!file) { alert('Selecciona una imagen primero', 'warning'); return; }
+        if (file.size > 5 * 1024 * 1024) { alert('El archivo es demasiado grande. Máximo 5MB', 'error'); return; }
+        if (!file.type.startsWith('image/')) { alert('El archivo debe ser una imagen', 'error'); return; }
+
+        setUploadingTemplateImageField(campo);
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const { data } = await apiClient.post(`/tienda/template/imagen/${campo}`, fd);
+            const url = data?.data?.url || data?.url;
+            setConfig((prev: any) => ({
+                ...prev,
+                diseno: { ...(prev?.diseno || {}), [campo]: url },
+            }));
+            alert('Imagen del template actualizada', 'success');
+        } catch (e: any) {
+            alert(e.response?.data?.message || 'Error al subir imagen del template', 'error');
+        } finally {
+            setUploadingTemplateImageField('');
+        }
+    };
+
     const subirBanner = async (file: File) => {
         if (!canUploadBanner) { alert(`Límite alcanzado: máximo ${bannerIsSlider ? SLIDER_MAX_COUNT : 6} banners para esta plantilla`, 'warning'); return; }
         if (file.size > 2.5 * 1024 * 1024) { alert('El archivo es demasiado grande. Máximo 2.5MB', 'error'); return; }
@@ -328,6 +352,6 @@ export const useConfiguracionTiendaViewModel = (): any => {
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,
         editingBanner, setEditingBanner, editBannerTitle, setEditBannerTitle, editBannerSubtitle, setEditBannerSubtitle, editBannerLink, setEditBannerLink, editBannerOrden, setEditBannerOrden,
         editBannerFile, setEditBannerFile, editSearch, setEditSearch, editResults, searchingEdit, openEditModal, handleUpdateBanner,
-        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno,
+        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno, subirImagenTemplate, uploadingTemplateImageField,
     };
 };

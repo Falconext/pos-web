@@ -90,6 +90,8 @@ export default function AdminLayout() {
     }
   }, [location.pathname])
 
+  const isAlmacen = sedeActiva?.tipo === 'ALMACEN'
+
   // Redireccionar a primer módulo permitido si no tiene acceso a dashboard
   useEffect(() => {
     if (!auth) return
@@ -100,6 +102,14 @@ export default function AdminLayout() {
       }
     }
   }, [auth, location.pathname, navigate])
+
+  // Sede tipo ALMACEN: solo kardex permitido
+  useEffect(() => {
+    if (!isAlmacen) return
+    if (!location.pathname.startsWith('/administrador/kardex')) {
+      navigate('/administrador/kardex/productos', { replace: true })
+    }
+  }, [isAlmacen, location.pathname, navigate])
 
   // Robust scroll lock for mobile drawer using position:fixed and restoring scroll
   useEffect(() => {
@@ -318,7 +328,7 @@ export default function AdminLayout() {
         {/* Toggle Button */}
         <button
           onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-          className={`hidden md:flex items-center absolute top-7 -translate-y-1/2 z-[80] justify-center w-8 h-8 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700 shadow-xl shadow-gray-950/10 transition-all cursor-pointer -right-4`}
+          className={`hidden md:flex items-center absolute top-7 -translate-y-1/2 z-[1] justify-center w-8 h-8 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700 shadow-xl shadow-gray-950/10 transition-all cursor-pointer -right-4`}
           title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
         >
           <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
@@ -385,8 +395,20 @@ export default function AdminLayout() {
 
             {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
               <>
+                {/* Aviso visual cuando la sede es un Almacén */}
+                {isAlmacen && !isSidebarCollapsed && (
+                  <div className="mx-2 mb-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
+                    <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                      <Icon icon="solar:box-bold-duotone" width={12} /> Modo Almacén
+                    </p>
+                    <p className="text-[9px] text-amber-600 dark:text-amber-500 mt-0.5">Solo acceso a Kardex</p>
+                  </div>
+                )}
+
                 {/* ── Sidebar dinámico generado desde plan.modulosAsignados ── */}
                 {planModules.map(({ modulo }) => {
+                  // En modo almacén solo mostrar el módulo kardex
+                  if (isAlmacen && modulo.codigo !== 'kardex') return null;
                   if (!hasPermission(auth, modulo.codigo)) return null;
                   const meta = MODULE_META[modulo.codigo];
                   if (meta?.condition && !meta.condition(auth)) return null;
@@ -510,7 +532,7 @@ export default function AdminLayout() {
 
         {/* Divider y configuración abajo */}
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">
-          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración Settings') }} to="/administrador/perfil" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Settings">
+          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración Settings') }} to="/administrador/perfil" className={() => theme.inactiveLink} title="Settings">
             <Icon icon="solar:settings-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
             {!isSidebarCollapsed && <span>Settings</span>}
           </NavLink>
@@ -538,7 +560,7 @@ export default function AdminLayout() {
       {/* Main content */}
       <main
         ref={mainRef}
-        className="flex-1 min-h-0 flex flex-col min-w-0 overflow-y-auto print:overflow-visible bg-[#F9FAFC] dark:bg-[#0A0D14]"
+        className="flex-1 min-h-0 z-0 flex flex-col min-w-0 overflow-y-auto print:overflow-visible bg-[#F9FAFC] dark:bg-[#0A0D14]"
       >
         <div className={`shrink-0 z-[50] transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
           <motion.header className="print:hidden flex items-center justify-between px-6 py-3.5 bg-white/90 backdrop-blur-md border-b border-gray-100 dark:bg-[#0A0D14]/90 dark:border-slate-800 transition-all duration-300" variants={fadeUp} initial="initial" animate="animate">
@@ -570,13 +592,16 @@ export default function AdminLayout() {
                     onClick={() => setIsSedeMenuOpen(p => !p)}
                     className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
                   >
-                    <Icon icon="solar:city-bold-duotone" className="text-violet-600" width={14} />
+                    <Icon icon={sedeActiva.tipo === 'ALMACEN' ? 'solar:box-bold-duotone' : 'solar:city-bold-duotone'} className="text-violet-600" width={14} />
                     <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                    {sedeActiva.tipo === 'ALMACEN' && (
+                      <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Almacén</span>
+                    )}
                     <Icon icon="solar:alt-arrow-down-linear" className="text-violet-600" width={12} />
                   </button>
                   <AnimatePresence>
                     {isSedeMenuOpen && (
-                    <motion.div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+                    <motion.div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[200px]" variants={scaleIn} initial="initial" animate="animate" exit="exit">
                       <p className="text-[10px] uppercase font-bold text-gray-400 px-3 py-1 tracking-wider">Cambiar sede</p>
                       {todasSedes.filter(s => s.activo).map(sede => (
                         <button
@@ -588,9 +613,13 @@ export default function AdminLayout() {
                           }}
                           className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${sede.id === sedeActiva.id ? 'bg-violet-50 text-violet-600 font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
-                          <Icon icon={sede.id === sedeActiva.id ? 'solar:check-circle-bold' : 'solar:city-linear'} width={14} />
+                          <Icon icon={sede.id === sedeActiva.id ? 'solar:check-circle-bold' : sede.tipo === 'ALMACEN' ? 'solar:box-linear' : 'solar:city-linear'} width={14} />
                           {sede.nombre}
-                          {sede.esPrincipal && <span className="ml-auto text-[10px] text-gray-400 font-normal">Principal</span>}
+                          {sede.tipo === 'ALMACEN'
+                            ? <span className="ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full uppercase">Almacén</span>
+                            : sede.esPrincipal
+                              ? <span className="ml-auto text-[10px] text-gray-400 font-normal">Principal</span>
+                              : null}
                         </button>
                       ))}
                     </motion.div>
@@ -599,8 +628,11 @@ export default function AdminLayout() {
                 </div>
               ) : (
                 <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg">
-                  <Icon icon="solar:city-bold-duotone" className="text-violet-600" width={14} />
+                  <Icon icon={sedeActiva.tipo === 'ALMACEN' ? 'solar:box-bold-duotone' : 'solar:city-bold-duotone'} className="text-violet-600" width={14} />
                   <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                  {sedeActiva.tipo === 'ALMACEN' && (
+                    <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Almacén</span>
+                  )}
                 </div>
               )
             })()}

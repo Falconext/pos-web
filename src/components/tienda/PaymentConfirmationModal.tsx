@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { BancoLogo } from '@/components/shared/BancoLogo';
 
 interface PaymentConfirmationModalProps {
     isOpen: boolean;
@@ -19,6 +20,7 @@ interface PaymentConfirmationModalProps {
         yapeNumero?: string;
         plinNumero?: string;
         whatsappTienda?: string;
+        cuentasBancarias?: any[];
     };
     storeSlug: string;
 }
@@ -40,11 +42,12 @@ export default function PaymentConfirmationModal({
     const isDigitalPayment = ['YAPE', 'PLIN', 'TRANSFERENCIA'].includes(orderData.medioPago);
     const isCashPayment = ['EFECTIVO', 'POS'].includes(orderData.medioPago);
     const isCardPayment = orderData.medioPago === 'TARJETA';
+    const isTransfer = orderData.medioPago === 'TRANSFERENCIA';
 
     // Check availability
     const hasYape = !!paymentConfig?.yapeQR || !!paymentConfig?.yapeNumero;
     const hasPlin = !!paymentConfig?.plinQR || !!paymentConfig?.plinNumero;
-    const showTabs = isDigitalPayment && (hasYape || hasPlin);
+    const showTabs = isDigitalPayment && (hasYape || hasPlin) && !isTransfer;
 
     const getQRCode = () => {
         if (activeTab === 'YAPE') return paymentConfig?.yapeQR;
@@ -238,6 +241,37 @@ export default function PaymentConfirmationModal({
                                         </div>
                                     </button>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {isTransfer && paymentConfig?.cuentasBancarias && paymentConfig.cuentasBancarias.length > 0 && (
+                        <div className="mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <h3 className="text-sm font-bold text-gray-900 mb-3">Cuentas Bancarias</h3>
+                            <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                                {paymentConfig.cuentasBancarias.map((cuenta: any) => (
+                                    <div key={cuenta.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 relative group flex gap-4 items-center">
+                                        <BancoLogo banco={cuenta.banco} size={48} />
+                                        <div className="flex flex-col flex-1 pr-8 gap-1">
+                                            <span className="text-sm font-mono text-gray-800 font-bold tracking-tight">{cuenta.numeroCuenta}</span>
+                                            {cuenta.cci && <span className="text-xs text-gray-500">CCI: <span className="font-mono">{cuenta.cci}</span></span>}
+                                            {cuenta.alias && <span className="text-xs text-gray-600 mt-0.5">Titular: <span className="font-bold text-gray-800">{cuenta.alias}</span></span>}
+                                            <div className="flex gap-2 mt-1.5">
+                                                <span className="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-500 font-bold uppercase">{cuenta.tipoCuenta}</span>
+                                                <span className="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-500 font-bold uppercase">{cuenta.moneda}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(cuenta.numeroCuenta);
+                                            }}
+                                            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
+                                            title="Copiar número de cuenta"
+                                        >
+                                            <Icon icon="solar:copy-linear" width={18} />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

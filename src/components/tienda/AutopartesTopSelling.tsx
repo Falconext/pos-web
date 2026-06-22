@@ -3,59 +3,68 @@ import { Icon } from '@iconify/react';
 
 interface Props {
   cp: string;
+  diseno?: any;
 }
 
-export default function AutopartesTopSelling({ cp }: Props) {
+export default function AutopartesTopSelling({ cp, diseno }: Props) {
+  const productImage = diseno?.autopartesProductImageUrl || '/assets/autopartes/producto.png';
   const categories = [
     {
       title: 'Motor y Rendimiento',
       items: [
-        { name: 'Aceites de Motor Racing & Motorsport', img: '/assets/autopartes/producto.png' },
-        { name: 'Motores Turboalimentados', img: '/assets/autopartes/producto.png' },
-        { name: 'Motores de Aspiración Natural', img: '/assets/autopartes/producto.png' },
-        { name: 'Sensor de Presión de Sobrealimentación', img: '/assets/autopartes/producto.png' }
+        { name: 'Aceites de Motor Racing & Motorsport', img: productImage },
+        { name: 'Motores Turboalimentados', img: productImage },
+        { name: 'Motores de Aspiración Natural', img: productImage },
+        { name: 'Sensor de Presión de Sobrealimentación', img: productImage }
       ]
     },
     {
       title: 'Llantas y Ruedas',
       items: [
-        { name: 'Llantas de Verano', img: '/assets/autopartes/producto.png' },
-        { name: 'Llantas de Pista', img: '/assets/autopartes/producto.png' },
-        { name: 'Llantas de Motocicleta', img: '/assets/autopartes/producto.png' },
-        { name: 'Llantas para Camión Ligero', img: '/assets/autopartes/producto.png' }
+        { name: 'Llantas de Verano', img: productImage },
+        { name: 'Llantas de Pista', img: productImage },
+        { name: 'Llantas de Motocicleta', img: productImage },
+        { name: 'Llantas para Camión Ligero', img: productImage }
       ]
     },
     {
       title: 'Sistema Eléctrico y Electrónica',
       items: [
-        { name: 'Reguladores de Voltaje', img: '/assets/autopartes/producto.png' },
-        { name: 'Relés de Gestión de Batería', img: '/assets/autopartes/producto.png' },
-        { name: 'Bujías de Precalentamiento', img: '/assets/autopartes/producto.png' },
-        { name: 'Sensores de Temperatura', img: '/assets/autopartes/producto.png' }
+        { name: 'Reguladores de Voltaje', img: productImage },
+        { name: 'Relés de Gestión de Batería', img: productImage },
+        { name: 'Bujías de Precalentamiento', img: productImage },
+        { name: 'Sensores de Temperatura', img: productImage }
       ]
     }
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-16">
-      
-      <div className="text-center mb-10 flex flex-col items-center">
+    <div className="w-full max-w-7xl mx-auto relative z-10 mb-20">
+      <div className="flex flex-col items-center justify-center text-center mb-10">
         <div className="flex items-center gap-2 mb-2">
           <div className="flex gap-[3px]">
-            <div className="w-3 h-0.5 bg-red-600 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
-            <div className="w-3 h-0.5 bg-red-600 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+            <div className="w-3 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+            <div className="w-3 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
           </div>
-          <span className="text-sm font-bold text-red-600" style={{ color: cp }}>Por Categorías</span>
+          <span className="text-sm font-bold" style={{ color: cp }}>Top Ventas</span>
+          <div className="flex gap-[3px]">
+            <div className="w-3 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+            <div className="w-3 h-0.5 transform -skew-x-[30deg]" style={{ backgroundColor: cp }}></div>
+          </div>
         </div>
-        <h2 className="text-3xl md:text-4xl font-black text-[#0B1340] tracking-tight">
-          Productos Más Vendidos de la Semana
+        
+        <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-3">
+          Productos Más Vendidos
         </h2>
+        <p className="text-sm text-gray-500 max-w-xl">
+          Explora nuestros productos más populares. ¡Equipa tu vehículo con los favoritos!
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center max-w-6xl mx-auto">
         {categories.map((cat, idx) => (
           <div key={idx} className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col">
-            <h3 className="text-lg font-black text-gray-900 mb-6">{cat.title}</h3>
+            <h3 className="text-lg font-black text-gray-900 mb-6 min-h-[56px]">{cat.title}</h3>
             
             <div className="flex flex-col">
               {cat.items.map((item, i) => (

@@ -18,6 +18,8 @@ export interface VentaPanelItem {
     tipo: TipoVenta;
     referencia: string;
     fecha: string;
+    clienteDoc: string;
+    seriesGarantia: string[];
     cliente: string;
     total: number;
     estadoPago: EstadoPago;
@@ -79,15 +81,20 @@ export function usePanelVentasViewModel() {
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<TabVentas>('TODO');
     const [busqueda, setBusqueda] = useState('');
+    const [filtroSerie, setFiltroSerie] = useState('');
+    const [filtroDni, setFiltroDni] = useState('');
     const [filtroRepartidorId, setFiltroRepartidorId] = useState<number | null | undefined>(undefined);
     const [filtroUsuarioId, setFiltroUsuarioId] = useState<number | null>(null);
-    const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const canFilterByUsuario = isAdmin;
+    const esPrincipalAdmin = isAdmin && Boolean(sedeActiva?.esPrincipal);
 
     const cargar = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({ fecha });
-            if (sedeActiva?.id) params.set('sedeId', String(sedeActiva.id));
+            // Admins on the principal sede see all sedes; everyone else filters by their sede
+            if (sedeActiva?.id && !esPrincipalAdmin) params.set('sedeId', String(sedeActiva.id));
             if (canFilterByUsuario && filtroUsuarioId) params.set('usuarioId', String(filtroUsuarioId));
             const { data } = await apiClient.get<any>(`/ventas/panel?${params}`);
             const raw = data?.data?.data ?? data?.data ?? [];
@@ -97,7 +104,7 @@ export function usePanelVentasViewModel() {
         } finally {
             setLoading(false);
         }
-    }, [fecha, sedeActiva?.id, filtroUsuarioId, canFilterByUsuario, alert]);
+    }, [fecha, sedeActiva?.id, esPrincipalAdmin, filtroUsuarioId, canFilterByUsuario, alert]);
 
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -118,6 +125,8 @@ export function usePanelVentasViewModel() {
 
     const filtrados = useMemo(() => {
         const search = busqueda.toLowerCase().trim();
+        const serie = filtroSerie.trim().toUpperCase();
+        const dni = filtroDni.trim();
         let base = items.filter((i) => i.tipo !== 'NOTA_CREDITO');
 
         if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA');
@@ -132,6 +141,9 @@ export function usePanelVentasViewModel() {
             );
         }
 
+        if (serie) base = base.filter((i) => (i.seriesGarantia ?? []).some((s) => s.toUpperCase().includes(serie)));
+        if (dni) base = base.filter((i) => (i.clienteDoc ?? '').includes(dni));
+
         if (search) {
             base = base.filter(
                 (i) =>
@@ -144,7 +156,7 @@ export function usePanelVentasViewModel() {
         }
 
         return base;
-    }, [items, tab, busqueda, filtroRepartidorId]);
+    }, [items, tab, busqueda, filtroSerie, filtroDni, filtroRepartidorId]);
 
     const actualizarEstado = useCallback(async (item: VentaPanelItem, nuevoEstado: string) => {
         try {
@@ -186,9 +198,12 @@ export function usePanelVentasViewModel() {
         loading,
         tab, setTab,
         busqueda, setBusqueda,
+        filtroSerie, setFiltroSerie,
+        filtroDni, setFiltroDni,
         filtroRepartidorId, setFiltroRepartidorId,
         filtroUsuarioId, setFiltroUsuarioId,
         canFilterByUsuario,
+        esPrincipalAdmin,
         repartidoresOpciones,
         countTodo, countVentas, countDespacho, countPorCobrar,
         totalVentas,

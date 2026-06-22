@@ -4,10 +4,13 @@ export interface Auth {
     user: IUser
 }
 
+export type TipoSede = 'PUNTO_DE_VENTA' | 'ALMACEN';
+
 export interface ISede {
     id: number
     nombre: string
     codigo: string | null
+    tipo: TipoSede
     esPrincipal: boolean
     activo: boolean
 }

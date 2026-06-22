@@ -18,6 +18,8 @@ export default function AutopartesTrendingProducts({ cp, slug, productos, diseno
 
   const comunidadTitle = diseno?.comunidadTitle || "Sé parte de nuestra\nComunidad Automotriz";
   const comunidadText = diseno?.comunidadText || "Únete al Club";
+  const comunidadImage = diseno?.autopartesCommunityImageUrl || '/assets/autopartes/comunidad.png';
+  const supportImage = diseno?.autopartesSupportImageUrl || '/assets/autopartes/asistencia.png';
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6 mb-16">
@@ -27,7 +29,7 @@ export default function AutopartesTrendingProducts({ cp, slug, productos, diseno
         {/* Red Banner */}
         <div className="flex-1 bg-red-600 rounded-2xl p-8 relative overflow-hidden text-white flex flex-col group">
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-110 pointer-events-none z-0">
-            <img src="/assets/autopartes/comunidad.png" className="absolute inset-0 w-full h-full object-cover" alt="Comunidad" />
+            <img src={comunidadImage} className="absolute inset-0 w-full h-full object-cover" alt="Comunidad" />
             <div className="absolute inset-0 bg-gradient-to-b from-red-800/90 via-red-800/40 to-transparent"></div>
           </div>
 
@@ -57,7 +59,7 @@ export default function AutopartesTrendingProducts({ cp, slug, productos, diseno
         {/* Black Banner */}
         <div className="flex-1 bg-black rounded-2xl p-8 relative overflow-hidden text-white flex flex-col border border-gray-800 group">
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-110 pointer-events-none z-0">
-            <img src="/assets/autopartes/asistencia.png" className="absolute inset-0 w-full h-full object-cover" alt="Support" />
+            <img src={supportImage} className="absolute inset-0 w-full h-full object-cover" alt="Asistencia" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-transparent"></div>
           </div>
 

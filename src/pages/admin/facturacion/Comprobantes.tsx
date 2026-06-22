@@ -411,13 +411,14 @@ const Comprobantes = () => {
         setIsOpenModalPagoParcial(true);
     };
 
-    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string) => {
+    const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string, cuentaBancariaId?: number) => {
         const payment = {
             tipo: 'PAGO_PARCIAL' as PaymentType,
             monto,
             medioPago: medioPago as any,
             observacion,
             referencia,
+            cuentaBancariaId,
         };
 
         // Tomamos datos del comprobante desde formValues (seleccionado del row)
@@ -426,6 +427,7 @@ const Comprobantes = () => {
             serie: formValues.serie,
             correlativo: formValues.correlativo,
             client: formValues.client,
+            cuentaBancariaId,
         };
 
         const result = await paymentFlow.processPayment(
@@ -438,7 +440,7 @@ const Comprobantes = () => {
                 mtoImpVenta: parseFloat((formValues?.total || '').toString().replace('S/ ', '') || '0'),
                 saldo: parseFloat((formValues?.saldo || '').toString().replace('S/ ', '') || '0') || undefined,
             },
-            async (_comprobante: any, _medioPago: string, _monto: number, _observacion?: string, _referencia?: string) => {
+            async (_comprobante: any, _medioPago: string, _monto: number, _observacion?: string, _referencia?: string, _cuentaBancariaId?: number) => {
                 // Reutiliza completePay del store (acepta monto opcional)
                 return await completePay(pagoData, medioPago, monto);
             }
@@ -645,7 +647,7 @@ const Comprobantes = () => {
             />
             </div>
 
-            <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
+        <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
                 <div>
@@ -665,7 +667,6 @@ const Comprobantes = () => {
                 </button>
             </div>
 
-            {/* Main Content Card */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Filters Section */}
                 <div className="p-5 border-b border-gray-100 dark:border-slate-800">
@@ -673,11 +674,13 @@ const Comprobantes = () => {
                         <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
                         <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-25 lg:grid-cols-5 gap-4">
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="">
+                            <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
+                        </div>
                         <div>
                             <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
-                        </div>
+                        </div>      
                         <div>
                             <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
                         </div>

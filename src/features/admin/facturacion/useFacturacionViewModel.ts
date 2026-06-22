@@ -59,6 +59,17 @@ type EnvioDespachoFormData = {
     montoCOD?: number;
 };
 
+export type PaymentLine = {
+    method: string;
+    amount: number;
+    referencia?: string;
+    cuentaBancariaId?: number | null;
+    cuentaBancariaLabel?: string;
+    tarjetaMarca?: string;
+    tarjetaTipo?: string;
+    tarjetaUltimos4?: string;
+};
+
 const cleanText = (value?: string) => String(value ?? '').trim();
 
 const esServicioTecnico = (item: any) =>
@@ -182,6 +193,8 @@ export const useFacturacionViewModel = () => {
     // Tracks the comprobante type that was pre-filled from a Nota de Venta conversion.
     // Prevents the auto-reset effect from overwriting the NV client while on that comprobante type.
     const fromNVComprobanteRef = useRef<string | null>(null);
+    const clientsRef = useRef(clients);
+    useEffect(() => { clientsRef.current = clients; }, [clients]);
 
     const _stateDefaultType = (location.state as any)?.defaultType as string | undefined;
     const _tipoDocInitMap: Record<string, string> = {
@@ -202,7 +215,16 @@ export const useFacturacionViewModel = () => {
 
     const [paymentMethod, setPaymentMethod] = useState<string>('Efectivo');
     const [isMixedPayment, setIsMixedPayment] = useState<boolean>(false);
-    const [splitPayments, setSplitPayments] = useState<{ method: string; amount: number }[]>([
+    const [paymentDetail, setPaymentDetail] = useState<PaymentLine>({
+        method: 'Efectivo',
+        amount: 0,
+        referencia: '',
+        cuentaBancariaId: null,
+        tarjetaMarca: '',
+        tarjetaTipo: 'Débito',
+        tarjetaUltimos4: '',
+    });
+    const [splitPayments, setSplitPayments] = useState<PaymentLine[]>([
         { method: 'Efectivo', amount: 0 },
         { method: 'Yape', amount: 0 },
     ]);
@@ -296,6 +318,8 @@ export const useFacturacionViewModel = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [descountGlobal, _setDescountGlobal] = useState<number>(0)
     const [descuentoPctNV, setDescuentoPctNV] = useState<number>(0)
+    const [descuentoSolesNV, setDescuentoSolesNV] = useState<number>(0)
+    const [descuentoModoNV, setDescuentoModoNV] = useState<'PCT' | 'SOLES'>('SOLES')
     const [fechaVencimientoCredito, setFechaVencimientoCredito] = useState<string>('')
     const [errors, setErrors] = useState({ observaciones: "" });
     const [errorsProduct, setErrorsProduct] = useState({ codigo: "", descripcion: "", categoriaId: 0, description: "", precioUnitario: "", stock: "", unidadMedida: "" });
@@ -368,6 +392,12 @@ export const useFacturacionViewModel = () => {
         };
         loadMasters();
     }, [formValues.comprobante]);
+
+    useEffect(() => {
+        setDescuentoPctNV(0);
+        setDescuentoSolesNV(0);
+        setDescuentoModoNV('SOLES');
+    }, [formValues.tipoDoc]);
 
     // Pagination calculations
     const totalPages = Math.ceil((totalProducts || 0) / limit);
@@ -788,13 +818,17 @@ export const useFacturacionViewModel = () => {
 
             if (fromNVComprobanteRef.current === null) {
                 if (LABELS_CLIENTES_VARIOS.includes(formValues?.comprobante)) {
-                    const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
-                    if (clientSelect) {
-                        setSelectedClient(clientSelect)
-                        setFormValues(prev => ({ ...prev, clienteId: Number(clientSelect.id) || 0, clienteNombre: "CLIENTES VARIOS" }))
-                    } else {
-                        setSelectedClient({ nroDoc: "10000000", nombre: "CLIENTES VARIOS" })
-                        setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "CLIENTES VARIOS" }))
+                    const clienteActual = formValues.clienteNombre?.trim() ?? "";
+                    const tieneClienteEspecifico = clienteActual !== "" && clienteActual !== "CLIENTES VARIOS";
+                    if (!tieneClienteEspecifico) {
+                        const clientSelect: any = clientsRef.current?.find((item: any) => "10000000" === item.nroDoc);
+                        if (clientSelect) {
+                            setSelectedClient(clientSelect)
+                            setFormValues(prev => ({ ...prev, clienteId: Number(clientSelect.id) || 0, clienteNombre: "CLIENTES VARIOS" }))
+                        } else {
+                            setSelectedClient({ nroDoc: "10000000", nombre: "CLIENTES VARIOS" })
+                            setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "CLIENTES VARIOS" }))
+                        }
                     }
                 } else if (formValues?.comprobante === "FACTURA") {
                     setFormValues(prev => ({ ...prev, clienteId: 0, clienteNombre: "" }))
@@ -802,7 +836,7 @@ export const useFacturacionViewModel = () => {
                 }
             }
         }
-    }, [formValues.comprobante, receiptNoteId, tiposOperacion, clients]);
+    }, [formValues.comprobante, receiptNoteId, tiposOperacion]);
 
     let comprobantesGenerar = isQuotationRoute
         ? tiposCotizacion
@@ -1340,7 +1374,13 @@ export const useFacturacionViewModel = () => {
     const esInformal = tiposInformales.includes(formValues.tipoDoc);
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
-    const montoDescuentoNV = esInformal && descuentoPctNV > 0 ? parseFloat((totalOriginal * descuentoPctNV / 100).toFixed(2)) : 0;
+    const montoDescuentoNV = esInformal
+        ? descuentoModoNV === 'SOLES'
+            ? Math.min(descuentoSolesNV, totalOriginal)
+            : descuentoPctNV > 0
+                ? parseFloat((totalOriginal * descuentoPctNV / 100).toFixed(2))
+                : 0
+        : 0;
     const totalAdjusted = isDiscountGlobalApplicable
         ? Math.max(totalOriginal - descountGlobal, 0)
         : Math.max(totalOriginal - montoDescuentoNV, 0);
@@ -1353,6 +1393,61 @@ export const useFacturacionViewModel = () => {
             ? Number(pay.toFixed(2))
             : Number(totalAdjusted.toFixed(2));
     const vueltoCalculado = Number(Math.max(0, montoRecibido - totalAdjusted).toFixed(2));
+    const buildPaymentDetails = () => {
+        const normalizeLine = (line: PaymentLine): PaymentLine => {
+            const method = normalizePaymentMethod(line.method);
+            const isTarjeta = method === 'TARJETA';
+            return {
+                method,
+                amount: Number(line.amount || 0),
+                referencia: cleanText(line.referencia) || undefined,
+                cuentaBancariaId: line.cuentaBancariaId ? Number(line.cuentaBancariaId) : null,
+                cuentaBancariaLabel: cleanText(line.cuentaBancariaLabel) || undefined,
+                tarjetaMarca: isTarjeta ? (cleanText(line.tarjetaMarca) || undefined) : undefined,
+                tarjetaTipo: isTarjeta ? (cleanText(line.tarjetaTipo) || undefined) : undefined,
+                tarjetaUltimos4: isTarjeta ? (cleanText(line.tarjetaUltimos4).replace(/\D/g, '').slice(-4) || undefined) : undefined,
+            };
+        };
+
+        if (isMixedPayment) {
+            return {
+                mode: 'MIXTO',
+                splitPayments: splitPayments
+                    .map(normalizeLine)
+                    .filter((line) => Number(line.amount || 0) > 0),
+            };
+        }
+
+        return {
+            mode: 'SIMPLE',
+            ...normalizeLine({
+                ...paymentDetail,
+                method: paymentMethod,
+                amount: montoRecibido,
+            }),
+        };
+    };
+
+    const validatePaymentDetails = () => {
+        if (isQuotationRoute || formValues.medioPago === 'Crédito') return true;
+        const requiresReference = (method?: string) => ['TRANSFERENCIA', 'TARJETA'].includes(normalizePaymentMethod(method));
+        const requiresAccount = (method?: string) => normalizePaymentMethod(method) === 'TRANSFERENCIA';
+        const details = buildPaymentDetails();
+        const lines: PaymentLine[] = details.mode === 'MIXTO' ? details.splitPayments : [details as PaymentLine];
+
+        for (const line of lines) {
+            if (Number(line.amount || 0) <= 0) continue;
+            if (requiresReference(line.method) && !cleanText(line.referencia)) {
+                useAlertStore.getState().alert(`Ingresa el número de operación/voucher para ${line.method}.`, "error");
+                return false;
+            }
+            if (requiresAccount(line.method) && !line.cuentaBancariaId) {
+                useAlertStore.getState().alert("Selecciona la cuenta bancaria donde ingresó la transferencia.", "error");
+                return false;
+            }
+        }
+        return true;
+    };
 
     useEffect(() => {
         if (porcentajeDetraccion > 0 && totalAdjusted > 0) {
@@ -1410,6 +1505,7 @@ export const useFacturacionViewModel = () => {
         if (productsInvoice.length === 0) {
             return useAlertStore.getState().alert("Debe agregar al menos un producto", "error")
         }
+        if (!validatePaymentDetails()) return;
 
         // Farmacia: bloquear emisión si hay ítems con receta pendiente
         if (isFarmaciaRetail) {
@@ -1482,6 +1578,7 @@ export const useFacturacionViewModel = () => {
         const effectiveMedioPago = isMixedPayment
             ? 'MIXTO'
             : paymentMethod;
+        const paymentDetails = buildPaymentDetails();
 
         const esDocumentoInformal = tiposInformales.includes(formValues.tipoDoc);
         const aplicacionMontoEnvio =
@@ -1493,6 +1590,8 @@ export const useFacturacionViewModel = () => {
             tipoOperacionId: formValues.tipoOperacionId || 1,
             fechaEmision,
             medioPago: effectiveMedioPago,
+            paymentDetails,
+            splitPayments: isMixedPayment ? paymentDetails.splitPayments : undefined,
             ...(origenComprobanteId != null ? { comprobanteOrigenId: origenComprobanteId } : {}),
             vuelto: vueltoCalculado,
             clienteId: Number(formValues?.clienteId) || invoiceData?.cliente?.id,
@@ -1529,6 +1628,7 @@ export const useFacturacionViewModel = () => {
             formaPagoMoneda: "PEN",
             tipoMoneda: "PEN",
             descuento: finalDiscount,
+            ...(esInformal && montoDescuentoNV > 0 ? { montoDescuentoGlobal: montoDescuentoNV } : {}),
             leyenda: totalInWords,
             observaciones: observacionesFinal,
             ...(formValues.medioPago === 'Crédito' && fechaVencimientoCredito ? { fechaVencimientoCredito } : {}),
@@ -1780,6 +1880,8 @@ export const useFacturacionViewModel = () => {
         // Form & Selections
         formValues, setFormValues,
         paymentMethod, setPaymentMethod,
+        paymentDetail, setPaymentDetail,
+        buildPaymentDetails,
         isMixedPayment, setIsMixedPayment,
         splitPayments, setSplitPayments,
         adelanto, setAdelanto,
@@ -1840,6 +1942,8 @@ export const useFacturacionViewModel = () => {
         envioData, setEnvioData,
         // Descuento % y condición de pago para informales
         descuentoPctNV, setDescuentoPctNV,
+        descuentoSolesNV, setDescuentoSolesNV,
+        descuentoModoNV, setDescuentoModoNV,
         fechaVencimientoCredito, setFechaVencimientoCredito,
         esInformal,
 

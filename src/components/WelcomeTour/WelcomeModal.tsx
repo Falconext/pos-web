@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import { BRAND } from '@/lib/branding';
 import { IUser } from '@/interfaces/auth';
@@ -23,10 +24,10 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ user, onStartTour, o
     const firstName = user.nombre?.split(' ')[0] || 'bienvenido';
     const empresaNombre = user.empresa?.nombre || BRAND.name;
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+            className="fixed inset-0 z-[999999] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.55)' }}
         >
             <div
                 className="relative w-full max-w-[560px] rounded-2xl shadow-2xl overflow-hidden
@@ -148,6 +149,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ user, onStartTour, o
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

@@ -4,6 +4,7 @@ import Button from './Button';
 import { Icon } from '@iconify/react';
 import { PaymentType, PaymentMethod } from '@/hooks/usePaymentFlow';
 import useEscapeKey from '@/hooks/useEscapeKey';
+import { useCuentasBancariasStore } from '@/zustand/cuentasBancarias';
 
 interface ModalPaymentUnifiedProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ interface ModalPaymentUnifiedProps {
     cliente: string;
     total: number;
   };
-  onConfirm: (monto: number, medioPago: PaymentMethod, observacion?: string, referencia?: string) => void;
+  onConfirm: (monto: number, medioPago: PaymentMethod, observacion?: string, referencia?: string, cuentaBancariaId?: number) => void;
   onCancel: () => void;
   error?: string;
 }
@@ -49,43 +50,40 @@ const ModalPaymentUnified = ({
   const [vuelto, setVuelto] = useState<number>(0);
   const [observacion, setObservacion] = useState<string>('');
   const [referencia, setReferencia] = useState<string>('');
+  const [cuentaBancariaId, setCuentaBancariaId] = useState<number | undefined>(undefined);
+
+  const { cuentas, listar } = useCuentasBancariasStore();
+
+  useEffect(() => {
+    if (isOpen && cuentas.length === 0) {
+      listar();
+    }
+  }, [isOpen, cuentas.length, listar]);
+
+  const cuentasActivas = cuentas.filter((c) => c.activo);
 
   const getDefaultMonto = () => {
     switch (paymentType) {
-      case 'ADELANTO':
-        return 0;
-      case 'PAGO_TOTAL':
-        return saldoPendiente;
-      case 'PAGO_PARCIAL':
-        return saldoPendiente;
-      default:
-        return saldoPendiente;
+      case 'ADELANTO': return 0;
+      default: return saldoPendiente;
     }
   };
 
   const getModalTitle = () => {
     switch (paymentType) {
-      case 'ADELANTO':
-        return 'Registrar Adelanto';
-      case 'PAGO_TOTAL':
-        return 'Pago Total';
-      case 'PAGO_PARCIAL':
-        return 'Registrar Pago Parcial';
-      default:
-        return 'Registrar Pago';
+      case 'ADELANTO': return 'Registrar Adelanto';
+      case 'PAGO_TOTAL': return 'Pago Total';
+      case 'PAGO_PARCIAL': return 'Registrar Pago Parcial';
+      default: return 'Registrar Pago';
     }
   };
 
   const getSubtitle = () => {
     switch (paymentType) {
-      case 'ADELANTO':
-        return `Adelanto máximo: S/ ${totalComprobante.toFixed(2)}`;
-      case 'PAGO_TOTAL':
-        return `Pago total del comprobante`;
-      case 'PAGO_PARCIAL':
-        return `Saldo pendiente: S/ ${saldoPendiente.toFixed(2)}`;
-      default:
-        return '';
+      case 'ADELANTO': return `Adelanto máximo: S/ ${totalComprobante.toFixed(2)}`;
+      case 'PAGO_TOTAL': return `Pago total del comprobante`;
+      case 'PAGO_PARCIAL': return `Saldo pendiente: S/ ${saldoPendiente.toFixed(2)}`;
+      default: return '';
     }
   };
 
@@ -97,8 +95,19 @@ const ModalPaymentUnified = ({
       setVuelto(0);
       setObservacion('');
       setReferencia('');
+      setCuentaBancariaId(undefined);
     }
   }, [isOpen, paymentType, saldoPendiente]);
+
+  // Auto-seleccionar primera cuenta bancaria al cambiar a Transferencia
+  useEffect(() => {
+    if (medioPago === 'Transferencia' && cuentasActivas.length > 0 && !cuentaBancariaId) {
+      setCuentaBancariaId(cuentasActivas[0].id);
+    }
+    if (medioPago !== 'Transferencia') {
+      setCuentaBancariaId(undefined);
+    }
+  }, [medioPago, cuentasActivas.length]);
 
   const handleMontoChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -119,20 +128,13 @@ const ModalPaymentUnified = ({
   };
 
   const handleConfirm = () => {
-    if (monto <= 0) {
-      setError('El monto debe ser mayor a 0');
-      return;
-    }
-    if (error) {
-      return;
-    }
-    onConfirm(monto, medioPago, observacion, referencia);
+    if (monto <= 0) { setError('El monto debe ser mayor a 0'); return; }
+    if (error) return;
+    onConfirm(monto, medioPago, observacion, referencia, cuentaBancariaId);
   };
 
   const handleClose = useCallback(() => {
-    if (isOpen) {
-      onCancel();
-    }
+    if (isOpen) onCancel();
   }, [isOpen, onCancel]);
 
   useEscapeKey(() => handleClose(), isOpen);
@@ -153,15 +155,9 @@ const ModalPaymentUnified = ({
         </div>
 
         <div className="bg-gray-50 p-3 rounded-lg mb-4 text-sm">
-          <p className="text-gray-600">
-            <span className="font-semibold">Comprobante:</span> {comprobanteInfo.serie}-{comprobanteInfo.correlativo}
-          </p>
-          <p className="text-gray-600">
-            <span className="font-semibold">Cliente:</span> {comprobanteInfo.cliente}
-          </p>
-          <p className="text-gray-600">
-            <span className="font-semibold">Total:</span> S/ {comprobanteInfo.total.toFixed(2)}
-          </p>
+          <p className="text-gray-600"><span className="font-semibold">Comprobante:</span> {comprobanteInfo.serie}-{comprobanteInfo.correlativo}</p>
+          <p className="text-gray-600"><span className="font-semibold">Cliente:</span> {comprobanteInfo.cliente}</p>
+          <p className="text-gray-600"><span className="font-semibold">Total:</span> S/ {comprobanteInfo.total.toFixed(2)}</p>
           {paymentType !== 'ADELANTO' && (
             <p className="text-gray-800 font-semibold mt-2">
               <span className="text-orange-600">Saldo Pendiente:</span> S/ {saldoPendiente.toFixed(2)}
@@ -184,9 +180,7 @@ const ModalPaymentUnified = ({
 
         {vuelto > 0 && paymentType !== 'ADELANTO' && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-800">
-              <span className="font-semibold">Vuelto:</span> S/ {vuelto.toFixed(2)}
-            </p>
+            <p className="text-sm text-green-800"><span className="font-semibold">Vuelto:</span> S/ {vuelto.toFixed(2)}</p>
           </div>
         )}
 
@@ -211,6 +205,33 @@ const ModalPaymentUnified = ({
           </div>
         </div>
 
+        {/* Cuenta bancaria destino — solo para Transferencia */}
+        {medioPago === 'Transferencia' && (
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Cuenta destino
+            </label>
+            {cuentasActivas.length === 0 ? (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                No hay cuentas bancarias registradas. Agrégalas en <strong>Mi Negocio → Cuentas Bancarias</strong>.
+              </p>
+            ) : (
+              <select
+                value={cuentaBancariaId ?? ''}
+                onChange={(e) => setCuentaBancariaId(e.target.value ? Number(e.target.value) : undefined)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">Sin especificar</option>
+                {cuentasActivas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.alias || c.banco} — {c.numeroCuenta} ({c.moneda})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
         {/* Observación */}
         <div className="mb-4">
           <InputPro
@@ -224,12 +245,12 @@ const ModalPaymentUnified = ({
           />
         </div>
 
-        {/* Referencia/Operación (solo para Transferencia y Tarjeta) */}
+        {/* Referencia/Operación */}
         {(medioPago === 'Transferencia' || medioPago === 'Tarjeta') && (
           <div className="mb-4">
             <InputPro
               type="text"
-              label={medioPago === 'Tarjeta' ? 'Número de Operación' : 'Referencia/Código'}
+              label={medioPago === 'Tarjeta' ? 'Número de Operación' : 'N° Operación / Referencia'}
               name="referencia"
               value={referencia}
               onChange={(e: any) => setReferencia(e.target.value)}

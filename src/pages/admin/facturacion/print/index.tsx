@@ -230,15 +230,19 @@ const PrintPDF = ({
     const totalDescuentos = Number(
         formValues?.totalDescuentos ??
         formValues?.mtoDescuentos ??
+        formValues?.mtoDescuentoGlobal ??
+        discount ??
         (totalPrices > totalReceipt ? totalPrices - totalReceipt : 0)
     );
-    const mtoOperGravadas = Number(formValues?.mtoOperGravadas ?? (totalReceipt / 1.18));
+    const explicitDiscount = Number(formValues?.mtoDescuentoGlobal ?? formValues?.totalDescuentos ?? discount ?? 0) || 0;
+    const netTotalFallback = Math.max(0, totalReceipt - explicitDiscount);
+    const mtoOperGravadas = Number(formValues?.mtoOperGravadas ?? (netTotalFallback / 1.18));
     const mtoOperGratuitas = Number(formValues?.mtoOperGratuitas ?? 0);
     const mtoOperInafectas = Number(formValues?.mtoOperInafectas ?? 0);
     const mtoOperExoneradas = Number(formValues?.mtoOperExoneradas ?? 0);
     const mtoIcbper = Number(formValues?.icbper ?? formValues?.mtoIcbper ?? 0);
-    const mtoIgv = Number(formValues?.mtoIGV ?? (totalReceipt - (totalReceipt / 1.18)));
-    const mtoImpVenta = Number(formValues?.mtoImpVenta ?? totalReceipt);
+    const mtoIgv = Number(formValues?.mtoIGV ?? (netTotalFallback - (netTotalFallback / 1.18)));
+    const mtoImpVenta = Number(formValues?.mtoImpVenta ?? netTotalFallback);
     const formatCantidad = (value: any): string => {
         const cantidad = Number(value || 0);
         if (!Number.isFinite(cantidad)) return '0';
@@ -250,6 +254,22 @@ const PrintPDF = ({
         ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + Number(sp.amount || 0), 0)
         : 0;
     const displayPagado = splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto;
+    const paymentDetails = formValues?.paymentDetails || {};
+    const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
+        ? paymentDetails.splitPayments
+        : (Array.isArray(formValues?.splitPayments) ? formValues.splitPayments : []);
+    const singlePaymentDetail = paymentDetails?.mode === 'SIMPLE' ? paymentDetails : { method: formValues?.medioPago, amount: mtoImpVenta };
+    const formatPaymentExtra = (payment: any) => {
+        const extras: string[] = [];
+        if (payment?.cuentaBancariaLabel) extras.push(`Cuenta: ${payment.cuentaBancariaLabel}`);
+        if (payment?.referencia) extras.push(`Op/Voucher: ${payment.referencia}`);
+        const method = (payment?.method || '').toUpperCase();
+        if (method === 'TARJETA') {
+            const tarjeta = [payment?.tarjetaMarca, payment?.tarjetaTipo, payment?.tarjetaUltimos4 ? `****${payment.tarjetaUltimos4}` : ''].filter(Boolean).join(' ');
+            if (tarjeta) extras.push(`Tarjeta: ${tarjeta}`);
+        }
+        return extras;
+    };
     const vendedorNombre = (formValues?.vendedor || company?.nombre || 'ADMIN').toString().toUpperCase();
     const empresaNumero = (
         company?.empresa?.celular ||
@@ -332,7 +352,7 @@ const PrintPDF = ({
                                         {receipt === "NOTA DE DEBITO" && (
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>MEDIO PAGO:</Text>
-                                                <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
+                                                <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
                                             </View>
                                         )}
                                         <View style={styles.infoRow}>
@@ -372,18 +392,31 @@ const PrintPDF = ({
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>MEDIOS PAGO:</Text>
                                         </View>
-                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
-                                            <View key={idx} style={[styles.infoRow, { paddingLeft: 4 }]}>
-                                                <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
-                                                <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
-                                            </View>
-                                        ))}
+                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                            const detail = splitPaymentDetails[idx] || sp;
+                                            return (
+                                                <View key={idx}>
+                                                    <View style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                        <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
+                                                        <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                    </View>
+                                                    {formatPaymentExtra(detail).map((line) => (
+                                                        <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
+                                                    ))}
+                                                </View>
+                                            );
+                                        })}
                                     </>
                                 ) : (
-                                    <View style={styles.infoRow}>
-                                        <Text style={styles.label}>MEDIO PAGO:</Text>
-                                        <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
-                                    </View>
+                                    <>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>MEDIO PAGO:</Text>
+                                            <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                        </View>
+                                        {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                            <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
+                                        ))}
+                                    </>
                                 )}
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>VUELTO:</Text>
@@ -403,10 +436,10 @@ const PrintPDF = ({
                                 {(discount && Number(discount) > 0) && (
                                     <View style={styles.infoRow}>
                                         <Text style={styles.label}>DESCUENTO:</Text>
-                                        <Text style={styles.value}>S/ {discount}</Text>
+                                        <Text style={styles.value}>- S/ {round2(totalDescuentos).toFixed(2)}</Text>
                                     </View>
                                 )}
-                                {totalReceipt < totalPrices && (
+                                {!explicitDiscount && totalReceipt < totalPrices && (
                                     <View style={styles.infoRow}>
                                         <Text style={styles.label}>DESCUENTO:</Text>
                                         <Text style={styles.value}>S/ {(totalPrices - totalReceipt).toFixed(2)}</Text>
@@ -538,7 +571,7 @@ const PrintPDF = ({
                                             {receipt === "NOTA DE DEBITO" && (
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
+                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
                                                 </View>
                                             )}
                                             <View style={styles.infoRow}>
@@ -561,18 +594,31 @@ const PrintPDF = ({
                                                     <View style={styles.infoRow}>
                                                         <Text style={styles.label}>MEDIOS DE PAGO</Text>
                                                     </View>
-                                                    {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => (
-                                                        <View key={idx} style={[styles.infoRow, { paddingLeft: 4 }]}>
-                                                            <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
-                                                            <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
-                                                        </View>
-                                                    ))}
+                                                    {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                        const detail = splitPaymentDetails[idx] || sp;
+                                                        return (
+                                                            <View key={idx}>
+                                                                <View style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                                    <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
+                                                                    <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                                </View>
+                                                                {formatPaymentExtra(detail).map((line) => (
+                                                                    <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
+                                                                ))}
+                                                            </View>
+                                                        );
+                                                    })}
                                                 </>
                                             ) : (
-                                                <View style={styles.infoRow}>
-                                                    <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(totalPrices).toFixed(2)}</Text>
-                                                </View>
+                                                <>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.label}>MEDIO DE PAGO</Text>
+                                                        <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                    </View>
+                                                    {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                        <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
+                                                    ))}
+                                                </>
                                             )}
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>VUELTO</Text>
@@ -656,10 +702,10 @@ const PrintPDF = ({
                                     {(discount && Number(discount) > 0) && (
                                         <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                             <Text style={styles.label}>DESCUENTO:</Text>
-                                            <Text style={styles.value}>S/ {discount}</Text>
+                                            <Text style={styles.value}>- S/ {round2(totalDescuentos).toFixed(2)}</Text>
                                         </View>
                                     )}
-                                    {totalReceipt < totalPrices && (
+                                    {!explicitDiscount && totalReceipt < totalPrices && (
                                         <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                             <Text style={styles.label}>DESCUENTO:</Text>
                                             <Text style={styles.value}>S/ {(totalPrices - totalReceipt).toFixed(2)}</Text>
@@ -669,17 +715,17 @@ const PrintPDF = ({
                                         <>
                                             <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                                 <Text style={styles.label}>OP. GRAVADA:</Text>
-                                                <Text style={styles.value}>S/ {round2(Number(total) / 1.18).toFixed(2)}</Text>
+                                                <Text style={styles.value}>S/ {round2(mtoOperGravadas).toFixed(2)}</Text>
                                             </View>
                                             <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                                 <Text style={styles.label}>IGV:</Text>
-                                                <Text style={styles.value}>S/ {round2(Number(total) - round2(Number(total) / 1.18)).toFixed(2)}</Text>
+                                                <Text style={styles.value}>S/ {round2(mtoIgv).toFixed(2)}</Text>
                                             </View>
                                         </>
                                     )}
                                     <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                         <Text style={styles.label}>IMPORTE TOTAL:</Text>
-                                        <Text style={styles.value}>S/ {round2(Number(total)).toFixed(2)}</Text>
+                                        <Text style={styles.value}>S/ {round2(mtoImpVenta).toFixed(2)}</Text>
                                     </View>
                                 </View>
                             </View>

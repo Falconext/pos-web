@@ -41,7 +41,10 @@ const apiClient = axios.create({
 
 // Request interceptor: inject access token
 apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('ACCESS_TOKEN')
+  const url = String(config.url || '')
+  const token = url.includes('auth/select-sede')
+    ? localStorage.getItem('PENDING_SEDE_TOKEN') || localStorage.getItem('ACCESS_TOKEN')
+    : localStorage.getItem('ACCESS_TOKEN')
   const isFormData =
     typeof FormData !== 'undefined' &&
     config.data instanceof FormData

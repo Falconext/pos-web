@@ -18,6 +18,7 @@ import TableSkeleton from '@/components/Skeletons/table';
 import { useProductsViewModel } from './useProductsViewModel';
 import { get } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
+import ModalPreviewCatalogo from '../shared/ModalPreviewCatalogo';
 
 export default function ProductsView() {
     const vm = useProductsViewModel();
@@ -53,6 +54,7 @@ export default function ProductsView() {
     };
 
     const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
+    const [isOpenModalPreviewCatalogo, setIsOpenModalPreviewCatalogo] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -119,18 +121,22 @@ export default function ProductsView() {
             const costoTotalFijo = stock * costoFijoUnitario;
             const margen = precio > 0 && costo > 0 ? ((precio - costo) / precio * 100) : 0;
             const gananciaUnidad = precio - costo;
+            const imageSrc = (item as any)?.imagenUrlDisplay || (item as any)?.imagenUrl;
 
             const allData: any = {
                 productoId: item?.id,
-                'Img': ((item as any)?.imagenUrlDisplay || (item as any)?.imagenUrl) ? (
+                'Img': imageSrc ? (
                     <div className="h-[43px] w-[43px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden flex items-center justify-center p-1">
                         <img
-                            src={(item as any).imagenUrlDisplay || (item as any).imagenUrl}
+                            key={imageSrc}
+                            src={imageSrc}
                             alt={item?.descripcion}
                             className="h-full w-full object-contain"
                             onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement?.classList.add('bg-gray-50');
+                                const target = e.currentTarget;
+                                target.onerror = null; // Prevent infinite loop
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSIjOWNhM2FmIiBkPSJNMjEgMTlWMWMwLS41NS0uNDUtMS0xLTFIM2MtLjU1IDAtMSAuNDUtMSAxdjE4YzAgLjU1LjQ1IDEgMWgxN2MuNTUgMCAxLS40NSAxLTF6TTguNSAxMy41bDIuNSAzLjAxTDE0LjUgMTJsNC41IDZIM2w1LjUtNy41eiIvPjwvc3ZnPg==';
+                                target.className = "h-6 w-6 object-contain opacity-50";
                             }}
                         />
                     </div>
@@ -427,8 +433,11 @@ export default function ProductsView() {
                                         </div>
                                     )}
                                 </div>
+                                <Button color="default" onClick={() => setIsOpenModalPreviewCatalogo(true)} className="text-sm !bg-blue-600 !text-white border-none shadow-sm shadow-blue-200/50">
+                                    <Icon icon="solar:shop-bold" className="mr-1.5 !text-white" /> Catálogo PDF
+                                </Button>
                                 <Button color="default" onClick={() => actions.setIsOpenModalCatalog(true)} className="text-sm !bg-slate-500 !text-white border-none shadow-sm shadow-slate-200/50">
-                                    <Icon icon="solar:cloud-download-bold" className="mr-1.5 !text-white" /> Catálogo
+                                    <Icon icon="solar:magic-stick-3-bold" className="mr-1.5 !text-white" /> Autocompletar
                                 </Button>
                             </div>
                         </div>
@@ -522,6 +531,11 @@ export default function ProductsView() {
                 confirmSubmit={actions.confirmDeleteProduct}
                 title={vm.labels.eliminar}
                 information={vm.labels.eliminarInfo}
+            />
+
+            <ModalPreviewCatalogo 
+                isOpen={isOpenModalPreviewCatalogo} 
+                onClose={() => setIsOpenModalPreviewCatalogo(false)} 
             />
 
         </div>

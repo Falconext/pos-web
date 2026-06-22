@@ -17,12 +17,25 @@ const SedesIndex = () => {
 
     const tableData = vm.sedes.map(sede => {
         const isActivo = (sede as any).activo !== false;
+        const esAlmacen = sede.tipo === 'ALMACEN';
         return {
             id: sede.id,
             nombre: sede.nombre,
             direccion: sede.direccion || '-',
-            codigo: (sede as any).codigo || '-',
-            tipo: sede.esPrincipal ? 'Principal' : 'Secundaria',
+            codigo: sede.codigo || '-',
+            'Tipo': (
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    esAlmacen
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                }`}>
+                    <Icon icon={esAlmacen ? 'solar:box-bold-duotone' : 'solar:shop-bold-duotone'} width={12} />
+                    {esAlmacen ? 'Almacén' : 'Punto de Venta'}
+                    {sede.esPrincipal && !esAlmacen && (
+                        <span className="ml-1 text-[9px] font-bold text-amber-600 bg-amber-100 px-1 py-0.5 rounded-full uppercase">Principal</span>
+                    )}
+                </span>
+            ),
             'Estado': (
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     isActivo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
@@ -60,7 +73,7 @@ const SedesIndex = () => {
                 {tableData.length > 0 ? (
                     <DataTable actions={actions} bodyData={tableData} headerColumns={[
                         { label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' },
-                        { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'tipo' },
+                        { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'Tipo' },
                         { label: 'Estado', key: 'Estado' },
                     ]} />
                 ) : <div className="text-center py-12 text-gray-500 dark:text-gray-400">No hay sedes registradas.</div>}

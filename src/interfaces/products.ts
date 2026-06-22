@@ -118,4 +118,5 @@ export type IFormProduct = {
   opcionesAtributos?: any
   valoresAtributos?: any
   productoPadreId?: number | null
+  variantesConfig?: any[]
 }

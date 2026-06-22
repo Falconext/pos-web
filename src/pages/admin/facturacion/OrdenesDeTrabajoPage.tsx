@@ -98,12 +98,12 @@ const OrdenesDeTrabajoPage = () => {
   const handlePagoParcial = (data: any) => handleInitiatePayment(data, 'PAGO_PARCIAL');
   const handlePagoTotal = (data: any) => handleInitiatePayment(data, 'PAGO_TOTAL');
 
-  const handleConfirmPago = async (monto: number, medioPago: string) => {
+  const handleConfirmPago = async (monto: number, medioPago: string, observacion?: string, referencia?: string, cuentaBancariaId?: number) => {
     try {
       const result = await paymentFlow.processPayment(
-        { tipo: paymentType, monto, medioPago: medioPago as any },
+        { tipo: paymentType, monto, medioPago: medioPago as any, observacion, referencia, cuentaBancariaId },
         formValues,
-        (data, medioPago, monto) => completePay(data, medioPago, monto)
+        (data, medioPago, monto, _obs, _ref, _cbId) => completePay(data, medioPago, monto)
       );
 
       if (result.success) {

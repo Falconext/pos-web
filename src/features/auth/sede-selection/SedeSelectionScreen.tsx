@@ -16,6 +16,9 @@ export default function SedeSelectionScreen() {
     const handleSelect = async (sede: ISede) => {
         setSelectedId(sede.id);
         await selectSede(sede.id);
+        if (!useAuthStore.getState().success) {
+            setSelectedId(null);
+        }
     };
 
     // Si ya autenticó con éxito, redirigir
@@ -57,8 +60,22 @@ export default function SedeSelectionScreen() {
                     </div>
 
                     {/* Sedes Grid */}
+                    {!pendingSedes || pendingSedes.length === 0 ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
+                            <Icon icon="solar:shield-warning-bold-duotone" className="mx-auto mb-2 text-4xl text-amber-500" />
+                            <p className="text-sm font-bold text-gray-900">Tu selección de sede expiró</p>
+                            <p className="mt-1 text-xs text-gray-500">Vuelve a iniciar sesión para cargar tus sedes disponibles.</p>
+                            <button
+                                onClick={handleLogout}
+                                className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#4F46E5] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
+                            >
+                                <Icon icon="solar:logout-bold-duotone" width={16} />
+                                Volver al login
+                            </button>
+                        </div>
+                    ) : (
                     <div className="space-y-3">
-                        {(pendingSedes || []).map((sede) => (
+                        {pendingSedes.map((sede) => (
                             <button
                                 key={sede.id}
                                 onClick={() => handleSelect(sede)}
@@ -77,6 +94,8 @@ export default function SedeSelectionScreen() {
                                 }`}>
                                     {loading && selectedId === sede.id ? (
                                         <Icon icon="mdi:loading" className="text-2xl animate-spin" />
+                                    ) : sede.tipo === 'ALMACEN' ? (
+                                        <Icon icon="solar:box-bold-duotone" className="text-2xl" />
                                     ) : sede.esPrincipal ? (
                                         <Icon icon="solar:buildings-bold-duotone" className="text-2xl" />
                                     ) : (
@@ -86,13 +105,17 @@ export default function SedeSelectionScreen() {
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-semibold text-gray-900 text-sm">{sede.nombre}</span>
-                                        {sede.esPrincipal && (
+                                        {sede.tipo === 'ALMACEN' ? (
+                                            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full">
+                                                Almacén
+                                            </span>
+                                        ) : sede.esPrincipal ? (
                                             <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full">
                                                 Principal
                                             </span>
-                                        )}
+                                        ) : null}
                                     </div>
                                     {sede.codigo && (
                                         <p className="text-xs text-gray-400 mt-0.5">Código: {sede.codigo}</p>
@@ -112,6 +135,7 @@ export default function SedeSelectionScreen() {
                             </button>
                         ))}
                     </div>
+                    )}
 
                     {/* Footer */}
                     <div className="pt-4 border-t border-gray-100 flex items-center justify-between">

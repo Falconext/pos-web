@@ -48,8 +48,8 @@ export default function AutopartesCartModal({
                    <Icon icon="solar:bag-3-bold" width={20} style={{ color: cp }} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black tracking-tight">Shopping Cart</h2>
-                  <p className="text-xs text-gray-500 font-medium">{carrito.length} items</p>
+                  <h2 className="text-xl font-black tracking-tight">Mi Carrito</h2>
+                  <p className="text-xs text-gray-500 font-medium">{carrito.length} {carrito.length === 1 ? 'artículo' : 'artículos'}</p>
                 </div>
               </div>
               <button 
@@ -65,8 +65,8 @@ export default function AutopartesCartModal({
               {carrito.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
                   <Icon icon="solar:cart-large-minimalistic-linear" width={64} className="mb-4" />
-                  <p className="text-lg font-bold">Your cart is empty</p>
-                  <p className="text-sm mt-1">Add some automotive parts to get started.</p>
+                  <p className="text-lg font-bold">Tu carrito está vacío</p>
+                  <p className="text-sm mt-1">Agrega repuestos automotrices para comenzar.</p>
                 </div>
               ) : (
                 carrito.map((item) => (
@@ -138,7 +138,7 @@ export default function AutopartesCartModal({
                   className="w-full py-4 rounded-xl flex items-center justify-center gap-2 text-white font-black text-lg transition-transform hover:scale-[1.02]"
                   style={{ backgroundColor: cp }}
                 >
-                  Proceed to Checkout <Icon icon="solar:alt-arrow-right-bold" />
+                  Ir al Checkout <Icon icon="solar:alt-arrow-right-bold" />
                 </button>
               </div>
             )}
