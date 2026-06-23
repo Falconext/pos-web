@@ -5,6 +5,7 @@ import UrbanoHeader from './UrbanoHeader';
 import UrbanoHero from './UrbanoHero';
 import UrbanoProductCard from './UrbanoProductCard';
 import UrbanoFooter from './UrbanoFooter';
+import { getUrbanoTemplateCategories, getUrbanoTemplateProducts, isUrbanoTemplateProduct } from './urbanoTemplateProducts';
 
 interface UrbanoCatalogoPageProps {
   slug: string;
@@ -44,16 +45,14 @@ export default function UrbanoCatalogoPage({
   const sliderRef = useRef<HTMLDivElement>(null);
   const diseno = tienda?.diseno || {};
 
-  const fallbackCategories = [
-    { nombre: diseno.urbanoCat1Text || 'Poleras', imagenUrl: diseno.urbanoCat1Img || '/assets/templates/urbano/coleccion5.png' },
-    { nombre: diseno.urbanoCat2Text || 'Pantalones', imagenUrl: diseno.urbanoCat2Img || '/assets/templates/urbano/coleccion6.png' },
-    { nombre: diseno.urbanoCat3Text || 'Polos', imagenUrl: diseno.urbanoCat3Img || '/assets/templates/urbano/coleccion7.png' },
-    { nombre: diseno.urbanoCat4Text || 'Casacas', imagenUrl: diseno.urbanoCat4Img || '/assets/templates/urbano/coleccion8.png' },
-  ];
+  const realProducts = productos || [];
+  const templateProducts = getUrbanoTemplateProducts(diseno);
+  const displayProducts = realProducts.length ? realProducts : templateProducts;
+  const fallbackCategories = getUrbanoTemplateCategories(diseno);
   const categoryNameFromProduct = (product: any) =>
     typeof product?.categoria === 'object' ? product.categoria?.nombre : product?.categoria;
   const imageForCategory = (name: string, fallback?: string) => {
-    const product = productos.find((item) => String(categoryNameFromProduct(item) || '').toLowerCase() === String(name).toLowerCase());
+    const product = displayProducts.find((item) => String(categoryNameFromProduct(item) || '').toLowerCase() === String(name).toLowerCase());
     return productImage(product) || fallback || PRODUCT_PLACEHOLDER;
   };
   const categoriesFromApi = allCategories
@@ -64,7 +63,7 @@ export default function UrbanoCatalogoPage({
       nombre: cat.nombre,
       imagenUrl: cat.imagenUrl || imageForCategory(cat.nombre, fallbackCategories[index]?.imagenUrl),
     }));
-  const categoriesFromProducts = Array.from(new Set(productos.map(categoryNameFromProduct).filter(Boolean)))
+  const categoriesFromProducts = Array.from(new Set(displayProducts.map(categoryNameFromProduct).filter(Boolean)))
     .filter((name: any) => String(name).toLowerCase() !== 'todos')
     .map((name: any, index) => ({
       nombre: String(name),
@@ -73,13 +72,14 @@ export default function UrbanoCatalogoPage({
   const displayCategories = (categoriesFromApi.length ? categoriesFromApi : categoriesFromProducts.length ? categoriesFromProducts : fallbackCategories).slice(0, 8);
   const splitCategories = displayCategories.slice(0, 4);
 
-  const collectionProducts = productos.slice(0, 12);
-  const lookProducts = productos.slice(0, 2);
-  const featureProducts = productos.slice(2, 4);
-  const galleryImages = productos.map(productImage).filter(Boolean).slice(0, 5);
+  const collectionProducts = displayProducts.slice(0, 12);
+  const lookProducts = displayProducts.slice(0, 2);
+  const featureProducts = displayProducts.slice(2, 4);
+  const galleryImages = displayProducts.map(productImage).filter(Boolean).slice(0, 5);
 
   const openProduct = (product: any) => {
     if (!product) return;
+    if (isUrbanoTemplateProduct(product)) return;
     window.scrollTo(0, 0);
     if (onProduct) onProduct(product);
     else navigate(`/tienda/${slug}/producto/${product.id}`);
@@ -179,13 +179,7 @@ export default function UrbanoCatalogoPage({
               ))}
             </div>
           </div>
-        ) : (
-          <div className="flex w-full flex-col items-center justify-center py-32 text-gray-400">
-            <Icon icon="solar:box-linear" className="mb-4 text-6xl opacity-50" />
-            <h3 className="mb-2 text-lg font-bold uppercase tracking-widest text-black">Sin productos</h3>
-            <p className="text-sm">Cuando publiques productos, esta colección se llenará automáticamente.</p>
-          </div>
-        )}
+        ) : null}
 
         {collectionProducts.length > 0 && (
           <div className="mt-20 flex w-full justify-center">
@@ -252,7 +246,7 @@ export default function UrbanoCatalogoPage({
       <section className="relative flex h-[60vh] w-full flex-col items-center justify-end overflow-hidden bg-[#EAEBEC] pb-16 md:h-[80vh] md:pb-24">
         <div className="absolute inset-0 z-0">
           <img
-            src={diseno.urbanoBottomBannerImg || productImage(productos[0]) || '/assets/templates/urbano/wear.png'}
+            src={diseno.urbanoBottomBannerImg || productImage(displayProducts[0]) || '/assets/templates/urbano/wear.png'}
             alt="Viste tu estilo"
             className="h-full w-full object-cover opacity-80"
           />

@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import UrbanoHeader from './UrbanoHeader';
 import UrbanoFooter from './UrbanoFooter';
 import UrbanoProductCard from './UrbanoProductCard';
+import { getUrbanoTemplateCategories, getUrbanoTemplateProducts, isUrbanoTemplateProduct } from './urbanoTemplateProducts';
 
 const IMPACT = '"Impact", "Arial Black", sans-serif';
 
@@ -62,14 +63,12 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
     const navigate = useNavigate();
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const diseno = tienda?.diseno || {};
-    const fallbackCategories = [
-        { nombre: diseno.urbanoCat1Text || 'Poleras', imagenUrl: diseno.urbanoCat1Img || '/assets/templates/urbano/coleccion5.png' },
-        { nombre: diseno.urbanoCat2Text || 'Pantalones', imagenUrl: diseno.urbanoCat2Img || '/assets/templates/urbano/coleccion6.png' },
-        { nombre: diseno.urbanoCat3Text || 'Polos', imagenUrl: diseno.urbanoCat3Img || '/assets/templates/urbano/coleccion7.png' },
-        { nombre: diseno.urbanoCat4Text || 'Casacas', imagenUrl: diseno.urbanoCat4Img || '/assets/templates/urbano/coleccion8.png' },
-    ];
+    const storeLooksEmpty = !loading && productos.length === 0 && total === 0 && allCategorias.length === 0 && allMarcas.length === 0;
+    const displayProducts = storeLooksEmpty ? getUrbanoTemplateProducts(diseno) : productos;
+    const displayTotal = storeLooksEmpty ? displayProducts.length : total;
+    const fallbackCategories = getUrbanoTemplateCategories(diseno);
     const imageForCategory = (name: string, fallback?: string) => {
-        const product = productos.find((item) => String(productCategoryName(item) || '').toLowerCase() === String(name).toLowerCase());
+        const product = displayProducts.find((item) => String(productCategoryName(item) || '').toLowerCase() === String(name).toLowerCase());
         return productImage(product) || fallback || '/assets/templates/urbano/coleccion1.png';
     };
     const headerCategories = (allCategorias.length > 0
@@ -77,7 +76,7 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
             const name = nameOf(cat);
             return name ? { nombre: name, imagenUrl: cat?.imagenUrl || imageForCategory(name, fallbackCategories[index]?.imagenUrl) } : null;
         }).filter(Boolean)
-        : Array.from(new Set(productos.map(productCategoryName).filter(Boolean))).map((name: any, index) => ({
+        : Array.from(new Set(displayProducts.map(productCategoryName).filter(Boolean))).map((name: any, index) => ({
             nombre: String(name),
             imagenUrl: imageForCategory(String(name), fallbackCategories[index]?.imagenUrl),
         }))
@@ -224,7 +223,7 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
                 {/* Toolbar */}
                 <div className="flex items-center justify-between gap-4 mb-8">
                     <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-gray-500">
-                        {loading ? 'Cargando…' : `${total} ${total === 1 ? 'producto' : 'productos'}`}
+                        {loading ? 'Cargando…' : `${displayTotal} ${displayTotal === 1 ? 'producto' : 'productos'}`}
                     </p>
                     <div className="flex items-center gap-3">
                         <button
@@ -292,15 +291,21 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
                                     </div>
                                 ))}
                             </div>
-                        ) : productos.length > 0 ? (
+                        ) : displayProducts.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">
-                                {productos.map((producto) => (
+                                {displayProducts.map((producto) => (
                                     <UrbanoProductCard
                                         key={producto.id}
                                         producto={producto}
                                         slug={slug}
-                                        onClick={() => { window.scrollTo(0, 0); onProduct(producto); }}
-                                        onAddToCart={() => onAddToCart(producto)}
+                                        onClick={() => {
+                                            if (isUrbanoTemplateProduct(producto)) return;
+                                            window.scrollTo(0, 0);
+                                            onProduct(producto);
+                                        }}
+                                        onAddToCart={() => {
+                                            if (!isUrbanoTemplateProduct(producto)) onAddToCart(producto);
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -347,7 +352,7 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
                                 onClick={() => setShowMobileFilters(false)}
                                 className="w-full bg-black text-white py-3.5 text-[11px] font-bold tracking-[0.2em] uppercase border-2 border-black hover:bg-white hover:text-black transition-colors"
                             >
-                                Ver {total} resultados
+                                Ver {displayTotal} resultados
                             </button>
                         </div>
                     </div>
