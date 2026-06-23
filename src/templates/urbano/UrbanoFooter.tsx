@@ -3,16 +3,23 @@ interface UrbanoFooterProps {
 }
 
 export default function UrbanoFooter({ tienda }: UrbanoFooterProps) {
+  const storeName = tienda?.diseno?.urbanoStoreName || tienda?.nombreComercial || tienda?.razonSocial || tienda?.nombre || 'BLNK';
+  const logoUrl = tienda?.diseno?.logo || tienda?.logoUrl;
+
   return (
     <footer className="w-full bg-[#1A1A1A] text-white py-16 px-4 md:px-8">
       <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
         <div>
-          <h2
-            className="text-2xl font-black tracking-tighter uppercase mb-6"
-            style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
-          >
-            {tienda?.nombre || 'BLNK'}
-          </h2>
+          {logoUrl ? (
+             <img src={logoUrl} alt={storeName} className="h-10 object-contain mb-6" />
+          ) : (
+            <h2
+              className="text-2xl font-black tracking-tighter uppercase mb-6"
+              style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
+            >
+              {storeName}
+            </h2>
+          )}
           <p className="text-[11px] text-gray-400 leading-loose">
             {tienda?.diseno?.urbanoSlogan || tienda?.slogan || 'Moda urbana minimalista para vestir tu día con estilo.'}
           </p>
@@ -55,7 +62,7 @@ export default function UrbanoFooter({ tienda }: UrbanoFooterProps) {
       </div>
 
       <div className="max-w-[1600px] mx-auto mt-16 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-gray-500 uppercase tracking-widest">
-        <p>&copy; {new Date().getFullYear()} {tienda?.nombre || 'BLNK'}. Todos los derechos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
         <div className="flex gap-6">
           <a href="#" className="hover:text-white transition-colors">Instagram</a>
           <a href="#" className="hover:text-white transition-colors">TikTok</a>

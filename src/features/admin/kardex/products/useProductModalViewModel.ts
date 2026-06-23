@@ -724,41 +724,45 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   const uploadVariantColorImages = async (variantes: any[] = []) => {
     const entries = Object.entries(variantImageFiles);
-    if (entries.length === 0 || variantes.length === 0) return variantes;
+    const parentId = Number(formValues.productoId);
+    if (entries.length === 0 || variantes.length === 0 || !parentId) return variantes;
 
     const colorOptionName = resolveColorOptionName();
     const updatedById = new Map<number, any>(
       variantes.map((variant) => [Number(variant.id), variant]),
     );
 
+    // Una sola subida por color: el backend aplica la MISMA url a todas las tallas
     for (const [colorValue, file] of entries) {
-      const matchingVariants = variantes.filter(
-        (variant) =>
-          String(variant?.valoresAtributos?.[colorOptionName] || "") === colorValue,
-      );
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("color", colorValue);
+      const resp = await apiClient.post(`/productos/${parentId}/imagen-color`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
+      const nuevaUrl =
+        resp?.data?.data?.url ||
+        resp?.data?.url ||
+        resp?.data?.data?.imagenUrl ||
+        resp?.data?.imagenUrl ||
+        null;
+      if (!nuevaUrl) continue;
 
-      for (const variant of matchingVariants) {
-        if (!variant?.id) continue;
-        const fd = new FormData();
-        fd.append("file", file);
-        const resp = await apiClient.post(`/productos/${variant.id}/imagen`, fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        const signed = resp?.data?.signedUrl || resp?.data?.data?.signedUrl;
-        const nuevaUrl =
-          resp?.data?.data?.url ||
-          resp?.data?.url ||
-          resp?.data?.data?.imagenUrl ||
-          resp?.data?.imagenUrl ||
-          null;
-        if (nuevaUrl) {
+      // Reflejar la misma url en todas las variantes de ese color localmente
+      variantes
+        .filter(
+          (variant) =>
+            String(variant?.valoresAtributos?.[colorOptionName] || "") === colorValue,
+        )
+        .forEach((variant) => {
+          if (!variant?.id) return;
           updatedById.set(Number(variant.id), {
             ...variant,
             imagenUrl: nuevaUrl,
             imagenUrlDisplay: signed || nuevaUrl,
           });
-        }
-      }
+        });
     }
 
     return Array.from(updatedById.values());

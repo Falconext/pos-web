@@ -67,7 +67,8 @@ export default function UrbanoHeader({
         navigate(`/tienda/${slug}/catalogo${term ? `?search=${encodeURIComponent(term)}` : ''}`);
     };
 
-    const storeName = tienda?.nombre || 'BLNK';
+    const storeName = tienda?.diseno?.urbanoStoreName || tienda?.nombreComercial || tienda?.razonSocial || tienda?.nombre || 'BLNK';
+    const logoUrl = tienda?.diseno?.logo || tienda?.logoUrl;
 
     const fallbackCategories = [
         { nombre: tienda?.diseno?.urbanoCat1Text || 'Poleras', imagenUrl: tienda?.diseno?.urbanoCat1Img },
@@ -141,13 +142,18 @@ export default function UrbanoHeader({
 
                     {/* Center: Logo */}
                     <div className="flex justify-center w-1/3">
-                        <h1 
-                            onClick={() => navigate(`/tienda/${slug}`)}
-                            className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter uppercase leading-none cursor-pointer text-black"
-                            style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
-                        >
-                            {storeName}
-                        </h1>
+                        <div onClick={() => navigate(`/tienda/${slug}`)} className="cursor-pointer flex items-center justify-center">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt={storeName} className="h-8 sm:h-10 object-contain" />
+                            ) : (
+                                <h1 
+                                    className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter uppercase leading-none text-black"
+                                    style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
+                                >
+                                    {storeName}
+                                </h1>
+                            )}
+                        </div>
                     </div>
 
                     {/* Right: Actions */}

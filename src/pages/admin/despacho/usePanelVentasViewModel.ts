@@ -59,6 +59,13 @@ export interface VentaPanelItem {
 
 export type TabVentas = 'TODO' | 'VENTAS' | 'CON_DESPACHO' | 'POR_COBRAR';
 
+const TIPOS_NO_VENTA = new Set(['NOTA_PEDIDO', 'COTIZACION', 'ORDEN_TRABAJO', 'OTRO']);
+
+const tieneSaldoPendiente = (item: VentaPanelItem) => Number(item.saldo ?? 0) > 0.01;
+const esDocumentoVisible = (item: VentaPanelItem) => item.tipo !== 'NOTA_CREDITO';
+const esVentaFinal = (item: VentaPanelItem) => !item.esConvertida && !TIPOS_NO_VENTA.has(item.tipo);
+const esCuentaPorCobrar = (item: VentaPanelItem) => esDocumentoVisible(item) && esVentaFinal(item) && tieneSaldoPendiente(item);
+
 const DESPACHO_TO_PEDIDO: Record<string, { estadoEntrega: string; estadoEnvio: string }> = {
     PREPARANDO: { estadoEntrega: 'CONFIRMADO',           estadoEnvio: 'POR_COORDINAR' },
     EN_CAMINO:  { estadoEntrega: 'EN_TRANSITO',          estadoEnvio: 'EN_REPARTO' },
@@ -78,6 +85,7 @@ export function usePanelVentasViewModel() {
 
     const [fecha, setFecha] = useState(() => moment().format('YYYY-MM-DD'));
     const [items, setItems] = useState<VentaPanelItem[]>([]);
+    const [porCobrarGlobal, setPorCobrarGlobal] = useState({ total: 0, cantidad: 0 });
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<TabVentas>('TODO');
     const [busqueda, setBusqueda] = useState('');
@@ -99,6 +107,11 @@ export function usePanelVentasViewModel() {
             const { data } = await apiClient.get<any>(`/ventas/panel?${params}`);
             const raw = data?.data?.data ?? data?.data ?? [];
             setItems(Array.isArray(raw) ? raw : []);
+            const resumenGlobal = data?.data?.resumen?.porCobrarGlobal ?? data?.resumen?.porCobrarGlobal;
+            setPorCobrarGlobal({
+                total: Number(resumenGlobal?.total ?? 0),
+                cantidad: Number(resumenGlobal?.cantidad ?? 0),
+            });
         } catch {
             alert('Error al cargar el panel de ventas', 'error');
         } finally {
@@ -127,11 +140,11 @@ export function usePanelVentasViewModel() {
         const search = busqueda.toLowerCase().trim();
         const serie = filtroSerie.trim().toUpperCase();
         const dni = filtroDni.trim();
-        let base = items.filter((i) => i.tipo !== 'NOTA_CREDITO');
+        let base = items.filter(esDocumentoVisible);
 
-        if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA');
+        if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA' && esVentaFinal(i));
         else if (tab === 'CON_DESPACHO') base = base.filter((i) => i.estadoDespacho !== 'NO_APLICA');
-        else if (tab === 'POR_COBRAR') base = base.filter((i) => (i.saldo ?? 0) > 0);
+        else if (tab === 'POR_COBRAR') base = base.filter(esCuentaPorCobrar);
 
         if (filtroRepartidorId !== undefined) {
             base = base.filter((i) =>
@@ -182,12 +195,15 @@ export function usePanelVentasViewModel() {
         }
     }, [alert]);
 
-    const countTodo = items.length;
-    const countVentas = useMemo(() => items.filter((i) => i.estadoDespacho === 'NO_APLICA').length, [items]);
-    const countDespacho = useMemo(() => items.filter((i) => i.estadoDespacho !== 'NO_APLICA').length, [items]);
-    const countPorCobrar = useMemo(() => items.filter((i) => (i.saldo ?? 0) > 0).length, [items]);
+    const itemsVisibles = useMemo(() => items.filter(esDocumentoVisible), [items]);
+    const countTodo = itemsVisibles.length;
+    const countVentas = useMemo(() => itemsVisibles.filter((i) => i.estadoDespacho === 'NO_APLICA' && esVentaFinal(i)).length, [itemsVisibles]);
+    const countDespacho = useMemo(() => itemsVisibles.filter((i) => i.estadoDespacho !== 'NO_APLICA').length, [itemsVisibles]);
+    const countPorCobrar = useMemo(() => itemsVisibles.filter(esCuentaPorCobrar).length, [itemsVisibles]);
+    const ventasDiaFinales = useMemo(() => itemsVisibles.filter(esVentaFinal), [itemsVisibles]);
+    const totalVentasDia = useMemo(() => ventasDiaFinales.reduce((s, i) => s + (i.total ?? 0), 0), [ventasDiaFinales]);
+    const totalPorCobrarDia = useMemo(() => itemsVisibles.filter(esCuentaPorCobrar).reduce((s, i) => s + (i.saldo ?? 0), 0), [itemsVisibles]);
     // Excluye convertidas y documentos que no son ventas finales (como Notas de Pedido)
-    const TIPOS_NO_VENTA = new Set(['NOTA_PEDIDO', 'COTIZACION', 'ORDEN_TRABAJO', 'OTRO']);
     const ventasFinales = useMemo(() => filtrados.filter((i) => !i.esConvertida && !TIPOS_NO_VENTA.has(i.tipo)), [filtrados]);
     const totalVentas = useMemo(() => ventasFinales.reduce((s, i) => s + (i.total ?? 0), 0), [ventasFinales]);
     const totalPorCobrar = useMemo(() => ventasFinales.reduce((s, i) => s + (i.saldo ?? 0), 0), [ventasFinales]);
@@ -206,8 +222,11 @@ export function usePanelVentasViewModel() {
         esPrincipalAdmin,
         repartidoresOpciones,
         countTodo, countVentas, countDespacho, countPorCobrar,
+        totalVentasDia,
+        totalPorCobrarDia,
         totalVentas,
         totalPorCobrar,
+        porCobrarGlobal,
         actualizarEstado,
         cargar,
     };

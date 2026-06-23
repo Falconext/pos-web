@@ -47,7 +47,7 @@ export default function ModaCheckoutPage({
   const total = calcularTotal();
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: `'${diseno?.tipografia || 'Inter'}', sans-serif` }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
       {/* ── Header ── */}
       <ModaHeader
         tienda={tienda || {}}

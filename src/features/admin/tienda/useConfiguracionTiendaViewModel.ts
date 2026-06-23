@@ -72,7 +72,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
             if (productSearch.trim().length > 2) {
                 setSearchingProducts(true);
                 try {
-                    const { data } = await apiClient.get('/producto', { params: { limit: 5, page: 1, search: productSearch } });
+                    const { data } = await apiClient.get('/productos', { params: { limit: 5, page: 1, search: productSearch } });
                     const p = data.data;
                     setProductResults(p?.productos || p?.data || p || []);
                 } catch { setProductResults([]); } finally { setSearchingProducts(false); }
@@ -86,7 +86,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
             if (editSearch.trim().length > 2) {
                 setSearchingEdit(true);
                 try {
-                    const { data } = await apiClient.get('/producto', { params: { limit: 5, page: 1, search: editSearch } });
+                    const { data } = await apiClient.get('/productos', { params: { limit: 5, page: 1, search: editSearch } });
                     const p = data.data;
                     setEditResults(p?.productos || p?.data || p || []);
                 } catch { setEditResults([]); } finally { setSearchingEdit(false); }

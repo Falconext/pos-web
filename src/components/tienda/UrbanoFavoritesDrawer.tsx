@@ -1,6 +1,10 @@
+import { useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useFavoritosStore } from '@/zustand/favoritos';
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 interface UrbanoFavoritesDrawerProps {
     isOpen: boolean;
@@ -10,8 +14,34 @@ interface UrbanoFavoritesDrawerProps {
 
 export default function UrbanoFavoritesDrawer({ isOpen, onClose, slug }: UrbanoFavoritesDrawerProps) {
     const navigate = useNavigate();
-    const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
+    const { getFavoritosBySlug, removeFavorito, refreshImagenes } = useFavoritosStore();
     const favoritos = getFavoritosBySlug(slug);
+
+    // Las URLs firmadas de S3 expiran (~10 min). Al abrir el drawer, re-obtenemos
+    // imágenes frescas para los favoritos persistidos y que no se vean rotas.
+    useEffect(() => {
+        if (!isOpen || !slug) return;
+        const items = getFavoritosBySlug(slug);
+        if (items.length === 0) return;
+        let cancelled = false;
+        (async () => {
+            const updates = await Promise.all(
+                items.map(async (fav) => {
+                    try {
+                        const res = await axios.get(`${BASE_URL}/public/store/${slug}/products/${fav.id}`);
+                        const prod = res.data?.data || res.data;
+                        return prod?.imagenUrl ? { id: fav.id, slug, imagenUrl: prod.imagenUrl as string } : null;
+                    } catch {
+                        return null;
+                    }
+                }),
+            );
+            if (cancelled) return;
+            const valid = updates.filter(Boolean) as Array<{ id: number; slug: string; imagenUrl: string }>;
+            if (valid.length > 0) refreshImagenes(valid);
+        })();
+        return () => { cancelled = true; };
+    }, [isOpen, slug]);
 
     if (!isOpen) return null;
 

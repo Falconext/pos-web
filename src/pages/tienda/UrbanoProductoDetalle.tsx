@@ -12,10 +12,12 @@ import UrbanoFooter from '@/templates/urbano/UrbanoFooter';
 import {
   findFashionVariant,
   getDefaultVariantSelection,
+  getFashionColorImage,
   getFashionColors,
   getFashionSizes,
   getVariantOptionNames,
   isFashionVariantAvailable,
+  variantValues,
 } from '@/templates/urbano/fashionVariants';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
@@ -94,7 +96,7 @@ export default function UrbanoProductoDetalle() {
         const defaultVariant = findFashionVariant(prod, defaultVariantSelection);
         setVarianteSelecciones(defaultVariantSelection);
         setVarianteActiva(defaultVariant);
-        if (defaultVariant?.imagenUrl) setSelectedImage(defaultVariant.imagenUrl);
+
 
         try {
           const catRes = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
@@ -146,11 +148,29 @@ export default function UrbanoProductoDetalle() {
   }, 0);
 
   const handleVariantChange = (optionName: string, value: string) => {
-    const nextSelection = { ...varianteSelecciones, [optionName]: value };
-    const match = findFashionVariant(producto, nextSelection);
+    let nextSelection = { ...varianteSelecciones, [optionName]: value };
+    let match = findFashionVariant(producto, nextSelection);
+
+    // Si la combinación color+talla actual no existe, auto-seleccionar primera talla disponible
+    if (!match && Array.isArray(producto?.variantes)) {
+      const fallback = producto.variantes.find((v: any) => {
+        const vals = variantValues(v);
+        return vals[optionName] === value && Number(v?.stock ?? 0) > 0;
+      });
+      if (fallback) {
+        nextSelection = variantValues(fallback);
+        match = fallback;
+      }
+    }
+
     setVarianteSelecciones(nextSelection);
     setVarianteActiva(match);
-    if (match?.imagenUrl) setSelectedImage(match.imagenUrl);
+
+    // La imagen es por color: usar la representativa del color seleccionado
+    const selectedColor = nextSelection[getVariantOptionNames(producto).color];
+    const colorImage = selectedColor ? getFashionColorImage(producto, selectedColor) : null;
+    if (colorImage) setSelectedImage(colorImage);
+    else if (match?.imagenUrl) setSelectedImage(match.imagenUrl);
   };
 
   const addToCart = () => {
@@ -256,15 +276,27 @@ export default function UrbanoProductoDetalle() {
     : Array.isArray(producto.imagenesExtra)
       ? producto.imagenesExtra
       : [];
-  const variantImages = Array.isArray(producto.variantes)
-    ? producto.variantes.map((variant: any) => variant.imagenUrl).filter(Boolean)
-    : [];
-  const productImages = Array.from(new Set([
-    varianteActiva?.imagenUrl,
-    producto.imagenUrl,
-    ...variantImages,
-    ...extraImages,
-  ].filter(Boolean)));
+
+  // Deduplica por pathname para ignorar tokens de firma S3 distintos sobre la misma imagen
+  const urlPath = (url: string) => { try { return new URL(url).pathname; } catch { return url; } };
+  // Una imagen por color (cada talla guarda su propio archivo, pero la foto es por color).
+  // Si hay imágenes por color, los thumbnails son los colores (uno por color); si no,
+  // se usa la imagen principal del producto + extras.
+  const colorThumbs = getFashionColors(producto).map((color) => color.image).filter(Boolean) as string[];
+  const productImages = (() => {
+    const seen = new Set<string>();
+    const source = colorThumbs.length > 0
+      ? [producto.imagenUrl, ...colorThumbs, ...extraImages]
+      : [producto.imagenUrl, ...extraImages];
+    return source
+      .filter(Boolean)
+      .filter((url: string) => {
+        const key = urlPath(url);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  })();
   const mainImage = selectedImage || productImages[0] || diseno.urbanoProductMainImg || '/assets/templates/urbano/coleccion1.png';
 
   const isColorGroup = (grupo: any) => /color|colour/i.test(grupo.nombre) && grupo.opciones.some((op: any) => op.colorHex);
@@ -275,6 +307,19 @@ export default function UrbanoProductoDetalle() {
   const variantColors = colorGroups.length ? [] : getFashionColors(producto);
   const variantSizes = sizeGroups.length ? [] : getFashionSizes(producto);
   const variantOptionNames = getVariantOptionNames(producto);
+
+  // Al clickear un thumbnail, sincroniza el color seleccionado con la imagen de esa variante
+  const handleThumbnailClick = (image: string) => {
+    const matched = Array.isArray(producto?.variantes)
+      ? producto.variantes.find((v: any) => v.imagenUrl && urlPath(v.imagenUrl) === urlPath(image))
+      : null;
+    const color = matched ? variantValues(matched)[variantOptionNames.color] : null;
+    if (color) {
+      handleVariantChange(variantOptionNames.color, color);
+    } else {
+      setSelectedImage(image);
+    }
+  };
 
   const AccordionItem = ({ title, id: itemId, children }: { title: string; id: string; children: React.ReactNode }) => (
     <div className="border-b border-gray-200">
@@ -314,21 +359,21 @@ export default function UrbanoProductoDetalle() {
       />
 
       <main className="w-full flex flex-col">
-        <section className="flex flex-col lg:flex-row w-full min-h-screen">
-          <div className="w-full lg:w-[55%] bg-[#F4F5F6] flex items-center justify-center min-h-[62vh] lg:min-h-screen relative overflow-hidden group">
+        <section className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-108px)]">
+          <div className="w-full lg:w-[55%] bg-[#F4F5F6] flex items-center justify-center min-h-[62vh] lg:min-h-[calc(100vh-108px)] relative overflow-hidden group">
             <img
               src={mainImage}
               alt={producto.descripcion}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              className="absolute top-6 left-0 right-0 bottom-0 w-full h-[calc(100%-24px)] object-contain transition-transform duration-1000 group-hover:scale-105"
             />
 
             {productImages.length > 1 && (
-              <div className="absolute left-4 top-4 z-10 flex flex-col gap-2">
-                {productImages.slice(0, 5).map((image: string) => (
+              <div className="absolute z-10 left-4 right-4 top-4 flex flex-row overflow-x-auto no-scrollbar gap-2 lg:right-auto lg:flex-col lg:overflow-visible">
+                {productImages.slice(0, 6).map((image: string) => (
                   <button
                     key={image}
-                    onClick={() => setSelectedImage(image)}
-                    className={`h-16 w-12 overflow-hidden bg-white border-2 ${selectedImage === image ? 'border-black' : 'border-white'}`}
+                    onClick={() => handleThumbnailClick(image)}
+                    className={`h-16 w-12 shrink-0 overflow-hidden bg-white border-2 ${selectedImage === image ? 'border-black' : 'border-white'}`}
                   >
                     <img src={image} alt="" className="h-full w-full object-cover" />
                   </button>
@@ -345,7 +390,7 @@ export default function UrbanoProductoDetalle() {
           </div>
 
           <div className="w-full lg:w-[45%] bg-white relative">
-            <div className="lg:sticky lg:top-0 w-full h-full lg:h-screen p-8 lg:p-16 xl:p-24 flex flex-col items-start overflow-y-auto no-scrollbar">
+            <div className="lg:sticky lg:top-[108px] w-full h-full lg:h-[calc(100vh-108px)] p-8 lg:p-16 xl:p-24 flex flex-col items-start overflow-y-auto no-scrollbar">
               <div className="w-full max-w-md pt-8 lg:pt-16">
                 <button onClick={() => navigate(`/tienda/${slug}`)} className="mb-8 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-black">
                   Volver a la tienda
@@ -363,7 +408,7 @@ export default function UrbanoProductoDetalle() {
                     <p className="text-[11px] font-bold uppercase tracking-wider mb-4">
                       COLOR: {grupo.opciones.find((op: any) => selecciones[grupo.id]?.includes(op.id))?.nombre || 'Selecciona'}
                     </p>
-                    <div className="flex gap-2.5">
+                    <div className="flex flex-wrap gap-2.5">
                       {grupo.opciones.map((op: any) => {
                         const selected = (selecciones[grupo.id] || []).includes(op.id);
                         return (
@@ -385,10 +430,9 @@ export default function UrbanoProductoDetalle() {
                     <p className="text-[11px] font-bold uppercase tracking-wider mb-4">
                       COLOR: {varianteSelecciones[variantOptionNames.color] || 'Selecciona'}
                     </p>
-                    <div className="flex gap-2.5">
+                    <div className="flex flex-wrap gap-2.5">
                       {variantColors.map((color) => {
                         const available = isFashionVariantAvailable(producto, {
-                          ...varianteSelecciones,
                           [variantOptionNames.color]: color.name,
                         });
                         return (

@@ -110,9 +110,9 @@ export function UrbanoProductoPreviewPage({
             <main className="w-full flex flex-col">
                 
                 {/* ── Section 1: Hero Split (55/45) ── */}
-                <div className="flex flex-col lg:flex-row w-full min-h-screen">
+                <div className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-108px)]">
                     {/* Left: Giant Product Image (Scrollable) */}
-                    <div className="w-full lg:w-[55%] bg-[#F4F5F6] flex items-center justify-center p-8 lg:p-16 min-h-[60vh] lg:min-h-screen relative overflow-hidden group">
+                    <div className="w-full lg:w-[55%] bg-[#F4F5F6] flex items-center justify-center p-8 lg:p-16 min-h-[60vh] lg:min-h-[calc(100vh-108px)] relative overflow-hidden group">
                         <img
                             src={diseno?.urbanoProductMainImg || "/assets/templates/urbano/coleccion1.png"}
                             alt={producto.descripcion}
@@ -130,7 +130,7 @@ export function UrbanoProductoPreviewPage({
                     {/* Right: Product Info (Sticky) */}
                     <div className="w-full lg:w-[45%] bg-white relative">
                         {/* Wrapper for sticky behavior */}
-                        <div className="lg:sticky lg:top-0 w-full h-full lg:h-screen p-8 lg:p-16 xl:p-24 flex flex-col items-start overflow-y-auto no-scrollbar">
+                        <div className="lg:sticky lg:top-[108px] w-full h-full lg:h-[calc(100vh-108px)] p-8 lg:p-16 xl:p-24 flex flex-col items-start overflow-y-auto no-scrollbar">
                             <div className="w-full max-w-md pt-8 lg:pt-16">
                                 <h1 className="text-3xl lg:text-[2.5rem] font-bold tracking-tighter mb-4 leading-none">
                                     {producto.descripcion}

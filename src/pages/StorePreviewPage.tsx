@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Icon } from '@iconify/react';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import ProductCardCatalog from '@/components/tienda/ProductCardCatalog';
@@ -24,10 +24,8 @@ import UrbanoCatalogoPage from '@/templates/urbano/UrbanoCatalogoPage';
 import AutopartesCheckout from '@/pages/tienda/AutopartesCheckout';
 import ModaHeader from '@/components/tienda/ModaHeader';
 import ModaHero from '@/components/tienda/ModaHero';
-import ModaFeaturedCollections from '@/components/tienda/ModaFeaturedCollections';
 import ModaBestSelling from '@/components/tienda/ModaBestSelling';
-import ModaNewArrivals from '@/components/tienda/ModaNewArrivals';
-import ModaPromoBanner from '@/components/tienda/ModaPromoBanner';
+import ModaHomeSections from '@/components/tienda/ModaHomeSections';
 import ModaFooter from '@/components/tienda/ModaFooter';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 
@@ -54,6 +52,70 @@ const URBANO_PREVIEW_ASSETS = [
   '/assets/templates/urbano/coleccion9.png',
   '/assets/templates/urbano/coleccion10.png',
 ];
+
+const MODA_CATALOG_PREVIEW = [
+  ['Camisa corset con lazo', 'PLM', 66.8, 76.9, 'https://images.unsplash.com/photo-1507680434567-5739c80be1ac?auto=format&fit=crop&q=90&w=900', 2],
+  ['Conjunto saco y pantalon arena', 'ARGUE CULTURE', 81.8, 99.8, 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=90&w=900', 4],
+  ['Pantalon drapeado grafito', 'BLAEXIT', 58.9, 67.9, 'https://images.unsplash.com/photo-1506629905607-d405b7a30db9?auto=format&fit=crop&q=90&w=900', 3],
+  ['Traje negro oversize wide-leg', 'ARGUE CULTURE', 91.9, 99.9, 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&q=90&w=900', 2],
+  ['Camisa blanca de lino con lazo', 'ORO', 50.9, 50.9, 'https://images.unsplash.com/photo-1542327897-d73f4005b533?auto=format&fit=crop&q=90&w=900', 2],
+  ['Camisa floral pastel boton-up', 'PLM', 72.9, 83.9, 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=90&w=900', 3],
+  ['Pantalon cargo denim fruncido', 'GRACE RUB', 64.9, 74.9, 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=90&w=900', 2],
+  ['Pantalon acid wash stacked', 'ASTT STUDIO', 82.9, 96.9, 'https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&q=90&w=900', 1],
+  ['Traje wide-leg con cuello scarf', 'ARGUE CULTURE', 73.8, 89.9, 'https://images.unsplash.com/photo-1520975682031-a9c3f8e4f69a?auto=format&fit=crop&q=90&w=900', 6],
+  ['Loafers negros de cuero patente', 'JCAESAR', 149.6, 194.48, 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&q=90&w=900', 1],
+  ['Camisa poplin boxy oversize', 'CLP', 95.9, 109.9, 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=90&w=900', 3],
+  ['Casaca negra hooded oversize', 'GY', 44.9, 69.9, 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=90&w=900', 3],
+] as const;
+
+const MODA_FILTER_GROUPS = [
+  { label: 'Género', key: 'genero', options: ['Hombre', 'Mujer', 'Unisex'] },
+  { label: 'Color', key: 'color', options: ['Negro', 'Blanco', 'Arena', 'Azul', 'Denim'] },
+  { label: 'Marca', key: 'marca', options: ['PLM', 'ARGUE CULTURE', 'BLAEXIT', 'ORO', 'JCAESAR', 'GY'] },
+  { label: 'Tipo de producto', key: 'tipo', options: ['Camisas', 'Pantalones', 'Casacas', 'Calzado'] },
+  { label: 'Precio', key: 'precio', options: ['Hasta S/ 70', 'S/ 70 - S/ 100', 'Más de S/ 100'] },
+  { label: 'Ocasión', key: 'ocasion', options: ['Diario', 'Oficina', 'Noche', 'Fin de semana'] },
+  { label: 'Estilo', key: 'estilo', options: ['Minimal', 'Urbano', 'Elegante', 'Street'] },
+] as const;
+
+function modaPreviewProducts(products: DemoProduct[]) {
+  return MODA_CATALOG_PREVIEW.map(([descripcion, marca, precioUnitario, precioOriginal, imagenUrl, coloresDisponibles], index) => ({
+    ...(products[index] || {}),
+    id: products[index]?.id || `moda-preview-catalog-${index + 1}`,
+    descripcion,
+    marca,
+    precioUnitario,
+    precioOriginal,
+    imagenUrl,
+    coloresDisponibles,
+    genero: ['Hombre', 'Hombre', 'Unisex', 'Hombre', 'Hombre', 'Mujer', 'Unisex', 'Hombre', 'Mujer', 'Unisex', 'Hombre', 'Mujer'][index] || 'Unisex',
+    color: ['Blanco', 'Arena', 'Negro', 'Negro', 'Blanco', 'Azul', 'Denim', 'Negro', 'Negro', 'Negro', 'Blanco', 'Negro'][index] || 'Negro',
+    tipo: ['Camisas', 'Pantalones', 'Pantalones', 'Casacas', 'Camisas', 'Camisas', 'Pantalones', 'Pantalones', 'Casacas', 'Calzado', 'Camisas', 'Casacas'][index] || 'Camisas',
+    ocasion: ['Noche', 'Oficina', 'Diario', 'Noche', 'Diario', 'Fin de semana', 'Diario', 'Oficina', 'Noche', 'Diario', 'Fin de semana', 'Diario'][index] || 'Diario',
+    estilo: ['Elegante', 'Minimal', 'Urbano', 'Elegante', 'Minimal', 'Street', 'Urbano', 'Street', 'Elegante', 'Minimal', 'Urbano', 'Street'][index] || 'Urbano',
+  }));
+}
+
+function modaFilterMatches(product: any, filters: Record<string, string>) {
+  return Object.entries(filters).every(([key, value]) => {
+    if (!value) return true;
+    if (key === 'precio') {
+      const price = Number(product.precioUnitario || 0);
+      if (value === 'Hasta S/ 70') return price <= 70;
+      if (value === 'S/ 70 - S/ 100') return price > 70 && price <= 100;
+      if (value === 'Más de S/ 100') return price > 100;
+    }
+    return String(product[key] || '').toLowerCase() === value.toLowerCase();
+  });
+}
+
+function sortModaProducts(products: any[], sort: string) {
+  const list = [...products];
+  if (sort === 'precio-asc') return list.sort((a, b) => Number(a.precioUnitario || 0) - Number(b.precioUnitario || 0));
+  if (sort === 'precio-desc') return list.sort((a, b) => Number(b.precioUnitario || 0) - Number(a.precioUnitario || 0));
+  if (sort === 'nombre') return list.sort((a, b) => String(a.descripcion || '').localeCompare(String(b.descripcion || '')));
+  return list;
+}
 
 // ─── Shared Header ─────────────────────────────────────────────────────────────
 function PreviewHeader({
@@ -809,6 +871,9 @@ export default function StorePreviewPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [showFilters, setShowFilters] = useState(false);
+  const [modaOpenFilter, setModaOpenFilter] = useState<string | null>('genero');
+  const [modaFilters, setModaFilters] = useState<Record<string, string>>({});
+  const [modaSort, setModaSort] = useState('relevancia');
 
   useEffect(() => {
     try {
@@ -851,7 +916,8 @@ export default function StorePreviewPage() {
   const cp = config.colorPrimario ?? demo.colorDefault ?? '#6A6CFF';
   const cs = config.colorSecundario ?? '#ffffff';
   const ca = config.colorAccento ?? '#FF6B6B';
-  const tf = config.tipografia ?? 'Inter';
+  const tf = config.tipografia ?? 'Poppins';
+  const previewFont = config.plantillaId === 'moda' ? 'Poppins' : tf;
   const urbanoPreviewProducts = demo.products.map((product, index) => ({
     ...product,
     imagenUrl: URBANO_PREVIEW_ASSETS[index % URBANO_PREVIEW_ASSETS.length],
@@ -862,6 +928,16 @@ export default function StorePreviewPage() {
       nombre: category,
       imagenUrl: URBANO_PREVIEW_ASSETS[(index + 4) % URBANO_PREVIEW_ASSETS.length],
     }));
+  const modaCatalogProducts = useMemo(() => modaPreviewProducts(demo.products), [demo.products]);
+  const modaVisibleProducts = useMemo(() => {
+    return sortModaProducts(modaCatalogProducts.filter((product) => modaFilterMatches(product, modaFilters)), modaSort);
+  }, [modaCatalogProducts, modaFilters, modaSort]);
+  const toggleModaFilter = (key: string, value: string) => {
+    setModaFilters((current) => ({
+      ...current,
+      [key]: current[key] === value ? '' : value,
+    }));
+  };
   const diseno = {
     ...config,
     colorPrimario: cp,
@@ -870,16 +946,16 @@ export default function StorePreviewPage() {
     tipografia: tf,
     ...(config.plantillaId === 'urbano'
       ? {
-          urbanoHeroImg: '/assets/templates/urbano/banner.png',
-          urbanoBottomBannerImg: '/assets/templates/urbano/wear.png',
-          urbanoShopTheLookImg: '/assets/templates/urbano/shoplook.png',
-          urbanoFeatureModelImg: '/assets/templates/urbano/jacket.png',
-          urbanoGallery1: '/assets/templates/urbano/coleccion2.png',
-          urbanoGallery2: '/assets/templates/urbano/coleccion3.png',
-          urbanoGallery3: '/assets/templates/urbano/coleccion4.png',
-          urbanoGallery4: '/assets/templates/urbano/coleccion5.png',
-          urbanoGallery5: '/assets/templates/urbano/coleccion6.png',
-        }
+        urbanoHeroImg: '/assets/templates/urbano/banner.png',
+        urbanoBottomBannerImg: '/assets/templates/urbano/wear.png',
+        urbanoShopTheLookImg: '/assets/templates/urbano/shoplook.png',
+        urbanoFeatureModelImg: '/assets/templates/urbano/jacket.png',
+        urbanoGallery1: '/assets/templates/urbano/coleccion2.png',
+        urbanoGallery2: '/assets/templates/urbano/coleccion3.png',
+        urbanoGallery3: '/assets/templates/urbano/coleccion4.png',
+        urbanoGallery4: '/assets/templates/urbano/coleccion5.png',
+        urbanoGallery5: '/assets/templates/urbano/coleccion6.png',
+      }
       : {}),
   };
 
@@ -904,7 +980,7 @@ export default function StorePreviewPage() {
     });
     setIsCartOpen(true);
   };
-  
+
   const actualizarCantidad = (id: number | string, cantidad: number) => {
     if (cantidad <= 0) {
       setCarrito(prev => prev.filter(item => item.id !== id));
@@ -914,7 +990,7 @@ export default function StorePreviewPage() {
   };
 
   return (
-    <div style={{ fontFamily: `'${tf}', sans-serif`, background: cs, minHeight: '100vh', color: '#111' }}>
+    <div style={{ fontFamily: `'${previewFont}', sans-serif`, background: cs, minHeight: '100vh', color: '#111' }}>
 
       {/* Admin preview bar */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-2 text-xs font-semibold text-white" style={{ background: '#0d1117' }}>
@@ -947,30 +1023,30 @@ export default function StorePreviewPage() {
       <div style={{ paddingTop: 36 }}>
         {config.plantillaId === 'autopartes' ? (
           page !== 'checkout' ? (
-            <AutopartesHeader 
-              tienda={{ nombre: demo.storeName, logo: '' }} 
-              slug="preview" 
-              cp={cp} 
-              carritoSize={carrito.reduce((sum, item) => sum + item.cantidad, 0)} 
-              onOpenCart={() => setIsCartOpen(true)} 
-              searchQuery="" 
-              setSearchQuery={() => {}} 
-              onSearchSubmit={(e, value) => { e.preventDefault(); goToPage('catalogo'); }} 
-              allCategories={demo.categories.filter(c => c !== 'Todos')} 
+            <AutopartesHeader
+              tienda={{ nombre: demo.storeName, logo: '' }}
+              slug="preview"
+              cp={cp}
+              carritoSize={carrito.reduce((sum, item) => sum + item.cantidad, 0)}
+              onOpenCart={() => setIsCartOpen(true)}
+              searchQuery=""
+              setSearchQuery={() => { }}
+              onSearchSubmit={(e, value) => { e.preventDefault(); goToPage('catalogo'); }}
+              allCategories={demo.categories.filter(c => c !== 'Todos')}
             />
           ) : null
         ) : config.plantillaId === 'moda' ? (
           page !== 'checkout' ? (
-            <ModaHeader 
-              tienda={{ nombre: demo.storeName, logo: '' }} 
-              slug="preview" 
-              cp={cp} 
-              carritoSize={carrito.reduce((sum, item) => sum + item.cantidad, 0)} 
-              onOpenCart={() => setIsCartOpen(true)} 
-              searchQuery="" 
-              setSearchQuery={() => {}} 
-              onSearchSubmit={(e) => { e.preventDefault(); goToPage('catalogo'); }} 
-              allCategories={demo.categories.filter(c => c !== 'Todos')} 
+            <ModaHeader
+              tienda={{ nombre: demo.storeName, logo: '' }}
+              slug="preview"
+              cp={cp}
+              carritoSize={carrito.reduce((sum, item) => sum + item.cantidad, 0)}
+              onOpenCart={() => setIsCartOpen(true)}
+              searchQuery=""
+              setSearchQuery={() => { }}
+              onSearchSubmit={(e) => { e.preventDefault(); goToPage('catalogo'); }}
+              allCategories={demo.categories.filter(c => c !== 'Todos')}
             />
           ) : null
         ) : config.plantillaId === 'urbano' ? (
@@ -1003,12 +1079,12 @@ export default function StorePreviewPage() {
           ) : (
             <AutopartesCartModal
               isOpen={isCartOpen}
-              cp={cp} 
-              carrito={carrito} 
+              cp={cp}
+              carrito={carrito}
               setCarrito={setCarrito}
-              onClose={() => setIsCartOpen(false)} 
-              actualizarCantidad={actualizarCantidad} 
-              onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }} 
+              onClose={() => setIsCartOpen(false)}
+              actualizarCantidad={actualizarCantidad}
+              onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }}
             />
           )
         )}
@@ -1036,7 +1112,7 @@ export default function StorePreviewPage() {
                     Productos por Categoría
                   </h2>
                 </div>
-                
+
                 <div className="flex flex-wrap md:flex-nowrap items-center gap-3">
                   <div className="flex flex-col flex-1 min-w-[160px]">
                     <span className="text-[10px] text-gray-500 font-bold mb-1 ml-1">Categoría Principal</span>
@@ -1053,38 +1129,38 @@ export default function StorePreviewPage() {
                     </div>
                   </div>
                   <div className="flex flex-col justify-end mt-2 md:mt-0 md:h-[50px] w-full md:w-auto">
-                     <button className="h-[34px] bg-[#1A1A1A] text-white px-5 rounded text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-black transition-colors md:mt-auto">
-                       <Icon icon="solar:magnifer-linear" />
-                       Buscar
-                     </button>
+                    <button className="h-[34px] bg-[#1A1A1A] text-white px-5 rounded text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-black transition-colors md:mt-auto">
+                      <Icon icon="solar:magnifer-linear" />
+                      Buscar
+                    </button>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {demo.products.slice(0, 8).map(product => (
-                  <ProductCardAutopartes 
-                    key={product.id} 
-                    producto={product} 
-                    slug="preview" 
-                    diseno={diseno} 
+                  <ProductCardAutopartes
+                    key={product.id}
+                    producto={product}
+                    slug="preview"
+                    diseno={diseno}
                     onAddToCart={() => {
                       addToCart(product);
-                    }} 
+                    }}
                   />
                 ))}
               </div>
             </section>
-            
+
             <section className="w-full max-w-7xl mx-auto px-4 xl:px-8 pb-16">
-              <AutopartesTrendingProducts 
-                cp={cp} 
-                slug="preview" 
-                productos={[...demo.products].reverse()} 
-                diseno={diseno} 
+              <AutopartesTrendingProducts
+                cp={cp}
+                slug="preview"
+                productos={[...demo.products].reverse()}
+                diseno={diseno}
                 onAddToCart={(p) => {
                   addToCart(p);
-                }} 
+                }}
               />
             </section>
 
@@ -1096,30 +1172,27 @@ export default function StorePreviewPage() {
             </div>
           </div>
         ) : page === 'home' && config.plantillaId === 'moda' ? (
-          <div className="bg-[#FAF9F6] w-full">
+          <div className="w-full bg-[#FAF9F6] text-[14px]">
             <ModaHero cp={cp} slug="preview" diseno={diseno} productos={demo.products.slice(0, 3)} />
-            <ModaFeaturedCollections slug="preview" productos={demo.products} onAddToCart={addToCart} />
-            <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-14 md:py-16">
-              <ModaBestSelling slug="preview" cp={cp} productos={demo.products} />
-              <ModaNewArrivals slug="preview" productos={demo.products} />
-              <ModaPromoBanner slug="preview" />
-            </div>
+            <ModaBestSelling slug="preview" cp={cp} productos={demo.products} genero="hombre" titulo="Más vendidos hombre" />
+            <ModaBestSelling slug="preview" cp={cp} productos={demo.products} genero="mujer" titulo="Más vendidos mujer" offset={10} />
+            <ModaHomeSections slug="preview" productos={demo.products} />
           </div>
         ) : page === 'home' && config.plantillaId === 'urbano' ? (
-            <UrbanoCatalogoPage
-                slug="preview"
-                tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno }}
-                productos={urbanoPreviewProducts}
-                allCategories={urbanoPreviewCategories}
-                cp={cp}
-                carritoSize={carrito.length}
-                onOpenCart={() => {}}
-                onAddToCart={(p) => addToCart(p)}
-                onProduct={(p) => goToProduct(p)}
-                searchQuery=""
-                setSearchQuery={() => {}}
-                onSearchSubmit={() => {}}
-            />
+          <UrbanoCatalogoPage
+            slug="preview"
+            tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno }}
+            productos={urbanoPreviewProducts}
+            allCategories={urbanoPreviewCategories}
+            cp={cp}
+            carritoSize={carrito.length}
+            onOpenCart={() => { }}
+            onAddToCart={(p) => addToCart(p)}
+            onProduct={(p) => goToProduct(p)}
+            searchQuery=""
+            setSearchQuery={() => { }}
+            onSearchSubmit={() => { }}
+          />
         ) : page === 'home' ? (
           <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(demo.products[0])} />
         ) : null}
@@ -1127,126 +1200,179 @@ export default function StorePreviewPage() {
           config.plantillaId === 'autopartes' ? (
             <AutopartesCatalog demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
           ) : config.plantillaId === 'moda' ? (
-            <div className="w-full min-h-screen bg-[#FAF9F6] pb-20">
-              <div className="max-w-7xl mx-auto px-4 xl:px-8 py-16">
-                
-                {/* Header text */}
-                <div className="text-center max-w-2xl mx-auto mb-16">
-                  <h1 className="text-3xl md:text-[2.5rem] font-bold text-gray-900 tracking-tight mb-4" style={{ fontFamily: '"Inter", sans-serif' }}>
-                    Donde la moda te encuentra
+            <div className="w-full min-h-screen bg-white pb-16 text-black">
+              <div className="mx-auto max-w-[1720px] px-5 pb-10 pt-6 md:px-10 lg:px-16">
+                <nav className="mb-12 text-[11px] text-neutral-500">
+                  <button onClick={() => goToPage('home')} className="hover:text-black">Inicio</button>
+                  <span className="mx-2">/</span>
+                  <span>Más vendidos hombre</span>
+                </nav>
+
+                <header className="mx-auto mb-14 max-w-[760px] text-center">
+                  <h1 className="text-[36px] font-medium lowercase leading-none tracking-[-0.055em] md:text-[54px]">
+                    más vendidos hombre
                   </h1>
-                  <p className="text-sm md:text-[15px] text-gray-500 leading-relaxed">
-                    Explora estilos seleccionados, piezas de lujo y tendencias modernas diseñadas para expresar tu confianza única.
+                  <p className="mt-8 text-[14px] leading-6 text-black">
+                    Explora nuestras prendas favoritas: camisas destacadas, pantalones wide-leg, casacas y esenciales urbanos para todos los días.
                   </p>
-                </div>
+                </header>
 
-                {/* Filter & Sort Bar */}
-                <div className="flex items-center justify-between mb-8 pb-4">
-                  <button onClick={() => setShowFilters(true)} className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-gray-600 transition-colors">
-                    <Icon icon="solar:filter-bold" width={18} />
-                    Filtrar y Ordenar
-                  </button>
-                  <span className="text-sm font-bold text-gray-500">{demo.products.length} Productos</span>
-                </div>
-
-                {/* Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-20">
-                  {demo.products.map(p => {
-                    const price = Number(p.precioUnitario || 0);
-                    return (
-                      <button key={p.id} onClick={() => goToProduct(p)} className="text-left group w-full bg-white rounded-[1.5rem] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all">
-                        <div className="relative w-full aspect-square bg-white rounded-xl mb-4 overflow-hidden flex items-center justify-center p-2">
-                          {p.imagenUrl ? (
-                            <img src={p.imagenUrl} alt={p.descripcion} className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.05]" />
-                          ) : (
-                            <Icon icon="solar:box-linear" className="text-gray-200 text-5xl" />
-                          )}
-                        </div>
-                        <p className="text-[13px] font-bold text-gray-900 leading-snug line-clamp-2 mb-1.5 px-1">{p.descripcion}</p>
-                        <p className="text-[13px] font-bold text-gray-600 px-1">${price.toFixed(2)}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Bottom Banners Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-4 md:gap-6 items-stretch">
-                  <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[340px]">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none w-full text-center">
-                      <span className="text-[10rem] sm:text-[14rem] font-black text-gray-50 opacity-50 tracking-tighter whitespace-nowrap">Comf</span>
+                <div className="grid gap-8 lg:grid-cols-[255px_1fr] lg:gap-10">
+                  <aside className="hidden lg:block">
+                    <div className="sticky top-[180px]">
+                      <h2 className="mb-5 text-[24px] font-normal lowercase tracking-[-0.04em]">filtros</h2>
+                      <div className="border-t border-neutral-300">
+                        {MODA_FILTER_GROUPS.map((filter) => (
+                          <div key={filter.key} className="border-b border-neutral-300">
+                            <button
+                              type="button"
+                              onClick={() => setModaOpenFilter(modaOpenFilter === filter.key ? null : filter.key)}
+                              className="flex h-[64px] w-full items-center justify-between text-left text-[13px] font-semibold"
+                            >
+                              {filter.label}
+                              <Icon icon={modaOpenFilter === filter.key ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} width={16} />
+                            </button>
+                            {modaOpenFilter === filter.key && (
+                              <div className="space-y-3 pb-5 text-[13px]">
+                                {filter.options.map((option) => (
+                                  <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => toggleModaFilter(filter.key, option)}
+                                    className={`block text-left ${modaFilters[filter.key] === option ? 'font-black text-black' : 'text-neutral-600 hover:text-black'}`}
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {Object.values(modaFilters).some(Boolean) && (
+                        <button onClick={() => setModaFilters({})} className="mt-6 text-[12px] font-semibold underline underline-offset-4">
+                          Limpiar filtros
+                        </button>
+                      )}
                     </div>
-                    
-                    <div className="relative z-10 max-w-[55%]">
-                      <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2 tracking-tight">
-                        ¡Tu evolución
-                      </h3>
-                      <h3 className="text-3xl lg:text-4xl text-gray-900 leading-tight mb-4" style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic' }}>
-                        comienza aquí!
-                      </h3>
-                      <p className="text-xs text-gray-500 leading-relaxed mb-6">
-                        Estilos seleccionados, telas lujosas y elegancia natural en un solo lugar. Vístete como sueñas.
-                      </p>
-                      <button 
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className="px-6 py-2.5 bg-[#2D2D2D] text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-black transition-colors inline-flex items-center gap-2"
+                  </aside>
+
+                  <section className="min-w-0">
+                    <div className="mb-9 flex items-center justify-between gap-4">
+                      <button
+                        onClick={() => setShowFilters(true)}
+                        className="inline-flex items-center gap-2 border border-neutral-300 px-4 py-2 text-[13px] font-medium lg:hidden"
                       >
-                        Empezar a comprar <Icon icon="solar:arrow-up-linear" width={16} />
+                        filtros
+                        <Icon icon="solar:filter-linear" width={16} />
                       </button>
+                      <p className="hidden text-[12px] text-black lg:block">{modaVisibleProducts.length} productos</p>
+                      <label className="ml-auto inline-flex items-center gap-2 text-[12px]">
+                        <span className="text-neutral-500">Ordenar por</span>
+                        <select value={modaSort} onChange={(event) => setModaSort(event.target.value)} className="bg-transparent pr-5 text-[12px] font-medium outline-none">
+                          <option value="relevancia">Más relevante</option>
+                          <option value="precio-asc">Precio menor a mayor</option>
+                          <option value="precio-desc">Precio mayor a menor</option>
+                          <option value="nombre">Nombre A-Z</option>
+                        </select>
+                      </label>
                     </div>
 
-                    <div className="absolute bottom-0 right-0 w-[45%] h-[95%] z-0 flex items-end justify-center">
-                      <img 
-                        src="https://images.unsplash.com/photo-1549439602-43ebca2327af?auto=format&fit=crop&q=80&w=800" 
-                        alt="Model" 
-                        className="w-full h-full object-cover object-top mix-blend-multiply opacity-90 scale-110 origin-bottom filter grayscale"
-                      />
+                    <div className="grid grid-cols-2 gap-x-7 gap-y-16 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-9 xl:gap-y-20">
+                      {modaVisibleProducts.map((product, index) => {
+                        const price = Number(product.precioUnitario || 0);
+                        const original = Number(product.precioOriginal || product.precioUnitario || 0);
+                        const saving = original > price ? original - price : [10.1, 18, 9, 8, 16.1, 44.88, 14, 25][index % 8];
+                        return (
+                          <article key={product.id} className="group text-center">
+                            <button type="button" onClick={() => goToProduct(product)} className="relative block w-full text-left">
+                              <span className="absolute left-2 top-0 z-10 rounded-[2px] bg-black px-2 py-1 text-[11px] font-black uppercase leading-none tracking-[0.06em] text-white">
+                                AHORRA S/ {saving.toFixed(2)}
+                              </span>
+                              <div className="aspect-[0.82] w-full overflow-hidden bg-white">
+                                <img
+                                  src={product.imagenUrl}
+                                  alt={product.descripcion}
+                                  className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.025]"
+                                />
+                              </div>
+                            </button>
+                            <button type="button" onClick={() => goToProduct(product)} className="mt-9 block w-full text-center">
+                              <p className="text-[10px] font-black uppercase tracking-[0.22em]">{product.marca || 'KREZKA'}</p>
+                              <h3 className="mx-auto mt-3 line-clamp-1 max-w-[270px] text-[14px] font-normal leading-6 text-black">
+                                {product.descripcion}
+                              </h3>
+                              <div className="mt-1 flex items-center justify-center gap-2 text-[14px] font-normal">
+                                <span>S/ {price.toFixed(2)}</span>
+                                {original > price && <span className="text-neutral-400 line-through">S/ {original.toFixed(2)}</span>}
+                              </div>
+                              <p className="mt-4 text-[13px] text-neutral-500">
+                                {product.coloresDisponibles || 1} {(product.coloresDisponibles || 1) === 1 ? 'color disponible' : 'colores disponibles'}
+                              </p>
+                            </button>
+                          </article>
+                        );
+                      })}
                     </div>
-                  </div>
-
-                  <div className="bg-[#B58863] rounded-[2rem] overflow-hidden min-h-[300px] lg:min-h-[340px] relative">
-                    <img 
-                      src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=1200" 
-                      alt="Girls laughing" 
-                      className="absolute inset-0 w-full h-full object-cover object-top"
-                    />
-                  </div>
+                    {modaVisibleProducts.length === 0 && (
+                      <div className="py-20 text-center">
+                        <p className="text-[18px] font-semibold">No hay productos con esos filtros.</p>
+                        <button onClick={() => setModaFilters({})} className="mt-4 h-11 bg-black px-8 text-[13px] font-semibold text-white">
+                          Limpiar filtros
+                        </button>
+                      </div>
+                    )}
+                  </section>
                 </div>
 
-                {/* Mock filter drawer */}
                 {showFilters && (
-                    <div className="fixed inset-0 z-[200]">
-                        <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
-                        <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col">
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                                <span className="font-black text-gray-900">Filtrar y Ordenar</span>
-                                <button onClick={() => setShowFilters(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                    <Icon icon="solar:close-circle-bold" width={18} className="text-gray-600" />
-                                </button>
-                            </div>
-                            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
-                                <div>
-                                    <p className="font-bold text-gray-800 mb-3 text-sm">Categorías</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {['Ropa', 'Calzado', 'Accesorios', 'Bolsos'].map((cat, i) => (
-                                            <button key={i} className="px-4 py-2 rounded-full text-xs font-bold border-2 border-[#E5E7EB] text-[#6B7280]">
-                                                {cat}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
-                                <button onClick={() => setShowFilters(false)} className="flex-1 py-3 rounded-full text-sm font-bold text-white bg-gray-900">
-                                    Ver {demo.products.length} Resultados
-                                </button>
-                            </div>
-                        </div>
+                  <div className="fixed inset-0 z-[200] lg:hidden">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
+                    <div className="absolute bottom-0 left-0 right-0 bg-white p-5 shadow-2xl">
+                      <div className="mb-5 flex items-center justify-between">
+                        <span className="text-[24px] font-medium lowercase">filtros</span>
+                        <button onClick={() => setShowFilters(false)}>
+                          <Icon icon="solar:close-circle-linear" width={28} />
+                        </button>
+                      </div>
+                      <div className="border-t border-neutral-300">
+                        {MODA_FILTER_GROUPS.map((filter) => (
+                          <div key={filter.key} className="border-b border-neutral-300">
+                            <button
+                              type="button"
+                              onClick={() => setModaOpenFilter(modaOpenFilter === filter.key ? null : filter.key)}
+                              className="flex h-[58px] w-full items-center justify-between text-[13px] font-semibold"
+                            >
+                              {filter.label}
+                              <Icon icon={modaOpenFilter === filter.key ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} width={16} />
+                            </button>
+                            {modaOpenFilter === filter.key && (
+                              <div className="space-y-3 pb-5">
+                                {filter.options.map((option) => (
+                                  <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => toggleModaFilter(filter.key, option)}
+                                    className={`block text-left text-[13px] ${modaFilters[filter.key] === option ? 'font-black text-black' : 'text-neutral-600'}`}
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={() => setShowFilters(false)} className="mt-6 h-11 w-full bg-black text-[13px] font-semibold text-white">
+                        Ver {modaVisibleProducts.length} productos
+                      </button>
                     </div>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
-            <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => {}} />
+            <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => { }} />
           )
         )}
 
@@ -1261,101 +1387,101 @@ export default function StorePreviewPage() {
         )}
         {page === 'checkout' && (
           config.plantillaId === 'moda' ? (
-            <ModaCheckoutPage 
-                slug="preview"
-                tienda={{ nombre: demo.storeName, diseno }}
-                diseno={diseno}
-                cp={cp}
-                pedidoCreado={null}
-                carritoState={carrito}
-                setCarritoState={setCarrito}
-                formData={{}}
-                erroresForm={{}}
-                handleChange={() => {}}
-                configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
-                configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
-                enviando={false}
-                search=""
-                setSearch={() => {}}
-                searchResults={[]}
-                suggestedProducts={[]}
-                updateQuantity={actualizarCantidad}
-                removeItem={(id) => actualizarCantidad(id, 0)}
-                calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
-                calcularCostoEnvio={() => 15}
-                calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
-                onSubmit={() => alert('¡Compra completada en modo demo!')}
-                onAddToCart={addToCart}
-                freeDeliveryThreshold={0}
-                freeDeliveryRemaining={0}
-                freeDeliveryProgress={0}
-                showConfirmModal={false}
-                setShowConfirmModal={() => {}}
-                showPaymentModal={false}
-                setShowPaymentModal={() => {}}
-                enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
-              />
+            <ModaCheckoutPage
+              slug="preview"
+              tienda={{ nombre: demo.storeName, diseno }}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={[]}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
           ) : config.plantillaId === 'autopartes' ? (
-            <AutopartesCheckout 
-                slug="preview"
-                tienda={{ nombre: demo.storeName, diseno }}
-                carrito={carrito}
-                formData={{}}
-                erroresForm={{}}
-                configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
-                configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
-                enviando={false}
-                search=""
-                setSearch={() => {}}
-                searchResults={[]}
-                suggestedProducts={[]}
-                handleChange={() => {}}
-                updateQuantity={actualizarCantidad}
-                removeItem={(id) => actualizarCantidad(id, 0)}
-                calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
-                calcularCostoEnvio={() => 15}
-                calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
-                onSubmit={() => alert('¡Compra completada en modo demo!')}
-                onAddToCart={addToCart}
-                freeDeliveryThreshold={0}
-                freeDeliveryRemaining={0}
-                freeDeliveryProgress={0}
-              />
+            <AutopartesCheckout
+              slug="preview"
+              tienda={{ nombre: demo.storeName, diseno }}
+              carrito={carrito}
+              formData={{}}
+              erroresForm={{}}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={[]}
+              handleChange={() => { }}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+            />
           ) : config.plantillaId === 'urbano' ? (
             <UrbanoCheckoutPage
-                slug="preview"
-                tienda={{ nombre: demo.storeName, diseno }}
-                diseno={diseno}
-                cp={cp}
-                pedidoCreado={null}
-                carritoState={carrito}
-                setCarritoState={setCarrito}
-                formData={{}}
-                erroresForm={{}}
-                handleChange={() => {}}
-                configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
-                configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
-                enviando={false}
-                search=""
-                setSearch={() => {}}
-                searchResults={[]}
-                suggestedProducts={[]}
-                updateQuantity={actualizarCantidad}
-                removeItem={(id) => actualizarCantidad(id, 0)}
-                calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
-                calcularCostoEnvio={() => 15}
-                calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
-                onSubmit={() => alert('¡Compra completada en modo demo!')}
-                onAddToCart={addToCart}
-                freeDeliveryThreshold={0}
-                freeDeliveryRemaining={0}
-                freeDeliveryProgress={0}
-                showConfirmModal={false}
-                setShowConfirmModal={() => {}}
-                showPaymentModal={false}
-                setShowPaymentModal={() => {}}
-                enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
-              />
+              slug="preview"
+              tienda={{ nombre: demo.storeName, diseno }}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={[]}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
           ) : (
             <div className="py-20 text-center font-bold text-gray-500">Checkout Preview (Generic)</div>
           )

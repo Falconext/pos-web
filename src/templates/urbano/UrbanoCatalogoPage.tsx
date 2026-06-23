@@ -73,8 +73,16 @@ export default function UrbanoCatalogoPage({
   const splitCategories = displayCategories.slice(0, 4);
 
   const collectionProducts = displayProducts.slice(0, 12);
-  const lookProducts = displayProducts.slice(0, 2);
-  const featureProducts = displayProducts.slice(2, 4);
+  
+  const shopTheLookSelected = Array.isArray(diseno.urbanoShopTheLookProducts) ? diseno.urbanoShopTheLookProducts : [];
+  const lookProducts = shopTheLookSelected.length > 0 
+    ? shopTheLookSelected.map((s: any) => displayProducts.find((p: any) => p.id === s.id) || s).slice(0, 2)
+    : displayProducts.slice(0, 2);
+
+  const featureSelected = Array.isArray(diseno.urbanoFeatureProducts) ? diseno.urbanoFeatureProducts : [];
+  const featureProducts = featureSelected.length > 0
+    ? featureSelected.map((s: any) => displayProducts.find((p: any) => p.id === s.id) || s).slice(0, 2)
+    : displayProducts.slice(2, 4);
   const galleryImages = displayProducts.map(productImage).filter(Boolean).slice(0, 5);
 
   const openProduct = (product: any) => {

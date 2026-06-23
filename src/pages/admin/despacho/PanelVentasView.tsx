@@ -107,6 +107,36 @@ function TabBtn({ active, onClick, label, count, variant = 'blue' }: {
     );
 }
 
+function KpiCard({ label, value, detail, icon, tone }: {
+    label: string;
+    value: string;
+    detail: string;
+    icon: string;
+    tone: 'emerald' | 'red' | 'amber' | 'blue';
+}) {
+    const styles = {
+        emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/40',
+        red: 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-900/40',
+        amber: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-900/40',
+        blue: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-900/40',
+    }[tone];
+
+    return (
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#111827]">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">{label}</p>
+                    <p className="mt-1 text-xl font-black text-gray-900 dark:text-white">{value}</p>
+                    <p className="mt-1 text-xs font-medium text-gray-500 dark:text-slate-400">{detail}</p>
+                </div>
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${styles}`}>
+                    <Icon icon={icon} width={20} />
+                </span>
+            </div>
+        </div>
+    );
+}
+
 // Dropdown selector de estado inline para filas con despacho
 function EstadoDespachoSelector({ item, onChange }: {
     item: VentaPanelItem;
@@ -514,6 +544,36 @@ export default function PanelVentasView() {
         { key: 'POR_COBRAR',   label: 'Por cobrar',   count: vm.countPorCobrar, variant: 'orange' },
     ];
     const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
+    const kpis = [
+        {
+            label: 'Vendido hoy',
+            value: `S/ ${vm.totalVentasDia.toFixed(2)}`,
+            detail: `${vm.countTodo} registro${vm.countTodo !== 1 ? 's' : ''} del día`,
+            icon: 'solar:wallet-money-bold-duotone',
+            tone: 'emerald' as const,
+        },
+        {
+            label: 'Por cobrar hoy',
+            value: `S/ ${vm.totalPorCobrarDia.toFixed(2)}`,
+            detail: `${vm.countPorCobrar} venta${vm.countPorCobrar !== 1 ? 's' : ''} con saldo hoy`,
+            icon: 'solar:bill-list-bold-duotone',
+            tone: vm.totalPorCobrarDia > 0 ? 'red' as const : 'blue' as const,
+        },
+        {
+            label: 'Pendiente total',
+            value: `S/ ${vm.porCobrarGlobal.total.toFixed(2)}`,
+            detail: `${vm.porCobrarGlobal.cantidad} cuenta${vm.porCobrarGlobal.cantidad !== 1 ? 's' : ''} acumulada${vm.porCobrarGlobal.cantidad !== 1 ? 's' : ''}`,
+            icon: 'solar:alarm-bold-duotone',
+            tone: vm.porCobrarGlobal.total > 0 ? 'amber' as const : 'blue' as const,
+        },
+        {
+            label: 'Con despacho',
+            value: String(vm.countDespacho),
+            detail: 'Ventas del día con seguimiento',
+            icon: 'solar:delivery-bold-duotone',
+            tone: 'blue' as const,
+        },
+    ];
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -522,18 +582,7 @@ export default function PanelVentasView() {
                 <div>
                     <h1 className="text-xl font-extrabold text-gray-900 dark:text-white">Panel de Ventas</h1>
                     <p className="text-sm text-gray-500 dark:text-slate-400">
-                        {vm.filtrados.length} registro{vm.filtrados.length !== 1 ? 's' : ''} ·{' '}
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                            S/ {vm.totalVentas.toFixed(2)}
-                        </span>
-                        {vm.totalPorCobrar > 0 && (
-                            <>
-                                {' '}·{' '}
-                                <span className="font-semibold text-red-500 dark:text-red-400">
-                                    S/ {vm.totalPorCobrar.toFixed(2)} por cobrar
-                                </span>
-                            </>
-                        )}
+                        Resumen del día seleccionado y deuda pendiente acumulada.
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -563,6 +612,12 @@ export default function PanelVentasView() {
                         <Icon icon="solar:refresh-linear" className={`text-lg ${vm.loading ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {kpis.map((kpi) => (
+                    <KpiCard key={kpi.label} {...kpi} />
+                ))}
             </div>
 
             {/* Tabs + filtros */}

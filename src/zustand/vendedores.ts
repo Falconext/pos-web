@@ -28,9 +28,17 @@ export interface VendedorComprobante {
     estadoEnvioSunat: string;
 }
 
+export interface VendedorProducto {
+    productoId: number | null;
+    descripcion: string;
+    cantidad: number;
+    monto: number;
+}
+
 export interface VendedorDetalle {
     usuario: { id: number; nombre: string; email: string; rol: string };
     chartData: VendedorChartPoint[];
+    productos: VendedorProducto[];
     comprobantes: VendedorComprobante[];
 }
 

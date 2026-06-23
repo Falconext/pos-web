@@ -3,6 +3,7 @@ type VariantValueMap = Record<string, string>;
 export type FashionColorOption = {
   name: string;
   hex: string;
+  image: string | null;
 };
 
 const COLOR_HEX: Record<string, string> = {
@@ -25,6 +26,7 @@ const COLOR_HEX: Record<string, string> = {
   negro: '#111111',
   red: '#DC2626',
   rojo: '#DC2626',
+  rosa: '#F9A8D4',
   rosado: '#F9A8D4',
   verde: '#16A34A',
   white: '#F8FAFC',
@@ -50,7 +52,7 @@ const normalizeArray = (value: any): any[] => {
   return [];
 };
 
-const variantValues = (variant: any): VariantValueMap => {
+export const variantValues = (variant: any): VariantValueMap => {
   const raw = variant?.valoresAtributos;
   if (!raw) return {};
   if (typeof raw === 'string') {
@@ -105,10 +107,23 @@ export const colorToHex = (name: string) => {
   return COLOR_HEX[normalized] || '#E5E7EB';
 };
 
+// Imagen representativa de un color: la primera variante de ese color con imagen.
+// En la tienda la imagen es por color (todas las tallas comparten la misma foto).
+export const getFashionColorImage = (producto: any, colorValue: string): string | null => {
+  const target = normalizeText(colorValue);
+  if (!target) return null;
+  const match = normalizeArray(producto?.variantes).find((variant) => {
+    const values = variantValues(variant);
+    const key = Object.keys(values).find(isColorName);
+    return key ? normalizeText(values[key]) === target && Boolean(variant?.imagenUrl) : false;
+  });
+  return match?.imagenUrl || null;
+};
+
 export const getFashionColors = (producto: any): FashionColorOption[] => {
   const values = [...valuesFromOptions(producto, isColorName)];
   valuesFromVariants(producto, isColorName).forEach((value) => uniquePush(values, value));
-  return values.map((name) => ({ name, hex: colorToHex(name) }));
+  return values.map((name) => ({ name, hex: colorToHex(name), image: getFashionColorImage(producto, name) }));
 };
 
 export const getFashionSizes = (producto: any): string[] => {
@@ -118,8 +133,23 @@ export const getFashionSizes = (producto: any): string[] => {
 };
 
 export const getDefaultVariantSelection = (producto: any) => {
-  const firstVariant = normalizeArray(producto?.variantes).find((variant) => Number(variant?.stock ?? 0) > 0)
-    || normalizeArray(producto?.variantes)[0];
+  const variantes = normalizeArray(producto?.variantes);
+  if (!variantes.length) return {};
+
+  // Color por defecto = primer color de las opciones (orden del admin) que tenga
+  // alguna variante con stock; si ninguno tiene stock, el primer color de la lista.
+  const colors = valuesFromOptions(producto, isColorName);
+  if (colors.length) {
+    const colorKey = Object.keys(variantValues(variantes[0])).find(isColorName) || 'Color';
+    const preferred = colors.find((color) =>
+      variantes.some((v) => variantValues(v)[colorKey] === color && Number(v?.stock ?? 0) > 0),
+    ) || colors[0];
+    const firstOfColor = variantes.find((v) => variantValues(v)[colorKey] === preferred && Number(v?.stock ?? 0) > 0)
+      || variantes.find((v) => variantValues(v)[colorKey] === preferred);
+    if (firstOfColor) return variantValues(firstOfColor);
+  }
+
+  const firstVariant = variantes.find((variant) => Number(variant?.stock ?? 0) > 0) || variantes[0];
   return firstVariant ? variantValues(firstVariant) : {};
 };
 

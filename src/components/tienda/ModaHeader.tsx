@@ -14,43 +14,47 @@ interface ModaHeaderProps {
   allCategories?: any[];
 }
 
-type MenuKey = 'men' | 'women' | null;
+type MenuKey = 'women' | 'men' | 'accessories' | 'style' | null;
 
 const menuBase = {
-  men: {
-    label: 'Men',
-    shipping: 'FREE SHIPPING FROM S/150 TO ALL PERU',
-    first: ['New Arrivals', 'White Sneakers', 'Bestsellers', 'Wedding', 'A Journey Shared in Brasil', 'Heineken x Filling Pieces'],
-    shoes: ['New Arrivals', 'All Shoes', 'Sneakers', 'Loafers | Derbies', 'Sandals | Slides'],
-    silhouettes: ['Loafer', 'Mondo', 'Low Top', 'Cruiser', 'Tiebreak', 'Riviera', 'Derby'],
-    clothing: ['New Arrivals', 'All Clothing', 'Knitwear', 'T-Shirts | Longsleeves', 'Shirts | Polos', 'Tank Tops', 'Hoodies | Sweatshirts', 'Jackets | Overshirts', 'Pants', 'Shorts | Swimshorts', 'Denim', 'Co-ords | Sets'],
-    cards: [
-      {
-        title: "Shop our Men's Shoes",
-        image: 'https://images.unsplash.com/photo-1515347619252-8d348b569ea4?auto=format&fit=crop&q=80&w=900',
-      },
-      {
-        title: "Shop our Men's Clothing",
-        image: 'https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&q=80&w=900',
-      },
+  women: {
+    label: 'Mujer',
+    groups: [
+      { title: 'Vestidos', items: ['Vestidos maxi', 'Vestidos midi', 'Vestidos mini'] },
+      { title: 'Faldas', items: ['Faldas maxi', 'Faldas midi', 'Faldas mini'] },
+      { title: 'Tops', items: ['Tops basicos', 'Blusas', 'Polos', 'Poleras y hoodies', 'Enterizos'] },
+      { title: 'Prendas inferiores', items: ['Pantalones', 'Jeans', 'Shorts', 'Pantalones flare', 'Pantalones wide-leg'] },
+      { title: 'Abrigos', items: ['Casacas y abrigos', 'Casacas puffer', 'Chalecos', 'Blazers'] },
+      { title: 'Tejidos', items: ['Cardigans', 'Chompas'] },
     ],
   },
-  women: {
-    label: 'Women',
-    shipping: 'FREE TOTE BAG WITH EVERY ORDER, ADD YOURS IN THE CART',
-    first: ['New Arrivals', 'White Sneakers', 'Bestsellers', 'Wedding', 'Heineken x Filling Pieces', 'Just Eat Takeaway.com x Filling Pieces'],
-    shoes: ['New Arrivals', 'All Shoes', 'Sneakers', 'Loafers', 'Sandals | Slides'],
-    silhouettes: ['Loafer', 'Low Top', 'Mondo', 'Cruiser'],
-    clothing: ['New Arrivals', 'All Clothing', 'Knitwear', 'T-Shirts | Shirts', 'Tank Tops', 'Hoodies | Sweatshirts', 'Jackets | Overshirts', 'Shirts | Polos', 'Pants | Jeans', 'Shorts', 'Denim', 'Co-ords | Sets'],
-    cards: [
-      {
-        title: "Shop our Women's Shoes",
-        image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=900',
-      },
-      {
-        title: "Shop our Women's Clothing",
-        image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=900',
-      },
+  men: {
+    label: 'Hombre',
+    groups: [
+      { title: 'Camisas', items: ['Camisas manga larga', 'Camisas manga corta', 'Sobrecamisas'] },
+      { title: 'Polos', items: ['Polos basicos', 'Polos estampados', 'Polos boxy'] },
+      { title: 'Pantalones', items: ['Jeans', 'Cargo', 'Joggers', 'Wide-leg'] },
+      { title: 'Casacas', items: ['Denim', 'Bomber', 'Puffer', 'Blazers'] },
+      { title: 'Calzado', items: ['Zapatillas', 'Botines', 'Zapatos'] },
+      { title: 'Tendencias', items: ['Nuevos ingresos', 'Más vendidos', 'Ofertas'] },
+    ],
+  },
+  accessories: {
+    label: 'Accesorios',
+    groups: [
+      { title: 'Bolsos', items: ['Carteras', 'Billeteras', 'Mochilas'] },
+      { title: 'Complementos', items: ['Lentes', 'Correas', 'Gorras', 'Joyeria'] },
+      { title: 'Calzado', items: ['Zapatillas', 'Botines', 'Sandalias'] },
+      { title: 'Edicion', items: ['Nuevos', 'Más vendidos', 'Ofertas'] },
+    ],
+  },
+  style: {
+    label: 'Estilo',
+    groups: [
+      { title: 'Editorial', items: ['Looks de temporada', 'Guia denim', 'Capsula minimal', 'Outfits de oficina'] },
+      { title: 'Colecciones', items: ['Recien llegado', 'Esenciales', 'Urbano', 'Minimal'] },
+      { title: 'Comprar por ocasion', items: ['Diario', 'Trabajo', 'Noche', 'Fin de semana'] },
+      { title: 'Inspiracion', items: ['Como combinar', 'Colores neutros', 'Layering'] },
     ],
   },
 };
@@ -68,11 +72,12 @@ export default function ModaHeader({
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState<MenuKey>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const brandName = useMemo(() => {
-    const name = tienda?.nombre || 'Filling Pieces';
-    return String(name).replace(/\s+/g, ' ').trim().toUpperCase();
-  }, [tienda?.nombre]);
+    const name = tienda?.diseno?.modaBrandName || tienda?.nombre || 'chiclara';
+    return String(name).replace(/\s+/g, ' ').trim();
+  }, [tienda?.diseno?.modaBrandName, tienda?.nombre]);
 
   const goCatalog = (query?: string) => {
     if (slug === 'preview') {
@@ -85,15 +90,45 @@ export default function ModaHeader({
   const menu = activeMenu ? menuBase[activeMenu] : null;
 
   return (
-    <header className="relative z-[80] w-full bg-white text-black" onMouseLeave={() => setActiveMenu(null)}>
-      <div className="h-[38px] bg-black text-white flex items-center justify-center px-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.03em]">
-          {menu?.shipping || '30 EASY DAYS RETURN POLICY'}
+    <header className="sticky top-0 z-[80] w-full bg-white text-[#111111]" onMouseLeave={() => setActiveMenu(null)}>
+      <div className="h-[72px] bg-black text-white grid grid-cols-[1fr_auto_1fr] items-center px-5 md:px-10">
+        <button className="justify-self-start text-white/80 hover:text-white" onClick={() => goCatalog('nuevos ingresos')} aria-label="Promoción anterior">
+          <Icon icon="solar:arrow-left-linear" width={22} />
+        </button>
+        <p className="text-[12px] md:text-[15px] font-black tracking-[-0.01em]">
+          {tienda?.diseno?.modaPromoText || 'Oferta de verano: hasta 30% OFF'}
         </p>
+        <button className="justify-self-end text-white/80 hover:text-white" onClick={() => goCatalog('ofertas')} aria-label="Promoción siguiente">
+          <Icon icon="solar:arrow-right-linear" width={22} />
+        </button>
       </div>
 
-      <div className="h-[56px] border-b border-black/90 bg-white flex items-center justify-between px-4 md:px-8">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="h-[86px] border-b border-[#E5E5E5] bg-white grid grid-cols-[1fr_auto_1fr] items-center px-5 md:px-10 lg:px-16">
+        {isSearchOpen ? (
+          <div className="col-span-3 flex items-center justify-center w-full">
+            <form onSubmit={(e) => { setIsSearchOpen(false); onSearchSubmit(e); }} className="relative w-full max-w-2xl flex items-center">
+              <Icon icon="solar:magnifer-linear" width={20} className="absolute left-4 text-gray-400 pointer-events-none" />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') { setIsSearchOpen(false); setSearchQuery(''); } }}
+                placeholder="Search for products"
+                className="w-full h-[46px] pl-12 pr-12 text-[14px] bg-white border border-[#E5E5E5] outline-none focus:border-black transition-colors rounded-[3px] text-gray-800"
+              />
+              <button 
+                type="button" 
+                onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} 
+                className="absolute right-4 text-gray-400 hover:text-black transition-colors" 
+                aria-label="Cerrar búsqueda"
+              >
+                <Icon icon="solar:close-linear" width={20} />
+              </button>
+            </form>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-4 min-w-0">
           <button
             className="lg:hidden -ml-1"
             onClick={() => setMobileOpen((value) => !value)}
@@ -103,55 +138,50 @@ export default function ModaHeader({
           </button>
           <Link to={`/tienda/${slug}`} className="flex items-center">
             {tienda?.logo ? (
-              <img src={tienda.logo} alt={tienda.nombre} className="h-8 max-w-[180px] object-contain" />
+              <img src={tienda.logo} alt={tienda.nombre} className="h-10 max-w-[190px] object-contain" />
             ) : (
-              <span className="text-[20px] md:text-[22px] font-medium tracking-[0.16em] leading-none border-b border-black pb-0.5 truncate max-w-[220px]">
+              <span className="font-serif text-[33px] md:text-[40px] font-black leading-none tracking-[-0.06em] truncate max-w-[240px]">
                 {brandName}
               </span>
             )}
           </Link>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-7 text-[15px] font-medium">
-          {(['men', 'women'] as const).map((key) => (
+        <nav className="hidden lg:flex items-center gap-10 text-[14px] font-medium">
+          <button onClick={() => goCatalog('nuevos ingresos')} className="leading-none hover:text-[#15243B]">
+            Nuevos ingresos
+          </button>
+          <button onClick={() => goCatalog('más vendidos')} className="leading-none hover:text-[#15243B]">
+            Más vendidos
+          </button>
+          {(['women', 'men', 'accessories', 'style'] as const).map((key) => (
             <button
               key={key}
               onMouseEnter={() => setActiveMenu(key)}
               onClick={() => goCatalog(key)}
-              className={`leading-none pb-1 border-b transition-colors ${activeMenu === key ? 'border-black' : 'border-transparent hover:border-black'}`}
+              className={`inline-flex items-center gap-1.5 leading-none pb-1 border-b transition-colors ${activeMenu === key ? 'border-black' : 'border-transparent hover:border-black'}`}
             >
               {menuBase[key].label}
+              <Icon icon="solar:alt-arrow-down-linear" width={14} />
             </button>
           ))}
-          <button onClick={() => goCatalog('mundo')} className="leading-none pb-1 border-b border-transparent hover:border-black">
-            Our World
-          </button>
-          <button onClick={() => goCatalog('ofertas')} className="leading-none pb-1 border-b border-transparent hover:border-black">
-            Rewards
+          <button onClick={() => goCatalog('ofertas')} className="leading-none hover:text-[#15243B]">
+            Ofertas
           </button>
         </nav>
 
-        <div className="hidden lg:flex items-center gap-4 text-[14px] font-medium uppercase">
-          <form onSubmit={onSearchSubmit} className="flex items-center gap-1">
-            <Icon icon="solar:magnifer-linear" width={18} />
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="SEARCH"
-              className="w-[70px] bg-transparent outline-none placeholder:text-black"
-            />
-          </form>
-          <button className="flex items-center gap-1 hover:opacity-60">
-            <Icon icon="solar:user-linear" width={18} />
-            LOGIN
+        <div className="hidden lg:flex items-center justify-end gap-6 text-[14px] font-medium">
+          <button onClick={() => setIsSearchOpen(true)} className="hover:opacity-60" aria-label="Buscar">
+            <Icon icon="solar:magnifer-linear" width={25} />
           </button>
-          <button className="flex items-center gap-1 hover:opacity-60" onClick={() => goCatalog('favoritos')}>
-            <Icon icon="solar:heart-linear" width={18} />
-            WISHLIST
+          <button className="hover:opacity-60" aria-label="Cuenta">
+            <Icon icon="solar:user-linear" width={25} />
           </button>
-          <button className="flex items-center gap-1 hover:opacity-60" onClick={onOpenCart}>
-            <Icon icon="solar:bag-4-linear" width={18} />
-            BAG ({carritoSize})
+          <button className="relative hover:opacity-60" onClick={onOpenCart} aria-label="Carrito">
+            <Icon icon="solar:bag-4-linear" width={27} />
+            <span className="absolute -right-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full bg-black text-[11px] font-black text-white">
+              {carritoSize}
+            </span>
           </button>
         </div>
 
@@ -159,13 +189,17 @@ export default function ModaHeader({
           <Icon icon="solar:bag-4-linear" width={20} />
           {carritoSize}
         </button>
+          </>
+        )}
       </div>
 
       {mobileOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-black p-5 shadow-xl">
           <div className="grid gap-4 text-lg font-medium">
-            <button onClick={() => goCatalog('men')} className="text-left">Men</button>
-            <button onClick={() => goCatalog('women')} className="text-left">Women</button>
+            <button onClick={() => goCatalog('nuevos ingresos')} className="text-left">Nuevos ingresos</button>
+            <button onClick={() => goCatalog('más vendidos')} className="text-left">Más vendidos</button>
+            <button onClick={() => goCatalog('mujer')} className="text-left">Mujer</button>
+            <button onClick={() => goCatalog('hombre')} className="text-left">Hombre</button>
             {allCategories.slice(0, 6).map((category: any) => {
               const name = typeof category === 'string' ? category : category?.nombre;
               if (!name) return null;
@@ -176,33 +210,12 @@ export default function ModaHeader({
       )}
 
       {menu && (
-        <div className="hidden lg:grid absolute top-full left-0 w-full h-[402px] bg-white border-b border-black shadow-sm grid-cols-[15%_15%_15%_15%_20%_20%]">
-          <div className="border-r border-black px-8 py-8">
-            <MenuList items={menu.first} onItemClick={goCatalog} markNew />
+        <div className="hidden lg:block absolute top-full left-0 w-full bg-white border-b border-[#D9D9D9] shadow-sm">
+          <div className="mx-auto grid min-h-[325px] max-w-[1280px] grid-cols-6 gap-10 px-10 py-14">
+            {menu.groups.map((group) => (
+              <MenuGroup key={group.title} title={group.title} items={group.items} onItemClick={goCatalog} />
+            ))}
           </div>
-          <div className="border-r border-black px-8 py-8">
-            <MenuGroup title="Shoes" items={menu.shoes} onItemClick={goCatalog} />
-            <MenuGroup title="Silhouettes" items={menu.silhouettes} onItemClick={goCatalog} className="mt-8" />
-          </div>
-          <div className="border-r border-black px-8 py-8">
-            <MenuGroup title="Clothing" items={menu.clothing} onItemClick={goCatalog} />
-          </div>
-          <div className="border-r border-black px-8 py-8">
-            <MenuGroup title="Accessories" items={['All Accessories', 'Gift Cards', 'Socks', 'Caps']} onItemClick={goCatalog} />
-          </div>
-          {menu.cards.map((card) => (
-            <button
-              key={card.title}
-              onClick={() => goCatalog(card.title)}
-              className="relative overflow-hidden group text-white text-center"
-            >
-              <img src={card.image} alt={card.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              <span className="absolute inset-0 bg-black/20 group-hover:bg-black/35 transition-colors" />
-              <span className="relative z-10 h-full flex items-center justify-center px-8 text-[16px] font-bold leading-snug">
-                {card.title}
-              </span>
-            </button>
-          ))}
         </div>
       )}
     </header>

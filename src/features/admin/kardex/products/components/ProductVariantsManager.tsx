@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useProductModalViewModel } from '../useProductModalViewModel';
 import Button from '@/components/Button';
@@ -62,6 +62,10 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     variantImagePreviews,
     setVariantImagePreviews,
   } = vm;
+
+  // Texto en edición de cada opción. Solo se confirma (parsea) al salir del campo,
+  // para no re-derivar la matriz/imágenes en cada tecla y perder fotos por colores intermedios.
+  const [editingValues, setEditingValues] = useState<Record<number, string>>({});
 
   const opcionesAtributos: VariantOption[] = Array.isArray((formValues as any).opcionesAtributos)
     ? (formValues as any).opcionesAtributos
@@ -150,14 +154,46 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
   const updateOptionValues = (index: number, valuesStr: string) => {
     const next = [...opcionesAtributos];
-    next[index] = {
-      ...next[index],
-      valores: valuesStr
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    };
-    commitOptionsAndConfig(next);
+    const oldValues = next[index]?.valores || [];
+    const newValues = valuesStr
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    next[index] = { ...next[index], valores: newValues };
+
+    // Si es la opción de color y solo se renombró (misma cantidad de valores),
+    // migrar la imagen del color viejo al nuevo para no perderla ni re-subirla.
+    const isColorOption = /color|colour/i.test(next[index]?.nombre || '');
+    let previousConfig = variantesConfig;
+
+    if (isColorOption && oldValues.length === newValues.length) {
+      const renames: Record<string, string> = {};
+      oldValues.forEach((oldVal, i) => {
+        if (oldVal && newValues[i] && oldVal !== newValues[i]) renames[oldVal] = newValues[i];
+      });
+
+      if (Object.keys(renames).length > 0) {
+        const nextFiles = { ...variantImageFiles };
+        const nextPreviews = { ...variantImagePreviews };
+        Object.entries(renames).forEach(([oldColor, newColor]) => {
+          if (nextFiles[oldColor] !== undefined) { nextFiles[newColor] = nextFiles[oldColor]; delete nextFiles[oldColor]; }
+          if (nextPreviews[oldColor] !== undefined) { nextPreviews[newColor] = nextPreviews[oldColor]; delete nextPreviews[oldColor]; }
+        });
+        setVariantImageFiles(nextFiles);
+        setVariantImagePreviews(nextPreviews);
+
+        // Renombrar el color en la config previa para conservar la imagenUrl ya subida
+        const base = variantesConfig.length > 0 ? variantesConfig : variantesExistentes;
+        previousConfig = base.map((row) => {
+          const color = row.valoresAtributos?.[colorOptionName];
+          return color && renames[color]
+            ? { ...row, valoresAtributos: { ...row.valoresAtributos, [colorOptionName]: renames[color] } }
+            : row;
+        });
+      }
+    }
+
+    commitOptionsAndConfig(next, previousConfig);
   };
 
   const addOption = () => {
@@ -278,8 +314,21 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 type="text"
                 placeholder="Ej: Negro, Blanco, Beige"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                value={(option.valores || []).join(', ')}
-                onChange={(event) => updateOptionValues(index, event.target.value)}
+                value={editingValues[index] ?? (option.valores || []).join(', ')}
+                onChange={(event) => setEditingValues((prev) => ({ ...prev, [index]: event.target.value }))}
+                onBlur={() => {
+                  if (editingValues[index] !== undefined) {
+                    updateOptionValues(index, editingValues[index]);
+                    setEditingValues((prev) => {
+                      const next = { ...prev };
+                      delete next[index];
+                      return next;
+                    });
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') (event.target as HTMLInputElement).blur();
+                }}
               />
             </label>
             <button

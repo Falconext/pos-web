@@ -407,7 +407,7 @@ export default function ModaProductoDetalle() {
   /* ── Derived values ── */
   const diseno = tienda?.diseno || {};
   const cp = diseno.colorPrimario || '#1A1A1A';
-  const fontFamily = diseno.tipografia || 'Inter';
+  const fontFamily = 'Poppins';
   const tiendaNombre = tienda?.nombreComercial || tienda?.nombre || 'Styliq';
 
   /* ── Loading state ── */

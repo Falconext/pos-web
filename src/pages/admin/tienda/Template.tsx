@@ -7,6 +7,99 @@ import { ALL_PLANTILLAS } from '@/components/tienda/resolveTemplate';
 import { useAuthStore } from '@/zustand/auth';
 import apiClient from '@/utils/apiClient';
 
+function TemplateProductSelector({ label, disenoKey, vm }: { label: string, disenoKey: string, vm: any }) {
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  
+  const selectedList = vm.config?.diseno?.[disenoKey] || [];
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (search.trim().length > 2) {
+        setSearching(true);
+        try {
+          const { data } = await apiClient.get('/productos', { params: { limit: 5, page: 1, search } });
+          const p = data.data;
+          setResults(p?.productos || p?.data || p || []);
+        } catch { setResults([]); } finally { setSearching(false); }
+      } else { setResults([]); }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const addProduct = (p: any) => {
+    const current = Array.isArray(selectedList) ? selectedList : [];
+    if (!current.find(x => x.id === p.id)) {
+      const newList = [...current, { 
+        id: p.id, 
+        descripcion: p.descripcion, 
+        imagenUrl: p.imagenUrl,
+        precioUnitario: p.precioUnitario,
+        opcionesAtributos: p.opcionesAtributos,
+        variantes: p.variantes
+      }];
+      vm.actualizarDiseno({ [disenoKey]: newList });
+    }
+    setSearch('');
+    setResults([]);
+  };
+
+  const removeProduct = (id: number) => {
+    const current = Array.isArray(selectedList) ? selectedList : [];
+    const newList = current.filter((x: any) => x.id !== id);
+    vm.actualizarDiseno({ [disenoKey]: newList });
+  };
+
+  return (
+    <div className="bg-white dark:bg-[#0A0D14] border border-gray-200 dark:border-slate-800 rounded-xl p-4 mt-2">
+      <h5 className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-3">{label}</h5>
+      
+      <div className="flex flex-col gap-2 mb-3">
+        {Array.isArray(selectedList) && selectedList.map((p: any) => (
+          <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              {p.imagenUrl ? <img src={p.imagenUrl} className="w-8 h-8 rounded object-cover" alt="" /> : <div className="w-8 h-8 rounded bg-gray-200 dark:bg-slate-800 flex items-center justify-center"><Icon icon="solar:box-linear" className="text-gray-400" /></div>}
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 line-clamp-1">{p.descripcion}</p>
+            </div>
+            <button type="button" onClick={() => removeProduct(p.id)} className="text-red-500 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+              <Icon icon="mdi:close" />
+            </button>
+          </div>
+        ))}
+        {(!Array.isArray(selectedList) || selectedList.length === 0) && <p className="text-xs text-gray-400">Ningún producto seleccionado</p>}
+      </div>
+
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Icon icon="solar:magnifer-linear" className="text-gray-400" width={14} />
+        </div>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar para añadir..."
+          className="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg text-xs focus:ring-2 focus:ring-[#FF9500] focus:border-transparent transition-all outline-none"
+        />
+        {searching && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Icon icon="eos-icons:loading" className="text-gray-400" /></div>}
+        
+        {results.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+            {results.map((p: any) => (
+              <div key={p.id} onClick={() => addProduct(p)} className="p-2 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-xs border-b dark:border-slate-800 last:border-0 flex items-center gap-2">
+                {p.imagenUrl ? <img src={p.imagenUrl} className="w-6 h-6 rounded object-cover" alt="" /> : <div className="w-6 h-6 rounded bg-gray-100 dark:bg-slate-800 flex items-center justify-center"><Icon icon="solar:box-linear" className="text-gray-400" /></div>}
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-800 dark:text-gray-200 truncate">{p.descripcion}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const AUTOPARTES_IMAGE_FIELDS = [
   { key: 'autopartesHeroImageUrl', label: 'Hero principal', hint: 'Banner grande superior', fallback: '/assets/autopartes/banner1.png' },
   { key: 'autopartesSideTopImageUrl', label: 'Hero lateral superior', hint: 'Tarjeta derecha superior', fallback: '/assets/autopartes/banner2.png' },
@@ -38,10 +131,6 @@ const URBANO_IMAGE_FIELDS = [
   { key: 'urbanoGallery3', label: 'Galería 3', hint: 'Imágenes inferiores 3', fallback: '/assets/templates/urbano/coleccion4.png' },
   { key: 'urbanoGallery4', label: 'Galería 4', hint: 'Imágenes inferiores 4', fallback: '/assets/templates/urbano/coleccion5.png' },
   { key: 'urbanoGallery5', label: 'Galería 5', hint: 'Imágenes inferiores 5', fallback: '/assets/templates/urbano/coleccion6.png' },
-  { key: 'urbanoProductMainImg', label: 'Producto Principal', hint: 'Imagen grande del detalle', fallback: '/assets/templates/urbano/coleccion1.png' },
-  { key: 'urbanoProductMacroImg', label: 'Macro Producto', hint: 'Detalle de textura', fallback: '/assets/templates/urbano/coleccion2.png' },
-  { key: 'urbanoProductModel1Img', label: 'Modelo Producto 1', hint: 'Producto (Frente)', fallback: '/assets/templates/urbano/coleccion3.png' },
-  { key: 'urbanoProductModel2Img', label: 'Modelo Producto 2', hint: 'Producto (Detalle)', fallback: '/assets/templates/urbano/coleccion4.png' },
 ];
 
 type TemplateDisenoPreview = Record<string, unknown>;
@@ -181,7 +270,7 @@ function UrbanoTemplatePreview({ diseno }: { diseno: TemplateDisenoPreview | und
     <aside className="rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white p-3 shadow-2xl shadow-slate-950/10 max-h-[calc(100vh-8rem)] overflow-y-auto">
       <div className="rounded-[22px] overflow-hidden bg-white text-black border border-slate-100">
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-          <div className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ fontFamily: '"Impact", sans-serif' }}>URBANO</div>
+          <div className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ fontFamily: '"Impact", sans-serif' }}>{text('urbanoStoreName', 'URBANO')}</div>
           <div className="flex gap-2">
             <Icon icon="solar:hamburger-menu-linear" className="text-gray-400" />
           </div>
@@ -257,17 +346,30 @@ function UrbanoTemplatePreview({ diseno }: { diseno: TemplateDisenoPreview | und
              <div className="w-1/2 flex flex-col justify-center p-2">
 	                <span className="text-[6px] font-black uppercase mb-2">{text('urbanoShopTheLookTitle', 'COMPRA EL LOOK')}</span>
                 <div className="flex gap-1">
-                   <div className="flex-1 aspect-[4/5] bg-gray-100" />
-                   <div className="flex-1 aspect-[4/5] bg-gray-100" />
+                  {(() => {
+                    const prods = Array.isArray(diseno?.urbanoShopTheLookProducts) ? diseno?.urbanoShopTheLookProducts : [];
+                    if (prods.length === 0) return <><div className="flex-1 aspect-[4/5] bg-gray-100" /><div className="flex-1 aspect-[4/5] bg-gray-100" /></>;
+                    return [0, 1].map(i => prods[i] ? (
+                      <div key={i} className="flex-1 aspect-[4/5] bg-gray-100 relative overflow-hidden">
+                        {prods[i].imagenUrl ? <img src={prods[i].imagenUrl} className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 bg-gray-100" />}
+                      </div>
+                    ) : <div key={i} className="flex-1 aspect-[4/5] bg-gray-100" />);
+                  })()}
                 </div>
              </div>
           </div>
 
           {/* 7. Editorial Row 2: Feature Highlight */}
           <div className="flex h-24 bg-white border-b border-gray-100">
-             <div className="w-1/2 relative bg-[#F4F5F6] flex items-center justify-center p-2">
-	                <span className="absolute top-1 left-1 text-[4px] font-bold text-gray-500 uppercase">{text('urbanoFeatureLabel', 'CASACA')}</span>
-                <Icon icon="solar:box-linear" className="text-gray-300 text-2xl" />
+             <div className="w-1/2 relative bg-[#F4F5F6] flex items-center justify-center p-2 overflow-hidden">
+	                <span className="absolute z-10 top-1 left-1 text-[4px] font-bold text-gray-500 uppercase">{text('urbanoFeatureLabel', 'CASACA')}</span>
+                {(() => {
+                  const prods = Array.isArray(diseno?.urbanoFeatureProducts) ? diseno?.urbanoFeatureProducts : [];
+                  if (prods.length > 0 && prods[0]?.imagenUrl) {
+                    return <img src={prods[0].imagenUrl} className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply" />;
+                  }
+                  return <Icon icon="solar:box-linear" className="text-gray-300 text-2xl" />;
+                })()}
              </div>
              <div className="w-1/2 relative bg-[#E8EAEB]">
                 <img src={image('urbanoFeatureModelImg')} className="w-full h-full object-cover" />
@@ -1032,6 +1134,9 @@ export default function TemplateTienda() {
             <div className="space-y-6">
               <div>
                 <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 border-b dark:border-slate-800 pb-2">Textos Principales</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <InputPro label="Nombre de Tienda (Logo Texto)" name="urbanoStoreName" value={vm.config?.diseno?.urbanoStoreName || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoStoreName: e.target.value })} placeholder="BLNK o Nombre Empresa" isLabel />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 	                  <InputPro label="Hero Subtítulo" name="urbanoHeroSubtitle" value={vm.config?.diseno?.urbanoHeroSubtitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoHeroSubtitle: e.target.value })} placeholder="Nueva colección" isLabel />
 	                  <InputPro label="Hero Título" name="urbanoHeroTitle" value={vm.config?.diseno?.urbanoHeroTitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoHeroTitle: e.target.value })} placeholder="Estilo urbano para la ciudad" isLabel />
@@ -1054,6 +1159,12 @@ export default function TemplateTienda() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
 	                  <InputPro label="Slogan Footer" name="urbanoSlogan" value={vm.config?.diseno?.urbanoSlogan || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoSlogan: e.target.value })} placeholder="Moda urbana minimalista para vestir tu día con estilo." isLabel />
+                </div>
+                
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-6 mb-3 border-b dark:border-slate-800 pb-2">Selección de Productos</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  <TemplateProductSelector label="Productos en 'Compra el look' (lado derecho)" disenoKey="urbanoShopTheLookProducts" vm={vm} />
+                  <TemplateProductSelector label="Productos en 'Completa el look' (lado derecho)" disenoKey="urbanoFeatureProducts" vm={vm} />
                 </div>
               </div>
 
@@ -1172,22 +1283,7 @@ export default function TemplateTienda() {
                             </div>
                           </div>
 
-                          {/* --- SECCIÓN: PÁGINA DE PRODUCTO --- */}
-                          <div className="flex flex-col gap-4 mt-8">
-                            <div className="border-b border-gray-800 pb-2 mb-2">
-                              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalle de Producto</h5>
-                            </div>
 
-                            {/* Imagen Principal del Detalle */}
-                            {renderUploader('urbanoProductMainImg', 'min-h-[220px]')}
-
-                            {/* Detalles Producto */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                              {renderUploader('urbanoProductMacroImg')}
-                              {renderUploader('urbanoProductModel1Img')}
-                              {renderUploader('urbanoProductModel2Img')}
-                            </div>
-                          </div>
                         </>
                       );
                     })()}

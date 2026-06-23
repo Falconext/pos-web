@@ -1,15 +1,62 @@
 import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import { useCuentasBancariasStore, BANCOS_PERU, ICuentaBancaria, ICreateCuentaBancaria } from '@/zustand/cuentasBancarias';
 
-import { BancoLogo } from '@/components/shared/BancoLogo';
+// Dominios oficiales para obtener logos reales via Clearbit
+const BANCO_DOMINIOS: Record<string, string> = {
+  BCP:        'viabcp.com',
+  INTERBANK:  'interbank.pe',
+  BBVA:       'bbva.pe',
+  SCOTIABANK: 'scotiabank.com.pe',
+  PICHINCHA:  'bancopichincha.com.pe',
+  BANBIF:     'banbif.com.pe',
+  NACION:     'bn.com.pe',
+};
+
+const BancoLogo = ({ banco, size = 36 }: { banco: string; size?: number }) => {
+  const [error, setError] = useState(false);
+  const dominio = BANCO_DOMINIOS[banco];
+
+  // Colores de fallback por banco
+  const FALLBACK: Record<string, { bg: string; label: string; color: string }> = {
+    BCP:        { bg: '#002F6C', label: 'BCP',    color: '#fff' },
+    INTERBANK:  { bg: '#007A4D', label: 'IB',     color: '#fff' },
+    BBVA:       { bg: '#004481', label: 'BBVA',   color: '#fff' },
+    SCOTIABANK: { bg: '#C8102E', label: 'SB',     color: '#fff' },
+    PICHINCHA:  { bg: '#FFD100', label: 'PICH',   color: '#111' },
+    BANBIF:     { bg: '#6B21A8', label: 'BIF',    color: '#fff' },
+    NACION:     { bg: '#F97316', label: 'BN',     color: '#fff' },
+  };
+  const fb = FALLBACK[banco] ?? { bg: '#6B7280', label: banco.slice(0, 3), color: '#fff' };
+
+  if (!dominio || error) {
+    return (
+      <div
+        style={{ width: size, height: size, background: fb.bg, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <span style={{ color: fb.color, fontSize: size * 0.27, fontWeight: 700, fontFamily: 'Arial', letterSpacing: '-0.5px' }}>
+          {fb.label}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={`https://logo.clearbit.com/${dominio}`}
+      alt={banco}
+      width={size}
+      height={size}
+      onError={() => setError(true)}
+      style={{ borderRadius: 8, objectFit: 'contain', background: '#f9fafb', border: '1px solid #e5e7eb' }}
+    />
+  );
+};
 
 const EMPTY_FORM: ICreateCuentaBancaria = {
   banco: 'BCP',
   numeroCuenta: '',
   cci: '',
-  titular: '',
   tipoCuenta: 'AHORROS',
   moneda: 'PEN',
   alias: '',
@@ -21,7 +68,6 @@ export default function CuentasBancariasConfig() {
   const [editando, setEditando] = useState<ICuentaBancaria | null>(null);
   const [form, setForm] = useState<ICreateCuentaBancaria>(EMPTY_FORM);
   const [mostrarInactivas, setMostrarInactivas] = useState(false);
-  const [confirmarEliminar, setConfirmarEliminar] = useState<ICuentaBancaria | null>(null);
 
   useEffect(() => { listar(); }, [listar]);
 
@@ -35,7 +81,6 @@ export default function CuentasBancariasConfig() {
       banco: cuenta.banco,
       numeroCuenta: cuenta.numeroCuenta,
       cci: cuenta.cci ?? '',
-      titular: cuenta.titular ?? '',
       tipoCuenta: cuenta.tipoCuenta,
       moneda: cuenta.moneda,
       alias: cuenta.alias ?? '',
@@ -48,7 +93,7 @@ export default function CuentasBancariasConfig() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.numeroCuenta.trim()) return;
-    const payload = { ...form, cci: form.cci || undefined, titular: form.titular || undefined, alias: form.alias || undefined };
+    const payload = { ...form, cci: form.cci || undefined, alias: form.alias || undefined };
     if (editando) {
       await actualizar(editando.id, payload);
     } else {
@@ -113,7 +158,7 @@ export default function CuentasBancariasConfig() {
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                  {cuenta.alias ? `${cuenta.alias} · ${cuenta.banco}` : cuenta.banco} · {cuenta.numeroCuenta}
+                  {cuenta.alias || cuenta.banco} · {cuenta.numeroCuenta}
                 </p>
                 <p className="text-xs text-gray-400">
                   {cuenta.tipoCuenta} · {cuenta.moneda}
@@ -136,7 +181,7 @@ export default function CuentasBancariasConfig() {
                   <Icon icon="solar:pen-bold" width={15} />
                 </button>
                 <button
-                  onClick={() => cuenta.activo ? setConfirmarEliminar(cuenta) : handleToggle(cuenta)}
+                  onClick={() => handleToggle(cuenta)}
                   className={`p-1.5 rounded-lg transition-colors ${
                     cuenta.activo
                       ? 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
@@ -162,57 +207,10 @@ export default function CuentasBancariasConfig() {
         </button>
       )}
 
-      {/* Modal confirmación eliminar */}
-      {confirmarEliminar && createPortal(
-        <div className="fixed inset-0 z-[1000001] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[1px]">
-          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#111827] shadow-2xl p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30">
-                <Icon icon="solar:trash-bin-trash-bold" className="text-red-500" width={22} />
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900 dark:text-white text-base">Eliminar cuenta bancaria</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Esta acción desactivará la cuenta</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 mb-5">
-              <BancoLogo banco={confirmarEliminar.banco} size={32} />
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {confirmarEliminar.alias ? `${confirmarEliminar.alias} · ${confirmarEliminar.banco}` : confirmarEliminar.banco} · {confirmarEliminar.numeroCuenta}
-                </p>
-                <p className="text-xs text-gray-400">{confirmarEliminar.tipoCuenta} · {confirmarEliminar.moneda}</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
-              ¿Estás seguro de que deseas eliminar esta cuenta? Podrás reactivarla en cualquier momento desde "Mostrar inactivas".
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmarEliminar(null)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                disabled={loading}
-                onClick={async () => {
-                  await handleToggle(confirmarEliminar);
-                  setConfirmarEliminar(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
-              >
-                {loading ? 'Eliminando...' : 'Sí, eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {showForm && createPortal(
-        <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[1px]">
-          <div className="w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl shadow-black/25 dark:bg-[#111827]">
+      {/* Modal — z-[9999] para quedar encima del sidebar y su stacking context */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl w-full max-w-md p-6">
             <div className="flex items-center gap-3 mb-5">
               <BancoLogo banco={form.banco} size={36} />
               <h4 className="flex-1 font-bold text-gray-900 dark:text-white text-base">
@@ -268,19 +266,6 @@ export default function CuentasBancariasConfig() {
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Titular de la cuenta
-                  </label>
-                  <input
-                    type="text"
-                    value={form.titular || ''}
-                    onChange={(e) => setForm((f) => ({ ...f, titular: e.target.value }))}
-                    placeholder="Nombre del empresario o empresa"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-
                 <div>
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
                     Tipo
@@ -311,13 +296,13 @@ export default function CuentasBancariasConfig() {
 
                 <div className="col-span-2">
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Nombre del Titular (opcional)
+                    Alias (opcional)
                   </label>
                   <input
                     type="text"
                     value={form.alias}
                     onChange={(e) => setForm((f) => ({ ...f, alias: e.target.value }))}
-                    placeholder="Ej: Juan Pérez o Empresa SAC"
+                    placeholder="Ej: BCP Principal, Cuenta Ventas"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
@@ -341,8 +326,7 @@ export default function CuentasBancariasConfig() {
               </div>
             </form>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );

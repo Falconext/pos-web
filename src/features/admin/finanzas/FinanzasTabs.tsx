@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { useRentabilidadViewModel } from './rentabilidad/useRentabilidadViewModel';
 import RentabilidadView from './rentabilidad/RentabilidadView';
@@ -50,7 +51,10 @@ const TABS: Tab[] = [
 ];
 
 export default function FinanzasTabs() {
-    const [activeTab, setActiveTab] = useState<TabId>('rentabilidad');
+    const [searchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab') as TabId | null;
+    const initialTab: TabId = tabParam && TABS.some((t) => t.id === tabParam) ? tabParam : 'rentabilidad';
+    const [activeTab, setActiveTab] = useState<TabId>(initialTab);
     const vm = useRentabilidadViewModel();
 
     return (

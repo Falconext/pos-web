@@ -515,8 +515,8 @@ export default function AdminLayout() {
           </motion.nav>
         </div>
 
-        {/* Mis Comisiones — solo para vendedores (USUARIO_EMPRESA) */}
-        {auth?.rol === 'USUARIO_EMPRESA' && (
+        {/* Mis Comisiones — vendedores y también el dueño (que puede vender) */}
+        {(auth?.rol === 'USUARIO_EMPRESA' || auth?.rol === 'ADMIN_EMPRESA') && (
           <div className="px-2 pb-1">
             <NavLink
               onClick={() => setIsSidebarOpen(false)}
@@ -524,8 +524,23 @@ export default function AdminLayout() {
               className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
               title="Mis Comisiones"
             >
-              <Icon icon="solar:hand-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'} text-amber-500`} />
+              <Icon icon="solar:hand-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
               {!isSidebarCollapsed && <span>Mis Comisiones</span>}
+            </NavLink>
+          </div>
+        )}
+
+        {/* Comisiones del equipo — vista global para el dueño */}
+        {auth?.rol === 'ADMIN_EMPRESA' && (
+          <div className="px-2 pb-1">
+            <NavLink
+              onClick={() => setIsSidebarOpen(false)}
+              to="/administrador/finanzas/dashboard?tab=comisiones"
+              className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
+              title="Comisiones del equipo"
+            >
+              <Icon icon="solar:users-group-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+              {!isSidebarCollapsed && <span>Comisiones del equipo</span>}
             </NavLink>
           </div>
         )}

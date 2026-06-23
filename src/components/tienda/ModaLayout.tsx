@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ModaHeader from './ModaHeader';
 import ModaHero from './ModaHero';
-import ModaFeaturedCollections from './ModaFeaturedCollections';
 import ModaBestSelling from './ModaBestSelling';
-import ModaNewArrivals from './ModaNewArrivals';
-import ModaPromoBanner from './ModaPromoBanner';
+import ModaHomeSections from './ModaHomeSections';
 import ModaFooter from './ModaFooter';
 import ShoppingCartModal from './ShoppingCartModal';
 
@@ -56,8 +54,8 @@ export default function ModaLayout({
 
   return (
     <div
-      className="min-h-screen bg-[#FAF9F6] text-gray-900"
-      style={{ fontFamily: `'${diseno?.tipografia || 'Inter'}', sans-serif` }}
+      className="min-h-screen bg-[#FAF9F6] text-[14px] text-gray-900"
+      style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14 }}
     >
       <ModaHeader
         tienda={tienda}
@@ -77,12 +75,9 @@ export default function ModaLayout({
         ) : (
           <>
             <ModaHero cp={cp} slug={slug} diseno={diseno} productos={productos.slice(0, 3)} />
-            <ModaFeaturedCollections slug={slug} productos={productos} onAddToCart={agregarAlCarrito} />
-            <div className="max-w-7xl mx-auto px-4 xl:px-8 py-14 md:py-16">
-              <ModaBestSelling slug={slug} cp={cp} productos={productos} />
-              <ModaNewArrivals slug={slug} productos={productos} />
-              <ModaPromoBanner slug={slug} />
-            </div>
+            <ModaBestSelling slug={slug} cp={cp} productos={productos} genero="hombre" titulo="Más vendidos hombre" />
+            <ModaBestSelling slug={slug} cp={cp} productos={productos} genero="mujer" titulo="Más vendidos mujer" offset={10} />
+            <ModaHomeSections slug={slug} productos={productos} />
           </>
         )}
       </main>

@@ -22,7 +22,7 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
 
     const isVetApproved = (producto.id % 3 === 0);
     const isSpecialDeal = hasDiscount && (producto.id % 2 === 0);
-    
+
     const isOutOfStock = Number(producto.stock) <= 0;
 
     const handleAdd = (e: React.MouseEvent) => {

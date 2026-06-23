@@ -91,6 +91,39 @@ export function VendedorDetalleDrawer({ open, detalle, isLoading, fechaInicio, f
                                 </div>
                             )}
 
+                            {/* Productos vendidos por este vendedor */}
+                            <div>
+                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                                    <Icon icon="solar:bag-smile-bold-duotone" width={16} className="text-amber-500" />
+                                    Productos vendidos
+                                </h3>
+                                <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-slate-800">
+                                    <table className="w-full text-xs" style={{ fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif' }}>
+                                        <thead className="bg-gray-50 dark:bg-slate-800/60">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400 tracking-wide">Producto</th>
+                                                <th className="px-3 py-2 text-right font-semibold text-gray-500 dark:text-gray-400 tracking-wide">Cantidad</th>
+                                                <th className="px-3 py-2 text-right font-semibold text-gray-500 dark:text-gray-400 tracking-wide">Monto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+                                            {(detalle.productos ?? []).map((p, idx) => (
+                                                <tr key={p.productoId ?? `d-${idx}`} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
+                                                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300 max-w-[220px] truncate">{p.descripcion}</td>
+                                                    <td className="px-3 py-2 text-right font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap">{p.cantidad}</td>
+                                                    <td className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">S/ {p.monto.toFixed(2)}</td>
+                                                </tr>
+                                            ))}
+                                            {(detalle.productos ?? []).length === 0 && (
+                                                <tr>
+                                                    <td colSpan={3} className="px-3 py-6 text-center text-gray-400">Sin productos vendidos en este período</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                             {/* Tabla de comprobantes */}
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
