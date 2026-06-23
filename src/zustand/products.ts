@@ -119,12 +119,31 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
             useAlertStore.setState({ loading: false });
         }
     },
-    setProductImage: (productoId: number, imagenUrl: string, imagenUrlDisplay?: string) => {
-        set((state) => ({
-            products: state.products.map((p: IProduct) =>
-                p.id === productoId ? { ...p, imagenUrl, imagenUrlDisplay: imagenUrlDisplay || imagenUrl } as any : p
-            ),
-        }), false, 'SET_PRODUCT_IMAGE');
+    setProductImage: (id: number, imagenUrl: string, imagenUrlDisplay?: string) => {
+        set((state: any) => {
+            const currentProds = Array.isArray(state.products) ? state.products : [];
+            const index = currentProds.findIndex((p: any) => p.id === id);
+            if (index < 0) return state;
+
+            const t = new Date().getTime();
+            const finalImgUrl = (imagenUrl && !imagenUrl.includes('?') && imagenUrl.startsWith('http')) 
+                ? `${imagenUrl}?t=${t}` 
+                : imagenUrl;
+            
+            let finalImgDisplayUrl = imagenUrlDisplay || imagenUrl;
+            if (finalImgDisplayUrl && !finalImgDisplayUrl.includes('?') && finalImgDisplayUrl.startsWith('http')) {
+                finalImgDisplayUrl = `${finalImgDisplayUrl}?t=${t}`;
+            }
+
+            const updatedProduct = {
+                ...currentProds[index],
+                imagenUrl: finalImgUrl,
+                imagenUrlDisplay: finalImgDisplayUrl
+            };
+            const nextProds = [...currentProds];
+            nextProds[index] = updatedProduct;
+            return { products: nextProds };
+        }, false, 'SET_PRODUCT_IMAGE');
     },
     upsertProductLocal: (product: Partial<IProduct> & Pick<IProduct, 'id'>) => {
         const productId = Number(product.id);
@@ -132,11 +151,20 @@ export const useProductsStore = create<IProductsState>()(devtools((set, _get) =>
 
         set((state) => {
             const currentProduct = state.products?.find((p: IProduct) => p.id === productId);
-            const nextProduct = {
+            let nextProduct = {
                 ...(currentProduct || {}),
                 ...product,
                 id: productId,
             } as IProduct;
+
+            const t = new Date().getTime();
+            if (nextProduct.imagenUrl && !nextProduct.imagenUrl.includes('?') && nextProduct.imagenUrl.startsWith('http')) {
+                nextProduct.imagenUrl = `${nextProduct.imagenUrl}?t=${t}`;
+            }
+            if (nextProduct.imagenUrlDisplay && !nextProduct.imagenUrlDisplay.includes('?') && nextProduct.imagenUrlDisplay.startsWith('http')) {
+                nextProduct.imagenUrlDisplay = `${nextProduct.imagenUrlDisplay}?t=${t}`;
+            }
+
             const exists = Boolean(currentProduct);
             const merged = exists
                 ? state.products.map((p: IProduct) => p.id === productId ? nextProduct : p)

@@ -1,0 +1,157 @@
+type VariantValueMap = Record<string, string>;
+
+export type FashionColorOption = {
+  name: string;
+  hex: string;
+};
+
+const COLOR_HEX: Record<string, string> = {
+  amarillo: '#FACC15',
+  arena: '#D6B98C',
+  azul: '#2563EB',
+  beige: '#D9C7A7',
+  black: '#111111',
+  blanco: '#F8FAFC',
+  blue: '#2563EB',
+  cafe: '#7C4A2D',
+  camel: '#C28B57',
+  celeste: '#93C5FD',
+  crema: '#F5E6C8',
+  dorado: '#D4AF37',
+  gris: '#6B7280',
+  marron: '#7C4A2D',
+  morado: '#7C3AED',
+  naranja: '#F97316',
+  negro: '#111111',
+  red: '#DC2626',
+  rojo: '#DC2626',
+  rosado: '#F9A8D4',
+  verde: '#16A34A',
+  white: '#F8FAFC',
+};
+
+const normalizeText = (value: any) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
+const normalizeArray = (value: any): any[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const variantValues = (variant: any): VariantValueMap => {
+  const raw = variant?.valoresAtributos;
+  if (!raw) return {};
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+};
+
+const isColorName = (name: string) => {
+  const normalized = normalizeText(name);
+  return normalized.includes('color') || normalized.includes('colour');
+};
+
+const isSizeName = (name: string) => {
+  const normalized = normalizeText(name);
+  return normalized.includes('talla') || normalized.includes('size') || normalized.includes('tamano');
+};
+
+const uniquePush = (values: string[], value: any) => {
+  const clean = String(value || '').trim();
+  if (clean && !values.some((current) => normalizeText(current) === normalizeText(clean))) {
+    values.push(clean);
+  }
+};
+
+const valuesFromOptions = (producto: any, predicate: (name: string) => boolean) => {
+  const result: string[] = [];
+  normalizeArray(producto?.opcionesAtributos).forEach((option) => {
+    if (!predicate(option?.nombre)) return;
+    normalizeArray(option?.valores).forEach((value) => uniquePush(result, value));
+  });
+  return result;
+};
+
+const valuesFromVariants = (producto: any, predicate: (name: string) => boolean) => {
+  const result: string[] = [];
+  normalizeArray(producto?.variantes).forEach((variant) => {
+    Object.entries(variantValues(variant)).forEach(([name, value]) => {
+      if (predicate(name)) uniquePush(result, value);
+    });
+  });
+  return result;
+};
+
+export const colorToHex = (name: string) => {
+  const normalized = normalizeText(name);
+  return COLOR_HEX[normalized] || '#E5E7EB';
+};
+
+export const getFashionColors = (producto: any): FashionColorOption[] => {
+  const values = [...valuesFromOptions(producto, isColorName)];
+  valuesFromVariants(producto, isColorName).forEach((value) => uniquePush(values, value));
+  return values.map((name) => ({ name, hex: colorToHex(name) }));
+};
+
+export const getFashionSizes = (producto: any): string[] => {
+  const values = [...valuesFromOptions(producto, isSizeName)];
+  valuesFromVariants(producto, isSizeName).forEach((value) => uniquePush(values, value));
+  return values;
+};
+
+export const getDefaultVariantSelection = (producto: any) => {
+  const firstVariant = normalizeArray(producto?.variantes).find((variant) => Number(variant?.stock ?? 0) > 0)
+    || normalizeArray(producto?.variantes)[0];
+  return firstVariant ? variantValues(firstVariant) : {};
+};
+
+export const findFashionVariant = (producto: any, selection: VariantValueMap) => {
+  const selectedEntries = Object.entries(selection).filter(([, value]) => value);
+  if (!selectedEntries.length) return null;
+  return normalizeArray(producto?.variantes).find((variant) => {
+    const values = variantValues(variant);
+    return selectedEntries.every(([name, value]) => values[name] === value);
+  }) || null;
+};
+
+export const isFashionVariantAvailable = (producto: any, selection: VariantValueMap) => {
+  const variants = normalizeArray(producto?.variantes);
+  const selectedEntries = Object.entries(selection).filter(([, value]) => value);
+  if (!variants.length || !selectedEntries.length) return true;
+
+  return variants.some((variant) => {
+    const values = variantValues(variant);
+    const matches = selectedEntries.every(([name, value]) => values[name] === value);
+    return matches && Number(variant?.stock ?? 0) > 0;
+  });
+};
+
+export const getVariantOptionNames = (producto: any) => {
+  const options = normalizeArray(producto?.opcionesAtributos);
+  const color = options.find((option) => isColorName(option?.nombre))?.nombre;
+  const size = options.find((option) => isSizeName(option?.nombre))?.nombre;
+  const firstVariantValues = variantValues(normalizeArray(producto?.variantes)[0]);
+
+  return {
+    color: color || Object.keys(firstVariantValues).find(isColorName) || 'Color',
+    size: size || Object.keys(firstVariantValues).find(isSizeName) || 'Talla',
+  };
+};

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -14,86 +14,244 @@ interface ModaHeaderProps {
   allCategories?: any[];
 }
 
+type MenuKey = 'men' | 'women' | null;
+
+const menuBase = {
+  men: {
+    label: 'Men',
+    shipping: 'FREE SHIPPING FROM S/150 TO ALL PERU',
+    first: ['New Arrivals', 'White Sneakers', 'Bestsellers', 'Wedding', 'A Journey Shared in Brasil', 'Heineken x Filling Pieces'],
+    shoes: ['New Arrivals', 'All Shoes', 'Sneakers', 'Loafers | Derbies', 'Sandals | Slides'],
+    silhouettes: ['Loafer', 'Mondo', 'Low Top', 'Cruiser', 'Tiebreak', 'Riviera', 'Derby'],
+    clothing: ['New Arrivals', 'All Clothing', 'Knitwear', 'T-Shirts | Longsleeves', 'Shirts | Polos', 'Tank Tops', 'Hoodies | Sweatshirts', 'Jackets | Overshirts', 'Pants', 'Shorts | Swimshorts', 'Denim', 'Co-ords | Sets'],
+    cards: [
+      {
+        title: "Shop our Men's Shoes",
+        image: 'https://images.unsplash.com/photo-1515347619252-8d348b569ea4?auto=format&fit=crop&q=80&w=900',
+      },
+      {
+        title: "Shop our Men's Clothing",
+        image: 'https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&q=80&w=900',
+      },
+    ],
+  },
+  women: {
+    label: 'Women',
+    shipping: 'FREE TOTE BAG WITH EVERY ORDER, ADD YOURS IN THE CART',
+    first: ['New Arrivals', 'White Sneakers', 'Bestsellers', 'Wedding', 'Heineken x Filling Pieces', 'Just Eat Takeaway.com x Filling Pieces'],
+    shoes: ['New Arrivals', 'All Shoes', 'Sneakers', 'Loafers', 'Sandals | Slides'],
+    silhouettes: ['Loafer', 'Low Top', 'Mondo', 'Cruiser'],
+    clothing: ['New Arrivals', 'All Clothing', 'Knitwear', 'T-Shirts | Shirts', 'Tank Tops', 'Hoodies | Sweatshirts', 'Jackets | Overshirts', 'Shirts | Polos', 'Pants | Jeans', 'Shorts', 'Denim', 'Co-ords | Sets'],
+    cards: [
+      {
+        title: "Shop our Women's Shoes",
+        image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=900',
+      },
+      {
+        title: "Shop our Women's Clothing",
+        image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=900',
+      },
+    ],
+  },
+};
+
 export default function ModaHeader({
   tienda,
   slug,
-  cp,
   carritoSize,
   onOpenCart,
   searchQuery,
   setSearchQuery,
   onSearchSubmit,
-  allCategories = []
+  allCategories = [],
 }: ModaHeaderProps) {
   const navigate = useNavigate();
+  const [activeMenu, setActiveMenu] = useState<MenuKey>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const brandName = useMemo(() => {
+    const name = tienda?.nombre || 'Filling Pieces';
+    return String(name).replace(/\s+/g, ' ').trim().toUpperCase();
+  }, [tienda?.nombre]);
+
+  const goCatalog = (query?: string) => {
+    if (slug === 'preview') {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+      return;
+    }
+    navigate(query ? `/tienda/${slug}/catalogo?search=${encodeURIComponent(query)}` : `/tienda/${slug}/catalogo`);
+  };
+
+  const menu = activeMenu ? menuBase[activeMenu] : null;
 
   return (
-    <header className="w-full bg-[#FAF9F6] border-b border-gray-100/50 flex flex-col">
-      <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-4 flex items-center justify-between gap-6">
-        
-        {/* Mobile Menu Icon (Hidden on Desktop) */}
-        <button className="lg:hidden text-gray-800">
-          <Icon icon="solar:hamburger-menu-linear" width={24} />
-        </button>
+    <header className="relative z-[80] w-full bg-white text-black" onMouseLeave={() => setActiveMenu(null)}>
+      <div className="h-[38px] bg-black text-white flex items-center justify-center px-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.03em]">
+          {menu?.shipping || '30 EASY DAYS RETURN POLICY'}
+        </p>
+      </div>
 
-        {/* Search Bar (Left side as in the image) */}
-        <div className="hidden lg:flex flex-1 max-w-[300px]">
-          <form onSubmit={onSearchSubmit} className="flex items-center w-full bg-white rounded-full overflow-hidden shadow-sm border border-gray-100 px-4 py-2">
-            <div className="text-indigo-400 mr-2">
-              <Icon icon="solar:magic-stick-3-bold-duotone" width={18} />
-            </div>
-            <input
-              type="text"
-              placeholder="Ai Search Clothe"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400"
-            />
-            <button type="submit" className="text-gray-400 hover:text-gray-800 transition-colors">
-              <Icon icon="solar:magnifer-linear" width={20} />
-            </button>
-          </form>
-        </div>
-
-        {/* Logo (Centered) */}
-        <div className="flex-1 flex justify-center">
-          <Link to={`/tienda/${slug}`} className="flex items-center gap-2">
+      <div className="h-[56px] border-b border-black/90 bg-white flex items-center justify-between px-4 md:px-8">
+        <div className="flex items-center gap-4 min-w-0">
+          <button
+            className="lg:hidden -ml-1"
+            onClick={() => setMobileOpen((value) => !value)}
+            aria-label="Abrir menu"
+          >
+            <Icon icon={mobileOpen ? 'solar:close-circle-linear' : 'solar:hamburger-menu-linear'} width={24} />
+          </button>
+          <Link to={`/tienda/${slug}`} className="flex items-center">
             {tienda?.logo ? (
-              <img src={tienda.logo} alt={tienda.nombre} className="h-8 w-auto object-contain" />
+              <img src={tienda.logo} alt={tienda.nombre} className="h-8 max-w-[180px] object-contain" />
             ) : (
-              <span className="text-3xl font-serif font-bold text-gray-900 tracking-tight" style={{ fontFamily: '"Playfair Display", serif' }}>
-                Styliq<span style={{ color: cp || '#B58863' }}>.</span>
+              <span className="text-[20px] md:text-[22px] font-medium tracking-[0.16em] leading-none border-b border-black pb-0.5 truncate max-w-[220px]">
+                {brandName}
               </span>
             )}
           </Link>
         </div>
 
-        {/* Links & Icons Right */}
-        <div className="flex-1 flex items-center justify-end gap-6">
-          {/* Icons */}
-          <div className="flex items-center gap-3">
-            <button className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-700 shadow-sm border border-gray-100 hover:scale-105 transition-transform">
-              <Icon icon="solar:heart-bold" width={20} className="text-gray-700" />
-            </button>
-            
-            <button 
-              onClick={onOpenCart}
-              className="relative w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-700 shadow-sm border border-gray-100 hover:scale-105 transition-transform cursor-pointer"
+        <nav className="hidden lg:flex items-center gap-7 text-[15px] font-medium">
+          {(['men', 'women'] as const).map((key) => (
+            <button
+              key={key}
+              onMouseEnter={() => setActiveMenu(key)}
+              onClick={() => goCatalog(key)}
+              className={`leading-none pb-1 border-b transition-colors ${activeMenu === key ? 'border-black' : 'border-transparent hover:border-black'}`}
             >
-              <Icon icon="solar:bag-3-bold" width={20} />
-              {carritoSize > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm">
-                  {carritoSize}
-                </span>
-              )}
+              {menuBase[key].label}
             </button>
+          ))}
+          <button onClick={() => goCatalog('mundo')} className="leading-none pb-1 border-b border-transparent hover:border-black">
+            Our World
+          </button>
+          <button onClick={() => goCatalog('ofertas')} className="leading-none pb-1 border-b border-transparent hover:border-black">
+            Rewards
+          </button>
+        </nav>
 
-            <button className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-700 shadow-sm border border-gray-100 hover:scale-105 transition-transform">
-              <Icon icon="solar:user-bold" width={20} />
-            </button>
+        <div className="hidden lg:flex items-center gap-4 text-[14px] font-medium uppercase">
+          <form onSubmit={onSearchSubmit} className="flex items-center gap-1">
+            <Icon icon="solar:magnifer-linear" width={18} />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="SEARCH"
+              className="w-[70px] bg-transparent outline-none placeholder:text-black"
+            />
+          </form>
+          <button className="flex items-center gap-1 hover:opacity-60">
+            <Icon icon="solar:user-linear" width={18} />
+            LOGIN
+          </button>
+          <button className="flex items-center gap-1 hover:opacity-60" onClick={() => goCatalog('favoritos')}>
+            <Icon icon="solar:heart-linear" width={18} />
+            WISHLIST
+          </button>
+          <button className="flex items-center gap-1 hover:opacity-60" onClick={onOpenCart}>
+            <Icon icon="solar:bag-4-linear" width={18} />
+            BAG ({carritoSize})
+          </button>
+        </div>
+
+        <button className="lg:hidden flex items-center gap-1 text-sm font-semibold" onClick={onOpenCart}>
+          <Icon icon="solar:bag-4-linear" width={20} />
+          {carritoSize}
+        </button>
+      </div>
+
+      {mobileOpen && (
+        <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-black p-5 shadow-xl">
+          <div className="grid gap-4 text-lg font-medium">
+            <button onClick={() => goCatalog('men')} className="text-left">Men</button>
+            <button onClick={() => goCatalog('women')} className="text-left">Women</button>
+            {allCategories.slice(0, 6).map((category: any) => {
+              const name = typeof category === 'string' ? category : category?.nombre;
+              if (!name) return null;
+              return <button key={name} onClick={() => goCatalog(name)} className="text-left">{name}</button>;
+            })}
           </div>
         </div>
-      </div>
+      )}
+
+      {menu && (
+        <div className="hidden lg:grid absolute top-full left-0 w-full h-[402px] bg-white border-b border-black shadow-sm grid-cols-[15%_15%_15%_15%_20%_20%]">
+          <div className="border-r border-black px-8 py-8">
+            <MenuList items={menu.first} onItemClick={goCatalog} markNew />
+          </div>
+          <div className="border-r border-black px-8 py-8">
+            <MenuGroup title="Shoes" items={menu.shoes} onItemClick={goCatalog} />
+            <MenuGroup title="Silhouettes" items={menu.silhouettes} onItemClick={goCatalog} className="mt-8" />
+          </div>
+          <div className="border-r border-black px-8 py-8">
+            <MenuGroup title="Clothing" items={menu.clothing} onItemClick={goCatalog} />
+          </div>
+          <div className="border-r border-black px-8 py-8">
+            <MenuGroup title="Accessories" items={['All Accessories', 'Gift Cards', 'Socks', 'Caps']} onItemClick={goCatalog} />
+          </div>
+          {menu.cards.map((card) => (
+            <button
+              key={card.title}
+              onClick={() => goCatalog(card.title)}
+              className="relative overflow-hidden group text-white text-center"
+            >
+              <img src={card.image} alt={card.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <span className="absolute inset-0 bg-black/20 group-hover:bg-black/35 transition-colors" />
+              <span className="relative z-10 h-full flex items-center justify-center px-8 text-[16px] font-bold leading-snug">
+                {card.title}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </header>
+  );
+}
+
+function MenuGroup({
+  title,
+  items,
+  onItemClick,
+  className = '',
+}: {
+  title: string;
+  items: string[];
+  onItemClick: (query?: string) => void;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="text-[14px] text-gray-500 mb-2">{title}</p>
+      <MenuList items={items} onItemClick={onItemClick} />
+    </div>
+  );
+}
+
+function MenuList({
+  items,
+  onItemClick,
+  markNew = false,
+}: {
+  items: string[];
+  onItemClick: (query?: string) => void;
+  markNew?: boolean;
+}) {
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item, index) => (
+        <li key={item}>
+          <button
+            onClick={() => onItemClick(item)}
+            className="text-left text-[15px] leading-[1.25] hover:underline underline-offset-4"
+          >
+            {item}
+            {markNew && [0, 1, 3, 5].includes(index) && (
+              <span className="ml-1 align-super text-[8px] text-slate-500 font-bold">NEW</span>
+            )}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

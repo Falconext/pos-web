@@ -109,7 +109,7 @@ const restauranteDemo: RubroDemo = {
 
 // ─── Ropa / Moda / Boutique ───────────────────────────────────────────────────
 const ropaDemo: RubroDemo = {
-  storeName: 'Boutique Élite',
+  storeName: 'KREZKA',
   slogan: 'Moda que te define',
   heroKeyword: 'La Mejor Moda',
   heroDesc: 'Las últimas tendencias en ropa y accesorios. Colecciones exclusivas para cada estilo, con envío gratis en pedidos mayores a S/150.',

@@ -15,6 +15,12 @@ import AutopartesTopSelling from '@/components/tienda/AutopartesTopSelling';
 import AutopartesFooter from '@/components/tienda/AutopartesFooter';
 import AutopartesCatalog from '@/components/tienda/AutopartesCatalog';
 import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
+import ModaCartModal from '@/components/tienda/ModaCartModal';
+import UrbanoCartModal from '@/components/tienda/UrbanoCartModal';
+import ModaCheckoutPage from '@/templates/moda/ModaCheckoutPage';
+import UrbanoCheckoutPage from '@/templates/urbano/UrbanoCheckoutPage';
+import { UrbanoProductoPreviewPage } from '@/pages/tienda/UrbanoProductoPreviewPage';
+import UrbanoCatalogoPage from '@/templates/urbano/UrbanoCatalogoPage';
 import AutopartesCheckout from '@/pages/tienda/AutopartesCheckout';
 import ModaHeader from '@/components/tienda/ModaHeader';
 import ModaHero from '@/components/tienda/ModaHero';
@@ -36,6 +42,18 @@ interface PreviewConfig {
 
 type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout';
 
+const URBANO_PREVIEW_ASSETS = [
+  '/assets/templates/urbano/coleccion1.png',
+  '/assets/templates/urbano/coleccion2.png',
+  '/assets/templates/urbano/coleccion3.png',
+  '/assets/templates/urbano/coleccion4.png',
+  '/assets/templates/urbano/coleccion5.png',
+  '/assets/templates/urbano/coleccion6.png',
+  '/assets/templates/urbano/coleccion7.png',
+  '/assets/templates/urbano/coleccion8.png',
+  '/assets/templates/urbano/coleccion9.png',
+  '/assets/templates/urbano/coleccion10.png',
+];
 
 // ─── Shared Header ─────────────────────────────────────────────────────────────
 function PreviewHeader({
@@ -420,6 +438,220 @@ function CatalogoPage({ demo, cp, onProduct, onAddToCart }: { demo: RubroDemo; c
   );
 }
 
+// ─── PAGE: MODA PRODUCTO DETALLE ──────────────────────────────────────────────
+function ModaProductoPreviewPage({ producto, demo, cp, diseno, onNav, onProduct, onAddToCart }: { producto: DemoProduct; demo: RubroDemo; cp: string; diseno: any; onNav: (p: PreviewPage) => void; onProduct: (p: DemoProduct) => void; onAddToCart: () => void }) {
+  const [cantidad, setCantidad] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(producto.imagenUrl);
+  const price = Number(producto.precioUnitario || 0);
+  const originalPrice = Number(producto.precioOriginal || 0);
+  const hasDiscount = !!(originalPrice && originalPrice > price);
+  const discountPct = hasDiscount ? Math.round((1 - price / originalPrice) * 100) : 0;
+  const starRating = [4, 4.5, 5, 4, 4.5][producto.id % 5];
+  const fullStars = Math.floor(starRating);
+  const hasHalf = starRating % 1 !== 0;
+  const related = demo.products.filter(p => p.id !== producto.id).slice(0, 4);
+  const demoImages = [producto.imagenUrl, ...demo.products.slice(0, 3).map(p => p.imagenUrl)];
+  const demoColors = ['#B58863', '#1A1A1A', '#C0392B', '#3498DB'];
+  const demoSizes = ['XS', 'S', 'M', 'L', 'XL'];
+  const [selectedColor, setSelectedColor] = useState(0);
+  const [selectedSize, setSelectedSize] = useState(2);
+
+  return (
+    <div className="pb-16 bg-[#FAF9F6]">
+      <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-8">
+
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-8">
+          <button onClick={() => onNav('home')} className="hover:text-gray-700 transition-colors font-medium">Inicio</button>
+          <Icon icon="solar:alt-arrow-right-linear" width={12} />
+          <button onClick={() => onNav('catalogo')} className="hover:text-gray-700 transition-colors font-medium">Catálogo</button>
+          <Icon icon="solar:alt-arrow-right-linear" width={12} />
+          <span className="font-semibold text-gray-700 truncate max-w-[160px]">{producto.descripcion}</span>
+        </nav>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+
+          {/* Images */}
+          <div className="flex flex-col gap-4">
+            <div className="relative overflow-hidden rounded-3xl bg-[#F5F0EB] aspect-[4/5]">
+              <img src={selectedImage} alt={producto.descripcion} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+              {hasDiscount && (
+                <span className="absolute top-4 left-4 text-[10px] font-black text-white px-3 py-1.5 rounded-full tracking-wider" style={{ backgroundColor: '#1A1A1A' }}>
+                  -{discountPct}% OFF
+                </span>
+              )}
+              <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow flex items-center justify-center hover:scale-110 transition-transform">
+                <Icon icon="solar:heart-linear" width={20} className="text-gray-600" />
+              </button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {demoImages.slice(0, 4).map((img, i) => (
+                <button key={i} onClick={() => setSelectedImage(img)}
+                  className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all"
+                  style={{ borderColor: selectedImage === img ? '#1A1A1A' : '#E5E7EB' }}>
+                  <img src={img} alt="" className="w-full h-full object-cover bg-[#F5F0EB]" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="flex flex-col pt-1">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">{demo.storeName}</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight mb-3">{producto.descripcion}</h1>
+
+            {/* Stars */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }, (_, i) => {
+                  const n = i + 1;
+                  const icon = n <= fullStars ? 'solar:star-bold' : hasHalf && n === fullStars + 1 ? 'solar:star-half-bold' : 'solar:star-outline';
+                  const color = n <= fullStars || (hasHalf && n === fullStars + 1) ? '#1A1A1A' : '#D1D5DB';
+                  return <Icon key={i} icon={icon} width={14} style={{ color }} />;
+                })}
+              </div>
+              <span className="text-xs text-gray-500 font-medium">{starRating.toFixed(1)} ({((producto.id * 23 + 7) % 90) + 3} reseñas)</span>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-3 mb-5">
+              <span className="text-3xl font-black text-gray-900">S/ {price.toFixed(2)}</span>
+              {hasDiscount && (
+                <>
+                  <span className="text-lg text-gray-400 line-through font-medium">S/ {originalPrice.toFixed(2)}</span>
+                  <span className="text-xs font-black text-white px-2 py-0.5 rounded-full bg-gray-900">-{discountPct}%</span>
+                </>
+              )}
+            </div>
+
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full mb-5 w-fit">
+              <Icon icon="solar:check-circle-bold" width={14} /> En Stock ({producto.stock})
+            </span>
+
+            {/* Color selector */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Color disponible</p>
+                <p className="text-xs font-semibold text-gray-700">{['Camel', 'Negro', 'Rojo', 'Azul'][selectedColor]}</p>
+              </div>
+              <div className="flex gap-2.5">
+                {demoColors.map((color, i) => (
+                  <button key={i} onClick={() => setSelectedColor(i)}
+                    className="w-8 h-8 rounded-full border-2 transition-all hover:scale-110"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: selectedColor === i ? '#1A1A1A' : 'transparent',
+                      boxShadow: selectedColor === i ? '0 0 0 2px #fff, 0 0 0 4px #1A1A1A' : 'none',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Size selector */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Talla</p>
+                <button className="text-xs font-semibold text-gray-500 underline underline-offset-2">Ver guía de tallas</button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {demoSizes.map((size, i) => (
+                  <button key={i} onClick={() => setSelectedSize(i)}
+                    className="min-w-[2.75rem] h-10 px-3 rounded-xl border-2 text-sm font-bold transition-all"
+                    style={{
+                      borderColor: selectedSize === i ? '#1A1A1A' : '#E5E7EB',
+                      backgroundColor: selectedSize === i ? '#1A1A1A' : '#fff',
+                      color: selectedSize === i ? '#fff' : '#374151',
+                    }}>
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Qty + Bag + Favorite */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center bg-gray-100 rounded-xl px-1 py-1 gap-1 border border-gray-200">
+                <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-white hover:text-gray-900 transition-all font-bold text-lg">−</button>
+                <span className="w-9 text-center font-black text-gray-900 text-sm">{cantidad}</span>
+                <button onClick={() => setCantidad(cantidad + 1)} className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-white hover:text-gray-900 transition-all font-bold text-lg">+</button>
+              </div>
+              <button className="w-12 h-12 rounded-xl border-2 border-gray-200 flex items-center justify-center hover:border-gray-900 transition-all">
+                <Icon icon="solar:heart-linear" width={20} className="text-gray-600" />
+              </button>
+              <button onClick={onAddToCart} className="flex-1 h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-gray-900 text-white hover:opacity-90 active:scale-95 transition-all">
+                <Icon icon="solar:bag-3-bold" width={18} /> Añadir a la bolsa
+              </button>
+            </div>
+
+            {/* Buy now */}
+            <button className="w-full h-12 rounded-xl border-2 border-gray-900 text-gray-900 font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-900 hover:text-white transition-all mb-6 active:scale-95">
+              <Icon icon="solar:lightning-bolt-bold" width={16} /> Comprar ahora
+            </button>
+
+            {/* Info cards */}
+            <div className="space-y-2 mb-5">
+              {[
+                { icon: 'solar:delivery-bold-duotone', title: 'Entrega rápida', desc: 'Coordinada directamente con la tienda' },
+                { icon: 'solar:refresh-bold-duotone', title: 'Cambios y devoluciones', desc: 'Devoluciones fáciles dentro de 7 días' },
+                { icon: 'solar:shield-check-bold-duotone', title: 'Pago seguro', desc: 'Atención y soporte vía WhatsApp' },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-gray-100">
+                  <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                    <Icon icon={icon} width={20} className="text-gray-700" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">{title}</p>
+                    <p className="text-[11px] text-gray-500">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-xs text-gray-400 border-t border-gray-100 pt-4">
+              <p><span className="font-semibold text-gray-500">Categoría:</span> {typeof producto.categoria === 'object' ? (producto.categoria as any)?.nombre : producto.categoria}</p>
+              <p className="mt-1"><span className="font-semibold text-gray-500">Marca:</span> {typeof producto.marca === 'object' ? (producto.marca as any)?.nombre : producto.marca}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* You may also like */}
+        {related.length > 0 && (
+          <section className="mt-16">
+            <h2 className="text-2xl font-black text-gray-900 mb-2">También te puede gustar</h2>
+            <p className="text-sm text-gray-400 mb-8">Estilos curados, piezas premium y tendencias de moda para expresar tu estilo único.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {related.map(p => {
+                const rPrice = Number(p.precioUnitario || 0);
+                const rOrig = Number(p.precioOriginal || 0);
+                const rDisc = rOrig > 0 && rOrig > rPrice;
+                return (
+                  <button key={p.id} onClick={() => { onProduct(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-left group w-full">
+                    <div className="relative overflow-hidden rounded-2xl bg-[#F5F0EB] aspect-[3/4] mb-3">
+                      <img src={p.imagenUrl} alt={p.descripcion} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                      {rDisc && (
+                        <span className="absolute top-3 left-3 text-[10px] font-black text-white px-2.5 py-1 rounded-full bg-gray-900">
+                          -{Math.round((1 - rPrice / rOrig) * 100)}%
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1 truncate">{typeof p.categoria === 'object' ? (p.categoria as any)?.nombre : p.categoria}</p>
+                    <p className="text-sm font-bold text-gray-900 leading-snug line-clamp-2 mb-2">{p.descripcion}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black text-gray-900">S/ {rPrice.toFixed(2)}</span>
+                      {rDisc && <span className="text-xs text-gray-400 line-through">S/ {rOrig.toFixed(2)}</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── PAGE: PRODUCTO DETALLE ────────────────────────────────────────────────────
 function ProductoPage({ producto, demo, cp, diseno, onNav, onProduct, onAddToCart }: { producto: DemoProduct; demo: RubroDemo; cp: string; diseno: any; onNav: (p: PreviewPage) => void; onProduct: (p: DemoProduct) => void; onAddToCart: () => void }) {
   const [cantidad, setCantidad] = useState(1);
@@ -576,6 +808,7 @@ export default function StorePreviewPage() {
   const [carrito, setCarrito] = useState<any[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     try {
@@ -619,7 +852,36 @@ export default function StorePreviewPage() {
   const cs = config.colorSecundario ?? '#ffffff';
   const ca = config.colorAccento ?? '#FF6B6B';
   const tf = config.tipografia ?? 'Inter';
-  const diseno = { colorPrimario: cp, colorSecundario: cs, colorAccento: ca, tipografia: tf };
+  const urbanoPreviewProducts = demo.products.map((product, index) => ({
+    ...product,
+    imagenUrl: URBANO_PREVIEW_ASSETS[index % URBANO_PREVIEW_ASSETS.length],
+  }));
+  const urbanoPreviewCategories = demo.categories
+    .filter((category) => category !== 'Todos')
+    .map((category, index) => ({
+      nombre: category,
+      imagenUrl: URBANO_PREVIEW_ASSETS[(index + 4) % URBANO_PREVIEW_ASSETS.length],
+    }));
+  const diseno = {
+    ...config,
+    colorPrimario: cp,
+    colorSecundario: cs,
+    colorAccento: ca,
+    tipografia: tf,
+    ...(config.plantillaId === 'urbano'
+      ? {
+          urbanoHeroImg: '/assets/templates/urbano/banner.png',
+          urbanoBottomBannerImg: '/assets/templates/urbano/wear.png',
+          urbanoShopTheLookImg: '/assets/templates/urbano/shoplook.png',
+          urbanoFeatureModelImg: '/assets/templates/urbano/jacket.png',
+          urbanoGallery1: '/assets/templates/urbano/coleccion2.png',
+          urbanoGallery2: '/assets/templates/urbano/coleccion3.png',
+          urbanoGallery3: '/assets/templates/urbano/coleccion4.png',
+          urbanoGallery4: '/assets/templates/urbano/coleccion5.png',
+          urbanoGallery5: '/assets/templates/urbano/coleccion6.png',
+        }
+      : {}),
+  };
 
   const goToProduct = (p: DemoProduct) => {
     setSelectedProduct(p);
@@ -711,20 +973,44 @@ export default function StorePreviewPage() {
               allCategories={demo.categories.filter(c => c !== 'Todos')} 
             />
           ) : null
+        ) : config.plantillaId === 'urbano' ? (
+          null // Urbano handles its own headers
         ) : (
           <PreviewHeader demo={demo} cp={cp} cartCount={carrito.reduce((sum, item) => sum + item.cantidad, 0)} currentPage={page} onNav={goToPage} activeCategory={activeCategory} onSelectCategory={setActiveCategory} />
         )}
 
         {isCartOpen && (
-          <AutopartesCartModal 
-            isOpen={isCartOpen}
-            cp={cp} 
-            carrito={carrito} 
-            setCarrito={setCarrito}
-            onClose={() => setIsCartOpen(false)} 
-            actualizarCantidad={actualizarCantidad} 
-            onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }} 
-          />
+          config.plantillaId === 'moda' ? (
+            <ModaCartModal
+              isOpen={isCartOpen}
+              carrito={carrito}
+              tienda={{ nombre: demo.storeName }}
+              setCarrito={setCarrito}
+              onClose={() => setIsCartOpen(false)}
+              actualizarCantidad={actualizarCantidad}
+              onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }}
+            />
+          ) : config.plantillaId === 'urbano' ? (
+            <UrbanoCartModal
+              isOpen={isCartOpen}
+              carrito={carrito}
+              tienda={{ nombre: demo.storeName }}
+              setCarrito={setCarrito}
+              onClose={() => setIsCartOpen(false)}
+              actualizarCantidad={actualizarCantidad}
+              onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }}
+            />
+          ) : (
+            <AutopartesCartModal
+              isOpen={isCartOpen}
+              cp={cp} 
+              carrito={carrito} 
+              setCarrito={setCarrito}
+              onClose={() => setIsCartOpen(false)} 
+              actualizarCantidad={actualizarCantidad} 
+              onCheckout={() => { setIsCartOpen(false); goToPage('checkout'); }} 
+            />
+          )
         )}
 
         {page === 'home' && config.plantillaId === 'autopartes' ? (
@@ -811,29 +1097,205 @@ export default function StorePreviewPage() {
           </div>
         ) : page === 'home' && config.plantillaId === 'moda' ? (
           <div className="bg-[#FAF9F6] w-full">
-            <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-8 md:py-10">
-              <ModaHero cp={cp} slug="preview" diseno={diseno} productos={demo.products.slice(0, 3)} />
-              <ModaFeaturedCollections slug="preview" />
+            <ModaHero cp={cp} slug="preview" diseno={diseno} productos={demo.products.slice(0, 3)} />
+            <ModaFeaturedCollections slug="preview" productos={demo.products} onAddToCart={addToCart} />
+            <div className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-14 md:py-16">
               <ModaBestSelling slug="preview" cp={cp} productos={demo.products} />
               <ModaNewArrivals slug="preview" productos={demo.products} />
               <ModaPromoBanner slug="preview" />
             </div>
           </div>
+        ) : page === 'home' && config.plantillaId === 'urbano' ? (
+            <UrbanoCatalogoPage
+                slug="preview"
+                tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno }}
+                productos={urbanoPreviewProducts}
+                allCategories={urbanoPreviewCategories}
+                cp={cp}
+                carritoSize={carrito.length}
+                onOpenCart={() => {}}
+                onAddToCart={(p) => addToCart(p)}
+                onProduct={(p) => goToProduct(p)}
+                searchQuery=""
+                setSearchQuery={() => {}}
+                onSearchSubmit={() => {}}
+            />
         ) : page === 'home' ? (
-          <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={addToCart} />
+          <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(demo.products[0])} />
         ) : null}
         {page === 'catalogo' && (
           config.plantillaId === 'autopartes' ? (
             <AutopartesCatalog demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
+          ) : config.plantillaId === 'moda' ? (
+            <div className="w-full min-h-screen bg-[#FAF9F6] pb-20">
+              <div className="max-w-7xl mx-auto px-4 xl:px-8 py-16">
+                
+                {/* Header text */}
+                <div className="text-center max-w-2xl mx-auto mb-16">
+                  <h1 className="text-3xl md:text-[2.5rem] font-bold text-gray-900 tracking-tight mb-4" style={{ fontFamily: '"Inter", sans-serif' }}>
+                    Donde la moda te encuentra
+                  </h1>
+                  <p className="text-sm md:text-[15px] text-gray-500 leading-relaxed">
+                    Explora estilos seleccionados, piezas de lujo y tendencias modernas diseñadas para expresar tu confianza única.
+                  </p>
+                </div>
+
+                {/* Filter & Sort Bar */}
+                <div className="flex items-center justify-between mb-8 pb-4">
+                  <button onClick={() => setShowFilters(true)} className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-gray-600 transition-colors">
+                    <Icon icon="solar:filter-bold" width={18} />
+                    Filtrar y Ordenar
+                  </button>
+                  <span className="text-sm font-bold text-gray-500">{demo.products.length} Productos</span>
+                </div>
+
+                {/* Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-20">
+                  {demo.products.map(p => {
+                    const price = Number(p.precioUnitario || 0);
+                    return (
+                      <button key={p.id} onClick={() => goToProduct(p)} className="text-left group w-full bg-white rounded-[1.5rem] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all">
+                        <div className="relative w-full aspect-square bg-white rounded-xl mb-4 overflow-hidden flex items-center justify-center p-2">
+                          {p.imagenUrl ? (
+                            <img src={p.imagenUrl} alt={p.descripcion} className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.05]" />
+                          ) : (
+                            <Icon icon="solar:box-linear" className="text-gray-200 text-5xl" />
+                          )}
+                        </div>
+                        <p className="text-[13px] font-bold text-gray-900 leading-snug line-clamp-2 mb-1.5 px-1">{p.descripcion}</p>
+                        <p className="text-[13px] font-bold text-gray-600 px-1">${price.toFixed(2)}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Bottom Banners Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-4 md:gap-6 items-stretch">
+                  <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[340px]">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none w-full text-center">
+                      <span className="text-[10rem] sm:text-[14rem] font-black text-gray-50 opacity-50 tracking-tighter whitespace-nowrap">Comf</span>
+                    </div>
+                    
+                    <div className="relative z-10 max-w-[55%]">
+                      <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2 tracking-tight">
+                        ¡Tu evolución
+                      </h3>
+                      <h3 className="text-3xl lg:text-4xl text-gray-900 leading-tight mb-4" style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic' }}>
+                        comienza aquí!
+                      </h3>
+                      <p className="text-xs text-gray-500 leading-relaxed mb-6">
+                        Estilos seleccionados, telas lujosas y elegancia natural en un solo lugar. Vístete como sueñas.
+                      </p>
+                      <button 
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        className="px-6 py-2.5 bg-[#2D2D2D] text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-black transition-colors inline-flex items-center gap-2"
+                      >
+                        Empezar a comprar <Icon icon="solar:arrow-up-linear" width={16} />
+                      </button>
+                    </div>
+
+                    <div className="absolute bottom-0 right-0 w-[45%] h-[95%] z-0 flex items-end justify-center">
+                      <img 
+                        src="https://images.unsplash.com/photo-1549439602-43ebca2327af?auto=format&fit=crop&q=80&w=800" 
+                        alt="Model" 
+                        className="w-full h-full object-cover object-top mix-blend-multiply opacity-90 scale-110 origin-bottom filter grayscale"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-[#B58863] rounded-[2rem] overflow-hidden min-h-[300px] lg:min-h-[340px] relative">
+                    <img 
+                      src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=1200" 
+                      alt="Girls laughing" 
+                      className="absolute inset-0 w-full h-full object-cover object-top"
+                    />
+                  </div>
+                </div>
+
+                {/* Mock filter drawer */}
+                {showFilters && (
+                    <div className="fixed inset-0 z-[200]">
+                        <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
+                        <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                                <span className="font-black text-gray-900">Filtrar y Ordenar</span>
+                                <button onClick={() => setShowFilters(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <Icon icon="solar:close-circle-bold" width={18} className="text-gray-600" />
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+                                <div>
+                                    <p className="font-bold text-gray-800 mb-3 text-sm">Categorías</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Ropa', 'Calzado', 'Accesorios', 'Bolsos'].map((cat, i) => (
+                                            <button key={i} className="px-4 py-2 rounded-full text-xs font-bold border-2 border-[#E5E7EB] text-[#6B7280]">
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+                                <button onClick={() => setShowFilters(false)} className="flex-1 py-3 rounded-full text-sm font-bold text-white bg-gray-900">
+                                    Ver {demo.products.length} Resultados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+              </div>
+            </div>
           ) : (
-            <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
+            <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => {}} />
           )
         )}
+
         {page === 'producto' && selectedProduct && (
-          <ProductoPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={addToCart} />
+          config.plantillaId === 'urbano' ? (
+            <UrbanoProductoPreviewPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(selectedProduct)} />
+          ) : config.plantillaId === 'moda' ? (
+            <ModaProductoPreviewPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(selectedProduct)} />
+          ) : (
+            <ProductoPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(selectedProduct)} />
+          )
         )}
         {page === 'checkout' && (
-          config.plantillaId === 'autopartes' ? (
+          config.plantillaId === 'moda' ? (
+            <ModaCheckoutPage 
+                slug="preview"
+                tienda={{ nombre: demo.storeName, diseno }}
+                diseno={diseno}
+                cp={cp}
+                pedidoCreado={null}
+                carritoState={carrito}
+                setCarritoState={setCarrito}
+                formData={{}}
+                erroresForm={{}}
+                handleChange={() => {}}
+                configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+                configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+                enviando={false}
+                search=""
+                setSearch={() => {}}
+                searchResults={[]}
+                suggestedProducts={[]}
+                updateQuantity={actualizarCantidad}
+                removeItem={(id) => actualizarCantidad(id, 0)}
+                calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+                calcularCostoEnvio={() => 15}
+                calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+                onSubmit={() => alert('¡Compra completada en modo demo!')}
+                onAddToCart={addToCart}
+                freeDeliveryThreshold={0}
+                freeDeliveryRemaining={0}
+                freeDeliveryProgress={0}
+                showConfirmModal={false}
+                setShowConfirmModal={() => {}}
+                showPaymentModal={false}
+                setShowPaymentModal={() => {}}
+                enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+              />
+          ) : config.plantillaId === 'autopartes' ? (
             <AutopartesCheckout 
                 slug="preview"
                 tienda={{ nombre: demo.storeName, diseno }}
@@ -859,6 +1321,41 @@ export default function StorePreviewPage() {
                 freeDeliveryRemaining={0}
                 freeDeliveryProgress={0}
               />
+          ) : config.plantillaId === 'urbano' ? (
+            <UrbanoCheckoutPage
+                slug="preview"
+                tienda={{ nombre: demo.storeName, diseno }}
+                diseno={diseno}
+                cp={cp}
+                pedidoCreado={null}
+                carritoState={carrito}
+                setCarritoState={setCarrito}
+                formData={{}}
+                erroresForm={{}}
+                handleChange={() => {}}
+                configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+                configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+                enviando={false}
+                search=""
+                setSearch={() => {}}
+                searchResults={[]}
+                suggestedProducts={[]}
+                updateQuantity={actualizarCantidad}
+                removeItem={(id) => actualizarCantidad(id, 0)}
+                calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+                calcularCostoEnvio={() => 15}
+                calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+                onSubmit={() => alert('¡Compra completada en modo demo!')}
+                onAddToCart={addToCart}
+                freeDeliveryThreshold={0}
+                freeDeliveryRemaining={0}
+                freeDeliveryProgress={0}
+                showConfirmModal={false}
+                setShowConfirmModal={() => {}}
+                showPaymentModal={false}
+                setShowPaymentModal={() => {}}
+                enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+              />
           ) : (
             <div className="py-20 text-center font-bold text-gray-500">Checkout Preview (Generic)</div>
           )
@@ -869,6 +1366,8 @@ export default function StorePreviewPage() {
           page !== 'checkout' && <AutopartesFooter tienda={null} slug="preview" diseno={diseno} />
         ) : config.plantillaId === 'moda' ? (
           page !== 'checkout' && <ModaFooter tiendaNombre={demo.storeName} />
+        ) : config.plantillaId === 'urbano' ? (
+          null // Hombre Urbano handles its own footers inside its pages
         ) : page !== 'producto' && (
           <footer className="py-10 border-t border-gray-100" style={{ background: '#fafafa' }}>
             <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">

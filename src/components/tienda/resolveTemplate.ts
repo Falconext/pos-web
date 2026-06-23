@@ -9,7 +9,8 @@ export type PlantillaId =
   | 'menu'
   | 'gadgets'
   | 'autopartes'
-  | 'moda';
+  | 'moda'
+  | 'urbano';
 
 export interface BannerSlotDef {
   orden: number;
@@ -52,6 +53,28 @@ export interface TemplateConfig {
   planesPermitidos?: string[];
   /** Restricted to specific rubros (by name). If undefined or empty, allowed for all rubros. */
   rubrosPermitidos?: string[];
+}
+
+export function normalizeRubroName(value?: string | null): string {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+export function isTemplateAllowedForRubro(template: Pick<TemplateConfig, 'rubrosPermitidos'>, rubroNombre?: string | null): boolean {
+  if (!template.rubrosPermitidos || template.rubrosPermitidos.length === 0) return true;
+
+  const rubro = normalizeRubroName(rubroNombre);
+  if (!rubro) return true;
+
+  return template.rubrosPermitidos.some((permitido) => {
+    const allowed = normalizeRubroName(permitido);
+    if (!allowed) return false;
+    return rubro === allowed || rubro.includes(allowed) || allowed.includes(rubro);
+  });
 }
 
 const CLASSIC_BANNER_SLOTS: BannerSlotDef[] = [
@@ -102,7 +125,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Diseño limpio y compacto. Más productos visibles, menos distracción.',
     accentColor: '#18181B',
     icon: 'solar:minimalistic-magnifer-bold',
-    rubrosPermitidos: ['Retail y comercio', 'Comercio minorista', 'Artesanía y decoración', 'Belleza y cuidado personal', 'Textil y confección', 'Textil y confecciones'],
+    rubrosPermitidos: ['Retail y comercio', 'Comercio minorista', 'Artesanía y decoración', 'Belleza y cuidado personal', 'Textil y confección', 'Textil y confecciones', 'Moda, Ropa Y Calzado', 'Moda', 'Ropa', 'Calzado'],
   },
   elegante: {
     cardComponent: 'ProductCardGlamora',
@@ -119,7 +142,7 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Foco en imagen vertical tipo lookbook. Perfecto para ropa, belleza y joyería.',
     accentColor: '#D4A0C5',
     icon: 'solar:star-bold',
-    rubrosPermitidos: ['Textil y confección', 'Textil y confecciones', 'Belleza y cuidado personal', 'Artesanía y decoración'],
+    rubrosPermitidos: ['Textil y confección', 'Textil y confecciones', 'Belleza y cuidado personal', 'Artesanía y decoración', 'Moda, Ropa Y Calzado', 'Moda', 'Ropa', 'Calzado'],
   },
   tecnica: {
     cardComponent: 'ProductCardGromuse',
@@ -239,7 +262,24 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     description: 'Diseño ultra limpio, estética editorial, tipografías finas. Ideal para ropa y alta costura.',
     accentColor: '#B58863',
     icon: 'solar:hanger-bold',
-    rubrosPermitidos: ['Textil y confección', 'Textil y confecciones'],
+    rubrosPermitidos: ['Textil y confección', 'Textil y confecciones', 'Moda, Ropa Y Calzado', 'Moda', 'Ropa', 'Calzado', 'Boutique'],
+  },
+  'urbano': {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: false,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Urbano',
+    description: 'Diseño street y contemporáneo, oscuro y minimalista. Ideal para marcas modernas.',
+    accentColor: '#111827',
+    icon: 'solar:t-shirt-bold',
+    rubrosPermitidos: ['Moda', 'Ropa', 'Textil y confección', 'Moda Urbana'],
   },
 };
 

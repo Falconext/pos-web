@@ -14,14 +14,14 @@ export default function ModaNewArrivals({ slug, productos }: ModaNewArrivalsProp
   const topProducts = [
     {
       id: 101,
-      title: "UrbanEase Straight Pants",
+      title: "Pantalón Recto UrbanEase",
       price: 199.00,
       image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800", 
       // Using a pants image with transparent/white background feel
     },
     {
       id: 102,
-      title: "LuxeLayer Satin Top",
+      title: "Top de Satén LuxeLayer",
       price: 87.00,
       image: "https://images.unsplash.com/photo-1603487742131-4160ecaea990?auto=format&fit=crop&q=80&w=800",
     }
@@ -30,25 +30,25 @@ export default function ModaNewArrivals({ slug, productos }: ModaNewArrivalsProp
   const bottomProducts = [
     {
       id: 103,
-      title: "RoseMist Blazer Dress",
+      title: "Vestido Blazer RoseMist",
       price: 179.00,
       image: "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?auto=format&fit=crop&q=80&w=800",
     },
     {
       id: 104,
-      title: "BlushAura Ruffle Top",
+      title: "Top con Vuelos BlushAura",
       price: 63.00,
       image: "https://images.unsplash.com/photo-1551799517-eb8f03cb5e6a?auto=format&fit=crop&q=80&w=800",
     },
     {
       id: 105,
-      title: "BoldMuse Corset Top",
+      title: "Top Corsé BoldMuse",
       price: 49.00,
       image: "https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?auto=format&fit=crop&q=80&w=800",
     },
     {
       id: 106,
-      title: "VibeSync Cropped Shirt",
+      title: "Camisa Corta VibeSync",
       price: 53.00,
       image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=800",
     }
@@ -57,7 +57,7 @@ export default function ModaNewArrivals({ slug, productos }: ModaNewArrivalsProp
   return (
     <section className="w-full mb-20" style={{ fontFamily: '"Inter", sans-serif' }}>
       <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-8">
-        New Arrivals
+        Nuevos Ingresos
       </h2>
 
       <div className="flex flex-col gap-6">
@@ -83,7 +83,7 @@ export default function ModaNewArrivals({ slug, productos }: ModaNewArrivalsProp
           </div>
 
           {/* Large Center Image */}
-          <div className="col-span-1 md:col-span-2 rounded-[2rem] overflow-hidden bg-gray-100 shadow-sm border border-gray-100 h-full">
+          <div className="col-span-1 md:col-span-2 rounded-[2rem] overflow-hidden bg-gray-100 shadow-sm border border-gray-100 aspect-square md:aspect-video">
             <img 
               src="https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?auto=format&fit=crop&q=80&w=1200" 
               alt="Clothes on Rack" 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { resolveTemplate, SLIDER_MAX_COUNT, SLIDER_BANNER_SLOTS } from '@/components/tienda/resolveTemplate';
@@ -246,7 +246,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
         }
     };
 
-    const actualizarDiseno = async (campos: Record<string, any>) => {
+    const actualizarDiseno = async (campos: Record<string, any>, options?: { silent?: boolean }) => {
         try {
             setSaving(true);
             await apiClient.patch('/tienda/diseno', campos);
@@ -254,12 +254,29 @@ export const useConfiguracionTiendaViewModel = (): any => {
                 ...prev,
                 diseno: { ...(prev?.diseno || {}), ...campos },
             }));
-            alert('Configuración de diseño guardada', 'success');
+            if (!options?.silent) alert('Configuración de diseño guardada', 'success');
         } catch (e: any) {
             alert(e.response?.data?.message || 'Error al guardar diseño', 'error');
         } finally {
             setSaving(false);
         }
+    };
+
+    // Para inputs de texto: refleja el cambio al instante en el preview y guarda
+    // tras dejar de escribir (debounce), sin mostrar toast en cada tecla.
+    const disenoTextTimers = useRef<Record<string, any>>({});
+    const actualizarDisenoTexto = (campos: Record<string, any>) => {
+        setConfig((prev: any) => ({
+            ...prev,
+            diseno: { ...(prev?.diseno || {}), ...campos },
+        }));
+        const key = Object.keys(campos).join('|');
+        if (disenoTextTimers.current[key]) clearTimeout(disenoTextTimers.current[key]);
+        disenoTextTimers.current[key] = setTimeout(() => {
+            apiClient.patch('/tienda/diseno', campos).catch((e: any) => {
+                alert(e.response?.data?.message || 'Error al guardar diseño', 'error');
+            });
+        }, 700);
     };
 
     const subirImagenTemplate = async (campo: string, file: File) => {
@@ -352,6 +369,6 @@ export const useConfiguracionTiendaViewModel = (): any => {
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,
         editingBanner, setEditingBanner, editBannerTitle, setEditBannerTitle, editBannerSubtitle, setEditBannerSubtitle, editBannerLink, setEditBannerLink, editBannerOrden, setEditBannerOrden,
         editBannerFile, setEditBannerFile, editSearch, setEditSearch, editResults, searchingEdit, openEditModal, handleUpdateBanner,
-        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno, subirImagenTemplate, uploadingTemplateImageField,
+        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno, actualizarDisenoTexto, subirImagenTemplate, uploadingTemplateImageField,
     };
 };

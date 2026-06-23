@@ -22,6 +22,12 @@ import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/t
 import { getRubroDemo } from '@/data/rubroDemo';
 import AutopartesCatalog from '@/components/tienda/AutopartesCatalog';
 import AutopartesFooter from '@/components/tienda/AutopartesFooter';
+import ModaHeader from '@/components/tienda/ModaHeader';
+import UrbanoCatalogoPage from '@/templates/urbano/UrbanoCatalogoPage';
+import UrbanoCatalogPage from '@/templates/urbano/UrbanoCatalogPage';
+import UrbanoCartModal from '@/components/tienda/UrbanoCartModal';
+import ModaFooter from '@/components/tienda/ModaFooter';
+import ModaCartModal from '@/components/tienda/ModaCartModal';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -256,10 +262,28 @@ export default function Catalogo() {
             if (config.plantillaId === 'autopartes') {
                 return (
                     <div className="bg-[#FAF5F5] min-h-screen">
-                        <AutopartesHeader tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno: config }} cp={cp} slug="preview" onCartClick={() => {}} cartItemCount={0} />
+                        <AutopartesHeader tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno: config }} cp={cp} slug="preview" onOpenCart={() => {}} carritoSize={0} searchQuery="" setSearchQuery={() => {}} onSearchSubmit={() => {}} allCategories={[]} />
                         <AutopartesCatalog demo={demo} cp={cp} onProduct={() => {}} onAddToCart={() => {}} />
                         <AutopartesFooter tienda={null} slug="preview" diseno={{ colorPrimario: cp }} />
                     </div>
+                );
+            }
+
+            if (config.plantillaId === 'urbano') {
+                return (
+                    <UrbanoCatalogoPage
+                        slug="preview"
+                        tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno: config }}
+                        productos={demo.products || []}
+                        allCategories={demo.categories || []}
+                        cp={cp}
+                        carritoSize={0}
+                        onOpenCart={() => {}}
+                        onAddToCart={() => {}}
+                        searchQuery=""
+                        setSearchQuery={() => {}}
+                        onSearchSubmit={() => {}}
+                    />
                 );
             }
         }
@@ -778,6 +802,357 @@ export default function Catalogo() {
         );
     }
 
+    // ── Moda catalog layout ───────────────────────────────────────────────────
+    if (diseno.plantillaId === 'moda') {
+        return (
+            <div className="min-h-screen bg-[#FAF9F6]" style={{ fontFamily: `'${diseno.tipografia || 'Inter'}', sans-serif` }}>
+                <ModaHeader
+                    tienda={tienda || {}}
+                    slug={slug || ''}
+                    cp={cp}
+                    carritoSize={carrito.reduce((s: number, i: any) => s + Number(i.cantidad || 1), 0)}
+                    onOpenCart={() => setMostrarCarrito(!mostrarCarrito)}
+                    searchQuery={search}
+                    setSearchQuery={setSearch}
+                    onSearchSubmit={e => {
+                        e.preventDefault();
+                        const q = search.trim();
+                        if (q) setSearch(q);
+                    }}
+                    allCategories={allCategorías}
+                />
+
+                <main className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-16">
+
+                    {/* Header text */}
+                    <div className="text-center max-w-2xl mx-auto mb-16">
+                        <h1 className="text-3xl md:text-[2.5rem] font-bold text-gray-900 tracking-tight mb-4" style={{ fontFamily: '"Inter", sans-serif' }}>
+                            Donde la moda te encuentra
+                        </h1>
+                        <p className="text-sm md:text-[15px] text-gray-500 leading-relaxed">
+                            Explora estilos seleccionados, piezas de lujo y tendencias modernas diseñadas para expresar tu confianza única.
+                        </p>
+                    </div>
+
+                    {/* Filter & Sort Bar */}
+                    <div className="flex items-center justify-between mb-8 pb-4">
+                        <button 
+                            onClick={() => setShowMobileFilters(true)}
+                            className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-gray-600 transition-colors"
+                        >
+                            <Icon icon="solar:filter-bold" width={18} />
+                            Filtrar y Ordenar
+                            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-gray-900" />}
+                        </button>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-bold text-gray-500 hidden sm:inline">{sortedProductos.length} Productos</span>
+                            <select
+                                value={sortBy}
+                                onChange={e => setSortBy(e.target.value)}
+                                className="text-sm font-semibold text-gray-700 bg-transparent border-none focus:outline-none focus:ring-0 cursor-pointer appearance-none pr-4"
+                            >
+                                <option value="relevance">Más Relevante</option>
+                                <option value="price-asc">Precio: Menor a Mayor</option>
+                                <option value="price-desc">Precio: Mayor a Menor</option>
+                                <option value="name-asc">Nombre A-Z</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Active filter chips */}
+                    {(selectedCategorías.length > 0 || selectedMarcas.length > 0) && (
+                        <div className="flex items-center gap-2 mb-6 flex-wrap">
+                            {[...selectedCategorías, ...selectedMarcas].map(chip => (
+                                <span
+                                    key={chip}
+                                    onClick={() => { toggleCategory(chip); toggleBrand(chip); }}
+                                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gray-900 text-white text-xs font-bold cursor-pointer hover:bg-gray-700 transition-colors"
+                                >
+                                    {chip}
+                                    <Icon icon="solar:close-circle-bold" className="text-gray-400" width={14} />
+                                </span>
+                            ))}
+                            <button
+                                onClick={() => { setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
+                                className="text-xs font-semibold text-gray-400 hover:text-gray-700 underline underline-offset-2"
+                            >
+                                Limpiar todo
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Grid */}
+                    {loading ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-20">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <div key={i} className="animate-pulse bg-white rounded-[1.5rem] p-4 border border-gray-50">
+                                    <div className="bg-gray-100 rounded-xl aspect-square mb-4" />
+                                    <div className="bg-gray-100 rounded h-3 w-3/4 mb-2" />
+                                    <div className="bg-gray-100 rounded h-4 w-1/2" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : sortedProductos.length === 0 ? (
+                        <div className="py-24 text-center mb-20">
+                            <Icon icon="solar:box-linear" className="text-6xl mx-auto mb-4 text-gray-200" />
+                            <h3 className="text-lg font-black text-gray-900 mb-2">No se encontraron resultados</h3>
+                            <p className="text-sm text-gray-500 mb-6">Intenta ajustar tus filtros o busca otra cosa.</p>
+                            <button
+                                onClick={() => { setSearch(''); setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
+                                className="text-sm font-bold px-6 py-3 rounded-full border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-all"
+                            >
+                                Limpiar filtros
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-20">
+                            {sortedProductos.map(producto => {
+                                const price = Number(producto.precioUnitario || 0);
+                                const original = Number(producto.precioOriginal || 0);
+                                const hasDisc = original > 0 && original > price;
+                                return (
+                                    <button
+                                        key={producto.id}
+                                        onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
+                                        className="text-left group w-full bg-white rounded-[1.5rem] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all flex flex-col relative"
+                                    >
+                                        <div className="relative w-full aspect-square bg-white rounded-xl mb-4 overflow-hidden flex items-center justify-center p-2">
+                                            {producto.imagenUrl ? (
+                                                <img src={producto.imagenUrl} alt={producto.descripcion} className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.05]" />
+                                            ) : (
+                                                <Icon icon="solar:box-linear" className="text-gray-200 text-5xl" />
+                                            )}
+                                            {hasDisc && (
+                                                <span className="absolute top-2 left-2 text-[10px] font-black text-white px-2 py-1 rounded-md tracking-wider bg-gray-900 z-10">
+                                                    -{Math.round((1 - price / original) * 100)}%
+                                                </span>
+                                            )}
+                                            <div 
+                                                onClick={e => { e.stopPropagation(); handleAgregarProducto(producto); }}
+                                                className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-200 bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:bg-gray-900 hover:text-white z-20"
+                                            >
+                                                Añadir a la bolsa
+                                            </div>
+                                        </div>
+                                        <p className="text-[13px] font-bold text-gray-900 leading-snug line-clamp-2 mb-1.5 px-1">{producto.descripcion}</p>
+                                        <div className="flex items-center gap-2 mt-auto px-1">
+                                            <p className="text-[13px] font-bold text-gray-600">S/ {price.toFixed(2)}</p>
+                                            {hasDisc && <span className="text-[11px] text-gray-400 line-through">S/ {original.toFixed(2)}</span>}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {productos.length < total && !loading && (
+                        <div className="flex justify-center mb-20">
+                            <button
+                                onClick={() => { const next = page + 1; setPage(next); cargarProductos(next); }}
+                                className="px-8 py-3.5 rounded-full font-bold text-sm border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-all"
+                            >
+                                Cargar más
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Bottom Banners Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-4 md:gap-6 items-stretch">
+                        <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[340px]">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none w-full text-center">
+                                <span className="text-[10rem] sm:text-[14rem] font-black text-gray-50 opacity-50 tracking-tighter whitespace-nowrap">Comf</span>
+                            </div>
+                            
+                            <div className="relative z-10 max-w-[55%]">
+                                <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2 tracking-tight">
+                                    ¡Tu evolución
+                                </h3>
+                                <h3 className="text-3xl lg:text-4xl text-gray-900 leading-tight mb-4" style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic' }}>
+                                    comienza aquí!
+                                </h3>
+                                <p className="text-xs text-gray-500 leading-relaxed mb-6">
+                                    Estilos seleccionados, telas lujosas y elegancia natural en un solo lugar. Vístete como sueñas.
+                                </p>
+                                <button 
+                                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                    className="px-6 py-2.5 bg-[#2D2D2D] text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-black transition-colors inline-flex items-center gap-2"
+                                >
+                                    Empezar a comprar <Icon icon="solar:arrow-up-linear" width={16} />
+                                </button>
+                            </div>
+
+                            <div className="absolute bottom-0 right-0 w-[45%] h-[95%] z-0 flex items-end justify-center">
+                                <img 
+                                    src="https://images.unsplash.com/photo-1549439602-43ebca2327af?auto=format&fit=crop&q=80&w=800" 
+                                    alt="Model" 
+                                    className="w-full h-full object-cover object-top mix-blend-multiply opacity-90 scale-110 origin-bottom filter grayscale"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="bg-[#B58863] rounded-[2rem] overflow-hidden min-h-[300px] lg:min-h-[340px] relative">
+                            <img 
+                                src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=1200" 
+                                alt="Girls laughing" 
+                                className="absolute inset-0 w-full h-full object-cover object-top"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Mobile filter drawer (kept as overlay) */}
+                    {showMobileFilters && (
+                        <div className="fixed inset-0 z-[200]">
+                            <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileFilters(false)} />
+                            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                                    <span className="font-black text-gray-900">Filtrar y Ordenar</span>
+                                    <button onClick={() => setShowMobileFilters(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <Icon icon="solar:close-circle-bold" width={18} className="text-gray-600" />
+                                    </button>
+                                </div>
+                                <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+                                    {allCategorías.length > 0 && (
+                                        <div>
+                                            <p className="font-bold text-gray-800 mb-3 text-sm">Categorías</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {allCategorías.map((cat, i) => {
+                                                    const name = typeof cat === 'string' ? cat : cat.nombre;
+                                                    const active = selectedCategorías.includes(name);
+                                                    return (
+                                                        <button key={i} onClick={() => toggleCategory(name)}
+                                                            className="px-4 py-2 rounded-full text-xs font-bold border-2 transition-all"
+                                                            style={active ? { background: '#1A1A1A', borderColor: '#1A1A1A', color: 'white' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                                                            {name}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {allMarcas.length > 0 && (
+                                        <div>
+                                            <p className="font-bold text-gray-800 mb-3 text-sm">Marcas</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {filteredMarcas.map((brand, i) => {
+                                                    const name = typeof brand === 'string' ? brand : brand.nombre;
+                                                    const active = selectedMarcas.includes(name);
+                                                    return (
+                                                        <button key={i} onClick={() => toggleBrand(name)}
+                                                            className="px-4 py-2 rounded-full text-xs font-bold border-2 transition-all"
+                                                            style={active ? { background: '#1A1A1A', borderColor: '#1A1A1A', color: 'white' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                                                            {name}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-bold text-gray-800 mb-3 text-sm">Precio</p>
+                                        <input
+                                            type="range"
+                                            min={minPrice} max={maxPrice}
+                                            value={priceRange[1]}
+                                            onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
+                                            className="w-full accent-gray-900"
+                                        />
+                                        <div className="flex justify-between text-[11px] text-gray-500 font-semibold">
+                                            <span>S/ {minPrice}</span><span>S/ {priceRange[1]}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+                                    {hasActiveFilters && (
+                                        <button onClick={() => { setSelectedMarcas([]); setSelectedCategorías([]); setPriceRange([minPrice, maxPrice]); }}
+                                            className="flex-1 py-3 rounded-full text-sm font-bold border-2 border-gray-900 text-gray-900">
+                                            Limpiar
+                                        </button>
+                                    )}
+                                    <button onClick={() => setShowMobileFilters(false)}
+                                        className="flex-1 py-3 rounded-full text-sm font-bold text-white bg-gray-900">
+                                        Ver {sortedProductos.length} Resultados
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </main>
+
+                <ModaFooter tiendaNombre={tienda?.nombreComercial || tienda?.nombre || 'Styliq'} />
+
+                <ModaCartModal
+                    isOpen={mostrarCarrito}
+                    onClose={() => setMostrarCarrito(false)}
+                    carrito={carrito}
+                    tienda={tienda || {}}
+                    actualizarCantidad={actualizarCantidad}
+                    onCheckout={irACheckout}
+                    slug={slug || ''}
+                    setCarrito={setCarrito}
+                />
+
+                {showPersonalizarModal && productoAPersonalizar && (
+                    <ProductCustomizationModal
+                        isOpen={showPersonalizarModal}
+                        onClose={() => { setShowPersonalizarModal(false); setProductoAPersonalizar(null); }}
+                        product={productoAPersonalizar}
+                        onConfirm={(p: any, mods: any[]) => {
+                            agregarAlCarritoDirecto(p, mods);
+                            setShowPersonalizarModal(false);
+                            setProductoAPersonalizar(null);
+                        }}
+                        modifiers={modificadoresProducto}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    // ── Hombre Urbano catalog layout ──────────────────────────────────────────
+    if (diseno.plantillaId === 'urbano') {
+        return (
+            <>
+                <UrbanoCatalogPage
+                    slug={slug || ''}
+                    tienda={tienda || {}}
+                    cp={cp}
+                    productos={sortedProductos}
+                    total={total}
+                    loading={loading}
+                    allCategorias={allCategorías}
+                    allMarcas={allMarcas}
+                    selectedCategorias={selectedCategorías}
+                    setSelectedCategorias={setSelectedCategorías}
+                    selectedMarcas={selectedMarcas}
+                    setSelectedMarcas={setSelectedMarcas}
+                    priceRange={priceRange}
+                    setPriceRange={setPriceRange}
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    search={search}
+                    setSearch={setSearch}
+                    hasActiveFilters={hasActiveFilters}
+                    carritoSize={carrito.length}
+                    onOpenCart={() => setMostrarCarrito(!mostrarCarrito)}
+                    onAddToCart={(p) => agregarAlCarritoDirecto(p, [])}
+                    onProduct={(p) => navigate(`/tienda/${slug}/producto/${p.id}`)}
+                />
+                <UrbanoCartModal
+                    isOpen={mostrarCarrito}
+                    onClose={() => setMostrarCarrito(false)}
+                    carrito={carrito}
+                    tienda={tienda || {}}
+                    actualizarCantidad={actualizarCantidad}
+                    onCheckout={irACheckout}
+                    slug={slug || ''}
+                    setCarrito={setCarrito}
+                />
+            </>
+        );
+    }
+
     // ── Autopartes catalog layout ─────────────────────────────────────────────
     if (diseno.plantillaId === 'autopartes') {
         const [priceMin, setPriceMin] = [priceRange[0], (v: number) => setPriceRange([v, priceRange[1]])];
@@ -882,7 +1257,7 @@ export default function Catalogo() {
                         setSelectedMarcas([]);
                         setPriceRange([minPrice, maxPrice]);
                     }}
-                    allCategorías={allCategorías}
+                    allCategories={allCategorías}
                 />
 
                 <main className="w-full max-w-7xl mx-auto px-4 xl:px-8 py-8">

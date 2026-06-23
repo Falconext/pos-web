@@ -25,12 +25,12 @@ export default function ModaPromoBanner({ slug }: ModaPromoBannerProps) {
         {/* Right Side: Content */}
         <div className="w-full md:w-1/2 p-10 md:p-16 flex flex-col justify-center">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-4 tracking-tight">
-            Limited-Time Deals on This <span style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontWeight: 'normal' }}>Season's</span><br/>
-            <span style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontWeight: 'normal' }}>Must-Haves!</span>
+            Ofertas por tiempo limitado en <span style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontWeight: 'normal' }}>los esenciales</span><br/>
+            <span style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontWeight: 'normal' }}>de la temporada</span>
           </h2>
           
           <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-8 font-medium">
-            Curated styles, luxurious fabrics, and effortless elegance all in one place. Dress the way you dream.
+            Estilos seleccionados, telas lujosas y elegancia sin esfuerzo en un solo lugar. Vístete como siempre soñaste.
           </p>
 
           <div>
@@ -38,7 +38,7 @@ export default function ModaPromoBanner({ slug }: ModaPromoBannerProps) {
               onClick={() => slug === "preview" ? window.dispatchEvent(new CustomEvent("preview-nav", { detail: "catalogo" })) : navigate(`/tienda/${slug}/catalogo`)}
               className="px-6 py-3 bg-[#2A2A2A] text-white text-sm font-semibold rounded-full hover:bg-black transition-colors inline-flex items-center gap-2"
             >
-              Start Shopping <Icon icon="solar:arrow-right-linear" width={18} />
+              Comprar ahora <Icon icon="solar:arrow-right-linear" width={18} />
             </button>
           </div>
         </div>

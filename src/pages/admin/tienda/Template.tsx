@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfiguracionTiendaViewModel } from '@/features/admin/tienda/useConfiguracionTiendaViewModel';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import { ALL_PLANTILLAS } from '@/components/tienda/resolveTemplate';
 import { useAuthStore } from '@/zustand/auth';
+import apiClient from '@/utils/apiClient';
 
 const AUTOPARTES_IMAGE_FIELDS = [
   { key: 'autopartesHeroImageUrl', label: 'Hero principal', hint: 'Banner grande superior', fallback: '/assets/autopartes/banner1.png' },
@@ -20,6 +22,26 @@ const AUTOPARTES_IMAGE_FIELDS = [
   { key: 'autopartesWidgetOneImageUrl', label: 'Widget 1', hint: 'Tarjeta inferior izquierda', fallback: '/assets/autopartes/widget1.png' },
   { key: 'autopartesWidgetTwoImageUrl', label: 'Widget 2', hint: 'Tarjeta inferior centro', fallback: '/assets/autopartes/widget2.png' },
   { key: 'autopartesWidgetThreeImageUrl', label: 'Widget 3', hint: 'Tarjeta inferior derecha', fallback: '/assets/autopartes/widget3.png' },
+];
+
+const URBANO_IMAGE_FIELDS = [
+  { key: 'urbanoHeroImg', label: 'Hero Banner', hint: 'Fondo principal', fallback: '/assets/templates/urbano/banner.png' },
+  { key: 'urbanoCat1Img', label: 'Categoría 1', hint: 'Primera imagen en split categories', fallback: '/assets/templates/urbano/coleccion5.png' },
+  { key: 'urbanoCat2Img', label: 'Categoría 2', hint: 'Segunda imagen', fallback: '/assets/templates/urbano/coleccion6.png' },
+  { key: 'urbanoCat3Img', label: 'Categoría 3', hint: 'Tercera imagen', fallback: '/assets/templates/urbano/coleccion7.png' },
+  { key: 'urbanoCat4Img', label: 'Categoría 4', hint: 'Cuarta imagen', fallback: '/assets/templates/urbano/coleccion8.png' },
+  { key: 'urbanoBottomBannerImg', label: 'Banner Inferior', hint: 'Imagen de fondo', fallback: '/assets/templates/urbano/wear.png' },
+  { key: 'urbanoShopTheLookImg', label: 'Compra el look', hint: 'Foto de modelo y outfit', fallback: '/assets/templates/urbano/shoplook.png' },
+  { key: 'urbanoFeatureModelImg', label: 'Feature Highlight', hint: 'Foto de contexto', fallback: '/assets/templates/urbano/coleccion9.png' },
+  { key: 'urbanoGallery1', label: 'Galería 1', hint: 'Imágenes inferiores 1', fallback: '/assets/templates/urbano/coleccion2.png' },
+  { key: 'urbanoGallery2', label: 'Galería 2', hint: 'Imágenes inferiores 2', fallback: '/assets/templates/urbano/coleccion3.png' },
+  { key: 'urbanoGallery3', label: 'Galería 3', hint: 'Imágenes inferiores 3', fallback: '/assets/templates/urbano/coleccion4.png' },
+  { key: 'urbanoGallery4', label: 'Galería 4', hint: 'Imágenes inferiores 4', fallback: '/assets/templates/urbano/coleccion5.png' },
+  { key: 'urbanoGallery5', label: 'Galería 5', hint: 'Imágenes inferiores 5', fallback: '/assets/templates/urbano/coleccion6.png' },
+  { key: 'urbanoProductMainImg', label: 'Producto Principal', hint: 'Imagen grande del detalle', fallback: '/assets/templates/urbano/coleccion1.png' },
+  { key: 'urbanoProductMacroImg', label: 'Macro Producto', hint: 'Detalle de textura', fallback: '/assets/templates/urbano/coleccion2.png' },
+  { key: 'urbanoProductModel1Img', label: 'Modelo Producto 1', hint: 'Producto (Frente)', fallback: '/assets/templates/urbano/coleccion3.png' },
+  { key: 'urbanoProductModel2Img', label: 'Modelo Producto 2', hint: 'Producto (Detalle)', fallback: '/assets/templates/urbano/coleccion4.png' },
 ];
 
 type TemplateDisenoPreview = Record<string, unknown>;
@@ -148,20 +170,190 @@ function AutopartesTemplatePreview({ diseno }: { diseno: TemplateDisenoPreview |
   );
 }
 
+function UrbanoTemplatePreview({ diseno }: { diseno: TemplateDisenoPreview | undefined }) {
+  const image = (key: string) => {
+    const fallback = URBANO_IMAGE_FIELDS.find(f => f.key === key)?.fallback || '';
+    return getPreviewImage(diseno, key, fallback);
+  };
+  const text = (key: string, fallback: string) => getPreviewText(diseno, key, fallback);
+
+  return (
+    <aside className="rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white p-3 shadow-2xl shadow-slate-950/10 max-h-[calc(100vh-8rem)] overflow-y-auto">
+      <div className="rounded-[22px] overflow-hidden bg-white text-black border border-slate-100">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+          <div className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ fontFamily: '"Impact", sans-serif' }}>URBANO</div>
+          <div className="flex gap-2">
+            <Icon icon="solar:hamburger-menu-linear" className="text-gray-400" />
+          </div>
+        </div>
+
+        <div className="p-0">
+          {/* 1. Hero Banner */}
+          <div className="relative aspect-[4/3] bg-gray-900 flex flex-col items-center justify-end pb-4">
+             <img src={image('urbanoHeroImg')} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+             <div className="relative z-10 flex flex-col items-center px-2 text-center">
+                <span className="text-[5px] text-white/80 font-bold tracking-[0.2em] uppercase mb-1">{text('urbanoHeroSubtitle', 'Nueva colección')}</span>
+                <span className="text-[14px] text-white font-black uppercase tracking-tighter leading-none mb-3" style={{ fontFamily: '"Impact", sans-serif' }}>{text('urbanoHeroTitle', 'Estilo urbano para la ciudad')}</span>
+                <span className="border border-white text-white text-[4px] font-bold uppercase tracking-widest px-2 py-1">
+                   {text('urbanoHeroBtn', '[ VER COLECCIÓN ]')}
+                </span>
+             </div>
+          </div>
+
+          {/* 2. La Colección (Slider) */}
+          <div className="p-3 bg-white">
+             <div className="flex justify-between items-center mb-2">
+                <span className="text-[8px] font-black uppercase" style={{ fontFamily: '"Impact", sans-serif' }}>La Colección</span>
+                <div className="flex gap-1"><span className="w-2 h-0.5 bg-gray-200" /><span className="w-2 h-0.5 bg-gray-200" /></div>
+             </div>
+             <div className="flex gap-2 overflow-hidden">
+	                {[1, 2].map((num) => (
+	                  <div key={num} className="w-2/3 shrink-0 relative aspect-[4/5] bg-gray-100 flex flex-col p-1">
+	                     <div className="w-full flex-1 bg-gray-200 mb-1" />
+	                     <div className="w-3/4 h-1 bg-gray-300 mb-0.5" />
+	                     <div className="w-1/2 h-1 bg-gray-200" />
+	                  </div>
+	                ))}
+             </div>
+          </div>
+
+          {/* 3. Marquee Central */}
+          <div className="w-full py-1.5 border-y border-gray-100 overflow-hidden flex whitespace-nowrap bg-white items-center">
+	             <p className="text-[4px] font-bold tracking-[0.2em] text-gray-400 mx-2">{text('urbanoMarqueeText', 'MODA URBANA / NUEVA COLECCIÓN')}</p>
+	             <p className="text-[4px] font-bold tracking-[0.2em] text-gray-400 mx-2">{text('urbanoMarqueeText', 'MODA URBANA / NUEVA COLECCIÓN')}</p>
+          </div>
+
+          {/* 4. Categorías Split (Nav + Image) */}
+          <div className="flex h-24 bg-white border-b border-gray-100">
+             <div className="w-1/2 flex flex-col items-end justify-center pr-3 gap-1">
+                {[1, 2, 3, 4].map(num => (
+                  <span key={num} className={`text-[6px] font-black uppercase ${num === 1 ? 'text-gray-900' : 'text-gray-300'}`}>
+	                     {text(`urbanoCat${num}Text`, num === 1 ? 'POLERAS' : num === 2 ? 'PANTALONES' : num === 3 ? 'POLOS' : 'CASACAS')}
+                  </span>
+                ))}
+             </div>
+             <div className="w-1/2 bg-[#F4F5F6] relative">
+                <img src={image('urbanoCat1Img')} className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90" />
+             </div>
+          </div>
+
+          {/* 5. Bottom Banner */}
+          <div className="relative h-20 bg-[#EAEBEC] overflow-hidden flex flex-col items-center justify-center">
+             <img src={image('urbanoBottomBannerImg')} className="absolute inset-0 w-full h-full object-cover opacity-80" />
+             <span className="relative z-10 text-[9px] font-bold text-white/90 tracking-tighter uppercase mb-2 text-center leading-tight px-2">
+	                {text('urbanoBottomBannerText', 'VISTE A TU MANERA.')}
+             </span>
+             <span className="relative z-10 border border-white/80 bg-white/10 px-2 py-0.5 text-[4px] font-bold text-white uppercase tracking-widest">
+	                {text('urbanoBottomBannerBtn', '[ VER COLECCIÓN ]')}
+             </span>
+          </div>
+
+	          {/* 6. Editorial Row 1: Compra el look */}
+          <div className="flex h-24 bg-white border-b border-gray-100">
+             <div className="w-1/2 relative bg-white flex items-center justify-center p-1">
+                <img src={image('urbanoShopTheLookImg')} className="w-full h-full object-contain" />
+             </div>
+             <div className="w-1/2 flex flex-col justify-center p-2">
+	                <span className="text-[6px] font-black uppercase mb-2">{text('urbanoShopTheLookTitle', 'COMPRA EL LOOK')}</span>
+                <div className="flex gap-1">
+                   <div className="flex-1 aspect-[4/5] bg-gray-100" />
+                   <div className="flex-1 aspect-[4/5] bg-gray-100" />
+                </div>
+             </div>
+          </div>
+
+          {/* 7. Editorial Row 2: Feature Highlight */}
+          <div className="flex h-24 bg-white border-b border-gray-100">
+             <div className="w-1/2 relative bg-[#F4F5F6] flex items-center justify-center p-2">
+	                <span className="absolute top-1 left-1 text-[4px] font-bold text-gray-500 uppercase">{text('urbanoFeatureLabel', 'CASACA')}</span>
+                <Icon icon="solar:box-linear" className="text-gray-300 text-2xl" />
+             </div>
+             <div className="w-1/2 relative bg-[#E8EAEB]">
+                <img src={image('urbanoFeatureModelImg')} className="w-full h-full object-cover" />
+             </div>
+          </div>
+
+          {/* 8. Gallery */}
+          <div className="flex bg-[#F4F5F6]">
+            {[1, 2, 3, 4, 5].map(num => (
+              <div key={`gal-${num}`} className="flex-1 aspect-[4/5] relative border-r border-white/20 last:border-0">
+                <img src={image(`urbanoGallery${num}`)} className="absolute inset-0 w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+
+          {/* 9. Footer */}
+          <div className="bg-[#1A1A1A] p-3 text-white">
+             <span className="text-[8px] font-black uppercase block mb-1" style={{ fontFamily: '"Impact", sans-serif' }}>BLNK</span>
+	             <span className="text-[4px] text-gray-400 block mb-2">{text('urbanoSlogan', 'Moda urbana minimalista para vestir tu día con estilo.')}</span>
+             <div className="flex gap-4">
+                <div className="w-4 h-1 bg-gray-700" />
+                <div className="w-4 h-1 bg-gray-700" />
+             </div>
+          </div>
+
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 
 export default function TemplateTienda() {
   const vm = useConfiguracionTiendaViewModel();
   const auth = useAuthStore(s => s.auth);
-  const rubroNombre = auth?.empresa?.rubro?.nombre || '';
+  const rubroNombre = vm.config?.rubro?.nombre || auth?.empresa?.rubro?.nombre || '';
+  const rubroId = vm.config?.rubro?.id || (auth as any)?.empresa?.rubroId || (auth as any)?.empresa?.rubro?.id;
+  const activePlantillaId = vm.config?.diseno?.plantillaId;
+  const [rubroPlantillaId, setRubroPlantillaId] = useState<string | null>(null);
+  const [loadingRubroPlantilla, setLoadingRubroPlantilla] = useState(false);
+  const syncedRubroTemplateRef = useRef('');
 
-  let plantillasVisibles = ALL_PLANTILLAS.filter(p => {
-    if (!p.rubrosPermitidos || p.rubrosPermitidos.length === 0) return true;
-    return p.rubrosPermitidos.includes(rubroNombre);
-  });
+  useEffect(() => {
+    let mounted = true;
+    if (!rubroId) {
+      setRubroPlantillaId(null);
+      return;
+    }
 
-  if (plantillasVisibles.length === 0) {
-    plantillasVisibles = ALL_PLANTILLAS.filter(p => ['moderna', 'minimal'].includes(p.id));
-  }
+    setLoadingRubroPlantilla(true);
+    apiClient.get(`/diseno-rubro/${rubroId}`)
+      .then(({ data }) => {
+        if (!mounted) return;
+        const payload = data?.data ?? data;
+        const plantillaId = typeof payload?.plantillaId === 'string' ? payload.plantillaId : null;
+        setRubroPlantillaId(plantillaId);
+      })
+      .catch(() => {
+        if (mounted) setRubroPlantillaId(null);
+      })
+      .finally(() => {
+        if (mounted) setLoadingRubroPlantilla(false);
+      });
+
+    return () => { mounted = false; };
+  }, [rubroId]);
+
+  useEffect(() => {
+    if (!rubroPlantillaId || activePlantillaId === rubroPlantillaId || vm.saving) return;
+    const syncKey = `${rubroId || 'sin-rubro'}:${activePlantillaId || 'sin-activa'}:${rubroPlantillaId}`;
+    if (syncedRubroTemplateRef.current === syncKey) return;
+    syncedRubroTemplateRef.current = syncKey;
+    vm.actualizarDiseno({ plantillaId: rubroPlantillaId });
+  }, [activePlantillaId, rubroId, rubroPlantillaId, vm]);
+
+  const plantillaAsignadaId = rubroPlantillaId || activePlantillaId;
+  const plantillasVisibles = useMemo(() => {
+    const asignada = ALL_PLANTILLAS.find(p => p.id === plantillaAsignadaId);
+    if (asignada) return [asignada];
+
+    const activa = ALL_PLANTILLAS.find(p => p.id === activePlantillaId);
+    if (activa) return [activa];
+
+    const fallback = ALL_PLANTILLAS.find(p => p.id === 'moderna');
+    return fallback ? [fallback] : [];
+  }, [activePlantillaId, plantillaAsignadaId]);
 
   if (vm.loading) {
     return (
@@ -223,39 +415,25 @@ export default function TemplateTienda() {
             Plantilla de Tienda
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-            Elige el diseño base de tu tienda virtual. Algunas plantillas requieren un plan superior.
+            Plantilla asignada desde Diseño de Tiendas para el rubro {rubroNombre ? <strong>{rubroNombre}</strong> : 'de tu empresa'}.
+            {loadingRubroPlantilla ? ' Cargando configuración del rubro...' : ' Solo el administrador del sistema puede cambiar esta plantilla base.'}
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {plantillasVisibles.map(plantilla => {
-              const isOn = vm.config?.diseno?.plantillaId === plantilla.id;
-              
-              // Determine if this template is allowed for the user's plan
-              const requiredPlans = plantilla.planesPermitidos || [];
-              const userPlan = vm.config?.plan?.nombre?.toUpperCase() || '';
-              // Simple check: if there are no required plans OR the user's plan is in the required list
-              const isAllowed = requiredPlans.length === 0 || requiredPlans.includes(userPlan) || userPlan.includes('CORPORATIVO');
+              const isOn = (plantillaAsignadaId || activePlantillaId) === plantilla.id;
 
               return (
                 <button
                   key={plantilla.id}
                   type="button"
-                  disabled={!isAllowed}
-                  onClick={() => vm.actualizarDiseno({ plantillaId: plantilla.id })}
-                  className={`relative text-left p-4 rounded-xl border-2 transition-all flex flex-col 
-                    ${!isAllowed ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800' : 
-                      isOn ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm' : 
-                      'border-gray-100 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'}`}
+                  disabled
+                  className={`relative text-left p-4 rounded-xl border-2 transition-all flex flex-col cursor-default
+                    ${isOn ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                 >
                   {isOn && (
                     <span className="absolute top-2 right-2">
                       <Icon icon="solar:check-circle-bold" className="text-indigo-600 text-sm" />
-                    </span>
-                  )}
-                  
-                  {!isAllowed && (
-                    <span className="absolute top-2 right-2" title={`Requiere plan: ${requiredPlans.join(', ')}`}>
-                      <Icon icon="solar:lock-bold" className="text-gray-400 text-sm" />
                     </span>
                   )}
 
@@ -265,8 +443,11 @@ export default function TemplateTienda() {
                   
                   <p className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-1">{plantilla.label}</p>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                    {!isAllowed ? `Requiere plan ${requiredPlans.join(' o ')}` : plantilla.description}
+                    {plantilla.description}
                   </p>
+                  <span className="mt-3 w-fit rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                    Asignada por rubro
+                  </span>
                 </button>
               );
             })}
@@ -617,7 +798,7 @@ export default function TemplateTienda() {
                     label="Título del Banner Principal" 
                     name="heroTitle" 
                     value={vm.config?.diseno?.heroTitle || ''} 
-                    onChange={(e: any) => vm.actualizarDiseno({ heroTitle: e.target.value })} 
+                    onChange={(e: any) => vm.actualizarDisenoTexto({ heroTitle: e.target.value })} 
                     placeholder="Catálogo de Productos" 
                     isLabel
                   />
@@ -625,7 +806,7 @@ export default function TemplateTienda() {
                     label="Subtítulo del Banner Principal" 
                     name="heroSubtitle" 
                     value={vm.config?.diseno?.heroSubtitle || ''} 
-                    onChange={(e: any) => vm.actualizarDiseno({ heroSubtitle: e.target.value })} 
+                    onChange={(e: any) => vm.actualizarDisenoTexto({ heroSubtitle: e.target.value })} 
                     placeholder="Encuentra los mejores repuestos..." 
                     isLabel
                   />
@@ -639,7 +820,7 @@ export default function TemplateTienda() {
                     label="Título de la Comunidad" 
                     name="comunidadTitle" 
                     value={vm.config?.diseno?.comunidadTitle || ''} 
-                    onChange={(e: any) => vm.actualizarDiseno({ comunidadTitle: e.target.value })} 
+                    onChange={(e: any) => vm.actualizarDisenoTexto({ comunidadTitle: e.target.value })} 
                     placeholder="Sé parte de nuestra comunidad" 
                     isLabel
                   />
@@ -647,7 +828,7 @@ export default function TemplateTienda() {
                     label="Texto descriptivo" 
                     name="comunidadText" 
                     value={vm.config?.diseno?.comunidadText || ''} 
-                    onChange={(e: any) => vm.actualizarDiseno({ comunidadText: e.target.value })} 
+                    onChange={(e: any) => vm.actualizarDisenoTexto({ comunidadText: e.target.value })} 
                     placeholder="Únete para ofertas exclusivas" 
                     isLabel
                   />
@@ -657,16 +838,16 @@ export default function TemplateTienda() {
               <div>
                 <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 border-b dark:border-slate-800 pb-2">Widgets Promocionales (Inferior)</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <InputPro label="Widget 1: Título" name="widgetOneTitle" value={vm.config?.diseno?.widgetOneTitle || ''} onChange={(e: any) => vm.actualizarDiseno({ widgetOneTitle: e.target.value })} placeholder="Llantas y Ruedas" isLabel />
-                  <InputPro label="Widget 1: Subtítulo" name="widgetOneSubtitle" value={vm.config?.diseno?.widgetOneSubtitle || ''} onChange={(e: any) => vm.actualizarDiseno({ widgetOneSubtitle: e.target.value })} placeholder="¡Mantente seguro en la Vía!" isLabel />
+                  <InputPro label="Widget 1: Título" name="widgetOneTitle" value={vm.config?.diseno?.widgetOneTitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ widgetOneTitle: e.target.value })} placeholder="Llantas y Ruedas" isLabel />
+                  <InputPro label="Widget 1: Subtítulo" name="widgetOneSubtitle" value={vm.config?.diseno?.widgetOneSubtitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ widgetOneSubtitle: e.target.value })} placeholder="¡Mantente seguro en la Vía!" isLabel />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <InputPro label="Widget 2: Título" name="widgetTwoTitle" value={vm.config?.diseno?.widgetTwoTitle || ''} onChange={(e: any) => vm.actualizarDiseno({ widgetTwoTitle: e.target.value })} placeholder="ACEITE MOTOR" isLabel />
-                  <InputPro label="Widget 2: Subtítulo" name="widgetTwoSubtitle" value={vm.config?.diseno?.widgetTwoSubtitle || ''} onChange={(e: any) => vm.actualizarDiseno({ widgetTwoSubtitle: e.target.value })} placeholder="¡Rendimiento Suave!" isLabel />
+                  <InputPro label="Widget 2: Título" name="widgetTwoTitle" value={vm.config?.diseno?.widgetTwoTitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ widgetTwoTitle: e.target.value })} placeholder="ACEITE MOTOR" isLabel />
+                  <InputPro label="Widget 2: Subtítulo" name="widgetTwoSubtitle" value={vm.config?.diseno?.widgetTwoSubtitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ widgetTwoSubtitle: e.target.value })} placeholder="¡Rendimiento Suave!" isLabel />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputPro label="Widget 3: Título" name="widgetThreeTitle" value={vm.config?.diseno?.widgetThreeTitle || ''} onChange={(e: any) => vm.actualizarDiseno({ widgetThreeTitle: e.target.value })} placeholder="COMPRA 1 LLEVA 1!" isLabel />
-                  <InputPro label="Widget 3: Subtítulo" name="widgetThreeSubtitle" value={vm.config?.diseno?.widgetThreeSubtitle || ''} onChange={(e: any) => vm.actualizarDiseno({ widgetThreeSubtitle: e.target.value })} placeholder="¡Aprovecha ahora!" isLabel />
+                  <InputPro label="Widget 3: Título" name="widgetThreeTitle" value={vm.config?.diseno?.widgetThreeTitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ widgetThreeTitle: e.target.value })} placeholder="COMPRA 1 LLEVA 1!" isLabel />
+                  <InputPro label="Widget 3: Subtítulo" name="widgetThreeSubtitle" value={vm.config?.diseno?.widgetThreeSubtitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ widgetThreeSubtitle: e.target.value })} placeholder="¡Aprovecha ahora!" isLabel />
                 </div>
               </div>
 
@@ -841,7 +1022,193 @@ export default function TemplateTienda() {
           </div>
         )}
 
-        
+        {vm.config?.diseno?.plantillaId === 'urbano' && (
+          <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+              <Icon icon="solar:t-shirt-bold" className="text-xl text-black dark:text-white" />
+              Configuración Especial Urbano
+            </h3>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 border-b dark:border-slate-800 pb-2">Textos Principales</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+	                  <InputPro label="Hero Subtítulo" name="urbanoHeroSubtitle" value={vm.config?.diseno?.urbanoHeroSubtitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoHeroSubtitle: e.target.value })} placeholder="Nueva colección" isLabel />
+	                  <InputPro label="Hero Título" name="urbanoHeroTitle" value={vm.config?.diseno?.urbanoHeroTitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoHeroTitle: e.target.value })} placeholder="Estilo urbano para la ciudad" isLabel />
+	                  <InputPro label="Hero Botón" name="urbanoHeroBtn" value={vm.config?.diseno?.urbanoHeroBtn || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoHeroBtn: e.target.value })} placeholder="[ VER COLECCIÓN ]" isLabel />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+	                  <InputPro label="Categoría 1" name="urbanoCat1Text" value={vm.config?.diseno?.urbanoCat1Text || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoCat1Text: e.target.value })} placeholder="POLERAS" isLabel />
+	                  <InputPro label="Categoría 2" name="urbanoCat2Text" value={vm.config?.diseno?.urbanoCat2Text || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoCat2Text: e.target.value })} placeholder="PANTALONES" isLabel />
+	                  <InputPro label="Categoría 3" name="urbanoCat3Text" value={vm.config?.diseno?.urbanoCat3Text || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoCat3Text: e.target.value })} placeholder="POLOS" isLabel />
+	                  <InputPro label="Categoría 4" name="urbanoCat4Text" value={vm.config?.diseno?.urbanoCat4Text || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoCat4Text: e.target.value })} placeholder="CASACAS" isLabel />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+	                  <InputPro label="Marquesina Central" name="urbanoMarqueeText" value={vm.config?.diseno?.urbanoMarqueeText || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoMarqueeText: e.target.value })} placeholder="MODA URBANA / NUEVA COLECCIÓN..." isLabel />
+	                  <InputPro label="Título Compra el Look" name="urbanoShopTheLookTitle" value={vm.config?.diseno?.urbanoShopTheLookTitle || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoShopTheLookTitle: e.target.value })} placeholder="COMPRA EL LOOK" isLabel />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+	                  <InputPro label="Marquesina Inferior" name="urbanoBottomBannerText" value={vm.config?.diseno?.urbanoBottomBannerText || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoBottomBannerText: e.target.value })} placeholder="VISTE A TU MANERA." isLabel />
+	                  <InputPro label="Botón Banner Inferior" name="urbanoBottomBannerBtn" value={vm.config?.diseno?.urbanoBottomBannerBtn || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoBottomBannerBtn: e.target.value })} placeholder="[ VER COLECCIÓN ]" isLabel />
+	                  <InputPro label="Etiqueta Producto Macro" name="urbanoFeatureLabel" value={vm.config?.diseno?.urbanoFeatureLabel || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoFeatureLabel: e.target.value })} placeholder="CASACA" isLabel />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
+	                  <InputPro label="Slogan Footer" name="urbanoSlogan" value={vm.config?.diseno?.urbanoSlogan || ''} onChange={(e: any) => vm.actualizarDisenoTexto({ urbanoSlogan: e.target.value })} placeholder="Moda urbana minimalista para vestir tu día con estilo." isLabel />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between gap-3 border-b dark:border-slate-800 pb-2 mb-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">Imágenes del template</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Sube una imagen para reemplazar el asset por defecto de cada bloque visual.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-gray-900 text-white dark:bg-white dark:text-gray-900">
+                    Urbano
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
+                  <div className="flex flex-col gap-4">
+                    {(() => {
+                      const renderUploader = (fieldKey: string, extraClasses = "") => {
+                        const field = URBANO_IMAGE_FIELDS.find(f => f.key === fieldKey);
+                        if (!field) return null;
+                        
+                        const value = vm.config?.diseno?.[field.key] || '';
+                        const preview = value || field.fallback;
+                        
+                        return (
+                          <div key={field.key} className={`relative rounded-2xl overflow-hidden bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm group min-h-[160px] flex flex-col justify-between ${extraClasses}`}>
+                            <img src={preview} alt={field.label} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
+                            
+                            {/* Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/80 transition-opacity duration-300 pointer-events-none" />
+
+                            <div className="relative z-20 flex flex-col h-full justify-between p-3">
+                              <div>
+                                <p className="text-xs font-black text-white drop-shadow-md">{field.label}</p>
+                                <p className="text-[9px] text-gray-300 drop-shadow-md line-clamp-1">{field.hint}</p>
+                              </div>
+
+                              <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg bg-white/95 backdrop-blur-sm px-2 py-1.5 text-[10px] font-black text-black transition-colors hover:bg-white shadow-lg">
+                                  {vm.uploadingTemplateImageField === field.key ? (
+                                    <>
+                                      <Icon icon="eos-icons:loading" className="animate-spin text-sm" />
+                                      Subiendo...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Icon icon="solar:cloud-upload-bold-duotone" className="text-sm" />
+                                      Subir imagen
+                                    </>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    className="hidden"
+                                    disabled={vm.uploadingTemplateImageField === field.key}
+                                    onChange={(event) => {
+                                      const file = event.currentTarget.files?.[0];
+                                      if (file) vm.subirImagenTemplate(field.key, file);
+                                      event.currentTarget.value = '';
+                                    }}
+                                  />
+                                </label>
+                                <input
+                                  type="text"
+                                  defaultValue={value}
+                                  onBlur={(event) => {
+                                    const nextValue = event.currentTarget.value.trim();
+                                    if (nextValue !== value) vm.actualizarDiseno({ [field.key]: nextValue || null });
+                                  }}
+                                  className="w-full rounded-lg bg-black/40 border border-white/20 px-2 py-1.5 text-[9px] text-white placeholder-gray-300 shadow-inner focus:border-white focus:outline-none focus:ring-1 focus:ring-white backdrop-blur-sm transition-colors hover:bg-black/60 focus:bg-black/80"
+                                  placeholder="O pega una URL..."
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <>
+                          {/* --- SECCIÓN: HOME PAGE --- */}
+                          <div className="flex flex-col gap-4">
+                            <div className="border-b border-gray-800 pb-2 mb-2">
+	                              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Página principal</h5>
+                            </div>
+
+                            {/* Hero */}
+                            {renderUploader('urbanoHeroImg', 'min-h-[220px]')}
+
+	                            {/* Categorías Split */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {renderUploader('urbanoCat1Img')}
+                              {renderUploader('urbanoCat2Img')}
+                              {renderUploader('urbanoCat3Img')}
+                              {renderUploader('urbanoCat4Img')}
+                            </div>
+
+                            {/* Bottom Banner */}
+                            {renderUploader('urbanoBottomBannerImg')}
+
+	                            {/* Compra el look y modelo destacado */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {renderUploader('urbanoShopTheLookImg')}
+                              {renderUploader('urbanoFeatureModelImg')}
+                            </div>
+
+                            {/* Gallery */}
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                              {renderUploader('urbanoGallery1')}
+                              {renderUploader('urbanoGallery2')}
+                              {renderUploader('urbanoGallery3')}
+                              {renderUploader('urbanoGallery4')}
+                              {renderUploader('urbanoGallery5')}
+                            </div>
+                          </div>
+
+                          {/* --- SECCIÓN: PÁGINA DE PRODUCTO --- */}
+                          <div className="flex flex-col gap-4 mt-8">
+                            <div className="border-b border-gray-800 pb-2 mb-2">
+                              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalle de Producto</h5>
+                            </div>
+
+                            {/* Imagen Principal del Detalle */}
+                            {renderUploader('urbanoProductMainImg', 'min-h-[220px]')}
+
+                            {/* Detalles Producto */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              {renderUploader('urbanoProductMacroImg')}
+                              {renderUploader('urbanoProductModel1Img')}
+                              {renderUploader('urbanoProductModel2Img')}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* PREVIEW LATERAL FIJO */}
+                  <div className="xl:sticky xl:top-6 self-start">
+                    <div className="mb-3 flex items-center justify-between rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 dark:border-indigo-950/50 dark:bg-indigo-950/20">
+                      <div>
+                        <p className="text-sm font-black text-indigo-700 dark:text-indigo-300">Preview en vivo</p>
+                        <p className="text-xs font-medium text-indigo-500/80 dark:text-indigo-300/70">Así se irá viendo la tienda virtual.</p>
+                      </div>
+                      <Icon icon="solar:monitor-smartphone-bold-duotone" className="text-2xl text-indigo-600 dark:text-indigo-300" />
+                    </div>
+                    <UrbanoTemplatePreview diseno={vm.config?.diseno} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import axios from 'axios';
 import SliderBanners from '@/components/tienda/SliderBanners';
 import CarouselBanners from '@/components/tienda/CarouselBanners';
 import Footer from '@/components/tienda/Footer';
+import { TEMPLATES, resolveTemplate } from '@/components/tienda/resolveTemplate';
 import StoreHeader from '@/components/tienda/StoreHeader';
 import CategoryCircles from '@/components/tienda/CategoryCircles';
 import ComboCard from '@/components/tienda/ComboCard';
@@ -15,9 +16,8 @@ import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import XtraHero from '@/components/tienda/XtraHero';
 import XtraHeader from '@/components/tienda/XtraHeader';
-import GadgetsLayout from '@/components/tienda/GadgetsLayout';
-import AutopartesLayout from '@/components/tienda/AutopartesLayout';
-import { resolveTemplate } from '@/components/tienda/resolveTemplate';
+import { templateRegistry } from '@/templates/registry';
+
 import StoreSidebar from '@/components/tienda/StoreSidebar';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
@@ -528,7 +528,7 @@ export default function TiendaPublica() {
                 }}
                 className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full transition-colors"
                 style={isActive
-                  ? { background: cp, color: '#fff' }
+                  ? { background: cp, color: cp.toLowerCase() === '#ffffff' ? '#000' : '#fff' }
                   : { border: '1px solid #2D2D2D', color: '#2D2D2D' }}
               >
                 <Icon icon="solar:tag-bold" width={12} />
@@ -586,44 +586,15 @@ export default function TiendaPublica() {
     </div>
   );
 
-  // ── Gadgets template: fully isolated layout ──────────────────────────────────
-  if (diseno.plantillaId === 'gadgets') {
+  // ── Template Dispatcher ───────────────────────────────────────────────────
+  const templateConfig = templateRegistry[diseno?.plantillaId];
+  if (templateConfig?.HomePage) {
+    const TemplateHome = templateConfig.HomePage;
     return (
-      <GadgetsLayout
-        tienda={tienda}
-        slug={slug || ''}
-        productos={productos}
-        allCategories={allCategories}
-        cp={cp}
-        diseno={diseno}
-        carrito={carrito}
-        setCarrito={setCarrito}
-        mostrarCarrito={mostrarCarrito}
-        setMostrarCarrito={setMostrarCarrito}
-        agregarAlCarrito={agregarAlCarrito}
-        actualizarCantidad={actualizarCantidad}
-        loading={loading}
-      />
-    );
-  }
-
-  // ── Autopartes template: fully isolated layout ───────────────────────────────
-  if (diseno.plantillaId === 'autopartes') {
-    return (
-      <AutopartesLayout
-        tienda={tienda}
-        slug={slug || ''}
-        productos={productos}
-        allCategories={allCategories}
-        cp={cp}
-        diseno={diseno}
-        carrito={carrito}
-        setCarrito={setCarrito}
-        mostrarCarrito={mostrarCarrito}
-        setMostrarCarrito={setMostrarCarrito}
-        agregarAlCarrito={agregarAlCarrito}
-        actualizarCantidad={actualizarCantidad}
-        loading={loading}
+      <TemplateHome
+        tienda={tienda} slug={slug || ''} productos={productos} allCategories={allCategories} cp={cp} diseno={diseno}
+        carrito={carrito} setCarrito={setCarrito} mostrarCarrito={mostrarCarrito} setMostrarCarrito={setMostrarCarrito}
+        agregarAlCarrito={agregarAlCarrito} actualizarCantidad={actualizarCantidad} loading={loading}
       />
     );
   }

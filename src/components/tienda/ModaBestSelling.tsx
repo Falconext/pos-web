@@ -10,15 +10,15 @@ interface ModaBestSellingProps {
 
 export default function ModaBestSelling({ slug, cp, productos }: ModaBestSellingProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState('Todos');
 
-  const tabs = ['All', 'Suit Coat', 'Shirts', 'Jeans', 'Jacket', 'Hoody'];
+  const tabs = ['Todos', 'Sacos', 'Camisas', 'Jeans', 'Chaquetas', 'Poleras'];
 
   // Mocking the top 3 best sellers with specific images to match design aesthetics
   const bestSellers = [
     {
       id: 1,
-      title: "Velora Double-Breasted Suit",
+      title: "Traje Cruzado Velora",
       price: 239.00,
       image: "https://images.unsplash.com/photo-1594938298596-eb5fd3c2266d?auto=format&fit=crop&q=80&w=800",
       badge: { text: "10%", type: "dark" },
@@ -26,18 +26,18 @@ export default function ModaBestSelling({ slug, cp, productos }: ModaBestSelling
     },
     {
       id: 2,
-      title: "The Duchess Tailored Set",
+      title: "Conjunto a Medida Duchess",
       price: 203.47,
       image: "https://images.unsplash.com/photo-1593030736226-fa4453a3e633?auto=format&fit=crop&q=80&w=800",
-      badge: { text: "New Arrival", type: "light" },
+      badge: { text: "Nuevo", type: "light" },
       colors: ['#D1BCA6', '#222222']
     },
     {
       id: 3,
-      title: "Tan Stretch Slim Fit Suit Coat",
+      title: "Saco de Traje Slim Fit Beige",
       price: 189.00,
       image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=800",
-      badge: { text: "New Arrival", type: "light" },
+      badge: { text: "Nuevo", type: "light" },
       colors: ['#D1BCA6', '#222222']
     }
   ];
@@ -48,7 +48,7 @@ export default function ModaBestSelling({ slug, cp, productos }: ModaBestSelling
       {/* Header & Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Best Selling Products
+          Productos más vendidos
         </h2>
         
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
@@ -109,39 +109,39 @@ export default function ModaBestSelling({ slug, cp, productos }: ModaBestSelling
       </div>
 
       {/* Bottom Banners Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-4 lg:gap-6 items-stretch">
         
         {/* Left Banner */}
-        <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[320px]">
+        <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[340px]">
           {/* Faint background text */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none w-full text-center">
-            <span className="text-[120px] font-black text-gray-50 opacity-50 tracking-tighter">Conf</span>
+            <span className="text-[10rem] sm:text-[14rem] font-black text-gray-50 opacity-50 tracking-tighter whitespace-nowrap">Comf</span>
           </div>
           
-          <div className="relative z-10 max-w-[60%]">
-            <h3 className="text-3xl font-bold text-gray-900 leading-tight mb-2">
-              Your Style Upgrade
+          <div className="relative z-10 max-w-[55%]">
+            <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2 tracking-tight">
+              Mejora tu estilo
             </h3>
-            <h3 className="text-4xl text-gray-900 leading-tight mb-4" style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic' }}>
-              Starts Here!
+            <h3 className="text-3xl lg:text-4xl text-gray-900 leading-tight mb-4" style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic' }}>
+              ¡Comienza aquí!
             </h3>
             <p className="text-xs text-gray-500 leading-relaxed mb-6">
-              Curated styles, luxurious fabrics, and effortless elegance all in one place. Dress the way you dream.
+              Estilos seleccionados, telas lujosas y elegancia sin esfuerzo en un solo lugar. Vístete como siempre soñaste.
             </p>
             <button 
               onClick={() => slug === "preview" ? window.dispatchEvent(new CustomEvent("preview-nav", { detail: "catalogo" })) : navigate(`/tienda/${slug}/catalogo`)}
-              className="px-6 py-2.5 bg-[#2A2A2A] text-white text-sm font-semibold rounded-full hover:bg-black transition-colors inline-flex items-center gap-2"
+              className="px-6 py-2.5 bg-[#2D2D2D] text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-black transition-colors inline-flex items-center gap-2"
             >
-              Start Shopping <Icon icon="solar:arrow-right-linear" width={16} />
+              Comprar ahora <Icon icon="solar:arrow-right-linear" width={16} />
             </button>
           </div>
 
           {/* Model Image */}
-          <div className="absolute bottom-0 right-0 w-[45%] h-[90%] z-0 flex items-end">
+          <div className="absolute bottom-0 right-0 w-[45%] h-[95%] z-0 flex items-end justify-center">
             <img 
               src="https://images.unsplash.com/photo-1549439602-43ebca2327af?auto=format&fit=crop&q=80&w=800" 
               alt="Model" 
-              className="w-full h-full object-contain object-bottom filter grayscale"
+              className="w-full h-full object-cover object-top mix-blend-multiply opacity-90 scale-110 origin-bottom filter grayscale"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/assets/autopartes/banner2.png';
               }}
@@ -150,11 +150,11 @@ export default function ModaBestSelling({ slug, cp, productos }: ModaBestSelling
         </div>
 
         {/* Right Banner */}
-        <div className="bg-[#B58863] rounded-[2rem] overflow-hidden min-h-[320px] relative">
+        <div className="bg-[#B58863] rounded-[2rem] overflow-hidden min-h-[300px] lg:min-h-[340px] relative">
           <img 
             src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=1200" 
             alt="Girls laughing" 
-            className="w-full h-full object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
         </div>
 

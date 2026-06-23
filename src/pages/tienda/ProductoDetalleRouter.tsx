@@ -5,6 +5,9 @@ import axios from 'axios';
 import ProductoDetalle from './ProductoDetalle';
 import GadgetsProductoDetalle from './GadgetsProductoDetalle';
 import AutopartesProductoDetalle from './AutopartesProductoDetalle';
+import ModaProductoDetalle from './ModaProductoDetalle';
+
+import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -34,5 +37,7 @@ export default function ProductoDetalleRouter() {
 
   if (plantillaId === 'gadgets') return <GadgetsProductoDetalle />;
   if (plantillaId === 'autopartes') return <AutopartesProductoDetalle />;
+  if (plantillaId === 'moda') return <ModaProductoDetalle />;
+  if (plantillaId === 'urbano') return <UrbanoProductoDetalle />;
   return <ProductoDetalle />;
 }
