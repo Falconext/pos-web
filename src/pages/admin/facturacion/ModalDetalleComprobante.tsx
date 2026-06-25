@@ -482,7 +482,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                     </div>
 
                     {/* ── Seguimiento de despacho (solo lectura) ── */}
-                    {puedeDespacho && (
+                    {puedeDespacho && envio && (envio.estado !== 'PREPARANDO' || envio.direccionDestino || envio.transportista || envio.codigoGuia) && (
                         <div className="p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
@@ -499,36 +499,27 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                                 </button>
                             </div>
 
-                            {envio ? (
-                                <div className="space-y-3">
-                                    {/* Badge de estado */}
-                                    {(() => {
-                                        const estadoInfo = getEstado(envio.estado);
-                                        return (
-                                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${estadoInfo.bg}`}>
-                                                <Icon icon={estadoInfo.icon} width={14} />
-                                                {estadoInfo.value}
-                                            </div>
-                                        );
-                                    })()}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <InfoCard icon="solar:bus-bold-duotone" label="Transportista" value={envio.transportista || '-'} />
-                                        <InfoCard icon="solar:tag-bold-duotone" label="Código guía / SKU" value={envio.codigoGuia || '-'} />
-                                        <InfoCard icon="solar:map-point-bold-duotone" label="Dirección destino" value={envio.direccionDestino || '-'} />
-                                        <InfoCard
-                                            icon="solar:calendar-bold-duotone"
-                                            label="Fecha estimada"
-                                            value={envio.fechaEstimada ? moment(envio.fechaEstimada).format('DD/MM/YYYY') : '-'}
-                                        />
-                                    </div>
+                            <div className="space-y-3">
+                                {(() => {
+                                    const estadoInfo = getEstado(envio.estado);
+                                    return (
+                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${estadoInfo.bg}`}>
+                                            <Icon icon={estadoInfo.icon} width={14} />
+                                            {estadoInfo.value}
+                                        </div>
+                                    );
+                                })()}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <InfoCard icon="solar:bus-bold-duotone" label="Transportista" value={envio.transportista || '-'} />
+                                    <InfoCard icon="solar:tag-bold-duotone" label="Código guía / SKU" value={envio.codigoGuia || '-'} />
+                                    <InfoCard icon="solar:map-point-bold-duotone" label="Dirección destino" value={envio.direccionDestino || '-'} />
+                                    <InfoCard
+                                        icon="solar:calendar-bold-duotone"
+                                        label="Fecha estimada"
+                                        value={envio.fechaEstimada ? moment(envio.fechaEstimada).format('DD/MM/YYYY') : '-'}
+                                    />
                                 </div>
-                            ) : (
-                                <div className="text-center py-8 rounded-xl border border-dashed border-gray-200 dark:border-slate-700">
-                                    <Icon icon="solar:delivery-linear" className="text-4xl text-gray-300 dark:text-slate-600 mx-auto mb-2" />
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Sin seguimiento de despacho</p>
-                                    <p className="text-xs text-gray-400 mt-1">Créalo desde el Panel de Despacho</p>
-                                </div>
-                            )}
+                            </div>
                         </div>
                     )}
                 </div>

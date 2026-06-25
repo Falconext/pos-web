@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useClientsStore } from '@/zustand/clients';
 import { useAuthStore } from '@/zustand/auth';
 import useAlertStore from '@/zustand/alert';
@@ -9,6 +9,7 @@ import {
     INITIAL_ERRORS,
     INITIAL_FORM,
     IClientsViewModelState,
+    GrupoFarmacia,
 } from './ClientsModel';
 
 const CODIGO_TO_TIPO_DOC: Record<string, string> = { '1': 'DNI', '6': 'RUC', '4': 'CE', '7': 'PASAPORTE', '0': 'OTRO' };
@@ -24,6 +25,11 @@ export const useClientsViewModel = () => {
     const { getAllClients, clients, totalClients, toggleStateClient, exportClients, importClients } = useClientsStore();
     const { success } = useAlertStore();
     const { auth } = useAuthStore();
+
+    const isFarmacia = useMemo(() => {
+        const r = auth?.empresa?.rubro?.nombre?.toLowerCase() ?? '';
+        return r.includes('farmacia') || r.includes('botica') || r.includes('drogueria') || r.includes('droguería');
+    }, [auth?.empresa?.rubro?.nombre]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +48,7 @@ export const useClientsViewModel = () => {
         showColumnFilter: false,
         isHoveredExp: false,
         isHoveredImp: false,
+        grupoFarmacia: 'pacientes',
     });
 
     const debounce = useDebounce(state.searchClient, 600);
@@ -101,10 +108,13 @@ export const useClientsViewModel = () => {
         }
     }, [success]);
 
-    // Fetch clients on search/pagination changes
+    // Fetch clients on search/pagination/tab changes
     useEffect(() => {
-        getAllClients({ page: state.currentPage, limit: state.itemsPerPage, search: debounce });
-    }, [debounce, state.currentPage, state.itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+        const personaFilter = isFarmacia && state.grupoFarmacia !== 'medicos'
+            ? state.grupoFarmacia === 'pacientes' ? 'CLIENTE' : 'EMPRESA'
+            : undefined;
+        getAllClients({ page: state.currentPage, limit: state.itemsPerPage, search: debounce, ...(personaFilter ? { persona: personaFilter } : {}) });
+    }, [debounce, state.currentPage, state.itemsPerPage, state.grupoFarmacia, isFarmacia]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // --- Table data ---
     const clientsTable = clients?.map((item: IClient) => {
@@ -133,9 +143,16 @@ export const useClientsViewModel = () => {
     // --- Actions ---
     const actions = {
         openNewModal: () => {
+            const isEmpresa = isFarmacia && state.grupoFarmacia === 'empresas';
             setState(prev => ({
                 ...prev,
-                formValues: INITIAL_FORM,
+                formValues: {
+                    ...INITIAL_FORM,
+                    persona: isFarmacia
+                        ? state.grupoFarmacia === 'pacientes' ? 'CLIENTE' : 'EMPRESA'
+                        : 'CLIENTE',
+                    tipoDoc: isEmpresa ? 'RUC' : 'DNI',
+                },
                 errors: INITIAL_ERRORS,
                 isOpenModal: true,
                 isEdit: false,
@@ -198,6 +215,7 @@ export const useClientsViewModel = () => {
         setAnchorEl: (el: HTMLElement | null) => setState(prev => ({ ...prev, anchorEl: el })),
         setIsHoveredExp: (v: boolean) => setState(prev => ({ ...prev, isHoveredExp: v })),
         setIsHoveredImp: (v: boolean) => setState(prev => ({ ...prev, isHoveredImp: v })),
+        setGrupoFarmacia: (grupo: GrupoFarmacia) => setState(prev => ({ ...prev, grupoFarmacia: grupo, currentPage: 1 })),
         handleImportExcel: async (event: ChangeEvent<HTMLInputElement>) => {
             const file = event.target.files?.[0];
             if (!file) return;
@@ -233,6 +251,8 @@ export const useClientsViewModel = () => {
         pages,
         // Constants
         ALL_COLUMNS,
+        // Context
+        isFarmacia,
         // Actions
         actions,
     };

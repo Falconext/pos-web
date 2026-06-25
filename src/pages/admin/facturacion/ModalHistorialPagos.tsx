@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
+import { createPortal } from 'react-dom';
 import { usePagosStore } from '@/zustand/pagos';
 
 interface ModalHistorialPagosProps {
@@ -48,8 +49,8 @@ const ModalHistorialPagos = ({ comprobante, onClose }: ModalHistorialPagosProps)
         Math.max(0, totalComprobante - totalPagado),
     );
 
-    return (
-        <div className="fixed inset-0 top-[-30px] bg-black/60   z-[999999] flex items-center justify-center p-4">
+    const content = (
+        <div className="fixed inset-0 bg-black/60 z-[999999] flex items-center justify-center p-4">
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl max-w-md w-full overflow-hidden max-h-[85vh] flex flex-col border dark:border-slate-800">
 
                 {/* Header */}
@@ -147,6 +148,9 @@ const ModalHistorialPagos = ({ comprobante, onClose }: ModalHistorialPagosProps)
             </div>
         </div>
     );
+
+    if (typeof document === 'undefined') return content;
+    return createPortal(content, document.body);
 };
 
 export default ModalHistorialPagos;

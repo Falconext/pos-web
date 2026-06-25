@@ -29,6 +29,7 @@ import Modal from "@/components/Modal";
 import { useSedesStore } from "@/zustand/sedes";
 import { useNavigate } from "react-router-dom";
 import { useUsersStore } from "@/zustand/users";
+import TableActionMenu from "@/components/TableActionMenu";
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -68,7 +69,8 @@ const ComprobantesInformales = () => {
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
     const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
     const [comprobante, setComprobante] = useState<string>("");
-    const [openAccionesId, setOpenAccionesId] = useState<number | null>(null);
+    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+    const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
@@ -143,190 +145,14 @@ const ComprobantesInformales = () => {
             despachoCompleto,
         };
 
-        const isOpen = openAccionesId === rowBase.id;
-
-        const handleAbrirModal = (data: any, tab: 'whatsapp' | 'email') => {
-            const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
-            if (comprobanteData) {
-                setComprobanteWhatsApp({
-                    id: comprobanteData.id,
-                    serie: comprobanteData.serie,
-                    correlativo: comprobanteData.correlativo,
-                    comprobante: comprobanteData.comprobante,
-                    total: comprobanteData.mtoImpVenta,
-                    clienteNombre: comprobanteData.cliente?.nombre || 'Cliente',
-                    clienteCelular: (comprobanteData as any).cliente?.telefono || '',
-                    clienteEmail: (comprobanteData as any).cliente?.email || '',
-                    pdfUrl: comprobanteData.s3PdfUrl || undefined,
-                });
-                setModalDefaultTab(tab);
-                setIsOpenModalWhatsApp(true);
-            }
-        };
-
-
         const acciones = (
-            <div
-                className="relative inline-block"
-                onClick={(e) => e.stopPropagation()} // evitar que el click burbujee al documento
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setMenuAnchor(e.currentTarget); setSelectedMenuRow({ ...rowBase, _item: item, despachoCompleto, despachoFecha }); }}
+                className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             >
-                <button
-                    type="button"
-                    onClick={() => setOpenAccionesId(isOpen ? null : rowBase.id)}
-                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                    <Icon icon="mdi:dots-vertical" width={18} height={18} />
-                </button>
-                {isOpen && (
-                    <div className="fixed flex-col right-10 mt-1 w-44 bg-white dark:bg-[#1E2435] border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleGetReceipt(rowBase);
-                                setOpenAccionesId(null);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-                            <Icon icon="mingcute:print-line" width={16} height={16} />
-                            <span>Imprimir</span>
-                        </button>
-                        {/* Botón de impresión térmica - solo se muestra en macOS */}
-
-                        <button
-                            type="button"
-                            disabled={!rowBase.s3PdfUrl}
-                            onClick={() => {
-                                if (rowBase.s3PdfUrl) {
-                                    setPdfUrl(rowBase.s3PdfUrl as string);
-                                    const corr = String(rowBase.correlativo || '').padStart(8, '0');
-                                    setPdfName(`${rowBase.serie}-${corr}.pdf`);
-                                    setIsOpenModalPdf(true);
-                                }
-                                setOpenAccionesId(null);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.s3PdfUrl ? 'text-gray-700' : 'text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icon icon="mdi:file-pdf-box" width={16} height={16} />
-                            <span>Ver PDF</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleAbrirModal(rowBase, 'email');
-                                setOpenAccionesId(null);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                        >
-                            <Icon icon="solar:letter-bold" width={16} height={16} />
-                            <span>Enviar Email</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleAbrirModal(rowBase, 'whatsapp');
-                                setOpenAccionesId(null);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 hover:bg-green-50"
-                        >
-                            <Icon icon="mdi:whatsapp" width={16} height={16} />
-                            <span>Enviar WhatsApp</span>
-                        </button>
-                        {despachoCompleto && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    navigate(`/administrador/ventas?fecha=${despachoFecha}&comprobanteId=${item.id}`);
-                                    setOpenAccionesId(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30"
-                            >
-                                <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
-                                <span>Ver despacho</span>
-                            </button>
-                        )}
-                        {rowBase.estadoEnvioSunat !== 'ANULADO' && (
-                            <>
-                                <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        handleAnular(rowBase);
-                                        setOpenAccionesId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
-                                >
-                                    <Icon icon="mdi:cancel" width={16} height={16} />
-                                    <span>Anular</span>
-                                </button>
-                            </>
-                        )}
-                        {item.comprobante === 'NOTA DE VENTA' && (
-                            <>
-                                <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const esRuc = item.cliente?.nroDoc?.length === 11;
-                                        navigate('/administrador/facturacion/nuevo', {
-                                            state: {
-                                                defaultType: 'FACTURA',
-                                                fromNotaDeVenta: true,
-                                                notaDeVentaData: {
-                                                    origenComprobanteId: item.id,
-                                                    cliente: esRuc ? item.cliente : null,
-                                                    clienteId: esRuc ? item.clienteId : null,
-                                                    observaciones: item.observaciones,
-                                                    productos: (item.detalles || []).map((d: any) => ({
-                                                        productoId: d.producto?.id,
-                                                        descripcion: d.descripcion,
-                                                        cantidad: d.cantidad,
-                                                        precioUnitario: d.mtoPrecioUnitario,
-                                                        unidad: d.unidad,
-                                                    }))
-                                                }
-                                            }
-                                        });
-                                        setOpenAccionesId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
-                                >
-                                    <Icon icon="mdi:file-document-edit-outline" width={16} height={16} />
-                                    <span>Convertir a Factura</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        navigate('/administrador/facturacion/nuevo', {
-                                            state: {
-                                                defaultType: 'BOLETA',
-                                                fromNotaDeVenta: true,
-                                                notaDeVentaData: {
-                                                    origenComprobanteId: item.id,
-                                                    cliente: item.cliente,
-                                                    clienteId: item.clienteId,
-                                                    observaciones: item.observaciones,
-                                                    productos: (item.detalles || []).map((d: any) => ({
-                                                        productoId: d.producto?.id,
-                                                        descripcion: d.descripcion,
-                                                        cantidad: d.cantidad,
-                                                        precioUnitario: d.mtoPrecioUnitario,
-                                                        unidad: d.unidad,
-                                                    }))
-                                                }
-                                            }
-                                        });
-                                        setOpenAccionesId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/30"
-                                >
-                                    <Icon icon="mdi:receipt-outline" width={16} height={16} />
-                                    <span>Hacer Boleta</span>
-                                </button>
-                            </>
-                        )}
-                    </div>
-                )}
-            </div>
+                <Icon icon="mdi:dots-vertical" width={18} height={18} />
+            </button>
         );
         return {
             ...rowBase,
@@ -350,8 +176,28 @@ const ComprobantesInformales = () => {
         await getInvoice(data.id);
     };
 
+    const handleCloseMenu = () => { setMenuAnchor(null); setSelectedMenuRow(null); };
+
+    const handleAbrirModal = (data: any, tab: 'whatsapp' | 'email') => {
+        const comprobanteData = invoices.find((inv: IInvoices) => inv.id === data.id);
+        if (comprobanteData) {
+            setComprobanteWhatsApp({
+                id: comprobanteData.id,
+                serie: comprobanteData.serie,
+                correlativo: comprobanteData.correlativo,
+                comprobante: comprobanteData.comprobante,
+                total: comprobanteData.mtoImpVenta,
+                clienteNombre: comprobanteData.cliente?.nombre || 'Cliente',
+                clienteCelular: (comprobanteData as any).cliente?.telefono || '',
+                clienteEmail: (comprobanteData as any).cliente?.email || '',
+                pdfUrl: comprobanteData.s3PdfUrl || undefined,
+            });
+            setModalDefaultTab(tab);
+            setIsOpenModalWhatsApp(true);
+        }
+    };
+
     const handleAnular = (data: any) => {
-        console.log(data);
         setFormValues(data);
         setIsOpenModalConfirm(true);
     }
@@ -813,6 +659,81 @@ const ComprobantesInformales = () => {
                     onClose={handleCloseReceipt}
                 />
             )}
+
+            {/* ── Dropdown de acciones (TableActionMenu) ── */}
+            <TableActionMenu
+                isOpen={Boolean(menuAnchor)}
+                anchorEl={menuAnchor}
+                onClose={handleCloseMenu}
+                className="w-44"
+            >
+                {selectedMenuRow && (() => {
+                    const row = selectedMenuRow;
+                    const item: IInvoices = row._item;
+                    return (
+                        <>
+                            <button type="button" onClick={() => { handleGetReceipt(row); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                <Icon icon="mingcute:print-line" width={16} height={16} />
+                                <span>Imprimir</span>
+                            </button>
+                            <button type="button" disabled={!row.s3PdfUrl}
+                                onClick={() => { if (row.s3PdfUrl) { setPdfUrl(row.s3PdfUrl); setPdfName(`${row.serie}-${String(row.correlativo || '').padStart(8, '0')}.pdf`); setIsOpenModalPdf(true); } handleCloseMenu(); }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 ${row.s3PdfUrl ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 cursor-not-allowed'}`}>
+                                <Icon icon="mdi:file-pdf-box" width={16} height={16} />
+                                <span>Ver PDF</span>
+                            </button>
+                            <button type="button" onClick={() => { handleAbrirModal(row, 'email'); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                <Icon icon="solar:letter-bold" width={16} height={16} />
+                                <span>Enviar Email</span>
+                            </button>
+                            <button type="button" onClick={() => { handleAbrirModal(row, 'whatsapp'); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/30">
+                                <Icon icon="mdi:whatsapp" width={16} height={16} />
+                                <span>Enviar WhatsApp</span>
+                            </button>
+                            {row.despachoCompleto && (
+                                <button type="button" onClick={() => { navigate(`/administrador/ventas?fecha=${row.despachoFecha}&comprobanteId=${row.id}`); handleCloseMenu(); }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30">
+                                    <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
+                                    <span>Ver despacho</span>
+                                </button>
+                            )}
+                            {row.estadoEnvioSunat !== 'ANULADO' && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button type="button" onClick={() => { handleAnular(row); handleCloseMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30">
+                                        <Icon icon="mdi:cancel" width={16} height={16} />
+                                        <span>Anular</span>
+                                    </button>
+                                </>
+                            )}
+                            {item?.comprobante === 'NOTA DE VENTA' && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button type="button" onClick={() => {
+                                        const esRuc = item.cliente?.nroDoc?.length === 11;
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: esRuc ? item.cliente : null, clienteId: esRuc ? item.clienteId : null, observaciones: item.observaciones, productos: (item.detalles || []).map((d: any) => ({ productoId: d.producto?.id, descripcion: d.descripcion, cantidad: d.cantidad, precioUnitario: d.mtoPrecioUnitario, unidad: d.unidad })) } } });
+                                        handleCloseMenu();
+                                    }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30">
+                                        <Icon icon="mdi:file-document-edit-outline" width={16} height={16} />
+                                        <span>Convertir a Factura</span>
+                                    </button>
+                                    <button type="button" onClick={() => {
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'BOLETA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, productos: (item.detalles || []).map((d: any) => ({ productoId: d.producto?.id, descripcion: d.descripcion, cantidad: d.cantidad, precioUnitario: d.mtoPrecioUnitario, unidad: d.unidad })) } } });
+                                        handleCloseMenu();
+                                    }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/30">
+                                        <Icon icon="mdi:receipt-outline" width={16} height={16} />
+                                        <span>Hacer Boleta</span>
+                                    </button>
+                                </>
+                            )}
+                        </>
+                    );
+                })()}
+            </TableActionMenu>
         </div>
     );
 

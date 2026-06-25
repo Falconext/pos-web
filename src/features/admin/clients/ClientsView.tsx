@@ -8,10 +8,18 @@ import ModalConfirm from '@/components/ModalConfirm';
 import TableActionMenu from '@/components/TableActionMenu';
 import { useClientsViewModel } from './useClientsViewModel';
 import ModalClient from './shared/ModalClient';
+import DoctorsView from '@/features/admin/doctors/DoctorsView';
+import type { GrupoFarmacia } from './ClientsModel';
+
+const GRUPO_TABS: { id: GrupoFarmacia; label: string; icon: string }[] = [
+    { id: 'pacientes', label: 'Pacientes', icon: 'solar:user-heart-bold-duotone' },
+    { id: 'empresas',  label: 'Empresas',  icon: 'solar:buildings-bold-duotone' },
+    { id: 'medicos',   label: 'Médicos',   icon: 'solar:stethoscope-bold-duotone' },
+];
 
 export default function ClientsView() {
     const vm = useClientsViewModel();
-    const { actions, clients, clientsTable, totalClients } = vm;
+    const { actions, clients, clientsTable, totalClients, isFarmacia } = vm;
 
     const [showOptionsDropdown, setShowOptionsDropdown] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -25,22 +33,65 @@ export default function ClientsView() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const grupoActivo = vm.grupoFarmacia;
+    const isMedicos = isFarmacia && grupoActivo === 'medicos';
+
+    const headerInfo = isFarmacia
+        ? grupoActivo === 'pacientes'
+            ? { title: 'Pacientes',  sub: 'Registro de pacientes de la farmacia' }
+            : grupoActivo === 'empresas'
+            ? { title: 'Empresas',   sub: 'Distribuidoras y empresas farmacéuticas' }
+            : { title: 'Médicos',    sub: 'Directorio de médicos prescriptores' }
+        : { title: 'Clientes', sub: 'Gestiona tu cartera de clientes' };
+
     return (
         <div className="min-h-screen px-2 pb-4 relative z-1 dark:bg-[#0A0D14]">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            {/* Header — siempre visible */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Clientes</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{headerInfo.title}</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{headerInfo.sub}</p>
                 </div>
-                <Button color="secondary" onClick={actions.openNewModal} className="flex items-center gap-2 !bg-violet-600 border-none shadow-md shadow-violet-200/50">
-                    <Icon icon="solar:add-circle-bold" className="text-lg" />
-                    Nuevo cliente
-                </Button>
+                {/* Botón nuevo — Médicos tiene su propio botón en la toolbar */}
+                {!isMedicos && (
+                    <Button color="secondary" onClick={actions.openNewModal} className="flex items-center gap-2 !bg-violet-600 border-none shadow-md shadow-violet-200/50">
+                        <Icon icon="solar:add-circle-bold" className="text-lg" />
+                        {isFarmacia && grupoActivo === 'pacientes' ? 'Nuevo paciente'
+                            : isFarmacia && grupoActivo === 'empresas' ? 'Nueva empresa'
+                            : 'Nuevo cliente'}
+                    </Button>
+                )}
             </div>
 
-            {/* Main Content Card */}
-            <div className="bg-white dark:bg-[#111827] relative z-0 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+            {/* Tabs farmacia */}
+            {isFarmacia && (
+                <div className="flex gap-2 mb-5">
+                    {GRUPO_TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => actions.setGrupoFarmacia(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                                grupoActivo === tab.id
+                                    ? 'bg-violet-600 text-white shadow-md shadow-violet-200/50'
+                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700'
+                            }`}
+                        >
+                            <Icon icon={tab.icon} width={18} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Tab Médicos — misma card que Pacientes/Empresas */}
+            {isMedicos && (
+                <div className="bg-white dark:bg-[#111827] relative z-0 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                    <DoctorsView embedded />
+                </div>
+            )}
+
+            {/* Main Content Card — Pacientes / Empresas / todos */}
+            {!isMedicos && <div className="bg-white dark:bg-[#111827] relative z-0 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Search and Actions Toolbar */}
                 <div className="p-5 border-b border-gray-100 dark:border-slate-800 relative z-50 overflow-visible">
                     <div className="flex flex-col lg:flex-row gap-4">
@@ -174,7 +225,7 @@ export default function ClientsView() {
                         </div>
                     )}
                 </div>
-            </div>
+            </div>}
 
             {/* Actions Dropdown Menu */}
             <TableActionMenu
@@ -219,6 +270,7 @@ export default function ClientsView() {
                     isOpenModal={vm.isOpenModal}
                     setIsOpenModal={(v: boolean) => !v && actions.closeModal()}
                     closeModal={actions.closeModal}
+                    grupoFarmacia={isFarmacia ? grupoActivo : undefined}
                 />
             )}
             {vm.isOpenModalConfirm && (

@@ -111,7 +111,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
       if (isFarmacia(auth)) {
         items.push(
           { codigo: 'kardex:lotes', nombre: 'Lotes', ruta: '/administrador/kardex/lotes' },
-          { codigo: 'kardex:libro-control', nombre: '💊 Libro Control', ruta: '/administrador/kardex/libro-control' },
+          { codigo: 'kardex:libro-control', nombre: 'Libro Control', ruta: '/administrador/kardex/libro-control' },
         );
       }
       return items;
@@ -213,6 +213,17 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   usuarios: {
     navRoute: () => '/administrador/usuarios',
     pathPrefix: () => '/administrador/usuarios',
+  },
+
+  clientes: {
+    navRoute: () => '/administrador/clientes',
+    pathPrefix: () => '/administrador/clientes',
+    extraItems: (auth) => {
+      if (!isFarmacia(auth)) return [];
+      return [
+        { codigo: 'clientes:medicos', nombre: '🩺 Médicos', ruta: '/administrador/medicos' },
+      ];
+    },
   },
 };
 

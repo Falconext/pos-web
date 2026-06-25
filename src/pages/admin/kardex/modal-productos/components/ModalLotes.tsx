@@ -181,7 +181,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                 <div className="grid grid-cols-2 gap-3 mb-3">
                                     <InputPro name="lote" value={loteForm.lote} onChange={handleLoteFormChange} error={loteErrors.lote} label="Código de Lote" placeholder="L2024-001" isLabel />
                                     <div className="relative">
-                                        <Calendar text="Vencimiento *" value={loteForm.fechaVencimiento ? moment(loteForm.fechaVencimiento).format('DD/MM/YYYY') : ''} onChange={(date: string) => {
+                                        <Calendar portal text="Vencimiento *" value={loteForm.fechaVencimiento ? moment(loteForm.fechaVencimiento).format('DD/MM/YYYY') : ''} onChange={(date: string) => {
                                             const [day, month, year] = date.split('/');
                                             setLoteForm(prev => ({ ...prev, fechaVencimiento: `${year}-${month}-${day}` }));
                                             setLoteErrors(prev => ({ ...prev, fechaVencimiento: '' }));
@@ -279,6 +279,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                                                     setEditForm(f => ({ ...f, fechaVencimiento: `${year}-${month}-${day}` }));
                                                                 }}
                                                                 name="editFechaVencimiento"
+                                                                portal
                                                             />
                                                         </div>
                                                     </div>
@@ -384,15 +385,27 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
                                     placeholder="Ej: L2024-001"
                                     isLabel
                                 />
-                                <div className="relative">
-                                    <Calendar
-                                        text="Fecha Vencimiento"
-                                        value={creationLote.fechaVencimiento ? moment(creationLote.fechaVencimiento).format('DD/MM/YYYY') : ''}
-                                        onChange={(date: string) => {
-                                            const [day, month, year] = date.split('/');
-                                            setCreationLote({ ...creationLote, fechaVencimiento: `${year}-${month}-${day}` });
-                                        }}
-                                        name="fechaVencimiento"
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="relative">
+                                        <Calendar
+                                            portal
+                                            text="Fecha Vencimiento"
+                                            value={creationLote.fechaVencimiento ? moment(creationLote.fechaVencimiento).format('DD/MM/YYYY') : ''}
+                                            onChange={(date: string) => {
+                                                const [day, month, year] = date.split('/');
+                                                setCreationLote({ ...creationLote, fechaVencimiento: `${year}-${month}-${day}` });
+                                            }}
+                                            name="fechaVencimiento"
+                                        />
+                                    </div>
+                                    <InputPro
+                                        type="number"
+                                        name="stockInicial"
+                                        value={creationLote.stockInicial}
+                                        onChange={(e) => setCreationLote({ ...creationLote, stockInicial: e.target.value })}
+                                        label="Cantidad Inicial"
+                                        placeholder="Ej: 100"
+                                        isLabel
                                     />
                                 </div>
                             </div>

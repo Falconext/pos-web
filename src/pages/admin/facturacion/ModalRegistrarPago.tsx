@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { createPortal } from 'react-dom';
 import { usePagosStore } from '@/zustand/pagos';
 import { useAuthStore } from '@/zustand/auth';
 import Select from '@/components/Select';
@@ -106,8 +107,8 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
     }
 
     // Modal de Registro de Pago
-    return (
-        <div className="fixed inset-0 bg-black/60 top-[-30px] z-50 flex items-center justify-center p-4">
+    const content = (
+        <div className="fixed inset-0 bg-black/60 top-[-30px] z-[999999] flex items-center justify-center p-4">
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border dark:border-slate-800">
                 {/* Header */}
                 <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
@@ -257,6 +258,9 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
             </div>
         </div>
     );
+
+    if (typeof document === 'undefined') return content;
+    return createPortal(content, document.body);
 };
 
 export default ModalRegistrarPago;

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { get } from "@/utils/fetch";
 import type { IDatosReceta } from "@/features/admin/facturacion/FacturacionModel";
+
+interface IDoctor { id: number; nombre: string; cmp?: string; especialidad?: string; }
 
 interface Props {
     isOpen: boolean;
@@ -17,6 +19,42 @@ export const ModalRecetaMedica = ({ isOpen, item, onConfirmar, onCerrar }: Props
     const [reniecLoading, setReniecLoading] = useState(false);
     const [reniecNombre, setReniecNombre] = useState<string | null>(null);
     const [reniecError, setReniecError] = useState<string | null>(null);
+
+    // doctor autocomplete
+    const [doctorQuery, setDoctorQuery] = useState('');
+    const [doctorResults, setDoctorResults] = useState<IDoctor[]>([]);
+    const [doctorLoading, setDoctorLoading] = useState(false);
+    const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+    const doctorRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!doctorQuery.trim() || doctorQuery.length < 2) {
+            setDoctorResults([]);
+            return;
+        }
+        const t = setTimeout(async () => {
+            setDoctorLoading(true);
+            try {
+                const res: any = await get<IDoctor[]>(`/doctors?search=${encodeURIComponent(doctorQuery)}`);
+                setDoctorResults(res?.data ?? []);
+                setShowDoctorDropdown(true);
+            } catch {
+                // silently ignore — campo aún funciona como texto libre
+            } finally {
+                setDoctorLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(t);
+    }, [doctorQuery]);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (doctorRef.current && !doctorRef.current.contains(e.target as Node))
+                setShowDoctorDropdown(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     if (!isOpen || !item) return null;
 
@@ -55,9 +93,15 @@ export const ModalRecetaMedica = ({ isOpen, item, onConfirmar, onCerrar }: Props
         }
     };
 
+    const selectDoctor = (doc: IDoctor) => {
+        setDatos(d => ({ ...d, medicoNombre: `Dr. ${doc.nombre}`, medicoId: doc.id }));
+        setDoctorQuery(`Dr. ${doc.nombre}`);
+        setShowDoctorDropdown(false);
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50  " onClick={onCerrar} />
+            <div className="absolute inset-0 bg-black/50" onClick={onCerrar} />
             <div className="relative bg-white dark:bg-[#1E2435] rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
@@ -149,18 +193,54 @@ export const ModalRecetaMedica = ({ isOpen, item, onConfirmar, onCerrar }: Props
                                 )}
                             </div>
 
-                            <div>
+                            {/* Médico con autocomplete de doctores registrados */}
+                            <div ref={doctorRef} className="relative">
                                 <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
-                                    Nombre del Médico <span className="text-red-500">*</span>
+                                    Médico prescriptor <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="text"
-                                    value={datos.medicoNombre ?? ""}
-                                    onChange={e => setDatos(d => ({ ...d, medicoNombre: e.target.value }))}
-                                    placeholder="Dr. García López"
-                                    className={inputCls}
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={doctorQuery}
+                                        onChange={e => {
+                                            setDoctorQuery(e.target.value);
+                                            setDatos(d => ({ ...d, medicoNombre: e.target.value, medicoId: undefined }));
+                                        }}
+                                        onFocus={() => doctorResults.length > 0 && setShowDoctorDropdown(true)}
+                                        placeholder="Buscar doctor registrado o escribir nombre..."
+                                        className={inputCls + " pr-9"}
+                                        required
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        {doctorLoading
+                                            ? <Icon icon="solar:spinner-bold" className="animate-spin text-gray-400" width={16} />
+                                            : <Icon icon="solar:stethoscope-bold" className="text-gray-400" width={16} />
+                                        }
+                                    </div>
+                                </div>
+                                {showDoctorDropdown && doctorResults.length > 0 && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
+                                        {doctorResults.map(doc => (
+                                            <button
+                                                key={doc.id}
+                                                type="button"
+                                                onMouseDown={() => selectDoctor(doc)}
+                                                className="w-full px-4 py-2.5 text-left hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors"
+                                            >
+                                                <div className="text-sm font-medium text-gray-900 dark:text-white">Dr. {doc.nombre}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {doc.cmp && `CMP: ${doc.cmp}`}{doc.cmp && doc.especialidad && ' · '}{doc.especialidad}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                {datos.medicoId && (
+                                    <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                                        <Icon icon="solar:check-circle-bold" />
+                                        Médico registrado vinculado
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}

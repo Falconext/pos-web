@@ -59,6 +59,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         permisos: user.rol === 'ADMIN_EMPRESA' ? ['*'] : (user.permisos || []),
         sedeIds: (user.sedes || []).map(s => s.id),
         subModuloIds: (user.subModulos || []).map(s => s.id),
+        comisionGlobal: user.comisionGlobal || undefined,
+        comisionGlobalFija: user.comisionGlobalFija || undefined,
+        comisionGlobalVenta: user.comisionGlobalVenta || undefined,
       });
     } else {
       setFormData({
@@ -70,6 +73,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         permisos: [],
         sedeIds: [],
         subModuloIds: [],
+        comisionGlobal: undefined,
+        comisionGlobalFija: undefined,
+        comisionGlobalVenta: undefined,
       });
     }
     setErrors({});
@@ -188,9 +194,40 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
       if (isEdit && user) {
         const updateData: Partial<IFormUsuario> = { ...formData };
         if (!formData.password) delete updateData.password;
+        if (updateData.comisionGlobal === '' as any || updateData.comisionGlobal === undefined) {
+          updateData.comisionGlobal = undefined;
+        } else {
+          updateData.comisionGlobal = Number(updateData.comisionGlobal);
+        }
+        if (updateData.comisionGlobalFija === '' as any || updateData.comisionGlobalFija === undefined) {
+          updateData.comisionGlobalFija = undefined;
+        } else {
+          updateData.comisionGlobalFija = Number(updateData.comisionGlobalFija);
+        }
+        if (updateData.comisionGlobalVenta === '' as any || updateData.comisionGlobalVenta === undefined) {
+          updateData.comisionGlobalVenta = undefined;
+        } else {
+          updateData.comisionGlobalVenta = Number(updateData.comisionGlobalVenta);
+        }
         await updateUser(user.id, updateData);
       } else {
-        await createUser(formData);
+        const createData: IFormUsuario = { ...formData };
+        if (createData.comisionGlobal === '' as any || createData.comisionGlobal === undefined) {
+          createData.comisionGlobal = undefined;
+        } else {
+          createData.comisionGlobal = Number(createData.comisionGlobal);
+        }
+        if (createData.comisionGlobalFija === '' as any || createData.comisionGlobalFija === undefined) {
+          createData.comisionGlobalFija = undefined;
+        } else {
+          createData.comisionGlobalFija = Number(createData.comisionGlobalFija);
+        }
+        if (createData.comisionGlobalVenta === '' as any || createData.comisionGlobalVenta === undefined) {
+          createData.comisionGlobalVenta = undefined;
+        } else {
+          createData.comisionGlobalVenta = Number(createData.comisionGlobalVenta);
+        }
+        await createUser(createData);
       }
       onClose();
     } catch (error: any) {
@@ -229,6 +266,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
             <InputPro type="email" name="email" value={formData.email} onChange={handleInputChange} label="Correo electrónico" isLabel error={errors.email} placeholder="usuario@empresa.com" />
             <InputPro type="text" name="dni" value={formData.dni} onChange={handleInputChange} label="DNI" isLabel error={errors.dni} placeholder="12345678" maxLength={8} />
             <InputPro type="text" name="celular" value={formData.celular} onChange={handleInputChange} label="Celular" isLabel error={errors.celular} placeholder="987654321" maxLength={9} />
+            <InputPro type="number" name="comisionGlobal" value={formData.comisionGlobal || ''} onChange={handleInputChange} label="Comisión Global (%)" isLabel placeholder="Ej: 5" min="0" max="100" />
+            <InputPro type="number" name="comisionGlobalFija" value={formData.comisionGlobalFija || ''} onChange={handleInputChange} label="Comisión Fija por Unidad (S/)" isLabel placeholder="Ej: 10" min="0" />
+            <InputPro type="number" name="comisionGlobalVenta" value={formData.comisionGlobalVenta || ''} onChange={handleInputChange} label="Comisión Fija por Venta/Ticket (S/)" isLabel placeholder="Ej: 5" min="0" />
           </div>
         </div>
 

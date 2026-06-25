@@ -61,6 +61,10 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     setVariantImageFiles,
     variantImagePreviews,
     setVariantImagePreviews,
+    variantGalleryImageFiles,
+    setVariantGalleryImageFiles,
+    variantGalleryImagePreviews,
+    setVariantGalleryImagePreviews,
   } = vm;
 
   // Texto en edición de cada opción. Solo se confirma (parsea) al salir del campo,
@@ -99,6 +103,12 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     () => Array.from(new Set(combinations.map((combo) => combo[colorOptionName]).filter(Boolean))),
     [colorOptionName, combinations],
   );
+
+  const galleryByColor: Record<string, string[]> = useMemo(() => {
+    const attrs = ((formValues as any).atributosTecnicos || {}) as Record<string, any>;
+    const raw = attrs.galeriaPorColor;
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  }, [formValues]);
 
   const buildConfig = (options: VariantOption[], previous: VariantConfig[] = variantesConfig) => {
     const combos = generateCombinations(options);
@@ -240,6 +250,63 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     setVariantImagePreviews({ ...variantImagePreviews, [color]: previewUrl });
   };
 
+  const updateGalleryByColor = (nextGallery: Record<string, string[]>) => {
+    setFormValues({
+      ...formValues,
+      atributosTecnicos: {
+        ...((formValues as any).atributosTecnicos || {}),
+        galeriaPorColor: nextGallery,
+      },
+    } as any);
+  };
+
+  const handleColorGalleryImages = (color: string, files?: FileList | null) => {
+    const selected = Array.from(files || []);
+    if (!selected.length) return;
+    const validFiles: File[] = [];
+    const validPreviews: string[] = [];
+
+    for (const file of selected) {
+      if (!file.type.startsWith('image/')) {
+        useAlertStore.getState().alert('Todos los archivos deben ser imágenes', 'error');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        useAlertStore.getState().alert('Cada imagen no debe superar 2MB', 'error');
+        return;
+      }
+      validFiles.push(file);
+      validPreviews.push(URL.createObjectURL(file));
+    }
+
+    setVariantGalleryImageFiles({
+      ...variantGalleryImageFiles,
+      [color]: [...(variantGalleryImageFiles[color] || []), ...validFiles],
+    });
+    setVariantGalleryImagePreviews({
+      ...variantGalleryImagePreviews,
+      [color]: [...(variantGalleryImagePreviews[color] || []), ...validPreviews],
+    });
+  };
+
+  const removeExistingGalleryImage = (color: string, url: string) => {
+    updateGalleryByColor({
+      ...galleryByColor,
+      [color]: (galleryByColor[color] || []).filter((image) => image !== url),
+    });
+  };
+
+  const removePendingGalleryImage = (color: string, index: number) => {
+    const nextFiles = { ...variantGalleryImageFiles };
+    const nextPreviews = { ...variantGalleryImagePreviews };
+    nextFiles[color] = (nextFiles[color] || []).filter((_, imageIndex) => imageIndex !== index);
+    nextPreviews[color] = (nextPreviews[color] || []).filter((_, imageIndex) => imageIndex !== index);
+    if (!nextFiles[color]?.length) delete nextFiles[color];
+    if (!nextPreviews[color]?.length) delete nextPreviews[color];
+    setVariantGalleryImageFiles(nextFiles);
+    setVariantGalleryImagePreviews(nextPreviews);
+  };
+
   const removeColorImage = (color: string) => {
     const nextFiles = { ...variantImageFiles };
     const nextPreviews = { ...variantImagePreviews };
@@ -349,12 +416,14 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             <h6 className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Imágenes por color</h6>
             <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-300">Se aplican a todas sus tallas</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {colorValues.map((color) => {
               const rowWithImage = rows.find(
                 (row) => row.valoresAtributos?.[colorOptionName] === color && (row.imagenUrlDisplay || row.imagenUrl),
               );
               const preview = variantImagePreviews[color] || rowWithImage?.imagenUrlDisplay || rowWithImage?.imagenUrl || '';
+              const savedGallery = galleryByColor[color] || [];
+              const pendingGallery = variantGalleryImagePreviews[color] || [];
               return (
                 <div key={color} className="rounded-2xl border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                   <div className="mb-2 flex items-center justify-between gap-2">
@@ -381,6 +450,60 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                       onChange={(event) => handleColorImage(color, event.target.files?.[0])}
                     />
                   </label>
+                  <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 p-2 dark:border-slate-800 dark:bg-slate-950/30">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wide text-gray-500">
+                        Galería del color
+                      </span>
+                      <label className="cursor-pointer rounded-lg bg-violet-50 px-2 py-1 text-[10px] font-black text-violet-700 transition hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300">
+                        + Fotos
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(event) => {
+                            handleColorGalleryImages(color, event.target.files);
+                            event.currentTarget.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {savedGallery.length === 0 && pendingGallery.length === 0 ? (
+                      <p className="py-3 text-center text-[11px] font-semibold text-gray-400">
+                        Agrega fotos frontal, espalda o detalle para este color.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2">
+                        {savedGallery.map((url) => (
+                          <div key={url} className="group relative h-16 overflow-hidden rounded-lg bg-white">
+                            <img src={url} alt={`${color} galería`} className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingGalleryImage(color, url)}
+                              className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white group-hover:flex"
+                              title="Quitar foto"
+                            >
+                              <Icon icon="solar:close-circle-bold" width={13} />
+                            </button>
+                          </div>
+                        ))}
+                        {pendingGallery.map((url, index) => (
+                          <div key={`${url}-${index}`} className="group relative h-16 overflow-hidden rounded-lg bg-white ring-2 ring-violet-300">
+                            <img src={url} alt={`${color} nueva foto`} className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removePendingGalleryImage(color, index)}
+                              className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white group-hover:flex"
+                              title="Quitar foto"
+                            >
+                              <Icon icon="solar:close-circle-bold" width={13} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}

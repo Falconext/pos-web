@@ -53,7 +53,7 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
                 </div>
 
                 {/* Métricas principales */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                     {/* Precio */}
                     <div className="bg-white/80 dark:bg-slate-800/60 rounded-xl p-3 border border-blue-100 dark:border-blue-900/40 text-center">
                         <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mx-auto mb-2">

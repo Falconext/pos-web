@@ -46,6 +46,9 @@ export interface IUsuario {
   permisos?: string[];
   sedes?: { id: number; nombre: string; codigo: string | null; esPrincipal: boolean }[];
   subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[];
+  comisionGlobal?: number;
+  comisionGlobalFija?: number;
+  comisionGlobalVenta?: number;
 }
 
 export interface IFormUsuario {
@@ -58,6 +61,9 @@ export interface IFormUsuario {
   permisos: string[];
   sedeIds?: number[];
   subModuloIds?: number[];
+  comisionGlobal?: number;
+  comisionGlobalFija?: number;
+  comisionGlobalVenta?: number;
 }
 
 export interface IUsersState {

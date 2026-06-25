@@ -23,6 +23,10 @@ export const useLotesViewModel = () => {
     const [ajusteModal, setAjusteModal] = useState<{ lote: ILoteGestion | null; open: boolean }>({ lote: null, open: false });
     const [editModal, setEditModal] = useState<{ lote: ILoteGestion | null; open: boolean }>({ lote: null, open: false });
     const [desactivarModal, setDesactivarModal] = useState<{ lote: ILoteGestion | null; open: boolean }>({ lote: null, open: false });
+    const [kardexModal, setKardexModal] = useState<{ lote: ILoteGestion | null; open: boolean }>({ lote: null, open: false });
+
+    const [kardexData, setKardexData] = useState<any[]>([]);
+    const [kardexLoading, setKardexLoading] = useState(false);
 
     const [ajusteForm, setAjusteForm] = useState({ tipo: 'INCREMENTO' as 'INCREMENTO' | 'DECREMENTO', cantidad: '', motivo: '' });
     const [editForm, setEditForm] = useState({ lote: '', fechaVencimiento: '', costoUnitario: '', proveedor: '' });
@@ -144,6 +148,20 @@ export const useLotesViewModel = () => {
         }
     };
 
+    // ── Kardex / Ventas ──────────────────────────────────────────
+    const abrirKardex = async (lote: ILoteGestion) => {
+        setKardexModal({ lote, open: true });
+        setKardexLoading(true);
+        try {
+            const resp: any = await get(`productos/lotes/${lote.id}/kardex`);
+            setKardexData(resp?.data ?? []);
+        } catch (e) {
+            useAlertStore.getState().alert('Error al cargar historial del lote', 'error');
+        } finally {
+            setKardexLoading(false);
+        }
+    };
+
     const pages = Math.max(1, Math.ceil(total / limit));
 
     return {
@@ -154,6 +172,7 @@ export const useLotesViewModel = () => {
         ajusteModal, setAjusteModal, ajusteForm, setAjusteForm, abrirAjuste, guardarAjuste,
         editModal, setEditModal, editForm, setEditForm, abrirEdicion, guardarEdicion,
         desactivarModal, setDesactivarModal, guardarDesactivar,
+        kardexModal, setKardexModal, kardexData, kardexLoading, abrirKardex,
         actionLoading,
     };
 };

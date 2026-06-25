@@ -12,6 +12,7 @@ import { usePagosStore } from '@/zustand/pagos';
 import ModalRegistrarPago from './ModalRegistrarPago';
 import ModalHistorialPagos from './ModalHistorialPagos';
 import ModalDetalleCuenta from './ModalDetalleCuenta';
+import ModalConfirm from '../../../components/ModalConfirm';
 
 const CuentasPorCobrar = () => {
     const { getCuentasPorCobrar, cuentasPorCobrar, totalCuentasPorCobrar, loadingCuentas } = usePagosStore();
@@ -26,6 +27,8 @@ const CuentasPorCobrar = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showHistorialModal, setShowHistorialModal] = useState(false);
     const [showDetalleModal, setShowDetalleModal] = useState(false);
+    const [showNoPhoneModal, setShowNoPhoneModal] = useState(false);
+    const [noPhoneClientName, setNoPhoneClientName] = useState('');
 
     const debounce = useDebounce(searchTerm, 500);
 
@@ -83,6 +86,7 @@ const CuentasPorCobrar = () => {
             saldo: `S/ ${Number(inv.saldo || 0).toFixed(2)}`,
             dias: diasVencidos,
             estadoCobro: estadoLabel,
+            celular: inv.cliente?.telefono || '-',
             _raw: inv,
         };
     }) || [];
@@ -113,6 +117,18 @@ const CuentasPorCobrar = () => {
     const handleVerDetalle = (row: any) => {
         setSelectedComprobante(row._raw);
         setShowDetalleModal(true);
+    };
+
+    const handleWhatsApp = (row: any) => {
+        const phone = row._raw.cliente?.telefono;
+        if (!phone || phone === '-') {
+            setNoPhoneClientName(row.cliente);
+            setShowNoPhoneModal(true);
+            return;
+        }
+        const message = `Estimado(a) ${row.cliente}, le escribimos para recordarle cordialmente que tiene una cuenta pendiente de pago correspondiente al comprobante ${row.comprobante}. El saldo actual es de ${row.saldo}. Agradeceremos pueda regularizar este pago a la brevedad posible. Quedamos a su disposición por cualquier consulta.`;
+        const whatsappUrl = `https://wa.me/51${phone.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
     };
 
     // Obtener lista única de clientes para el filtro
@@ -153,6 +169,12 @@ const CuentasPorCobrar = () => {
             className: 'payment',
             icon: <Icon icon="solar:hand-money-bold-duotone" width="20" height="20" color="#10b981" />,
             tooltip: 'Registrar Pago',
+        },
+        {
+            onClick: handleWhatsApp,
+            className: 'whatsapp',
+            icon: <Icon icon="ic:baseline-whatsapp" width="20" height="20" color="#25D366" />,
+            tooltip: 'Recordatorio WhatsApp',
         },
     ];
 
@@ -310,6 +332,7 @@ const CuentasPorCobrar = () => {
                                         { label: 'Tipo', key: 'tipoDocumento' },
                                         { label: 'Cliente', key: 'cliente' },
                                         { label: 'RUC/DNI', key: 'rucDni' },
+                                        { label: 'Celular', key: 'celular' },
                                         { label: 'Total', key: 'total' },
                                         { label: 'Saldo', key: 'saldo' },
                                         { label: 'Días', key: 'dias' },
@@ -374,6 +397,16 @@ const CuentasPorCobrar = () => {
                     }}
                 />
             )}
+
+            {/* Modal de Información - Sin Teléfono */}
+            <ModalConfirm
+                isOpenModal={showNoPhoneModal}
+                setIsOpenModal={setShowNoPhoneModal}
+                title="Información"
+                information={`El cliente ${noPhoneClientName} no tiene un número de celular registrado en el sistema. No es posible enviar un mensaje de WhatsApp.`}
+                confirmText="Entendido"
+                confirmSubmit={() => setShowNoPhoneModal(false)}
+            />
         </div>
     );
 };

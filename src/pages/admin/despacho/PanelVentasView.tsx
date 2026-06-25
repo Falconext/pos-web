@@ -544,27 +544,32 @@ export default function PanelVentasView() {
         { key: 'POR_COBRAR',   label: 'Por cobrar',   count: vm.countPorCobrar, variant: 'orange' },
     ];
     const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
+    const totalVentasDia = Number(vm.totalVentasDia ?? 0);
+    const totalPorCobrarDia = Number(vm.totalPorCobrarDia ?? 0);
+    const porCobrarGlobalTotal = Number(vm.porCobrarGlobal?.total ?? 0);
+    const porCobrarGlobalCantidad = Number(vm.porCobrarGlobal?.cantidad ?? 0);
+
     const kpis = [
         {
             label: 'Vendido hoy',
-            value: `S/ ${vm.totalVentasDia.toFixed(2)}`,
-            detail: `${vm.countTodo} registro${vm.countTodo !== 1 ? 's' : ''} del día`,
+            value: `S/ ${totalVentasDia.toFixed(2)}`,
+            detail: `${vm.countTodo ?? 0} registro${(vm.countTodo ?? 0) !== 1 ? 's' : ''} del día`,
             icon: 'solar:wallet-money-bold-duotone',
             tone: 'emerald' as const,
         },
         {
             label: 'Por cobrar hoy',
-            value: `S/ ${vm.totalPorCobrarDia.toFixed(2)}`,
-            detail: `${vm.countPorCobrar} venta${vm.countPorCobrar !== 1 ? 's' : ''} con saldo hoy`,
+            value: `S/ ${totalPorCobrarDia.toFixed(2)}`,
+            detail: `${vm.countPorCobrar ?? 0} venta${(vm.countPorCobrar ?? 0) !== 1 ? 's' : ''} con saldo hoy`,
             icon: 'solar:bill-list-bold-duotone',
-            tone: vm.totalPorCobrarDia > 0 ? 'red' as const : 'blue' as const,
+            tone: totalPorCobrarDia > 0 ? 'red' as const : 'blue' as const,
         },
         {
             label: 'Pendiente total',
-            value: `S/ ${vm.porCobrarGlobal.total.toFixed(2)}`,
-            detail: `${vm.porCobrarGlobal.cantidad} cuenta${vm.porCobrarGlobal.cantidad !== 1 ? 's' : ''} acumulada${vm.porCobrarGlobal.cantidad !== 1 ? 's' : ''}`,
+            value: `S/ ${porCobrarGlobalTotal.toFixed(2)}`,
+            detail: `${porCobrarGlobalCantidad} cuenta${porCobrarGlobalCantidad !== 1 ? 's' : ''} acumulada${porCobrarGlobalCantidad !== 1 ? 's' : ''}`,
             icon: 'solar:alarm-bold-duotone',
-            tone: vm.porCobrarGlobal.total > 0 ? 'amber' as const : 'blue' as const,
+            tone: porCobrarGlobalTotal > 0 ? 'amber' as const : 'blue' as const,
         },
         {
             label: 'Con despacho',
@@ -809,13 +814,13 @@ export default function PanelVentasView() {
                                             </td>
                                             <td className="px-3 py-2.5 text-xs font-bold text-right whitespace-nowrap">
                                                 <span className={item.esConvertida ? 'line-through text-slate-400' : 'text-gray-900 dark:text-white'}>
-                                                    S/ {item.total.toFixed(2)}
+                                                    S/ {Number(item.total ?? 0).toFixed(2)}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-2.5 text-xs font-bold text-right whitespace-nowrap">
-                                                {item.saldo > 0 ? (
+                                                {(item.saldo ?? 0) > 0 ? (
                                                     <span className="text-red-500 dark:text-red-400">
-                                                        S/ {item.saldo.toFixed(2)}
+                                                        S/ {Number(item.saldo ?? 0).toFixed(2)}
                                                     </span>
                                                 ) : (
                                                     <span className="text-slate-300 dark:text-slate-600">—</span>

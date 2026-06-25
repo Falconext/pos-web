@@ -410,7 +410,7 @@ export const useFacturacionViewModel = () => {
 
     // Server Fetch Logic
     useEffect(() => {
-        const params: any = { page, limit };
+        const params: any = { page, limit, soloVendibles: true, usarPrecioSede: true };
         if (debouncedSearchTerm) params.search = debouncedSearchTerm;
         if (selectedCategoryId !== 0) params.categoriaId = selectedCategoryId;
         if (sedeActiva?.id) params.sedeId = sedeActiva.id;

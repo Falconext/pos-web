@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { BarcodeScannerInput } from '@/components/BarcodeScannerInput';
@@ -36,6 +36,18 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const [simVentasDia, setSimVentasDia] = useState('');
     const [simPublicidadDia, setSimPublicidadDia] = useState('');
     const [descTiendaOpen, setDescTiendaOpen] = useState(false);
+
+    // Abrir la "Descripción para la tienda online" por defecto si ya tiene texto.
+    // Se ejecuta una vez por producto y soporta que la descripción llegue async al editar.
+    const autoOpenedForRef = useRef<number | null>(null);
+    useEffect(() => {
+        const pid = Number((formValues as any)?.productoId) || 0;
+        const hasText = !!(formValues as any)?.descripcionLarga;
+        if (hasText && autoOpenedForRef.current !== pid) {
+            autoOpenedForRef.current = pid;
+            setDescTiendaOpen(true);
+        }
+    }, [(formValues as any)?.productoId, (formValues as any)?.descripcionLarga]);
     const esServicio = String(((formValues as any)?.atributosTecnicos || {})?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
     const setAtributoTecnico = (key: string, value: string) => {

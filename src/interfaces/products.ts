@@ -20,6 +20,17 @@ export type IProduct = {
   loteFefoCostoUnitario?: number | null
   stockMinimo?: number
   stockMaximo?: number
+  sedeStockConfig?: {
+    sedeId: number
+    stock?: number
+    stockMinimo?: number
+    stockMaximo?: number | null
+    ubicacionSede?: string | null
+    visibleEnSede?: boolean
+    vendibleEnSede?: boolean
+    precioUnitarioSede?: number | null
+    precioOfertaSede?: number | null
+  } | null
   estado: string
   creadoEn: string
   empresaId: number
@@ -56,12 +67,12 @@ export type IProduct = {
   unidadVenta?: string
   factorConversion?: number
   // Campos Ofertas
-  precioOferta?: number
-  fechaInicioOferta?: string | Date
-  fechaFinOferta?: string | Date
+  precioOferta?: number | null
+  fechaInicioOferta?: string | Date | null
+  fechaFinOferta?: string | Date | null
   // Precios por Mayorista
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
-  atributosTecnicos?: Record<string, string | number | boolean | null>
+  atributosTecnicos?: Record<string, any>
   descripcionLarga?: string | null
   opcionesAtributos?: any
   valoresAtributos?: any
@@ -89,6 +100,11 @@ export type IFormProduct = {
   porcentajeProvision?: number,
   stockMinimo?: number,
   stockMaximo?: number,
+  visibleEnSede?: boolean,
+  vendibleEnSede?: boolean,
+  precioUnitarioSede?: number | null,
+  precioOfertaSede?: number | null,
+  ubicacionSede?: string | null,
   codigo: string,
   unidadMedidaId: number
   costoPromedio?: number
@@ -108,12 +124,12 @@ export type IFormProduct = {
   unidadVenta?: string
   factorConversion?: number
   // Campos Ofertas
-  precioOferta?: number
-  fechaInicioOferta?: string | Date
-  fechaFinOferta?: string | Date
+  precioOferta?: number | null
+  fechaInicioOferta?: string | Date | null
+  fechaFinOferta?: string | Date | null
   // Precios por Mayorista
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
-  atributosTecnicos?: Record<string, string | number | boolean | null>
+  atributosTecnicos?: Record<string, any>
   descripcionLarga?: string | null
   opcionesAtributos?: any
   valoresAtributos?: any

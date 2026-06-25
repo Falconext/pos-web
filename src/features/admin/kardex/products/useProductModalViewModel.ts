@@ -34,7 +34,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   // --- Global Stores ---
   const { getUnitOfMeasure, unitOfMeasure }: IExtentionsState =
     useExtentionsStore();
-  const { auth } = useAuthStore();
+  const { auth, sedeActiva } = useAuthStore();
   const { getAllCategories, categories } = useCategoriesStore();
   const {
     editProduct,
@@ -163,6 +163,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const filePrincipalInputRef = useRef<HTMLInputElement | null>(null);
   const [variantImageFiles, setVariantImageFiles] = useState<Record<string, File>>({});
   const [variantImagePreviews, setVariantImagePreviews] = useState<Record<string, string>>({});
+  const [variantGalleryImageFiles, setVariantGalleryImageFiles] = useState<Record<string, File[]>>({});
+  const [variantGalleryImagePreviews, setVariantGalleryImagePreviews] = useState<Record<string, string[]>>({});
 
   // --- Stock State ---
   const [tipoAjusteStock, setTipoAjusteStock] =
@@ -176,10 +178,35 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   // --- Form State ---
   const [loading, setLoading] = useState(false);
+
+  const sedePolicyPayload = () => {
+    const precioUnitarioSede = (formValues as any)?.precioUnitarioSede;
+    const precioOfertaSede = (formValues as any)?.precioOfertaSede;
+    const payload: Record<string, any> = {
+      visibleEnSede: formValues?.visibleEnSede ?? true,
+      vendibleEnSede: formValues?.vendibleEnSede ?? true,
+      precioUnitarioSede:
+        precioUnitarioSede === null ||
+        precioUnitarioSede === undefined ||
+        precioUnitarioSede === ''
+          ? null
+          : Number(precioUnitarioSede),
+      precioOfertaSede:
+        precioOfertaSede === null ||
+        precioOfertaSede === undefined ||
+        precioOfertaSede === ''
+          ? null
+          : Number(precioOfertaSede),
+      ubicacionSede: formValues?.ubicacionSede || null,
+    };
+    if (sedeActiva?.id) payload.sedeId = sedeActiva.id;
+    return payload;
+  };
   const [technicalTemplate, setTechnicalTemplate] = useState<any | null>(null);
   const [creationLote, setCreationLote] = useState<ICreationLote>({
     lote: "",
     fechaVencimiento: "",
+    stockInicial: "",
   });
 
   // --- Wholesale Options State ---
@@ -432,9 +459,13 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           ? ""
           : "El producto debe tener un precio",
       stock: !esServicio && !isEdit
-        ? formValues?.stock && Number(formValues?.stock) > 0
-          ? ""
-          : "El producto debe tener un stock"
+        ? (esFarmaceutico && features.gestionLotes)
+          ? (creationLote.stockInicial && Number(creationLote.stockInicial) > 0)
+            ? ""
+            : "Debe ingresar el stock inicial usando el botón Gestión de Lotes"
+          : (formValues?.stock && Number(formValues?.stock) > 0)
+            ? ""
+            : "El producto debe tener un stock"
         : "",
     };
     setErrors(newErrors);
@@ -722,10 +753,13 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     return colorOption?.nombre || opciones[0]?.nombre || "Color";
   };
 
-  const uploadVariantColorImages = async (variantes: any[] = []) => {
+  const uploadVariantColorImages = async (variantes: any[] = [], parentIdArg?: number) => {
     const entries = Object.entries(variantImageFiles);
-    const parentId = Number(formValues.productoId);
-    if (entries.length === 0 || variantes.length === 0 || !parentId) return variantes;
+    // En creación el id real llega por argumento (formValues.productoId aún es 0)
+    const parentId = Number(parentIdArg ?? formValues.productoId);
+    // El backend asigna la imagen a las variantes del color buscándolas en BD,
+    // así que no requerimos que el frontend ya tenga la lista de variantes.
+    if (entries.length === 0 || !parentId) return variantes;
 
     const colorOptionName = resolveColorOptionName();
     const updatedById = new Map<number, any>(
@@ -766,6 +800,48 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
 
     return Array.from(updatedById.values());
+  };
+
+  const uploadVariantColorGallery = async (parentIdArg?: number) => {
+    const entries = Object.entries(variantGalleryImageFiles).filter(([, files]) => files.length > 0);
+    const parentId = Number(parentIdArg ?? formValues.productoId);
+    if (!entries.length || !parentId) return (formValues as any)?.atributosTecnicos || {};
+
+    const attrs = { ...(((formValues as any)?.atributosTecnicos || {}) as Record<string, any>) };
+    const currentGallery = attrs.galeriaPorColor && typeof attrs.galeriaPorColor === "object"
+      ? attrs.galeriaPorColor
+      : {};
+    const nextGallery: Record<string, string[]> = { ...currentGallery };
+
+    for (const [colorValue, files] of entries) {
+      const uploadedUrls: string[] = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const resp = await apiClient.post(`/productos/${parentId}/imagen-extra`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const url =
+          resp?.data?.data?.url ||
+          resp?.data?.url ||
+          resp?.data?.data?.imagenUrl ||
+          resp?.data?.imagenUrl ||
+          null;
+        if (url) uploadedUrls.push(url);
+      }
+      const previousUrls = Array.isArray(nextGallery[colorValue]) ? nextGallery[colorValue] : [];
+      nextGallery[colorValue] = Array.from(new Set([...previousUrls, ...uploadedUrls]));
+    }
+
+    const nextAttrs = { ...attrs, galeriaPorColor: nextGallery };
+    await apiClient.put(`/productos/${parentId}`, { atributosTecnicos: nextAttrs });
+    setFormValues({
+      ...formValues,
+      atributosTecnicos: nextAttrs,
+    } as any);
+    setVariantGalleryImageFiles({});
+    setVariantGalleryImagePreviews({});
+    return nextAttrs;
   };
 
   const persistExternalProductImage = (productoId: number, externalUrl: string) => {
@@ -833,9 +909,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           ? { imagenUrl: null, removerImagen: true }
           : {};
         const stockPayload =
-          tipoAjusteStock !== "ninguno"
-            ? stockFinal
-            : Number(formValues?.stock ?? 0);
+          (esFarmaceutico && features.gestionLotes)
+            ? undefined
+            : tipoAjusteStock !== "ninguno"
+              ? stockFinal
+              : Number(formValues?.stock ?? 0);
         const fechaInicioOfertaPayload = formValues.fechaInicioOferta || null;
         const fechaFinOfertaPayload = formValues.fechaFinOferta || null;
         let updatedProduct = await editProduct({
@@ -889,6 +967,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             : null,
           fechaInicioOferta: fechaInicioOfertaPayload,
           fechaFinOferta: fechaFinOfertaPayload,
+          ...sedePolicyPayload(),
           ...imagePatch,
         });
 
@@ -992,6 +1071,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         try {
           const variantesActualizadas = await uploadVariantColorImages(
             (updatedProduct as any)?.variantes || [],
+            Number(formValues.productoId),
           );
           if (variantesActualizadas.length > 0) {
             updatedProduct = {
@@ -1008,6 +1088,23 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             );
         }
 
+        let atributosTecnicosFinal =
+          (formValues as any)?.atributosTecnicos ?? (updatedProduct as any)?.atributosTecnicos;
+        try {
+          atributosTecnicosFinal = await uploadVariantColorGallery(Number(formValues.productoId));
+          updatedProduct = {
+            ...(updatedProduct || {}),
+            atributosTecnicos: atributosTecnicosFinal,
+          };
+        } catch {
+          useAlertStore
+            .getState()
+            .alert(
+              "Producto guardado, pero no se pudo subir la galería por color",
+              "warning",
+            );
+        }
+
         upsertProductLocal({
           ...(updatedProduct || {}),
           id: Number(formValues.productoId),
@@ -1018,7 +1115,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           costoFijo: Number((formValues as any).costoFijo || 0),
           comisionPorVenta: Number((formValues as any).comisionPorVenta || 0),
           comisionPorcentaje: Number((formValues as any).comisionPorcentaje || 0),
-          atributosTecnicos: (formValues as any)?.atributosTecnicos ?? (updatedProduct as any)?.atributosTecnicos,
+          atributosTecnicos: atributosTecnicosFinal,
           stock:
             tipoAjusteStock !== "ninguno"
               ? Number(stockFinal)
@@ -1117,7 +1214,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 ? Number((formValues as any).comisionPorcentaje)
                 : undefined,
             stock:
-              isFarmacia && features.gestionLotes && creationLote.lote
+              esFarmaceutico && features.gestionLotes && creationLote.lote
                 ? 0
                 : Number(formValues.stock),
             stockMinimo:
@@ -1128,6 +1225,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               formValues?.stockMaximo != null
                 ? Number(formValues?.stockMaximo)
                 : undefined,
+            ...sedePolicyPayload(),
             porcentajeVenta:
               formValues?.porcentajeVenta != null
                 ? Number(formValues?.porcentajeVenta)
@@ -1185,7 +1283,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           }
 
           if (
-            isFarmacia &&
+            esFarmaceutico &&
             features.gestionLotes &&
             creationLote.lote &&
             creationLote.fechaVencimiento
@@ -1195,8 +1293,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 productoId: Number(newId),
                 lote: creationLote.lote,
                 fechaVencimiento: creationLote.fechaVencimiento,
-                stockInicial: Number(formValues.stock),
-                stockActual: Number(formValues.stock),
+                stockInicial: Number(creationLote.stockInicial || 0),
+                stockActual: Number(creationLote.stockInicial || 0),
                 costoUnitario: formValues.costoUnitario
                   ? Number(formValues.costoUnitario)
                   : undefined,
@@ -1216,7 +1314,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
           let variantesFinales = product?.data?.variantes || [];
           try {
-            variantesFinales = await uploadVariantColorImages(variantesFinales);
+            variantesFinales = await uploadVariantColorImages(variantesFinales, Number(newId));
             if (product?.data && variantesFinales.length > 0) {
               product.data.variantes = variantesFinales;
             }
@@ -1228,6 +1326,28 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 "warning",
               );
           }
+
+          let atributosTecnicosFinal =
+            (formValues as any)?.atributosTecnicos ?? product?.data?.atributosTecnicos;
+          try {
+            atributosTecnicosFinal = await uploadVariantColorGallery(Number(newId));
+            if (product?.data) {
+              product.data.atributosTecnicos = atributosTecnicosFinal;
+            }
+          } catch {
+            useAlertStore
+              .getState()
+              .alert(
+                "Producto creado, pero no se pudo subir la galería por color",
+                "warning",
+              );
+          }
+
+          const optimisticStock = (esFarmaceutico && features.gestionLotes)
+            ? isEdit
+              ? Number(updatedProduct?.stock ?? product?.data?.stock ?? formValues.stock)
+              : (creationLote.lote ? Number(creationLote.stockInicial || 0) : 0)
+            : Number(formValues.stock);
 
           if (newId) upsertProductLocal({
             ...(product?.data || {}),
@@ -1242,12 +1362,29 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             precioUnitario: String(formValues.precioUnitario),
             costoUnitario: Number(formValues.costoUnitario || 0),
             costoFijo: Number((formValues as any).costoFijo || 0),
+            atributosTecnicos: atributosTecnicosFinal,
             comisionPorVenta: Number((formValues as any).comisionPorVenta || 0),
             comisionPorcentaje: Number((formValues as any).comisionPorcentaje || 0),
-            stock: Number(formValues.stock),
-            stockBase: Number(formValues.stock),
+            stock: optimisticStock,
+            stockBase: optimisticStock,
             stockMinimo: Number(formValues.stockMinimo || 0),
             stockMaximo: Number(formValues.stockMaximo || 0),
+            visibleEnSede: formValues.visibleEnSede ?? true,
+            vendibleEnSede: formValues.vendibleEnSede ?? true,
+            precioUnitarioSede: formValues.precioUnitarioSede ?? null,
+            precioOfertaSede: formValues.precioOfertaSede ?? null,
+            ubicacionSede: formValues.ubicacionSede || '',
+            sedeStockConfig: {
+              sedeId: sedeActiva?.id,
+              stock: optimisticStock,
+              stockMinimo: Number(formValues.stockMinimo || 0),
+              stockMaximo: Number(formValues.stockMaximo || 0),
+              visibleEnSede: formValues.visibleEnSede ?? true,
+              vendibleEnSede: formValues.vendibleEnSede ?? true,
+              precioUnitarioSede: formValues.precioUnitarioSede ?? null,
+              precioOfertaSede: formValues.precioOfertaSede ?? null,
+              ubicacionSede: formValues.ubicacionSede || '',
+            },
             porcentajeVenta: Number(formValues.porcentajeVenta ?? 100),
             porcentajeProvision: Number(formValues.porcentajeProvision ?? 0),
             localizacion: formValues.localizacion || "",
@@ -1322,6 +1459,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     esFarmaceutico,
     isFabricacion,
     isModaRubro,
+    sedeActiva,
     features,
     productSections,
     labels,
@@ -1345,6 +1483,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     filePrincipalInputRef,
     variantImageFiles,
     variantImagePreviews,
+    variantGalleryImageFiles,
+    variantGalleryImagePreviews,
     tipoAjusteStock,
     cantidadAjuste,
     stockOriginal,
@@ -1363,6 +1503,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     setLoadingImage,
     setVariantImageFiles,
     setVariantImagePreviews,
+    setVariantGalleryImageFiles,
+    setVariantGalleryImagePreviews,
     setTipoAjusteStock,
     setCantidadAjuste,
     setShowMedicamentoModal,

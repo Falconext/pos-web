@@ -9,6 +9,16 @@ import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelect
 import ReviewFeedbackModal from '@/components/tienda/ReviewFeedbackModal';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
+import {
+  findFashionVariant,
+  getDefaultVariantSelection,
+  getFashionColorGallery,
+  getFashionColors,
+  getFashionSizes,
+  getVariantOptionNames,
+  isFashionVariantAvailable,
+  variantValues,
+} from '@/templates/urbano/fashionVariants';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -162,6 +172,8 @@ export default function ModaProductoDetalle() {
   const [loading, setLoading] = useState(true);
   const [cantidad, setCantidad] = useState(1);
   const [selectedImage, setSelectedImage] = useState('');
+  const [varianteSelecciones, setVarianteSelecciones] = useState<Record<string, string>>({});
+  const [varianteActiva, setVarianteActiva] = useState<any>(null);
   const [carrito, setCarrito] = useState<any[]>([]);
   const [mostrarCarrito, setMostrarCarrito] = useState(false);
   const [search, setSearch] = useState('');
@@ -203,7 +215,13 @@ export default function ModaProductoDetalle() {
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
         setTienda(tiendaData);
-        if (prod.imagenUrl) setSelectedImage(prod.imagenUrl);
+        const defaultVariantSelection = getDefaultVariantSelection(prod);
+        const defaultVariant = findFashionVariant(prod, defaultVariantSelection);
+        const defaultColor = defaultVariantSelection[getVariantOptionNames(prod).color];
+        const gallery = defaultColor ? getFashionColorGallery(prod, defaultColor) : [];
+        setVarianteSelecciones(defaultVariantSelection);
+        setVarianteActiva(defaultVariant);
+        setSelectedImage(gallery[0] || defaultVariant?.imagenUrl || prod.imagenUrl || '');
 
         // Reviews
         try {
@@ -301,6 +319,29 @@ export default function ModaProductoDetalle() {
     );
   }, 0);
 
+  const handleVariantChange = (optionName: string, value: string) => {
+    if (!producto) return;
+    let nextSelection = { ...varianteSelecciones, [optionName]: value };
+    let match = findFashionVariant(producto, nextSelection);
+
+    if (!match && Array.isArray(producto?.variantes)) {
+      const fallback = producto.variantes.find((variant: any) => {
+        const values = variantValues(variant);
+        return values[optionName] === value && Number(variant?.stock ?? 0) > 0;
+      }) || producto.variantes.find((variant: any) => variantValues(variant)[optionName] === value);
+      if (fallback) {
+        nextSelection = variantValues(fallback);
+        match = fallback;
+      }
+    }
+
+    setVarianteSelecciones(nextSelection);
+    setVarianteActiva(match);
+    const selectedColor = nextSelection[getVariantOptionNames(producto).color];
+    const gallery = selectedColor ? getFashionColorGallery(producto, selectedColor) : [];
+    setSelectedImage(gallery[0] || match?.imagenUrl || producto.imagenUrl || '');
+  };
+
   const addToCart = () => {
     if (!producto) return;
     for (const g of modificadoresProducto) {
@@ -324,15 +365,25 @@ export default function ModaProductoDetalle() {
       });
     });
 
+    if (Array.isArray(producto.variantes) && producto.variantes.length > 0 && !varianteActiva) {
+      alert('Selecciona una combinación disponible de color y talla.');
+      return;
+    }
+
     const pExtra = mods.reduce((s, m) => s + Number(m.precioExtra || 0), 0);
-    const itemId = mods.length ? `${producto.id}-${Date.now()}` : producto.id;
+    const itemId = mods.length || varianteActiva ? `${producto.id}-${varianteActiva?.id || 'base'}-${Date.now()}` : producto.id;
     const item = {
       ...producto,
       id: itemId,
       productoId: producto.id,
+      varianteId: varianteActiva?.id,
+      valoresAtributos: varianteActiva?.valoresAtributos || varianteSelecciones,
       cantidad,
-      precioBase: producto.precioUnitario,
-      precioUnitario: Number(producto.precioUnitario) + pExtra,
+      precioBase: varianteActiva?.precioUnitario ?? producto.precioUnitario,
+      precioUnitario: Number(varianteActiva?.precioUnitario ?? producto.precioUnitario) + pExtra,
+      stock: varianteActiva?.stock ?? producto.stock,
+      codigo: varianteActiva?.codigo || producto.codigo,
+      imagenUrl: selectedImage || varianteActiva?.imagenUrl || producto.imagenUrl,
       modificadores: mods,
     };
 
@@ -342,7 +393,7 @@ export default function ModaProductoDetalle() {
       if (s) current = JSON.parse(s) || [];
     } catch {}
 
-    if (!mods.length) {
+    if (!mods.length && !varianteActiva) {
       const existe = current.find(i => i.productoId === item.productoId && !i.modificadores?.length);
       if (existe) {
         const updated = current.map(i =>
@@ -427,16 +478,39 @@ export default function ModaProductoDetalle() {
     );
   }
 
-  const price = Number(producto.precioUnitario || 0);
+  const variantOptionNames = getVariantOptionNames(producto);
+  const variantColors = getFashionColors(producto);
+  const variantSizes = getFashionSizes(producto);
+  const selectedColor = varianteSelecciones[variantOptionNames.color] || variantColors[0]?.name || '';
+  const selectedColorGallery = selectedColor ? getFashionColorGallery(producto, selectedColor) : [];
+  const price = Number(varianteActiva?.precioUnitario ?? producto.precioUnitario ?? 0);
   const originalPrice = Number(producto.precioOriginal || 0);
   const hasDiscount = originalPrice > 0 && originalPrice > price;
   const discountPct = hasDiscount ? Math.round((1 - price / originalPrice) * 100) : 0;
   const finalPrice = price + precioExtra;
-  const isOutOfStock = Number(producto?.stock ?? 0) <= 0;
+  const currentStock = Number(varianteActiva?.stock ?? producto?.stock ?? 0);
+  const isUnavailableVariant = Array.isArray(producto.variantes) && producto.variantes.length > 0 && !varianteActiva;
+  const isOutOfStock = isUnavailableVariant || currentStock <= 0;
   const esServicio = String(producto?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
   const ratingCount = reviewSummary.ratingCount || Number(producto.ratingCount || 0);
   const starRating = ratingCount > 0 ? Number(reviewSummary.ratingAvg || producto.ratingAvg || 0) : 0;
-  const productImages = [producto.imagenUrl, ...(producto.imagenes || [])].filter(Boolean);
+  const productImages = (() => {
+    const urls = [
+      ...selectedColorGallery,
+      producto.imagenUrl,
+      ...(Array.isArray(producto.imagenes) ? producto.imagenes : []),
+      ...(Array.isArray(producto.imagenesExtra) ? producto.imagenesExtra : []),
+    ].filter(Boolean);
+    const seen = new Set<string>();
+    return urls.filter((url: string) => {
+      const key = (() => {
+        try { return new URL(url).pathname; } catch { return url; }
+      })();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
   const cartCount = carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0);
 
   /* ── Color modifier helper ── */
@@ -617,10 +691,82 @@ export default function ModaProductoDetalle() {
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">
-                  <Icon icon="solar:check-circle-bold" width={14} /> En Stock ({producto.stock})
+                  <Icon icon="solar:check-circle-bold" width={14} /> En Stock ({currentStock})
                 </span>
               )}
             </div>
+
+            {variantColors.length > 0 && (
+              <div className="mb-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Color</p>
+                  <p className="text-xs font-semibold text-gray-700">{selectedColor}</p>
+                </div>
+                <div className="flex flex-wrap gap-2.5">
+                  {variantColors.map((color) => {
+                    const isSelected = selectedColor === color.name;
+                    const colorPreview = color.image || getFashionColorGallery(producto, color.name)[0];
+                    return (
+                      <button
+                        key={color.name}
+                        type="button"
+                        title={color.name}
+                        onClick={() => handleVariantChange(variantOptionNames.color, color.name)}
+                        className="h-14 w-14 overflow-hidden rounded-xl border-2 bg-white transition-all hover:scale-105"
+                        style={{
+                          borderColor: isSelected ? '#1A1A1A' : '#E5E7EB',
+                          boxShadow: isSelected ? '0 0 0 2px #fff, 0 0 0 4px #1A1A1A' : 'none',
+                        }}
+                      >
+                        {colorPreview ? (
+                          <img src={colorPreview} alt={color.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="block h-full w-full" style={{ backgroundColor: color.hex }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {variantSizes.length > 0 && (
+              <div className="mb-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                    Talla: {varianteSelecciones[variantOptionNames.size] || ''}
+                  </p>
+                  <button className="text-xs font-semibold text-gray-500 underline underline-offset-2 hover:text-gray-900 transition-colors">
+                    Ver guía de tallas
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {variantSizes.map((size) => {
+                    const isSelected = varianteSelecciones[variantOptionNames.size] === size;
+                    const isAvailable = isFashionVariantAvailable(producto, {
+                      ...varianteSelecciones,
+                      [variantOptionNames.size]: size,
+                    });
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        disabled={!isAvailable}
+                        onClick={() => handleVariantChange(variantOptionNames.size, size)}
+                        className="min-w-[2.75rem] h-10 px-3 rounded-xl border-2 text-sm font-bold transition-all hover:border-gray-900 disabled:cursor-not-allowed disabled:opacity-35"
+                        style={{
+                          borderColor: isSelected ? '#1A1A1A' : '#E5E7EB',
+                          backgroundColor: isSelected ? '#1A1A1A' : '#fff',
+                          color: isSelected ? '#fff' : '#374151',
+                        }}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Color modifiers — custom swatch UI */}
             {modificadoresProducto.filter(isColorGroup).map(grupo => (
@@ -741,7 +887,7 @@ export default function ModaProductoDetalle() {
                 <span className="w-9 text-center font-black text-gray-900 text-sm">{cantidad}</span>
                 <button
                   onClick={() =>
-                    setCantidad(esServicio ? cantidad + 1 : Math.min(producto.stock || 99, cantidad + 1))
+                    setCantidad(esServicio ? cantidad + 1 : Math.min(currentStock || 99, cantidad + 1))
                   }
                   className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-white hover:text-gray-900 transition-all font-bold text-lg"
                 >

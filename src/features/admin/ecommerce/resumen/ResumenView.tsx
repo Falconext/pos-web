@@ -1,6 +1,10 @@
 import { Icon } from '@iconify/react';
 import { useResumenViewModel } from './useResumenViewModel';
 import { ProductoResumen, MESES, fmt } from './ResumenModel';
+import Select from '@/components/Select';
+import { Calendar } from '@/components/Date';
+import { useAuthStore } from '@/zustand/auth';
+import moment from 'moment';
 
 const ESTADO_CONFIG = {
   bien:    { icon: '✅', label: 'Ganando bien',    color: 'text-emerald-600 dark:text-emerald-400' },
@@ -57,27 +61,86 @@ function FilaProducto({ p }: { p: ProductoResumen }) {
 }
 
 export default function ResumenView() {
-  const { mes, anio, data, isLoading, navegarMes, esMesActual } = useResumenViewModel();
+  const { fechaInicio, setFechaInicio, fechaFin, setFechaFin, sedeId, setSedeId, data, isLoading } = useResumenViewModel();
   const r = data?.resumen;
+  const { auth } = useAuthStore();
+  const sedesOptions = [{ id: '', value: 'Todas las sedes' }, ...(auth?.sedes || []).map((s: any) => ({ id: s.id.toString(), value: s.nombre }))];
+
+  const handleDate = (date: string, name: string) => {
+    if (!moment(date, 'DD/MM/YYYY', true).isValid()) return;
+    const formatted = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
+    if (name === 'fechaInicio') setFechaInicio(formatted);
+    else if (name === 'fechaFin') setFechaFin(formatted);
+  };
+
+  const handleRangoRapido = (id: any, val: string) => {
+    const today = moment();
+    if (val === 'HOY') {
+      setFechaInicio(today.format('YYYY-MM-DD'));
+      setFechaFin(today.format('YYYY-MM-DD'));
+    } else if (val === 'AYER') {
+      setFechaInicio(today.clone().subtract(1, 'day').format('YYYY-MM-DD'));
+      setFechaFin(today.clone().subtract(1, 'day').format('YYYY-MM-DD'));
+    } else if (val === 'SEMANA') {
+      setFechaInicio(today.clone().subtract(7, 'days').format('YYYY-MM-DD'));
+      setFechaFin(today.format('YYYY-MM-DD'));
+    } else if (val === 'MES') {
+      setFechaInicio(today.clone().startOf('month').format('YYYY-MM-DD'));
+      setFechaFin(today.format('YYYY-MM-DD'));
+    } else if (val === 'MES_ANTERIOR') {
+      setFechaInicio(today.clone().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'));
+      setFechaFin(today.clone().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'));
+    }
+  };
+
+  const tituloFechas = fechaInicio === fechaFin 
+    ? moment(fechaInicio).format('DD MMM YYYY') 
+    : `${moment(fechaInicio).format('DD MMM')} al ${moment(fechaFin).format('DD MMM YYYY')}`;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14] px-4 py-6 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14] px-4 py-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
           <p className="text-xs text-gray-400 font-medium mb-0.5">Mi Negocio</p>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            ¿Cómo me fue en {MESES[mes - 1]} {anio}?
+            Resumen: {tituloFechas}
           </h1>
         </div>
-        <div className="flex items-center gap-1 bg-white dark:bg-[#111827] rounded-2xl px-3 py-2 border border-gray-100/50 dark:border-slate-800 shadow-sm">
-          <button onClick={() => navegarMes(-1)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-            <Icon icon="solar:alt-arrow-left-bold" className="text-gray-500 dark:text-gray-400" />
-          </button>
-          <span className="text-sm font-bold text-gray-900 dark:text-white min-w-[80px] text-center">{MESES[mes - 1]} {anio}</span>
-          <button onClick={() => navegarMes(1)} disabled={esMesActual} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30">
-            <Icon icon="solar:alt-arrow-right-bold" className="text-gray-500 dark:text-gray-400" />
-          </button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-gray-100/50 dark:border-slate-800 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <Select
+            error=""
+            label="Rango Rápido"
+            name="rangoRapido"
+            onChange={handleRangoRapido}
+            options={[
+              { value: '', label: 'Personalizado' },
+              { value: 'HOY', label: 'Hoy' },
+              { value: 'AYER', label: 'Ayer' },
+              { value: 'SEMANA', label: 'Últimos 7 días' },
+              { value: 'MES', label: 'Este mes' },
+              { value: 'MES_ANTERIOR', label: 'Mes pasado' },
+            ]}
+          />
+        </div>
+        <div>
+          <Calendar text="Desde" name="fechaInicio" onChange={handleDate} value={moment(fechaInicio).format('DD/MM/YYYY')} />
+        </div>
+        <div>
+          <Calendar text="Hasta" name="fechaFin" onChange={handleDate} value={moment(fechaFin).format('DD/MM/YYYY')} />
+        </div>
+        <div>
+          <Select
+            error=""
+            label="Sede"
+            name="sedeId"
+            onChange={(id: any) => setSedeId(id)}
+            options={sedesOptions}
+          />
         </div>
       </div>
 
@@ -88,7 +151,7 @@ export default function ResumenView() {
       ) : !r ? (
         <div className="bg-white dark:bg-[#111827] rounded-3xl p-16 text-center border border-gray-100/50 dark:border-slate-800">
           <Icon icon="solar:chart-square-bold-duotone" className="text-5xl text-gray-200 dark:text-slate-700 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-400">Sin datos para este mes</p>
+          <p className="text-sm font-semibold text-gray-400">Sin datos para este rango de fechas</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -128,8 +191,8 @@ export default function ResumenView() {
           {data!.productos.length > 0 && (
             <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100/50 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 dark:border-slate-800">
-                <h2 className="text-sm font-bold text-gray-900 dark:text-white">Mis productos este mes</h2>
-                <p className="text-xs text-gray-400 mt-0.5">ordenados por lo que más vendiste</p>
+                <h2 className="text-sm font-bold text-gray-900 dark:text-white">Mis productos vendidos</h2>
+                <p className="text-xs text-gray-400 mt-0.5">ordenados por lo que más vendiste en este periodo</p>
               </div>
               <div className="px-5">
                 {data!.productos.map(p => <FilaProducto key={p.id} p={p} />)}

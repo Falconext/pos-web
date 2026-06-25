@@ -1,4 +1,5 @@
 import React, { JSX, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './date.module.css';
 import { Icons } from '../Svg/iconsPack';
 import Icon from '../Icon';
@@ -30,9 +31,10 @@ interface CalendarProps {
     value?: string;
     className?: string;
     isLabel?: boolean;
+    portal?: boolean;
 }
 
-export const Calendar = ({ mode, events, text, onChange, name, right, left, disabled, top, withOutFormat, value = '', className = '' }: CalendarProps) => {
+export const Calendar = ({ mode, events, text, onChange, name, right, left, disabled, top, withOutFormat, value = '', className = '', portal = false }: CalendarProps) => {
     const { isDarkMode } = useThemeStore();
     const [writeDate, setWriteDate] = useState<string>(value || '');
     const userChangedDate = useRef(false);
@@ -52,6 +54,21 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
         return new Date();
     });
     const [isOpen, setIsOpen, ref] = useOutsideClick(false);
+    const [portalPosition, setPortalPosition] = useState({ top: 0, left: 0 });
+
+    const updatePortalPosition = () => {
+        if (!ref.current || typeof window === 'undefined') return;
+        const rect = ref.current.getBoundingClientRect();
+        const panelWidth = 300;
+        const panelHeight = 390;
+        const gap = 8;
+        const leftPos = Math.min(Math.max(12, rect.left), window.innerWidth - panelWidth - 12);
+        const fitsBelow = rect.bottom + panelHeight + gap <= window.innerHeight;
+        setPortalPosition({
+            left: leftPos,
+            top: fitsBelow ? rect.bottom + gap : Math.max(12, rect.top - panelHeight - gap),
+        });
+    };
 
     useEffect(() => {
         onChangeRef.current = onChange;
@@ -79,6 +96,17 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
             setCalendarDate(new Date(selectedDate));
         }
     }, [selectedDate]);
+
+    useEffect(() => {
+        if (!isOpen || !portal) return;
+        updatePortalPosition();
+        window.addEventListener('resize', updatePortalPosition);
+        window.addEventListener('scroll', updatePortalPosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePortalPosition);
+            window.removeEventListener('scroll', updatePortalPosition, true);
+        };
+    }, [isOpen, portal]);
 
     const daysInMonth = (date: Date): number => {
         return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -157,11 +185,45 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
         }
     }, [selectedDate, writeDate, withOutFormat, name]);
 
+    const calendarPanel = (
+        <motion.div
+            className={styles.panel}
+            animate={portal ? { opacity: 1, x: 0, y: 0 } : left ? { x: -140, y: 10 } : top ? { x: 0, y: -400 } : right ? { y: 40 } : { x: 0, y: 10 }}
+            initial={portal ? { opacity: 0, y: -4 } : left ? { y: 10, x: -10 } : top ? { x: 0, y: -390 } : right ? { y: 20 } : { y: 40 }}
+            style={{
+                ...(portal ? { position: 'fixed', top: portalPosition.top, left: portalPosition.left, zIndex: 2147483000 } : {}),
+                ...(isDarkMode ? { background: '#1e2435', border: '1px solid #2d3748', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' } : {}),
+            }}
+        >
+            <div
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                className={isDarkMode ? styles.dark : ''}
+            >
+                <div className={styles.header}>
+                    <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}>
+                        <Icon icon={Icons.arrowLeft} />
+                    </button>
+                    <div className={styles.month}>{calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+                    <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}>
+                        <Icon icon={Icons.arrowRight} />
+                    </button>
+                </div>
+                <div className={styles.days}>
+                    {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map((day) => (
+                        <div key={day} className={styles['day-label']}>{day}</div>
+                    ))}
+                    {renderDays()}
+                </div>
+            </div>
+        </motion.div>
+    );
+
     return (
         <div ref={ref} className={`${styles.date}${!text ? ` ${styles.noLabel}` : ''} ${className}`}>
             <div className={disabled ? styles.disabled : undefined}>
                 <div className={mode === 'flex' ? styles.modeFlex : ''}>
-                    <div className={`absolute z-[1] ${text ? 'top-[0px]' : 'top-[-2px]'} right-2`} onClick={() => setIsOpen(!isOpen)}>
+                    <div className={`absolute z-[1] ${text ? 'top-[0px]' : 'top-[-2px]'} right-2`} onClick={() => { updatePortalPosition(); setIsOpen(!isOpen); }}>
                         <Icon icon={Icons.date} />
                     </div>
                 </div>
@@ -169,7 +231,7 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
                     mode={mode}
                     disabled={disabled}
                     name={name ?? ''}
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => { updatePortalPosition(); setIsOpen(true); }}
                     isLabel={!!text}
                     label={text}
                     type="text"
@@ -177,31 +239,7 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
                     value={writeDate}
                 />
             </div>
-            {isOpen && (
-                <motion.div
-                    animate={left ? { x: -140, y: 10 } : top ? { x: 0, y: -400 } : right ? { y: 40 } : { x: 0, y: 10 }}
-                    initial={left ? { y: 10, x: -10 } : top ? { x: 0, y: -390 } : right ? { y: 20 } : { y: 40 }}
-                    style={isDarkMode ? { background: '#1e2435', border: '1px solid #2d3748', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' } : {}}
-                >
-                    <div onClick={(e) => e.stopPropagation()} className={isDarkMode ? styles.dark : ''}>
-                        <div className={styles.header}>
-                            <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}>
-                                <Icon icon={Icons.arrowLeft} />
-                            </button>
-                            <div className={styles.month}>{calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
-                            <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}>
-                                <Icon icon={Icons.arrowRight} />
-                            </button>
-                        </div>
-                        <div className={styles.days}>
-                            {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map((day) => (
-                                <div key={day} className={styles['day-label']}>{day}</div>
-                            ))}
-                            {renderDays()}
-                        </div>
-                    </div>
-                </motion.div>
-            )}
+            {isOpen && (portal ? createPortal(calendarPanel, document.body) : calendarPanel)}
         </div>
     );
 };

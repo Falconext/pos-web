@@ -50,6 +50,8 @@ export const INITIAL_ERRORS = {
     empresaId: 0,
 };
 
+export type GrupoFarmacia = 'pacientes' | 'empresas' | 'medicos';
+
 export interface IClientsViewModelState {
     currentPage: number;
     itemsPerPage: number;
@@ -65,4 +67,5 @@ export interface IClientsViewModelState {
     showColumnFilter: boolean;
     isHoveredExp: boolean;
     isHoveredImp: boolean;
+    grupoFarmacia: GrupoFarmacia;
 }

@@ -9,6 +9,7 @@ import { ProduccionRoute } from './app/ProduccionRoute'
 import AdminIndex from './pages/admin/Index'
 import AdminLayout from './layouts/AdminLayout'
 import ClientesPage from './pages/admin/Clientes'
+import DoctorsPage from './pages/admin/Doctors'
 import ReporteContabilidad from './pages/admin/contabilidad/Reporte'
 import ReporteInformales from './pages/admin/contabilidad/ReporteInformales'
 import ArqueoCaja from './pages/admin/contabilidad/Arqueo'
@@ -118,6 +119,7 @@ function App() {
           <Route path="empresas/crear" element={<Navigate to="/administrador/empresas" replace />} />
           <Route path="empresas/editar/:id" element={<Navigate to="/administrador/empresas" replace />} />
           <Route path="clientes" element={<ClientesPage />} />
+          <Route path="medicos" element={<DoctorsPage />} />
 
           <Route path="compras" element={<ComprasIndex />} />
           <Route path="compras/proveedores" element={<ProveedoresPage />} />

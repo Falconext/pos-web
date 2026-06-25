@@ -25,8 +25,8 @@ export interface ResumenMes {
 }
 
 export interface ResumenEcommerceResponse {
-  mes: number;
-  anio: number;
+  fechaInicio?: string;
+  fechaFin?: string;
   resumen: ResumenMes;
   productos: ProductoResumen[];
 }

@@ -3,6 +3,8 @@ import { useLotesViewModel } from './useLotesViewModel';
 import { ESTADO_LOTE_OPTIONS, type ILoteGestion } from './LotesModel';
 import { Calendar } from '@/components/Date';
 import moment from 'moment';
+import { useEffect } from 'react';
+import { useClientsStore } from '@/zustand/clients';
 
 const getBadgeDias = (dias: number) => {
     if (dias < 0) return { label: 'VENCIDO', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' };
@@ -12,6 +14,11 @@ const getBadgeDias = (dias: number) => {
 
 export default function LotesView() {
     const vm = useLotesViewModel();
+    const { clients: proveedores, getAllClients } = useClientsStore();
+
+    useEffect(() => {
+        getAllClients({ limit: 1000, persona: 'PROVEEDOR' });
+    }, [getAllClients]);
 
     return (
         <div className="p-4 md:p-6 min-h-screen dark:bg-[#0A0D14] space-y-5">
@@ -48,7 +55,7 @@ export default function LotesView() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: 'Lotes activos', value: vm.kpis.totalActivos, icon: 'solar:box-bold-duotone', color: 'blue' },
-                    { label: 'Por vencer <30d', value: vm.kpis.porVencer30d, icon: 'solar:clock-circle-bold-duotone', color: 'amber' },
+                    { label: 'Próximos a vencer', value: vm.kpis.porVencer30d, icon: 'solar:clock-circle-bold-duotone', color: 'amber' },
                     { label: 'Vencidos con stock', value: vm.kpis.vencidosConStock, icon: 'solar:danger-circle-bold-duotone', color: 'red' },
                     { label: 'Valor en inventario', value: `S/ ${vm.kpis.valorTotalInventario.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: 'solar:wallet-money-bold-duotone', color: 'emerald' },
                 ].map((kpi) => (
@@ -148,10 +155,10 @@ export default function LotesView() {
                                                 {lote.valorEnStock > 0 ? `S/ ${lote.valorEnStock.toFixed(2)}` : '—'}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                                                    <Icon icon="solar:cart-check-bold" className="text-xs" />
+                                                <button onClick={() => vm.abrirKardex(lote)} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-600 hover:text-violet-600 dark:text-gray-300 dark:hover:text-violet-400 transition-colors bg-gray-100 hover:bg-violet-50 dark:bg-slate-800 dark:hover:bg-violet-900/30 px-2 py-1 rounded-md">
+                                                    <Icon icon="solar:cart-check-bold" className="text-[14px]" />
                                                     {lote.totalVentas}
-                                                </span>
+                                                </button>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${badge.cls}`}>
@@ -248,7 +255,16 @@ export default function LotesView() {
                                 <input type="number" step="0.01" value={vm.editForm.costoUnitario} onChange={e => vm.setEditForm(f => ({ ...f, costoUnitario: e.target.value }))} className={inputCls} placeholder="0.00" />
                             </FormField>
                             <FormField label="Proveedor">
-                                <input type="text" value={vm.editForm.proveedor} onChange={e => vm.setEditForm(f => ({ ...f, proveedor: e.target.value }))} className={inputCls} />
+                                <select 
+                                    value={vm.editForm.proveedor} 
+                                    onChange={e => vm.setEditForm(f => ({ ...f, proveedor: e.target.value }))} 
+                                    className={inputCls}
+                                >
+                                    <option value="">-- Seleccionar --</option>
+                                    {proveedores.map(p => (
+                                        <option key={p.id} value={p.nombre}>{p.nombre}</option>
+                                    ))}
+                                </select>
                             </FormField>
                         </div>
                         <ModalActions loading={vm.actionLoading} onCancel={() => vm.setEditModal({ lote: null, open: false })} onConfirm={vm.guardarEdicion} label="Guardar cambios" />
@@ -263,10 +279,44 @@ export default function LotesView() {
                     <div className="p-6 pt-2 space-y-4">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                             {vm.desactivarModal.lote.stockActual > 0
-                                ? `Este lote tiene <strong>${vm.desactivarModal.lote.stockActual}</strong> unidades en stock. Al desactivarlo se registrará una salida en el kardex.`
-                                : 'El lote está sin stock y se desactivará del sistema.'}
+                                ? <>Este lote tiene <strong>{vm.desactivarModal.lote.stockActual}</strong> unidades en stock. Al desactivarlo se registrará una salida en el kardex.</>
+                                : '¿Estás seguro de desactivar este lote? Ya no aparecerá en las opciones de venta.'}
                         </p>
                         <ModalActions loading={vm.actionLoading} onCancel={() => vm.setDesactivarModal({ lote: null, open: false })} onConfirm={vm.guardarDesactivar} label="Sí, desactivar" danger />
+                    </div>
+                </ModalOverlay>
+            )}
+
+            {/* ── Modal Kardex / Ventas ── */}
+            {vm.kardexModal.open && vm.kardexModal.lote && (
+                <ModalOverlay onClose={() => vm.setKardexModal({ lote: null, open: false })}>
+                    <ModalHeader icon="solar:cart-check-bold" title="Historial y Ventas" subtitle={`Lote ${vm.kardexModal.lote.lote} · ${vm.kardexModal.lote.producto.descripcion}`} onClose={() => vm.setKardexModal({ lote: null, open: false })} />
+                    <div className="p-6 pt-2 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        {vm.kardexLoading ? (
+                            <div className="flex items-center justify-center py-10 text-gray-400">
+                                <Icon icon="solar:spinner-bold" className="text-3xl animate-spin" />
+                            </div>
+                        ) : vm.kardexData.length === 0 ? (
+                            <div className="text-center py-10 text-gray-400">
+                                <p className="font-medium">No hay movimientos registrados.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {vm.kardexData.map((mov, i) => (
+                                    <div key={i} className="flex justify-between items-center bg-gray-50 dark:bg-slate-800 p-3 rounded-xl border border-gray-100 dark:border-slate-700">
+                                        <div>
+                                            <p className="text-[12px] font-bold text-gray-800 dark:text-gray-200">{mov.movimiento.concepto}</p>
+                                            <p className="text-[10px] text-gray-500">{moment(mov.movimiento.fecha).format('DD/MM/YYYY HH:mm')} · {mov.movimiento.usuario?.nombre || 'Sistema'}</p>
+                                        </div>
+                                        <div>
+                                            <span className={`px-2 py-1 text-[11px] font-black rounded-lg ${mov.movimiento.tipoMovimiento === 'INGRESO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' : 'bg-red-100 text-red-700 dark:bg-red-900/30'}`}>
+                                                {mov.movimiento.tipoMovimiento === 'INGRESO' ? '+' : '-'} {mov.cantidad}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </ModalOverlay>
             )}
@@ -292,16 +342,16 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
 function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
     return (
         <div className="flex items-center justify-between p-6 pb-4">
-            <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                <div className="w-9 h-9 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center shrink-0">
                     <Icon icon={icon} className="text-violet-600 dark:text-violet-400 text-lg" />
                 </div>
-                <div>
-                    <h3 className="font-black text-gray-900 dark:text-white text-base">{title}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{subtitle}</p>
+                <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-gray-900 dark:text-white text-base truncate">{title}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{subtitle}</p>
                 </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors shrink-0">
                 <Icon icon="solar:close-circle-linear" className="text-gray-400 text-xl" />
             </button>
         </div>

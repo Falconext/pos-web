@@ -38,6 +38,7 @@ export interface IDatosReceta {
     dniPaciente?: string;
     nombrePaciente?: string;
     medicoNombre?: string;
+    medicoId?: number;
 }
 
 /** Ítem del carrito enriquecido para rubros farmacéuticos */

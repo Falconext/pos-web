@@ -20,6 +20,7 @@ const FALLBACK_VISIBLE_COLUMNS = [
     'Valor Inventario',
     'Costo Total Fijo',
     'Stock',
+    'Sede',
     'Estado',
     'Acciones',
 ];
@@ -302,7 +303,24 @@ export const useProductsViewModel = () => {
             }
             return prev.map((item) => {
                 const fromStore = storeById.get(item.id);
-                return fromStore ? ({ ...item, ...fromStore } as IProduct) : item;
+                if (!fromStore) return item;
+
+                const merged = { ...item, ...fromStore } as IProduct & {
+                    imagenUrl?: string;
+                    imagenUrlDisplay?: string;
+                };
+
+                // Conserva la imagen ya firmada/renderizable del listado actual para no
+                // reemplazarla con copias viejas del store global.
+                return {
+                    ...merged,
+                    imagenUrl: (item as any)?.imagenUrl || merged.imagenUrl,
+                    imagenUrlDisplay:
+                        (item as any)?.imagenUrlDisplay ||
+                        (item as any)?.imagenUrl ||
+                        merged.imagenUrlDisplay ||
+                        merged.imagenUrl,
+                } as IProduct;
             });
         });
     }, [storeProducts]);
@@ -407,6 +425,7 @@ export const useProductsViewModel = () => {
         const originalProduct = products.find((p: IProduct) => p.id === data.productoId);
 
         if (originalProduct) {
+            const sedeStockConfig = (originalProduct as any).sedeStockConfig || {};
             setState(prev => ({
                 ...prev,
                 formValues: {
@@ -426,8 +445,13 @@ export const useProductsViewModel = () => {
                     costoFijo: Number((originalProduct as any).costoFijo || 0),
                     comisionPorVenta: Number((originalProduct as any).comisionPorVenta || 0),
                     comisionPorcentaje: Number((originalProduct as any).comisionPorcentaje || 0),
-                    stockMinimo: originalProduct.stockMinimo || 0,
-                    stockMaximo: originalProduct.stockMaximo || 0,
+                    stockMinimo: Number(sedeStockConfig.stockMinimo ?? originalProduct.stockMinimo ?? 0),
+                    stockMaximo: Number(sedeStockConfig.stockMaximo ?? originalProduct.stockMaximo ?? 0),
+                    visibleEnSede: sedeStockConfig.visibleEnSede ?? true,
+                    vendibleEnSede: sedeStockConfig.vendibleEnSede ?? true,
+                    precioUnitarioSede: sedeStockConfig.precioUnitarioSede ?? null,
+                    precioOfertaSede: sedeStockConfig.precioOfertaSede ?? null,
+                    ubicacionSede: sedeStockConfig.ubicacionSede ?? '',
                     imagenUrl: (originalProduct as any)?.imagenUrl || '',
                     imagenUrlDisplay: (originalProduct as any)?.imagenUrlDisplay || (originalProduct as any)?.imagenUrl || '',
                     principioActivo: (originalProduct as any).principioActivo || '',
@@ -443,6 +467,7 @@ export const useProductsViewModel = () => {
                     preciosMayorista: Array.isArray((originalProduct as any).preciosMayorista)
                         ? (originalProduct as any).preciosMayorista
                         : [],
+                    atributosTecnicos: (originalProduct as any).atributosTecnicos || {},
                     opcionesAtributos: Array.isArray((originalProduct as any).opcionesAtributos)
                         ? (originalProduct as any).opcionesAtributos
                         : [],
@@ -465,6 +490,25 @@ export const useProductsViewModel = () => {
                         : [],
                 }
             }));
+
+            // El listado no trae campos pesados (descripcionLarga, atributosTecnicos).
+            // Traemos el producto completo por id para poblar el editor de descripción.
+            try {
+                const resp = await apiClient.get(`/productos/${originalProduct.id}`);
+                const full = resp?.data?.data || resp?.data;
+                if (full) {
+                    setState(prev => ({
+                        ...prev,
+                        formValues: {
+                            ...prev.formValues,
+                            descripcionLarga: full.descripcionLarga ?? (prev.formValues as any).descripcionLarga ?? '',
+                            atributosTecnicos: full.atributosTecnicos ?? (prev.formValues as any).atributosTecnicos,
+                        } as any,
+                    }));
+                }
+            } catch {
+                // Si falla, el formulario igual queda usable con los datos del listado
+            }
         }
     };
 

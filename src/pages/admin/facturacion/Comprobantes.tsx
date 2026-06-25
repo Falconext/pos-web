@@ -945,193 +945,153 @@ const Comprobantes = () => {
                 isOpen={Boolean(menuAnchor)}
                 anchorEl={menuAnchor}
                 onClose={handleCloseMenu}
+                className="w-44"
             >
                 {selectedMenuRow && (() => {
                     const rowBase = selectedMenuRow;
                     const canEmitirSunat = ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(rowBase.comprobante);
 
+                    const canNC = ['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE';
+                    const canBaja = rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE';
+
                     return (
                         <>
+                            {/* ── Acciones principales ── */}
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setDetalleComprobanteId(rowBase.id);
-                                    handleCloseMenu();
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium"
+                                onClick={() => { setDetalleComprobanteId(rowBase.id); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="solar:document-text-bold-duotone" width={16} height={16} />
                                 <span>Ver detalle</span>
                             </button>
                             <button
                                 type="button"
-                                onClick={() => {
-                                    handleGetReceipt(rowBase);
-                                    handleCloseMenu();
-                                }}
+                                onClick={() => { handleGetReceipt(rowBase); handleCloseMenu(); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="mingcute:print-line" width={16} height={16} />
                                 <span>Imprimir</span>
                             </button>
-
                             <button
                                 type="button"
                                 onClick={() => handleVerPdf(rowBase)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="mdi:file-pdf-box" width={16} height={16} />
                                 <span>Ver PDF</span>
                             </button>
-
                             <button
                                 type="button"
                                 disabled={!rowBase.xmlSunat}
-                                onClick={() => {
-                                    if (rowBase.xmlSunat) {
-                                        handleDownloadAsset(rowBase.xmlSunat, rowBase.xmlFileName);
-                                    }
-                                    handleCloseMenu();
-                                }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.xmlSunat ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
+                                onClick={() => { if (rowBase.xmlSunat) { handleDownloadAsset(rowBase.xmlSunat, rowBase.xmlFileName); } handleCloseMenu(); }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 ${rowBase.xmlSunat ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="hugeicons:xml-02" width={16} height={16} />
                                 <span>Descargar XML</span>
                             </button>
-
                             <button
                                 type="button"
                                 disabled={!rowBase.cdrSunat}
-                                onClick={() => {
-                                    if (rowBase.cdrSunat) {
-                                        handleDownloadAsset(rowBase.cdrSunat, rowBase.cdrFileName);
-                                    }
-                                    handleCloseMenu();
-                                }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 ${rowBase.cdrSunat ? 'text-[#6B7280]' : 'text-gray-400 cursor-not-allowed'}`}
+                                onClick={() => { if (rowBase.cdrSunat) { handleDownloadAsset(rowBase.cdrSunat, rowBase.cdrFileName); } handleCloseMenu(); }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-slate-700 ${rowBase.cdrSunat ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Icon icon="mdi:zip-box-outline" width={16} height={16} />
                                 <span>Descargar CDR</span>
                             </button>
-
                             <button
                                 type="button"
-                                onClick={() => {
-                                    handleAbrirModal(rowBase, 'email');
-                                    handleCloseMenu();
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#6B7280] hover:bg-gray-100"
+                                onClick={() => { handleAbrirModal(rowBase, 'email'); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                             >
                                 <Icon icon="solar:letter-bold" width={16} height={16} />
                                 <span>Enviar Email</span>
                             </button>
-
                             <button
                                 type="button"
-                                onClick={() => {
-                                    handleAbrirModal(rowBase, 'whatsapp');
-                                    handleCloseMenu();
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 hover:bg-green-50"
+                                onClick={() => { handleAbrirModal(rowBase, 'whatsapp'); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/30"
                             >
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span>Enviar WhatsApp</span>
                             </button>
 
+                            {/* ── Sección: acciones especiales ── */}
                             {(rowBase.comprobante?.includes('COTIZACI') || rowBase.tipoDoc === 'COT') && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        handleConvertirAFactura(rowBase);
-                                        handleCloseMenu();
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-t border-gray-100 dark:border-slate-800"
-                                >
-                                    <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
-                                    <span className="font-medium">Convertir a Factura</span>
-                                </button>
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button
+                                        type="button"
+                                        onClick={() => { handleConvertirAFactura(rowBase); handleCloseMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                                    >
+                                        <Icon icon="solar:document-add-bold-duotone" width={16} height={16} />
+                                        <span>Convertir a Factura</span>
+                                    </button>
+                                </>
                             )}
 
-                            {/* Dar de Baja - Solo para documentos informales (TICKET, OT, NV, etc.)
-                                Las boletas/facturas SUNAT se anulan con Nota de Crédito */}
                             {!canEmitirSunat && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button
+                                        type="button"
+                                        disabled={!canBaja}
+                                        onClick={() => { if (canBaja) { setFormValues(rowBase); setIsOpenModalConfirm(true); } handleCloseMenu(); }}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${canBaja ? 'text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30' : 'text-gray-400 cursor-not-allowed'}`}
+                                    >
+                                        <Icon icon="solar:close-circle-bold-duotone" width={16} height={16} />
+                                        <span>Dar de Baja</span>
+                                    </button>
+                                </>
+                            )}
+
+                            <>
+                                <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                 <button
                                     type="button"
-                                    disabled={rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO' || rowBase.estado === 'PENDIENTE'}
+                                    disabled={!canNC}
                                     onClick={() => {
-                                        if (rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE') {
-                                            setFormValues(rowBase);
-                                            setIsOpenModalConfirm(true);
+                                        if (canNC) {
+                                            navigate('/administrador/facturacion/nuevo', {
+                                                state: { fromCreditNote: true, creditNoteData: { comprobanteReemplazar: rowBase.comprobante, serieReemplazar: rowBase.serie, correlativoReemplazar: rowBase.correlativo } }
+                                            });
                                         }
                                         handleCloseMenu();
                                     }}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-800 ${rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 cursor-not-allowed'}`}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${canNC ? 'text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30' : 'text-gray-400 cursor-not-allowed'}`}
                                 >
-                                    <Icon icon="solar:close-circle-bold-duotone" width={16} height={16} />
-                                    <span className="font-medium">Dar de Baja</span>
+                                    <Icon icon="solar:document-medicine-bold-duotone" width={16} height={16} />
+                                    <span>Generar NC (Anular)</span>
                                 </button>
-                            )}
+                            </>
 
-                            {/* Emitir Nota de Crédito */}
-                            <button
-                                type="button"
-                                disabled={!['FACTURA', 'BOLETA'].includes(rowBase.comprobante) || rowBase.estado === 'ANULADO' || rowBase.estado === 'RECHAZADO' || rowBase.estado === 'PENDIENTE'}
-                                onClick={() => {
-                                    if (['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE') {
-                                        navigate('/administrador/facturacion/nuevo', {
-                                            state: {
-                                                fromCreditNote: true,
-                                                creditNoteData: {
-                                                    comprobanteReemplazar: rowBase.comprobante,
-                                                    serieReemplazar: rowBase.serie,
-                                                    correlativoReemplazar: rowBase.correlativo
-                                                }
-                                            }
-                                        });
-                                    }
-                                    handleCloseMenu();
-                                }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-amber-50 dark:hover:bg-amber-900/10 border-t border-gray-100 dark:border-slate-800 ${['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 cursor-not-allowed'}`}
-                            >
-                                <Icon icon="solar:document-medicine-bold-duotone" width={16} height={16} />
-                                <span className="font-medium">Generar NC (Anular)</span>
-                            </button>
-
-                            {/* Ver error SUNAT */}
                             {rowBase.sunatErrorMsg && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setErrorSunatModal({
-                                            titulo: `Error SUNAT — ${rowBase.serie}-${String(rowBase.correlativo).padStart(8, '0')}`,
-                                            mensaje: rowBase.sunatErrorMsg,
-                                        });
-                                        handleCloseMenu();
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-orange-50 dark:hover:bg-orange-900/10 border-t border-gray-100 dark:border-slate-800 text-orange-600 dark:text-orange-400"
-                                >
-                                    <Icon icon="solar:danger-triangle-bold-duotone" width={16} height={16} />
-                                    <span className="font-medium">Ver error SUNAT</span>
-                                </button>
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button
+                                        type="button"
+                                        onClick={() => { setErrorSunatModal({ titulo: `Error SUNAT — ${rowBase.serie}-${String(rowBase.correlativo).padStart(8, '0')}`, mensaje: rowBase.sunatErrorMsg }); handleCloseMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/30"
+                                    >
+                                        <Icon icon="solar:danger-triangle-bold-duotone" width={16} height={16} />
+                                        <span>Ver error SUNAT</span>
+                                    </button>
+                                </>
                             )}
 
-                            {/* Eliminar comprobante atascado */}
-                            {canEmitirSunat &&
-                                rowBase.estadoSunatRaw !== 'EMITIDO' &&
-                                rowBase.estadoSunatRaw !== 'ANULADO' &&
-                                rowBase.estadoSunatRaw !== 'NO_APLICA' && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setFormValues(rowBase);
-                                        setIsOpenModalConfirmDescartar(true);
-                                        handleCloseMenu();
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/10 border-t border-gray-100 dark:border-slate-800 text-red-600 dark:text-red-400"
-                                >
-                                    <Icon icon="solar:trash-bin-trash-bold-duotone" width={16} height={16} />
-                                    <span className="font-medium">Eliminar comprobante</span>
-                                </button>
+                            {canEmitirSunat && rowBase.estadoSunatRaw !== 'EMITIDO' && rowBase.estadoSunatRaw !== 'ANULADO' && rowBase.estadoSunatRaw !== 'NO_APLICA' && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button
+                                        type="button"
+                                        onClick={() => { setFormValues(rowBase); setIsOpenModalConfirmDescartar(true); handleCloseMenu(); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                                    >
+                                        <Icon icon="solar:trash-bin-trash-bold-duotone" width={16} height={16} />
+                                        <span>Eliminar comprobante</span>
+                                    </button>
+                                </>
                             )}
                         </>
                     );

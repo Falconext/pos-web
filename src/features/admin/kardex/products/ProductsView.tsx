@@ -199,6 +199,29 @@ export default function ProductsView() {
                 '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 0)}%`,
                 'Stock minimo': esServicio ? '-' : item?.stockMinimo ?? 0,
                 'U.M': unidadNombre.toUpperCase(),
+                'Sede': (() => {
+                    const cfg = (item as any).sedeStockConfig;
+                    if (!cfg) return '-';
+                    if (cfg.visibleEnSede === false) {
+                        return (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
+                                <Icon icon="mdi:eye-off-outline" width={12} /> Oculto
+                            </span>
+                        );
+                    }
+                    if (cfg.vendibleEnSede === false) {
+                        return (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-600">
+                                <Icon icon="mdi:archive-outline" width={12} /> Solo inventario
+                            </span>
+                        );
+                    }
+                    return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                            <Icon icon="mdi:cash-register" width={12} /> Vendible
+                        </span>
+                    );
+                })(),
                 'Estado': item.estado,
                 'Tienda': (item as any).publicarEnTienda ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">

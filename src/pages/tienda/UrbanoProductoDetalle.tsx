@@ -12,6 +12,7 @@ import UrbanoFooter from '@/templates/urbano/UrbanoFooter';
 import {
   findFashionVariant,
   getDefaultVariantSelection,
+  getFashionColorGallery,
   getFashionColorImage,
   getFashionColors,
   getFashionSizes,
@@ -91,9 +92,11 @@ export default function UrbanoProductoDetalle() {
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
         setTienda(tiendaData);
-        setSelectedImage(prod.imagenUrl || '');
         const defaultVariantSelection = getDefaultVariantSelection(prod);
         const defaultVariant = findFashionVariant(prod, defaultVariantSelection);
+        const defaultColor = defaultVariantSelection[getVariantOptionNames(prod).color];
+        const defaultGallery = defaultColor ? getFashionColorGallery(prod, defaultColor) : [];
+        setSelectedImage(defaultGallery[0] || defaultVariant?.imagenUrl || prod.imagenUrl || '');
         setVarianteSelecciones(defaultVariantSelection);
         setVarianteActiva(defaultVariant);
 
@@ -168,8 +171,10 @@ export default function UrbanoProductoDetalle() {
 
     // La imagen es por color: usar la representativa del color seleccionado
     const selectedColor = nextSelection[getVariantOptionNames(producto).color];
+    const colorGallery = selectedColor ? getFashionColorGallery(producto, selectedColor) : [];
     const colorImage = selectedColor ? getFashionColorImage(producto, selectedColor) : null;
-    if (colorImage) setSelectedImage(colorImage);
+    if (colorGallery[0]) setSelectedImage(colorGallery[0]);
+    else if (colorImage) setSelectedImage(colorImage);
     else if (match?.imagenUrl) setSelectedImage(match.imagenUrl);
   };
 
@@ -279,13 +284,20 @@ export default function UrbanoProductoDetalle() {
 
   // Deduplica por pathname para ignorar tokens de firma S3 distintos sobre la misma imagen
   const urlPath = (url: string) => { try { return new URL(url).pathname; } catch { return url; } };
+  const variantOptionNames = getVariantOptionNames(producto);
   // Una imagen por color (cada talla guarda su propio archivo, pero la foto es por color).
   // Si hay imágenes por color, los thumbnails son los colores (uno por color); si no,
   // se usa la imagen principal del producto + extras.
-  const colorThumbs = getFashionColors(producto).map((color) => color.image).filter(Boolean) as string[];
+  const selectedColor = varianteSelecciones[variantOptionNames.color];
+  const selectedColorGallery = selectedColor ? getFashionColorGallery(producto, selectedColor) : [];
+  const colorThumbs = getFashionColors(producto)
+    .flatMap((color) => getFashionColorGallery(producto, color.name).length ? getFashionColorGallery(producto, color.name) : [color.image])
+    .filter(Boolean) as string[];
   const productImages = (() => {
     const seen = new Set<string>();
-    const source = colorThumbs.length > 0
+    const source = selectedColorGallery.length > 0
+      ? [...selectedColorGallery, ...colorThumbs, producto.imagenUrl, ...extraImages]
+      : colorThumbs.length > 0
       ? [producto.imagenUrl, ...colorThumbs, ...extraImages]
       : [producto.imagenUrl, ...extraImages];
     return source
@@ -306,7 +318,6 @@ export default function UrbanoProductoDetalle() {
   const otherGroups = modificadoresProducto.filter((grupo) => !isColorGroup(grupo) && !isSizeGroup(grupo));
   const variantColors = colorGroups.length ? [] : getFashionColors(producto);
   const variantSizes = sizeGroups.length ? [] : getFashionSizes(producto);
-  const variantOptionNames = getVariantOptionNames(producto);
 
   // Al clickear un thumbnail, sincroniza el color seleccionado con la imagen de esa variante
   const handleThumbnailClick = (image: string) => {
@@ -330,7 +341,7 @@ export default function UrbanoProductoDetalle() {
         <span>{title}</span>
         <span className="text-lg leading-none font-normal">{openAccordion === itemId ? '-' : '+'}</span>
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openAccordion === itemId ? 'max-h-96 opacity-100 pb-5' : 'max-h-0 opacity-0'}`}>
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openAccordion === itemId ? 'max-h-[1500px] opacity-100 pb-5' : 'max-h-0 opacity-0'}`}>
         {children}
       </div>
     </div>
@@ -542,16 +553,16 @@ export default function UrbanoProductoDetalle() {
         </section>
 
         <section className="flex flex-col-reverse lg:flex-row w-full border-t border-gray-200">
-          <div className="w-full lg:w-[50%] p-8 lg:p-16 xl:p-24 flex flex-col justify-center bg-white">
-            <div className="w-full max-w-lg mx-auto lg:mx-auto lg:mr-16">
+          <div className="w-full lg:w-[50%] min-w-0 p-8 lg:p-16 xl:p-24 flex flex-col justify-center bg-white">
+            <div className="w-full min-w-0 max-w-lg mx-auto lg:mx-auto lg:mr-16">
               <AccordionItem title="DESCRIPCIÓN" id="DESCRIPCION">
                 {producto.descripcionLarga ? (
                   <div
-                    className="text-[13px] leading-relaxed text-black font-medium pr-4 space-y-3 [&_h1]:text-base [&_h1]:font-black [&_h1]:uppercase [&_h2]:text-sm [&_h2]:font-black [&_h2]:uppercase [&_h2]:tracking-tight [&_h3]:font-bold [&_h3]:uppercase [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:text-gray-700 [&_strong]:font-bold [&_a]:underline"
+                    className="text-[13px] leading-relaxed text-black font-medium pr-4 space-y-3 break-words [overflow-wrap:anywhere] whitespace-normal [&_p]:whitespace-normal [&_p]:break-words [&_h1]:text-base [&_h1]:font-black [&_h1]:uppercase [&_h2]:text-sm [&_h2]:font-black [&_h2]:uppercase [&_h2]:tracking-tight [&_h3]:font-bold [&_h3]:uppercase [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:text-gray-700 [&_strong]:font-bold [&_a]:underline"
                     dangerouslySetInnerHTML={{ __html: producto.descripcionLarga }}
                   />
                 ) : (
-                  <div className="text-[13px] leading-relaxed text-black font-medium pr-4">
+                  <div className="text-[13px] leading-relaxed text-black font-medium pr-4 break-words [overflow-wrap:anywhere] whitespace-normal">
                     {`Prenda seleccionada para una tienda urbana. ${producto.descripcion} mantiene una presentación editorial y lista para venta online.`}
                   </div>
                 )}

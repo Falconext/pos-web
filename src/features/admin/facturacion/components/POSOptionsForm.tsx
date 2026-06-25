@@ -396,32 +396,38 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                                 )}
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Condición de Pago</label>
-                            <div className="flex gap-1.5">
-                                {['Contado', 'Crédito'].map(c => (
-                                    <button
-                                        key={c}
-                                        type="button"
-                                        onClick={() => {
-                                            vm.setFormValues({ ...vm.formValues, medioPago: c });
-                                            if (c === 'Contado') vm.setFechaVencimientoCredito('');
-                                        }}
-                                        className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-all ${
-                                            (vm.formValues?.medioPago === c || (!vm.formValues?.medioPago && c === 'Contado'))
-                                                ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
-                                                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-violet-400'
-                                        }`}
-                                    >
-                                        {c}
-                                    </button>
-                                ))}
-                            </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Condición de Pago (aplica para todos excepto NC/ND/NP) */}
+            {vm.formValues?.comprobante !== "NOTA DE CREDITO" && vm.formValues?.comprobante !== "NOTA DE DEBITO" && vm.formValues?.tipoDoc !== 'NP' && (
+                <div className="mt-3 space-y-2">
+                    <div>
+                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Condición de Pago</label>
+                        <div className="flex gap-1.5">
+                            {['Contado', 'Crédito'].map(c => (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    onClick={() => {
+                                        vm.setFormValues({ ...vm.formValues, medioPago: c });
+                                        if (c === 'Contado') vm.setFechaVencimientoCredito('');
+                                    }}
+                                    className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-all ${
+                                        (vm.formValues?.medioPago === c || (!vm.formValues?.medioPago && c === 'Contado'))
+                                            ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-violet-400'
+                                    }`}
+                                >
+                                    {c}
+                                </button>
+                            ))}
                         </div>
                     </div>
                     {vm.formValues?.medioPago === 'Crédito' && (
                         <div>
-                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Fecha de Vencimiento</label>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Fecha de Vencimiento / Cuota única</label>
                             <input
                                 type="date"
                                 value={vm.fechaVencimientoCredito || ''}
@@ -429,6 +435,9 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                                 onChange={e => vm.setFechaVencimientoCredito(e.target.value)}
                                 className="w-full h-9 px-3 text-sm rounded-xl border border-violet-300 dark:border-violet-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-400/20 transition-all"
                             />
+                            {vm.formValues?.comprobante === "FACTURA" && (
+                                <p className="text-[10px] text-gray-500 mt-1">Para múltiples cuotas, usa el botón "Operación Fiscal" arriba.</p>
+                            )}
                         </div>
                     )}
                 </div>

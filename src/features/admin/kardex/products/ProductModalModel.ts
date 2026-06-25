@@ -20,6 +20,7 @@ export type TipoAjusteStock = 'ninguno' | 'reemplazar' | 'sumar' | 'restar';
 export interface ICreationLote {
     lote: string;
     fechaVencimiento: string;
+    stockInicial?: string | number;
 }
 
 export interface IWholesaleOption {

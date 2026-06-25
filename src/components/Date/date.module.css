@@ -67,7 +67,8 @@
     font-weight: 500;
 }
 
-.date > div:nth-child(2) {
+.date > div:nth-child(2),
+.panel {
     border-radius: 20px;
     background: #fff;
     padding: 10px;

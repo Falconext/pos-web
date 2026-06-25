@@ -120,6 +120,41 @@ export const getFashionColorImage = (producto: any, colorValue: string): string 
   return match?.imagenUrl || null;
 };
 
+export const getFashionColorGallery = (producto: any, colorValue: string): string[] => {
+  const target = normalizeText(colorValue);
+  const attrs = producto?.atributosTecnicos || {};
+  const rawGallery =
+    attrs?.galeriaPorColor ||
+    attrs?.galeriaImagenesPorColor ||
+    attrs?.imagenesPorColor ||
+    {};
+  const gallery = typeof rawGallery === 'string'
+    ? (() => {
+        try {
+          const parsed = JSON.parse(rawGallery);
+          return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+        } catch {
+          return {};
+        }
+      })()
+    : rawGallery;
+
+  const direct = Array.isArray(gallery?.[colorValue]) ? gallery[colorValue] : null;
+  const normalizedKey = Object.keys(gallery || {}).find((key) => normalizeText(key) === target);
+  const byNormalized = normalizedKey && Array.isArray(gallery?.[normalizedKey]) ? gallery[normalizedKey] : null;
+  const principal = getFashionColorImage(producto, colorValue);
+  const urls = [principal, ...(direct || byNormalized || [])].filter(Boolean) as string[];
+  const seen = new Set<string>();
+  return urls.filter((url) => {
+    const key = (() => {
+      try { return new URL(url).pathname; } catch { return url; }
+    })();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export const getFashionColors = (producto: any): FashionColorOption[] => {
   const values = [...valuesFromOptions(producto, isColorName)];
   valuesFromVariants(producto, isColorName).forEach((value) => uniquePush(values, value));
