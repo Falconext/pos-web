@@ -246,6 +246,12 @@ const ComprobantePrintPage = ({
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{round2(mtoOperGravadas).toFixed(2)}</div></label>
+                        {mtoOperExoneradas > 0 && (
+                            <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">OP. EXONERADAS:</div> <div>{round2(mtoOperExoneradas).toFixed(2)}</div></label>
+                        )}
+                        {mtoOperInafectas > 0 && (
+                            <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">OP. INAFECTAS:</div> <div>{round2(mtoOperInafectas).toFixed(2)}</div></label>
+                        )}
                         <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{round2(mtoIgv).toFixed(2)}</div></label>
                         {totalDescuentos > 0 && (
                             <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
@@ -491,11 +497,11 @@ const ComprobantePrintPage = ({
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. EXONERADAS:</span>
-                                                <span>S/ 0.00</span>
+                                                <span>S/ {round2(mtoOperExoneradas).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. INAFECTAS:</span>
-                                                <span>S/ 0.00</span>
+                                                <span>S/ {round2(mtoOperInafectas).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. GRATUITAS:</span>

@@ -79,7 +79,13 @@ export const ModalRecetaMedica = ({ isOpen, item, onConfirmar, onCerrar }: Props
         setReniecError(null);
         try {
             const resp: any = await get(`clientes/consultar?numero=${dni}&tipo=DNI`);
-            const nombre = resp?.nombre || resp?.data?.nombre || resp?.nombreCompleto || resp?.data?.nombreCompleto;
+            const d = resp?.data ?? resp;
+            const nombre =
+                d?.nombre_completo ||
+                d?.nombreCompleto ||
+                d?.nombre ||
+                [d?.apellido_paterno, d?.apellido_materno, d?.nombres].filter(Boolean).join(' ').trim() ||
+                null;
             if (nombre) {
                 setReniecNombre(nombre);
                 setDatos(d => ({ ...d, nombrePaciente: nombre }));

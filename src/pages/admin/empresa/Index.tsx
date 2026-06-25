@@ -1,3 +1,4 @@
+import { useMemo, useState, type MouseEvent } from 'react';
 import { useEmpresaIndexViewModel } from '@/features/admin/empresa/useEmpresaIndexViewModel';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import DataTable from '@/components/Datatable';
@@ -9,16 +10,41 @@ import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import ModalConfirm from '@/components/ModalConfirm';
 import TableSkeleton from '@/components/Skeletons/table';
+import TableActionMenu from '@/components/TableActionMenu';
 
 const EmpresasIndex = () => {
   const vm = useEmpresaIndexViewModel();
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
 
-  const actions: any = [
-    { onClick: vm.handleViewDetails, className: "details", icon: <Icon color="#6366F1" icon="solar:eye-bold-duotone" />, tooltip: "Ver detalles" },
-    { onClick: vm.handleEdit, className: "edit", icon: <Icon color="#66AD78" icon="material-symbols:edit" />, tooltip: "Editar" },
-    { onClick: vm.handleToggleState, className: "toggle", icon: <Icon icon="mdi:power" color="#F59E0B" />, tooltip: "Activar/Desactivar" },
-    { onClick: vm.handleDelete, className: "delete", icon: <Icon icon="mdi:trash-can" color="#EF443C" />, tooltip: "Eliminar" },
-  ];
+  const handleOpenMenu = (event: MouseEvent<HTMLElement>, row: any) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedMenuRow(row);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchor(null);
+    setSelectedMenuRow(null);
+  };
+
+  const runMenuAction = (handler: (row: any) => void | Promise<void>) => {
+    if (!selectedMenuRow) return;
+    handler(selectedMenuRow);
+    handleCloseMenu();
+  };
+
+  const tableData = useMemo(() => vm.empresasTable.map((row: any) => ({
+    ...row,
+    'Acciones': (
+      <button
+        type="button"
+        onClick={(event) => handleOpenMenu(event, row)}
+        className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+      >
+        <Icon icon="mdi:dots-vertical" width={18} height={18} />
+      </button>
+    ),
+  })), [vm.empresasTable]);
 
   if (vm.loading && vm.empresas.length === 0) return <TableSkeleton />;
 
@@ -53,7 +79,7 @@ const EmpresasIndex = () => {
         <div className="p-4">
           {vm.empresasTable?.length > 0 ? (
             <>
-              <div className="overflow-hidden overflow-x-auto"><DataTable actions={actions} bodyData={vm.empresasTable} headerColumns={['RUC', 'Razon Social', 'Rubro', 'Plan', 'Uso Mensual', 'Tienda Virtual', 'Expiración', 'Estado']} /></div>
+              <div className="overflow-hidden overflow-x-auto"><DataTable actions={[]} bodyData={tableData} headerColumns={['RUC', 'Razon Social', 'Ambiente', 'Rubro', 'Plan', 'Tienda Virtual', { label: 'Expiración', key: 'fechaExpiracion' }, 'Vence en', 'Estado', 'Acciones']} /></div>
               <div className="mt-4 pt-4 border-t border-gray-100"><Pagination pages={vm.pages} currentPage={vm.currentPageState} setcurrentPage={vm.setCurrentPageState} indexOfFirstItem={vm.indexOfFirstItem} indexOfLastItem={Math.min(vm.indexOfLastItem, vm.totalEmpresas)} total={vm.totalEmpresas} setitemsPerPage={vm.setItemsPerPage} optionSelect={true} /></div>
             </>
           ) : !vm.loading && (
@@ -73,6 +99,47 @@ const EmpresasIndex = () => {
       />
       <EmpresaFormModal open={vm.openEmpresaModal} mode={vm.empresaModalMode} empresaId={vm.empresaEditingId} onClose={() => vm.setOpenEmpresaModal(false)} onSaved={vm.refreshEmpresas} />
       <EmpresaDrawer empresa={vm.drawerEmpresa} onClose={() => vm.setDrawerEmpresa(null)} />
+      <TableActionMenu
+        isOpen={Boolean(menuAnchor)}
+        anchorEl={menuAnchor}
+        onClose={handleCloseMenu}
+        className="w-56"
+      >
+        {selectedMenuRow && (
+          <>
+            <button type="button" onClick={() => runMenuAction(vm.handleViewDetails)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+              <Icon icon="solar:eye-bold-duotone" width={16} height={16} />
+              <span>Ver detalles</span>
+            </button>
+            <button type="button" onClick={() => runMenuAction(vm.handleEdit)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+              <Icon icon="material-symbols:edit" width={16} height={16} />
+              <span>Editar</span>
+            </button>
+            {selectedMenuRow.estado === 'ACTIVO' && (
+              <>
+                <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                <button type="button" onClick={() => runMenuAction(vm.handleEnviarRecordatorioEmail)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30">
+                  <Icon icon="solar:letter-bold-duotone" width={16} height={16} />
+                  <span>Recordar por correo</span>
+                </button>
+                <button type="button" onClick={() => runMenuAction(vm.handleEnviarRecordatorioWhatsapp)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30">
+                  <Icon icon="ic:baseline-whatsapp" width={16} height={16} />
+                  <span>Recordar por WhatsApp</span>
+                </button>
+              </>
+            )}
+            <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+            <button type="button" onClick={() => runMenuAction(vm.handleToggleState)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30">
+              <Icon icon="mdi:power" width={16} height={16} />
+              <span>{selectedMenuRow.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'}</span>
+            </button>
+            <button type="button" onClick={() => runMenuAction(vm.handleDelete)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30">
+              <Icon icon="mdi:trash-can" width={16} height={16} />
+              <span>Eliminar</span>
+            </button>
+          </>
+        )}
+      </TableActionMenu>
     </div>
   );
 };

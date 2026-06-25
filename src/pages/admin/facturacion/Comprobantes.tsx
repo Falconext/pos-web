@@ -31,6 +31,7 @@ import TableActionMenu from "@/components/TableActionMenu";
 import { useSedesStore } from "@/zustand/sedes";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
 import { useUsersStore } from "@/zustand/users";
+import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -562,18 +563,7 @@ const Comprobantes = () => {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `
-              @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap');
-              @media print {
-                @page { size: ${dimensions.width}mm ${dimensions.height}mm; margin: 0; background-color: #fff; }
-                * {
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
-                  font-family: ${dimensions.width <= 80 ? "'VT323', monospace" : "'Inter', system-ui, sans-serif"} !important;
-                }
-                body { width: ${dimensions.width}mm; height: ${dimensions.height}mm; overflow: hidden; background-color: #fff; }
-              }
-            `,
+        pageStyle: buildComprobantePrintPageStyle(dimensions),
     });
 
     useEffect(() => {

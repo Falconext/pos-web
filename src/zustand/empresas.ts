@@ -24,6 +24,7 @@ interface Empresa {
   providerId?: string;
   providerToken?: string;
   usaDemo?: boolean;
+  ambienteFacturacion?: 'DEMO' | 'PRODUCCIÓN';
   usuarioPse?: string;
   contrasenaPse?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';
@@ -49,6 +50,10 @@ interface Empresa {
     id: number;
     nombre: string;
   };
+  usuarios?: Array<{
+    nombre?: string | null;
+    celular?: string | null;
+  }>;
 }
 
 interface Plan {

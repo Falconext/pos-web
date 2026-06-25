@@ -59,14 +59,18 @@ export function useCampanasViewModel() {
       plataforma: c.plataforma,
       productoId: c.producto?.id ?? null,
       presupuestoDiario: c.presupuestoDiario,
+      presupuestoOriginal: c.presupuestoOriginal ?? c.presupuestoDiario,
+      tipoPresupuesto: c.tipoPresupuesto ?? 'DIARIO',
       moneda: c.moneda as 'PEN' | 'USD',
       fechaInicio: c.fechaInicio,
+      fechaFin: c.fechaFin ?? '',
+      esRecurrente: c.esRecurrente ?? false,
     });
     setIsModalOpen(true);
   };
 
   const guardar = async () => {
-    if (!form.nombre.trim() || !form.presupuestoDiario) {
+    if (!form.nombre.trim() || !form.presupuestoOriginal) {
       alertFn('Completa nombre y presupuesto', 'error');
       return;
     }
@@ -74,7 +78,8 @@ export function useCampanasViewModel() {
     try {
       const payload = {
         ...form,
-        presupuestoDiario: Number(form.presupuestoDiario),
+        presupuestoDiario: Number(form.presupuestoDiario || form.presupuestoOriginal), // just fallback
+        presupuestoOriginal: Number(form.presupuestoOriginal),
         productoId: form.productoId ?? undefined,
       };
       if (editando) {

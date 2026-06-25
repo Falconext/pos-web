@@ -1,5 +1,11 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+export interface OtroIngreso {
+    concepto: string;
+    tipo: string;
+    monto: number;
+}
+
 export interface PnlResponse {
     periodo: { mes: number; anio: number; label: string };
     ventasNetas: number;
@@ -11,6 +17,8 @@ export interface PnlResponse {
     lineasServicio: number;
     gananciaBruta: number;
     margenBruto: number;
+    otrosIngresos: number;
+    otrosIngresosDetalle: OtroIngreso[];
     gastosTotales: number;
     gastoPublicidad: number;
     gastosPorCategoria: Array<{ categoria: string; etiqueta: string | null; monto: number }>;
@@ -18,7 +26,7 @@ export interface PnlResponse {
     margenNeto: number;
     resumenDiario: RentabilidadDia[];
     comparacion: {
-        mesAnterior: { gananciaNeta: number; margenNeto: number } | null;
+        mesAnterior: { gananciaNeta: number; margenNeto: number; otrosIngresos: number } | null;
         variacionMonto: number | null;
         variacionPorcentaje: number | null;
     };
@@ -62,6 +70,39 @@ export interface GastoOperativo {
     monto: number;
     descripcion: string | null;
     creadoEn: string;
+}
+
+export interface IngresoManual {
+    id: number;
+    concepto: string;
+    tipo: string;
+    monto: number;
+    fecha: string;
+    descripcion?: string | null;
+    creadoEn: string;
+}
+
+export interface IngresoFormData {
+    concepto: string;
+    tipo: string;
+    monto: number;
+    fecha: string;
+    descripcion?: string;
+}
+
+export const TIPOS_INGRESO = [
+    { key: 'SUSCRIPCION', label: 'Suscripción',      icon: 'solar:refresh-circle-bold-duotone',        esFinanciamiento: false },
+    { key: 'VENTA',       label: 'Venta',             icon: 'solar:bag-bold-duotone',                   esFinanciamiento: false },
+    { key: 'OTROS',       label: 'Otros',             icon: 'solar:box-bold-duotone',                   esFinanciamiento: false },
+    { key: 'PRESTAMO',    label: 'Préstamo',          icon: 'solar:hand-money-bold-duotone',            esFinanciamiento: true  },
+    { key: 'INVERSION',   label: 'Inversión',         icon: 'solar:graph-up-bold-duotone',              esFinanciamiento: true  },
+    { key: 'CAPITAL',     label: 'Capital adicional', icon: 'solar:dollar-minimalistic-bold-duotone',   esFinanciamiento: true  },
+] as const;
+
+export const TIPOS_FINANCIAMIENTO = ['PRESTAMO', 'INVERSION', 'CAPITAL'] as const;
+
+export function esFinanciamiento(tipo: string): boolean {
+    return (TIPOS_FINANCIAMIENTO as readonly string[]).includes(tipo);
 }
 
 export interface GastoFormData {

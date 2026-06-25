@@ -105,13 +105,16 @@ export const useProductsViewModel = () => {
     const COLUMNAS_ECOMMERCE = ['Costo Total Fijo', 'Tienda'];
 
     const allColumns = useMemo(() => {
-        const base = ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Tienda', 'Acciones'];
+        // Rubros farmacéuticos: "Lotes" (próximo vencimiento) al costado de Producto, sin U.M/%Venta/%Provisión
+        const base = esFarmaceuticoRubro
+            ? ['Img', 'Producto', 'Lotes', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización', 'Estado', 'Tienda', 'Acciones']
+            : ['Img', 'Producto', 'Categoria', 'Marca', 'Precio Venta', 'Costo', 'Valor Inventario', 'Costo Total Fijo', 'Stock', 'Localización', '% Venta', '% Provisión', 'U.M', 'Estado', 'Tienda', 'Acciones'];
         return base.filter(c => {
             if (COLUMNAS_CORPORATIVAS.includes(c) && !tieneGestionProvisiones) return false;
             if (COLUMNAS_ECOMMERCE.includes(c) && !tieneTienda) return false;
             return true;
         });
-    }, [tieneGestionProvisiones, tieneTienda]);
+    }, [tieneGestionProvisiones, tieneTienda, esFarmaceuticoRubro]);
 
     const initialVisibleColumns = allColumns;
 

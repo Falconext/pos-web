@@ -2,7 +2,53 @@ import { useState, useEffect } from 'react';
 import { useEmpresasStore } from '@/zustand/empresas';
 import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
-import { get } from '@/utils/fetch';
+import { post } from '@/utils/fetch';
+
+const DAY_MS = 86400000;
+
+const normalizeDateOnly = (value?: string | Date | null): string => {
+    if (!value) return '';
+    const raw = typeof value === 'string' ? value : value.toISOString();
+    const iso = raw.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
+};
+
+const formatDateOnly = (value?: string | Date | null): string => {
+    const iso = normalizeDateOnly(value);
+    if (!iso) return '-';
+    const [year, month, day] = iso.split('-');
+    return `${day}/${month}/${year}`;
+};
+
+const getDaysUntilDate = (value?: string | Date | null): number | null => {
+    const iso = normalizeDateOnly(value);
+    if (!iso) return null;
+    const [year, month, day] = iso.split('-').map(Number);
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const targetUtc = Date.UTC(year, month - 1, day);
+    return Math.ceil((targetUtc - todayUtc) / DAY_MS);
+};
+
+const formatDaysUntil = (days: number | null): string => {
+    if (days === null) return '-';
+    if (days < 0) {
+        const expiredDays = Math.abs(days);
+        return `Vencido hace ${expiredDays} día${expiredDays === 1 ? '' : 's'}`;
+    }
+    if (days === 0) return 'Vence hoy';
+    return `${days} día${days === 1 ? '' : 's'}`;
+};
+
+const normalizeWhatsappPhone = (value?: string | null): string => {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.length === 9) return `51${digits}`;
+    if (digits.length === 11 && digits.startsWith('51')) return digits;
+    return digits;
+};
 
 export const useEmpresaIndexViewModel = (): any => {
     const { empresas, totalEmpresas, currentPage, totalPages, loading, error, listarEmpresas, cambiarEstadoEmpresa, eliminarEmpresa } = useEmpresasStore();
@@ -18,7 +64,6 @@ export const useEmpresaIndexViewModel = (): any => {
     const [openEmpresaModal, setOpenEmpresaModal] = useState(false);
     const [empresaModalMode, setEmpresaModalMode] = useState<'create' | 'edit'>('create');
     const [empresaEditingId, setEmpresaEditingId] = useState<number | undefined>(undefined);
-    const [usageStats, setUsageStats] = useState<Record<number, any>>({});
 
     const debounceSearch = useDebounce(searchTerm, 1000);
 
@@ -29,18 +74,6 @@ export const useEmpresaIndexViewModel = (): any => {
     useEffect(() => {
         listarEmpresas({ search: debounceSearch, page: currentPageState, limit: itemsPerPage, sort: 'id', order: 'desc', estado: estadoFiltro, tipoEmpresa: tipoFiltro });
     }, [debounceSearch, currentPageState, itemsPerPage, estadoFiltro, tipoFiltro]);
-
-    useEffect(() => {
-        const loadUsageStats = async () => {
-            const formalEmpresas = empresas?.filter((e: any) => e.tipoEmpresa === 'FORMAL') || [];
-            const stats: Record<number, any> = {};
-            for (const emp of formalEmpresas) {
-                try { const resp: any = await get(`comprobante/usage/${emp.id}`); if (resp?.data) stats[emp.id] = resp.data; else if (resp && !resp.error) stats[emp.id] = resp; } catch { }
-            }
-            setUsageStats(stats);
-        };
-        if (empresas?.length > 0) loadUsageStats();
-    }, [empresas]);
 
     useEffect(() => { if (success === true) { setIsOpenModalConfirm(false); setSelectedEmpresa(null); } }, [success]);
 
@@ -56,29 +89,33 @@ export const useEmpresaIndexViewModel = (): any => {
         setIsOpenModalConfirm(false); setSelectedEmpresa(null);
     };
 
-    const formatUsoMensual = (usage: any): string => {
-        if (!usage) return '-';
-        const emitidos = Number(usage.comprobantesEmitidos ?? 0);
-        const limite = usage.limiteMaximo;
-        if (limite === null || limite === undefined || Number(limite) === 0) {
-            return `${emitidos}/ilimitado`;
-        }
-        return `${emitidos}/${Number(limite)}`;
-    };
-
     const empresasTable = empresas?.map((empresa: any) => {
+        const ambienteDisplay = empresa.ambienteFacturacion ?? (empresa.usaDemo ? 'DEMO' : 'PRODUCCIÓN');
         const tiendaEstado = empresa.plan?.tieneTienda && empresa?.slugTienda ? 'Activa' : empresa.plan?.tieneTienda && !empresa?.slugTienda ? 'Disponible' : 'No disponible';
-        const usage = usageStats[empresa.id];
-        const usoDisplay = empresa.tipoEmpresa === 'FORMAL' ? formatUsoMensual(usage) : '-';
-        return { id: empresa.id, 'RUC': empresa.ruc, 'Razon Social': empresa.razonSocial, 'Rubro': empresa?.rubro?.nombre || '-', plan: empresa.plan?.nombre || '-', 'Uso Mensual': usoDisplay, tienda: tiendaEstado, fechaExpiracion: new Date(empresa.fechaExpiracion).toLocaleDateString(), estado: empresa.estado };
+        const diasRestantes = getDaysUntilDate(empresa.fechaExpiracion);
+        const adminPrincipal = empresa.usuarios?.[0];
+        return {
+            id: empresa.id,
+            'RUC': empresa.ruc,
+            'Razon Social': empresa.razonSocial,
+            nombreComercial: empresa.nombreComercial,
+            adminNombre: adminPrincipal?.nombre || '',
+            adminCelular: adminPrincipal?.celular || '',
+            'Ambiente': ambienteDisplay,
+            'Rubro': empresa?.rubro?.nombre || '-',
+            'Plan': empresa.plan?.nombre || '-',
+            'Tienda Virtual': tiendaEstado,
+            fechaExpiracion: formatDateOnly(empresa.fechaExpiracion),
+            'Vence en': formatDaysUntil(diasRestantes),
+            estado: empresa.estado,
+        };
     }) || [];
 
     const [drawerEmpresa, setDrawerEmpresa] = useState<any>(null);
     const [alertasDismissed, setAlertasDismissed] = useState(false);
     const [filtroPorVencer, setFiltroPorVencer] = useState(false);
 
-    const getDiasRestantes = (fechaExpiracion: string) =>
-        Math.ceil((new Date(fechaExpiracion).getTime() - Date.now()) / 86400000);
+    const getDiasRestantes = (fechaExpiracion: string) => getDaysUntilDate(fechaExpiracion) ?? 0;
 
     const proximasVencer = (empresas || []).filter((e: any) => {
         if (!e.fechaExpiracion) return false;
@@ -93,6 +130,42 @@ export const useEmpresaIndexViewModel = (): any => {
 
     const refreshEmpresas = () => listarEmpresas({ search: debounceSearch, page: currentPageState, limit: itemsPerPage, sort: 'id', order: 'desc' });
 
+    const handleEnviarRecordatorioEmail = async (row: any) => {
+        if (row.estado !== 'ACTIVO') {
+            useAlertStore.getState().alert('Solo se puede recordar a empresas activas', 'warning');
+            return;
+        }
+        const resp = await post(`empresa/${row.id}/enviar-email`, { tipo: 'RECORDATORIO' });
+        if (resp.success === false || resp.error) {
+            useAlertStore.getState().alert(resp.error || 'No se pudo enviar el correo de recordatorio', 'error');
+            return;
+        }
+        useAlertStore.getState().alert('Correo de recordatorio enviado correctamente', 'success');
+    };
+
+    const handleEnviarRecordatorioWhatsapp = async (row: any) => {
+        if (row.estado !== 'ACTIVO') {
+            useAlertStore.getState().alert('Solo se puede recordar a empresas activas', 'warning');
+            return;
+        }
+        const phone = normalizeWhatsappPhone(row.adminCelular);
+        if (!phone) {
+            useAlertStore.getState().alert('La empresa no tiene celular de administrador activo', 'warning');
+            return;
+        }
+        const empresaNombre = row.nombreComercial || row['Razon Social'] || 'tu empresa';
+        const fechaExpiracion = row.fechaExpiracion && row.fechaExpiracion !== '-' ? row.fechaExpiracion : 'por confirmar';
+        const estadoVencimiento = String(row['Vence en'] || '').toLowerCase();
+        const mensaje = [
+            `Hola ${row.adminNombre || 'equipo'}, te recordamos que la suscripción de ${empresaNombre} ${estadoVencimiento}.`,
+            `Plan actual: ${row.Plan || 'Suscripción activa'}.`,
+            `Fecha de vencimiento: ${fechaExpiracion}.`,
+            'Renueva a tiempo para mantener activo tu acceso, facturación, inventario, ventas y tienda virtual.',
+        ].join('\n');
+
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+    };
+
     const empresasTableFiltradas = filtroPorVencer
         ? empresasTable.filter((e: any) => {
             const full = empresas?.find((emp: any) => emp.id === e.id);
@@ -102,5 +175,5 @@ export const useEmpresaIndexViewModel = (): any => {
         })
         : empresasTable;
 
-    return { empresas, empresasTable: empresasTableFiltradas, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes };
+    return { empresas, empresasTable: empresasTableFiltradas, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp };
 };

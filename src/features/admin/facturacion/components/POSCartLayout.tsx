@@ -91,8 +91,8 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                     {vm.usaLotesFarmacia && item.refrigerado && (
                                         <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">🧊 Frío</span>
                                     )}
-                                    {/* Farmacia: receta pendiente */}
-                                    {vm.isFarmaciaRetail && item.pendienteReceta && (
+                                    {/* Farmacia/droguería: receta pendiente */}
+                                    {vm.habilitaRecetaMedica && item.pendienteReceta && (
                                         <button
                                             onClick={() => vm.handleAbrirRecetaModal(index)}
                                             className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px] hover:bg-red-200 transition-colors"
@@ -100,8 +100,8 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                             📋 Receta
                                         </button>
                                     )}
-                                    {/* Farmacia: receta confirmada */}
-                                    {vm.isFarmaciaRetail && item.datosReceta && !item.pendienteReceta && (
+                                    {/* Farmacia/droguería: receta confirmada */}
+                                    {vm.habilitaRecetaMedica && item.datosReceta && !item.pendienteReceta && (
                                         <span className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">✅ Receta OK</span>
                                     )}
                                     {requiereSerie(item) && (

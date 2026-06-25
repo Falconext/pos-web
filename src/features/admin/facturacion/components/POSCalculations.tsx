@@ -162,6 +162,18 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                     <span>IGV (18%)</span>
                     <span>S/ {vm.igvAdjusted.toFixed(2)}</span>
                 </div>
+                {vm.opExoneradaAdjusted > 0 && (
+                    <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
+                        <span>Op. Exonerada</span>
+                        <span>S/ {vm.opExoneradaAdjusted.toFixed(2)}</span>
+                    </div>
+                )}
+                {vm.opInafectaAdjusted > 0 && (
+                    <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
+                        <span>Op. Inafecta</span>
+                        <span>S/ {vm.opInafectaAdjusted.toFixed(2)}</span>
+                    </div>
+                )}
                 {(vm.hasDiscount || (vm.formValues.motivoId === 6 && vm.descountGlobal > 0)) && (
                     <div className="flex justify-between text-sm text-green-600 font-medium">
                         <span>Descuento</span>

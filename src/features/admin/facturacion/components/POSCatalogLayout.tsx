@@ -210,6 +210,30 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                         </button>
                     ))}
                 </div>
+
+                {/* Toggle rápido de precio por lote FEFO — solo rubros con lotes */}
+                {vm.usaLotesFarmacia && (
+                    <div className="mx-1 mb-3 flex items-center justify-between gap-3 rounded-2xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/60 dark:bg-violet-950/10 px-4 py-2.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Icon icon="solar:tag-price-bold-duotone" className="text-violet-500 text-lg flex-shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-[13px] font-bold text-gray-800 dark:text-gray-100">Precio por lote (FEFO)</p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                                    {vm.usarPrecioLoteFefo ? 'El precio se toma del costo del lote que vence primero' : 'Se usa el precio de venta del producto'}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={vm.togglePrecioLoteFefo}
+                            disabled={vm.togglingPrecioLote}
+                            aria-pressed={vm.usarPrecioLoteFefo}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${vm.usarPrecioLoteFefo ? 'bg-violet-600' : 'bg-gray-300 dark:bg-slate-600'}`}
+                        >
+                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${vm.usarPrecioLoteFefo ? 'translate-x-5' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Product Grid */}
@@ -471,7 +495,14 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                                     <p className="text-xs text-gray-600 dark:text-amber-400">Costo lote: {l.costo !== null ? `S/${l.costo.toFixed(2)}` : "-"}</p>
                                                 </div>
                                             </div>
-                                        )) : (
+                                        )) : infoProduct?.tieneLotesVencidos ? (
+                                            <div className="px-4 py-5 text-sm font-semibold text-red-600 dark:text-red-400 flex items-start gap-2">
+                                                <Icon icon="solar:danger-triangle-bold" className="text-base flex-shrink-0 mt-0.5" />
+                                                <span>
+                                                    Solo hay lotes VENCIDOS ({Number(infoProduct?.stockVencido ?? 0)} und). No se puede vender medicación vencida — registra un lote vigente en Kardex.
+                                                </span>
+                                            </div>
+                                        ) : (
                                             <div className="px-4 py-5 text-sm text-gray-500 dark:text-slate-400">
                                                 Este producto no tiene lotes activos con stock.
                                             </div>

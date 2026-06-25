@@ -133,7 +133,7 @@ export default function GastoFormModal({
     const selectedCategoria = CATEGORIAS_FIJAS.find(c => c.key === form.categoria);
 
     return (
-        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+        <div className="fixed top-[-30px] inset-0 z-[999999] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50  "
@@ -290,7 +290,7 @@ export default function GastoFormModal({
                                         Repetir diariamente
                                     </span>
                                     <span className="block text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                        Úsalo para campañas activas. El sistema aplicará este monto cada día y calculará ROAS y ganancia neta sin que lo registres manualmente.
+                                        Úsalo para campañas activas. El sistema aplicará este monto cada día y calculará tu ganancia neta automáticamente, sin que lo registres manualmente.
                                     </span>
                                 </span>
                             </label>

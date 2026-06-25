@@ -1282,6 +1282,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             } catch (imgError) {}
           }
 
+          // Lotes optimistas para reflejar el lote inicial en la fila de la tabla
+          // sin recargar la página (la columna "Lotes" lee product.lotes).
+          let lotesOptimistas: any[] = [];
           if (
             esFarmaceutico &&
             features.gestionLotes &&
@@ -1289,7 +1292,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             creationLote.fechaVencimiento
           ) {
             try {
-              await apiClient.post("/productos/lotes", {
+              const loteResp = await apiClient.post("/productos/lotes", {
                 productoId: Number(newId),
                 lote: creationLote.lote,
                 fechaVencimiento: creationLote.fechaVencimiento,
@@ -1299,6 +1302,15 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                   ? Number(formValues.costoUnitario)
                   : undefined,
               });
+              const loteCreado = loteResp?.data?.data ?? loteResp?.data ?? {};
+              lotesOptimistas = [{
+                id: loteCreado?.id,
+                lote: creationLote.lote,
+                fechaVencimiento: creationLote.fechaVencimiento,
+                stockActual: Number(creationLote.stockInicial || 0),
+                costoUnitario: formValues.costoUnitario ? Number(formValues.costoUnitario) : null,
+                activo: true,
+              }];
               useAlertStore
                 .getState()
                 .alert("Lote inicial registrado", "success");
@@ -1414,6 +1426,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             imagenUrl: urlFinal || imageToSave || product?.data?.imagenUrl || undefined,
             imagenUrlDisplay: urlFinalDisplay || urlFinal || imageToSave || product?.data?.imagenUrlDisplay || product?.data?.imagenUrl || undefined,
             variantes: variantesFinales,
+            ...(lotesOptimistas.length > 0 ? { lotes: lotesOptimistas } : {}),
             estado: "ACTIVO",
           });
 

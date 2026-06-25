@@ -17,6 +17,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import InputPro from '@/components/InputPro';
 import ComprobantePrintPage from './comprobanteImprimir';
 import { useReactToPrint } from 'react-to-print';
+import { buildComprobantePrintPageStyle } from '@/utils/printStyles';
 import { usePaymentFlow, PaymentType } from '@/hooks/usePaymentFlow';
 import ModalPaymentUnified from '@/components/ModalPaymentUnified';
 import PaymentReceipt from '@/components/PaymentReceipt';
@@ -243,22 +244,7 @@ const OrdenesDeTrabajoPage = () => {
   const componentRef = useRef(null);
   const printFn = useReactToPrint({
     contentRef: componentRef as any,
-    pageStyle: `@media print {
-      @page {
-        size: ${dimensions.width}mm ${dimensions.height}mm;
-        margin: 0;
-      }
-      body {
-        width: ${dimensions.width}mm;
-        height: ${dimensions.height}mm;
-        overflow: hidden;
-      }
-      .p-5 {
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-      }
-    }`,
+    pageStyle: buildComprobantePrintPageStyle(dimensions),
   });
 
   const handleDate = (date: string, name: string) => {

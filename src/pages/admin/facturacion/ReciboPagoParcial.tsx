@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
+import { buildComprobantePrintPageStyle } from '@/utils/printStyles';
 
 const ReciboPagoParcial = ({
     comprobante,
@@ -13,22 +14,7 @@ const ReciboPagoParcial = ({
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print {
-            @page {
-              size: 80mm 297mm;
-              margin: 0;
-            }
-            body {
-              width: 80mm;
-              height: 297mm;
-              overflow: hidden;
-            }
-            .p-5 {
-              width: 100%;
-              height: 100%;
-              box-sizing: border-box;
-            }
-          }`,
+        pageStyle: buildComprobantePrintPageStyle({ width: 80, height: 297 }),
     });
 
     const logoDataUrl = (() => {

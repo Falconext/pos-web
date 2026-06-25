@@ -6,6 +6,8 @@ import {
     EvolucionPoint,
     GastoOperativo,
     GastoFormData,
+    IngresoManual,
+    IngresoFormData,
 } from './RentabilidadModel';
 
 // ─── State shape ─────────────────────────────────────────────────────────────
@@ -16,10 +18,14 @@ interface RentabilidadState {
     pnl: PnlResponse | null;
     evolucion: EvolucionPoint[];
     gastos: GastoOperativo[];
+    ingresos: IngresoManual[];
     isLoading: boolean;
     isModalOpen: boolean;
     gastoEditando: GastoOperativo | null;
     isSaving: boolean;
+    isIngresoModalOpen: boolean;
+    ingresoEditando: IngresoManual | null;
+    isSavingIngreso: boolean;
 }
 
 // ─── ViewModel ────────────────────────────────────────────────────────────────
@@ -34,10 +40,14 @@ export function useRentabilidadViewModel() {
         pnl: null,
         evolucion: [],
         gastos: [],
+        ingresos: [],
         isLoading: false,
         isModalOpen: false,
         gastoEditando: null,
         isSaving: false,
+        isIngresoModalOpen: false,
+        ingresoEditando: null,
+        isSavingIngreso: false,
     });
 
     // ─── Derived ──────────────────────────────────────────────────────────────
@@ -65,6 +75,15 @@ export function useRentabilidadViewModel() {
         }
     }, []);
 
+    const fetchIngresos = useCallback(async (mes: number, anio: number) => {
+        const fi = `${anio}-${String(mes).padStart(2, '0')}-01`;
+        const ff = new Date(anio, mes, 0).toISOString().slice(0, 10);
+        const resp = await get<{ items: IngresoManual[]; total: number }>(`finanzas/ingresos-manuales?fechaInicio=${fi}&fechaFin=${ff}`);
+        if (resp.data) {
+            setState(prev => ({ ...prev, ingresos: (resp.data as any).items ?? [] }));
+        }
+    }, []);
+
     const fetchEvolucion = useCallback(async () => {
         const resp = await get<EvolucionPoint[]>(`analisis-financiero/evolucion?meses=6`);
         if (resp.data) {
@@ -81,6 +100,7 @@ export function useRentabilidadViewModel() {
                 await Promise.all([
                     fetchPnl(state.mesActual, state.anioActual),
                     fetchGastos(state.mesActual, state.anioActual),
+                    fetchIngresos(state.mesActual, state.anioActual),
                 ]);
             } finally {
                 setState(prev => ({ ...prev, isLoading: false }));
@@ -118,11 +138,11 @@ export function useRentabilidadViewModel() {
     const refreshPnlAndGastos = useCallback(async (mes: number, anio: number) => {
         setState(prev => ({ ...prev, isLoading: true }));
         try {
-            await Promise.all([fetchPnl(mes, anio), fetchGastos(mes, anio)]);
+            await Promise.all([fetchPnl(mes, anio), fetchGastos(mes, anio), fetchIngresos(mes, anio)]);
         } finally {
             setState(prev => ({ ...prev, isLoading: false }));
         }
-    }, [fetchPnl, fetchGastos]);
+    }, [fetchPnl, fetchGastos, fetchIngresos]);
 
     const crearGasto = useCallback(async (data: GastoFormData) => {
         setState(prev => ({ ...prev, isSaving: true }));
@@ -194,6 +214,56 @@ export function useRentabilidadViewModel() {
         setState(prev => ({ ...prev, isModalOpen: false, gastoEditando: null }));
     }, []);
 
+    // ─── Ingreso CRUD ─────────────────────────────────────────────────────────
+
+    const crearIngreso = useCallback(async (data: IngresoFormData) => {
+        setState(prev => ({ ...prev, isSavingIngreso: true }));
+        try {
+            const resp = await post<IngresoManual>('finanzas/ingresos-manuales', data);
+            if (resp.error) { alert(resp.error, 'error', 'Error'); return false; }
+            alert('Ingreso registrado correctamente', 'success', 'Éxito');
+            setState(prev => ({ ...prev, isIngresoModalOpen: false, ingresoEditando: null }));
+            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            return true;
+        } catch { alert('No se pudo registrar el ingreso', 'error', 'Error'); return false; }
+        finally { setState(prev => ({ ...prev, isSavingIngreso: false })); }
+    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+
+    const actualizarIngreso = useCallback(async (id: number, data: Partial<IngresoFormData>) => {
+        setState(prev => ({ ...prev, isSavingIngreso: true }));
+        try {
+            const resp = await patch<IngresoManual>(`finanzas/ingresos-manuales/${id}`, data);
+            if (resp.error) { alert(resp.error, 'error', 'Error'); return false; }
+            alert('Ingreso actualizado correctamente', 'success', 'Éxito');
+            setState(prev => ({ ...prev, isIngresoModalOpen: false, ingresoEditando: null }));
+            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            return true;
+        } catch { alert('No se pudo actualizar el ingreso', 'error', 'Error'); return false; }
+        finally { setState(prev => ({ ...prev, isSavingIngreso: false })); }
+    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+
+    const eliminarIngreso = useCallback(async (id: number) => {
+        try {
+            const resp = await del(`finanzas/ingresos-manuales/${id}`);
+            if (resp.error) { alert(resp.error, 'error', 'Error'); return false; }
+            alert('Ingreso eliminado', 'success', 'Éxito');
+            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            return true;
+        } catch { alert('No se pudo eliminar el ingreso', 'error', 'Error'); return false; }
+    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+
+    const abrirModalCrearIngreso = useCallback(() => {
+        setState(prev => ({ ...prev, isIngresoModalOpen: true, ingresoEditando: null }));
+    }, []);
+
+    const abrirModalEditarIngreso = useCallback((ingreso: IngresoManual) => {
+        setState(prev => ({ ...prev, isIngresoModalOpen: true, ingresoEditando: ingreso }));
+    }, []);
+
+    const cerrarModalIngreso = useCallback(() => {
+        setState(prev => ({ ...prev, isIngresoModalOpen: false, ingresoEditando: null }));
+    }, []);
+
     // ─── Return ───────────────────────────────────────────────────────────────
 
     return {
@@ -203,10 +273,14 @@ export function useRentabilidadViewModel() {
         pnl: state.pnl,
         evolucion: state.evolucion,
         gastos: state.gastos,
+        ingresos: state.ingresos,
         isLoading: state.isLoading,
         isModalOpen: state.isModalOpen,
         gastoEditando: state.gastoEditando,
         isSaving: state.isSaving,
+        isIngresoModalOpen: state.isIngresoModalOpen,
+        ingresoEditando: state.ingresoEditando,
+        isSavingIngreso: state.isSavingIngreso,
         isCurrentOrFuture,
 
         // Actions
@@ -216,6 +290,12 @@ export function useRentabilidadViewModel() {
         eliminarGasto,
         abrirModalCrear,
         abrirModalEditar,
+        crearIngreso,
+        actualizarIngreso,
+        eliminarIngreso,
+        abrirModalCrearIngreso,
+        abrirModalEditarIngreso,
+        cerrarModalIngreso,
         cerrarModal,
     };
 }

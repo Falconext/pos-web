@@ -12,6 +12,7 @@ import useAlertStore from '@/zustand/alert';
 import ComprobantePrintPage from './comprobanteImprimir';
 import { numberToWords } from '@/utils/numberToLetters';
 import { hasPlanFeature } from '@/utils/permissions';
+import { buildComprobantePrintPageStyle } from '@/utils/printStyles';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -154,18 +155,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `
-            @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap');
-            @media print {
-                @page { size: ${dim.width}mm ${dim.height}mm; margin: 0; background-color: #fff; }
-                * {
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                    font-family: ${dim.width <= 80 ? "'VT323', monospace" : "'Inter', system-ui, sans-serif"} !important;
-                }
-                body { width: ${dim.width}mm; height: ${dim.height}mm; overflow: hidden; background-color: #fff; }
-            }
-        `,
+        pageStyle: buildComprobantePrintPageStyle(dim),
     });
 
     useEffect(() => {

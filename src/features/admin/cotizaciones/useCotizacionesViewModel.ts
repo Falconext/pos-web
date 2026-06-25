@@ -11,6 +11,7 @@ import { useAuthStore } from "@/zustand/auth";
 import { usePaymentFlow, PaymentType } from "@/hooks/usePaymentFlow";
 import { useDebounce } from "@/hooks/useDebounce";
 import { post } from "@/utils/fetch";
+import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 import { IComprobanteWhatsApp, IEstadoInvoiceOption, IPrintFormatOption, PrintFormatSize } from "./CotizacionesModel";
 
@@ -138,21 +139,7 @@ export function useCotizacionesViewModel() {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `
-              @media print {
-                @page {
-                  size: ${dimensions.width}mm ${dimensions.height}mm;
-                  margin: 0;
-                  background-color: #fff;
-                }
-                body {
-                  width: ${dimensions.width}mm;
-                  height: ${dimensions.height}mm;
-                  overflow: hidden;
-                  background-color: #fff;
-                }
-              }
-            `,
+        pageStyle: buildComprobantePrintPageStyle(dimensions),
     });
 
     useEffect(() => {

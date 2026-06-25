@@ -24,8 +24,12 @@ export interface Campana {
   plataforma: PlataformaAds;
   producto: CampanaProducto | null;
   presupuestoDiario: number;
+  presupuestoOriginal?: number;
+  tipoPresupuesto?: 'DIARIO' | 'SEMANAL' | 'MENSUAL' | 'TOTAL';
   moneda: string;
   fechaInicio: string;
+  fechaFin?: string;
+  esRecurrente?: boolean;
   estado: EstadoCampana;
   diasActivos: number;
   diasProyectados: number;
@@ -54,8 +58,12 @@ export interface CampanaForm {
   plataforma: PlataformaAds;
   productoId: number | null;
   presupuestoDiario: number;
+  presupuestoOriginal?: number;
+  tipoPresupuesto?: 'DIARIO' | 'SEMANAL' | 'MENSUAL' | 'TOTAL';
   moneda: 'PEN' | 'USD';
   fechaInicio: string;
+  fechaFin?: string;
+  esRecurrente?: boolean;
 }
 
 export const initialCampanaForm: CampanaForm = {
@@ -63,8 +71,12 @@ export const initialCampanaForm: CampanaForm = {
   plataforma: 'META',
   productoId: null,
   presupuestoDiario: 0,
+  presupuestoOriginal: 0,
+  tipoPresupuesto: 'DIARIO',
   moneda: 'PEN',
   fechaInicio: new Date().toISOString().slice(0, 10),
+  fechaFin: '',
+  esRecurrente: false,
 };
 
 export const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];

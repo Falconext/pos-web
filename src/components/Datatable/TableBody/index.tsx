@@ -200,14 +200,14 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                         <span className={`font-semibold ${Number(cell) > 10 ? 'text-emerald-600' : Number(cell) > 0 ? 'text-amber-500' : 'text-rose-500'}`}>
                                             {cell?.toString()}
                                         </span>
-                                    ) : key === 'estado' || key === 'tipo' || key === 'status' ? (
+                                    ) : key === 'estado' || key === 'tipo' || key === 'status' || key === 'ambiente' || key === 'Ambiente' ? (
                                         <div
                                             className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-                                                ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present' || cell === 'COMPLETADO'
+                                                ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present' || cell === 'COMPLETADO' || cell === 'PRODUCCIÓN'
                                                     ? 'bg-emerald-50 text-emerald-600'
                                                     : cell === 'PENDIENTE'
                                                         ? 'bg-blue-50 text-blue-600'
-                                                        : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'AJUSTE' || cell === 'ENVIANDO'
+                                                        : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'AJUSTE' || cell === 'ENVIANDO' || cell === 'DEMO'
                                                             ? 'bg-amber-50 text-amber-600'
                                                             : cell === 'PARTIAL'
                                                                 ? 'bg-blue-50 text-blue-600'
@@ -231,6 +231,8 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                                 : cell === 'ACEPTADO' ? 'Aceptado'
                                                 : cell === 'ENVIANDO' ? 'Enviando'
                                                 : cell === 'FALLIDO_ENVIO' ? 'Fallido Envío'
+                                                : cell === 'PRODUCCIÓN' ? 'Producción'
+                                                : cell === 'DEMO' ? 'Demo'
                                                 : cell?.toString().toLowerCase()}
                                         </div>
                                     ) : isTruncatable ? (

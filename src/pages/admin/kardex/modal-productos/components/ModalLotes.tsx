@@ -7,6 +7,7 @@ import { Calendar } from '@/components/Date';
 import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
+import { useProductsStore } from '@/zustand/products';
 
 interface IProps {
     isOpen: boolean;
@@ -43,7 +44,22 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
     const cargarLotes = async (productoId: number) => {
         try {
             const { data } = await apiClient.get(`/productos/${productoId}/lotes`);
-            setLotes(data?.data || data || []);
+            const lista: any[] = data?.data || data || [];
+            setLotes(lista);
+            // Propaga al store global para que la tabla de productos refleje los
+            // cambios de lote (stock total + lotes vigentes) sin recargar la página.
+            // Se replica el filtro de la lista: solo lotes activos con stock > 0,
+            // ordenados FEFO (vencimiento asc) tal como los espera la columna "Lotes".
+            const lotesVigentes = lista
+                .filter((l) => l?.activo !== false && Number(l?.stockActual) > 0)
+                .sort((a, b) => new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime());
+            const stockTotal = lotesVigentes.reduce((s, l) => s + Number(l.stockActual || 0), 0);
+            useProductsStore.getState().upsertProductLocal({
+                id: productoId,
+                stock: stockTotal,
+                stockBase: stockTotal,
+                lotes: lotesVigentes,
+            } as any);
         } catch {
             // silencioso
         }

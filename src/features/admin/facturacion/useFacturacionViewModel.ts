@@ -10,6 +10,7 @@ import { numberToWords } from "@/utils/numberToLetters";
 import { calculateTotals } from "@/utils/calculateTotals";
 import useAlertStore from "@/zustand/alert";
 import { useAuthStore } from "@/zustand/auth";
+import { useEmpresasStore } from "@/zustand/empresas";
 import { IFormClient } from "@/interfaces/clients";
 import { IFormProduct } from "@/interfaces/products";
 import { formatISO, parse } from 'date-fns';
@@ -155,7 +156,32 @@ export const useFacturacionViewModel = () => {
     const isFarmaciaRetail = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
     const esDrogueria = rubroNombre.includes('drogueria') || rubroNombre.includes('droguería');
     const usaLotesFarmacia = isFarmaciaRetail || esDrogueria;
+    // Receta médica / controlados: farmacia, botica y droguería (DIGEMID exige
+    // trazar receta de psicotrópicos/estupefacientes también a nivel mayorista)
+    const habilitaRecetaMedica = isFarmaciaRetail || esDrogueria;
     const usarPrecioLoteFefo = Boolean((auth?.empresa as any)?.usarPrecioLoteFefo);
+    const [togglingPrecioLote, setTogglingPrecioLote] = useState(false);
+    // Toggle rápido (solo rubros con lotes) — persiste el flag de empresa y actualiza el estado
+    const togglePrecioLoteFefo = async () => {
+        const next = !usarPrecioLoteFefo;
+        setTogglingPrecioLote(true);
+        try {
+            await useEmpresasStore.getState().actualizarMiEmpresa({ usarPrecioLoteFefo: next });
+            useAuthStore.setState((state: any) =>
+                state.auth
+                    ? { auth: { ...state.auth, empresa: { ...state.auth.empresa, usarPrecioLoteFefo: next } } }
+                    : state,
+            );
+            useAlertStore.getState().alert(
+                next ? 'Activado: el precio se tomará del lote (FEFO)' : 'Desactivado: se usa el precio de venta',
+                'success',
+            );
+        } catch {
+            useAlertStore.getState().alert('No se pudo cambiar la configuración', 'error');
+        } finally {
+            setTogglingPrecioLote(false);
+        }
+    };
 
     const [resellerBranding, setResellerBranding] = useState<{ nombre: string | null; whiteLabelNombre: string | null; whiteLabelWebsite: string | null } | null>(null);
     useEffect(() => {
@@ -335,6 +361,7 @@ export const useFacturacionViewModel = () => {
     const [porcentajeDetraccion, setPorcentajeDetraccion] = useState<number>(0);
     const [montoDetraccion, setMontoDetraccion] = useState<number>(0);
     const [isModalDetraccionOpen, setIsModalDetraccionOpen] = useState<boolean>(false);
+    const [isModalCuotasOpen, setIsModalCuotasOpen] = useState<boolean>(false);
     const [cuotas, setCuotas] = useState<Array<{ monto: number; fechaVencimiento: string }>>([]);
 
     // Retención 3%
@@ -1020,6 +1047,12 @@ export const useFacturacionViewModel = () => {
         if (!esServicio && usaLotesFarmacia) {
             const loteFefo = product?.loteFefo;
             if (!loteFefo) {
+                if (product?.tieneLotesVencidos) {
+                    return useAlertStore.getState().alert(
+                        `${String(product?.descripcion || 'Este producto').toUpperCase()} solo tiene lotes VENCIDOS. No se puede vender medicación vencida — registra un lote vigente en Kardex.`,
+                        "error",
+                    );
+                }
                 return useAlertStore.getState().alert("Este producto no tiene lotes registrados. Ingresa un lote en Kardex antes de vender.", "warning");
             }
             if (loteFefo.diasAlVencimiento !== null && loteFefo.diasAlVencimiento < 0) {
@@ -1088,7 +1121,7 @@ export const useFacturacionViewModel = () => {
                     lotesDisponibles: product?.lotesDisponibles ?? [],
                     loteId: lote.loteId,
                     loteNumero: lote.loteNumero,
-                    pendienteReceta: isFarmaciaRetail && (product.requiereReceta || product.controlado),
+                    pendienteReceta: habilitaRecetaMedica && (product.requiereReceta || product.controlado),
                     requiereReceta: product.requiereReceta ?? false,
                     controlado: product.controlado ?? false,
                     refrigerado: product.refrigerado ?? false,
@@ -1114,7 +1147,7 @@ export const useFacturacionViewModel = () => {
             ? {
                 loteId: product.loteFefo.loteId,
                 loteNumero: product.loteFefo.loteNumero,
-                pendienteReceta: isFarmaciaRetail && (product.requiereReceta || product.controlado),
+                pendienteReceta: habilitaRecetaMedica && (product.requiereReceta || product.controlado),
                 requiereReceta: product.requiereReceta ?? false,
                 controlado: product.controlado ?? false,
                 refrigerado: product.refrigerado ?? false,
@@ -1433,7 +1466,7 @@ export const useFacturacionViewModel = () => {
         const requiresReference = (method?: string) => ['TRANSFERENCIA', 'TARJETA'].includes(normalizePaymentMethod(method));
         const requiresAccount = (method?: string) => normalizePaymentMethod(method) === 'TRANSFERENCIA';
         const details = buildPaymentDetails();
-        const lines: PaymentLine[] = details.mode === 'MIXTO' ? details.splitPayments : [details as PaymentLine];
+        const lines: PaymentLine[] = details.mode === 'MIXTO' ? (details.splitPayments ?? []) : [details as PaymentLine];
 
         for (const line of lines) {
             if (Number(line.amount || 0) <= 0) continue;
@@ -1458,8 +1491,29 @@ export const useFacturacionViewModel = () => {
     }, [porcentajeDetraccion, totalAdjusted]);
 
     const igvRate = 0.18;
-    const opGravadaAdjusted = totalAdjusted / (1 + igvRate);
-    const igvAdjusted = totalAdjusted - opGravadaAdjusted;
+    
+    let sumGravadas = 0;
+    let sumExoneradas = 0;
+    let sumInafectas = 0;
+
+    productsInvoice.forEach((p: any) => {
+        const lineTotal = parseFloat(p.total) || 0;
+        const type = String(p.tipoAfectacionIGV || '10');
+        if (type.startsWith('1')) sumGravadas += lineTotal;
+        else if (type.startsWith('2')) sumExoneradas += lineTotal;
+        else if (type.startsWith('3')) sumInafectas += lineTotal;
+        else sumGravadas += lineTotal;
+    });
+
+    const sumTotalLines = sumGravadas + sumExoneradas + sumInafectas;
+    const discountRatio = (sumTotalLines > 0 && totalAdjusted < sumTotalLines) 
+        ? totalAdjusted / sumTotalLines 
+        : 1;
+
+    const opGravadaAdjusted = (sumGravadas * discountRatio) / (1 + igvRate);
+    const igvAdjusted = (sumGravadas * discountRatio) - opGravadaAdjusted;
+    const opExoneradaAdjusted = sumExoneradas * discountRatio;
+    const opInafectaAdjusted = sumInafectas * discountRatio;
     const finalDiscount = isDiscountGlobalApplicable
         ? Number(productDiscount) + descountGlobal
         : Number(productDiscount) + montoDescuentoNV;
@@ -1507,8 +1561,8 @@ export const useFacturacionViewModel = () => {
         }
         if (!validatePaymentDetails()) return;
 
-        // Farmacia: bloquear emisión si hay ítems con receta pendiente
-        if (isFarmaciaRetail) {
+        // Farmacia/droguería: bloquear emisión si hay ítems con receta pendiente
+        if (habilitaRecetaMedica) {
             const pendientes = productsInvoice.filter((p: any) => p.pendienteReceta);
             if (pendientes.length > 0) {
                 return useAlertStore.getState().alert(
@@ -1579,6 +1633,24 @@ export const useFacturacionViewModel = () => {
             ? 'MIXTO'
             : paymentMethod;
         const paymentDetails = buildPaymentDetails();
+        const esPagoCredito = formValues.medioPago === 'Crédito';
+        const cuotasCredito = esPagoCredito
+            ? (cuotas.length > 0
+                ? cuotas
+                : (fechaVencimientoCredito
+                    ? [{ monto: totalAdjusted, fechaVencimiento: fechaVencimientoCredito }]
+                    : []))
+            : [];
+
+        if (esPagoCredito) {
+            if (cuotasCredito.length === 0) {
+                return useAlertStore.getState().alert("Configura la fecha de vencimiento o el cronograma de cuotas para la venta al crédito.", "error");
+            }
+            const sumaCuotas = cuotasCredito.reduce((sum, cuota) => sum + Number(cuota.monto || 0), 0);
+            if (Math.abs(sumaCuotas - totalAdjusted) > 0.01) {
+                return useAlertStore.getState().alert(`La suma de cuotas (S/ ${sumaCuotas.toFixed(2)}) debe ser igual al total de la factura (S/ ${totalAdjusted.toFixed(2)}).`, "error");
+            }
+        }
 
         const esDocumentoInformal = tiposInformales.includes(formValues.tipoDoc);
         const aplicacionMontoEnvio =
@@ -1624,14 +1696,15 @@ export const useFacturacionViewModel = () => {
                     descuento: 0,
                 }] : []),
             ],
-            formaPagoTipo: formValues.medioPago === 'Crédito' ? 'Credito' : (formValues.medioPago || 'Contado'),
+            formaPagoTipo: esPagoCredito ? 'Credito' : (formValues.medioPago || 'Contado'),
             formaPagoMoneda: "PEN",
             tipoMoneda: "PEN",
             descuento: finalDiscount,
             ...(esInformal && montoDescuentoNV > 0 ? { montoDescuentoGlobal: montoDescuentoNV } : {}),
             leyenda: totalInWords,
             observaciones: observacionesFinal,
-            ...(formValues.medioPago === 'Crédito' && fechaVencimientoCredito ? { fechaVencimientoCredito } : {}),
+            ...(esPagoCredito && fechaVencimientoCredito ? { fechaVencimientoCredito } : {}),
+            ...(esPagoCredito && cuotasCredito.length > 0 ? { cuotas: cuotasCredito } : {}),
             adelanto: (() => {
                 const envioAdelanto = esDocumentoInformal && envioActivo && Number(envioData.costoEnvio) > 0 && aplicacionMontoEnvio === 'ADELANTO'
                     ? Number(envioData.costoEnvio)
@@ -1654,12 +1727,12 @@ export const useFacturacionViewModel = () => {
                 cuentaBancoNacion: cuentaBancoNacion || undefined,
                 porcentajeDetraccion: porcentajeDetraccion > 0 ? porcentajeDetraccion : undefined,
                 montoDetraccion: montoDetraccion > 0 ? montoDetraccion : undefined,
-                cuotas: cuotas.length > 0 ? cuotas : undefined,
+                cuotas: cuotasCredito.length > 0 ? cuotasCredito : undefined,
             } : {}),
             ...(retencionData ? {
                 retencionMonto: retencionData.montoDetraccion,
                 retencionPorcentaje: retencionData.porcentajeDetraccion,
-                cuotas: formValues.cuotas && formValues.cuotas.length > 0 ? formValues.cuotas : undefined,
+                cuotas: cuotasCredito.length > 0 ? cuotasCredito : undefined,
             } : {}),
         };
 
@@ -1914,7 +1987,11 @@ export const useFacturacionViewModel = () => {
         // Farmacia flags
         isFarmaciaRetail,
         esDrogueria,
+        habilitaRecetaMedica,
         usaLotesFarmacia,
+        usarPrecioLoteFefo,
+        togglePrecioLoteFefo,
+        togglingPrecioLote,
 
         // Fraccionamiento
         modoFraccionPorProducto,
@@ -1924,6 +2001,7 @@ export const useFacturacionViewModel = () => {
         isOpenModalClient, setIsOpenModalClient,
         isOpenModalProduct, setIsOpenModalProduct,
         isModalDetraccionOpen, setIsModalDetraccionOpen,
+        isModalCuotasOpen, setIsModalCuotasOpen,
         isModalRetencionOpen, setIsModalRetencionOpen,
         isQuotationConfigModalOpen, setIsQuotationConfigModalOpen,
         IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice,
@@ -1983,7 +2061,7 @@ export const useFacturacionViewModel = () => {
 
         // Derived Logic
         totalAdjusted, total, productDiscount, hasDiscount,
-        opGravadaAdjusted, igvAdjusted, finalDiscount, totalInWords,
+        opGravadaAdjusted, igvAdjusted, opExoneradaAdjusted, opInafectaAdjusted, finalDiscount, totalInWords,
         montoRecibido, vueltoCalculado, isCashPayment,
 
         // References & Inputs

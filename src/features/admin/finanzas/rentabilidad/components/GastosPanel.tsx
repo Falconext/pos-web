@@ -10,7 +10,7 @@ interface GastosPanelProps {
 
 export default function GastosPanel({ gastos, onAgregar, onEditar, onEliminar }: GastosPanelProps) {
     return (
-        <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800 h-full flex flex-col">
+        <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800 max-h-[360px] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export default function GastosPanel({ gastos, onAgregar, onEditar, onEliminar }:
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
                     <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Monto configurado</span>
                     <span className="text-base font-bold text-gray-900 dark:text-white tabular-nums">
-                        {formatCurrency(gastos.reduce((sum, g) => sum + g.monto, 0))}
+                        {formatCurrency(gastos.reduce((sum, g) => sum + Number(g.monto), 0))}
                     </span>
                 </div>
             )}

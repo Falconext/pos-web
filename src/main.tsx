@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
+import { scheduleAppVersionChecks } from './utils/appVersion'
 
 // Clave inline — NO importar branding.ts aquí para evitar que BRAND se evalúe
 // antes de que bootstrapBranding() resuelva el fetch y setee __FALCONEXT_PUBLIC_BRAND__
@@ -122,6 +123,7 @@ const bootstrapBranding = async () => {
 }
 
 const start = async () => {
+  scheduleAppVersionChecks()
   await bootstrapBranding()
   const { default: App } = await import('./App')
 

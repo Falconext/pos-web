@@ -15,6 +15,8 @@ import ModalEditLineItem from "@/pages/admin/facturacion/ModalEditLineItem";
 import ModalDetraccion from "@/pages/admin/facturacion/ModalDetraccion";
 import ModalConfiguracionCotizacion from "@/pages/admin/facturacion/ModalConfiguracionCotizacion";
 import { ModalRecetaMedica } from "@/pages/admin/facturacion/ModalRecetaMedica";
+import ModalCuotas from "@/pages/admin/facturacion/ModalCuotas";
+import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 export const FacturacionNuevoView = () => {
     const vm = useFacturacionViewModel();
@@ -35,7 +37,7 @@ export const FacturacionNuevoView = () => {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print { @page { size: ${localDimensions.width}mm ${localDimensions.height}mm; margin: 0; } body { margin: 0; width: ${localDimensions.width}mm; } }`,
+        pageStyle: buildComprobantePrintPageStyle(localDimensions),
     });
 
     useEffect(() => {
@@ -86,6 +88,8 @@ export const FacturacionNuevoView = () => {
                         splitPayments: vm.isMixedPayment ? vm.splitPayments : undefined,
                         paymentDetails: vm.buildPaymentDetails?.(),
                         mtoOperGravadas: vm.opGravadaAdjusted,
+                        mtoOperExoneradas: vm.opExoneradaAdjusted,
+                        mtoOperInafectas: vm.opInafectaAdjusted,
                         mtoIGV: vm.igvAdjusted,
                         mtoImpVenta: vm.totalAdjusted,
                         mtoDescuentoGlobal: vm.finalDiscount,
@@ -223,6 +227,13 @@ export const FacturacionNuevoView = () => {
                 mediosPagoDetraccion={vm.mediosPagoDetraccion}
                 initialData={vm.retencionData}
                 mode="RETENCION"
+            />
+            <ModalCuotas
+                isOpen={vm.isModalCuotasOpen}
+                onClose={() => vm.setIsModalCuotasOpen(false)}
+                onSave={(cuotas) => vm.setCuotas(cuotas)}
+                initialCuotas={vm.cuotas || []}
+                totalFactura={vm.totalAdjusted}
             />
             <ModalConfiguracionCotizacion
                 isOpen={vm.isQuotationConfigModalOpen}

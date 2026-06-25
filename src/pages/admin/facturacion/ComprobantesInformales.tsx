@@ -30,6 +30,7 @@ import { useSedesStore } from "@/zustand/sedes";
 import { useNavigate } from "react-router-dom";
 import { useUsersStore } from "@/zustand/users";
 import TableActionMenu from "@/components/TableActionMenu";
+import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -358,18 +359,7 @@ const ComprobantesInformales = () => {
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `
-              @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap');
-              @media print {
-                @page { size: ${dimensions.width}mm ${dimensions.height}mm; margin: 0; background-color: #fff; }
-                * {
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
-                  font-family: ${dimensions.width <= 80 ? "'VT323', monospace" : "'Inter', system-ui, sans-serif"} !important;
-                }
-                body { width: ${dimensions.width}mm; height: ${dimensions.height}mm; overflow: hidden; background-color: #fff; }
-              }
-            `,
+        pageStyle: buildComprobantePrintPageStyle(dimensions),
     });
 
     useEffect(() => {

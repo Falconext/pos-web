@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { PnlResponse, formatCurrency, formatPercent, getCategoriaLabel, getCategoriaIcon } from '../RentabilidadModel';
+import { PnlResponse, OtroIngreso, formatCurrency, formatPercent, getCategoriaLabel, getCategoriaIcon, TIPOS_INGRESO } from '../RentabilidadModel';
 
 interface PnlTableProps {
     pnl: PnlResponse;
@@ -75,8 +75,19 @@ function Divider() {
     return <div className="my-1 border-t border-dashed border-gray-200 dark:border-slate-700" />;
 }
 
+function getTipoIngresoIcon(tipo: string): string {
+    return TIPOS_INGRESO.find(t => t.key === tipo)?.icon ?? 'solar:wallet-money-bold-duotone';
+}
+
+function getTipoIngresoLabel(tipo: string): string {
+    return TIPOS_INGRESO.find(t => t.key === tipo)?.label ?? tipo;
+}
+
 export default function PnlTable({ pnl }: PnlTableProps) {
-    const ref = pnl.ventasNetas || 1;
+    const otrosIngresos = pnl.otrosIngresos ?? 0;
+    const otrosIngresosDetalle: OtroIngreso[] = pnl.otrosIngresosDetalle ?? [];
+    const ingresosTotales = pnl.ventasNetas + otrosIngresos;
+    const ref = ingresosTotales || 1;
 
     return (
         <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800 h-full">
@@ -110,6 +121,35 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                 reference={ref}
                 barColor="bg-indigo-500"
             />
+
+            {/* Otros Ingresos (manuales operacionales) */}
+            {otrosIngresos > 0 && (
+                <>
+                    <div className="mt-1 mb-0.5 px-3">
+                        <span className="text-xs font-semibold text-emerald-500 dark:text-emerald-400 uppercase tracking-wide">Otros Ingresos</span>
+                    </div>
+                    {otrosIngresosDetalle.map((i, idx) => (
+                        <PnlRow
+                            key={idx}
+                            label={`${getTipoIngresoLabel(i.tipo)} — ${i.concepto}`}
+                            icon={getTipoIngresoIcon(i.tipo)}
+                            value={i.monto}
+                            reference={ref}
+                            indent
+                            barColor="bg-emerald-400"
+                        />
+                    ))}
+                    <PnlRow
+                        label="Total Ingresos"
+                        icon="solar:wallet-money-bold-duotone"
+                        value={ingresosTotales}
+                        reference={ref}
+                        isResult
+                        colorClass="bg-teal-500 dark:bg-teal-600 rounded-xl"
+                        barColor="bg-teal-300"
+                    />
+                </>
+            )}
 
             {/* Costo de mercadería */}
             <PnlRow
@@ -186,7 +226,7 @@ export default function PnlTable({ pnl }: PnlTableProps) {
             />
 
             {/* Empty state for gastos */}
-            {pnl.gastosPorCategoria.length === 0 && (
+            {pnl.gastosPorCategoria.length === 0 && otrosIngresos === 0 && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">
                     Sin gastos operativos registrados este mes
                 </p>

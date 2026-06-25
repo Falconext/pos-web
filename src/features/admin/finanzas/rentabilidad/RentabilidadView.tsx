@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import {
     PnlResponse,
@@ -8,11 +9,16 @@ import {
     formatPercent,
     getMesFullLabel,
     GastoFormData,
+    IngresoManual,
+    IngresoFormData,
 } from './RentabilidadModel';
 import PnlTable from './components/PnlTable';
 import GastosPanel from './components/GastosPanel';
+import IngresosPanel from './components/IngresosPanel';
 import EvolucionChart from './components/EvolucionChart';
 import GastoFormModal from './components/GastoFormModal';
+import IngresoFormModal from './components/IngresoFormModal';
+import HistorialFinancieroDrawer from './components/HistorialFinancieroDrawer';
 
 interface RentabilidadViewProps {
     mesActual: number;
@@ -20,10 +26,14 @@ interface RentabilidadViewProps {
     pnl: PnlResponse | null;
     evolucion: EvolucionPoint[];
     gastos: GastoOperativo[];
+    ingresos: IngresoManual[];
     isLoading: boolean;
     isModalOpen: boolean;
     gastoEditando: GastoOperativo | null;
     isSaving: boolean;
+    isIngresoModalOpen: boolean;
+    ingresoEditando: IngresoManual | null;
+    isSavingIngreso: boolean;
     isCurrentOrFuture: boolean;
     navegarMes: (delta: -1 | 1) => void;
     crearGasto: (data: GastoFormData) => Promise<boolean>;
@@ -32,6 +42,12 @@ interface RentabilidadViewProps {
     abrirModalCrear: () => void;
     abrirModalEditar: (gasto: GastoOperativo) => void;
     cerrarModal: () => void;
+    crearIngreso: (data: IngresoFormData) => Promise<boolean>;
+    actualizarIngreso: (id: number, data: Partial<IngresoFormData>) => Promise<boolean>;
+    eliminarIngreso: (id: number) => Promise<boolean>;
+    abrirModalCrearIngreso: () => void;
+    abrirModalEditarIngreso: (ingreso: IngresoManual) => void;
+    cerrarModalIngreso: () => void;
 }
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
@@ -191,23 +207,33 @@ function DailyProfitCard({ pnl }: { pnl: PnlResponse }) {
 
 export default function RentabilidadView(props: RentabilidadViewProps) {
     const {
-        mesActual, anioActual, pnl, evolucion, gastos,
+        mesActual, anioActual, pnl, evolucion, gastos, ingresos,
         isLoading, isModalOpen, gastoEditando, isSaving, isCurrentOrFuture,
+        isIngresoModalOpen, ingresoEditando, isSavingIngreso,
         navegarMes, crearGasto, actualizarGasto, eliminarGasto,
         abrirModalCrear, abrirModalEditar, cerrarModal,
+        crearIngreso, actualizarIngreso, eliminarIngreso,
+        abrirModalCrearIngreso, abrirModalEditarIngreso, cerrarModalIngreso,
     } = props;
 
     const isNeta = (pnl?.gananciaNeta ?? 0) >= 0;
+    const [isHistorialOpen, setIsHistorialOpen] = useState(false);
 
     return (
         <div className="space-y-6">
             {/* ── Month Navigator ── */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Rentabilidad P&amp;L</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                        Análisis detallado de ganancias y pérdidas
-                    </p>
+                    <div className="flex items-center gap-3 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Análisis detallado de ganancias y pérdidas
+                        </p>
+                        <button onClick={() => setIsHistorialOpen(true)} className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors border border-indigo-100 dark:border-indigo-800/30">
+                            <Icon icon="solar:history-bold-duotone" />
+                            Ver historial completo
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2 bg-white dark:bg-[#111827] border border-gray-100/50 dark:border-slate-800 rounded-2xl p-1.5 shadow-sm">
@@ -303,20 +329,26 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                         />
                     </div>
 
-                    {/* ── Row 2: PnlTable + GastosPanel ── */}
+                    {/* ── Row 2: PnlTable + Panels ── */}
                     {pnl ? (
                         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                             {/* P&L Table — 60% */}
                             <div className="lg:col-span-3">
                                 <PnlTable pnl={pnl} />
                             </div>
-                            {/* Gastos Panel — 40% */}
-                            <div className="lg:col-span-2">
+                            {/* Right panels — 40%: Gastos + Ingresos stacked */}
+                            <div className="lg:col-span-2 flex flex-col gap-6">
                                 <GastosPanel
                                     gastos={gastos}
                                     onAgregar={abrirModalCrear}
                                     onEditar={abrirModalEditar}
                                     onEliminar={eliminarGasto}
+                                />
+                                <IngresosPanel
+                                    ingresos={ingresos}
+                                    onAgregar={abrirModalCrearIngreso}
+                                    onEditar={abrirModalEditarIngreso}
+                                    onEliminar={eliminarIngreso}
                                 />
                             </div>
                         </div>
@@ -347,6 +379,27 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                 onClose={cerrarModal}
                 onCrear={crearGasto}
                 onActualizar={actualizarGasto}
+            />
+
+            {/* ── Ingreso Form Modal ── */}
+            <IngresoFormModal
+                isOpen={isIngresoModalOpen}
+                mesActual={mesActual}
+                anioActual={anioActual}
+                ingresoEditando={ingresoEditando}
+                isSaving={isSavingIngreso}
+                onClose={cerrarModalIngreso}
+                onCrear={crearIngreso}
+                onActualizar={actualizarIngreso}
+            />
+
+            <HistorialFinancieroDrawer
+                isOpen={isHistorialOpen}
+                onClose={() => setIsHistorialOpen(false)}
+                onEditarGasto={abrirModalEditar}
+                onEliminarGasto={eliminarGasto}
+                onEditarIngreso={abrirModalEditarIngreso}
+                onEliminarIngreso={eliminarIngreso}
             />
         </div>
     );

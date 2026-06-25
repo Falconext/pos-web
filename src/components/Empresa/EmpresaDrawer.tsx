@@ -40,6 +40,26 @@ const LOG_ICONS: Record<string, { icon: string; color: string; label: string }> 
     PLAN_CAMBIADO: { icon: 'solar:star-bold-duotone', color: '#F59E0B', label: 'Plan cambiado' },
 };
 
+const DAY_MS = 86400000;
+
+const normalizeDateOnly = (value?: string | null): string => {
+    if (!value) return '';
+    const iso = value.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
+};
+
+const getDaysUntilDate = (value?: string | null): number | null => {
+    const iso = normalizeDateOnly(value);
+    if (!iso) return null;
+    const [year, month, day] = iso.split('-').map(Number);
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const targetUtc = Date.UTC(year, month - 1, day);
+    return Math.ceil((targetUtc - todayUtc) / DAY_MS);
+};
+
 const relativeTime = (dateStr: string) => {
     const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
     if (diff < 60) return 'hace un momento';
@@ -137,9 +157,7 @@ export default function EmpresaDrawer({
         finally { setEnviandoEmail(false); }
     };
 
-    const diasRestantes = empresa?.fechaExpiracion
-        ? Math.ceil((new Date(empresa.fechaExpiracion).getTime() - Date.now()) / 86400000)
-        : null;
+    const diasRestantes = getDaysUntilDate(empresa?.fechaExpiracion);
 
     const expColor = diasRestantes === null ? '' :
         diasRestantes <= 0 ? 'text-red-600' :

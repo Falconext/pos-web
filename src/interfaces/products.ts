@@ -61,6 +61,9 @@ export type IProduct = {
   concentracion?: string
   presentacion?: string
   laboratorio?: string
+  requiereReceta?: boolean
+  controlado?: boolean
+  refrigerado?: boolean
   // Campos Bodega/Supermercado
   codigoBarras?: string
   unidadCompra?: string
@@ -118,6 +121,9 @@ export type IFormProduct = {
   concentracion?: string
   presentacion?: string
   laboratorio?: string
+  requiereReceta?: boolean
+  controlado?: boolean
+  refrigerado?: boolean
   // Campos Bodega/Supermercado
   codigoBarras?: string
   unidadCompra?: string

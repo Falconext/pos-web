@@ -199,6 +199,27 @@ export default function ProductsView() {
                 '% Provisión': `${Number((item as any)?.porcentajeProvision ?? 0)}%`,
                 'Stock minimo': esServicio ? '-' : item?.stockMinimo ?? 0,
                 'U.M': unidadNombre.toUpperCase(),
+                'Lotes': (() => {
+                    const lotes = Array.isArray(itemAny?.lotes) ? itemAny.lotes : [];
+                    if (esServicio || lotes.length === 0) return <span className="text-gray-400">—</span>;
+                    const prox = lotes[0];
+                    const venc = new Date(prox.fechaVencimiento);
+                    const dias = Math.ceil((venc.getTime() - Date.now()) / 86400000);
+                    const color = dias < 0
+                        ? { bg: '#FEE2E2', text: '#B91C1C' }
+                        : dias <= 60
+                            ? { bg: '#FEF3C7', text: '#B45309' }
+                            : { bg: '#DCFCE7', text: '#15803D' };
+                    const totalStock = lotes.reduce((s: number, l: any) => s + Number(l.stockActual || 0), 0);
+                    return (
+                        <div className="flex flex-col gap-0.5">
+                            <span style={{ backgroundColor: color.bg, color: color.text }} className="inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap">
+                                {dias < 0 ? 'Vencido' : `Vence ${venc.toLocaleDateString('es-PE')}`}
+                            </span>
+                            <span className="text-[10px] text-gray-400">{lotes.length} lote{lotes.length > 1 ? 's' : ''} · {totalStock} und</span>
+                        </div>
+                    );
+                })(),
                 'Sede': (() => {
                     const cfg = (item as any).sedeStockConfig;
                     if (!cfg) return '-';

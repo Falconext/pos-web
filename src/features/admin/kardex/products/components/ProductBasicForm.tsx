@@ -395,19 +395,19 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             </div>
 
             <div className={`col-span-1 ${isRestaurante ? 'md:col-span-2' : 'md:col-span-2 flex gap-2'}`}>
-                <Select defaultValue={formValues.afectacionNombre || "Gravado - operación onerosa"} error={""} isSearch options={afectaciones} id="tipoAfectacionIGV" name="afectacionNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Tipo de afectación" />
+                <Select defaultValue={afectaciones.find(a => a.id === String((formValues as any)?.tipoAfectacionIGV))?.value || "Gravado - Operación Onerosa"} error={""} isSearch options={afectaciones} id="tipoAfectacionIGV" name="afectacionNombre" value={afectaciones.find(a => a.id === String((formValues as any)?.tipoAfectacionIGV))?.value || "Gravado - Operación Onerosa"} onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Tipo de afectación" />
             </div>
 
             <div className="col-span-1 md:col-span-1">
-                <Select defaultValue={formValues?.unidadMedidaNombre} error={""} isSearch options={unitOfMeasure?.map((item: ICategory) => ({ id: item?.id, value: `${item?.nombre}` }))} id="unidadMedidaId" name="unidadMedidaNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Unidad de medida" />
+                <Select defaultValue={formValues?.unidadMedidaNombre} error={""} isSearch options={unitOfMeasure?.map((item: ICategory) => ({ id: item?.id, value: `${item?.nombre}` }))} id="unidadMedidaId" name="unidadMedidaNombre" value={formValues?.unidadMedidaNombre || ""} onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Unidad de medida" />
             </div>
             <div className={`col-span-1 md:col-span-1 ${isRestaurante ? '' : 'flex gap-2'} w-full`}>
                 <div className="w-full">
-                    <Select defaultValue={formValues.categoriaNombre} error={""} isSearch options={categories?.map((item: ICategory) => ({ id: item?.id, value: `${item?.nombre}` }))} id="categoriaId" name="categoriaNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Categoria" />
+                    <Select defaultValue={formValues.categoriaNombre} error={""} isSearch options={categories?.map((item: ICategory) => ({ id: item?.id, value: `${item?.nombre}` }))} id="categoriaId" name="categoriaNombre" value={formValues?.categoriaNombre || ""} onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Categoria" />
                 </div>
                 {!isRestaurante && (
                     <div className="w-full">
-                        <Select defaultValue={formValues.marcaNombre} error={""} isSearch options={brands?.map((item: IBrand) => ({ id: item?.id, value: `${item?.nombre}` }))} id="marcaId" name="marcaNombre" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Marca" />
+                        <Select defaultValue={formValues.marcaNombre} error={""} isSearch options={brands?.map((item: IBrand) => ({ id: item?.id, value: `${item?.nombre}` }))} id="marcaId" name="marcaNombre" value={formValues?.marcaNombre || ""} onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Marca" />
                     </div>
                 )}
             </div>
@@ -607,8 +607,8 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             placeholder="Ej: 1234567"
                         />
                         <div className="flex flex-col gap-3 pt-1">
-                            {/* requiereReceta: solo farmacia/botica retail */}
-                            {isFarmacia && (
+                            {/* requiereReceta: farmacia, botica y droguería */}
+                            {esFarmaceutico && (
                                 <label className="flex items-center gap-3 cursor-pointer group">
                                     <div className="relative">
                                         <input

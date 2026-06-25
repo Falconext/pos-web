@@ -103,10 +103,14 @@ export default function FinanzasTabs() {
                         pnl={vm.pnl}
                         evolucion={vm.evolucion}
                         gastos={vm.gastos}
+                        ingresos={vm.ingresos}
                         isLoading={vm.isLoading}
                         isModalOpen={vm.isModalOpen}
                         gastoEditando={vm.gastoEditando}
                         isSaving={vm.isSaving}
+                        isIngresoModalOpen={vm.isIngresoModalOpen}
+                        ingresoEditando={vm.ingresoEditando}
+                        isSavingIngreso={vm.isSavingIngreso}
                         isCurrentOrFuture={vm.isCurrentOrFuture}
                         navegarMes={vm.navegarMes}
                         crearGasto={vm.crearGasto}
@@ -115,6 +119,12 @@ export default function FinanzasTabs() {
                         abrirModalCrear={vm.abrirModalCrear}
                         abrirModalEditar={vm.abrirModalEditar}
                         cerrarModal={vm.cerrarModal}
+                        crearIngreso={vm.crearIngreso}
+                        actualizarIngreso={vm.actualizarIngreso}
+                        eliminarIngreso={vm.eliminarIngreso}
+                        abrirModalCrearIngreso={vm.abrirModalCrearIngreso}
+                        abrirModalEditarIngreso={vm.abrirModalEditarIngreso}
+                        cerrarModalIngreso={vm.cerrarModalIngreso}
                     />
                 </div>
             )}

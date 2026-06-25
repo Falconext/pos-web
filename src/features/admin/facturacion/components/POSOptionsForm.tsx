@@ -436,7 +436,16 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                                 className="w-full h-9 px-3 text-sm rounded-xl border border-violet-300 dark:border-violet-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-400/20 transition-all"
                             />
                             {vm.formValues?.comprobante === "FACTURA" && (
-                                <p className="text-[10px] text-gray-500 mt-1">Para múltiples cuotas, usa el botón "Operación Fiscal" arriba.</p>
+                                <div className="mt-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => vm.setIsModalCuotasOpen(true)}
+                                        className="w-full p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-800/30 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors flex items-center justify-center gap-1.5"
+                                    >
+                                        <Icon icon="solar:list-bold" width={16} />
+                                        Configurar Múltiples Cuotas {vm.cuotas?.length > 0 ? `(${vm.cuotas.length})` : ''}
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}

@@ -35,7 +35,10 @@ function CampanaCard({ c, onEditar, onToggle }: { c: Campana; onEditar: () => vo
           {plat.label}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{c.nombre}</p>
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
+            {c.nombre}
+            {c.esRecurrente && <Icon icon="solar:refresh-circle-bold-duotone" className="text-indigo-500" title="Bucle recurrente activo" />}
+          </p>
           {c.producto && (
             <p className="text-xs text-indigo-500 dark:text-indigo-400 truncate mt-0.5">{c.producto.descripcion}</p>
           )}
@@ -56,7 +59,10 @@ function CampanaCard({ c, onEditar, onToggle }: { c: Campana; onEditar: () => vo
       {/* Métricas */}
       <div className="grid grid-cols-4 gap-px bg-gray-100 dark:bg-slate-800 border-t border-gray-100 dark:border-slate-800">
         {[
-          { label: 'Presup./día', value: formatCurrency(c.presupuestoDiario, moneda) },
+          { 
+            label: c.tipoPresupuesto === 'SEMANAL' ? 'Presup. Semanal' : c.tipoPresupuesto === 'MENSUAL' ? 'Presup. Mensual' : c.tipoPresupuesto === 'TOTAL' ? 'Presup. Total' : 'Presup./día', 
+            value: formatCurrency(c.presupuestoOriginal || c.presupuestoDiario, moneda) 
+          },
           { label: 'Días del mes', value: String(c.diasProyectados ?? c.diasActivos) },
           { label: 'Invertido', value: formatCurrency(c.gastoEstimado, moneda), sub: `${c.diasActivos} días` },
           { label: 'Ventas', value: String(c.ventasAtribuidas), sub: 'unidades' },

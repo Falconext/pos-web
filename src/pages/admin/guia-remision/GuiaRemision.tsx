@@ -18,6 +18,7 @@ import { useAuthStore } from "@/zustand/auth";
 import { useSedesStore } from "@/zustand/sedes";
 import Select from "@/components/Select";
 import apiClient from "@/utils/apiClient";
+import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import ModalConfirm from "@/components/ModalConfirm";
 
 const MOTIVOS_TRASLADO: Record<string, string> = {
@@ -61,7 +62,7 @@ const GuiaRemision = () => {
     const handlePrintReact = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: `@media print { @page { size: 210mm 297mm; margin: 0; } body { margin: 0; width: 210mm; } }`,
+        pageStyle: buildComprobantePrintPageStyle({ width: 210, height: 297 }),
     });
 
     const handlePrint = (guia: any) => {
