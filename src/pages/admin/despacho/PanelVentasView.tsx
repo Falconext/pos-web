@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import apiClient from '@/utils/apiClient';
@@ -352,8 +352,11 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
 export default function PanelVentasView() {
     const vm = usePanelVentasViewModel();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { alert } = useAlertStore();
     const { usuarios, getAllUsers } = useUsersStore();
+    const queryFecha = searchParams.get('fecha');
+    const queryComprobanteId = Number(searchParams.get('comprobanteId') || 0) || null;
 
     const [mostrarProductos, setMostrarProductos] = useState<boolean>(
         () => localStorage.getItem('panel_mostrar_productos') !== 'false',
@@ -384,6 +387,16 @@ export default function PanelVentasView() {
             getAllUsers({ page: 1, limit: 200 });
         }
     }, [vm.canFilterByUsuario, getAllUsers]);
+
+    useEffect(() => {
+        if (queryFecha && moment(queryFecha, 'YYYY-MM-DD', true).isValid() && queryFecha !== vm.fecha) {
+            vm.setFecha(queryFecha);
+        }
+    }, [queryFecha, vm.fecha, vm.setFecha]);
+
+    const filasVisibles = queryComprobanteId
+        ? vm.filtrados.filter((item) => item.comprobanteId === queryComprobanteId)
+        : vm.filtrados;
 
     const handleOpenMenu = (e: React.MouseEvent<HTMLElement>, item: VentaPanelItem) => {
         e.stopPropagation();
@@ -759,7 +772,7 @@ export default function PanelVentasView() {
                                         <p className="text-sm">Cargando ventas...</p>
                                     </td>
                                 </tr>
-                            ) : vm.filtrados.length === 0 ? (
+                            ) : filasVisibles.length === 0 ? (
                                 <tr>
                                     <td colSpan={mostrarProductos ? 18 + (vm.esPrincipalAdmin ? 1 : 0) : 17 + (vm.esPrincipalAdmin ? 1 : 0)} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="solar:sad-square-linear" className="text-4xl mx-auto mb-2 opacity-40" />
@@ -767,7 +780,7 @@ export default function PanelVentasView() {
                                     </td>
                                 </tr>
                             ) : (
-                                vm.filtrados.map((item) => {
+                                filasVisibles.map((item) => {
                                     const tipoConf = TIPO_CONFIG[item.tipo] ?? { label: item.tipo, cls: 'bg-slate-100 text-slate-500' };
                                     const pagoConf = PAGO_CONFIG[item.estadoPago] ?? PAGO_CONFIG.PENDIENTE;
                                     const sunatConf = SUNAT_CONFIG[item.estadoSunat] ?? SUNAT_CONFIG.NO_APLICA;

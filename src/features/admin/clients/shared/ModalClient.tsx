@@ -225,7 +225,7 @@ export default function ModalClient({
                         {/* Correo + Celular */}
                         <div className="grid grid-cols-2 gap-4">
                             <InputPro autocomplete="off" value={formValues?.email} error={errors.email} name="email" onChange={handleChange} isLabel label="Correo principal" />
-                            <InputPro autocomplete="off" value={formValues?.telefono} error={errors.telefono} name="phone" onChange={handleChange} isLabel label="Celular" />
+                            <InputPro autocomplete="off" value={formValues?.telefono} error={errors.telefono} name="telefono" onChange={handleChange} isLabel label="Celular" />
                         </div>
 
                         {/* Ubigeo */}

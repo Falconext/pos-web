@@ -1185,8 +1185,6 @@ export const useFacturacionViewModel = () => {
     }
 
     const handleAddFreeQuoteItem = () => {
-        if (!isQuotationRoute) return;
-
         const descripcion = cleanText(freeQuoteItem.descripcion);
         const cantidad = Number(freeQuoteItem.cantidad);
         const precioUnitario = Number(freeQuoteItem.precioUnitario);
@@ -1221,7 +1219,6 @@ export const useFacturacionViewModel = () => {
         } as any);
 
         setFreeQuoteItem(crearEstadoItemLibre());
-        setShowFreeQuoteItemForm(false);
     };
 
     // Farmacia: confirmar datos de receta para un ítem del carrito

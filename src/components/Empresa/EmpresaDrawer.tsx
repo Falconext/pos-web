@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
@@ -8,10 +9,14 @@ interface Empresa {
     ruc?: string;
     razonSocial?: string;
     nombreComercial?: string;
-    plan?: { nombre: string };
+    direccion?: string;
+    fechaActivacion?: string;
+    plan?: { nombre: string; costo?: number | string; descripcion?: string };
     fechaExpiracion?: string;
     estado?: string;
     brand?: string;
+    slugTienda?: string;
+    usuarios?: Array<{ nombre?: string | null; email?: string | null; celular?: string | null }>;
 }
 
 interface Nota {
@@ -88,6 +93,11 @@ export default function EmpresaDrawer({
     const [emailTipo, setEmailTipo] = useState<'BIENVENIDA' | 'AGRADECIMIENTO' | 'RECORDATORIO' | 'PROMOCION' | null>(null);
     const [emailMensaje, setEmailMensaje] = useState('');
     const [emailTituloPromo, setEmailTituloPromo] = useState('');
+    const [pagoConcepto, setPagoConcepto] = useState('');
+    const [pagoMonto, setPagoMonto] = useState('');
+    const [pagoReferencia, setPagoReferencia] = useState('');
+    const [incluirInstalacion, setIncluirInstalacion] = useState(false);
+    const [costoInstalacion, setCostoInstalacion] = useState('');
     const [enviandoEmail, setEnviandoEmail] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -142,22 +152,36 @@ export default function EmpresaDrawer({
             alert('Escribe el mensaje de la promoción', 'error');
             return;
         }
+        if (emailTipo === 'BIENVENIDA' && incluirInstalacion && !costoInstalacion.trim()) {
+            alert('Ingresa el coste de instalación', 'error');
+            return;
+        }
         setEnviandoEmail(true);
         try {
             await apiClient.post(`/empresa/${empresa.id}/enviar-email`, {
                 tipo: emailTipo,
                 mensajeCustom: emailMensaje.trim() || undefined,
                 tituloPromo: emailTituloPromo.trim() || undefined,
+                pagoConcepto: pagoConcepto.trim() || undefined,
+                pagoMonto: pagoMonto.trim() || undefined,
+                pagoReferencia: pagoReferencia.trim() || undefined,
+                costoInstalacion: (emailTipo === 'BIENVENIDA' && incluirInstalacion) ? costoInstalacion.trim() : undefined,
             });
             alert('Email enviado correctamente', 'success');
             setEmailMensaje('');
             setEmailTituloPromo('');
+            setPagoConcepto('');
+            setPagoMonto('');
+            setPagoReferencia('');
+            setIncluirInstalacion(false);
+            setCostoInstalacion('');
             setEmailTipo(null);
         } catch { alert('Error al enviar el email', 'error'); }
         finally { setEnviandoEmail(false); }
     };
 
     const diasRestantes = getDaysUntilDate(empresa?.fechaExpiracion);
+    const adminPrincipal = empresa?.usuarios?.[0];
 
     const expColor = diasRestantes === null ? '' :
         diasRestantes <= 0 ? 'text-red-600' :
@@ -166,16 +190,16 @@ export default function EmpresaDrawer({
 
     if (!empresa) return null;
 
-    return (
+    return createPortal(
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+                className="fixed inset-0 z-[9999999] bg-black/40"
                 onClick={onClose}
             />
 
             {/* Drawer */}
-            <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-[420px] bg-white dark:bg-[#0F1219] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="fixed right-0 top-0 bottom-0 z-[9999999] w-full max-w-[420px] bg-white dark:bg-[#0F1219] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
 
                 {/* Header */}
                 <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
@@ -323,30 +347,47 @@ export default function EmpresaDrawer({
 
                     {tab === 'comunicar' && (
                         <div className="px-4 py-4 flex flex-col gap-4">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Selecciona una plantilla para enviar un email profesional al administrador de esta empresa.</p>
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-3">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                    Selecciona una plantilla profesional. Se enviará al administrador activo
+                                    {adminPrincipal?.email ? <>: <strong className="text-gray-800 dark:text-gray-200">{adminPrincipal.email}</strong></> : ' de esta empresa'}.
+                                </p>
+                            </div>
 
                             {/* Template cards */}
                             <div className="grid grid-cols-2 gap-2">
                                 {([
-                                    { tipo: 'BIENVENIDA', label: 'Bienvenida', icon: '🎉', color: 'emerald', desc: 'Cuenta activada y lista' },
-                                    { tipo: 'AGRADECIMIENTO', label: 'Agradecimiento', icon: '🙌', color: 'violet', desc: 'Gracias por pago puntual' },
-                                    { tipo: 'RECORDATORIO', label: 'Recordatorio', icon: '⏰', color: 'amber', desc: 'Suscripción por vencer' },
-                                    { tipo: 'PROMOCION', label: 'Promoción', icon: '🎁', color: 'pink', desc: 'Oferta o novedad especial' },
+                                    { tipo: 'BIENVENIDA', label: 'Bienvenida', icon: 'solar:hand-shake-bold-duotone', color: 'emerald', desc: 'Accesos, plan y primeros pasos' },
+                                    { tipo: 'AGRADECIMIENTO', label: 'Agradecimiento', icon: 'solar:check-circle-bold-duotone', color: 'violet', desc: 'Constancia de pago o renovación' },
+                                    { tipo: 'RECORDATORIO', label: 'Recordatorio', icon: 'solar:bell-bing-bold-duotone', color: 'amber', desc: 'Suscripción por vencer' },
+                                    { tipo: 'PROMOCION', label: 'Promoción', icon: 'solar:tag-price-bold-duotone', color: 'pink', desc: 'Oferta o novedad especial' },
                                 ] as const).map((t) => {
                                     const selected = emailTipo === t.tipo;
-                                    const colors: Record<string, string> = {
-                                        emerald: selected ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300',
-                                        violet: selected ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20 ring-2 ring-violet-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300',
-                                        amber: selected ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-amber-300',
-                                        pink: selected ? 'border-pink-400 bg-pink-50 dark:bg-pink-900/20 ring-2 ring-pink-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-pink-300',
+                                    const colors: Record<string, { wrap: string; icon: string; chip: string }> = {
+                                        emerald: { wrap: selected ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300', icon: 'text-emerald-600 dark:text-emerald-400', chip: 'bg-emerald-100 dark:bg-emerald-900/30' },
+                                        violet: { wrap: selected ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20 ring-2 ring-violet-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300', icon: 'text-violet-600 dark:text-violet-400', chip: 'bg-violet-100 dark:bg-violet-900/30' },
+                                        amber: { wrap: selected ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-amber-300', icon: 'text-amber-600 dark:text-amber-400', chip: 'bg-amber-100 dark:bg-amber-900/30' },
+                                        pink: { wrap: selected ? 'border-pink-400 bg-pink-50 dark:bg-pink-900/20 ring-2 ring-pink-300/50' : 'border-gray-200 dark:border-slate-700 hover:border-pink-300', icon: 'text-pink-600 dark:text-pink-400', chip: 'bg-pink-100 dark:bg-pink-900/30' },
                                     };
+                                    const c = colors[t.color];
                                     return (
                                         <button
                                             key={t.tipo}
-                                            onClick={() => { setEmailTipo(t.tipo); setEmailMensaje(''); setEmailTituloPromo(''); }}
-                                            className={`flex flex-col items-start p-3 rounded-xl border transition-all text-left ${colors[t.color]}`}
+                                            onClick={() => {
+                                                setEmailTipo(t.tipo);
+                                                setEmailMensaje('');
+                                                setEmailTituloPromo('');
+                                                setPagoConcepto('');
+                                                setPagoMonto('');
+                                                setPagoReferencia('');
+                                                setIncluirInstalacion(false);
+                                                setCostoInstalacion('');
+                                            }}
+                                            className={`flex flex-col items-start p-3 rounded-xl border transition-all text-left ${c.wrap}`}
                                         >
-                                            <span className="text-2xl mb-1.5">{t.icon}</span>
+                                            <span className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${c.chip}`}>
+                                                <Icon icon={t.icon} width={20} className={c.icon} />
+                                            </span>
                                             <span className="text-xs font-bold text-gray-800 dark:text-gray-100">{t.label}</span>
                                             <span className="text-[11px] text-gray-400 mt-0.5 leading-tight">{t.desc}</span>
                                         </button>
@@ -357,6 +398,51 @@ export default function EmpresaDrawer({
                             {/* Dynamic fields */}
                             {emailTipo && (
                                 <div className="flex flex-col gap-3">
+                                    {emailTipo === 'BIENVENIDA' && (
+                                        <>
+                                            <div className="rounded-2xl border border-emerald-100 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/20 p-3">
+                                                <div className="flex items-start gap-2">
+                                                    <Icon icon="solar:login-3-bold-duotone" className="text-emerald-600 mt-0.5" width={18} />
+                                                    <div>
+                                                        <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Se incluirá automáticamente</p>
+                                                        <p className="text-[11px] leading-relaxed text-emerald-700/80 dark:text-emerald-300/80 mt-1">
+                                                            URL de acceso, usuario administrador, plan, vigencia, seguridad de contraseña y primeros pasos.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 p-3 space-y-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIncluirInstalacion((v) => !v)}
+                                                    className="flex items-center justify-between w-full"
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <Icon icon="solar:settings-bold-duotone" className="text-emerald-600" width={18} />
+                                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Incluir coste de instalación</span>
+                                                    </span>
+                                                    <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${incluirInstalacion ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-slate-600'}`}>
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${incluirInstalacion ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                                    </span>
+                                                </button>
+                                                {incluirInstalacion && (
+                                                    <div>
+                                                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Coste de instalación *</label>
+                                                        <input
+                                                            type="text"
+                                                            value={costoInstalacion}
+                                                            onChange={(e) => setCostoInstalacion(e.target.value)}
+                                                            placeholder="Ej: S/ 150.00"
+                                                            className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
+                                                        />
+                                                        <p className="text-[11px] text-gray-400 mt-1">Se mostrará en el correo de bienvenida como un concepto de pago.</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+
                                     {emailTipo === 'PROMOCION' && (
                                         <div>
                                             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">Título de la promoción *</label>
@@ -369,6 +455,46 @@ export default function EmpresaDrawer({
                                             />
                                         </div>
                                     )}
+
+                                    {emailTipo === 'AGRADECIMIENTO' && (
+                                        <div className="rounded-2xl border border-violet-100 dark:border-violet-900/50 bg-violet-50/70 dark:bg-violet-900/10 p-3 space-y-3">
+                                            <div className="flex items-start gap-2">
+                                                <Icon icon="solar:receipt-bold-duotone" className="text-violet-600 mt-0.5" width={18} />
+                                                <div>
+                                                    <p className="text-xs font-bold text-violet-800 dark:text-violet-300">Detalle de pago opcional</p>
+                                                    <p className="text-[11px] leading-relaxed text-violet-700/80 dark:text-violet-300/80 mt-1">
+                                                        Úsalo para pago de instalación, renovación de plan o constancia administrativa.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={pagoConcepto}
+                                                    onChange={(e) => setPagoConcepto(e.target.value)}
+                                                    placeholder="Concepto: Instalación, renovación mensual, plan anual..."
+                                                    className="w-full px-3 py-2 text-xs rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+                                                />
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={pagoMonto}
+                                                        onChange={(e) => setPagoMonto(e.target.value)}
+                                                        placeholder="Monto: S/ 99.90"
+                                                        className="w-full px-3 py-2 text-xs rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={pagoReferencia}
+                                                        onChange={(e) => setPagoReferencia(e.target.value)}
+                                                        placeholder="Ref./comprobante"
+                                                        className="w-full px-3 py-2 text-xs rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div>
                                         <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
                                             {emailTipo === 'PROMOCION' ? 'Descripción de la oferta *' : 'Mensaje adicional (opcional)'}
@@ -378,8 +504,8 @@ export default function EmpresaDrawer({
                                             onChange={(e) => setEmailMensaje(e.target.value)}
                                             rows={4}
                                             placeholder={
-                                                emailTipo === 'BIENVENIDA' ? 'Ej: Recuerda que puedes contactarnos en cualquier momento...' :
-                                                emailTipo === 'AGRADECIMIENTO' ? 'Ej: Además queremos informarte que hemos lanzado...' :
+                                                emailTipo === 'BIENVENIDA' ? 'Ej: Tu implementación ya quedó lista. Estamos atentos para acompañarte...' :
+                                                emailTipo === 'AGRADECIMIENTO' ? 'Ej: Gracias por renovar. Adjuntamos la referencia registrada y quedamos atentos...' :
                                                 emailTipo === 'RECORDATORIO' ? 'Ej: Puedes realizar tu pago mediante transferencia a...' :
                                                 'Describe la oferta o promoción especial...'
                                             }
@@ -390,7 +516,7 @@ export default function EmpresaDrawer({
                                     <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/15 border border-blue-100 dark:border-blue-800/30">
                                         <Icon icon="solar:info-circle-bold-duotone" className="text-blue-500 flex-shrink-0" width={16} />
                                         <p className="text-xs text-blue-700 dark:text-blue-400">
-                                            El email se enviará al administrador de <strong>{empresa.nombreComercial || empresa.razonSocial}</strong> con diseño profesional.
+                                            El email se enviará con diseño profesional, datos del plan y contexto comercial de <strong>{empresa.nombreComercial || empresa.razonSocial}</strong>.
                                         </p>
                                     </div>
 
@@ -453,6 +579,7 @@ export default function EmpresaDrawer({
                     )}
                 </div>
             </div>
-        </>
+        </>,
+        document.body
     );
 }

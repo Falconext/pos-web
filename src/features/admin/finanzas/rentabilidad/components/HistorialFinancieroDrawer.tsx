@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import { get } from '@/utils/fetch';
 import {
@@ -75,7 +76,7 @@ export default function HistorialFinancieroDrawer({
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <>
             {/* Overlay */}
             <div
@@ -230,6 +231,7 @@ export default function HistorialFinancieroDrawer({
                     )}
                 </div>
             </div>
-        </>
+        </>,
+        document.body
     );
 }

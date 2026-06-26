@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import { NavLink } from 'react-router-dom';
 import moment from 'moment';
@@ -13,9 +13,17 @@ import ModalRegistrarPago from './ModalRegistrarPago';
 import ModalHistorialPagos from './ModalHistorialPagos';
 import ModalDetalleCuenta from './ModalDetalleCuenta';
 import ModalConfirm from '../../../components/ModalConfirm';
+import TableActionMenu from "@/components/TableActionMenu";
+import { useReactToPrint } from "react-to-print";
+import { useInvoiceStore } from '@/zustand/invoices';
+import { useAuthStore } from '@/zustand/auth';
+import ComprobantePrintPage from "./comprobanteImprimir";
+import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 const CuentasPorCobrar = () => {
     const { getCuentasPorCobrar, cuentasPorCobrar, totalCuentasPorCobrar, loadingCuentas } = usePagosStore();
+    const { getInvoice, invoice } = useInvoiceStore();
+    const { auth } = useAuthStore();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(50);
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +37,27 @@ const CuentasPorCobrar = () => {
     const [showDetalleModal, setShowDetalleModal] = useState(false);
     const [showNoPhoneModal, setShowNoPhoneModal] = useState(false);
     const [noPhoneClientName, setNoPhoneClientName] = useState('');
+    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+    const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
+    const [shouldPrint, setShouldPrint] = useState(false);
+    const componentRef = useRef(null);
+
+    const printFn = useReactToPrint({
+        // @ts-ignore
+        contentRef: componentRef,
+        pageStyle: buildComprobantePrintPageStyle({ width: 80, height: 330 }),
+    });
+
+    useEffect(() => {
+        if (!invoice) return;
+        if (shouldPrint && invoice) {
+            const timer = setTimeout(() => {
+                printFn();
+                setShouldPrint(false);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [invoice, shouldPrint]);
 
     const debounce = useDebounce(searchTerm, 500);
 
@@ -75,7 +104,7 @@ const CuentasPorCobrar = () => {
         else if (inv.estadoPago === 'PENDIENTE_PAGO') estadoLabel = 'PENDIENTE DE PAGO';
         else if (inv.estadoPago) estadoLabel = inv.estadoPago;
 
-        return {
+        const rowBase = {
             id: inv.id,
             fecha: moment(inv.fechaEmision).format('DD/MM/YYYY'),
             comprobante: `${inv.serie}-${String(inv.correlativo).padStart(8, '0')}`.toUpperCase(),
@@ -89,11 +118,39 @@ const CuentasPorCobrar = () => {
             celular: inv.cliente?.telefono || '-',
             _raw: inv,
         };
+
+        const acciones = (
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setMenuAnchor(e.currentTarget); setSelectedMenuRow(rowBase); }}
+                className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+                <Icon icon="mdi:dots-vertical" width={18} height={18} />
+            </button>
+        );
+
+        return { ...rowBase, acciones };
     }) || [];
 
-    const handleRegistrarPago = (row: any) => {
-        setSelectedComprobante(row._raw);
-        setShowPaymentModal(true);
+    const handleCloseMenu = () => {
+        setMenuAnchor(null);
+        setSelectedMenuRow(null);
+    };
+
+    const handleGenerarOrdenDePago = async () => {
+        if (selectedMenuRow) {
+            setShouldPrint(true);
+            await getInvoice(selectedMenuRow.id);
+            handleCloseMenu();
+        }
+    };
+
+    const handleRegistrarPago = () => {
+        if (selectedMenuRow) {
+            setSelectedComprobante(selectedMenuRow._raw);
+            setShowPaymentModal(true);
+            handleCloseMenu();
+        }
     };
 
     const handlePaymentSuccess = () => {
@@ -109,26 +166,37 @@ const CuentasPorCobrar = () => {
         });
     };
 
-    const handleVerHistorial = (row: any) => {
-        setSelectedComprobante(row._raw);
-        setShowHistorialModal(true);
-    };
-
-    const handleVerDetalle = (row: any) => {
-        setSelectedComprobante(row._raw);
-        setShowDetalleModal(true);
-    };
-
-    const handleWhatsApp = (row: any) => {
-        const phone = row._raw.cliente?.telefono;
-        if (!phone || phone === '-') {
-            setNoPhoneClientName(row.cliente);
-            setShowNoPhoneModal(true);
-            return;
+    const handleVerHistorial = () => {
+        if (selectedMenuRow) {
+            setSelectedComprobante(selectedMenuRow._raw);
+            setShowHistorialModal(true);
+            handleCloseMenu();
         }
-        const message = `Estimado(a) ${row.cliente}, le escribimos para recordarle cordialmente que tiene una cuenta pendiente de pago correspondiente al comprobante ${row.comprobante}. El saldo actual es de ${row.saldo}. Agradeceremos pueda regularizar este pago a la brevedad posible. Quedamos a su disposición por cualquier consulta.`;
-        const whatsappUrl = `https://wa.me/51${phone.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+    };
+
+    const handleVerDetalle = () => {
+        if (selectedMenuRow) {
+            setSelectedComprobante(selectedMenuRow._raw);
+            setShowDetalleModal(true);
+            handleCloseMenu();
+        }
+    };
+
+    const handleWhatsApp = () => {
+        if (selectedMenuRow) {
+            const row = selectedMenuRow;
+            const phone = row._raw.cliente?.telefono;
+            if (!phone || phone === '-') {
+                setNoPhoneClientName(row.cliente);
+                setShowNoPhoneModal(true);
+                handleCloseMenu();
+                return;
+            }
+            const message = `Estimado(a) ${row.cliente}, le escribimos para recordarle cordialmente que tiene una cuenta pendiente de pago correspondiente al comprobante ${row.comprobante}. El saldo actual es de ${row.saldo}. Agradeceremos pueda regularizar este pago a la brevedad posible. Quedamos a su disposición por cualquier consulta.`;
+            const whatsappUrl = `https://wa.me/51${phone.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            handleCloseMenu();
+        }
     };
 
     // Obtener lista única de clientes para el filtro
@@ -150,33 +218,6 @@ const CuentasPorCobrar = () => {
         if (!clienteFilter) return pendientes;
         return pendientes?.filter((inv: any) => inv.cliente?.id === Number(clienteFilter));
     }, [pendientes, clienteFilter]);
-
-    const actions = [
-        {
-            onClick: handleVerDetalle,
-            className: 'detail',
-            icon: <Icon icon="solar:document-text-bold-duotone" width="20" height="20" color="#8b5cf6" />,
-            tooltip: 'Ver Detalle',
-        },
-        {
-            onClick: handleVerHistorial,
-            className: 'history',
-            icon: <Icon icon="solar:history-bold-duotone" width="20" height="20" color="#6366f1" />,
-            tooltip: 'Ver Historial',
-        },
-        {
-            onClick: handleRegistrarPago,
-            className: 'payment',
-            icon: <Icon icon="solar:hand-money-bold-duotone" width="20" height="20" color="#10b981" />,
-            tooltip: 'Registrar Pago',
-        },
-        {
-            onClick: handleWhatsApp,
-            className: 'whatsapp',
-            icon: <Icon icon="ic:baseline-whatsapp" width="20" height="20" color="#25D366" />,
-            tooltip: 'Recordatorio WhatsApp',
-        },
-    ];
 
     const handleDate = (date: string, name: string) => {
         if (!moment(date, 'DD/MM/YYYY', true).isValid()) return;
@@ -324,7 +365,6 @@ const CuentasPorCobrar = () => {
                         <>
                             <div className="overflow-x-auto">
                                 <DataTable
-                                    actions={actions}
                                     bodyData={tableData}
                                     headerColumns={[
                                         { label: 'Fecha', key: 'fecha' },
@@ -337,6 +377,7 @@ const CuentasPorCobrar = () => {
                                         { label: 'Saldo', key: 'saldo' },
                                         { label: 'Días', key: 'dias' },
                                         { label: 'Estado', key: 'estadoCobro' },
+                                        { label: 'Acciones', key: 'acciones' }
                                     ]}
                                 />
                             </div>
@@ -397,6 +438,62 @@ const CuentasPorCobrar = () => {
                     }}
                 />
             )}
+
+            {/* Dropdown de acciones (TableActionMenu) */}
+            <TableActionMenu
+                isOpen={Boolean(menuAnchor)}
+                anchorEl={menuAnchor}
+                onClose={handleCloseMenu}
+                className="w-44"
+            >
+                {selectedMenuRow && (
+                    <>
+                        <button onClick={handleVerDetalle} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-700 transition-colors">
+                            <Icon icon="solar:document-text-bold-duotone" width={16} height={16} color="#8b5cf6" />
+                            <span>Ver Detalle</span>
+                        </button>
+                        <button onClick={handleVerHistorial} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-700 transition-colors">
+                            <Icon icon="solar:history-bold-duotone" width={16} height={16} color="#6366f1" />
+                            <span>Ver Historial</span>
+                        </button>
+                        <button onClick={handleRegistrarPago} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-700 transition-colors">
+                            <Icon icon="solar:hand-money-bold-duotone" width={16} height={16} color="#10b981" />
+                            <span>Registrar Pago</span>
+                        </button>
+                        <button onClick={handleWhatsApp} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-700 transition-colors">
+                            <Icon icon="ic:baseline-whatsapp" width={16} height={16} color="#25D366" />
+                            <span>WhatsApp</span>
+                        </button>
+                        <hr className="my-1 border-gray-100 dark:border-slate-800" />
+                        <button onClick={handleGenerarOrdenDePago} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/30 transition-colors">
+                            <Icon icon="solar:printer-minimalistic-bold-duotone" width={16} height={16} />
+                            <span>Generar orden de pago</span>
+                        </button>
+                    </>
+                )}
+            </TableActionMenu>
+
+            <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+                <ComprobantePrintPage
+                    id="print-root"
+                    company={auth}
+                    componentRef={componentRef}
+                    formValues={{
+                        ...invoice,
+                        fechaVencimientoCredito: invoice?.fechaVencimientoCredito || invoice?.fechaVencimiento || (invoice?.cuotas?.length > 0 ? invoice.cuotas[0].fechaVencimiento : null)
+                    }}
+                    size="TICKET"
+                    serie={invoice?.serie}
+                    correlative={invoice?.correlativo}
+                    productsInvoice={invoice?.detalles}
+                    total={Number(invoice?.mtoImpVenta || 0).toFixed(2)}
+                    mode="off"
+                    discount={invoice?.discount}
+                    receipt="ORDEN DE PAGO"
+                    selectedClient={invoice?.cliente}
+                />
+            </div>
+
 
             {/* Modal de Información - Sin Teléfono */}
             <ModalConfirm

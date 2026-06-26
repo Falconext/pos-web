@@ -79,6 +79,9 @@ export const FacturacionNuevoView = () => {
                     quotationAdvance={vm.quotationAdvance}
                     formValues={{
                         ...vm.formValues,
+                        formaPagoTipo: vm.formValues.medioPago === 'Crédito' ? 'Credito' : 'Contado',
+                        fechaVencimientoCredito: vm.fechaVencimientoCredito,
+                        cuotas: vm.cuotas,
                         vuelto: vm.vueltoCalculado,
                         vendedor: vm.auth?.nombre,
                         serie: vm.dataReceipt?.serie,

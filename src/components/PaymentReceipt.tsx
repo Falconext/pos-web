@@ -165,6 +165,13 @@ const PaymentReceipt = ({
               <p className="flex justify-between mt-1"><span>Método de Pago:</span><span>{payment.medioPago?.toUpperCase()}</span></p>
               {payment.referencia && <p className="flex justify-between mt-1"><span>Referencia:</span><span>{payment.referencia}</span></p>}
               {payment.observacion && <div className="mt-1"><p>Observación:</p><p>{payment.observacion}</p></div>}
+              {Number(nuevoSaldo ?? 0) > 0 && (() => {
+                const fVenc = comprobante?.data?.fechaVencimientoCredito || comprobante?.data?.fechaVencimiento || (comprobante?.data?.cuotas?.length > 0 ? comprobante?.data?.cuotas[0].fechaVencimiento : null);
+                if (fVenc) {
+                  return <p className="flex justify-between mt-1"><span>Fecha Vencimiento:</span><span>{new Date(fVenc).toLocaleDateString('es-PE')}</span></p>;
+                }
+                return null;
+              })()}
             </div>
             <hr className="my-1 border-dashed border-[#222]" />
             <div className="text-[18px] text-center">
@@ -227,6 +234,13 @@ const PaymentReceipt = ({
               <Row label="Método de pago" value={payment.medioPago?.toUpperCase()} />
               {payment.referencia && <Row label="Referencia" value={payment.referencia.toUpperCase()} />}
               {payment.observacion && <Row label="Observación" value={payment.observacion} />}
+              {Number(nuevoSaldo ?? 0) > 0 && (() => {
+                const fVenc = comprobante?.data?.fechaVencimientoCredito || comprobante?.data?.fechaVencimiento || (comprobante?.data?.cuotas?.length > 0 ? comprobante?.data?.cuotas[0].fechaVencimiento : null);
+                if (fVenc) {
+                  return <Row label="Fecha Vencimiento" value={new Date(fVenc).toLocaleDateString('es-PE')} />;
+                }
+                return null;
+              })()}
             </div>
 
             <div className="border-t border-gray-100 dark:border-slate-700 pt-2.5 flex justify-between items-center">

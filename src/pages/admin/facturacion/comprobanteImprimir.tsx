@@ -165,7 +165,10 @@ const ComprobantePrintPage = ({
                             <span className="">RUC: {company?.empresa?.ruc}</span>
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
+                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
+                            {receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt === "ORDEN DE PAGO" ? "ORDEN DE PAGO" : `${receipt || 'NOTA'} DE VENTA ELECTRÓNICA`}
+                            <br />{formValues?.serie}-{formValues?.correlativo}
+                        </h2>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div>
                             <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">FECHA/HORA:</span> {moment(formValues?.fechaEmision).format('DD/MM/YYYY HH:mm:ss')}</p>
@@ -275,17 +278,22 @@ const ComprobantePrintPage = ({
                             )
                         }
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</p>
-                        {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><span className="">CONDICIÓN DE PAGO:</span> <span>{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</span></p>
+                        {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && (formValues?.cuotas?.length > 0 ? (
                             <div className="mt-1 mb-1">
                                 <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
                                 {formValues.cuotas.map((cuota: any, idx: number) => (
-                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'}`}>
-                                        Cuota {idx + 1}: {moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}
+                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} flex justify-between`}>
+                                        <span>CUOTA {idx + 1}:</span>
+                                        <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}</span>
                                     </p>
                                 ))}
                             </div>
-                        )}
+                        ) : (
+                            formValues?.fechaVencimientoCredito && (
+                                <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">VENCIMIENTO:</div> <div>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</div></label>
+                            )
+                        ))}
                         {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                             <div>
                                 <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
@@ -304,14 +312,14 @@ const ComprobantePrintPage = ({
                                     );
                                 })}
                             </div>
-                        ) : (
+                        ) : formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' ? (
                             <>
                                 <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                     <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
                                 ))}
                             </>
-                        )}
+                        ) : null}
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>VUELTO:</span>
                             <span>S/ {displayVuelto.toFixed(2)}</span>
@@ -571,7 +579,7 @@ const ComprobantePrintPage = ({
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
                                         <div className="text-lg font-bold">{receipt}</div>
-                                        <div className='font-bold text-lg'>ELECTRONICA</div>
+                                        {receipt !== "ORDEN DE PAGO" && receipt !== "COTIZACIÓN" && <div className='font-bold text-lg'>ELECTRONICA</div>}
                                         <div>{formValues?.serie}-{formValues?.correlativo}</div>
                                     </div>
                                 </div>
@@ -613,7 +621,27 @@ const ComprobantePrintPage = ({
                                                     <span className="text-xs">SOLES</span>
 
                                                     <span className="font-bold text-xs">FORMA PAGO:</span>
-                                                    <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</span>
+                                                    <span className="text-xs">{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</span>
+
+                                                    {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && (formValues?.cuotas?.length > 0 ? (
+                                                        <>
+                                                            <span className="font-bold text-xs">CUOTAS:</span>
+                                                            <span className="text-xs">
+                                                                {formValues.cuotas.map((cuota: any, idx: number) => (
+                                                                    <span key={idx} className="block">
+                                                                        Cuota {idx + 1}: {moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}
+                                                                    </span>
+                                                                ))}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        formValues?.fechaVencimientoCredito && (
+                                                            <>
+                                                                <span className="font-bold text-xs">VENCIMIENTO:</span>
+                                                                <span className="text-xs">{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</span>
+                                                            </>
+                                                        )
+                                                    ))}
 
                                                     {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                                         <>

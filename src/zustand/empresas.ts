@@ -52,6 +52,7 @@ interface Empresa {
   };
   usuarios?: Array<{
     nombre?: string | null;
+    email?: string | null;
     celular?: string | null;
   }>;
 }

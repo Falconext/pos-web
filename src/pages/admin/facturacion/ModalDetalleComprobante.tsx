@@ -91,6 +91,28 @@ const planPermiteDespacho = (auth: any) => {
     return hasPlanFeature(auth, 'tieneDeliveryGPS');
 };
 
+const hasUsefulText = (value: unknown) => {
+    const text = String(value ?? '').trim();
+    return Boolean(text) && !['-', '—', 'NO_APLICA', 'NULL', 'UNDEFINED'].includes(text.toUpperCase());
+};
+
+const hasRealDespacho = (envio: any) => {
+    if (!envio?.id) return false;
+
+    const estado = String(envio.estado ?? '').trim().toUpperCase();
+    if (estado && estado !== 'PREPARANDO' && estado !== 'NO_APLICA') return true;
+
+    const hasDestino = hasUsefulText(envio.direccionDestino) || hasUsefulText(envio.agenciaDestino);
+    const hasCourier = hasUsefulText(envio.transportista);
+    const hasTracking = hasUsefulText(envio.codigoGuia) || hasUsefulText(envio.nroOrden) || hasUsefulText(envio.claveOrden);
+    const hasContacto = String(envio.celularDest ?? '').replace(/\D/g, '').length >= 9;
+    const hasFecha = hasUsefulText(envio.fechaEstimada);
+    const hasPaquetes = Number(envio.nroPaquetes ?? 0) > 0;
+    const hasOperativo = hasUsefulText(envio.establecimiento) || hasUsefulText(envio.empaquetador) || hasUsefulText(envio.repartidor);
+
+    return hasCourier || hasDestino || hasTracking || hasContacto || hasFecha || hasPaquetes || hasOperativo;
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -230,6 +252,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
 
     const total = getComprobanteTotal(comprobante);
     const comprobanteLabel = getComprobanteLabel(comprobante);
+    const showDespacho = puedeDespacho && hasRealDespacho(envio);
 
     return (
         <>
@@ -472,7 +495,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                     </div>
 
                     {/* ── Seguimiento de despacho (solo lectura) ── */}
-                    {puedeDespacho && envio && (envio.estado !== 'PREPARANDO' || envio.direccionDestino || envio.transportista || envio.codigoGuia) && (
+                    {showDespacho && (
                         <div className="p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
@@ -481,7 +504,7 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => { onClose(); navigate('/administrador/tienda/pedidos'); }}
+                                    onClick={() => { onClose(); navigate(`/administrador/ventas?fecha=${moment(comprobante.fechaEmision).format('YYYY-MM-DD')}&comprobanteId=${comprobante.id}`); }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-200 dark:border-blue-800/50"
                                 >
                                     <Icon icon="solar:arrow-right-up-bold" width={13} />

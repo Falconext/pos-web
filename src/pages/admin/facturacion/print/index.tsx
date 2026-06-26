@@ -321,7 +321,7 @@ const PrintPDF = ({
                             <Text style={styles.separator}>-------------------------------------------------------------------</Text>
                             <View>
                                 <Text style={{ fontWeight: "bold", textAlign: "center", fontSize: 8 }}>
-                                    {receipt} DE VENTA ELECTRÓNICA
+                                    {receipt === 'COTIZACIÓN' ? 'COTIZACIÓN' : receipt === 'ORDEN DE PAGO' ? 'ORDEN DE PAGO' : `${receipt || ''} DE VENTA ELECTRÓNICA`}
                                     {'\n'}
                                     <Text>{formValues.serie}-{formValues.correlativo}</Text>
                                 </Text>
@@ -385,8 +385,14 @@ const PrintPDF = ({
                             <>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>FORMA PAGO:</Text>
-                                    <Text style={styles.value}>CONTADO</Text>
+                                    <Text style={styles.value}>{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</Text>
                                 </View>
+                                {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && formValues?.fechaVencimientoCredito && (
+                                    <View style={styles.infoRow}>
+                                        <Text style={styles.label}>VENCIMIENTO:</Text>
+                                        <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
+                                    </View>
+                                )}
                                 {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                     <>
                                         <View style={styles.infoRow}>
@@ -587,8 +593,14 @@ const PrintPDF = ({
                                         <>
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>FORMA DE PAGO</Text>
-                                                <Text style={styles.value}>CONTADO</Text>
+                                                <Text style={styles.value}>{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</Text>
                                             </View>
+                                            {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && formValues?.fechaVencimientoCredito && (
+                                                <View style={styles.infoRow}>
+                                                    <Text style={styles.label}>VENCIMIENTO</Text>
+                                                    <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
+                                                </View>
+                                            )}
                                             {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                                 <>
                                                     <View style={styles.infoRow}>

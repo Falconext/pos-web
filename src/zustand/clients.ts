@@ -83,18 +83,17 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
         useAlertStore.setState({ loading: true });
         try {
             const resp: any = await put(`clientes/${data.id}`, data);
-            if (resp.code === 1) {
-                useAlertStore.setState({ success: true });
+            if (resp.code === 1 || resp.success === true) {
+                useAlertStore.setState({ success: true, loading: false });
                 set((state) => ({
                     clients: state.clients.map((item: IClient) =>
                         item.id === data?.id ? { ...item, ...data } : item
                     ),
                 }), false, "UPDATE_Clients");
-                useAlertStore.setState({ loading: false })
-                useAlertStore.getState().alert("Se actualizo el cliente correctamente", "success");
+                useAlertStore.getState().alert("Se actualizó el cliente correctamente", "success");
             } else {
-                useAlertStore.setState({ loading: false })
-                useAlertStore.getState().alert("Error al editar el Clientso", "error");
+                useAlertStore.setState({ success: false, loading: false });
+                useAlertStore.getState().alert(resp.message || "Error al editar el Cliente", "error");
             }
         } catch (error: any) {
             return useAlertStore.getState().alert(`${error}`, "error")

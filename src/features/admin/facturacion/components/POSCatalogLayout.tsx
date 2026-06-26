@@ -104,16 +104,14 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                         <span className="hidden md:inline">Producto</span>
                     </button>
 
-                    {vm.isQuotationRoute && (
                         <button
                             onClick={() => vm.setShowFreeQuoteItemForm((open: boolean) => !open)}
                             className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-semibold shadow-md transition-all"
-                            title="Cotizar sin registrar en inventario"
+                            title="Añadir ítem sin registrar en inventario (libre)"
                         >
                             <Icon icon="solar:document-add-bold-duotone" className="text-xl" />
                             <span className="hidden md:inline">Ítem libre</span>
                         </button>
-                    )}
                 </div>
 
                 {/* Barcode scanner — auto-adds to cart on Enter */}
@@ -127,7 +125,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                     error={vm.barcodeError}
                 />
 
-                {vm.isQuotationRoute && vm.showFreeQuoteItemForm && (
+                {vm.showFreeQuoteItemForm && (
                     <div className="mb-4 rounded-2xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/70 dark:bg-violet-950/10 p-3">
                         <div className="flex flex-col lg:flex-row gap-2">
                             <div className="flex rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-1">
@@ -172,17 +170,27 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                 placeholder="P. Unit."
                                 className="w-full lg:w-32 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-300"
                             />
-                            <button
-                                type="button"
-                                onClick={vm.handleAddFreeQuoteItem}
-                                className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Icon icon="solar:cart-plus-bold-duotone" className="text-lg" />
-                                Agregar
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={vm.handleAddFreeQuoteItem}
+                                    className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Icon icon="solar:cart-plus-bold-duotone" className="text-lg" />
+                                    Agregar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => vm.setShowFreeQuoteItemForm(false)}
+                                    className="px-4 py-3 rounded-xl bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-bold text-sm transition-all flex items-center justify-center"
+                                    title="Cerrar form"
+                                >
+                                    <Icon icon="solar:close-circle-bold-duotone" className="text-lg" />
+                                </button>
+                            </div>
                         </div>
                         <p className="mt-2 text-xs text-violet-700/80 dark:text-violet-300/80 font-semibold">
-                            No se creará en inventario ni descontará stock; solo quedará como línea de esta cotización.
+                            No se creará en inventario ni descontará stock; solo quedará como línea temporal para este comprobante.
                         </p>
                     </div>
                 )}

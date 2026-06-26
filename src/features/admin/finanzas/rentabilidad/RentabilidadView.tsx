@@ -274,7 +274,7 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
             {!isLoading && (
                 <>
                     {/* ── Row 1: KPI Cards ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                         {/* Ventas Netas */}
                         <KpiCard
                             title="Ventas Netas"
@@ -282,6 +282,19 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             icon="solar:cart-large-4-bold-duotone"
                             iconBg="bg-indigo-50 dark:bg-indigo-900/20"
                             iconColor="text-indigo-600 dark:text-indigo-400"
+                        />
+
+                        {/* Ingresos Manuales (operativos del mes) */}
+                        <KpiCard
+                            title="Ingresos Manuales"
+                            value={formatCurrency(pnl?.otrosIngresos ?? 0)}
+                            icon="solar:wallet-money-bold-duotone"
+                            iconBg="bg-teal-50 dark:bg-teal-900/20"
+                            iconColor="text-teal-600 dark:text-teal-400"
+                            sub={(pnl?.otrosIngresos ?? 0) > 0
+                                ? `Suma a la ganancia · ${ingresos.length} registro${ingresos.length === 1 ? '' : 's'}`
+                                : 'Sin ingresos manuales este mes'}
+                            subColor="text-teal-500 dark:text-teal-400"
                         />
 
                         {/* Ganancia Bruta */}

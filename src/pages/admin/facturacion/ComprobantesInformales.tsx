@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 import { useUsersStore } from "@/zustand/users";
 import TableActionMenu from "@/components/TableActionMenu";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
+import ModalDetalleComprobante from "./ModalDetalleComprobante";
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -75,6 +76,7 @@ const ComprobantesInformales = () => {
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
+    const [detalleComprobanteId, setDetalleComprobanteId] = useState<number | null>(null);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const pages = [];
@@ -435,7 +437,10 @@ const ComprobantesInformales = () => {
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
-                formValues={invoice}
+                formValues={{
+                    ...invoice,
+                    fechaVencimientoCredito: invoice?.fechaVencimientoCredito || invoice?.fechaVencimiento || (invoice?.cuotas?.length > 0 ? invoice.cuotas[0].fechaVencimiento : null)
+                }}
                 size={printSize}
                 serie={invoice?.serie}
                 correlative={invoice?.correlativo}
@@ -650,6 +655,12 @@ const ComprobantesInformales = () => {
                 />
             )}
 
+            <ModalDetalleComprobante
+                comprobanteId={detalleComprobanteId}
+                isOpen={detalleComprobanteId !== null}
+                onClose={() => setDetalleComprobanteId(null)}
+            />
+
             {/* ── Dropdown de acciones (TableActionMenu) ── */}
             <TableActionMenu
                 isOpen={Boolean(menuAnchor)}
@@ -662,6 +673,11 @@ const ComprobantesInformales = () => {
                     const item: IInvoices = row._item;
                     return (
                         <>
+                            <button type="button" onClick={() => { setDetalleComprobanteId(row.id); handleCloseMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium">
+                                <Icon icon="solar:document-text-bold-duotone" width={16} height={16} />
+                                <span>Ver detalle</span>
+                            </button>
                             <button type="button" onClick={() => { handleGetReceipt(row); handleCloseMenu(); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
                                 <Icon icon="mingcute:print-line" width={16} height={16} />
