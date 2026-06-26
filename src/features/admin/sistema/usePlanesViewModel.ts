@@ -139,8 +139,10 @@ export const usePlanesViewModel = () => {
         if (!form.nombre || form.costo === undefined) { alert('Nombre y costo son obligatorios', 'warning'); return; }
         try {
             setLoading(true);
+            // Quita campos de relación/solo-lectura que el backend no acepta en el DTO
+            const { id, _count, modulosAsignados, subModulosAsignados, creadoEn, createdAt, updatedAt, ...formData } = form as any;
             const payload = {
-                ...form,
+                ...formData,
                 features: (featureCatalog.length ? featureCatalog : []).reduce((acc, feature) => {
                     acc[feature.key] = Boolean((form as any)[feature.key]);
                     return acc;

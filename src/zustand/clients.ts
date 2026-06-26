@@ -21,6 +21,22 @@ export interface IClientsState {
     importClients: (file: File) => Promise<void>;
 }
 
+// Solo estos campos acepta el DTO del backend; el resto (id, estado,
+// tipoDocumentoId, empresaId, tipoDocumento, etc.) son de UI/relación y deben omitirse.
+const CLIENTE_PAYLOAD_KEYS = [
+    'nombre', 'tipoDoc', 'nroDoc', 'direccion', 'email', 'telefono',
+    'ubigeo', 'departamento', 'provincia', 'distrito', 'persona',
+    'grupoSanguineo', 'alergias', 'fechaNacimiento', 'medicoTratanteId',
+] as const;
+
+const sanitizeClientePayload = (data: any) => {
+    const payload: Record<string, any> = {};
+    for (const key of CLIENTE_PAYLOAD_KEYS) {
+        if (data?.[key] !== undefined && data?.[key] !== null) payload[key] = data[key];
+    }
+    return payload;
+};
+
 export const useClientsStore = create<IClientsState>()(devtools((set, _get) => ({
     clients: [],
     getAllClients: async (params: any, callback?: Function,
@@ -58,8 +74,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
     addClients: async (data: any) => {
         useAlertStore.setState({ loading: true });
         try {
-            const resp: any = await post(`clientes`, data);
-            console.log(resp);
+            const resp: any = await post(`clientes`, sanitizeClientePayload(data));
             if (resp.code === 1 || resp.success === true) {
                 useAlertStore.setState({ success: true, loading: false });
                 set((state) => ({
@@ -71,7 +86,8 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
                 useAlertStore.getState().alert("Se agregó el cliente correctamente", "success");
             } else {
                 useAlertStore.setState({ success: false, loading: false });
-                useAlertStore.getState().alert(resp.message || `Este documento ya ha sido registrado en un cliente`, "error");
+                const msg = Array.isArray(resp.message) ? resp.message.join('. ') : resp.message;
+                useAlertStore.getState().alert(msg || `No se pudo guardar el cliente`, "error");
             }
         } catch (error: any) {
             useAlertStore.setState({ success: false, loading: false });
@@ -82,7 +98,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
     editClients: async (data: any) => {
         useAlertStore.setState({ loading: true });
         try {
-            const resp: any = await put(`clientes/${data.id}`, data);
+            const resp: any = await put(`clientes/${data.id}`, sanitizeClientePayload(data));
             if (resp.code === 1 || resp.success === true) {
                 useAlertStore.setState({ success: true, loading: false });
                 set((state) => ({
