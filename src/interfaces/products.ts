@@ -89,6 +89,7 @@ export type IFormProduct = {
   productoId: number
   descripcion: string,
   categoriaNombre: string
+  disponibleParaVenta: boolean
   categoriaId: string | number | null,
   marcaNombre?: string
   marcaId?: number | null,

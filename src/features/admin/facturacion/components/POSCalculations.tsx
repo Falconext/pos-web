@@ -233,7 +233,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
             )}
 
             {/* Payment Methods */}
-            {!vm.isQuotationRoute && (
+            {!vm.isQuotationRoute && vm.formValues?.medioPago !== 'Crédito' && (
                 <div className="mb-3 md:mb-4">
                     {/* Toggle simple / mixto */}
                     <div className="flex items-center justify-between mb-2">

@@ -95,7 +95,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
             useAlertStore.getState().alert('Lote agregado correctamente', 'success');
             setLoteForm(emptyLoteForm);
             setShowLoteForm(false);
-            cargarLotes(Number(formValues.productoId));
+            await cargarLotes(Number(formValues.productoId));
         } catch (error: any) {
             useAlertStore.getState().alert(error.response?.data?.message || 'Error al agregar lote', 'error');
         }
@@ -142,7 +142,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
 
             useAlertStore.getState().alert('Lote actualizado', 'success');
             setEditingId(null);
-            cargarLotes(Number(formValues.productoId));
+            await cargarLotes(Number(formValues.productoId));
         } catch (error: any) {
             useAlertStore.getState().alert(error.response?.data?.message || 'Error al actualizar lote', 'error');
         }
@@ -155,7 +155,7 @@ const ModalLotes = ({ isOpen, onClose, formValues, isEdit, creationLote, setCrea
             await apiClient.patch(`/productos/lotes/${loteId}/desactivar`);
             useAlertStore.getState().alert('Lote eliminado correctamente', 'success');
             setDeletingId(null);
-            cargarLotes(Number(formValues.productoId));
+            await cargarLotes(Number(formValues.productoId));
         } catch (error: any) {
             useAlertStore.getState().alert(error.response?.data?.message || 'Error al eliminar lote', 'error');
         } finally {

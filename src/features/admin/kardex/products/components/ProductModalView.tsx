@@ -1,14 +1,13 @@
-import React from "react";
 import Modal from "@/components/Modal";
 import Button from "@/components/Button";
 import { Icon } from "@iconify/react";
 import { IPropsProducts } from "../ProductModalModel";
 import { useProductModalViewModel } from "../useProductModalViewModel";
 import { ProductImageUploader } from "./ProductImageUploader";
-import { ProductFinancialAnalysis } from "./ProductFinancialAnalysis";
 import { ProductStockManager } from "./ProductStockManager";
 import { ProductWholesalePricing } from "./ProductWholesalePricing";
 import { ProductBasicForm } from "./ProductBasicForm";
+import { ProductRichDescription } from "./ProductRichDescription";
 import ModalMedicamento from "@/pages/admin/kardex/modal-productos/components/ModalMedicamento";
 import ModalLotes from "@/pages/admin/kardex/modal-productos/components/ModalLotes";
 
@@ -87,7 +86,13 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                     >
                         <div className={`mt-5 ${vm.isFarmacia ? 'w-full' : ''}`}>
                             <ProductImageUploader vm={vm} />
-                            <ProductFinancialAnalysis vm={vm} />
+                            {vm.productSections.mayorista && (
+                                <div className="mt-4">
+                                    <ProductWholesalePricing vm={vm} />
+                                </div>
+                            )}
+                            <ProductRichDescription vm={vm} />
+
                         </div>
                     </div>
 

@@ -31,7 +31,7 @@ const isRestaurante = (auth: any) => {
 
 const isFarmacia = (auth: any) => {
   const r = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
-  return r.includes('farmacia') || r.includes('botica') || r.includes('drogueria') || r.includes('droguería');
+  return r.includes('farmacia') || r.includes('botica') || r.includes('medicament') || r.includes('drogueria') || r.includes('droguería');
 };
 
 // Fallback routes for modules that don't have ruta set in DB yet

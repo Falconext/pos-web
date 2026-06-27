@@ -175,7 +175,7 @@ export default function UrbanoCatalogoPage({
               ref={sliderRef}
               className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth md:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {collectionProducts.map((product) => (
+              {collectionProducts.map((product: any) => (
                 <div key={product.id} className="w-[70vw] flex-shrink-0 snap-start sm:w-[40vw] md:w-[30vw] xl:w-[22vw]">
                   <UrbanoProductCard
                     producto={product}
@@ -291,7 +291,7 @@ export default function UrbanoCatalogoPage({
                 {diseno.urbanoShopTheLookTitle || 'Compra el look'}
               </h3>
               <div className="grid max-w-lg grid-cols-2 gap-4 md:gap-8">
-                {lookProducts.map((product) => (
+                {lookProducts.map((product: any) => (
                   <UrbanoProductCard
                     key={product.id}
                     producto={product}
@@ -318,7 +318,7 @@ export default function UrbanoCatalogoPage({
                   {diseno.urbanoFeatureTitle || 'Completa el look'}
                 </h3>
                 <div className="grid max-w-lg grid-cols-2 gap-4 md:gap-8">
-                  {featureProducts.map((product) => (
+                  {featureProducts.map((product: any) => (
                     <UrbanoProductCard
                       key={product.id}
                       producto={product}

@@ -21,6 +21,7 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     imageCandidates,
     setImageCandidates,
     aprobarImagenReferencia,
+    productSections,
   } = vm;
 
   return (
@@ -146,29 +147,35 @@ export const ProductImageUploader: React.FC<{ vm: ViewProps }> = ({ vm }) => {
           Recomendación: 800x800px, JPG o PNG. Peso máximo 2MB.
         </p>
 
-        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={handleAutoImage}
-            disabled={isGeneratingImage || !formValues.descripcion}
-            className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-              !formValues.descripcion
-                ? "bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800"
-            }`}
-          >
-            <Icon
-              icon={isGeneratingImage ? "mdi:loading" : "mdi:magic-staff"}
-              className={isGeneratingImage ? "animate-spin" : ""}
-              width={16}
-            />
-            {isGeneratingImage ? "Buscando..." : "Auto-Generar Imagen"}
-          </button>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center leading-tight">
-            Nota: La imagen generada puede no ser exacta y sirve solo como apoyo
-            referencial.
-          </p>
-        </div>
+        {productSections.autoGenerarImagen && (
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={handleAutoImage}
+              disabled={isGeneratingImage || !formValues.descripcion}
+              className={`mt-3 w-full py-2 px-4 flex items-center justify-center gap-2 rounded-lg font-medium text-sm transition-all shadow-sm ${
+                isGeneratingImage || !formValues.descripcion
+                  ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
+                  : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 hover:shadow-md"
+              }`}
+            >
+              <Icon
+                icon={
+                  isGeneratingImage
+                    ? "line-md:loading-loop"
+                    : "solar:magic-stick-3-bold-duotone"
+                }
+                width={20}
+                className={isGeneratingImage ? "text-indigo-400" : ""}
+              />
+              {isGeneratingImage ? "Buscando..." : "Auto-Generar Imagen"}
+            </button>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center leading-tight">
+              Nota: La imagen generada puede no ser exacta y sirve solo como apoyo
+              referencial.
+            </p>
+          </div>
+        )}
 
         {imageCandidates.length > 0 && (
           <div className="mt-3 border border-indigo-100 dark:border-indigo-900/40 rounded-lg p-3 bg-indigo-50/40 dark:bg-indigo-950/20">

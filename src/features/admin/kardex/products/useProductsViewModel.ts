@@ -31,7 +31,6 @@ export const useProductsViewModel = () => {
         products: storeProducts,
         lastUpsertedProduct,
         productMutationVersion,
-        toggleStateProduct,
         exportProducts: exportProductsAction, importProducts: importProductsAction,
         deleteProduct, deleteAllProducts, setProductImage
     } = useProductsStore();
@@ -78,14 +77,10 @@ export const useProductsViewModel = () => {
 
     const esFarmaceuticoRubro = (() => {
         const r = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
-        return r.includes('farmacia') || r.includes('botica') || r.includes('drogueria') || r.includes('droguería');
+        return r.includes('farmacia') || r.includes('botica') || r.includes('medicament') || r.includes('drogueria') || r.includes('droguería');
     })();
-    const farmaciaIgvDefault = esFarmaceuticoRubro
-        ? { tipoAfectacionIGV: '20', afectacionNombre: 'Exonerado' }
-        : {};
     const createEmptyProductForm = (): IFormProduct => ({
         ...initialProductForm,
-        ...farmaciaIgvDefault,
         preciosMayorista: [],
     });
     const createEmptyProductErrors = () => ({
@@ -352,11 +347,11 @@ export const useProductsViewModel = () => {
 
         setProducts(previousProducts => {
             const existingIndex = previousProducts.findIndex(
-                product => product.id === lastUpsertedProduct.id,
+                product => Number(product.id) === Number(lastUpsertedProduct.id),
             );
             if (existingIndex >= 0) {
                 return previousProducts.map(product =>
-                    product.id === lastUpsertedProduct.id
+                    Number(product.id) === Number(lastUpsertedProduct.id)
                         ? ({ ...product, ...lastUpsertedProduct } as IProduct)
                         : product
                 );
@@ -609,9 +604,26 @@ export const useProductsViewModel = () => {
         setState(prev => ({ ...prev, formValues: data, isOpenModalConfirm: true }));
     };
 
-    const confirmToggleroduct = () => {
-        toggleStateProduct(Number(state.formValues?.productoId));
+    const confirmToggleroduct = async () => {
+        const productoId = Number(state.formValues?.productoId);
+        // Determine the new state from local products (not from Zustand store which may be stale)
+        const localProduct = products.find(p => p.id === productoId);
+        const nuevoEstado = localProduct?.estado === 'INACTIVO' ? 'ACTIVO' : 'INACTIVO';
         setState(prev => ({ ...prev, isOpenModalConfirm: false }));
+        try {
+            const resp: any = await apiClient.patch(`productos/${productoId}/estado`, { estado: nuevoEstado });
+            if (resp?.data?.code === 1 || resp?.status === 200) {
+                // Update local products state immediately for real-time UI feedback
+                setProducts(prev => prev.map(p =>
+                    p.id === productoId ? { ...p, estado: nuevoEstado } as IProduct : p
+                ));
+                useAlertStore.getState().alert('El producto ha cambiado su estado correctamente', 'success');
+            } else {
+                useAlertStore.getState().alert('Error al cambiar el estado del producto', 'error');
+            }
+        } catch {
+            useAlertStore.getState().alert('Error al cambiar el estado del producto', 'error');
+        }
     };
 
     const togglePublicarTienda = async (producto: any) => {

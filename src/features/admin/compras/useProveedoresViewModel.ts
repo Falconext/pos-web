@@ -32,6 +32,7 @@ export const useProveedoresViewModel = () => {
         isEdit: false,
         errors: INITIAL_PROVEEDOR_ERRORS,
         openAccionesId: null,
+        anchorEl: null,
     });
 
     const debounce = useDebounce(state.searchClient, 600);
@@ -56,7 +57,7 @@ export const useProveedoresViewModel = () => {
     // Close dropdown on document click
     useEffect(() => {
         const handleDocClick = () => {
-            if (state.openAccionesId !== null) setState(prev => ({ ...prev, openAccionesId: null }));
+            if (state.openAccionesId !== null) setState(prev => ({ ...prev, openAccionesId: null, anchorEl: null }));
         };
         document.addEventListener('click', handleDocClick);
         return () => document.removeEventListener('click', handleDocClick);
@@ -101,6 +102,8 @@ export const useProveedoresViewModel = () => {
             setState(prev => ({ ...prev, searchClient: e.target.value })),
         setOpenAccionesId: (id: number | null) =>
             setState(prev => ({ ...prev, openAccionesId: id })),
+        setAnchorEl: (el: HTMLElement | null) =>
+            setState(prev => ({ ...prev, anchorEl: el })),
     };
 
     return {

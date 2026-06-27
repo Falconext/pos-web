@@ -27,7 +27,7 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
     const { auth } = useAuthStore();
     const isFarmacia = useMemo(() => {
         const r = auth?.empresa?.rubro?.nombre?.toLowerCase() ?? '';
-        return r.includes('farmacia') || r.includes('botica') || r.includes('drogueria') || r.includes('droguería');
+        return r.includes('farmacia') || r.includes('botica') || r.includes('medicament') || r.includes('drogueria') || r.includes('droguería');
     }, [auth?.empresa?.rubro?.nombre]);
 
     const persons = [

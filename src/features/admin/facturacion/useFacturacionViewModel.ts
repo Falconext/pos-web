@@ -153,7 +153,7 @@ export const useFacturacionViewModel = () => {
 
     // Detección de rubros farmacéuticos
     const rubroNombre = ((auth?.empresa as any)?.rubro?.nombre ?? '').toLowerCase();
-    const isFarmaciaRetail = rubroNombre.includes('farmacia') || rubroNombre.includes('botica');
+    const isFarmaciaRetail = rubroNombre.includes('farmacia') || rubroNombre.includes('botica') || rubroNombre.includes('medicament');
     const esDrogueria = rubroNombre.includes('drogueria') || rubroNombre.includes('droguería');
     const usaLotesFarmacia = isFarmaciaRetail || esDrogueria;
     // Receta médica / controlados: farmacia, botica y droguería (DIGEMID exige
@@ -1243,7 +1243,8 @@ export const useFacturacionViewModel = () => {
         setBarcodeError(false);
         
         try {
-            const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
+            const queryParams = sedeActiva?.id ? `?sedeId=${sedeActiva.id}` : '';
+            const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}${queryParams}`);
             const producto = resp?.data ?? resp;
             if (producto?.id) {
                 handleProductClick(producto);

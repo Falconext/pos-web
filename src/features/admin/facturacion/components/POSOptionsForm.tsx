@@ -3,6 +3,8 @@ import InputPro from "@/components/InputPro";
 import { Icon } from "@iconify/react";
 import { useState } from "react";
 import { EnvioModal } from "./EnvioModal";
+import { Calendar } from "@/components/Date";
+import moment from "moment";
 
 const COURIER_LABELS: Record<string, string> = {
     SHALOM_PRO: 'Shalom PRO', SHALOM_COD: 'Shalom COD', OLVA: 'Olva',
@@ -301,18 +303,16 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                             Hasta {vm.fechaEmisionDiasAtras} días atrás (SUNAT)
                         </span>
                     </div>
-                    <input
-                        type="date"
-                        value={vm.fechaEmisionManual}
-                        min={vm.fechaEmisionMinDate}
-                        max={vm.fechaEmisionMaxDate}
-                        onChange={(e) => {
-                            const val = e.target.value;
+                    <Calendar
+                        value={vm.fechaEmisionManual ? moment(vm.fechaEmisionManual, 'YYYY-MM-DD').format('DD/MM/YYYY') : ''}
+                        withOutFormat={true}
+                        onChange={(val) => {
                             if (val >= vm.fechaEmisionMinDate && val <= vm.fechaEmisionMaxDate) {
                                 vm.setFechaEmisionManual(val);
                             }
                         }}
-                        className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+                        portal={true}
+                        className="w-full"
                     />
                     {vm.fechaEmisionManual !== vm.fechaEmisionMaxDate && (
                         <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl">
@@ -428,12 +428,12 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                     {vm.formValues?.medioPago === 'Crédito' && (
                         <div>
                             <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Fecha de Vencimiento / Cuota única</label>
-                            <input
-                                type="date"
-                                value={vm.fechaVencimientoCredito || ''}
-                                min={new Date().toISOString().split('T')[0]}
-                                onChange={e => vm.setFechaVencimientoCredito(e.target.value)}
-                                className="w-full h-9 px-3 text-sm rounded-xl border border-violet-300 dark:border-violet-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                            <Calendar
+                                value={vm.fechaVencimientoCredito ? moment(vm.fechaVencimientoCredito, 'YYYY-MM-DD').format('DD/MM/YYYY') : ''}
+                                withOutFormat={true}
+                                onChange={(val) => vm.setFechaVencimientoCredito(val)}
+                                portal={true}
+                                className="w-full"
                             />
                             {vm.formValues?.comprobante === "FACTURA" && (
                                 <div className="mt-3">

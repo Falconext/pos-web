@@ -294,40 +294,44 @@ const ComprobantePrintPage = ({
                                 <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">VENCIMIENTO:</div> <div>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</div></label>
                             )
                         ))}
-                        {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
-                            <div>
-                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
-                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                    const detail = splitPaymentDetails[idx] || sp;
-                                    return (
-                                        <div key={idx} className="mb-0.5">
-                                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                                                <span>{sp.method?.toUpperCase()}:</span>
-                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
-                                            </p>
-                                            {formatPaymentExtra(detail).map((line) => (
-                                                <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'} text-left`}>{line}</p>
-                                            ))}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' ? (
+                        {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
                             <>
-                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
-                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                    <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
-                                ))}
+                                {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                    <div>
+                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
+                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                            const detail = splitPaymentDetails[idx] || sp;
+                                            return (
+                                                <div key={idx} className="mb-0.5">
+                                                    <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                                        <span>{sp.method?.toUpperCase()}:</span>
+                                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                    </p>
+                                                    {formatPaymentExtra(detail).map((line) => (
+                                                        <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'} text-left`}>{line}</p>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                                        {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                            <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
+                                        ))}
+                                    </>
+                                )}
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                    <span>VUELTO:</span>
+                                    <span>S/ {displayVuelto.toFixed(2)}</span>
+                                </p>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                    <span>PAGADO:</span>
+                                    <span>S/ {displayPagado.toFixed(2)}</span>
+                                </p>
                             </>
-                        ) : null}
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                            <span>VUELTO:</span>
-                            <span>S/ {displayVuelto.toFixed(2)}</span>
-                        </p>
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                            <span>PAGADO:</span>
-                            <span>S/ {displayPagado.toFixed(2)}</span>
-                        </p>
+                        )}
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>VENDEDOR:</span>
                             <span className="text-right">{vendedorNombre}</span>
@@ -643,43 +647,47 @@ const ComprobantePrintPage = ({
                                                         )
                                                     ))}
 
-                                                    {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                    {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
                                                         <>
-                                                            <span className="font-bold text-xs">MEDIOS PAGO:</span>
-                                                            <span className="text-xs">
-                                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                                                    const detail = splitPaymentDetails[idx] || sp;
-                                                                    return (
-                                                                        <span key={idx} className="block">
-                                                                            <span className="flex justify-between">
-                                                                                <span>{sp.method?.toUpperCase()}:</span>
-                                                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
-                                                                            </span>
-                                                                            {formatPaymentExtra(detail).map((line) => (
-                                                                                <span key={line} className="block text-[10px] text-gray-700">{line}</span>
-                                                                            ))}
-                                                                        </span>
-                                                                    );
-                                                                })}
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <span className="font-bold text-xs">MEDIO PAGO:</span>
-                                                            <span className="text-xs">
-                                                                {formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(mtoImpVenta).toFixed(2)}
-                                                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                                                    <span key={line} className="block text-[10px] text-gray-700">{line}</span>
-                                                                ))}
-                                                            </span>
+                                                            {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                                <>
+                                                                    <span className="font-bold text-xs">MEDIOS PAGO:</span>
+                                                                    <span className="text-xs">
+                                                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                                            const detail = splitPaymentDetails[idx] || sp;
+                                                                            return (
+                                                                                <span key={idx} className="block">
+                                                                                    <span className="flex justify-between">
+                                                                                        <span>{sp.method?.toUpperCase()}:</span>
+                                                                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                                                    </span>
+                                                                                    {formatPaymentExtra(detail).map((line) => (
+                                                                                        <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                                    ))}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="font-bold text-xs">MEDIO PAGO:</span>
+                                                                    <span className="text-xs">
+                                                                        {formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(mtoImpVenta).toFixed(2)}
+                                                                        {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                                            <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                        ))}
+                                                                    </span>
+                                                                </>
+                                                            )}
+        
+                                                            <span className="font-bold text-xs">VUELTO:</span>
+                                                            <span className="text-xs">S/ {displayVuelto.toFixed(2)}</span>
+        
+                                                            <span className="font-bold text-xs">PAGADO:</span>
+                                                            <span className="text-xs">S/ {displayPagado.toFixed(2)}</span>
                                                         </>
                                                     )}
-
-                                                    <span className="font-bold text-xs">VUELTO:</span>
-                                                    <span className="text-xs">S/ {displayVuelto.toFixed(2)}</span>
-
-                                                    <span className="font-bold text-xs">PAGADO:</span>
-                                                    <span className="text-xs">S/ {displayPagado.toFixed(2)}</span>
 
                                                     <span className="font-bold text-xs">VENDEDOR:</span>
                                                     <span className="text-xs">{vendedorNombre}</span>

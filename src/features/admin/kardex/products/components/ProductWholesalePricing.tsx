@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import { useProductModalViewModel } from '../useProductModalViewModel';
 
@@ -18,6 +18,11 @@ export const ProductWholesalePricing: React.FC<{ vm: ViewProps }> = ({ vm }) => 
     const [focused, setFocused] = useState<'cantidadMinima' | 'precio' | null>(null);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [editValues, setEditValues] = useState({ cantidadMinima: '', precio: '' });
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (wholesaleOptions.length > 0) setIsOpen(true);
+    }, [wholesaleOptions.length]);
 
     const basePrice = Number(formValues.precioUnitario) || 0;
     const sorted = [...wholesaleOptions].sort((a, b) => a.cantidadMinima - b.cantidadMinima);
@@ -56,25 +61,35 @@ export const ProductWholesalePricing: React.FC<{ vm: ViewProps }> = ({ vm }) => 
     };
 
     return (
-        <div className="col-span-2 mt-2">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-sm">
-                        <Icon icon="solar:tag-price-bold-duotone" className="text-white" width={15} />
+        <div className="mt-4 mb-4">
+            <div className={`rounded-2xl border transition-all duration-200 overflow-hidden ${isOpen ? 'border-emerald-200 dark:border-emerald-900/40' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-900/50 hover:shadow-sm'}`}>
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(o => !o)}
+                    className="w-full flex items-center justify-between p-4 text-left group bg-white dark:bg-[#1E2435]"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg transition-colors ${isOpen ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'}`}>
+                            <Icon icon="solar:tag-price-bold-duotone" width={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">Precios por Mayorista</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Define rangos de precio según cantidad</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">Precios por Mayorista</p>
-                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Define rangos de precio según cantidad</p>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {wholesaleOptions.length > 0 && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                {wholesaleOptions.length} nivel{wholesaleOptions.length > 1 ? 'es' : ''}
+                            </span>
+                        )}
+                        <div className={`p-1 rounded-full transition-colors ${isOpen ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500' : 'text-gray-400 group-hover:text-emerald-500'}`}>
+                            <Icon icon="mdi:chevron-down" className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} width={20} />
+                        </div>
                     </div>
-                </div>
-                {wholesaleOptions.length > 0 && (
-                    <span className="ml-auto text-[11px] font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
-                        {wholesaleOptions.length} nivel{wholesaleOptions.length > 1 ? 'es' : ''}
-                    </span>
-                )}
-            </div>
-
+                </button>
+                <div className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#1E2435]">
             {/* Tiers list */}
             {sorted.length > 0 && (
                 <div className="mb-3 space-y-1.5">
@@ -87,7 +102,7 @@ export const ProductWholesalePricing: React.FC<{ vm: ViewProps }> = ({ vm }) => 
                         return (
                             <div
                                 key={idx}
-                                className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 hover:border-green-200 dark:hover:border-green-800 transition-colors group"
+                                className="flex items-center gap-3 px-3 py-2 rounded-xl border border-gray-300 transition-colors group"
                             >
                                 {/* Step badge */}
                                 <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
@@ -244,6 +259,9 @@ export const ProductWholesalePricing: React.FC<{ vm: ViewProps }> = ({ vm }) => 
                         <Icon icon="mdi:plus" width={16} />
                         <span className="hidden sm:inline">Agregar</span>
                     </button>
+                </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

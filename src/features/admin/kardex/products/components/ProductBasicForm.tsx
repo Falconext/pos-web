@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 import { BarcodeScannerInput } from '@/components/BarcodeScannerInput';
 import { Icon } from '@iconify/react';
 import Select from '@/components/Select';
@@ -10,8 +8,9 @@ import { IBrand } from '@/zustand/brands';
 import { GrupoModificador } from '@/zustand/modificadores';
 import { useProductModalViewModel } from '../useProductModalViewModel';
 import { ProductStockManager } from './ProductStockManager';
-import { ProductWholesalePricing } from './ProductWholesalePricing';
+
 import { ProductVariantsManager } from './ProductVariantsManager';
+import { ProductFinancialAnalysis } from './ProductFinancialAnalysis';
 
 const afectaciones = [
     { id: "10", value: "Gravado - Operación Onerosa" },
@@ -35,19 +34,9 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const [modoConIgv, setModoConIgv] = useState(true);
     const [simVentasDia, setSimVentasDia] = useState('');
     const [simPublicidadDia, setSimPublicidadDia] = useState('');
-    const [descTiendaOpen, setDescTiendaOpen] = useState(false);
+    const [advancedFinancialOpen, setAdvancedFinancialOpen] = useState(false);
+    const [provisionOpen, setProvisionOpen] = useState(false);
 
-    // Abrir la "Descripción para la tienda online" por defecto si ya tiene texto.
-    // Se ejecuta una vez por producto y soporta que la descripción llegue async al editar.
-    const autoOpenedForRef = useRef<number | null>(null);
-    useEffect(() => {
-        const pid = Number((formValues as any)?.productoId) || 0;
-        const hasText = !!(formValues as any)?.descripcionLarga;
-        if (hasText && autoOpenedForRef.current !== pid) {
-            autoOpenedForRef.current = pid;
-            setDescTiendaOpen(true);
-        }
-    }, [(formValues as any)?.productoId, (formValues as any)?.descripcionLarga]);
     const esServicio = String(((formValues as any)?.atributosTecnicos || {})?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
     const setAtributoTecnico = (key: string, value: string) => {
@@ -360,7 +349,9 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.precioUnitario} error={errors.precioUnitario} name="precioUnitario" onChange={handleChange} handleOnBlur={handlePrecioUnitarioBlur} isLabel label="Precio Venta (S/)" />
                     <InputPro autocomplete="off" type="number" step="0.01" value={formValues?.costoUnitario || ''} name="costoUnitario" onChange={handleChange} isLabel label="Costo (S/)" placeholder="0.00" />
-                    <InputPro autocomplete="off" value={(formValues as any)?.localizacion || ''} name="localizacion" onChange={handleChange} isLabel label="Ubicación / Localización" placeholder="Ej: Pasillo 3 - Estante B" />
+                    {productSections.localizacion && (
+                        <InputPro autocomplete="off" value={(formValues as any)?.localizacion || ''} name="localizacion" onChange={handleChange} isLabel label="Ubicación / Localización" placeholder="Ej: Pasillo 3 - Estante B" />
+                    )}
                     {productSections.ecommerce && fixedCostFields}
                 </div>
             </div>
@@ -370,11 +361,21 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     // GENERAL AND RESTAURANTS LAYOUT
     return (
         <div className={`md:px-2 px-3 ${isRestaurante ? 'col-span-1' : 'col-span-2'} grid grid-cols-1 md:grid-cols-2 mt-5 gap-4 md:gap-5`}>
-            <div className="col-span-1 md:col-span-1">
-                <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label={labels.codigo} />
-            </div>
+            {productSections.codigos && (
+                <div className="col-span-1 md:col-span-1">
+                    <InputPro
+                        autocomplete="off"
+                        value={(formValues as any)?.codigoBarras || ''}
+                        name="codigoBarras"
+                        onChange={handleChange}
+                        isLabel
+                        label="Código de Barras"
+                        placeholder="EAN-13 / UPC"
+                    />
+                </div>
+            )}
 
-            <div className="col-span-1 md:col-span-1 relative">
+            <div className={`col-span-1 ${productSections.codigos ? 'md:col-span-1' : 'md:col-span-2'} relative`}>
                 <div className="flex justify-between items-center mb-1">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{labels.nombre}</label>
                     <button
@@ -394,7 +395,11 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 <InputPro autocomplete="off" value={formValues?.descripcion} error={errors.descripcion} name="descripcion" onChange={handleChange} isLabel={false} />
             </div>
 
-            <div className={`col-span-1 ${isRestaurante ? 'md:col-span-2' : 'md:col-span-2 flex gap-2'}`}>
+            <div className="col-span-1 md:col-span-1">
+                <InputPro autocomplete="off" error={errors.codigo} value={formValues?.codigo} name="codigo" onChange={handleChange} isLabel label={labels.codigo} />
+            </div>
+
+            <div className="col-span-1 md:col-span-1">
                 <Select defaultValue={afectaciones.find(a => a.id === String((formValues as any)?.tipoAfectacionIGV))?.value || "Gravado - Operación Onerosa"} error={""} isSearch options={afectaciones} id="tipoAfectacionIGV" name="afectacionNombre" value={afectaciones.find(a => a.id === String((formValues as any)?.tipoAfectacionIGV))?.value || "Gravado - Operación Onerosa"} onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Tipo de afectación" />
             </div>
 
@@ -412,81 +417,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 )}
             </div>
 
-            {productSections.descripcionRica && (
-                <div className="col-span-1 md:col-span-2">
-                    <div className={`rounded-2xl border transition-all duration-200 overflow-hidden ${descTiendaOpen ? 'border-rose-200 dark:border-rose-900/40' : 'border-gray-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-900/50 hover:shadow-sm'}`}>
-                        <button
-                            type="button"
-                            onClick={() => setDescTiendaOpen(o => !o)}
-                            className="w-full flex items-center justify-between p-4 text-left group"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg transition-colors ${descTiendaOpen ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 group-hover:text-rose-600 dark:group-hover:text-rose-400'}`}>
-                                    <Icon icon="solar:document-text-bold-duotone" width={20} />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Descripción para la Tienda Online</h4>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        {(formValues as any)?.descripcionLarga
-                                            ? 'Rich text activo · Fichas técnicas, specs, detalles'
-                                            : 'Agrega contenido rico · Se muestra en la página de tu producto'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                {(formValues as any)?.descripcionLarga && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400">
-                                        Activo
-                                    </span>
-                                )}
-                                <Icon
-                                    icon="solar:alt-arrow-down-bold"
-                                    width={16}
-                                    className={`text-gray-400 transition-transform duration-200 ${descTiendaOpen ? 'rotate-180' : ''}`}
-                                />
-                            </div>
-                        </button>
 
-                        {descTiendaOpen && (
-                            <div className="px-4 pb-4 border-t border-rose-100 dark:border-rose-900/30 pt-4 bg-rose-50/30 dark:bg-rose-950/5">
-                                <div className="quill-container rounded-xl overflow-hidden">
-                                    <ReactQuill
-                                        theme="snow"
-                                        value={(formValues as any)?.descripcionLarga || ''}
-                                        onChange={(value: string) => setFormValues({ ...formValues, descripcionLarga: value } as any)}
-                                        placeholder="Escribe la descripción completa del producto: especificaciones, garantía, compatibilidad, características..."
-                                        className="bg-white dark:bg-slate-800"
-                                        modules={{
-                                            toolbar: [
-                                                [{ header: [2, 3, false] }],
-                                                ['bold', 'italic', 'underline'],
-                                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                                ['link', 'clean'],
-                                            ],
-                                        }}
-                                    />
-                                </div>
-                                <div className="flex items-center justify-between mt-3">
-                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-                                        <Icon icon="solar:info-circle-linear" width={13} />
-                                        Visible en la página de detalle del producto en tu tienda virtual.
-                                    </p>
-                                    {(formValues as any)?.descripcionLarga && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormValues({ ...formValues, descripcionLarga: '' } as any)}
-                                            className="text-[11px] text-red-400 hover:text-red-600 transition-colors flex items-center gap-1"
-                                        >
-                                            <Icon icon="solar:trash-bin-minimalistic-linear" width={12} />
-                                            Limpiar
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {vm.isModaRubro && <ProductVariantsManager vm={vm} />}
 
@@ -554,7 +485,19 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     </div>
                 </>
             )}
-
+            {productSections.localizacion && (
+                <div className="col-span-1 md:col-span-2 mt-2">
+                    <InputPro
+                        autocomplete="off"
+                        value={(formValues as any)?.localizacion || ''}
+                        name="localizacion"
+                        onChange={handleChange}
+                        isLabel
+                        label="Ubicación / Localización"
+                        placeholder="Ej: Pasillo 3 - Estante B"
+                    />
+                </div>
+            )}
             {!esServicio && productSections.lotes && (
                 <div className="col-span-1 md:col-span-2">
                     <button type="button" onClick={() => setShowLotesModal(true)} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1E2435] hover:border-indigo-400 hover:shadow-md transition-all group text-left">
@@ -572,7 +515,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            {productSections.farmacia && isFarmacia && (
+            {productSections.farmacia && esFarmaceutico && (
                 <>
                     <div className="col-span-1 md:col-span-1">
                         <InputPro autocomplete="off" value={(formValues as any)?.principioActivo || ''} name="principioActivo" onChange={handleChange} isLabel label="Principio Activo" placeholder="Ej: Paracetamol" />
@@ -596,7 +539,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <Icon icon="solar:medical-kit-bold-duotone" width={16} className="text-violet-500" />
                         Regulatorio Farmacéutico
                     </h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 dark:border-slate-800/60 pt-4">
                         <InputPro
                             autocomplete="off"
                             value={(formValues as any)?.codigoDigemid || ''}
@@ -606,62 +549,60 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             label="Código DIGEMID"
                             placeholder="Ej: 1234567"
                         />
-                        <div className="flex flex-col gap-3 pt-1">
-                            {/* requiereReceta: farmacia, botica y droguería */}
-                            {esFarmaceutico && (
-                                <label className="flex items-center gap-3 cursor-pointer group">
-                                    <div className="relative">
-                                        <input
-                                            type="checkbox"
-                                            name="requiereReceta"
-                                            checked={Boolean((formValues as any)?.requiereReceta)}
-                                            onChange={handleChange}
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-violet-600 transition-colors" />
-                                        <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Requiere Receta Médica</p>
-                                        <p className="text-xs text-gray-400">Bloquea venta en POS hasta ingresar Nº receta</p>
-                                    </div>
-                                </label>
-                            )}
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <div className="relative">
+                        {/* requiereReceta: farmacia, botica y droguería */}
+                        {esFarmaceutico && (
+                            <label className="flex items-start gap-3 cursor-pointer group mt-1 md:mt-2">
+                                <div className="relative mt-0.5 shrink-0">
                                     <input
                                         type="checkbox"
-                                        name="controlado"
-                                        checked={Boolean((formValues as any)?.controlado)}
+                                        name="requiereReceta"
+                                        checked={Boolean((formValues as any)?.requiereReceta)}
                                         onChange={handleChange}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-red-600 transition-colors" />
+                                    <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-violet-600 transition-colors" />
                                     <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medicamento Controlado</p>
-                                    <p className="text-xs text-gray-400">Requiere DNI paciente y nombre del médico</p>
+                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-tight">Requiere Receta Médica</p>
+                                    <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Bloquea venta en POS hasta ingresar Nº receta</p>
                                 </div>
                             </label>
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <div className="relative">
-                                    <input
-                                        type="checkbox"
-                                        name="refrigerado"
-                                        checked={Boolean((formValues as any)?.refrigerado)}
-                                        onChange={handleChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-blue-500 transition-colors" />
-                                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">🧊 Cadena de Frío</p>
-                                    <p className="text-xs text-gray-400">Muestra alerta en POS y en el carrito</p>
-                                </div>
-                            </label>
-                        </div>
+                        )}
+                        <label className="flex items-start gap-3 cursor-pointer group mt-1 md:mt-2">
+                            <div className="relative mt-0.5 shrink-0">
+                                <input
+                                    type="checkbox"
+                                    name="controlado"
+                                    checked={Boolean((formValues as any)?.controlado)}
+                                    onChange={handleChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-red-600 transition-colors" />
+                                <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-tight">Medicamento Controlado</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Requiere DNI paciente y nombre del médico</p>
+                            </div>
+                        </label>
+                        <label className="flex items-start gap-3 cursor-pointer group mt-1 md:mt-2">
+                            <div className="relative mt-0.5 shrink-0">
+                                <input
+                                    type="checkbox"
+                                    name="refrigerado"
+                                    checked={Boolean((formValues as any)?.refrigerado)}
+                                    onChange={handleChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-10 h-5 bg-gray-200 dark:bg-slate-700 rounded-full peer-checked:bg-blue-500 transition-colors" />
+                                <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-tight">🧊 Cadena de Frío</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Muestra alerta en POS y en el carrito</p>
+                            </div>
+                        </label>
                     </div>
                 </div>
             )}
@@ -680,17 +621,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            {productSections.codigos && (
-                <div className="col-span-1 md:col-span-2">
-                    <BarcodeScannerInput
-                        name="codigoBarras"
-                        label="Código de Barras"
-                        value={(formValues as any)?.codigoBarras || ''}
-                        onChange={handleChange}
-                        placeholder="Escanea o escribe EAN-13 / UPC"
-                    />
-                </div>
-            )}
+
 
             {productSections.ofertas && (
                 <div className="col-span-1 md:col-span-2 border-t dark:border-slate-800 pt-4 mt-4">
@@ -706,386 +637,437 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
-            {/* ── Tarjeta de precio inteligente ── */}
-            <div className="col-span-1 md:col-span-2">
-                {(() => {
-                    const esGravado = !['20', '30'].includes((formValues as any).tipoAfectacionIGV ?? '10');
-                    const igvPct = esGravado ? 0.18 : 0;
-                    const precio = Number(formValues?.precioUnitario) || 0;
-                    const costo = Number((formValues as any)?.costoUnitario) || 0;
+            {/* ── Tarjeta de precio inteligente y Resumen de Margen ── */}
+            <div className="col-span-1 md:col-span-2 mt-2 grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
+                <div className="w-full h-full flex">
+                    {(() => {
+                        const esGravado = !['20', '30'].includes((formValues as any).tipoAfectacionIGV ?? '10');
+                        const igvPct = esGravado ? 0.18 : 0;
+                        const precio = Number(formValues?.precioUnitario) || 0;
+                        const costo = Number((formValues as any)?.costoUnitario) || 0;
 
-                    // precioUnitario siempre se guarda CON IGV — derivar neto desde ahí
-                    const precioConIgv = precio;
-                    const precioSinIgv = esGravado ? parseFloat((precio / 1.18).toFixed(2)) : precio;
-                    const igvMonto = parseFloat((precioConIgv - precioSinIgv).toFixed(2));
+                        // precioUnitario siempre se guarda CON IGV — derivar neto desde ahí
+                        const precioConIgv = precio;
+                        const precioSinIgv = esGravado ? parseFloat((precio / 1.18).toFixed(2)) : precio;
+                        const igvMonto = parseFloat((precioConIgv - precioSinIgv).toFixed(2));
 
-                    const margen = costo > 0 && precioSinIgv > 0
-                        ? parseFloat(((precioSinIgv - costo) / costo * 100).toFixed(1))
-                        : null;
-                    const margenPositivo = margen !== null && margen >= 0;
+                        const margen = costo > 0 && precioSinIgv > 0
+                            ? parseFloat(((precioSinIgv - costo) / costo * 100).toFixed(1))
+                            : null;
+                        const margenPositivo = margen !== null && margen >= 0;
 
-                    const handlePrecioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-                        const num = parseFloat(e.target.value) || 0;
-                        const conIgv = modoConIgv ? num : parseFloat((num * (1 + igvPct)).toFixed(2));
-                        setFormValues({ ...formValues, precioUnitario: conIgv } as any);
-                    };
+                        const handlePrecioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                            const num = parseFloat(e.target.value) || 0;
+                            const conIgv = modoConIgv ? num : parseFloat((num * (1 + igvPct)).toFixed(2));
+                            setFormValues({ ...formValues, precioUnitario: conIgv } as any);
+                        };
 
-                    return (
-                        <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gradient-to-br from-white to-gray-50/30 dark:from-slate-800/60 dark:to-slate-900/40 p-4 space-y-3">
-                            {/* Header con toggle */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                                        <Icon icon="solar:dollar-minimalistic-bold-duotone" className="text-white" width={14} />
+                        return (
+                            <div className="w-full flex flex-col justify-between rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gradient-to-br from-white to-gray-50/30 dark:from-slate-800/60 dark:to-slate-900/40 p-4 space-y-3">
+                                <div>
+                                    {/* Header con toggle */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                                <Icon icon="solar:dollar-minimalistic-bold-duotone" className="text-white" width={14} />
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-800 dark:text-white">Precio de Venta</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 p-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
+                                            <button type="button" onClick={() => setModoConIgv(true)}
+                                                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${modoConIgv ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
+                                                Con IGV
+                                            </button>
+                                            <button type="button" onClick={() => setModoConIgv(false)}
+                                                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${!modoConIgv ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
+                                                Sin IGV
+                                            </button>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-bold text-gray-800 dark:text-white">Precio de Venta</span>
-                                </div>
-                                <div className="flex items-center gap-1 p-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
-                                    <button type="button" onClick={() => setModoConIgv(true)}
-                                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${modoConIgv ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
-                                        Con IGV
-                                    </button>
-                                    <button type="button" onClick={() => setModoConIgv(false)}
-                                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${!modoConIgv ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
-                                        Sin IGV
-                                    </button>
-                                </div>
-                            </div>
 
-                            {/* Input precio */}
-                            <InputPro
-                                type="number"
-                                step="0.01"
-                                name="precioUnitario"
-                                placeholder="0.00"
-                                isLabel
-                                label={modoConIgv ? `Precio de venta con IGV (S/)${esGravado ? '' : ' — ' + ((formValues as any).tipoAfectacionIGV === '20' ? 'Exonerado' : 'Inafecto')}` : 'Precio neto sin IGV (S/)'}
-                                value={modoConIgv ? (precio || '') : (precioSinIgv || '')}
-                                onChange={handlePrecioChange}
-                                handleOnBlur={handlePrecioUnitarioBlur}
-                                error={errors.precioUnitario}
-                            />
+                                    {/* Input precio */}
+                                    <InputPro
+                                        type="number"
+                                        step="0.01"
+                                        name="precioUnitario"
+                                        placeholder="0.00"
+                                        isLabel
+                                        label={modoConIgv ? `Precio de venta con IGV (S/)${esGravado ? '' : ' — ' + ((formValues as any).tipoAfectacionIGV === '20' ? 'Exonerado' : 'Inafecto')}` : 'Precio neto sin IGV (S/)'}
+                                        value={modoConIgv ? (precio || '') : (precioSinIgv || '')}
+                                        onChange={handlePrecioChange}
+                                        handleOnBlur={handlePrecioUnitarioBlur}
+                                        error={errors.precioUnitario}
+                                    />
 
-                            {/* Desglose IGV */}
-                            {esGravado && precio > 0 && (
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-center">
-                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Neto</p>
-                                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mt-0.5">S/ {precioSinIgv.toFixed(2)}</p>
-                                    </div>
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 text-center">
-                                        <p className="text-[10px] text-blue-500 font-medium uppercase tracking-wide">IGV 18%</p>
-                                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">S/ {igvMonto.toFixed(2)}</p>
-                                    </div>
-                                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2 text-center">
-                                        <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide">Total</p>
-                                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">S/ {precioConIgv.toFixed(2)}</p>
-                                    </div>
-                                </div>
-                            )}
+                                    {/* Desglose IGV */}
+                                    {esGravado && precio > 0 && (
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-center">
+                                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Neto</p>
+                                                <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mt-0.5">S/ {precioSinIgv.toFixed(2)}</p>
+                                            </div>
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 text-center">
+                                                <p className="text-[10px] text-blue-500 font-medium uppercase tracking-wide">IGV 18%</p>
+                                                <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">S/ {igvMonto.toFixed(2)}</p>
+                                            </div>
+                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2 text-center">
+                                                <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide">Total</p>
+                                                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">S/ {precioConIgv.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                    )}
 
-                            {/* Costo + margen */}
-                            {!isRestaurante && (
-                                <div className="flex gap-3 items-end">
-                                    <div className="flex-1">
-                                        <InputPro
-                                            type="number"
-                                            step="0.01"
-                                            name="costoUnitario"
-                                            placeholder="0.00"
-                                            isLabel
-                                            label="Costo unitario S/ (neto sin IGV)"
-                                            value={(formValues as any)?.costoUnitario != null ? parseFloat(Number((formValues as any).costoUnitario).toFixed(2)) : ''}
-                                            onChange={(e) => setFormValues({ ...formValues, costoUnitario: parseFloat(e.target.value) || 0 } as any)}
-                                        />
-                                    </div>
-                                    {margen !== null && (
-                                        <div className={`px-3 py-2 rounded-xl text-center min-w-[80px] mb-0.5 ${margenPositivo ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-                                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Margen</p>
-                                            <p className={`text-base font-bold mt-0.5 ${margenPositivo ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
-                                                {margenPositivo ? '+' : ''}{margen}%
-                                            </p>
+                                    {/* Costo + margen */}
+                                    {!isRestaurante && (
+                                        <div className="flex gap-3 items-end mt-10">
+                                            <div className="flex-1">
+                                                <InputPro
+                                                    type="number"
+                                                    step="0.01"
+                                                    name="costoUnitario"
+                                                    placeholder="0.00"
+                                                    isLabel
+                                                    label="Costo unitario S/ (neto sin IGV)"
+                                                    value={(formValues as any)?.costoUnitario != null ? parseFloat(Number((formValues as any).costoUnitario).toFixed(2)) : ''}
+                                                    onChange={(e) => setFormValues({ ...formValues, costoUnitario: parseFloat(e.target.value) || 0 } as any)}
+                                                />
+                                            </div>
+                                            {margen !== null && (
+                                                <div className={`px-3 py-2 rounded-xl text-center min-w-[80px] mb-0.5 ${margenPositivo ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Margen</p>
+                                                    <p className={`text-base font-bold mt-0.5 ${margenPositivo ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                                        {margenPositivo ? '+' : ''}{margen}%
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
-                    );
-                })()}
+                            </div>
+                        );
+                    })()}
+                </div>
+                <div className="w-full h-full">
+                    <ProductFinancialAnalysis vm={vm} />
+                </div>
             </div>
 
             {!esServicio && productSections.inventario && <ProductStockManager vm={vm} />}
 
-            {!isRestaurante && productSections.ecommerce && fixedCostFields}
-
-            {/* ── Simulador de Rentabilidad Diaria ── */}
-            {!isRestaurante && productSections.ecommerce && (() => {
-                const esGravado = !['20', '30'].includes((formValues as any).tipoAfectacionIGV ?? '10');
-                const precio = Number(formValues?.precioUnitario) || 0;
-                const precioNeto = esGravado ? precio / 1.18 : precio;
-                const costo = Number((formValues as any)?.costoUnitario) || 0;
-                const costoFijo = Number((formValues as any)?.costoFijo) || 0;
-                const comision = Number((formValues as any)?.comisionPorVenta) || 0;
-
-                const ventasDia = parseFloat(simVentasDia) || 0;
-                const pubDia = parseFloat(simPublicidadDia) || 0;
-
-                const gananciaXUnidad = precioNeto - costo - costoFijo - comision;
-                const gananciaXDia = ventasDia > 0
-                    ? (gananciaXUnidad * ventasDia) - pubDia
-                    : null;
-                const cpaDia = ventasDia > 0 ? pubDia / ventasDia : 0;
-                const ganaXUnidadConAds = ventasDia > 0 ? gananciaXUnidad - cpaDia : null;
-
-                const tieneBaseDatos = precioNeto > 0 && costo > 0;
-                const gana = gananciaXDia !== null && gananciaXDia > 0;
-                const empata = gananciaXDia !== null && gananciaXDia === 0;
-
-                return (
-                    <div className="col-span-1 md:col-span-2">
-                        <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/60 to-violet-50/40 dark:from-indigo-950/20 dark:to-violet-950/10 p-5 space-y-4">
-                            {/* Header */}
+            {!isRestaurante && productSections.analisisAvanzado && (
+                <div className="col-span-1 md:col-span-2">
+                    <div className={`rounded-2xl border transition-all duration-200 overflow-hidden ${advancedFinancialOpen ? 'border-indigo-200 dark:border-indigo-900/40' : 'border-gray-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900/50 hover:shadow-sm'}`}>
+                        <button
+                            type="button"
+                            onClick={() => setAdvancedFinancialOpen(o => !o)}
+                            className="w-full flex items-center justify-between p-4 text-left group bg-white dark:bg-[#1E2435]"
+                        >
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm">
-                                    <Icon icon="solar:chart-bold-duotone" className="text-white" width={18} />
+                                <div className={`p-2 rounded-lg transition-colors ${advancedFinancialOpen ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>
+                                    <Icon icon="solar:calculator-bold-duotone" width={20} />
                                 </div>
                                 <div>
-                                    <h5 className="text-sm font-bold text-gray-900 dark:text-white">Simulador de Rentabilidad Diaria</h5>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">¿Cuánto ganarías al día si vendes X unidades con Y de publicidad?</p>
-                                </div>
-                            </div>
-
-                            {/* Inputs del simulador */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
-                                        Unidades vendidas por día
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        value={simVentasDia}
-                                        onChange={e => setSimVentasDia(e.target.value)}
-                                        placeholder="Ej: 10"
-                                        className="w-full px-3 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
-                                        Publicidad al día (S/)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={simPublicidadDia}
-                                        onChange={e => setSimPublicidadDia(e.target.value)}
-                                        placeholder="Ej: 100"
-                                        className="w-full px-3 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Resultado */}
-                            {!tieneBaseDatos && (
-                                <div className="flex items-center gap-2 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-                                    <Icon icon="mdi:alert-circle-outline" width={15} />
-                                    Ingresa el precio y costo del producto para activar el simulador.
-                                </div>
-                            )}
-
-                            {tieneBaseDatos && gananciaXDia === null && (
-                                <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 space-y-2 border border-indigo-100 dark:border-indigo-900/40">
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-3">Desglose por unidad vendida</p>
-                                    <div className="space-y-1.5 text-sm">
-                                        {[
-                                            { label: 'Precio de venta (neto)', val: precioNeto, color: 'text-gray-700 dark:text-gray-200', sign: '' },
-                                            { label: 'Costo del producto', val: -costo, color: 'text-red-500', sign: '−' },
-                                            ...(costoFijo > 0 ? [{ label: 'Regalo / envío', val: -costoFijo, color: 'text-red-500', sign: '−' }] : []),
-                                            ...(comision > 0 ? [{ label: 'Comisión vendedor', val: -comision, color: 'text-red-500', sign: '−' }] : []),
-                                        ].map((r, i) => (
-                                            <div key={i} className="flex justify-between items-center">
-                                                <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
-                                                <span className={`font-semibold ${r.color}`}>{r.sign} S/ {Math.abs(r.val).toFixed(2)}</span>
-                                            </div>
-                                        ))}
-                                        <div className="border-t border-indigo-100 dark:border-indigo-900/50 pt-2 flex justify-between items-center">
-                                            <span className="font-bold text-gray-700 dark:text-gray-200 text-sm">Ganancia sin ads</span>
-                                            <span className={`text-lg font-bold ${gananciaXUnidad >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
-                                                S/ {gananciaXUnidad.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <p className="text-[11px] text-indigo-400 dark:text-indigo-500 text-center pt-1">
-                                        Ingresa las unidades/día y publicidad para ver la proyección diaria
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Análisis Financiero Avanzado</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        Simulador de rentabilidad diaria, comisiones y costos por venta.
                                     </p>
                                 </div>
-                            )}
+                            </div>
+                            <Icon
+                                icon="solar:alt-arrow-down-bold"
+                                width={16}
+                                className={`text-gray-400 transition-transform duration-200 ${advancedFinancialOpen ? 'rotate-180' : ''}`}
+                            />
+                        </button>
+                        {advancedFinancialOpen && (
+                            <div className="p-4 border-t border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/20 dark:bg-indigo-950/5 space-y-4">
+                                {fixedCostFields}
 
-                            {tieneBaseDatos && gananciaXDia !== null && (
-                                <div className="space-y-3">
-                                    {/* Desglose diario */}
-                                    <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 border border-indigo-100 dark:border-indigo-900/40">
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-3">Desglose diario ({ventasDia} unidades)</p>
-                                        <div className="space-y-1.5 text-sm">
-                                            {[
-                                                { label: `Ingresos (${ventasDia} × S/${precioNeto.toFixed(2)})`, val: precioNeto * ventasDia, color: 'text-emerald-600 dark:text-emerald-400', sign: '' },
-                                                { label: `Costo producto (${ventasDia} × S/${costo.toFixed(2)})`, val: -(costo * ventasDia), color: 'text-red-400', sign: '−' },
-                                                ...(costoFijo > 0 ? [{ label: `Regalo/envío (${ventasDia} × S/${costoFijo.toFixed(2)})`, val: -(costoFijo * ventasDia), color: 'text-red-400', sign: '−' }] : []),
-                                                ...(comision > 0 ? [{ label: `Comisión vendedor (${ventasDia} × S/${comision.toFixed(2)})`, val: -(comision * ventasDia), color: 'text-red-400', sign: '−' }] : []),
-                                                ...(pubDia > 0 ? [{ label: 'Publicidad (TikTok / Meta)', val: -pubDia, color: 'text-amber-500', sign: '−' }] : []),
-                                            ].map((r, i) => (
-                                                <div key={i} className="flex justify-between items-center">
-                                                    <span className="text-gray-500 dark:text-gray-400 text-xs">{r.label}</span>
-                                                    <span className={`font-semibold text-sm ${r.color}`}>{r.sign} S/ {Math.abs(r.val).toFixed(2)}</span>
+                                {/* ── Simulador de Rentabilidad Diaria ── */}
+                                {(() => {
+                                    const esGravado = !['20', '30'].includes((formValues as any).tipoAfectacionIGV ?? '10');
+                                    const precio = Number(formValues?.precioUnitario) || 0;
+                                    const precioNeto = esGravado ? precio / 1.18 : precio;
+                                    const costo = Number((formValues as any)?.costoUnitario) || 0;
+                                    const costoFijo = Number((formValues as any)?.costoFijo) || 0;
+                                    const comision = Number((formValues as any)?.comisionPorVenta) || 0;
+
+                                    const ventasDia = parseFloat(simVentasDia) || 0;
+                                    const pubDia = parseFloat(simPublicidadDia) || 0;
+
+                                    const gananciaXUnidad = precioNeto - costo - costoFijo - comision;
+                                    const gananciaXDia = ventasDia > 0
+                                        ? (gananciaXUnidad * ventasDia) - pubDia
+                                        : null;
+                                    const cpaDia = ventasDia > 0 ? pubDia / ventasDia : 0;
+                                    const ganaXUnidadConAds = ventasDia > 0 ? gananciaXUnidad - cpaDia : null;
+
+                                    const tieneBaseDatos = precioNeto > 0 && costo > 0;
+                                    const gana = gananciaXDia !== null && gananciaXDia > 0;
+                                    const empata = gananciaXDia !== null && gananciaXDia === 0;
+
+                                    return (
+                                        <div className="col-span-1 md:col-span-2">
+                                            <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/60 to-violet-50/40 dark:from-indigo-950/20 dark:to-violet-950/10 p-5 space-y-4">
+                                                {/* Header */}
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm">
+                                                        <Icon icon="solar:chart-bold-duotone" className="text-white" width={18} />
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="text-sm font-bold text-gray-900 dark:text-white">Simulador de Rentabilidad Diaria</h5>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">¿Cuánto ganarías al día si vendes X unidades con Y de publicidad?</p>
+                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
 
-                                    {/* Resultado grande */}
-                                    <div className={`rounded-xl p-4 text-center border-2 ${gana ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700' : empata ? 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700' : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700'}`}>
-                                        <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${gana ? 'text-emerald-600 dark:text-emerald-400' : empata ? 'text-gray-500' : 'text-red-500'}`}>
-                                            {gana ? '¡Estás ganando!' : empata ? 'Punto de equilibrio' : 'Estás perdiendo dinero'}
-                                        </p>
-                                        <p className={`text-4xl font-black tracking-tight ${gana ? 'text-emerald-600 dark:text-emerald-400' : empata ? 'text-gray-600' : 'text-red-500'}`}>
-                                            {gana ? '+' : ''} S/ {gananciaXDia.toFixed(2)}
-                                        </p>
-                                        <p className={`text-xs mt-1 ${gana ? 'text-emerald-500' : empata ? 'text-gray-400' : 'text-red-400'}`}>
-                                            al día
-                                        </p>
-                                    </div>
+                                                {/* Inputs del simulador */}
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                                                            Unidades vendidas por día
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            value={simVentasDia}
+                                                            onChange={e => setSimVentasDia(e.target.value)}
+                                                            placeholder="Ej: 10"
+                                                            className="w-full px-3 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                                                            Publicidad al día (S/)
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.01"
+                                                            value={simPublicidadDia}
+                                                            onChange={e => setSimPublicidadDia(e.target.value)}
+                                                            placeholder="Ej: 100"
+                                                            className="w-full px-3 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                    {/* Info adicional: CPA y ganancia con ads */}
-                                    {pubDia > 0 && ventasDia > 0 && (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="bg-white/60 dark:bg-slate-800/50 rounded-xl p-3 text-center border border-indigo-100 dark:border-indigo-900/40">
-                                                <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">CPA (costo por venta)</p>
-                                                <p className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">S/ {cpaDia.toFixed(2)}</p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5">publicidad ÷ ventas</p>
-                                            </div>
-                                            <div className={`rounded-xl p-3 text-center border ${ganaXUnidadConAds !== null && ganaXUnidadConAds >= 0 ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40' : 'bg-red-50/60 dark:bg-red-950/20 border-red-100 dark:border-red-900/40'}`}>
-                                                <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Ganancia por unidad</p>
-                                                <p className={`text-base font-bold mt-0.5 ${ganaXUnidadConAds !== null && ganaXUnidadConAds >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
-                                                    S/ {(ganaXUnidadConAds ?? 0).toFixed(2)}
-                                                </p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5">incluyendo publicidad</p>
+                                                {/* Resultado */}
+                                                {!tieneBaseDatos && (
+                                                    <div className="flex items-center gap-2 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+                                                        <Icon icon="mdi:alert-circle-outline" width={15} />
+                                                        Ingresa el precio y costo del producto para activar el simulador.
+                                                    </div>
+                                                )}
+
+                                                {tieneBaseDatos && gananciaXDia === null && (
+                                                    <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 space-y-2 border border-indigo-100 dark:border-indigo-900/40">
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-3">Desglose por unidad vendida</p>
+                                                        <div className="space-y-1.5 text-sm">
+                                                            {[
+                                                                { label: 'Precio de venta (neto)', val: precioNeto, color: 'text-gray-700 dark:text-gray-200', sign: '' },
+                                                                { label: 'Costo del producto', val: -costo, color: 'text-red-500', sign: '−' },
+                                                                ...(costoFijo > 0 ? [{ label: 'Regalo / envío', val: -costoFijo, color: 'text-red-500', sign: '−' }] : []),
+                                                                ...(comision > 0 ? [{ label: 'Comisión vendedor', val: -comision, color: 'text-red-500', sign: '−' }] : []),
+                                                            ].map((r, i) => (
+                                                                <div key={i} className="flex justify-between items-center">
+                                                                    <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
+                                                                    <span className={`font-semibold ${r.color}`}>{r.sign} S/ {Math.abs(r.val).toFixed(2)}</span>
+                                                                </div>
+                                                            ))}
+                                                            <div className="border-t border-indigo-100 dark:border-indigo-900/50 pt-2 flex justify-between items-center">
+                                                                <span className="font-bold text-gray-700 dark:text-gray-200 text-sm">Ganancia sin ads</span>
+                                                                <span className={`text-lg font-bold ${gananciaXUnidad >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                                                    S/ {gananciaXUnidad.toFixed(2)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[11px] text-indigo-400 dark:text-indigo-500 text-center pt-1">
+                                                            Ingresa las unidades/día y publicidad para ver la proyección diaria
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {tieneBaseDatos && gananciaXDia !== null && (
+                                                    <div className="space-y-3">
+                                                        {/* Desglose diario */}
+                                                        <div className="bg-white/70 dark:bg-slate-800/60 rounded-xl p-4 border border-indigo-100 dark:border-indigo-900/40">
+                                                            <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-3">Desglose diario ({ventasDia} unidades)</p>
+                                                            <div className="space-y-1.5 text-sm">
+                                                                {[
+                                                                    { label: `Ingresos (${ventasDia} × S/${precioNeto.toFixed(2)})`, val: precioNeto * ventasDia, color: 'text-emerald-600 dark:text-emerald-400', sign: '' },
+                                                                    { label: `Costo producto (${ventasDia} × S/${costo.toFixed(2)})`, val: -(costo * ventasDia), color: 'text-red-400', sign: '−' },
+                                                                    ...(costoFijo > 0 ? [{ label: `Regalo/envío (${ventasDia} × S/${costoFijo.toFixed(2)})`, val: -(costoFijo * ventasDia), color: 'text-red-400', sign: '−' }] : []),
+                                                                    ...(comision > 0 ? [{ label: `Comisión vendedor (${ventasDia} × S/${comision.toFixed(2)})`, val: -(comision * ventasDia), color: 'text-red-400', sign: '−' }] : []),
+                                                                    ...(pubDia > 0 ? [{ label: 'Publicidad (TikTok / Meta)', val: -pubDia, color: 'text-amber-500', sign: '−' }] : []),
+                                                                ].map((r, i) => (
+                                                                    <div key={i} className="flex justify-between items-center">
+                                                                        <span className="text-gray-500 dark:text-gray-400 text-xs">{r.label}</span>
+                                                                        <span className={`font-semibold text-sm ${r.color}`}>{r.sign} S/ {Math.abs(r.val).toFixed(2)}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Resultado grande */}
+                                                        <div className={`rounded-xl p-4 text-center border-2 ${gana ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700' : empata ? 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700' : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700'}`}>
+                                                            <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${gana ? 'text-emerald-600 dark:text-emerald-400' : empata ? 'text-gray-500' : 'text-red-500'}`}>
+                                                                {gana ? '¡Estás ganando!' : empata ? 'Punto de equilibrio' : 'Estás perdiendo dinero'}
+                                                            </p>
+                                                            <p className={`text-4xl font-black tracking-tight ${gana ? 'text-emerald-600 dark:text-emerald-400' : empata ? 'text-gray-600' : 'text-red-500'}`}>
+                                                                {gana ? '+' : ''} S/ {gananciaXDia.toFixed(2)}
+                                                            </p>
+                                                            <p className={`text-xs mt-1 ${gana ? 'text-emerald-500' : empata ? 'text-gray-400' : 'text-red-400'}`}>
+                                                                al día
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Info adicional: CPA y ganancia con ads */}
+                                                        {pubDia > 0 && ventasDia > 0 && (
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div className="bg-white/60 dark:bg-slate-800/50 rounded-xl p-3 text-center border border-indigo-100 dark:border-indigo-900/40">
+                                                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">CPA (costo por venta)</p>
+                                                                    <p className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">S/ {cpaDia.toFixed(2)}</p>
+                                                                    <p className="text-[10px] text-gray-400 mt-0.5">publicidad ÷ ventas</p>
+                                                                </div>
+                                                                <div className={`rounded-xl p-3 text-center border ${ganaXUnidadConAds !== null && ganaXUnidadConAds >= 0 ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40' : 'bg-red-50/60 dark:bg-red-950/20 border-red-100 dark:border-red-900/40'}`}>
+                                                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Ganancia por unidad</p>
+                                                                    <p className={`text-base font-bold mt-0.5 ${ganaXUnidadConAds !== null && ganaXUnidadConAds >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                                                                        S/ {(ganaXUnidadConAds ?? 0).toFixed(2)}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-gray-400 mt-0.5">incluyendo publicidad</p>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
                     </div>
-                );
-            })()}
-
-            {/* Solo mayorista para NO restaurantes (súpers, tiendas, etc) */}
-            {productSections.mayorista && <ProductWholesalePricing vm={vm} />}
-
-            {productSections.provisiones && (
-            <div className="col-span-1 md:col-span-2">
-                <InputPro
-                    autocomplete="off"
-                    value={(formValues as any)?.localizacion || ''}
-                    name="localizacion"
-                    onChange={handleChange}
-                    isLabel
-                    label="Ubicación / Localización"
-                    placeholder="Ej: Pasillo 3 - Estante B"
-                />
-            </div>
+                </div>
             )}
 
             {productSections.provisiones && (
-                <div className="col-span-1 md:col-span-2">
-                    <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/10">
-                        <div className="col-span-2 flex items-center gap-2 mb-1">
-                            <Icon icon="solar:star-bold-duotone" className="text-purple-500" width={14} />
-                            <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Gestión de provisiones</span>
-                        </div>
-                        <p className="col-span-2 text-[11px] leading-4 text-gray-500 dark:text-gray-400">
-                            Venta define el máximo para despacho inmediato. Provisión define el máximo para reservas activas. Ambos porcentajes deben sumar 100%.
-                        </p>
-                        <InputPro
-                            autocomplete="off"
-                            type="number"
-                            value={(formValues as any)?.porcentajeVenta ?? 100}
-                            name="porcentajeVenta"
-                            onChange={handleChange}
-                            isLabel
-                            label="% Venta"
-                            placeholder="100"
-                        />
-                        <InputPro
-                            autocomplete="off"
-                            type="number"
-                            value={(formValues as any)?.porcentajeProvision ?? 0}
-                            name="porcentajeProvision"
-                            onChange={handleChange}
-                            isLabel
-                            label="% Provisión"
-                            placeholder="0"
-                        />
-
-                        {(() => {
-                            const stockBase = Number((formValues as any)?.stock ?? 0);
-                            const reservadoReal = Number((formValues as any)?.stockReservado ?? 0);
-                            const porcentajeProvision = Number((formValues as any)?.porcentajeProvision ?? 0);
-
-                            const cupoProvision = Math.max(0, Math.floor((stockBase * porcentajeProvision) / 100));
-                            const cupoVenta = Math.max(0, stockBase - cupoProvision);
-                            const provisionDisponible = Math.max(0, cupoProvision - reservadoReal);
-                            const ventaDisponible = Math.max(0, Math.min(stockBase - reservadoReal, cupoVenta));
-
-                            const statusColor =
-                                reservadoReal > cupoProvision
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-emerald-600 dark:text-emerald-400';
-
-                            return (
-                                <div className="col-span-2 mt-1 rounded-xl border border-purple-200/80 dark:border-purple-800/60 bg-white/80 dark:bg-slate-900/60 p-3">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Icon icon="solar:pie-chart-3-bold-duotone" className="text-purple-500" width={16} />
-                                        <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
-                                            Distribución de stock
-                                        </span>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        <div className="rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-800/60 px-3 py-2">
-                                            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Stock base</p>
-                                            <p className="text-base font-bold text-gray-800 dark:text-gray-100 mt-0.5">{stockBase}</p>
-                                        </div>
-                                        <div className="rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/20 px-3 py-2">
-                                            <p className="text-[10px] uppercase tracking-wide text-blue-500 font-semibold">Cupo venta</p>
-                                            <p className="text-base font-bold text-blue-700 dark:text-blue-300 mt-0.5">{cupoVenta}</p>
-                                        </div>
-                                        <div className="rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-900/20 px-3 py-2">
-                                            <p className="text-[10px] uppercase tracking-wide text-amber-600 font-semibold">Cupo provisión</p>
-                                            <p className="text-base font-bold text-amber-700 dark:text-amber-300 mt-0.5">{cupoProvision}</p>
-                                        </div>
-                                        <div className="rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-900/20 px-3 py-2">
-                                            <p className="text-[10px] uppercase tracking-wide text-emerald-600 font-semibold">Reservado real</p>
-                                            <p className={`text-base font-bold mt-0.5 ${statusColor}`}>{reservadoReal}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                                            Venta disponible: <strong>{ventaDisponible}</strong>
-                                        </span>
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
-                                            Provisión disponible: <strong>{provisionDisponible}</strong>
-                                        </span>
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300">
-                                            Provisión se redondea hacia abajo y las unidades restantes quedan disponibles para venta.
-                                        </span>
-                                    </div>
+                <div className="col-span-1 md:col-span-2 mb-4">
+                    <div className={`rounded-2xl border transition-all duration-200 overflow-hidden ${provisionOpen ? 'border-gray-300 dark:border-slate-600' : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-sm'}`}>
+                        <button
+                            type="button"
+                            onClick={() => setProvisionOpen(o => !o)}
+                            className="w-full flex items-center justify-between p-4 text-left group bg-white dark:bg-[#1E2435]"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg transition-colors ${provisionOpen ? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300' : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 group-hover:bg-gray-100 dark:group-hover:bg-slate-700 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`}>
+                                    <Icon icon="solar:box-minimalistic-bold-duotone" width={20} />
                                 </div>
-                            );
-                        })()}
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Gestión de Provisiones</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Define el máximo para despacho y reservas activas</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                {Number((formValues as any)?.porcentajeProvision ?? 0) > 0 && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                                        Activo
+                                    </span>
+                                )}
+                                <div className={`p-1 rounded-full transition-colors ${provisionOpen ? 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`}>
+                                    <Icon icon="mdi:chevron-down" className={`transition-transform duration-300 ${provisionOpen ? 'rotate-180' : ''}`} width={20} />
+                                </div>
+                            </div>
+                        </button>
+                        <div className={`transition-all duration-300 ease-in-out ${provisionOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#1E2435]">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <p className="col-span-2 text-[11px] leading-4 text-gray-500 dark:text-gray-400">
+                                        Venta define el máximo para despacho inmediato. Provisión define el máximo para reservas activas. Ambos porcentajes deben sumar 100%.
+                                    </p>
+                                    <InputPro
+                                        autocomplete="off"
+                                        type="number"
+                                        value={(formValues as any)?.porcentajeVenta ?? 100}
+                                        name="porcentajeVenta"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="% Venta"
+                                        placeholder="100"
+                                    />
+                                    <InputPro
+                                        autocomplete="off"
+                                        type="number"
+                                        value={(formValues as any)?.porcentajeProvision ?? 0}
+                                        name="porcentajeProvision"
+                                        onChange={handleChange}
+                                        isLabel
+                                        label="% Provisión"
+                                        placeholder="0"
+                                    />
+
+                                    {(() => {
+                                        const stockBase = Number((formValues as any)?.stock ?? 0);
+                                        const reservadoReal = Number((formValues as any)?.stockReservado ?? 0);
+                                        const porcentajeProvision = Number((formValues as any)?.porcentajeProvision ?? 0);
+
+                                        const cupoProvision = Math.max(0, Math.floor((stockBase * porcentajeProvision) / 100));
+                                        const cupoVenta = Math.max(0, stockBase - cupoProvision);
+                                        const provisionDisponible = Math.max(0, cupoProvision - reservadoReal);
+                                        const ventaDisponible = Math.max(0, Math.min(stockBase - reservadoReal, cupoVenta));
+
+                                        const statusColor =
+                                            reservadoReal > cupoProvision
+                                                ? 'text-red-600 dark:text-red-400'
+                                                : 'text-emerald-600 dark:text-emerald-400';
+
+                                        return (
+                                            <div className="col-span-2 mt-1 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Icon icon="solar:pie-chart-3-bold-duotone" className="text-gray-500 dark:text-gray-400" width={16} />
+                                                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                                                        Distribución de stock
+                                                    </span>
+                                                </div>
+
+                                                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 mt-2">
+                                                    <table className="w-full text-left border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 text-[10px] text-gray-500 uppercase tracking-wide">
+                                                                <th className="px-3 py-2 font-semibold">Stock Base</th>
+                                                                <th className="px-3 py-2 font-semibold">Cupo Venta</th>
+                                                                <th className="px-3 py-2 font-semibold">Cupo Provisión</th>
+                                                                <th className="px-3 py-2 font-semibold">Reservado Real</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr className="text-sm font-bold text-gray-800 dark:text-gray-100 bg-white dark:bg-slate-900">
+                                                                <td className="px-3 py-2">{stockBase}</td>
+                                                                <td className="px-3 py-2">{cupoVenta}</td>
+                                                                <td className="px-3 py-2">{cupoProvision}</td>
+                                                                <td className={`px-3 py-2 ${statusColor}`}>{reservadoReal}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300">
+                                                        Venta disponible: <strong>{ventaDisponible}</strong>
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300">
+                                                        Provisión disponible: <strong>{provisionDisponible}</strong>
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-400">
+                                                        Provisión se redondea hacia abajo y las unidades restantes quedan disponibles para venta.
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

@@ -5,6 +5,7 @@ import InputPro from '@/components/InputPro';
 import DataTable from '@/components/Datatable';
 import Pagination from '@/components/Pagination';
 import ModalConfirm from '@/components/ModalConfirm';
+import TableActionMenu from '@/components/TableActionMenu';
 import { useProveedoresViewModel } from './useProveedoresViewModel';
 import ModalProveedor from '@/pages/admin/compras/ModalProveedor';
 import { VISIBLE_PROVEEDOR_COLUMNS } from './ComprasModel';
@@ -63,33 +64,20 @@ export default function ProveedoresView() {
                                             <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
                                                 <button
                                                     type="button"
-                                                    onClick={() => actions.setOpenAccionesId(
-                                                        vm.openAccionesId === row.id ? null : row.id
-                                                    )}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (vm.openAccionesId === row.id) {
+                                                            actions.setOpenAccionesId(null);
+                                                            actions.setAnchorEl(null);
+                                                        } else {
+                                                            actions.setOpenAccionesId(row.id);
+                                                            actions.setAnchorEl(e.currentTarget);
+                                                        }
+                                                    }}
                                                     className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center gap-1"
                                                 >
                                                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                                                 </button>
-                                                {vm.openAccionesId === row.id && (
-                                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 overflow-hidden">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => actions.openEditModal(row._raw)}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                                                        >
-                                                            <Icon icon="material-symbols:edit" width={16} height={16} />
-                                                            <span>Editar</span>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => actions.openConfirmToggle(row._raw)}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                                                        >
-                                                            <Icon icon="mdi:power" width={16} height={16} />
-                                                            <span>{row._raw.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
-                                                        </button>
-                                                    </div>
-                                                )}
                                             </div>
                                         ),
                                     }))}
@@ -118,6 +106,38 @@ export default function ProveedoresView() {
                     )}
                 </div>
             </div>
+
+            {/* Actions Dropdown Menu */}
+            <TableActionMenu
+                isOpen={!!vm.openAccionesId && !!vm.anchorEl}
+                anchorEl={vm.anchorEl}
+                onClose={() => { actions.setOpenAccionesId(null); actions.setAnchorEl(null); }}
+            >
+                {vm.openAccionesId && (() => {
+                    const rowBase = clients?.find((c: any) => c.id === vm.openAccionesId);
+                    if (!rowBase) return null;
+                    return (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => actions.openEditModal(rowBase)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+                            >
+                                <Icon icon="material-symbols:edit" width={16} height={16} />
+                                <span>Editar</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => actions.openConfirmToggle(rowBase)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+                            >
+                                <Icon icon="mdi:power" width={16} height={16} />
+                                <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
+                            </button>
+                        </>
+                    );
+                })()}
+            </TableActionMenu>
 
             {/* Modals */}
             {vm.isOpenModal && (

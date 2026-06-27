@@ -16,13 +16,13 @@ export interface RubroFeatures {
 }
 
 /**
- * Farmacia retail: farmacia o botica. Habilita receta médica y fraccionamiento.
+ * Farmacia retail: farmacia, botica o medicamentos. Habilita receta médica y fraccionamiento.
  * NO incluye droguería (mayorista sin dispensación al público).
  */
 export function esFarmaciaRetailRubro(nombre: string | null | undefined): boolean {
     if (!nombre) return false;
     const n = nombre.toLowerCase();
-    return n.includes('farmacia') || n.includes('botica');
+    return n.includes('farmacia') || n.includes('botica') || n.includes('medicament');
 }
 
 /**
@@ -167,8 +167,8 @@ export function detectarFuncionesRubro(
 
     const nombre = nombreRubro.toLowerCase();
 
-    // FARMACIA / BOTICA (retail — vende al público, requiere receta)
-    const esFarmacia = nombre.includes('farmacia') || nombre.includes('botica');
+    // FARMACIA / BOTICA / MEDICAMENTOS (retail — vende al público, requiere receta)
+    const esFarmacia = nombre.includes('farmacia') || nombre.includes('botica') || nombre.includes('medicament');
 
     // DROGUERÍA (mayorista — distribuye a empresas, sin dispensación al público)
     const esDrogueria = nombre.includes('drogueria') || nombre.includes('droguería');

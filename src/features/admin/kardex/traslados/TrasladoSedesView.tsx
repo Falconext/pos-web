@@ -21,6 +21,7 @@ interface SelectedProduct {
     stockActual: number;
     cantidad: number;
     unidadMedida: string;
+    imagenUrl?: string;
 }
 
 export default function TrasladoSedesView() {
@@ -90,7 +91,7 @@ export default function TrasladoSedesView() {
             }
             try {
                 setLoadingProducts(true);
-                const { data } = await apiClient.get('/productos/listar', {
+                const { data } = await apiClient.get('/productos', {
                     params: {
                         search: searchTerm.trim(),
                         limit: 10,
@@ -144,7 +145,8 @@ export default function TrasladoSedesView() {
             descripcion: p.descripcion,
             stockActual: stockSede,
             cantidad: 1,
-            unidadMedida: p.unidadMedida?.nombre || ''
+            unidadMedida: p.unidadMedida?.nombre || '',
+            imagenUrl: p.imagenUrl
         }]);
         setSearchTerm('');
         setSearchResults([]);
@@ -351,6 +353,7 @@ export default function TrasladoSedesView() {
                                 onChange={(e) => setBarcodeInput(e.target.value)}
                                 onScan={handleBarcodeScan}
                                 loading={barcodeLoading}
+                                hideIcon={true}
                             />
 
                             <div className="relative">
@@ -461,8 +464,19 @@ export default function TrasladoSedesView() {
                                                         }`}
                                                     >
                                                         <td className="px-5 py-3.5">
-                                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{p.descripcion}</p>
-                                                            <p className="font-mono text-[10px] font-bold text-[#4F6EF7] mt-0.5">{p.codigo}</p>
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden bg-gray-50 dark:bg-slate-800 shrink-0 flex items-center justify-center">
+                                                                    {p.imagenUrl ? (
+                                                                        <img src={p.imagenUrl} alt={p.descripcion} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <Icon icon="solar:box-minimalistic-linear" className="text-gray-300 dark:text-slate-600" width={18} />
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{p.descripcion}</p>
+                                                                    <p className="font-mono text-[10px] font-bold text-[#4F6EF7] mt-0.5">{p.codigo}</p>
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-3.5 text-center">
                                                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">

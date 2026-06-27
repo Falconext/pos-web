@@ -103,4 +103,5 @@ export interface IProveedoresViewModelState {
     isEdit: boolean;
     errors: typeof INITIAL_PROVEEDOR_ERRORS;
     openAccionesId: number | null;
+    anchorEl: HTMLElement | null;
 }

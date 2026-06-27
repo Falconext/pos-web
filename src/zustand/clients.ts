@@ -86,7 +86,7 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
                 useAlertStore.getState().alert("Se agregó el cliente correctamente", "success");
             } else {
                 useAlertStore.setState({ success: false, loading: false });
-                const msg = Array.isArray(resp.message) ? resp.message.join('. ') : resp.message;
+                const msg = Array.isArray(resp.message) ? resp.message.join('. ') : (resp.message || resp.error);
                 useAlertStore.getState().alert(msg || `No se pudo guardar el cliente`, "error");
             }
         } catch (error: any) {

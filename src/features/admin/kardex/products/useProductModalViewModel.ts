@@ -69,7 +69,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   const isFarmacia = (() => {
     const rubroNombre = auth?.empresa?.rubro?.nombre?.toLowerCase() || "";
-    return rubroNombre.includes("farmacia") || rubroNombre.includes("botica");
+    return rubroNombre.includes("farmacia") || rubroNombre.includes("botica") || rubroNombre.includes("medicament");
   })();
 
   const esDrogueria = (() => {
@@ -113,6 +113,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const tieneTienda = hasPlanFeature(userPermissions, "tieneTienda");
   const tieneGestionLotes = hasPlanFeature(userPermissions, "tieneGestionLotes");
   const tieneDescripcionRica = hasPlanFeature(userPermissions, "tieneDescripcionRica");
+  const tieneAnalisisFinancieroAvanzado = hasPlanFeature(userPermissions, "tieneAnalisisFinancieroAvanzado");
+  const tieneMultiplesSedes = hasPlanFeature(userPermissions, "tieneMultiplesSedes");
+  const tieneAutoGenerarImagen = hasPlanFeature(userPermissions, "tieneAutoGenerarImagen");
+  const tieneLocalizacion = hasPlanFeature(userPermissions, "tieneLocalizacion");
+
   const productSections = {
     imagen: true,
     precios: true,
@@ -126,8 +131,12 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     fichaComputo: features.fichaTecnicaComputo,
     seriesGarantia: features.controlSeriesGarantia,
     ecommerce: tieneTienda,
-    descripcionRica: tieneDescripcionRica || features.descripcionRica,
+    descripcionRica: tieneDescripcionRica,
     provisiones: tieneGestionProvisiones,
+    analisisAvanzado: tieneAnalisisFinancieroAvanzado,
+    multiplesSedes: tieneMultiplesSedes,
+    autoGenerarImagen: tieneAutoGenerarImagen,
+    localizacion: tieneLocalizacion,
   };
 
   const labels = {
@@ -910,7 +919,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           : {};
         const stockPayload =
           (esFarmaceutico && features.gestionLotes)
-            ? undefined
+            ? Number(formValues?.stock ?? 0)
             : tipoAjusteStock !== "ninguno"
               ? stockFinal
               : Number(formValues?.stock ?? 0);
@@ -1356,13 +1365,13 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           }
 
           const optimisticStock = (esFarmaceutico && features.gestionLotes)
-            ? isEdit
-              ? Number(updatedProduct?.stock ?? product?.data?.stock ?? formValues.stock)
-              : (creationLote.lote ? Number(creationLote.stockInicial || 0) : 0)
+            ? (creationLote.lote ? Number(creationLote.stockInicial || 0) : 0)
             : Number(formValues.stock);
 
+          const { lotes: _droppedLotes, ...productDataSinLotes } = product?.data || {};
+
           if (newId) upsertProductLocal({
-            ...(product?.data || {}),
+            ...productDataSinLotes,
             id: Number(newId),
             descripcion: formValues.descripcion,
             codigo: product?.data?.codigo || formValues.codigo,

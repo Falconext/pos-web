@@ -24,8 +24,8 @@ export const useLibroControlViewModel = () => {
             const params = new URLSearchParams({ fechaInicio, fechaFin });
             if (productoId) params.set('productoId', String(productoId));
             const resp: any = await get(`kardex/libro-control-psicotropicos?${params}`);
-            setMovimientos(resp?.movimientos ?? []);
-            setProductosControlados(resp?.productosControlados ?? []);
+            setMovimientos(resp?.data?.movimientos ?? []);
+            setProductosControlados(resp?.data?.productosControlados ?? []);
         } catch {
             useAlertStore.getState().alert('Error al cargar el libro de control', 'error');
         } finally {
@@ -70,8 +70,8 @@ export const useLibroControlViewModel = () => {
 
         const csv = [
             ...header.map(h => `"${h}"`),
-            headers.map(h => `"${h}"`).join(','),
-            ...rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')),
+            headers.map(h => `"${h}"`).join(';'),
+            ...rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')),
         ].join('\n');
 
         const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });

@@ -237,7 +237,7 @@ const Select = ({
                             reference={inputRef}
                             onClick={() => !disabled && setIsOpen(true)}
                             onKeyDown={handleKeyDown}
-                            error={error}
+                            error={null}
                             name={name}
                             value={valueOptions || defaultValue}
                             label={label}
@@ -264,6 +264,7 @@ const Select = ({
 
                 </div>
             </div>
+            {error && typeof error === "string" && <p className="text-[#D35130] font-bold text-sm mt-1">{error}</p>}
             {dropdownContent}
         </>
     );

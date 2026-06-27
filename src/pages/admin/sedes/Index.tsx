@@ -80,8 +80,8 @@ const SedesIndex = () => {
             </div>
             {vm.showModal && <SedeModal isOpen={vm.showModal} onClose={() => vm.setShowModal(false)} sede={vm.selectedSede} isEdit={vm.isEdit} />}
             {vm.showConfirm && vm.selectedSede && (
-                <ModalConfirm isOpenModal={vm.showConfirm} setIsOpenModal={vm.setShowConfirm} title="Desactivar Sede"
-                    information={`¿Desactivar la sede "${vm.selectedSede.nombre}"? El historial y datos se conservan. Puedes reactivarla desde el botón de encendido en cualquier momento. El cupo de tu plan quedará libre.`}
+                <ModalConfirm isOpenModal={vm.showConfirm} setIsOpenModal={vm.setShowConfirm} title="Eliminar Sede"
+                    information={`¿Estás seguro de eliminar permanentemente la sede "${vm.selectedSede.nombre}"? Esto borrará su configuración y stock. Si la sede ya tiene historial de ventas o movimientos, el sistema no te permitirá eliminarla y deberás desactivarla (usando el botón de encendido) en su lugar.`}
                     confirmSubmit={vm.confirmDelete} />
             )}
         </div>

@@ -393,45 +393,60 @@ const PrintPDF = ({
                                         <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
                                     </View>
                                 )}
-                                {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
-                                    <>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.label}>MEDIOS PAGO:</Text>
-                                        </View>
-                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                            const detail = splitPaymentDetails[idx] || sp;
-                                            return (
-                                                <View key={idx}>
-                                                    <View style={[styles.infoRow, { paddingLeft: 4 }]}>
-                                                        <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
-                                                        <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
-                                                    </View>
-                                                    {formatPaymentExtra(detail).map((line) => (
-                                                        <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
-                                                    ))}
-                                                </View>
-                                            );
-                                        })}
-                                    </>
-                                ) : (
-                                    <>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.label}>MEDIO PAGO:</Text>
-                                            <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
-                                        </View>
-                                        {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                            <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
+                                {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
+                                    <View>
+                                        <Text style={[styles.label, { marginTop: 4 }]}>CRONOGRAMA DE CUOTAS:</Text>
+                                        {formValues.cuotas.map((cuota: any, idx: number) => (
+                                            <View style={[styles.infoRow, { paddingLeft: 4 }]} key={idx}>
+                                                <Text style={styles.label}>CUOTA {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}):</Text>
+                                                <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                            </View>
                                         ))}
+                                    </View>
+                                )}
+                                {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
+                                    <>
+                                        {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                            <>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={styles.label}>MEDIOS PAGO:</Text>
+                                                </View>
+                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                    const detail = splitPaymentDetails[idx] || sp;
+                                                    return (
+                                                        <View key={idx}>
+                                                            <View style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                                <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
+                                                                <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                            </View>
+                                                            {formatPaymentExtra(detail).map((line) => (
+                                                                <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
+                                                            ))}
+                                                        </View>
+                                                    );
+                                                })}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={styles.label}>MEDIO PAGO:</Text>
+                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                </View>
+                                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                    <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
+                                                ))}
+                                            </>
+                                        )}
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>VUELTO:</Text>
+                                            <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>PAGADO:</Text>
+                                            <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
+                                        </View>
                                     </>
                                 )}
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.label}>VUELTO:</Text>
-                                    <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
-                                </View>
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.label}>PAGADO:</Text>
-                                    <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
-                                </View>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>VENDEDOR:</Text>
                                     <Text style={styles.value}>{vendedorNombre}</Text>
@@ -601,45 +616,60 @@ const PrintPDF = ({
                                                     <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
                                                 </View>
                                             )}
-                                            {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
-                                                <>
-                                                    <View style={styles.infoRow}>
-                                                        <Text style={styles.label}>MEDIOS DE PAGO</Text>
-                                                    </View>
-                                                    {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                                        const detail = splitPaymentDetails[idx] || sp;
-                                                        return (
-                                                            <View key={idx}>
-                                                                <View style={[styles.infoRow, { paddingLeft: 4 }]}>
-                                                                    <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
-                                                                    <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
-                                                                </View>
-                                                                {formatPaymentExtra(detail).map((line) => (
-                                                                    <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
-                                                                ))}
-                                                            </View>
-                                                        );
-                                                    })}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <View style={styles.infoRow}>
-                                                        <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                        <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
-                                                    </View>
-                                                    {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                                        <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
+                                            {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
+                                                <View>
+                                                    <Text style={[styles.label, { marginTop: 4 }]}>CRONOGRAMA DE CUOTAS</Text>
+                                                    {formValues.cuotas.map((cuota: any, idx: number) => (
+                                                        <View style={[styles.infoRow, { paddingLeft: 4 }]} key={idx}>
+                                                            <Text style={styles.label}>CUOTA {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')})</Text>
+                                                            <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                                        </View>
                                                     ))}
+                                                </View>
+                                            )}
+                                            {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
+                                                <>
+                                                    {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                        <>
+                                                            <View style={styles.infoRow}>
+                                                                <Text style={styles.label}>MEDIOS DE PAGO</Text>
+                                                            </View>
+                                                            {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                                const detail = splitPaymentDetails[idx] || sp;
+                                                                return (
+                                                                    <View key={idx}>
+                                                                        <View style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                                            <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
+                                                                            <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                                        </View>
+                                                                        {formatPaymentExtra(detail).map((line) => (
+                                                                            <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
+                                                                        ))}
+                                                                    </View>
+                                                                );
+                                                            })}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <View style={styles.infoRow}>
+                                                                <Text style={styles.label}>MEDIO DE PAGO</Text>
+                                                                <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                            </View>
+                                                            {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                                <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
+                                                            ))}
+                                                        </>
+                                                    )}
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.label}>VUELTO</Text>
+                                                        <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
+                                                    </View>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.label}>PAGADO</Text>
+                                                        <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
+                                                    </View>
                                                 </>
                                             )}
-                                            <View style={styles.infoRow}>
-                                                <Text style={styles.label}>VUELTO</Text>
-                                                <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
-                                            </View>
-                                            <View style={styles.infoRow}>
-                                                <Text style={styles.label}>PAGADO</Text>
-                                                <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
-                                            </View>
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>VENDEDOR</Text>
                                                 <Text style={styles.value}>{vendedorNombre}</Text>

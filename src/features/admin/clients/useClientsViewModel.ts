@@ -28,7 +28,7 @@ export const useClientsViewModel = () => {
 
     const isFarmacia = useMemo(() => {
         const r = auth?.empresa?.rubro?.nombre?.toLowerCase() ?? '';
-        return r.includes('farmacia') || r.includes('botica') || r.includes('drogueria') || r.includes('droguería');
+        return r.includes('farmacia') || r.includes('botica') || r.includes('medicament') || r.includes('drogueria') || r.includes('droguería');
     }, [auth?.empresa?.rubro?.nombre]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);

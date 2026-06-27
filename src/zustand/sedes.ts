@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { sedeService } from '../services/sede.service';
 import { Sede, CreateSedeDto, UpdateSedeDto } from '../interfaces/Sede';
 import useAlertStore from './alert';
+import { useAuthStore } from './auth';
 
 interface ISedesState {
     sedes: Sede[];
@@ -46,6 +47,7 @@ export const useSedesStore = create<ISedesState>()(
                     set({ loading: true });
                     await sedeService.crear(data);
                     await get().listarSedes();
+                    await useAuthStore.getState().me();
                     useAlertStore.getState().alert('Sede creada exitosamente', 'success');
                 } catch (error: any) {
                     console.error('Error al crear sede:', error);
@@ -62,6 +64,7 @@ export const useSedesStore = create<ISedesState>()(
                     set({ loading: true });
                     await sedeService.actualizar(id, data);
                     await get().listarSedes();
+                    await useAuthStore.getState().me();
                     useAlertStore.getState().alert('Sede actualizada exitosamente', 'success');
                 } catch (error: any) {
                     console.error('Error al actualizar sede:', error);
@@ -77,6 +80,7 @@ export const useSedesStore = create<ISedesState>()(
                     set({ loading: true });
                     await sedeService.eliminar(id);
                     await get().listarSedes();
+                    await useAuthStore.getState().me();
                     useAlertStore.getState().alert('Sede desactivada. Puedes reactivarla desde el ícono de encendido.', 'success');
                 } catch (error: any) {
                     console.error('Error al eliminar sede:', error);
@@ -92,6 +96,7 @@ export const useSedesStore = create<ISedesState>()(
                     set({ loading: true });
                     await sedeService.toggleActivo(id, activo);
                     await get().listarSedes();
+                    await useAuthStore.getState().me();
                     useAlertStore.getState().alert(`Sede ${activo ? 'activada' : 'desactivada'} correctamente`, 'success');
                 } catch (error: any) {
                     console.error('Error al cambiar estado de sede:', error);

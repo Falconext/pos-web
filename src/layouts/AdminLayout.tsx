@@ -581,18 +581,18 @@ export default function AdminLayout() {
           <motion.header className="print:hidden flex items-center justify-between px-6 py-3.5 bg-white/90 backdrop-blur-md border-b border-gray-100 dark:bg-[#0A0D14]/90 dark:border-slate-800 transition-all duration-300" variants={fadeUp} initial="initial" animate="animate">
           <div className="flex items-center gap-4">
             <motion.button
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Abrir menú"
               whileHover={interactiveHover.whileHover}
               whileTap={interactiveHover.whileTap}
             >
-              <Icon icon="solar:hamburger-menu-linear" width="22" className="text-gray-600" />
+              <Icon icon="solar:hamburger-menu-linear" width="22" className="text-gray-600 dark:text-gray-300" />
             </motion.button>
             <div className="flex items-center gap-1.5 text-[13px] font-medium">
-              <span className="text-gray-400">Administrador</span>
-              <Icon icon="solar:alt-arrow-right-linear" width="13" className="text-gray-300" />
-              <span className="text-violet-600 font-semibold">{nameNavbar}</span>
+              <span className="text-gray-400 dark:text-gray-500">Administrador</span>
+              <Icon icon="solar:alt-arrow-right-linear" width="13" className="text-gray-300 dark:text-gray-600" />
+              <span className="text-violet-600 dark:text-violet-400 font-semibold">{nameNavbar}</span>
             </div>
             {/* Sede activa badge / switcher */}
             {sedeActiva && (() => {
@@ -605,19 +605,19 @@ export default function AdminLayout() {
                   <button
                     type="button"
                     onClick={() => setIsSedeMenuOpen(p => !p)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/40 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
                   >
-                    <Icon icon={sedeActiva.tipo === 'ALMACEN' ? 'solar:box-bold-duotone' : 'solar:city-bold-duotone'} className="text-violet-600" width={14} />
-                    <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                    <Icon icon={sedeActiva.tipo === 'ALMACEN' ? 'solar:box-bold-duotone' : 'solar:city-bold-duotone'} className="text-violet-600 dark:text-violet-400" width={14} />
+                    <span className="text-[12px] font-semibold text-violet-600 dark:text-violet-400 truncate max-w-[140px]">{sedeActiva.nombre}</span>
                     {sedeActiva.tipo === 'ALMACEN' && (
-                      <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Almacén</span>
+                      <span className="text-[9px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Almacén</span>
                     )}
-                    <Icon icon="solar:alt-arrow-down-linear" className="text-violet-600" width={12} />
+                    <Icon icon="solar:alt-arrow-down-linear" className="text-violet-600 dark:text-violet-400" width={12} />
                   </button>
                   <AnimatePresence>
                     {isSedeMenuOpen && (
-                    <motion.div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[200px]" variants={scaleIn} initial="initial" animate="animate" exit="exit">
-                      <p className="text-[10px] uppercase font-bold text-gray-400 px-3 py-1 tracking-wider">Cambiar sede</p>
+                    <motion.div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[200px]" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-500 px-3 py-1 tracking-wider">Cambiar sede</p>
                       {todasSedes.filter(s => s.activo).map(sede => (
                         <button
                           key={sede.id}
@@ -626,14 +626,14 @@ export default function AdminLayout() {
                             selectSede(sede.id)
                             setIsSedeMenuOpen(false)
                           }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${sede.id === sedeActiva.id ? 'bg-violet-50 text-violet-600 font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-50'}`}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${sede.id === sedeActiva.id ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 font-semibold cursor-default' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                         >
                           <Icon icon={sede.id === sedeActiva.id ? 'solar:check-circle-bold' : sede.tipo === 'ALMACEN' ? 'solar:box-linear' : 'solar:city-linear'} width={14} />
                           {sede.nombre}
                           {sede.tipo === 'ALMACEN'
-                            ? <span className="ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full uppercase">Almacén</span>
+                            ? <span className="ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-full uppercase">Almacén</span>
                             : sede.esPrincipal
-                              ? <span className="ml-auto text-[10px] text-gray-400 font-normal">Principal</span>
+                              ? <span className="ml-auto text-[10px] text-gray-400 dark:text-slate-500 font-normal">Principal</span>
                               : null}
                         </button>
                       ))}
@@ -642,11 +642,11 @@ export default function AdminLayout() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-lg">
-                  <Icon icon={sedeActiva.tipo === 'ALMACEN' ? 'solar:box-bold-duotone' : 'solar:city-bold-duotone'} className="text-violet-600" width={14} />
-                  <span className="text-[12px] font-semibold text-violet-600 truncate max-w-[140px]">{sedeActiva.nombre}</span>
+                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/40 rounded-lg">
+                  <Icon icon={sedeActiva.tipo === 'ALMACEN' ? 'solar:box-bold-duotone' : 'solar:city-bold-duotone'} className="text-violet-600 dark:text-violet-400" width={14} />
+                  <span className="text-[12px] font-semibold text-violet-600 dark:text-violet-400 truncate max-w-[140px]">{sedeActiva.nombre}</span>
                   {sedeActiva.tipo === 'ALMACEN' && (
-                    <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Almacén</span>
+                    <span className="text-[9px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Almacén</span>
                   )}
                 </div>
               )
@@ -699,11 +699,11 @@ export default function AdminLayout() {
                         <Icon
                           icon={opt.level === 0 ? 'solar:maximize-square-3-linear' : 'solar:minimize-square-3-bold'}
                           width="15"
-                          className={zoomLevel === opt.level ? 'text-violet-500' : 'text-gray-400'}
+                          className={zoomLevel === opt.level ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-slate-500'}
                         />
                         {opt.level === 0 ? 'Normal' : opt.level === 1 ? 'Compacto' : opt.level === 2 ? 'Más compacto' : 'Mínimo'}
                       </span>
-                      <span className={`text-xs font-mono ${zoomLevel === opt.level ? 'text-violet-500' : 'text-gray-400'}`}>
+                      <span className={`text-xs font-mono ${zoomLevel === opt.level ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-slate-500'}`}>
                         {opt.label}
                       </span>
                     </button>
@@ -716,7 +716,7 @@ export default function AdminLayout() {
             <div className="hidden md:block">
               <button
                 onClick={toggleConfigurator}
-                className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-colors"
                 title="Configuración de UI"
               >
                 <Icon icon="solar:settings-linear" width="20" />
@@ -731,13 +731,13 @@ export default function AdminLayout() {
             )}
 
             {/* Divider */}
-            <div className="hidden md:block w-px h-6 bg-gray-200 mx-2" />
+            <div className="hidden md:block w-px h-6 bg-gray-200 dark:bg-slate-700 mx-2" />
 
             {/* User profile */}
             <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
-                className="flex items-center gap-2.5 rounded-full outline-none focus:outline-none hover:bg-gray-50 px-2 py-1.5 transition-all border border-transparent hover:border-gray-200"
+                className="flex items-center gap-2.5 rounded-full outline-none focus:outline-none hover:bg-gray-50 dark:hover:bg-slate-800 px-2 py-1.5 transition-all border border-transparent hover:border-gray-200 dark:hover:border-slate-700"
                 onClick={() => setIsUserMenuOpen((p) => !p)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
@@ -745,7 +745,7 @@ export default function AdminLayout() {
                 <img
                   width={34}
                   height={34}
-                  className="rounded-full object-cover ring-2 ring-indigo-100"
+                  className="rounded-full object-cover ring-2 ring-indigo-100 dark:ring-indigo-900/50"
                   src={companyLogoSrc}
                   onError={(e) => {
                     e.currentTarget.onerror = null
@@ -754,34 +754,36 @@ export default function AdminLayout() {
                   alt=""
                 />
                 <div className="hidden md:flex flex-col items-start gap-0">
-                  <span className="text-[13px] font-semibold text-gray-800 leading-tight">{auth?.nombre?.split(' ')[0]}</span>
-                  <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider leading-tight">{auth?.empresa?.nombreComercial?.split(' ')[0] ?? auth?.rol?.replace('ADMIN_', '')?.replace('USUARIO_', '')}</span>
+                  <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 leading-tight">{auth?.nombre?.split(' ')[0]}</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider leading-tight">{auth?.empresa?.nombreComercial?.split(' ')[0] ?? auth?.rol?.replace('ADMIN_', '')?.replace('USUARIO_', '')}</span>
                 </div>
-                <Icon icon="solar:alt-arrow-down-bold" className="hidden md:block text-gray-400" width="14" />
+                <Icon icon="solar:alt-arrow-down-bold" className="hidden md:block text-gray-400 dark:text-gray-500" width="14" />
               </button>
 
               <AnimatePresence>
               {isUserMenuOpen && (
-                <motion.div className="absolute right-0 mt-2 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 z-[999999] overflow-hidden" variants={scaleIn} initial="initial" animate="animate" exit="exit">
-                  <div className="px-4 py-3.5 bg-gray-50 border-b border-gray-100">
-                    <p className="text-[13px] font-bold text-gray-900 truncate">{auth?.nombre}</p>
-                    <p className="text-[11px] text-gray-500 truncate mt-0.5">{auth?.empresa?.nombreComercial}</p>
+                <motion.div className="absolute right-0 mt-2 w-56 rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl shadow-gray-200/60 dark:shadow-black/40 z-[999999] overflow-hidden" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+                  <div className="px-4 py-3.5 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
+                    <p className="text-[13px] font-bold text-gray-900 dark:text-white truncate">{auth?.nombre}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{auth?.empresa?.nombreComercial}</p>
                   </div>
                   <ul className="py-1.5" role="menu">
-                    <li>
-                      <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
-                        onClick={() => { setIsUserMenuOpen(false); navigate('/administrador/perfil') }}
-                        role="menuitem"
-                      >
-                        <Icon icon="solar:user-circle-bold-duotone" width="18" />
-                        Perfil
-                      </button>
-                    </li>
-                    {(auth?.empresa?.slugTienda || hasPlanFeature(auth, 'tieneTienda')) && (
+                    {!isAlmacen && (
                       <li>
                         <button
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                          onClick={() => { setIsUserMenuOpen(false); navigate('/administrador/perfil') }}
+                          role="menuitem"
+                        >
+                          <Icon icon="solar:user-circle-bold-duotone" width="18" />
+                          Perfil
+                        </button>
+                      </li>
+                    )}
+                    {!isAlmacen && (auth?.empresa?.slugTienda || hasPlanFeature(auth, 'tieneTienda')) && (
+                      <li>
+                        <button
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                           onClick={() => { setIsUserMenuOpen(false); if (auth?.empresa?.slugTienda) navigate(`/tienda/${auth.empresa.slugTienda}`); else navigate('/administrador/tienda/configuracion'); }}
                           role="menuitem"
                         >
@@ -790,9 +792,9 @@ export default function AdminLayout() {
                         </button>
                       </li>
                     )}
-                    <li className="border-t border-gray-100 mt-1 pt-1">
+                    <li className="border-t border-gray-100 dark:border-slate-700 mt-1 pt-1">
                       <button
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                         onClick={() => { setIsUserMenuOpen(false); logout() }}
                         role="menuitem"
                       >

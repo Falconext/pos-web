@@ -14,6 +14,8 @@ export interface Plan {
     tieneTienda: boolean; tieneBanners: boolean; tieneGaleria: boolean;
     tieneCulqi: boolean; tieneDeliveryGPS: boolean; tieneTicketera: boolean;
     tieneGestionLotes: boolean; tieneGestionProvisiones: boolean; tieneDescripcionRica: boolean;
+    tieneAnalisisFinancieroAvanzado: boolean; tieneMultiplesSedes: boolean;
+    tieneAutoGenerarImagen: boolean; tieneLocalizacion: boolean;
     features?: Record<string, boolean>;
     _count?: { empresas: number };
     modulosAsignados?: { modulo: { id: number; codigo: string; nombre: string; descripcion: string; icono: string; } }[];
@@ -23,7 +25,8 @@ export interface Plan {
 export interface PlanFeatureCatalogItem {
     key: keyof Pick<Plan,
         'esPrueba' | 'tieneTienda' | 'tieneBanners' | 'tieneGaleria' | 'tieneCulqi' |
-        'tieneDeliveryGPS' | 'tieneTicketera' | 'tieneGestionLotes' | 'tieneGestionProvisiones' | 'tieneDescripcionRica'
+        'tieneDeliveryGPS' | 'tieneTicketera' | 'tieneGestionLotes' | 'tieneGestionProvisiones' | 'tieneDescripcionRica' |
+        'tieneAnalisisFinancieroAvanzado' | 'tieneMultiplesSedes' | 'tieneAutoGenerarImagen' | 'tieneLocalizacion'
     >;
     label: string;
     description: string;
@@ -45,6 +48,8 @@ const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
     tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false,
     tieneGestionLotes: false, tieneGestionProvisiones: false, tieneDescripcionRica: false,
+    tieneAnalisisFinancieroAvanzado: false, tieneMultiplesSedes: false,
+    tieneAutoGenerarImagen: false, tieneLocalizacion: false,
     moduloIds: [], subModuloIds: [],
 };
 
@@ -126,6 +131,7 @@ export const usePlanesViewModel = () => {
         setCurrentId(plan.id);
         setForm({
             ...plan,
+            ...(plan.features || {}),
             plataforma,
             producto,
             moduloIds: plan.modulosAsignados?.map(m => m.modulo.id) || [],
@@ -140,7 +146,7 @@ export const usePlanesViewModel = () => {
         try {
             setLoading(true);
             // Quita campos de relación/solo-lectura que el backend no acepta en el DTO
-            const { id, _count, modulosAsignados, subModulosAsignados, creadoEn, createdAt, updatedAt, ...formData } = form as any;
+            const { id, _count, modulosAsignados, subModulosAsignados, creadoEn, createdAt, updatedAt, features, ...formData } = form as any;
             const payload = {
                 ...formData,
                 features: (featureCatalog.length ? featureCatalog : []).reduce((acc, feature) => {

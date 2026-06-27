@@ -14,6 +14,7 @@ interface BarcodeScannerInputProps {
     label?: string;
     name?: string;
     error?: boolean;
+    hideIcon?: boolean;
 }
 
 export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
@@ -28,23 +29,26 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
     label,
     name,
     error = false,
+    hideIcon = false,
 }) => {
     return (
         <div className={cn('relative group', className)}>
             {label && (
-                <label className="block text-[12px] font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1 uppercase">
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     {label}
                 </label>
             )}
             <div className="relative">
-                <Icon
-                    icon="solar:barcode-bold-duotone"
-                    className={cn(
-                        "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
-                        loading ? "text-violet-500" : error ? "text-red-500" : "text-gray-400 dark:text-gray-500"
-                    )}
-                    width={20}
-                />
+                {!hideIcon && (
+                    <Icon
+                        icon="solar:barcode-bold-duotone"
+                        className={cn(
+                            "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
+                            loading ? "text-indigo-500" : error ? "text-red-500" : "text-slate-400 dark:text-slate-500"
+                        )}
+                        width={20}
+                    />
+                )}
                 <input
                     ref={inputRef}
                     type="text"
@@ -64,11 +68,9 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
                     disabled={disabled || loading}
                     autoComplete="off"
                     className={cn(
-                        "w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 py-2.4 text-sm text-gray-900 border-solid placeholder:text-gray-400 font-medium dark:bg-[#1E293B] dark:border-slate-800 dark:text-gray-300 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-150 shadow-sm",
-                        error 
-                            ? "border-red-300 focus:ring-red-100 focus:border-red-500 dark:border-red-900/50" 
-                            : "focus:ring-violet-100 focus:border-violet-500 dark:focus:ring-violet-900/20 dark:focus:border-violet-500",
-                        disabled && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900"
+                        "w-full h-10 rounded-xl border border-slate-200 bg-white pr-10 text-sm text-slate-800 placeholder:text-slate-400 font-normal dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-900 transition-all duration-150",
+                        hideIcon ? "pl-3" : "pl-10",
+                        error && "border-[#D35130] focus:ring-[#D35130]/30 focus:border-[#D35130] dark:border-red-900/50"
                     )}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
