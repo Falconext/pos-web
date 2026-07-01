@@ -9,6 +9,7 @@ import { useFavoritosStore } from '@/zustand/favoritos';
 import { useCompareStore } from '@/zustand/compare';
 import ReviewFeedbackModal from '@/components/tienda/ReviewFeedbackModal';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
+import { withPricing, withPricingList } from '@/templates/shared/pricing';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
@@ -173,7 +174,7 @@ export default function ProductoDetalle() {
           axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
           axios.get(`${BASE_URL}/public/store/${slug}`)
         ]);
-        const prod = prodRes.data.data || prodRes.data;
+        const prod = withPricing(prodRes.data.data || prodRes.data);
         setProducto(prod);
         setTienda(tiendaRes.data.data || tiendaRes.data);
         if (prod.imagenUrl) setSelectedImage(prod.imagenUrl);
@@ -227,7 +228,7 @@ export default function ProductoDetalle() {
         try {
           const relatedRes = await axios.get(`${BASE_URL}/public/store/${slug}/products/${id}/related`);
           const relatedData = relatedRes.data.data || relatedRes.data;
-          setRelatedProducts(Array.isArray(relatedData) ? relatedData : []);
+          setRelatedProducts(Array.isArray(relatedData) ? withPricingList(relatedData) : []);
         } catch (err) { console.error('Error fetching related:', err); }
 
       } catch (e) {
@@ -746,6 +747,12 @@ export default function ProductoDetalle() {
             <div className="flex items-end gap-2 text-[#1A1A1A] mb-6">
               <span className="text-sm font-semibold text-gray-500 pb-1">S/</span>
               <span className="text-5xl font-black tracking-tight leading-none">{precioFinal.toFixed(2)}</span>
+              {producto.enOferta && Number(producto.precioRegular) > precioBaseActual && (
+                <>
+                  <span className="text-xl font-semibold text-gray-400 line-through pb-1">S/ {(Number(producto.precioRegular) + precioExtra).toFixed(2)}</span>
+                  <span className="ml-1 rounded-md bg-red-500 px-2 py-0.5 text-xs font-bold text-white mb-1">-{producto.descuentoOferta}%</span>
+                </>
+              )}
             </div>
 
             {/* Klarna / Installments Box */}

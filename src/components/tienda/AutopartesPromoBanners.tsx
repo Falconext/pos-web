@@ -10,8 +10,8 @@ interface AutopartesPromoBannersProps {
 
 export default function AutopartesPromoBanners({ cp, slug, diseno }: AutopartesPromoBannersProps) {
   const navigate = useNavigate();
-  const promoLeftImage = diseno?.autopartesPromoLeftImageUrl || '/assets/autopartes/llantas.png';
-  const promoRightImage = diseno?.autopartesPromoRightImageUrl || '/assets/autopartes/luces.png';
+  const promoLeftImage = diseno?.autopartesPromoLeftImageUrl || '/assets/templates/autopartes/llantas.png';
+  const promoRightImage = diseno?.autopartesPromoRightImageUrl || '/assets/templates/autopartes/luces.png';
 
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">

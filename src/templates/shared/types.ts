@@ -143,6 +143,30 @@ export interface TemplateCheckoutPageProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Seguimiento Page (used by SeguimientoPedido.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface TemplateSeguimientoPageProps {
+  slug: string;
+  tienda: any;
+  diseno: any;
+  cp: string;
+  codigo: string;
+  setCodigo: (c: string) => void;
+  pedido: any;
+  loading: boolean;
+  error: string;
+  buscarPedido: (codigo: string) => Promise<void>;
+  handleSubmit: (e: React.FormEvent) => void;
+  compartirSeguimiento: () => void;
+  copiedLink: boolean;
+  getEstadoSeguimiento: (pedido: any) => string;
+  getEstadoColor: (estado: string) => string;
+  getEstadoLabel: (estado: string) => string;
+  lastUpdated: Date | null;
+  TERMINAL_STATES: string[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Re-export React for use in interface files
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';

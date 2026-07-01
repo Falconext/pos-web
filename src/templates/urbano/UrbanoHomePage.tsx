@@ -15,14 +15,23 @@ export default function UrbanoHomePage({
   mostrarCarrito,
   agregarAlCarrito,
   actualizarCantidad,
+  diseno,
 }: TemplateHomePageProps) {
   const navigate = useNavigate();
+  const irACheckout = () => {
+    if (slug === 'preview') {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'checkout' }));
+      return;
+    }
+    navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } });
+  };
 
   return (
     <>
       <UrbanoCatalogoPage
         slug={slug}
         tienda={tienda}
+        diseno={diseno}
         productos={productos}
         allCategories={allCategories}
         cp={cp}
@@ -39,7 +48,7 @@ export default function UrbanoHomePage({
         carrito={carrito}
         tienda={tienda}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } })}
+        onCheckout={irACheckout}
         slug={slug}
         setCarrito={setCarrito}
       />

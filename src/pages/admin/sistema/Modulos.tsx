@@ -327,7 +327,7 @@ const ModulosPage = () => {
                     {!vm.productoScope && (
                         <div className="col-span-2">
                             <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Producto</p>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {([
                                     { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                                     { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },

@@ -1,7 +1,7 @@
 import ModaHeader from '@/components/tienda/ModaHeader';
 import ModaFooter from '@/components/tienda/ModaFooter';
-import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
-import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
+import ModaPaymentConfirmationModal from '@/components/tienda/ModaPaymentConfirmationModal';
+import ModaConfirmOrderModal from '@/components/tienda/ModaConfirmOrderModal';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
@@ -275,7 +275,12 @@ export default function ModaCheckoutPage({
                               {item.modificadores.filter((m: any) => m && m.opcionNombre).map((m: any) => m.opcionNombre).join(' / ')}
                           </p>
                       )}
-                      <p className="text-sm font-bold text-gray-600 mt-1">S/ {(Number(item.precioUnitario) * item.cantidad).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-gray-600 mt-1 flex items-baseline gap-2">
+                        <span>S/ {(Number(item.precioUnitario) * item.cantidad).toFixed(2)}</span>
+                        {item.enOferta && Number(item.precioRegular) > Number(item.precioUnitario) && (
+                          <span className="text-xs font-medium text-gray-400 line-through">S/ {(Number(item.precioRegular) * item.cantidad).toFixed(2)}</span>
+                        )}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -346,7 +351,7 @@ export default function ModaCheckoutPage({
       <ModaFooter tiendaNombre={tienda?.nombreComercial || tienda?.nombre || 'Styliq'} />
 
       {pedidoCreado && (
-        <PaymentConfirmationModal
+        <ModaPaymentConfirmationModal
           isOpen={showPaymentModal}
           onClose={() => { setShowPaymentModal(false); window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`; }}
           orderData={{ id: pedidoCreado.id, codigoSeguimiento: pedidoCreado.codigoSeguimiento, total: pedidoCreado.total || calcularTotal(), medioPago: formData.medioPago, tipoEntrega: formData.tipoEntrega, clienteNombre: formData.clienteNombre }}
@@ -354,7 +359,7 @@ export default function ModaCheckoutPage({
           storeSlug={slug || ''}
         />
       )}
-      <ConfirmOrderModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={enviarPedido} total={calcularTotal()} loading={enviando} tiendaColor={cp || "#2A2A2A"} />
+      <ModaConfirmOrderModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={enviarPedido} total={calcularTotal()} loading={enviando} />
     </div>
   );
 }

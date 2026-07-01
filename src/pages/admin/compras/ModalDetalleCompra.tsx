@@ -105,8 +105,8 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                         <Icon icon="solar:box-bold-duotone" className="text-violet-500" />
                         Productos Comprados
                     </h3>
-                    <div className="overflow-hidden border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm">
-                        <table className="w-full text-sm text-left">
+                    <div className="overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm">
+                        <table className="w-full min-w-[640px] text-sm text-left">
                             <thead className="bg-gray-50/50 dark:bg-slate-900/50 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-slate-800">
                                 <tr>
                                     <th className="px-4 py-3 uppercase text-[10px] tracking-wider">Descripción</th>

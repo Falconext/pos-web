@@ -39,7 +39,7 @@ function FilaWaterfall({ label, valor, esTotal = false, esNegativo = false, icon
 function FilaProducto({ p }: { p: ProductoResumen }) {
   const cfg = ESTADO_CONFIG[p.estado];
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-gray-50 dark:border-slate-800 last:border-0">
+    <div className="flex flex-col gap-3 py-3 border-b border-gray-50 dark:border-slate-800 last:border-0 sm:flex-row sm:items-center">
       <span className="text-xl w-6 text-center flex-shrink-0">{cfg.icon}</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{p.descripcion}</p>
@@ -48,13 +48,15 @@ function FilaProducto({ p }: { p: ProductoResumen }) {
           {p.ads > 0 && <span className="ml-2 text-amber-500">· S/ {p.ads.toFixed(0)} en ads</span>}
         </p>
       </div>
-      <div className="text-right flex-shrink-0">
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:text-right sm:flex-shrink-0">
+      <div>
         <p className="text-xs text-gray-400">Ingresé</p>
         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{fmt(p.ingresos)}</p>
       </div>
-      <div className="text-right flex-shrink-0 min-w-[90px]">
+      <div className="sm:min-w-[90px]">
         <p className="text-xs text-gray-400">Me quedó</p>
         <p className={`text-sm font-bold ${cfg.color}`}>{fmt(p.ganancia)}</p>
+      </div>
       </div>
     </div>
   );
@@ -98,19 +100,19 @@ export default function ResumenView() {
     : `${moment(fechaInicio).format('DD MMM')} al ${moment(fechaFin).format('DD MMM YYYY')}`;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14] px-4 py-6 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14] px-3 sm:px-4 py-4 sm:py-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 sm:mb-6 gap-4">
+        <div className="min-w-0">
           <p className="text-xs text-gray-400 font-medium mb-0.5">Mi Negocio</p>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">
             Resumen: {tituloFechas}
           </h1>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-gray-100/50 dark:border-slate-800 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-gray-100/50 dark:border-slate-800 shadow-sm mb-5 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div>
           <Select
             error=""
@@ -149,14 +151,14 @@ export default function ResumenView() {
           <Icon icon="mdi:loading" className="animate-spin text-3xl text-indigo-500" />
         </div>
       ) : !r ? (
-        <div className="bg-white dark:bg-[#111827] rounded-3xl p-16 text-center border border-gray-100/50 dark:border-slate-800">
+        <div className="bg-white dark:bg-[#111827] rounded-3xl p-8 sm:p-16 text-center border border-gray-100/50 dark:border-slate-800">
           <Icon icon="solar:chart-square-bold-duotone" className="text-5xl text-gray-200 dark:text-slate-700 mx-auto mb-3" />
           <p className="text-sm font-semibold text-gray-400">Sin datos para este rango de fechas</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Waterfall principal */}
-          <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-gray-100/50 dark:border-slate-800 shadow-sm">
+          <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 sm:p-5 border border-gray-100/50 dark:border-slate-800 shadow-sm">
             <FilaWaterfall label="Vendí en total" valor={r.ingresos} icon="solar:wallet-bold-duotone" />
             <FilaWaterfall label="Costo de mis productos" valor={r.costoMercaderia} esNegativo icon="solar:box-bold-duotone" />
             <FilaWaterfall label="Envíos y empaque" valor={r.costoEnvios} esNegativo icon="solar:delivery-bold-duotone" />
@@ -171,18 +173,20 @@ export default function ResumenView() {
           </div>
 
           {/* KPIs rápidos */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { label: 'Ventas realizadas', value: `${r.totalVentas}`, icon: 'solar:cart-large-4-bold-duotone', color: 'bg-indigo-600' },
               { label: 'Ticket promedio', value: fmt(r.ticketPromedio), icon: 'solar:tag-price-bold-duotone', color: 'bg-violet-600' },
               { label: 'Productos vendidos', value: `${r.productosDistintos}`, icon: 'solar:box-minimalistic-bold-duotone', color: 'bg-amber-500' },
             ].map((k, i) => (
-              <div key={i} className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-gray-100/50 dark:border-slate-800 shadow-sm text-center">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2 ${k.color}`}>
+              <div key={i} className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-gray-100/50 dark:border-slate-800 shadow-sm text-left sm:text-center flex items-center gap-3 sm:block">
+                <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center sm:mx-auto sm:mb-2 ${k.color}`}>
                   <Icon icon={k.icon} className="text-base text-white" />
                 </div>
+                <div className="min-w-0">
                 <p className="text-base font-bold text-gray-900 dark:text-white">{k.value}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{k.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -194,12 +198,12 @@ export default function ResumenView() {
                 <h2 className="text-sm font-bold text-gray-900 dark:text-white">Mis productos vendidos</h2>
                 <p className="text-xs text-gray-400 mt-0.5">ordenados por lo que más vendiste en este periodo</p>
               </div>
-              <div className="px-5">
+              <div className="px-4 sm:px-5">
                 {data!.productos.map(p => <FilaProducto key={p.id} p={p} />)}
               </div>
 
               {/* Leyenda */}
-              <div className="px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-4 flex-wrap">
+              <div className="px-4 sm:px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-3 sm:gap-4 flex-wrap">
                 {Object.entries(ESTADO_CONFIG).map(([k, v]) => (
                   <span key={k} className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <span>{v.icon}</span> {v.label}

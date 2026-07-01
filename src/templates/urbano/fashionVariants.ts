@@ -156,15 +156,24 @@ export const getFashionColorGallery = (producto: any, colorValue: string): strin
 };
 
 export const getFashionColors = (producto: any): FashionColorOption[] => {
-  const values = [...valuesFromOptions(producto, isColorName)];
-  valuesFromVariants(producto, isColorName).forEach((value) => uniquePush(values, value));
+  // Si el producto DECLARA opciones, la opción "Color" es la única fuente de verdad:
+  // así, un producto solo-talla (sin opción Color) no muestra colores, aunque su
+  // listado traiga variantes fantasma con colores que no coinciden con las opciones.
+  // Solo los productos sin opciones declaradas (legacy) derivan de las variantes.
+  const hasOptions = normalizeArray(producto?.opcionesAtributos).length > 0;
+  const values = hasOptions
+    ? valuesFromOptions(producto, isColorName)
+    : valuesFromVariants(producto, isColorName);
   return values.map((name) => ({ name, hex: colorToHex(name), image: getFashionColorImage(producto, name) }));
 };
 
 export const getFashionSizes = (producto: any): string[] => {
-  const values = [...valuesFromOptions(producto, isSizeName)];
-  valuesFromVariants(producto, isSizeName).forEach((value) => uniquePush(values, value));
-  return values;
+  // Misma regla que en colores: la opción "Talla" declarada manda; si no hay opciones
+  // declaradas, se cae a las variantes (legacy). Evita tallas fantasma como "Única".
+  const hasOptions = normalizeArray(producto?.opcionesAtributos).length > 0;
+  return hasOptions
+    ? valuesFromOptions(producto, isSizeName)
+    : valuesFromVariants(producto, isSizeName);
 };
 
 export const getDefaultVariantSelection = (producto: any) => {

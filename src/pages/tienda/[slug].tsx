@@ -5,7 +5,7 @@ import axios from 'axios';
 import SliderBanners from '@/components/tienda/SliderBanners';
 import CarouselBanners from '@/components/tienda/CarouselBanners';
 import Footer from '@/components/tienda/Footer';
-import { TEMPLATES, resolveTemplate } from '@/components/tienda/resolveTemplate';
+import { TEMPLATES, resolveTemplate, resolveTemplateId } from '@/components/tienda/resolveTemplate';
 import StoreHeader from '@/components/tienda/StoreHeader';
 import CategoryCircles from '@/components/tienda/CategoryCircles';
 import ComboCard from '@/components/tienda/ComboCard';
@@ -17,6 +17,8 @@ import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import XtraHero from '@/components/tienda/XtraHero';
 import XtraHeader from '@/components/tienda/XtraHeader';
 import { templateRegistry } from '@/templates/registry';
+import { useAuthStore } from '@/zustand/auth';
+import StoreLiveEditorDrawer from '@/components/tienda/StoreLiveEditorDrawer';
 
 import StoreSidebar from '@/components/tienda/StoreSidebar';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
@@ -26,6 +28,7 @@ import MembershipBanner from '@/components/tienda/MembershipBanner';
 import { useCompareStore } from '@/zustand/compare';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
+import { withPricing, withPricingList } from '@/templates/shared/pricing';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -62,8 +65,26 @@ export default function TiendaPublica() {
   const [showCompareModal, setShowCompareModal] = useState(false);
   const { getBySlug, clear: clearCompare } = useCompareStore();
   const { refreshImagenes } = useFavoritosStore();
+  const auth = useAuthStore(s => s.auth);
 
+  // Estado para el Live Editor (panel flotante "modo WordPress")
+  const [disenoLive, setDisenoLive] = useState<any>(null);
 
+  useEffect(() => {
+    if (tienda?.diseno) {
+      setDisenoLive(tienda.diseno);
+    }
+  }, [tienda?.diseno]);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'UPDATE_DISENO') {
+        setDisenoLive((prev: any) => ({ ...prev, ...e.data.payload }));
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
   useEffect(() => {
     cargarTienda();
     cargarCombos();
@@ -105,7 +126,7 @@ export default function TiendaPublica() {
       const fetchAndAction = async () => {
         try {
           const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${productIdParam}`);
-          const product = data.data || data;
+          const product = data.data ? withPricing(data.data) : data ? withPricing(data) : null;
           if (product) {
             handleAgregarProducto(product);
             // Remove param to avoid re-triggering on refresh
@@ -169,7 +190,7 @@ export default function TiendaPublica() {
           limit: 8 // Show top 8 wholesale products
         }
       });
-      setWholesaleProducts(data.data || []);
+      setWholesaleProducts(withPricingList(data.data || []));
     } catch (e) { console.error('Error loading wholesale products:', e); }
   };
 
@@ -281,6 +302,8 @@ export default function TiendaPublica() {
         totalItems = data.total ?? items.length;
         currentPage = data.page ?? p;
       }
+
+      items = withPricingList(items || []);
 
       setTotal(totalItems || 0);
       setPage(currentPage || p);
@@ -479,11 +502,22 @@ export default function TiendaPublica() {
     );
   }
 
-  const diseno = tienda.diseno || {};
+  const diseno = disenoLive || tienda.diseno || {};
   const cp = diseno.colorPrimario || '#FF9500';
   const template = resolveTemplate(diseno?.plantillaId);
   const bannerIsSlider: boolean = diseno?.bannerIsSlider ?? template.bannerIsSlider;
   const hasBanners = template.bannerSlots.length > 0;
+
+  // Live Editor "modo WordPress": solo visible para el dueño de esta tienda.
+  const isOwner = !!auth?.empresa?.slugTienda && auth.empresa.slugTienda === slug;
+  const liveEditor = isOwner ? (
+    <StoreLiveEditorDrawer
+      slug={slug || ''}
+      diseno={diseno}
+      onChange={(campos) => setDisenoLive((prev: any) => ({ ...(prev || {}), ...campos }))}
+      defaultOpen={searchParams.get('edit') === '1'}
+    />
+  ) : null;
 
   const CARD_MAP: Record<string, React.ComponentType<any>> = {
     ProductCardPio,
@@ -587,20 +621,25 @@ export default function TiendaPublica() {
   );
 
   // ── Template Dispatcher ───────────────────────────────────────────────────
-  const templateConfig = templateRegistry[diseno?.plantillaId];
+  const templateConfig = templateRegistry[resolveTemplateId(diseno?.plantillaId)];
   if (templateConfig?.HomePage) {
     const TemplateHome = templateConfig.HomePage;
     return (
-      <TemplateHome
-        tienda={tienda} slug={slug || ''} productos={productos} allCategories={allCategories} cp={cp} diseno={diseno}
-        carrito={carrito} setCarrito={setCarrito} mostrarCarrito={mostrarCarrito} setMostrarCarrito={setMostrarCarrito}
-        agregarAlCarrito={agregarAlCarrito} actualizarCantidad={actualizarCantidad} loading={loading}
-      />
+      <>
+        {liveEditor}
+        <TemplateHome
+          tienda={tienda} slug={slug || ''} productos={productos} allCategories={allCategories} cp={cp} diseno={diseno}
+          carrito={carrito} setCarrito={setCarrito} mostrarCarrito={mostrarCarrito} setMostrarCarrito={setMostrarCarrito}
+          agregarAlCarrito={agregarAlCarrito} actualizarCantidad={actualizarCantidad} loading={loading}
+        />
+      </>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#F6F6F6]" style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'Inter, sans-serif') }}>
+
+      {liveEditor}
 
       {/* Header */}
       <StoreHeader

@@ -8,7 +8,9 @@ import ProductCardPio from '@/components/tienda/ProductCardPio';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import { templateRegistry } from '@/templates/registry';
+import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
 import { clearTiendaCart, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
+import { withPricingList } from '@/templates/shared/pricing';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -175,7 +177,7 @@ export default function Checkout() {
             try {
                 const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, { params: { search, limit: 5 } });
                 const items = data?.data?.data || data?.data || [];
-                setSearchResults(Array.isArray(items) ? items : []);
+                setSearchResults(Array.isArray(items) ? withPricingList(items) : []);
             } catch { setSearchResults([]); }
         }, 300);
         return () => clearTimeout(timeout);
@@ -237,7 +239,7 @@ export default function Checkout() {
         try {
             const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, { params: { limit: 12 } });
             const items = data?.data?.data || data?.data || [];
-            setSuggestedProducts(Array.isArray(items) ? items : []);
+            setSuggestedProducts(Array.isArray(items) ? withPricingList(items) : []);
         } catch { }
     };
 
@@ -436,7 +438,7 @@ export default function Checkout() {
 
     // ── Template Dispatcher ───────────────────────────────────────────────────
     const cp = diseno.colorPrimario || '#FF9500';
-    const templateConfig = templateRegistry[diseno.plantillaId];
+    const templateConfig = templateRegistry[resolveTemplateId(diseno.plantillaId)];
     if (templateConfig?.CheckoutPage) {
         const TemplateCheckout = templateConfig.CheckoutPage;
         return (

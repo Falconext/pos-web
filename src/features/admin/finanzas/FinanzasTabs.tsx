@@ -58,45 +58,47 @@ export default function FinanzasTabs() {
     const vm = useRentabilidadViewModel();
 
     return (
-        <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14]">
+        <div className="min-h-screen overflow-x-hidden bg-[#F8F9FB] dark:bg-[#0A0D14]">
             {/* ── Header + Tab bar area ── */}
-            <div className="px-6 pt-6">
+            <div className="px-3 pt-5 sm:px-6 sm:pt-6">
                 {/* Page Header */}
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mb-1">
+                <div className="mb-5 sm:mb-6">
+                    <div className="mb-1 flex min-w-0 items-center gap-2 text-sm font-medium text-gray-400">
                         <span>Finanzas</span>
-                        <Icon icon="solar:alt-arrow-right-linear" />
-                        <span className="text-indigo-600 dark:text-indigo-400">
+                        <Icon icon="solar:alt-arrow-right-linear" className="shrink-0" />
+                        <span className="truncate text-indigo-600 dark:text-indigo-400">
                             {TABS.find(t => t.id === activeTab)?.label}
                         </span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
                         Análisis Financiero
                     </h1>
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex items-center gap-2 mb-6 bg-white dark:bg-[#111827] rounded-2xl p-1.5 border border-gray-100/50 dark:border-slate-800 shadow-sm w-fit">
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                                activeTab === tab.id
-                                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-indigo-900/30'
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800'
-                            }`}
-                        >
-                            <Icon icon={tab.icon} className="text-base flex-shrink-0" />
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="mb-6 max-w-full overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="inline-flex min-w-max items-center gap-1.5 rounded-2xl border border-gray-100/50 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-[#111827] sm:gap-2">
+                        {TABS.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex min-w-[92px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all sm:min-w-0 sm:flex-row sm:gap-2 sm:px-5 sm:text-sm ${
+                                    activeTab === tab.id
+                                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-indigo-900/30'
+                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200'
+                                }`}
+                            >
+                                <Icon icon={tab.icon} className="text-base flex-shrink-0" />
+                                <span className="leading-tight">{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
             {/* ── Tab Content ── */}
             {activeTab === 'rentabilidad' && (
-                <div className="px-6 pb-6">
+                <div className="px-3 pb-6 sm:px-6">
                     <RentabilidadView
                         mesActual={vm.mesActual}
                         anioActual={vm.anioActual}
@@ -135,19 +137,19 @@ export default function FinanzasTabs() {
             )}
 
             {activeTab === 'comisiones' && (
-                <div className="px-6 pb-6">
+                <div className="px-3 pb-6 sm:px-6">
                     <ComisionesView />
                 </div>
             )}
 
             {activeTab === 'categorias' && (
-                <div className="px-6 pb-6">
+                <div className="px-3 pb-6 sm:px-6">
                     <CategoriasView />
                 </div>
             )}
 
             {activeTab === 'metodosPago' && (
-                <div className="px-6 pb-6">
+                <div className="px-3 pb-6 sm:px-6">
                     <MetodosPagoView />
                 </div>
             )}

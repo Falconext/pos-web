@@ -46,6 +46,14 @@ export default function AutopartesHeader({
     onSearchSubmit(e, localSearch);
   };
 
+  const goTracking = () => {
+    if (slug === 'preview') {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'checkout' }));
+      return;
+    }
+    navigate(`/tienda/${slug}/seguimiento`);
+  };
+
   // Fallback links if categories are few
   const quickLinks = ['Tienda de Llantas', 'Fluidos y Lubricantes', 'Baterías', 'Herramientas', 'Camiones', 'Motocicletas', 'Zona Eléctrica'];
 
@@ -90,6 +98,15 @@ export default function AutopartesHeader({
 
         {/* Icons Right */}
         <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
+          <button
+            type="button"
+            onClick={goTracking}
+            className="relative text-gray-600 hover:text-gray-900 transition-colors hidden sm:block"
+            title="Rastrear mi pedido"
+            aria-label="Rastrear mi pedido"
+          >
+            <Icon icon="solar:box-minimalistic-bold-duotone" width={24} />
+          </button>
           <button
             type="button"
             onClick={() => setIsFavoritesOpen(true)}
@@ -185,6 +202,13 @@ export default function AutopartesHeader({
                     </button>
                   ))
                 )}
+                <button
+                  onClick={() => { setIsCategoryMenuOpen(false); goTracking(); }}
+                  className="mt-1 flex w-full items-center gap-2 border-t border-gray-100 px-5 py-3 text-sm font-bold text-gray-800 hover:bg-gray-50 transition-colors"
+                >
+                  <Icon icon="solar:box-minimalistic-bold-duotone" width={18} style={{ color: cp }} />
+                  Rastrear mi pedido
+                </button>
               </div>
             )}
           </div>

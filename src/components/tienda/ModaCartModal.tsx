@@ -36,6 +36,7 @@ export default function ModaCartModal({
   isOpen,
   onClose,
   carrito,
+  tienda,
   actualizarCantidad,
   onCheckout,
   setCarrito,
@@ -43,15 +44,30 @@ export default function ModaCartModal({
   if (!isOpen) return null;
 
   const subtotal = carrito.reduce((sum, item) => sum + getPrice(item) * Number(item.cantidad || 1), 0);
+
+  const cotizarPorWhatsApp = () => {
+    if (!carrito.length) return;
+    const raw = String(tienda?.whatsappTienda || tienda?.diseno?.whatsappTienda || tienda?.celular || tienda?.telefono || '').replace(/\D/g, '');
+    const nombreTienda = tienda?.nombreComercial || tienda?.nombre || 'Tienda';
+    const lineas = carrito
+      .map((item) => `• ${Number(item.cantidad || 1)}x ${item.descripcion} — ${money(getPrice(item) * Number(item.cantidad || 1))}`)
+      .join('\n');
+    const mensaje =
+      `*SOLICITUD DE COTIZACIÓN — ${nombreTienda}*\n\n` +
+      `${lineas}\n\n` +
+      `*Total estimado: ${money(subtotal)}*\n\n` +
+      `Hola, quisiera cotizar estos productos. ¿Me confirman precio y disponibilidad?`;
+    const base = raw ? `https://wa.me/${raw.length === 9 ? `51${raw}` : raw}` : 'https://wa.me/';
+    window.open(`${base}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+  };
   const freeShippingGoal = 199;
   const remaining = Math.max(0, freeShippingGoal - subtotal);
   const progress = Math.min(100, (subtotal / freeShippingGoal) * 100);
 
   const removeItem = (item: any) => {
-    if (setCarrito) {
-      setCarrito(carrito.filter((current) => current.id !== item.id));
-      return;
-    }
+    // Always go through actualizarCantidad so localStorage is kept in sync.
+    // Using setCarrito directly only updates React state but skips the localStorage
+    // write, causing deleted items to re-appear on the next addToCart.
     actualizarCantidad(item.id, 0);
   };
 
@@ -160,6 +176,13 @@ export default function ModaCartModal({
             </div>
             <button onClick={onCheckout} className="h-11 w-full bg-black text-[13px] font-medium text-white hover:bg-neutral-800">
               Finalizar compra →
+            </button>
+            <button
+              onClick={cotizarPorWhatsApp}
+              className="mt-2 flex h-11 w-full items-center justify-center gap-2 border border-neutral-300 bg-white text-[13px] font-medium text-neutral-800 transition-colors hover:border-black hover:bg-neutral-50"
+            >
+              <Icon icon="ic:baseline-whatsapp" width={17} className="text-emerald-600" />
+              Cotizar por WhatsApp
             </button>
             <p className="mt-3 text-center text-[11px] text-neutral-500">Impuestos y envío se calculan al finalizar.</p>
           </footer>

@@ -10,7 +10,7 @@ import ProductCardEmox from '@/components/tienda/ProductCardEmox';
 import ProductCardGlamora from '@/components/tienda/ProductCardGlamora';
 import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
 import ProductCardCatalog from '@/components/tienda/ProductCardCatalog';
-import { resolveTemplate } from '@/components/tienda/resolveTemplate';
+import { resolveTemplate, resolveTemplateId } from '@/components/tienda/resolveTemplate';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 import GadgetsCartModal from '@/components/tienda/GadgetsCartModal';
@@ -18,6 +18,7 @@ import AutopartesHeader from '@/components/tienda/AutopartesHeader';
 import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
 import { useCompareStore } from '@/zustand/compare';
 import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
+import { withPricingList } from '@/templates/shared/pricing';
 
 import { getRubroDemo } from '@/data/rubroDemo';
 import AutopartesCatalog from '@/components/tienda/AutopartesCatalog';
@@ -28,6 +29,8 @@ import UrbanoCatalogPage from '@/templates/urbano/UrbanoCatalogPage';
 import UrbanoCartModal from '@/components/tienda/UrbanoCartModal';
 import ModaFooter from '@/components/tienda/ModaFooter';
 import ModaCartModal from '@/components/tienda/ModaCartModal';
+import MayeCatalogoPage from '@/templates/maye/MayeCatalogoPage';
+import { templateRegistry } from '@/templates/registry';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -172,6 +175,7 @@ export default function Catalogo() {
             if (Array.isArray(data?.data?.data)) { items = data.data.data; totalItems = data.data.total ?? items.length; currentPage = data.data.page ?? p; }
             else if (Array.isArray(data?.data)) { items = data.data; totalItems = data.total ?? items.length; currentPage = data.page ?? p; }
             else if (Array.isArray(data)) { items = data; totalItems = data.length; }
+            items = withPricingList(items);
             setTotal(totalItems); setPage(currentPage);
             if (reset) setProductos(items); else setProductos(prev => [...prev, ...items]);
         } catch { }
@@ -294,6 +298,112 @@ export default function Catalogo() {
             <div className="flex items-center justify-center h-screen bg-white">
                 <Icon icon="eos-icons:loading" className="w-12 h-12 text-[#FF9500]" />
             </div>
+        );
+    }
+
+    const templateId = resolveTemplateId(diseno.plantillaId);
+    const templateCatalogoProps = {
+        tienda: tienda || {},
+        slug: slug || '',
+        diseno,
+        cp,
+        navigate,
+        productos,
+        sortedProductos,
+        loading,
+        total,
+        page,
+        cargarProductos: (nextPage: number) => cargarProductos(nextPage),
+        allCategorías,
+        allMarcas,
+        filteredMarcas,
+        selectedCategorías,
+        setSelectedCategorías,
+        selectedMarcas,
+        setSelectedMarcas,
+        priceRange,
+        setPriceRange,
+        minPrice,
+        maxPrice,
+        sortBy,
+        setSortBy,
+        hasActiveFilters,
+        toggleCategory,
+        toggleBrand,
+        search,
+        setSearch,
+        carrito,
+        setCarrito,
+        mostrarCarrito,
+        setMostrarCarrito,
+        actualizarCantidad,
+        irACheckout,
+        handleAgregarProducto,
+        agregarAlCarritoDirecto,
+        showMobileFilters,
+        setShowMobileFilters,
+        showPersonalizarModal,
+        setShowPersonalizarModal,
+        productoAPersonalizar,
+        setProductoAPersonalizar,
+        modificadoresProducto,
+    };
+
+    if (templateId !== 'urbano') {
+        const TemplateCatalogo = templateRegistry[templateId]?.CatalogoPage;
+        if (TemplateCatalogo) {
+            return <TemplateCatalogo {...templateCatalogoProps} />;
+        }
+    }
+
+    if (diseno.plantillaId === 'maye') {
+        return (
+            <MayeCatalogoPage
+                tienda={tienda || {}}
+                slug={slug || ''}
+                diseno={diseno}
+                cp={cp}
+                navigate={navigate}
+                productos={productos}
+                sortedProductos={sortedProductos}
+                loading={loading}
+                total={total}
+                page={page}
+                cargarProductos={(nextPage) => cargarProductos(nextPage)}
+                allCategorías={allCategorías}
+                allMarcas={allMarcas}
+                filteredMarcas={filteredMarcas}
+                selectedCategorías={selectedCategorías}
+                setSelectedCategorías={setSelectedCategorías}
+                selectedMarcas={selectedMarcas}
+                setSelectedMarcas={setSelectedMarcas}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                hasActiveFilters={hasActiveFilters}
+                toggleCategory={toggleCategory}
+                toggleBrand={toggleBrand}
+                search={search}
+                setSearch={setSearch}
+                carrito={carrito}
+                setCarrito={setCarrito}
+                mostrarCarrito={mostrarCarrito}
+                setMostrarCarrito={setMostrarCarrito}
+                actualizarCantidad={actualizarCantidad}
+                irACheckout={irACheckout}
+                handleAgregarProducto={handleAgregarProducto}
+                agregarAlCarritoDirecto={agregarAlCarritoDirecto}
+                showMobileFilters={showMobileFilters}
+                setShowMobileFilters={setShowMobileFilters}
+                showPersonalizarModal={showPersonalizarModal}
+                setShowPersonalizarModal={setShowPersonalizarModal}
+                productoAPersonalizar={productoAPersonalizar}
+                setProductoAPersonalizar={setProductoAPersonalizar}
+                modificadoresProducto={modificadoresProducto}
+            />
         );
     }
 
@@ -1109,7 +1219,7 @@ export default function Catalogo() {
     }
 
     // ── Hombre Urbano catalog layout ──────────────────────────────────────────
-    if (diseno.plantillaId === 'urbano') {
+    if (templateId === 'urbano') {
         return (
             <>
                 <UrbanoCatalogPage
@@ -1343,7 +1453,7 @@ export default function Catalogo() {
 
                 <Footer tienda={tienda || {}} diseno={diseno} />
 
-                <AutopartesCartModal 
+                <AutopartesCartModal
                     isOpen={mostrarCarrito}
                     onClose={() => setMostrarCarrito(false)}
                     carrito={carrito}
@@ -1351,6 +1461,7 @@ export default function Catalogo() {
                     actualizarCantidad={actualizarCantidad}
                     onCheckout={irACheckout}
                     cp={cp}
+                    tienda={tienda}
                 />
 
                 {showPersonalizarModal && productoAPersonalizar && (

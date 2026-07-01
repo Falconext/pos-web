@@ -238,8 +238,8 @@ export default function MisComisionesPage() {
                         </button>
                     ))}
 
-                    <div className="ml-auto flex items-center gap-2">
-                        <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Desde</label>
                             <input
                                 type="date"
@@ -247,10 +247,10 @@ export default function MisComisionesPage() {
                                 min={firstDay(mes, anio)}
                                 max={hasta}
                                 onChange={(e) => { setDesde(e.target.value); setPreset('mes'); }}
-                                className="text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                                className="flex-1 sm:flex-none min-w-0 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
                             />
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Hasta</label>
                             <input
                                 type="date"
@@ -258,7 +258,7 @@ export default function MisComisionesPage() {
                                 min={desde}
                                 max={lastDay(mes, anio)}
                                 onChange={(e) => { setHasta(e.target.value); setPreset('mes'); }}
-                                className="text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                                className="flex-1 sm:flex-none min-w-0 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
                             />
                         </div>
                         {hayFiltros && (

@@ -147,8 +147,8 @@ export default function ProductsView() {
                 ),
                 'Código': item?.codigo?.toUpperCase(),
                 'Producto': (
-                    <div className="flex flex-col">
-                        <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight uppercase">{item?.descripcion}</span>
+                    <div className="flex flex-col max-w-[260px] min-w-0">
+                        <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight uppercase truncate" title={item?.descripcion}>{item?.descripcion}</span>
                         <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 uppercase">{item?.codigo}</span>
                         {item?.codigoBarras && (
                             <span className="text-[10px] text-violet-400 dark:text-violet-400 mt-0.5 font-mono tracking-wide">{item.codigoBarras}</span>
@@ -353,19 +353,120 @@ export default function ProductsView() {
         }
     };
 
+    const renderMobileProducts = () => {
+        if (vm.loading || (!vm.productsLoaded && productsSource.length === 0)) {
+            return <TableSkeleton />;
+        }
+
+        if (productsSource.length === 0) {
+            return (
+                <div className="py-12 text-center">
+                    <Icon icon="solar:box-linear" className="mx-auto mb-3 text-5xl text-gray-300 dark:text-slate-600" />
+                    <p className="text-sm font-bold text-gray-500 dark:text-gray-400">No se encontraron productos</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-3">
+                {productsSource.map((item: any) => {
+                    const imageSrc = item?.imagenUrlDisplay || item?.imagenUrl;
+                    const stock = Number(item?.stock || 0);
+                    const esServicio = String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
+                    const stockTone = esServicio
+                        ? 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300'
+                        : stock <= 0
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
+                            : stock <= 10
+                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+                                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300';
+
+                    return (
+                        <article key={item.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0F1623]">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+                                    {imageSrc ? (
+                                        <img src={imageSrc} alt={item?.descripcion} className="h-full w-full object-contain" />
+                                    ) : (
+                                        <Icon icon="solar:gallery-linear" width={28} className="text-gray-300" />
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="line-clamp-2 text-sm font-black uppercase leading-snug text-gray-900 dark:text-white">{item?.descripcion}</p>
+                                    <p className="mt-1 text-[11px] font-mono text-gray-400">{item?.codigo || 'Sin código'}</p>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-black uppercase text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
+                                            {item?.categoria?.nombre || 'Sin categoría'}
+                                        </span>
+                                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${stockTone}`}>
+                                            {esServicio ? 'Servicio' : `${stock} stock`}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        actions.setOpenAccionesId(item.id);
+                                        actions.setAnchorEl(e.currentTarget);
+                                    }}
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200"
+                                    aria-label="Acciones"
+                                >
+                                    <Icon icon="mdi:dots-vertical" width={20} height={20} />
+                                </button>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                                <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                    <p className="font-bold uppercase tracking-wide text-gray-400">Precio venta</p>
+                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">S/ {Number(item?.precioUnitario || 0).toFixed(2)}</p>
+                                </div>
+                                <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                    <p className="font-bold uppercase tracking-wide text-gray-400">Costo</p>
+                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">S/ {Number(item?.costoUnitario || item?.costoPromedio || 0).toFixed(2)}</p>
+                                </div>
+                                <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                    <p className="font-bold uppercase tracking-wide text-gray-400">Marca</p>
+                                    <p className="mt-1 truncate font-bold text-gray-700 dark:text-gray-200">{item?.marca?.nombre || 'Sin marca'}</p>
+                                </div>
+                                <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                    <p className="font-bold uppercase tracking-wide text-gray-400">Tienda</p>
+                                    <p className={`mt-1 font-bold ${(item as any).publicarEnTienda ? 'text-emerald-600' : 'text-gray-400'}`}>{(item as any).publicarEnTienda ? 'Publicado' : 'Oculto'}</p>
+                                </div>
+                            </div>
+                        </article>
+                    );
+                })}
+
+                <Pagination
+                    data={productsSource}
+                    optionSelect
+                    currentPage={vm.currentPage}
+                    indexOfFirstItem={vm.indexOfFirstItem}
+                    indexOfLastItem={vm.indexOfLastItem}
+                    setcurrentPage={actions.setcurrentPage}
+                    setitemsPerPage={actions.setitemsPerPage}
+                    pages={vm.pages}
+                    total={vm.totalProducts}
+                />
+            </div>
+        );
+    };
+
     return (
-        <div className="min-h-screen px-2 pb-4 relative z-1">
+        <div className="min-h-screen px-3 sm:px-2 pb-4 relative z-1">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                <div>
-                    <h1 className="text-2xl font-[600] text-gray-900 dark:text-white tracking-tight">{vm.labels.titulo}</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 sm:mb-6">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-[600] text-gray-900 dark:text-white tracking-tight">{vm.labels.titulo}</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-[400] mt-1">Gestiona tu inventario de {vm.labels.titulo.toLowerCase()}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex w-full sm:w-auto gap-3">
                     <Button
                         color="secondary"
                         onClick={actions.openNewProduct}
-                        className="flex items-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-lg" />
                         {vm.labels.nuevoBtn}
@@ -375,7 +476,7 @@ export default function ProductsView() {
 
             {/* Main Content */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 relative z-0 overflow-hidden">
-                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
+                <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-slate-800">
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <InputPro
@@ -387,7 +488,7 @@ export default function ProductsView() {
                             />
                         </div>
                         <BarcodeScannerInput
-                            className="min-w-[220px]"
+                            className="w-full lg:min-w-[220px] lg:w-auto"
                             inputRef={barcodeRef}
                             value={barcodeInput}
                             onChange={(e) => setBarcodeInput(e.target.value)}
@@ -397,7 +498,7 @@ export default function ProductsView() {
                             placeholder=""
                         />
                         {vm.isAdmin && vm.esPrincipal && (
-                            <div className="w-48">
+                            <div className="w-full lg:w-48">
                                 <Select
                                     onChange={(id: any) => vm.handleSelectSede(id)}
                                     label="Sede"
@@ -409,7 +510,7 @@ export default function ProductsView() {
                             </div>
                         )}
                         <div className="w-full flex md:top-3 relative z-50 lg:w-auto overflow-visible pb-2 lg:pb-0">
-                            <div className="flex flex-wrap gap-2 px-1 items-center">
+                            <div className="flex gap-2 px-1 items-center overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                 <Button color="default" onClick={() => actions.setIsOpenModalCategory(true)} className="text-sm !bg-blue-500 !text-white border-none shadow-sm shadow-blue-200/50">
                                     <Icon icon="solar:tag-bold-duotone" className="mr-1.5 !text-white" /> Categorías
                                 </Button>
@@ -488,7 +589,7 @@ export default function ProductsView() {
                     </div>
                 </div>
 
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                     <input
                         type="file"
                         accept="image/*"
@@ -498,8 +599,11 @@ export default function ProductsView() {
                         disabled={vm.uploading}
                     />
 
-                    <div className="overflow-x-auto">
+                    <div className="hidden md:block overflow-x-auto">
                         {renderContent()}
+                    </div>
+                    <div className="md:hidden">
+                        {renderMobileProducts()}
                     </div>
 
                     {/* Modals */}

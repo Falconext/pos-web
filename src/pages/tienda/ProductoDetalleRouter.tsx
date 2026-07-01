@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ComponentType } from 'react';
 import { useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -6,10 +7,22 @@ import ProductoDetalle from './ProductoDetalle';
 import GadgetsProductoDetalle from './GadgetsProductoDetalle';
 import AutopartesProductoDetalle from './AutopartesProductoDetalle';
 import ModaProductoDetalle from './ModaProductoDetalle';
+import TecnologiaProductoDetalle from './TecnologiaProductoDetalle';
+import MayeProductoDetalle from './MayeProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
+import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+
+const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
+  gadgets: GadgetsProductoDetalle,
+  autopartes: AutopartesProductoDetalle,
+  tecnologia: TecnologiaProductoDetalle,
+  maye: MayeProductoDetalle,
+  moda: ModaProductoDetalle,
+  urbano: UrbanoProductoDetalle,
+};
 
 export default function ProductoDetalleRouter() {
   const { slug } = useParams();
@@ -35,9 +48,7 @@ export default function ProductoDetalleRouter() {
     );
   }
 
-  if (plantillaId === 'gadgets') return <GadgetsProductoDetalle />;
-  if (plantillaId === 'autopartes') return <AutopartesProductoDetalle />;
-  if (plantillaId === 'moda') return <ModaProductoDetalle />;
-  if (plantillaId === 'urbano') return <UrbanoProductoDetalle />;
+  const DetailPage = DETAIL_PAGE_BY_TEMPLATE[resolveTemplateId(plantillaId)];
+  if (DetailPage) return <DetailPage />;
   return <ProductoDetalle />;
 }

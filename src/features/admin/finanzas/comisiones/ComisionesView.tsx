@@ -233,7 +233,7 @@ export default function ComisionesView() {
                     {/* Presets de período */}
                     <div>
                         <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Período rápido</p>
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-wrap gap-1.5">
                             {([
                                 { key: 'mes', label: 'Mes completo', icon: 'solar:calendar-bold-duotone' },
                                 { key: 'q1',  label: '1ra quincena', icon: 'solar:calendar-minimalistic-bold-duotone' },
@@ -369,6 +369,12 @@ export default function ComisionesView() {
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{v.vendedor.nombre}</p>
                                         <p className="text-xs text-gray-400 dark:text-gray-500">DNI {v.vendedor.dni} · {v.cantidadVentas} ventas</p>
+                                        {/* Montos visibles en móvil */}
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] sm:hidden">
+                                            <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(v.totalComision)}</span>
+                                            <span className="text-emerald-600 dark:text-emerald-400">Pag. {formatCurrency(v.totalPagado)}</span>
+                                            <span className={v.totalPendiente > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'}>Pend. {formatCurrency(v.totalPendiente)}</span>
+                                        </div>
                                     </div>
 
                                     <div className="hidden sm:flex items-center gap-6 text-right">

@@ -191,7 +191,7 @@ export default function SistemaRubros() {
             {/* Table */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {filtered.length > 0 ? (
-                    <table className={DataTableStyles.table}>
+                    <div className="overflow-x-auto"><table className={DataTableStyles.table}>
                         <thead>
                             <tr>
                                 <th style={{ textAlign: 'center', width: 48 }}>#</th>
@@ -280,7 +280,7 @@ export default function SistemaRubros() {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
+                    </table></div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                         <div className="bg-violet-50 dark:bg-violet-900/20 p-6 rounded-full mb-4">

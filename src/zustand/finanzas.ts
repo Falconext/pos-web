@@ -36,7 +36,7 @@ export interface IFinanzasState {
     chartData: ChartData[];
     metodosPago: MetodoPagoResumen[];
     conciliacion: ConciliacionResumen | null;
-    getResumenFinanciero: (fechaInicio: string, fechaFin: string, sedeId?: number | null) => void;
+    getResumenFinanciero: (fechaInicio: string, fechaFin: string, sedeId?: number | null, usuarioId?: number | null) => void;
     isLoading: boolean;
 }
 
@@ -46,11 +46,12 @@ export const useFinanzasStore = create<IFinanzasState>()(devtools((set) => ({
     metodosPago: [],
     conciliacion: null,
     isLoading: false,
-    getResumenFinanciero: async (fechaInicio: string, fechaFin: string, sedeId?: number | null) => {
+    getResumenFinanciero: async (fechaInicio: string, fechaFin: string, sedeId?: number | null, usuarioId?: number | null) => {
         try {
             set({ isLoading: true });
             const params = new URLSearchParams({ fechaInicio, fechaFin });
             if (sedeId) params.append('sedeId', String(sedeId));
+            if (usuarioId) params.append('usuarioId', String(usuarioId));
             const resp: any = await get(`finanzas/resumen?${params}`);
             console.log("Respuesta Resumen Financiero:", resp);
             if (resp.code === 1 || resp.success) { // Handle potential different response structure

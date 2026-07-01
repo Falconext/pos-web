@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import axios from 'axios';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { onTiendaCartCleared, tiendaCartKey } from '@/utils/tiendaCart';
+import { withPricing, withPricingList } from '@/templates/shared/pricing';
 import UrbanoCartModal from '@/components/tienda/UrbanoCartModal';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
 import UrbanoHeader from '@/templates/urbano/UrbanoHeader';
@@ -48,6 +49,8 @@ export default function UrbanoProductoDetalle() {
   const [tienda, setTienda] = useState<any>(null);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [related, setRelated] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewSummary, setReviewSummary] = useState({ ratingAvg: 0, ratingCount: 0 });
   const [modificadoresProducto, setModificadoresProducto] = useState<any[]>([]);
   const [selecciones, setSelecciones] = useState<Record<number, number[]>>({});
   const [loading, setLoading] = useState(true);
@@ -88,10 +91,15 @@ export default function UrbanoProductoDetalle() {
           axios.get(`${BASE_URL}/public/store/${slug}`),
         ]);
 
-        const prod = prodRes.data.data || prodRes.data;
+        const prod = withPricing(prodRes.data.data || prodRes.data);
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
         setTienda(tiendaData);
+        setReviews([]);
+        setReviewSummary({
+          ratingAvg: Number(prod.ratingAvg || prod.ratingPromedio || prod.promedioRating || 0),
+          ratingCount: Number(prod.ratingCount || prod.totalReviews || prod.reviewsCount || 0),
+        });
         const defaultVariantSelection = getDefaultVariantSelection(prod);
         const defaultVariant = findFashionVariant(prod, defaultVariantSelection);
         const defaultColor = defaultVariantSelection[getVariantOptionNames(prod).color];
@@ -125,9 +133,22 @@ export default function UrbanoProductoDetalle() {
         try {
           const relRes = await axios.get(`${BASE_URL}/public/store/${slug}/products/${id}/related`);
           const rel = relRes.data.data || relRes.data;
-          setRelated(Array.isArray(rel) ? rel.slice(0, 10) : []);
+          setRelated(Array.isArray(rel) ? withPricingList(rel.slice(0, 10)) : []);
         } catch {
           setRelated([]);
+        }
+
+        try {
+          const reviewsRes = await axios.get(`${BASE_URL}/public/store/${slug}/products/${prod.id}/reviews`);
+          const payload = reviewsRes.data?.data || reviewsRes.data || {};
+          const reviewItems = Array.isArray(payload.reviews) ? payload.reviews : [];
+          setReviews(reviewItems);
+          setReviewSummary({
+            ratingAvg: Number(payload.ratingAvg || payload.promedio || 0),
+            ratingCount: Number(payload.ratingCount || reviewItems.length || 0),
+          });
+        } catch {
+          setReviews([]);
         }
 
         try {
@@ -346,6 +367,13 @@ export default function UrbanoProductoDetalle() {
       </div>
     </div>
   );
+  const renderStars = (rating: number, size = 14) => (
+    <span className="inline-flex items-center gap-0.5 text-[#F59E0B]">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Icon key={index} icon={index < Math.round(rating || 0) ? 'solar:star-bold' : 'solar:star-linear'} width={size} />
+      ))}
+    </span>
+  );
 
   return (
     <div className="relative bg-white text-black font-sans w-full selection:bg-black selection:text-white" style={{ fontFamily: '"Inter", sans-serif' }}>
@@ -392,12 +420,7 @@ export default function UrbanoProductoDetalle() {
               </div>
             )}
 
-            <div className="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
-              <div className="relative inline-block bg-white px-5 py-3 rounded-lg shadow-lg">
-                <Icon icon="carbon:close-filled" className="absolute -top-2 -right-2 text-black text-xl bg-white rounded-full" />
-                <span className="text-xs font-bold">Nueva colección</span>
-              </div>
-            </div>
+
           </div>
 
           <div className="w-full lg:w-[45%] bg-white relative">
@@ -410,9 +433,31 @@ export default function UrbanoProductoDetalle() {
                 <h1 className="text-3xl lg:text-[2.5rem] font-bold tracking-tighter mb-4 leading-none">
                   {producto.descripcion}
                 </h1>
-                <p className="text-lg font-bold text-gray-900 mb-10">
-                  S/. {finalPrice.toFixed(2)}
-                </p>
+                {reviewSummary.ratingCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenAccordion('RESENAS')}
+                    className="mb-5 inline-flex items-center gap-2 text-[11px] font-bold text-gray-500 hover:text-black transition-colors"
+                  >
+                    {renderStars(reviewSummary.ratingAvg)}
+                    <span>{reviewSummary.ratingAvg.toFixed(1)} ({reviewSummary.ratingCount} reseñas)</span>
+                  </button>
+                )}
+                <div className="flex items-center gap-3 mb-10">
+                  <p className="text-lg font-bold text-gray-900">
+                    S/. {finalPrice.toFixed(2)}
+                  </p>
+                  {producto.enOferta && Number(producto.precioRegular) > variantPrice && (
+                    <>
+                      <span className="text-base font-medium text-gray-400 line-through">
+                        S/. {(Number(producto.precioRegular) + precioExtra).toFixed(2)}
+                      </span>
+                      <span className="bg-black text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1">
+                        -{producto.descuentoOferta}%
+                      </span>
+                    </>
+                  )}
+                </div>
 
                 {colorGroups.length > 0 ? colorGroups.map((grupo) => (
                   <div key={grupo.id} className="mb-10">
@@ -542,10 +587,10 @@ export default function UrbanoProductoDetalle() {
                 </div>
 
                 <div className="flex flex-col gap-5 text-[11px] font-medium text-black">
-                  <div className="flex gap-4 items-center"><Icon icon="solar:box-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>Envío gratis desde S/150</span></div>
-                  <div className="flex gap-4 items-center"><Icon icon="solar:star-fall-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>Producto disponible en tienda virtual</span></div>
-                  <div className="flex gap-4 items-center"><Icon icon="solar:shield-check-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>Compra segura con Falconext</span></div>
-                  <div className="flex gap-4 items-center"><Icon icon="solar:hand-stars-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>Diseño urbano, minimalista y premium</span></div>
+                  <div className="flex gap-4 items-center"><Icon icon="solar:box-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>{isOutOfStock ? 'Producto sin stock disponible' : `Stock disponible: ${currentStock} unidades`}</span></div>
+                  <div className="flex gap-4 items-center"><Icon icon="solar:tag-price-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>{producto.marca?.nombre || producto.marca ? `Marca: ${producto.marca?.nombre || producto.marca}` : 'Producto publicado por la tienda'}</span></div>
+                  <div className="flex gap-4 items-center"><Icon icon="solar:shield-check-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>Compra protegida con seguimiento de pedido</span></div>
+                  <div className="flex gap-4 items-center"><Icon icon="solar:delivery-linear" className="text-xl flex-shrink-0 text-gray-400" /><span>Entrega coordinada según la configuración del negocio</span></div>
                 </div>
               </div>
             </div>
@@ -578,6 +623,37 @@ export default function UrbanoProductoDetalle() {
                 <div className="text-[13px] leading-relaxed text-gray-600">
                   Coordina entrega, recojo o envío desde la tienda virtual. Los tiempos dependen de la configuración del negocio.
                 </div>
+              </AccordionItem>
+              <AccordionItem title="RESEÑAS" id="RESENAS">
+                {reviewSummary.ratingCount > 0 ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-[13px] font-bold text-black">
+                      {renderStars(reviewSummary.ratingAvg, 15)}
+                      <span>{reviewSummary.ratingAvg.toFixed(1)} de 5</span>
+                      <span className="text-gray-400">({reviewSummary.ratingCount})</span>
+                    </div>
+                    <div className="space-y-3">
+                      {reviews.slice(0, 6).map((review) => (
+                        <div key={review.id || `${review.clienteNombre}-${review.creadoEn}`} className="border border-gray-100 p-4">
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <div>
+                              <p className="text-[12px] font-bold text-black">{review.clienteNombre || 'Cliente verificado'}</p>
+                              {review.compraVerificada && (
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#3b8c6a]">Compra verificada</p>
+                              )}
+                            </div>
+                            {renderStars(Number(review.rating || 0), 12)}
+                          </div>
+                          {review.comentario && <p className="text-[12px] leading-relaxed text-gray-600">{review.comentario}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-[13px] leading-relaxed text-gray-600">
+                    Aún no hay reseñas publicadas para este producto.
+                  </div>
+                )}
               </AccordionItem>
             </div>
           </div>
@@ -613,7 +689,7 @@ export default function UrbanoProductoDetalle() {
           </section>
         )}
 
-        <UrbanoFooter tienda={tienda} />
+        <UrbanoFooter tienda={tienda} diseno={diseno} slug={slug || ''} categories={categorias} />
       </main>
 
       <UrbanoCartModal

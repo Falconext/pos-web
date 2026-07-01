@@ -3,6 +3,7 @@ import moment from 'moment';
 import { useFinanzasStore } from '@/zustand/finanzas';
 import { useAuthStore } from '@/zustand/auth';
 import { useSedesStore } from '@/zustand/sedes';
+import { useUsersStore } from '@/zustand/users';
 import { IChartDataFormatted } from './FinanceDashboardModel';
 import { pdf } from '@react-pdf/renderer';
 import React from 'react';
@@ -18,15 +19,26 @@ export function useFinanceDashboardViewModel() {
     const { kpis, chartData, metodosPago, conciliacion, getResumenFinanciero, isLoading } = useFinanzasStore();
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
+    const { usuarios, getAllUsers } = useUsersStore();
 
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
     const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true;
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const [selectedUsuarioId, setSelectedUsuarioId] = useState<number | null>(null);
     const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null);
+    // El filtro por vendedor solo aplica para administradores de empresa
+    const effectiveUsuarioId = isAdmin ? selectedUsuarioId : null;
 
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
+    ];
+
+    const usuariosOptions = [
+        { id: 0, value: 'Todos los vendedores' },
+        ...(usuarios ?? [])
+            .filter((u: any) => String(u?.estado ?? 'ACTIVO').toUpperCase() === 'ACTIVO')
+            .map((u: any) => ({ id: u.id, value: u.nombre }))
     ];
 
     const [fechaInicio, setFechaInicio] = useState<string>(
@@ -38,13 +50,14 @@ export function useFinanceDashboardViewModel() {
 
     useEffect(() => {
         if (isAdmin && esPrincipal) listarSedes();
+        if (isAdmin) getAllUsers({ page: 1, limit: 200 });
     }, [isAdmin, esPrincipal]);
 
     useEffect(() => {
         if (fechaInicio && fechaFin) {
-            getResumenFinanciero(fechaInicio, fechaFin, effectiveSedeId);
+            getResumenFinanciero(fechaInicio, fechaFin, effectiveSedeId, effectiveUsuarioId);
         }
-    }, [fechaInicio, fechaFin, effectiveSedeId]);
+    }, [fechaInicio, fechaFin, effectiveSedeId, effectiveUsuarioId]);
 
     const formattedChartData: IChartDataFormatted[] = useMemo(() => {
         return (chartData ?? []).map((row: any) => {
@@ -73,7 +86,7 @@ export function useFinanceDashboardViewModel() {
 
     const refreshData = () => {
         if (fechaInicio && fechaFin) {
-            getResumenFinanciero(fechaInicio, fechaFin, effectiveSedeId);
+            getResumenFinanciero(fechaInicio, fechaFin, effectiveSedeId, effectiveUsuarioId);
         }
     };
 
@@ -126,6 +139,11 @@ export function useFinanceDashboardViewModel() {
         esPrincipal,
         sedesOptions,
         handleSelectSede: (id: any) => setSelectedSedeId(id === 0 ? null : Number(id)),
+
+        // Vendedor filtering (solo admin)
+        usuariosOptions,
+        selectedUsuarioId,
+        handleSelectUsuario: (id: any) => setSelectedUsuarioId(id === 0 ? null : Number(id)),
 
         // Handlers
         handleDateChange,

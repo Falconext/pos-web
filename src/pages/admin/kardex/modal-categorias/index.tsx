@@ -59,8 +59,11 @@ const ModalCategories = ({ isOpenModal, closeModal, setIsOpenModal }: IPropsProd
         getAllCategories({})
     }, [])
 
-    const handleGetCategory = (data: IFormCategories) => {
-        setFormValues(data)
+    const handleGetCategory = (data: any) => {
+        setFormValues({
+            categoriaId: data.categoriaId,
+            nombre: data.nombre
+        })
         setPreviewUrl(data.imagenUrl || null)
         setImageFile(null)
         setIsEdit(true);

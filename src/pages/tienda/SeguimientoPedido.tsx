@@ -4,6 +4,8 @@ import { Icon } from '@iconify/react';
 import axios from 'axios';
 import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 import Footer from '@/components/tienda/Footer';
+import { templateRegistry } from '@/templates/registry';
+import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const TERMINAL_STATES = ['ENTREGADO', 'ENTREGADO_COMPLETADO', 'CANCELADO', 'CANCELADO_INTERNO', 'CANCELADO_CLIENTE'];
@@ -118,6 +120,7 @@ export default function SeguimientoPedido() {
     const borderRadius = getBordeRadius();
     const btnRadius = getBotonStyle();
     const fontFamily = getFontFamily();
+    const cp = diseno.colorPrimario || '#FF9500';
 
     const buscarPedido = async (codigoBusqueda: string) => {
         if (!codigoBusqueda.trim()) {
@@ -207,6 +210,36 @@ export default function SeguimientoPedido() {
         };
         return labels[estado] || estado;
     };
+
+    // ── Template Dispatcher ───────────────────────────────────────────────────
+    if (tienda && diseno.plantillaId) {
+        const templateConfig = templateRegistry[resolveTemplateId(diseno.plantillaId)];
+        if (templateConfig?.SeguimientoPage) {
+            const TemplateSeguimiento = templateConfig.SeguimientoPage;
+            return (
+                <TemplateSeguimiento
+                    slug={slug || ''}
+                    tienda={tienda}
+                    diseno={diseno}
+                    cp={cp}
+                    codigo={codigo}
+                    setCodigo={setCodigo}
+                    pedido={pedido}
+                    loading={loading}
+                    error={error}
+                    buscarPedido={buscarPedido}
+                    handleSubmit={handleSubmit}
+                    compartirSeguimiento={compartirSeguimiento}
+                    copiedLink={copiedLink}
+                    getEstadoSeguimiento={getEstadoSeguimiento}
+                    getEstadoColor={getEstadoColor}
+                    getEstadoLabel={getEstadoLabel}
+                    lastUpdated={lastUpdated}
+                    TERMINAL_STATES={TERMINAL_STATES}
+                />
+            );
+        }
+    }
 
     return (
         <div className={`min-h-screen bg-gradient-to-b from-[#F9FBFD] via-[#F6F7F9] to-[#F2F4F7] ${fontFamily}`} style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'sans-serif') }}>

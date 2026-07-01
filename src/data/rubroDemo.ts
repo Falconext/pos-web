@@ -159,14 +159,14 @@ const automotrizDemo: RubroDemo = {
   plantillaDefault: 'tecnica',
   colorDefault: '#1C1917',
   products: [
-    { id: 1, descripcion: 'Aceite Motor Mobil 1 5W-30 4L', precioUnitario: 89.90, precioOriginal: 110.00, imagenUrl: '/assets/autopartes/producto.png', stock: 30, categoria: { nombre: 'Lubricantes' }, marca: { nombre: 'Mobil' } },
-    { id: 2, descripcion: 'Pastillas de Freno Toyota Corolla', precioUnitario: 45.00, precioOriginal: 0, imagenUrl: '/assets/autopartes/producto.png', stock: 20, categoria: { nombre: 'Frenos' }, marca: { nombre: 'TRW' } },
-    { id: 3, descripcion: 'Batería Bosch 60Ah 12V', precioUnitario: 299.00, precioOriginal: 350.00, imagenUrl: '/assets/autopartes/producto.png', stock: 8, categoria: { nombre: 'Eléctrico' }, marca: { nombre: 'Bosch' } },
-    { id: 4, descripcion: 'Filtro de Aire Motor Honda', precioUnitario: 28.00, precioOriginal: 0, imagenUrl: '/assets/autopartes/producto.png', stock: 25, categoria: { nombre: 'Motor' }, marca: { nombre: 'Bosch' } },
-    { id: 5, descripcion: 'Amortiguador Monroe Trasero', precioUnitario: 159.00, precioOriginal: 200.00, imagenUrl: '/assets/autopartes/producto.png', stock: 6, categoria: { nombre: 'Motor' }, marca: { nombre: 'Monroe' } },
-    { id: 6, descripcion: 'Cámara de Reversa Universal HD', precioUnitario: 89.00, precioOriginal: 0, imagenUrl: '/assets/autopartes/producto.png', stock: 15, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Genérico' } },
-    { id: 7, descripcion: 'Llantas 195/65R15 Pirelli', precioUnitario: 280.00, precioOriginal: 320.00, imagenUrl: '/assets/autopartes/producto.png', stock: 16, categoria: { nombre: 'Motor' }, marca: { nombre: 'Pirelli' } },
-    { id: 8, descripcion: 'Extintor Vehicular 1kg CO2', precioUnitario: 35.00, precioOriginal: 0, imagenUrl: '/assets/autopartes/producto.png', stock: 40, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Solkaflam' } },
+    { id: 1, descripcion: 'Aceite Motor Mobil 1 5W-30 4L', precioUnitario: 89.90, precioOriginal: 110.00, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 30, categoria: { nombre: 'Lubricantes' }, marca: { nombre: 'Mobil' } },
+    { id: 2, descripcion: 'Pastillas de Freno Toyota Corolla', precioUnitario: 45.00, precioOriginal: 0, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 20, categoria: { nombre: 'Frenos' }, marca: { nombre: 'TRW' } },
+    { id: 3, descripcion: 'Batería Bosch 60Ah 12V', precioUnitario: 299.00, precioOriginal: 350.00, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 8, categoria: { nombre: 'Eléctrico' }, marca: { nombre: 'Bosch' } },
+    { id: 4, descripcion: 'Filtro de Aire Motor Honda', precioUnitario: 28.00, precioOriginal: 0, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 25, categoria: { nombre: 'Motor' }, marca: { nombre: 'Bosch' } },
+    { id: 5, descripcion: 'Amortiguador Monroe Trasero', precioUnitario: 159.00, precioOriginal: 200.00, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 6, categoria: { nombre: 'Motor' }, marca: { nombre: 'Monroe' } },
+    { id: 6, descripcion: 'Cámara de Reversa Universal HD', precioUnitario: 89.00, precioOriginal: 0, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 15, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Genérico' } },
+    { id: 7, descripcion: 'Llantas 195/65R15 Pirelli', precioUnitario: 280.00, precioOriginal: 320.00, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 16, categoria: { nombre: 'Motor' }, marca: { nombre: 'Pirelli' } },
+    { id: 8, descripcion: 'Extintor Vehicular 1kg CO2', precioUnitario: 35.00, precioOriginal: 0, imagenUrl: '/assets/templates/autopartes/producto.png', stock: 40, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Solkaflam' } },
   ],
 };
 

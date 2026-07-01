@@ -57,7 +57,7 @@ const ProductSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                     {isLoading ? (
                         <div className="p-4 text-center dark:text-gray-400">Cargando...</div>
                     ) : products && products.length > 0 ? (
-                        <table className="w-full text-sm text-left">
+                        <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm text-left">
                             <thead className="text-xs text-gray-700 dark:text-gray-200 uppercase bg-gray-50 dark:bg-slate-800">
                                 <tr>
                                     <th className="px-4 py-3">Código</th>
@@ -89,7 +89,7 @@ const ProductSearchModal = ({ isOpen, onClose, onSelect }: IProps) => {
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>
+                        </table></div>
                     ) : (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron productos

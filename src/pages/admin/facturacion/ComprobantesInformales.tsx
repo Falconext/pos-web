@@ -77,6 +77,7 @@ const ComprobantesInformales = () => {
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
     const [detalleComprobanteId, setDetalleComprobanteId] = useState<number | null>(null);
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const pages = [];
@@ -145,7 +146,10 @@ const ComprobantesInformales = () => {
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
                 : item.estadoPago,
+            estadoEnvioSunat: item.estadoEnvioSunat,
             despachoCompleto,
+            despachoFecha,
+            _item: item,
         };
 
         const acciones = (
@@ -432,8 +436,17 @@ const ComprobantesInformales = () => {
         setSearchClient(e.target.value)
     }
 
+    const activeFilterCount = [
+        searchClient.trim(),
+        fechaInicio,
+        fechaFin,
+        stateInvoice !== 'TODOS' ? stateInvoice : '',
+        selectedSedeId,
+        selectedUsuarioId,
+    ].filter(Boolean).length;
+
     return (
-        <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
+        <div className="min-h-screen overflow-x-hidden bg-gray-50 px-3 pb-4 dark:bg-[#0A0D14] sm:px-2">
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
@@ -457,15 +470,15 @@ const ComprobantesInformales = () => {
             />
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:mb-6 sm:flex-row sm:items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Notas de venta</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">Notas de venta</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de notas de pedido</p>
                 </div>
                 <button
                     type="button"
                     onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', defaultClient: 'CLIENTES_VARIOS' } })}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:w-auto sm:py-2"
                 >
                     <Icon icon="solar:add-circle-bold" className="text-lg" />
                     Nueva venta
@@ -475,20 +488,35 @@ const ComprobantesInformales = () => {
             {/* Main Content Card */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
-                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
+                <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600" />
+                            <div className="min-w-0">
+                                <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
+                                <p className="truncate text-xs text-gray-400 md:hidden">
+                                    {activeFilterCount} activos · {moment(fechaInicio).format('DD/MM')} - {moment(fechaFin).format('DD/MM')}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileFiltersOpen((value) => !value)}
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-black text-white shadow-lg shadow-blue-500/20 md:hidden"
+                        >
+                            {isMobileFiltersOpen ? 'Ocultar' : 'Ver filtros'}
+                            <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-6`}>
                         <div className="">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
                         <div>
-                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
+                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
-                            <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
+                            <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
@@ -533,10 +561,52 @@ const ComprobantesInformales = () => {
                 </div>
 
                 {/* Table Content */}
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                     {productsTable?.length > 0 ? (
                         <>
-                            <div className="overflow-x-auto">
+                            <div className="space-y-3 md:hidden">
+                                {productsTable.map((row: any) => (
+                                    <article key={row.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0F172A]">
+                                        <div className="mb-3 flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-[11px] font-black uppercase tracking-wide text-gray-400">{row.sede}</p>
+                                                <h3 className="mt-1 truncate text-base font-black text-gray-900 dark:text-white">
+                                                    {row.comprobante} {row.serie}-{row.correlativo}
+                                                </h3>
+                                                <p className="text-xs font-semibold text-gray-500">{row.fechaEmisión}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); setMenuAnchor(e.currentTarget); setSelectedMenuRow(row); }}
+                                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200"
+                                            >
+                                                <Icon icon="mdi:dots-vertical" width={20} height={20} />
+                                            </button>
+                                        </div>
+
+                                        <div className="mb-3 rounded-2xl bg-gray-50 p-3 dark:bg-slate-900/60">
+                                            <p className="truncate text-sm font-black uppercase text-gray-900 dark:text-white">{row.client || 'Cliente no registrado'}</p>
+                                            <p className="text-xs text-gray-500">{row.document || '-'} · {row.vendedor || 'Sin vendedor'}</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 rounded-2xl bg-gray-50 p-3 dark:bg-slate-900/60">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-gray-400">Importe</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white">{row.total}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-gray-400">Saldo</p>
+                                                <p className="text-sm font-black text-amber-600 dark:text-amber-300">{row.saldo}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-gray-400">Estado</p>
+                                                <p className="truncate text-sm font-black text-gray-900 dark:text-white">{row.estado || '-'}</p>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                            <div className="hidden overflow-x-auto md:block">
                                 <DataTable bodyData={productsTable}
                                     headerColumns={[
                                         'Fecha',

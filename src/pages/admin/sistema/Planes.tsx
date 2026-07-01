@@ -159,7 +159,7 @@ const Planes = () => {
                             {!hasProductoScope && (
                                 <div>
                                     <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">Producto del plan</p>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {([
                                             { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                                             { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
@@ -184,7 +184,7 @@ const Planes = () => {
                             {!hasNegocioScope && (
                                 <div>
                                     <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">Plataforma del plan</p>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {([
                                             { id: 'falconext', label: 'Falconext', icon: 'solar:bolt-bold-duotone', color: '#0EA5E9' },
                                             { id: 'krezka', label: 'Krezka', icon: 'solar:star-bold-duotone', color: '#6366F1' },
@@ -206,7 +206,7 @@ const Planes = () => {
                                     </div>
                                 </div>
                             )}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <InputPro isLabel label="Costo (S/)" name="costo" type="number" value={vm.form.costo} onChange={(e) => vm.setForm({ ...vm.form, costo: Number(e.target.value) })} />
                                 <InputPro isLabel label="Duración (Días)" name="duracionDias" type="number" value={vm.form.duracionDias} onChange={(e) => vm.setForm({ ...vm.form, duracionDias: Number(e.target.value) })} />
                             </div>
@@ -215,7 +215,7 @@ const Planes = () => {
                     <div className="border-t border-gray-100 dark:border-slate-700 my-4"></div>
                     <div className="rounded-lg">
                         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wider">Límites</h4>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <InputPro
                                     isLabel

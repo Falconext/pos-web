@@ -11,6 +11,7 @@ import ReviewFeedbackModal from '@/components/tienda/ReviewFeedbackModal';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { useCompareStore } from '@/zustand/compare';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
+import { withPricing, withPricingList } from '@/templates/shared/pricing';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -226,7 +227,7 @@ export default function GadgetsProductoDetalle() {
           axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
           axios.get(`${BASE_URL}/public/store/${slug}`),
         ]);
-        const prod = prodRes.data.data || prodRes.data;
+        const prod = withPricing(prodRes.data.data || prodRes.data);
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
         setTienda(tiendaData);
@@ -270,13 +271,13 @@ export default function GadgetsProductoDetalle() {
         try {
           const productsRes = await axios.get(`${BASE_URL}/public/store/${slug}/products`, { params: { limit: 60 } });
           const products = productsRes.data?.data || productsRes.data || [];
-          setSearchProducts(Array.isArray(products) ? products : []);
+          setSearchProducts(Array.isArray(products) ? withPricingList(products) : []);
         } catch { }
 
         try {
           const relRes = await axios.get(`${BASE_URL}/public/store/${slug}/products/${id}/related`);
           const rel = relRes.data.data || relRes.data;
-          setRelatedProducts(Array.isArray(rel) ? rel : []);
+          setRelatedProducts(Array.isArray(rel) ? withPricingList(rel) : []);
         } catch { }
       } catch (e) {
         console.error('Error cargando producto gadgets:', e);

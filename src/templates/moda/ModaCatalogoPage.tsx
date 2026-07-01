@@ -80,8 +80,7 @@ function catalogTitle(search: string, selectedCategories: string[]) {
   return "men's best sellers";
 }
 
-export default function ModaCatalogoPage({
-  tienda, slug, cp, navigate,
+export default function ModaCatalogoPage({ tienda, slug, cp, navigate,
   productos, sortedProductos, loading, total, page, cargarProductos,
   allCategorías, filteredMarcas,
   selectedCategorías, setSelectedCategorías, selectedMarcas, setSelectedMarcas,
@@ -93,8 +92,7 @@ export default function ModaCatalogoPage({
   actualizarCantidad, irACheckout, agregarAlCarritoDirecto,
   showMobileFilters, setShowMobileFilters,
   showPersonalizarModal, setShowPersonalizarModal,
-  productoAPersonalizar, setProductoAPersonalizar, modificadoresProducto,
-}: TemplateCatalogoPageProps) {
+  productoAPersonalizar, setProductoAPersonalizar, modificadoresProducto, diseno }: TemplateCatalogoPageProps) {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const fallback = useMemo(() => buildFallbackProducts(), []);
   const productSource = sortedProductos.length > 0 ? sortedProductos : fallback;

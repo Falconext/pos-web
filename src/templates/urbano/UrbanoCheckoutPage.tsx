@@ -47,6 +47,20 @@ export default function UrbanoCheckoutPage({
   showPaymentModal, setShowPaymentModal, pedidoCreado, enviarPedido,
 }: TemplateCheckoutPageProps) {
   const navigate = useNavigate();
+  const isPreview = slug === 'preview';
+  const safeFormData = {
+    clienteNombre: '',
+    clienteTelefono: '',
+    clienteEmail: '',
+    clienteDireccion: '',
+    clienteReferencia: '',
+    medioPago: 'EFECTIVO',
+    observaciones: '',
+    tipoEntrega: 'RECOJO',
+    ...(formData || {}),
+  };
+  const safeErrores = erroresForm || {};
+  const cartItems = Array.isArray(carritoState) ? carritoState : [];
   const subtotal = calcularSubtotal();
   const envio = calcularCostoEnvio();
   const total = calcularTotal();
@@ -55,20 +69,45 @@ export default function UrbanoCheckoutPage({
     .filter(Boolean)))
     .map((nombre) => ({ nombre: String(nombre) }));
 
+  const goStore = () => {
+    if (isPreview) {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'home' }));
+      return;
+    }
+    navigate(`/tienda/${slug}`);
+  };
+
+  const goCatalog = (query?: string) => {
+    if (isPreview) {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+      return;
+    }
+    navigate(`/tienda/${slug}/catalogo${query ? `?search=${encodeURIComponent(query)}` : ''}`);
+  };
+
+  const goProduct = (product: any) => {
+    window.scrollTo(0, 0);
+    if (isPreview) {
+      window.dispatchEvent(new CustomEvent('preview-product', { detail: product }));
+      return;
+    }
+    navigate(`/tienda/${slug}/producto/${product.id}`);
+  };
+
   const cotizarPorWhatsApp = () => {
-    const raw = String(formData.clienteTelefono || '').replace(/\D/g, '');
+    const raw = String(safeFormData.clienteTelefono || '').replace(/\D/g, '');
     if (raw.length < 9) {
       alert('Ingresa tu número de WhatsApp en "Teléfono" para enviarte la cotización.');
       return;
     }
     const phone = raw.length === 9 ? `51${raw}` : raw;
     const nombreTienda = tienda?.nombreComercial || tienda?.nombre || 'Tienda';
-    const lineas = carritoState.map((item: any) =>
+    const lineas = cartItems.map((item: any) =>
       `• ${item.cantidad}x ${item.descripcion} — S/ ${(Number(item.precioUnitario) * item.cantidad).toFixed(2)}`
     ).join('\n');
     const mensaje =
       `*COTIZACIÓN — ${nombreTienda}*\n` +
-      (formData.clienteNombre ? `Cliente: ${formData.clienteNombre}\n` : '') +
+      (safeFormData.clienteNombre ? `Cliente: ${safeFormData.clienteNombre}\n` : '') +
       `\n${lineas}\n\n` +
       `Subtotal: S/ ${subtotal.toFixed(2)}\n` +
       `Envío: ${envio === 0 ? 'Gratis' : `S/ ${envio.toFixed(2)}`}\n` +
@@ -85,24 +124,28 @@ export default function UrbanoCheckoutPage({
         slug={slug || ''}
         cp={cp}
         carritoSize={carritoState.reduce((s: number, i: any) => s + Number(i.cantidad || 1), 0)}
-        onOpenCart={() => navigate(`/tienda/${slug}`)}
+        onOpenCart={goStore}
         searchQuery={search}
         setSearchQuery={setSearch}
-        onSearchSubmit={(e: any) => { e.preventDefault(); }}
+        onSearchSubmit={(e: any, value?: string) => {
+          e.preventDefault();
+          const term = String(value || search || '').trim();
+          goCatalog(term);
+        }}
         categories={headerCategories}
       />
 
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-6 pb-12 lg:pb-20">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-12 pt-6 pb-12 lg:pb-20">
 
         {/* Title */}
-        <div className="mb-14 border-b-2 border-black pb-6">
+        <div className="mb-8 sm:mb-14 border-b-2 border-black pb-6">
           <p className="text-[11px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-3">Compra</p>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-black leading-none" style={{ fontFamily: IMPACT }}>
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter uppercase text-black leading-none" style={{ fontFamily: IMPACT }}>
             Finalizar Compra
           </h1>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
 
           {/* Left Column (Forms) */}
           <div className="flex-1 min-w-0 space-y-12">
@@ -115,12 +158,12 @@ export default function UrbanoCheckoutPage({
                   {configEnvio.aceptaEnvio && (
                     <label
                       className={`flex-1 flex flex-col items-center justify-center gap-2 py-6 cursor-pointer border-2 transition-all ${
-                        formData.tipoEntrega === 'ENVIO'
+                        safeFormData.tipoEntrega === 'ENVIO'
                           ? 'border-black bg-black text-white'
                           : 'border-gray-200 text-gray-600 hover:border-black'
                       }`}
                     >
-                      <input type="radio" className="hidden" name="tipoEntrega" value="ENVIO" checked={formData.tipoEntrega === 'ENVIO'} onChange={handleChange} />
+                      <input type="radio" className="hidden" name="tipoEntrega" value="ENVIO" checked={safeFormData.tipoEntrega === 'ENVIO'} onChange={handleChange} />
                       <Icon icon="solar:delivery-linear" width={24} />
                       <span className="text-[11px] font-bold tracking-[0.15em] uppercase">Envío a domicilio</span>
                     </label>
@@ -128,19 +171,19 @@ export default function UrbanoCheckoutPage({
                   {configEnvio.aceptaRecojo && (
                     <label
                       className={`flex-1 flex flex-col items-center justify-center gap-2 py-6 cursor-pointer border-2 transition-all ${
-                        formData.tipoEntrega === 'RECOJO'
+                        safeFormData.tipoEntrega === 'RECOJO'
                           ? 'border-black bg-black text-white'
                           : 'border-gray-200 text-gray-600 hover:border-black'
                       }`}
                     >
-                      <input type="radio" className="hidden" name="tipoEntrega" value="RECOJO" checked={formData.tipoEntrega === 'RECOJO'} onChange={handleChange} />
+                      <input type="radio" className="hidden" name="tipoEntrega" value="RECOJO" checked={safeFormData.tipoEntrega === 'RECOJO'} onChange={handleChange} />
                       <Icon icon="solar:shop-linear" width={24} />
                       <span className="text-[11px] font-bold tracking-[0.15em] uppercase">Recojo en tienda</span>
                     </label>
                   )}
                 </div>
 
-                {formData.tipoEntrega === 'RECOJO' && configEnvio.direccionRecojo && (
+                {safeFormData.tipoEntrega === 'RECOJO' && configEnvio.direccionRecojo && (
                   <div className="mt-4 flex items-start gap-3 bg-[#F4F5F6] p-4 border-l-2 border-black text-sm">
                     <Icon icon="solar:map-point-bold" width={18} className="text-black flex-shrink-0 mt-0.5" />
                     <span className="text-gray-600 leading-relaxed">
@@ -161,22 +204,22 @@ export default function UrbanoCheckoutPage({
                       type="text"
                       name="clienteNombre"
                       placeholder="Nombre completo *"
-                      value={formData.clienteNombre}
+                      value={safeFormData.clienteNombre}
                       onChange={handleChange}
-                      className={inputCls('clienteNombre', erroresForm)}
+                      className={inputCls('clienteNombre', safeErrores)}
                     />
-                    {erroresForm.clienteNombre && <p className="text-red-500 text-xs mt-1.5 font-medium">{erroresForm.clienteNombre}</p>}
+                    {safeErrores.clienteNombre && <p className="text-red-500 text-xs mt-1.5 font-medium">{safeErrores.clienteNombre}</p>}
                   </div>
                   <div>
                     <input
                       type="tel"
                       name="clienteTelefono"
                       placeholder="Teléfono *"
-                      value={formData.clienteTelefono}
+                      value={safeFormData.clienteTelefono}
                       onChange={handleChange}
-                      className={inputCls('clienteTelefono', erroresForm)}
+                      className={inputCls('clienteTelefono', safeErrores)}
                     />
-                    {erroresForm.clienteTelefono && <p className="text-red-500 text-xs mt-1.5 font-medium">{erroresForm.clienteTelefono}</p>}
+                    {safeErrores.clienteTelefono && <p className="text-red-500 text-xs mt-1.5 font-medium">{safeErrores.clienteTelefono}</p>}
                   </div>
                 </div>
                 <div>
@@ -184,32 +227,32 @@ export default function UrbanoCheckoutPage({
                     type="email"
                     name="clienteEmail"
                     placeholder="Correo electrónico (opcional)"
-                    value={formData.clienteEmail}
+                    value={safeFormData.clienteEmail}
                     onChange={handleChange}
-                    className={inputCls('clienteEmail', erroresForm)}
+                    className={inputCls('clienteEmail', safeErrores)}
                   />
-                  {erroresForm.clienteEmail && <p className="text-red-500 text-xs mt-1.5 font-medium">{erroresForm.clienteEmail}</p>}
+                  {safeErrores.clienteEmail && <p className="text-red-500 text-xs mt-1.5 font-medium">{safeErrores.clienteEmail}</p>}
                 </div>
 
-                {formData.tipoEntrega === 'ENVIO' && (
+                {safeFormData.tipoEntrega === 'ENVIO' && (
                   <>
                     <div>
                       <input
                         type="text"
                         name="clienteDireccion"
                         placeholder="Dirección de envío *"
-                        value={formData.clienteDireccion}
+                        value={safeFormData.clienteDireccion}
                         onChange={handleChange}
-                        className={inputCls('clienteDireccion', erroresForm)}
+                        className={inputCls('clienteDireccion', safeErrores)}
                       />
-                      {erroresForm.clienteDireccion && <p className="text-red-500 text-xs mt-1.5 font-medium">{erroresForm.clienteDireccion}</p>}
+                      {safeErrores.clienteDireccion && <p className="text-red-500 text-xs mt-1.5 font-medium">{safeErrores.clienteDireccion}</p>}
                     </div>
                     <div>
                       <input
                         type="text"
                         name="clienteReferencia"
                         placeholder="Referencia (ej: casa blanca, frente a parque)"
-                        value={formData.clienteReferencia}
+                        value={safeFormData.clienteReferencia}
                         onChange={handleChange}
                         className="w-full bg-white text-black px-4 py-3.5 text-sm border-2 border-gray-200 focus:border-black transition-colors focus:outline-none placeholder-gray-400"
                       />
@@ -229,9 +272,11 @@ export default function UrbanoCheckoutPage({
                     method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
                     : method === 'TRANSFERENCIA' ? Boolean(configPago?.cuentasBancarias?.length > 0)
                     : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                    : true;
+                    : method === 'YAPE' ? Boolean(configPago?.yapeQR || configPago?.yapeQrUrl || configPago?.yapeNumero)
+                    : method === 'PLIN' ? Boolean(configPago?.plinQR || configPago?.plinQrUrl || configPago?.plinNumero)
+                    : false;
                   if (!show) return null;
-                  const active = formData.medioPago === method;
+                  const active = safeFormData.medioPago === method;
                   return (
                     <label
                       key={method}
@@ -247,7 +292,7 @@ export default function UrbanoCheckoutPage({
                 })}
               </div>
 
-              {formData.medioPago === 'TRANSFERENCIA' && configPago?.cuentasBancarias?.length > 0 && (
+              {safeFormData.medioPago === 'TRANSFERENCIA' && configPago?.cuentasBancarias?.length > 0 && (
                 <div className="mt-6">
                   <p className="text-[11px] text-gray-400 uppercase tracking-[0.2em] mb-3">Cuentas Disponibles</p>
                   <div className="grid grid-cols-1 gap-3">
@@ -272,7 +317,7 @@ export default function UrbanoCheckoutPage({
               <textarea
                 name="observaciones"
                 placeholder="Instrucciones especiales para el pedido..."
-                value={formData.observaciones}
+                value={safeFormData.observaciones}
                 onChange={handleChange}
                 rows={3}
                 className="w-full bg-white text-black px-4 py-3.5 text-sm border-2 border-gray-200 focus:border-black transition-colors focus:outline-none placeholder-gray-400 resize-none"
@@ -288,8 +333,8 @@ export default function UrbanoCheckoutPage({
               </h2>
 
               <div className="space-y-4 mb-6">
-                {carritoState.map((item: any) => (
-                  <div key={item.id} className="flex gap-4">
+                {cartItems.map((item: any) => (
+                  <div key={item.id} className="flex gap-3 sm:gap-4">
                     <div className="relative w-16 h-20 bg-[#F4F5F6] border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {item.imagenUrl
                         ? <img src={item.imagenUrl} className="w-full h-full object-cover" alt="" />
@@ -322,7 +367,12 @@ export default function UrbanoCheckoutPage({
                             <Icon icon="mdi:plus" width={12} />
                           </button>
                         </div>
-                        <span className="text-[13px] font-bold text-black">S/ {(Number(item.precioUnitario) * item.cantidad).toFixed(2)}</span>
+                        <span className="text-[13px] font-bold text-black flex items-baseline gap-1.5">
+                          S/ {(Number(item.precioUnitario) * item.cantidad).toFixed(2)}
+                          {item.enOferta && Number(item.precioRegular) > Number(item.precioUnitario) && (
+                            <span className="text-[10px] font-medium text-gray-400 line-through">S/ {(Number(item.precioRegular) * item.cantidad).toFixed(2)}</span>
+                          )}
+                        </span>
                       </div>
                     </div>
                     <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-black transition-colors self-start">
@@ -360,8 +410,8 @@ export default function UrbanoCheckoutPage({
                   </div>
                 )}
 
-                {erroresForm._minimo && (
-                  <p className="text-red-500 text-xs font-medium text-center mt-4">{erroresForm._minimo}</p>
+                {safeErrores._minimo && (
+                  <p className="text-red-500 text-xs font-medium text-center mt-4">{safeErrores._minimo}</p>
                 )}
 
                 <div className="flex justify-between items-baseline pt-6 border-t-2 border-black mt-4">
@@ -373,7 +423,7 @@ export default function UrbanoCheckoutPage({
 
                 <button
                   onClick={onSubmit}
-                  disabled={enviando || carritoState.length === 0}
+                  disabled={enviando || cartItems.length === 0}
                   className="group w-full py-4 mt-6 bg-black text-white font-bold text-[11px] tracking-[0.2em] uppercase border-2 border-black transition-all hover:bg-white hover:text-black disabled:opacity-40 disabled:hover:bg-black disabled:hover:text-white disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 >
                   {enviando
@@ -388,7 +438,7 @@ export default function UrbanoCheckoutPage({
 
                 <button
                   onClick={cotizarPorWhatsApp}
-                  disabled={carritoState.length === 0}
+                  disabled={cartItems.length === 0}
                   className="w-full py-4 mt-3 bg-white text-black font-bold text-[11px] tracking-[0.2em] uppercase border-2 border-black transition-all hover:bg-[#25D366] hover:border-[#25D366] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 >
                   <Icon icon="ic:baseline-whatsapp" width={18} />
@@ -401,7 +451,7 @@ export default function UrbanoCheckoutPage({
             </div>
 
             <button
-              onClick={() => navigate(`/tienda/${slug}`)}
+              onClick={goStore}
               className="w-full text-center mt-6 text-[11px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-black transition-colors underline underline-offset-4"
             >
               Volver a la tienda
@@ -422,7 +472,7 @@ export default function UrbanoCheckoutPage({
                 <div key={p.id} className="flex flex-col group">
                   <div
                     className="w-full aspect-[4/5] bg-[#F4F5F6] overflow-hidden mb-4 cursor-pointer relative"
-                    onClick={() => { window.scrollTo(0, 0); navigate(`/tienda/${slug}/producto/${p.id}`); }}
+                    onClick={() => goProduct(p)}
                   >
                     {p.imagenUrl ? (
                       <img
@@ -438,7 +488,7 @@ export default function UrbanoCheckoutPage({
                   </div>
                   <h3
                     className="text-xs sm:text-[13px] font-bold uppercase text-black truncate pr-2 mb-1 cursor-pointer"
-                    onClick={() => { window.scrollTo(0, 0); navigate(`/tienda/${slug}/producto/${p.id}`); }}
+                    onClick={() => goProduct(p)}
                   >
                     {p.descripcion}
                   </h3>
@@ -458,13 +508,13 @@ export default function UrbanoCheckoutPage({
         </section>
       )}
 
-      <UrbanoFooter tienda={tienda} />
+      <UrbanoFooter tienda={tienda} diseno={diseno} slug={slug} categories={headerCategories} />
 
       {pedidoCreado && (
         <PaymentConfirmationModal
           isOpen={showPaymentModal}
           onClose={() => { setShowPaymentModal(false); window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`; }}
-          orderData={{ id: pedidoCreado.id, codigoSeguimiento: pedidoCreado.codigoSeguimiento, total: pedidoCreado.total || calcularTotal(), medioPago: formData.medioPago, tipoEntrega: formData.tipoEntrega, clienteNombre: formData.clienteNombre }}
+          orderData={{ id: pedidoCreado.id, codigoSeguimiento: pedidoCreado.codigoSeguimiento, total: pedidoCreado.total || calcularTotal(), medioPago: safeFormData.medioPago, tipoEntrega: safeFormData.tipoEntrega, clienteNombre: safeFormData.clienteNombre }}
           paymentConfig={configPago ? { yapeQR: configPago.yapeQR || configPago.yapeQrUrl || undefined, plinQR: configPago.plinQR || configPago.plinQrUrl || undefined, yapeNumero: configPago.yapeNumero || undefined, plinNumero: configPago.plinNumero || undefined, whatsappTienda: configPago.whatsappTienda || undefined } : undefined}
           storeSlug={slug || ''}
         />

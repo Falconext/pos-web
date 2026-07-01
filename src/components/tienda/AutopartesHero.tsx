@@ -14,10 +14,10 @@ export default function AutopartesHero({ cp, slug, diseno, productos }: Autopart
 
   const heroTitle = diseno?.heroTitle || "Frenos de Motor\nAlta Calidad";
   const heroSubtitle = diseno?.heroSubtitle || "Instalación de repuestos en los servicios de nuestros socios. Por tiempo limitado para clientes nuevos, obtén envío gratis en tus pedidos.";
-  const heroImage = diseno?.autopartesHeroImageUrl || '/assets/autopartes/banner1.png';
-  const sideTopImage = diseno?.autopartesSideTopImageUrl || '/assets/autopartes/banner2.png';
-  const sideBottomImage = diseno?.autopartesSideBottomImageUrl || '/assets/autopartes/banner3.png';
-  const vehicleImage = diseno?.autopartesVehicleImageUrl || '/assets/autopartes/banner4.png';
+  const heroImage = diseno?.autopartesHeroImageUrl || '/assets/templates/autopartes/banner1.png';
+  const sideTopImage = diseno?.autopartesSideTopImageUrl || '/assets/templates/autopartes/banner2.png';
+  const sideBottomImage = diseno?.autopartesSideBottomImageUrl || '/assets/templates/autopartes/banner3.png';
+  const vehicleImage = diseno?.autopartesVehicleImageUrl || '/assets/templates/autopartes/banner4.png';
 
   return (
     <div className="w-full flex flex-col gap-6">

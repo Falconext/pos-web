@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface ModaHeaderProps {
+  diseno?: any;
   tienda: any;
   slug: string;
   cp: string;
@@ -59,25 +60,23 @@ const menuBase = {
   },
 };
 
-export default function ModaHeader({
-  tienda,
+export default function ModaHeader({ tienda,
   slug,
   carritoSize,
   onOpenCart,
   searchQuery,
   setSearchQuery,
   onSearchSubmit,
-  allCategories = [],
-}: ModaHeaderProps) {
+  allCategories = [], diseno }: ModaHeaderProps) {
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState<MenuKey>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const brandName = useMemo(() => {
-    const name = tienda?.diseno?.modaBrandName || tienda?.nombre || 'chiclara';
+    const name = (diseno || tienda?.diseno)?.modaBrandName || tienda?.nombre || 'chiclara';
     return String(name).replace(/\s+/g, ' ').trim();
-  }, [tienda?.diseno?.modaBrandName, tienda?.nombre]);
+  }, [(diseno || tienda?.diseno)?.modaBrandName, tienda?.nombre]);
 
   const goCatalog = (query?: string) => {
     if (slug === 'preview') {
@@ -85,6 +84,14 @@ export default function ModaHeader({
       return;
     }
     navigate(query ? `/tienda/${slug}/catalogo?search=${encodeURIComponent(query)}` : `/tienda/${slug}/catalogo`);
+  };
+
+  const goTracking = () => {
+    if (slug === 'preview') {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'checkout' }));
+      return;
+    }
+    navigate(`/tienda/${slug}/seguimiento`);
   };
 
   const menu = activeMenu ? menuBase[activeMenu] : null;
@@ -96,7 +103,7 @@ export default function ModaHeader({
           <Icon icon="solar:arrow-left-linear" width={22} />
         </button>
         <p className="text-[12px] md:text-[15px] font-black tracking-[-0.01em]">
-          {tienda?.diseno?.modaPromoText || 'Oferta de verano: hasta 30% OFF'}
+          {(diseno || tienda?.diseno)?.modaPromoText || 'Oferta de verano: hasta 30% OFF'}
         </p>
         <button className="justify-self-end text-white/80 hover:text-white" onClick={() => goCatalog('ofertas')} aria-label="Promoción siguiente">
           <Icon icon="solar:arrow-right-linear" width={22} />
@@ -177,6 +184,9 @@ export default function ModaHeader({
           <button className="hover:opacity-60" aria-label="Cuenta">
             <Icon icon="solar:user-linear" width={25} />
           </button>
+          <button onClick={goTracking} className="hover:opacity-60" aria-label="Rastrear mi pedido" title="Rastrear mi pedido">
+            <Icon icon="solar:box-minimalistic-linear" width={25} />
+          </button>
           <button className="relative hover:opacity-60" onClick={onOpenCart} aria-label="Carrito">
             <Icon icon="solar:bag-4-linear" width={27} />
             <span className="absolute -right-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full bg-black text-[11px] font-black text-white">
@@ -205,6 +215,10 @@ export default function ModaHeader({
               if (!name) return null;
               return <button key={name} onClick={() => goCatalog(name)} className="text-left">{name}</button>;
             })}
+            <button onClick={() => { setMobileOpen(false); goTracking(); }} className="mt-1 flex items-center gap-2 border-t border-neutral-200 pt-4 text-left">
+              <Icon icon="solar:box-minimalistic-linear" width={20} />
+              Rastrear mi pedido
+            </button>
           </div>
         </div>
       )}

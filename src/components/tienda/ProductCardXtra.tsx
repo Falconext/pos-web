@@ -8,6 +8,8 @@ interface Props {
     descripcion: string;
     precioUnitario: number;
     precioOriginal?: number;
+    precioRegular?: number;
+    enOferta?: boolean;
     imagenUrl: string;
     stock: number;
     ratingAvg?: number;
@@ -18,15 +20,15 @@ interface Props {
   };
   slug: string;
   diseno: { colorPrimario: string; colorAccento?: string };
-  onAddToCart: () => void;
+  onAddToCart: (producto?: any) => void;
   onClick?: () => void;
 }
 
 export default function ProductCardXtra({ producto, slug, diseno, onClick, onAddToCart }: Props) {
   const cp = diseno?.colorPrimario ?? '#2563EB';
   const price = Number(producto.precioUnitario || 0);
-  const originalPrice = Number(producto.precioOriginal || 0);
-  const hasDiscount = !!(originalPrice && originalPrice > price);
+  const originalPrice = Number(producto.precioOriginal || producto.precioRegular || 0);
+  const hasDiscount = Boolean(producto.enOferta) && !!(originalPrice && originalPrice > price);
   const discountPct = hasDiscount
     ? Math.round((1 - price / originalPrice) * 100)
     : 0;
@@ -38,13 +40,8 @@ export default function ProductCardXtra({ producto, slug, diseno, onClick, onAdd
   const hasHalf = rating % 1 !== 0;
   const isOutOfStock = Number(producto.stock) <= 0;
 
-  const tickerText = `⚡ HOT SALE ${discountPct}% OFF `;
-
   return (
     <>
-      {/* Marquee keyframes — injected once, harmless if duplicated */}
-      <style>{`@keyframes xtra-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
-
       <div
         className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group"
         onClick={onClick}
@@ -52,20 +49,12 @@ export default function ProductCardXtra({ producto, slug, diseno, onClick, onAdd
         {/* ── Image area ── */}
         <div className="relative bg-white" style={{ minHeight: 220 }}>
 
-          {/* Sale + discount badges — top left */}
+          {/* Badge de oferta — arriba izquierda */}
           {hasDiscount && (
-            <div className="absolute top-3 left-3 z-10 flex flex-col items-center gap-1.5">
-              <span
-                className="px-3 py-0.5 rounded-full text-[11px] font-bold text-white leading-tight"
-                style={{ background: cp }}
-              >
-                Sale!
-              </span>
-              <span
-                className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
-                style={{ background: cp }}
-              >
-                {discountPct}%
+            <div className="absolute top-3 left-3 z-10">
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-2.5 py-1 text-[11px] font-black text-white shadow-md shadow-red-500/25">
+                <Icon icon="solar:tag-price-bold" width={12} />
+                -{discountPct}%
               </span>
             </div>
           )}
@@ -89,16 +78,12 @@ export default function ProductCardXtra({ producto, slug, diseno, onClick, onAdd
             </div>
           )}
 
-          {/* HOT SALE ticker */}
+          {/* Banner de oferta en español */}
           {hasDiscount && (
-            <div className="absolute bottom-0 left-0 right-0 overflow-hidden bg-amber-400 py-1">
-              <div
-                className="flex whitespace-nowrap text-[10px] font-bold text-white"
-                style={{ animation: 'xtra-marquee 10s linear infinite' }}
-              >
-                {/* Duplicated so the loop is seamless */}
-                <span className="pr-4">{tickerText.repeat(8)}</span>
-                <span className="pr-4">{tickerText.repeat(8)}</span>
+            <div className="absolute bottom-2 left-2 right-2 z-10">
+              <div className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-500 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-white shadow-lg shadow-red-500/25">
+                <Icon icon="solar:fire-bold" width={13} />
+                ¡Oferta! Ahorra {discountPct}%
               </div>
             </div>
           )}

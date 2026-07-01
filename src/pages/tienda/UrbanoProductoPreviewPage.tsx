@@ -20,7 +20,7 @@ export function UrbanoProductoPreviewPage({
     onAddToCart: (p?: any) => void 
 }) {
     const [isScrolled, setIsScrolled] = useState(false);
-    const [openAccordion, setOpenAccordion] = useState<string | null>('DESCRIPTION');
+    const [openAccordion, setOpenAccordion] = useState<string | null>('DESCRIPCION');
     
     // Demo states for interactivity
     const demoSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -94,7 +94,7 @@ export function UrbanoProductoPreviewPage({
                     onClick={onAddToCart} 
                     className="bg-black text-white px-6 md:px-8 py-3 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
                 >
-                    ADD TO BAG
+                    AGREGAR
                 </button>
             </div>
 
@@ -122,7 +122,7 @@ export function UrbanoProductoPreviewPage({
                         <div className="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
                             <div className="relative inline-block bg-white px-5 py-3 rounded-lg shadow-lg">
                                 <Icon icon="carbon:close-filled" className="absolute -top-2 -right-2 text-black text-xl bg-white rounded-full cursor-pointer" />
-                                <span className="text-xs font-bold">Get Early Access</span>
+                                <span className="text-xs font-bold">Vista de producto</span>
                             </div>
                         </div>
                     </div>
@@ -156,8 +156,8 @@ export function UrbanoProductoPreviewPage({
                                 {/* Size Selector */}
                                 <div className="w-full mb-10">
                                     <div className="flex justify-between items-end mb-4">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider">SIZE: {demoSizes[selectedSize]}</span>
-                                        <button className="text-[11px] font-bold uppercase tracking-wider border-b border-black hover:text-gray-500 hover:border-gray-500 transition-colors">FIND YOUR SIZE</button>
+                                        <span className="text-[11px] font-bold uppercase tracking-wider">TALLA: {demoSizes[selectedSize]}</span>
+                                        <button className="text-[11px] font-bold uppercase tracking-wider border-b border-black hover:text-gray-500 hover:border-gray-500 transition-colors">GUÍA DE TALLAS</button>
                                     </div>
                                     <div className="grid grid-cols-6 gap-2 mb-4">
                                         {demoSizes.map((size, i) => (
@@ -171,8 +171,8 @@ export function UrbanoProductoPreviewPage({
                                         ))}
                                     </div>
                                     <div className="flex justify-between items-center text-[11px] font-bold tracking-wide">
-                                        <span className="text-gray-600">Take one size up</span>
-                                        <span className="text-[#3b8c6a]">ALMOST SOLD OUT</span>
+                                        <span className="text-gray-600">Elige tu talla habitual</span>
+                                        <span className="text-[#3b8c6a]">DISPONIBLE</span>
                                     </div>
                                 </div>
 
@@ -182,7 +182,7 @@ export function UrbanoProductoPreviewPage({
                                         onClick={onAddToCart} 
                                         className="flex-1 bg-black text-white h-[52px] rounded font-bold text-[11px] tracking-[0.2em] uppercase hover:bg-gray-800 transition-colors"
                                     >
-                                        ADD TO BAG
+                                        AGREGAR AL CARRITO
                                     </button>
                                     <button className="w-[52px] h-[52px] flex items-center justify-center border border-gray-200 rounded hover:border-black transition-colors text-gray-500 hover:text-black">
                                         <Icon icon="solar:heart-linear" className="text-xl" />
@@ -193,19 +193,19 @@ export function UrbanoProductoPreviewPage({
                                 <div className="flex flex-col gap-5 text-[11px] font-medium text-black">
                                     <div className="flex gap-4 items-center">
                                         <Icon icon="solar:box-linear" className="text-xl flex-shrink-0 text-gray-400" />
-                                        <span>Free shipping from €150 to EU, UK, US & Canada</span>
+                                        <span>Entrega y recojo según configuración del negocio</span>
                                     </div>
                                     <div className="flex gap-4 items-center">
                                         <Icon icon="solar:star-fall-linear" className="text-xl flex-shrink-0 text-gray-400" />
-                                        <span>Earn {price} loyalty points when buying this product</span>
+                                        <span>Precio visible: S/. {price.toFixed(2)}</span>
                                     </div>
                                     <div className="flex gap-4 items-center">
                                         <Icon icon="solar:shield-check-linear" className="text-xl flex-shrink-0 text-gray-400" />
-                                        <span>Trusted for over 15 years. Rated 4.6/5 stars</span>
+                                        <span>Compra protegida con seguimiento de pedido</span>
                                     </div>
                                     <div className="flex gap-4 items-center">
                                         <Icon icon="solar:hand-stars-linear" className="text-xl flex-shrink-0 text-gray-400" />
-                                        <span>Handcrafted from premium materials</span>
+                                        <span>Catálogo conectado a productos reales de la tienda</span>
                                     </div>
                                 </div>
                             </div>
@@ -219,30 +219,30 @@ export function UrbanoProductoPreviewPage({
                     <div className="w-full lg:w-[50%] p-8 lg:p-16 xl:p-24 flex flex-col justify-center bg-white">
                         <div className="w-full max-w-lg mx-auto lg:mx-auto lg:mr-16">
                             
-                            <AccordionItem title="DESCRIPTION" id="DESCRIPTION">
+                            <AccordionItem title="DESCRIPCIÓN" id="DESCRIPCION">
                                 <div className="text-[13px] leading-relaxed text-black font-medium pr-4">
-                                    This is the essential, elevated knit staple for the season. The {producto.descripcion} is crafted from a premium 100% cotton yarn, which is knit into a fine, ribbed pattern. This technique gives the garment a sophisticated, 3D structure and a luxurious hand-feel. This version is defined by a 3D embroidery for subtle branding, and is finished with our antique white color details. It's the perfect high-end foundation piece for layering.
+                                    {producto.descripcionLarga || `${producto.descripcion} se muestra como producto destacado dentro de la experiencia Urbano. En tienda real se usará la descripción configurada por el negocio.`}
                                 </div>
                             </AccordionItem>
 
-                            <AccordionItem title="DETAILS" id="DETAILS">
+                            <AccordionItem title="DETALLES" id="DETALLES">
                                 <ul className="text-[13px] leading-relaxed text-gray-600 list-disc pl-4 space-y-2">
-                                    <li>100% Premium Heavyweight Cotton</li>
-                                    <li>Ribbed texture structure</li>
-                                    <li>Tonal embroidered logo</li>
-                                    <li>Designed in Amsterdam, made in Portugal</li>
+                                    <li>Precio: S/. {price.toFixed(2)}</li>
+                                    <li>Categoría: {producto.categoria?.nombre || producto.categoria || 'Catálogo'}</li>
+                                    <li>Marca: {producto.marca?.nombre || producto.marca || 'Tienda'}</li>
+                                    <li>Stock visible según disponibilidad real del negocio</li>
                                 </ul>
                             </AccordionItem>
 
-                            <AccordionItem title="SIZE & FIT" id="SIZE_FIT">
+                            <AccordionItem title="TALLAS Y VARIANTES" id="TALLAS">
                                 <div className="text-[13px] leading-relaxed text-gray-600">
-                                    Model is 185cm / 6'1" and is wearing a size Medium. We recommend taking one size up for a more relaxed fit.
+                                    Si el producto tiene colores, tallas o variantes, la tienda real mostrará las combinaciones disponibles y bloqueará las agotadas.
                                 </div>
                             </AccordionItem>
 
-                            <AccordionItem title="DELIVERY & RETURNS" id="DELIVERY">
+                            <AccordionItem title="ENTREGA Y CAMBIOS" id="ENTREGA">
                                 <div className="text-[13px] leading-relaxed text-gray-600">
-                                    Orders placed before 15:00 CET are shipped the same day. You have 14 days from the shipping date to return your purchase.
+                                    La entrega, recojo y medios de pago se aplican desde la configuración real del negocio.
                                 </div>
                             </AccordionItem>
                             
@@ -282,10 +282,9 @@ export function UrbanoProductoPreviewPage({
                     <div className="w-full py-16 lg:py-24 bg-white border-t border-gray-100">
                         <div className="w-full pl-4 md:pl-8 pr-4 md:pr-8 mb-10 flex justify-between items-center">
                             <h2 className="text-2xl md:text-[2rem] font-black tracking-tighter uppercase" style={{ fontFamily: '"Inter", sans-serif' }}>Productos similares</h2>
-                            <div className="hidden md:flex gap-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                <span className="hover:text-black cursor-pointer transition-colors">Filter</span>
-                                <span className="hover:text-black cursor-pointer transition-colors">Sort</span>
-                            </div>
+                            <button onClick={() => onNav('catalogo')} className="hidden md:flex text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-black transition-colors">
+                                Ver catálogo
+                            </button>
                         </div>
 
                         <div className="w-full relative group/slider py-4">
@@ -353,29 +352,30 @@ export function UrbanoProductoPreviewPage({
             <footer className="w-full bg-[#1A1A1A] text-white py-16 px-4 md:px-8 mt-auto">
                 <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
                     <div className="flex flex-col gap-4">
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">HOME</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">SHOP</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">LOOKBOOK</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">ABOUT</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">CONTACT</a>
+                        <button onClick={() => onNav('home')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Inicio</button>
+                        <button onClick={() => onNav('catalogo')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Catálogo</button>
+                        <button onClick={() => onNav('detalle')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Detalle</button>
+                        <button onClick={() => onNav('checkout')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Checkout</button>
+                        <button onClick={() => onNav('checkout')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Seguimiento</button>
                     </div>
                     <div className="flex flex-col gap-4">
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">PRIVACY POLICY</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">REFUND POLICY</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">SHIPPING POLICY</a>
-                        <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">CONTACT</a>
+                        <button onClick={() => onNav('catalogo')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Productos</button>
+                        <button onClick={() => onNav('checkout')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Pedido</button>
+                        <button onClick={() => onNav('checkout')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Estado de pedido</button>
+                        <button onClick={() => onNav('home')} className="text-left text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">Tienda</button>
                     </div>
                     <div className="md:col-span-2 flex flex-col items-start md:items-end">
-                        <h4 className="text-xl font-black tracking-tighter uppercase mb-2">STAY IN THE SILENCE</h4>
-                        <p className="text-[11px] text-gray-400 mb-6 text-left md:text-right">No spam. No noise. Just quiet drops, once in a while.</p>
-                        <div className="w-full max-w-sm flex border border-gray-700 bg-transparent">
-                            <input type="email" placeholder="Email address" className="bg-transparent border-none outline-none text-[13px] px-4 py-3.5 flex-1 text-white placeholder-gray-500" />
-                            <button className="px-4 text-white hover:opacity-70 transition-opacity"><Icon icon="solar:arrow-right-linear" width={20} /></button>
-                        </div>
+                        <h4 className="text-xl font-black tracking-tighter uppercase mb-2">{diseno?.urbanoFooterTitle || 'ATENCIÓN'}</h4>
+                        <p className="text-[11px] text-gray-400 mb-6 text-left md:text-right max-w-sm">
+                            {diseno?.urbanoFooterHelpText || 'En tienda real se usan los datos, pagos y canales de contacto configurados por el negocio.'}
+                        </p>
+                        <button onClick={() => onNav('checkout')} className="border border-gray-700 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white hover:text-black transition-colors">
+                            Ver pedido
+                        </button>
                     </div>
                 </div>
                 <div className="max-w-[1600px] mx-auto mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">© 2026 BLNK-theme, Powered by Falconext</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">© 2026 {diseno?.urbanoStoreName || demo.storeName || 'Urbano'}, Powered by Falconext</p>
                     <div className="flex gap-4">
                         <Icon icon="mdi:facebook" className="text-gray-500 hover:text-white transition-colors text-lg" />
                         <Icon icon="mdi:instagram" className="text-gray-500 hover:text-white transition-colors text-lg" />

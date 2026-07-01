@@ -249,7 +249,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         </p>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <InputPro
                         autocomplete="off"
                         type="number"
@@ -432,7 +432,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             <p className="text-xs text-gray-500 dark:text-gray-400">Los servicios no manejan stock, lotes ni series.</p>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[
                             { id: 'PRODUCTO', title: 'Producto físico', desc: 'Descuenta inventario y usa stock.' },
                             { id: 'SERVICIO', title: 'Servicio técnico', desc: 'Instalación, formateo, soporte.' },
@@ -613,7 +613,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <Icon icon="solar:box-minimalistic-bold-duotone" width={16} />
                         Unidades de Compra/Venta
                     </h5>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <InputPro autocomplete="off" value={(formValues as any)?.unidadCompra || ''} name="unidadCompra" onChange={handleChange} isLabel label="Unidad Compra" placeholder="CAJA" />
                         <InputPro autocomplete="off" value={(formValues as any)?.unidadVenta || ''} name="unidadVenta" onChange={handleChange} isLabel label="Unidad Venta" placeholder="BLISTER" />
                         <InputPro autocomplete="off" type="number" value={(formValues as any)?.factorConversion || 1} name="factorConversion" onChange={handleChange} isLabel label="Factor" placeholder="1" />
@@ -629,7 +629,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <Icon icon="solar:tag-price-bold-duotone" width={16} />
                         Ofertas y Promociones
                     </h5>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <InputPro autocomplete="off" type="number" step="0.01" value={(formValues as any)?.precioOferta || ''} name="precioOferta" onChange={handleChange} isLabel label="Precio Oferta (S/)" placeholder="0.00" />
                         <InputPro autocomplete="off" type="date" value={(formValues as any)?.fechaInicioOferta ? String((formValues as any).fechaInicioOferta).split('T')[0] : ''} name="fechaInicioOferta" onChange={handleChange} isLabel label="Inicio Oferta" />
                         <InputPro autocomplete="off" type="date" value={(formValues as any)?.fechaFinOferta ? String((formValues as any).fechaFinOferta).split('T')[0] : ''} name="fechaFinOferta" onChange={handleChange} isLabel label="Fin Oferta" />
@@ -701,7 +701,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                                     {/* Desglose IGV */}
                                     {esGravado && precio > 0 && (
-                                        <div className="grid grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-8">
                                             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-center">
                                                 <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Neto</p>
                                                 <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mt-0.5">S/ {precioSinIgv.toFixed(2)}</p>
@@ -821,7 +821,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 </div>
 
                                                 {/* Inputs del simulador */}
-                                                <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
                                                             Unidades vendidas por día
@@ -924,7 +924,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                                                         {/* Info adicional: CPA y ganancia con ads */}
                                                         {pubDia > 0 && ventasDia > 0 && (
-                                                            <div className="grid grid-cols-2 gap-2">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 <div className="bg-white/60 dark:bg-slate-800/50 rounded-xl p-3 text-center border border-indigo-100 dark:border-indigo-900/40">
                                                                     <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">CPA (costo por venta)</p>
                                                                     <p className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">S/ {cpaDia.toFixed(2)}</p>
@@ -981,7 +981,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         </button>
                         <div className={`transition-all duration-300 ease-in-out ${provisionOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                             <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#1E2435]">
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <p className="col-span-2 text-[11px] leading-4 text-gray-500 dark:text-gray-400">
                                         Venta define el máximo para despacho inmediato. Provisión define el máximo para reservas activas. Ambos porcentajes deben sumar 100%.
                                     </p>

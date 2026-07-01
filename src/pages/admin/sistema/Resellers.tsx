@@ -260,7 +260,7 @@ export default function AdminResellers() {
 
                     <div className="p-5">
                         {activeTab === 'general' && (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="col-span-2">
                                     <InputPro isLabel label="Nombre Comercial" name="nombre" value={vm.formData.nombre} onChange={vm.handleCreateChange as any} placeholder="Ej. Distribuciones Lima Norte" />
                                 </div>
@@ -275,7 +275,7 @@ export default function AdminResellers() {
                         )}
 
                         {activeTab === 'whitelabel' && (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="col-span-2">
                                     <InputPro isLabel label="Nombre de Marca" name="whiteLabelNombre" value={vm.formData.whiteLabelNombre} onChange={vm.handleCreateChange as any} placeholder="Jamble" />
                                 </div>

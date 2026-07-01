@@ -18,6 +18,22 @@ export default function GadgetsCartModal({
 }: Props) {
   const subtotal = carrito.reduce((sum, item) => sum + Number(item.precioUnitario) * Number(item.cantidad || 1), 0);
 
+  const cotizarPorWhatsApp = () => {
+    if (!carrito.length) return;
+    const raw = String(tienda?.whatsappTienda || tienda?.diseno?.whatsappTienda || tienda?.celular || tienda?.telefono || '').replace(/\D/g, '');
+    const nombreTienda = tienda?.nombreComercial || tienda?.nombre || 'Tienda';
+    const lineas = carrito
+      .map((item) => `• ${Number(item.cantidad || 1)}x ${item.descripcion} — S/ ${(Number(item.precioUnitario || 0) * Number(item.cantidad || 1)).toFixed(2)}`)
+      .join('\n');
+    const mensaje =
+      `*SOLICITUD DE COTIZACIÓN — ${nombreTienda}*\n\n` +
+      `${lineas}\n\n` +
+      `*Total estimado: S/ ${subtotal.toFixed(2)}*\n\n` +
+      `Hola, quisiera cotizar estos productos. ¿Me confirman precio y disponibilidad?`;
+    const base = raw ? `https://wa.me/${raw.length === 9 ? `51${raw}` : raw}` : 'https://wa.me/';
+    window.open(`${base}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -124,8 +140,11 @@ export default function GadgetsCartModal({
                             <Icon icon="mdi:plus" width={12} />
                           </button>
                         </div>
-                        <span className="text-sm font-black text-[#1A1A1A]">
+                        <span className="text-sm font-black text-[#1A1A1A] flex items-baseline gap-1.5">
                           S/ {(Number(item.precioUnitario) * (item.cantidad || 1)).toFixed(2)}
+                          {item.enOferta && Number(item.precioRegular) > Number(item.precioUnitario) && (
+                            <span className="text-[11px] font-medium text-gray-400 line-through">S/ {(Number(item.precioRegular) * (item.cantidad || 1)).toFixed(2)}</span>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -152,6 +171,13 @@ export default function GadgetsCartModal({
             >
               Ir a Pagar
               <Icon icon="solar:arrow-right-linear" className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={cotizarPorWhatsApp}
+              className="mt-2.5 w-full py-3 font-bold text-sm rounded-xl flex items-center justify-center gap-2 border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"
+            >
+              <Icon icon="ic:baseline-whatsapp" width={18} className="text-emerald-600" />
+              Cotizar por WhatsApp
             </button>
             <p className="text-center text-[11px] text-gray-500 mt-2.5">
               Impuestos y envío calculados al finalizar

@@ -198,6 +198,7 @@ export default function AutopartesCatalogoPage({
         actualizarCantidad={actualizarCantidad}
         onCheckout={irACheckout}
         cp={cp}
+        tienda={tienda}
       />
 
       {showPersonalizarModal && productoAPersonalizar && (

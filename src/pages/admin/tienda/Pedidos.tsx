@@ -117,6 +117,7 @@ export default function PedidosTienda() {
   const navigate = useNavigate();
   const [selectedPedido, setSelectedPedido] = useState<PedidoTiendaAdmin | null>(null);
   const [confirmPago, setConfirmPago] = useState<PedidoTiendaAdmin | null>(null);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const navegarComprobantePedido = (pedido: PedidoTiendaAdmin, defaultType: 'BOLETA' | 'FACTURA') => {
     navigate('/administrador/facturacion/nuevo', {
@@ -296,10 +297,17 @@ export default function PedidosTienda() {
     };
   });
 
+  const activeFilterCount = [
+    vm.busqueda.trim(),
+    vm.fechaDesde,
+    vm.fechaHasta,
+    vm.filtroEstado,
+  ].filter(Boolean).length;
+
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Pedidos</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">Pedidos</h1>
         {vm.newOrdersCount > 0 && (
           <button
             onClick={vm.clearNewOrders}
@@ -312,8 +320,25 @@ export default function PedidosTienda() {
 
       <section className="rounded-[22px] border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827]">
         {/* Filtros */}
-        <div className="border-b border-gray-100 p-5 dark:border-slate-800 rounded-t-[22px] bg-white dark:bg-[#111827]">
-          <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr_0.7fr_auto]">
+        <div className="rounded-t-[22px] border-b border-gray-100 bg-white p-4 dark:border-slate-800 dark:bg-[#111827] sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
+            <div className="flex min-w-0 items-center gap-2">
+              <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600" />
+              <div className="min-w-0">
+                <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
+                <p className="truncate text-xs text-gray-400">{activeFilterCount} activos</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMobileFiltersOpen((value) => !value)}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-black text-white shadow-lg shadow-blue-500/20"
+            >
+              {isMobileFiltersOpen ? 'Ocultar' : 'Ver filtros'}
+              <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
+            </button>
+          </div>
+          <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4 md:grid md:grid-cols-2 xl:grid-cols-[1.4fr_0.7fr_0.7fr_auto]`}>
             <label className="space-y-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">Buscar pedido</span>
               <div className="relative">
@@ -347,7 +372,7 @@ export default function PedidosTienda() {
               <Button
                 type="button"
                 variant="outline-default"
-                className="h-11 rounded-xl px-4"
+                className="h-11 w-full rounded-xl px-4 xl:w-auto"
                 onClick={() => { vm.setBusqueda(''); vm.setFechaDesde(''); vm.setFechaHasta(''); vm.setFiltroEstado(''); }}
               >
                 <Icon icon="solar:refresh-bold" className="h-4 w-4" />
@@ -357,10 +382,10 @@ export default function PedidosTienda() {
           </div>
 
           {/* Filtros de estado */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className={`${isMobileFiltersOpen ? 'flex' : 'hidden'} -mx-1 mt-5 gap-2 overflow-x-auto px-1 pb-1 md:flex md:flex-wrap md:overflow-visible`}>
             <button
               onClick={() => vm.setFiltroEstado('')}
-              className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm transition ${!vm.filtroEstado ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-[#0F172A] dark:text-gray-300'}`}
+              className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm transition ${!vm.filtroEstado ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-[#0F172A] dark:text-gray-300'}`}
             >
               Todos
               <span className={`rounded-full px-2 py-0.5 text-xs ${!vm.filtroEstado ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-800'}`}>{vm.pedidos.length}</span>
@@ -369,7 +394,7 @@ export default function PedidosTienda() {
               <button
                 key={estado.value}
                 onClick={() => vm.setFiltroEstado(vm.filtroEstado === estado.value ? '' : estado.value)}
-                className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm transition ${vm.filtroEstado === estado.value ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-[#0F172A] dark:text-gray-300'}`}
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm transition ${vm.filtroEstado === estado.value ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-[#0F172A] dark:text-gray-300'}`}
               >
                 {estado.label}
                 <span className={`rounded-full px-2 py-0.5 text-xs ${vm.filtroEstado === estado.value ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-800'}`}>{estado.count}</span>
@@ -378,12 +403,175 @@ export default function PedidosTienda() {
           </div>
         </div>
 
-        {/* DataTable */}
-        <DataTable
-          bodyData={bodyData}
-          headerColumns={HEADER_COLS}
-          pageSize={20}
-        />
+        <div className="space-y-3 p-3 md:hidden">
+          {vm.pedidosFiltrados.map((pedido, index) => {
+            const formattedDate = formatDate(pedido.creadoEn).split(',');
+
+            return (
+              <article
+                key={pedido.id}
+                onClick={() => setSelectedPedido(pedido)}
+                className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition active:scale-[0.99] dark:border-slate-800 dark:bg-[#0F172A]"
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-gray-400">Pedido #{index + 1}</p>
+                    <h3 className="mt-1 truncate text-base font-black uppercase text-gray-900 dark:text-white">{pedido.clienteNombre}</h3>
+                    <p className="text-xs text-gray-500">{formattedDate[0]} · {formattedDate[1]?.trim()}</p>
+                  </div>
+                  <PagoBadge pedido={pedido} />
+                </div>
+
+                <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-slate-900/60">
+                  <SellerCell nombre={pedido.vendedorNombre} />
+                  <span className="truncate text-xs font-semibold text-gray-500">{pedido.clienteTelefono || pedido.codigoSeguimiento}</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 rounded-2xl bg-gray-50 p-3 dark:bg-slate-900/60">
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-gray-400">Total</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-white">{money(pedido.total)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-gray-400">Pagado</p>
+                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-300">{money(pedido.montoPagado)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-gray-400">Saldo</p>
+                    <p className="text-sm font-black text-amber-600 dark:text-amber-300">{money(pedido.saldoPendiente)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    name={`mobile-estadoEntrega-${pedido.id}`}
+                    label="Estado entrega"
+                    error={null}
+                    options={entregaOpts}
+                    value={entregaOpts.find(o => o.id === pedido.estadoEntrega)?.value ?? ''}
+                    inputClassName={selCls}
+                    onChange={(id) => vm.actualizarPedidoOperativo(pedido.id, { estadoEntrega: String(id) as PedidoTiendaAdmin['estadoEntrega'] })}
+                  />
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Select
+                      name={`mobile-agenciaEnvio-${pedido.id}`}
+                      label="Agencia envío"
+                      error={null}
+                      options={agenciaOpts}
+                      value={agenciaOpts.find(o => o.id === pedido.agenciaEnvio)?.value ?? ''}
+                      inputClassName={selCls}
+                      onChange={(id) => vm.actualizarPedidoOperativo(pedido.id, { agenciaEnvio: String(id) as PedidoTiendaAdmin['agenciaEnvio'] })}
+                    />
+                    <Select
+                      name={`mobile-estadoEnvio-${pedido.id}`}
+                      label="Estado envío"
+                      error={null}
+                      options={envioOpts}
+                      value={envioOpts.find(o => o.id === pedido.estadoEnvio)?.value ?? ''}
+                      inputClassName={selCls}
+                      onChange={(id) => vm.actualizarPedidoOperativo(pedido.id, { estadoEnvio: String(id) as PedidoTiendaAdmin['estadoEnvio'] })}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setConfirmPago(pedido); }}
+                    disabled={pedido.saldoPendiente <= 0.01}
+                    className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-500 text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    title={pedido.saldoPendiente <= 0.01 ? 'Ya está pagado' : 'Marcar como pagado'}
+                  >
+                    <Icon icon="solar:wallet-money-bold" className="h-4 w-4" />
+                  </button>
+                  {pedidoPuedeDocumentarse(pedido) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); navegarComprobantePedido(pedido, 'BOLETA'); }}
+                        className="inline-flex h-10 items-center justify-center rounded-xl bg-violet-500 text-white transition hover:bg-violet-600"
+                        title="Hacer boleta"
+                      >
+                        <Icon icon="solar:bill-list-bold" className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); navegarComprobantePedido(pedido, 'FACTURA'); }}
+                        className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700"
+                        title="Hacer factura"
+                      >
+                        <Icon icon="solar:document-add-bold" className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSelectedPedido(pedido); }}
+                    className="inline-flex h-10 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300"
+                    title="Ver detalle"
+                  >
+                    <Icon icon="solar:eye-bold" className="h-4 w-4" />
+                  </button>
+                  {pedido.tipoEntrega === 'ENVIO' && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/administrador/ventas?fecha=${pedido.creadoEn.slice(0, 10)}&pedidoId=${pedido.id}`);
+                      }}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-indigo-500 text-white transition hover:bg-indigo-600"
+                      title="Ver en despacho"
+                    >
+                      <Icon icon="solar:delivery-bold-duotone" className="h-4 w-4" />
+                    </button>
+                  )}
+                  {pedido.clienteTelefono && (
+                    <a
+                      href={vm.buildWhatsappUrl(pedido, pedido.estadoEntrega) || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-500 text-white transition hover:bg-emerald-600"
+                      title="WhatsApp"
+                    >
+                      <Icon icon="mdi:whatsapp" className="h-4 w-4" />
+                    </a>
+                  )}
+                  {vm.buildReviewWhatsappUrl(pedido) && (
+                    <a
+                      href={vm.buildReviewWhatsappUrl(pedido) || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-amber-400 text-white transition hover:bg-amber-500"
+                      title="Solicitar reseña"
+                    >
+                      <Icon icon="solar:star-bold" className="h-4 w-4" />
+                    </a>
+                  )}
+                  {pedidoPuedeDocumentarse(pedido) && pedido.tipoEntrega === 'ENVIO' && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navegarGuiaPedido(pedido); }}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600"
+                      title="Hacer guía de remisión"
+                    >
+                      <Icon icon="solar:route-bold-duotone" className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="hidden md:block">
+          <DataTable
+            bodyData={bodyData}
+            headerColumns={HEADER_COLS}
+            pageSize={20}
+          />
+        </div>
       </section>
 
       {/* Drawer lateral */}

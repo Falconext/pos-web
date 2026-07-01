@@ -121,7 +121,7 @@ function ModalGasto({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewModel>
                     </div>
 
                     {/* Categoría + Monto */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Select
                             label="Categoría *"
                             name="categoria"
@@ -239,7 +239,7 @@ function ModalIngreso({ vm }: { vm: ReturnType<typeof useSistemaFinanzasViewMode
                     </div>
 
                     {/* Tipo + Monto */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Select
                             label="Tipo *"
                             name="tipo"

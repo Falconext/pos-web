@@ -3,10 +3,11 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 
 interface ModaPromoBannerProps {
+  diseno?: any;
   slug: string;
 }
 
-export default function ModaPromoBanner({ slug }: ModaPromoBannerProps) {
+export default function ModaPromoBanner({ slug, diseno }: ModaPromoBannerProps) {
   const navigate = useNavigate();
 
   return (

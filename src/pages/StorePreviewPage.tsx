@@ -20,13 +20,25 @@ import UrbanoCartModal from '@/components/tienda/UrbanoCartModal';
 import ModaCheckoutPage from '@/templates/moda/ModaCheckoutPage';
 import UrbanoCheckoutPage from '@/templates/urbano/UrbanoCheckoutPage';
 import { UrbanoProductoPreviewPage } from '@/pages/tienda/UrbanoProductoPreviewPage';
+import UrbanoHomePage from '@/templates/urbano/UrbanoHomePage';
 import UrbanoCatalogoPage from '@/templates/urbano/UrbanoCatalogoPage';
+import UrbanoCatalogPage from '@/templates/urbano/UrbanoCatalogPage';
 import AutopartesCheckout from '@/pages/tienda/AutopartesCheckout';
 import ModaHeader from '@/components/tienda/ModaHeader';
 import ModaHero from '@/components/tienda/ModaHero';
 import ModaBestSelling from '@/components/tienda/ModaBestSelling';
 import ModaHomeSections from '@/components/tienda/ModaHomeSections';
 import ModaFooter from '@/components/tienda/ModaFooter';
+import TecnologiaLayout from '@/components/tienda/TecnologiaLayout';
+import TecnologiaHeader from '@/components/tienda/TecnologiaHeader';
+import TecnologiaFooter from '@/components/tienda/TecnologiaFooter';
+import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
+import MayeLayout from '@/components/tienda/MayeLayout';
+import TecnologiaCatalogoPage from '@/templates/tecnologia/TecnologiaCatalogoPage';
+import MayeCatalogoPage from '@/templates/maye/MayeCatalogoPage';
+import TecnologiaCheckoutPage from '@/templates/tecnologia/TecnologiaCheckoutPage';
+import MayeCheckoutPage from '@/templates/maye/MayeCheckoutPage';
+import { MayeProductoPreviewPage } from '@/pages/tienda/MayeProductoPreviewPage';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 
 interface PreviewConfig {
@@ -39,6 +51,9 @@ interface PreviewConfig {
 }
 
 type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout';
+
+const isPreviewPage = (value: string | null): value is PreviewPage =>
+  value === 'home' || value === 'catalogo' || value === 'producto' || value === 'checkout';
 
 const URBANO_PREVIEW_ASSETS = [
   '/assets/templates/urbano/coleccion1.png',
@@ -154,17 +169,13 @@ function PreviewHeader({
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm" style={{ background: cp }}>
             {initials}
           </div>
-          <div className="leading-tight">
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">{wordFirst}</p>
-            <p className="font-black text-gray-900 text-base leading-none">{wordRest || wordFirst}<span style={{ color: cp }}>.</span></p>
-          </div>
         </div>
 
         <div className="relative hidden lg:block flex-shrink-0">
           <button
             type="button"
             onClick={() => setIsCategoryOpen((open) => !open)}
-            className="h-11 inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 text-sm font-black text-gray-800 shadow-sm hover:border-gray-300 hover:shadow-md transition-all"
+            className="h-11 inline-flex items-center gap-2 rounded-2xl bg-gray-50 px-4 text-sm font-black text-gray-800 transition-colors hover:bg-gray-100"
           >
             <span className="h-7 w-7 rounded-xl flex items-center justify-center text-white" style={{ background: cp }}>
               <Icon icon="solar:widget-5-bold-duotone" width={16} />
@@ -200,7 +211,7 @@ function PreviewHeader({
         </div>
 
         <div className="flex-1 relative">
-          <div className="h-11 hidden md:flex items-center gap-3 rounded-2xl bg-gray-50/90 px-4 shadow-sm">
+          <div className="h-11 hidden md:flex items-center gap-3 rounded-2xl bg-gray-50 px-4 transition-colors">
             <Icon icon="solar:magnifer-linear" className="text-gray-400 text-sm flex-shrink-0" />
             <span className="text-sm font-semibold text-gray-400">Buscar productos, marcas o códigos...</span>
           </div>
@@ -227,7 +238,7 @@ function PreviewHeader({
 
 // ─── Prose classes (sin @tailwindcss/typography) ──────────────────────────────
 const PROSE = [
-  'text-sm text-gray-600 leading-relaxed',
+  'text-sm text-gray-600 leading-relaxed overflow-hidden w-full [&_*]:!whitespace-pre-wrap [&_*]:!break-words [&_*]:!max-w-full',
   '[&_h2]:text-base [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mb-2 [&_h2]:mt-4',
   '[&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-800 [&_h3]:mb-2 [&_h3]:mt-3',
   '[&_p]:mb-3 [&_p]:leading-relaxed',
@@ -861,6 +872,253 @@ function ProductoPage({ producto, demo, cp, diseno, onNav, onProduct, onAddToCar
   );
 }
 
+function TecnologiaProductoPreviewPage({
+  producto,
+  demo,
+  cp,
+  diseno,
+  carrito,
+  setCarrito,
+  mostrarCarrito,
+  setMostrarCarrito,
+  actualizarCantidad,
+  onNav,
+  onProduct,
+  onAddToCart,
+}: {
+  producto: DemoProduct;
+  demo: RubroDemo;
+  cp: string;
+  diseno: any;
+  carrito: any[];
+  setCarrito: (items: any[]) => void;
+  mostrarCarrito: boolean;
+  setMostrarCarrito: (value: boolean) => void;
+  actualizarCantidad: (id: number | string, cantidad: number) => void;
+  onNav: (p: PreviewPage) => void;
+  onProduct: (p: DemoProduct) => void;
+  onAddToCart: (producto: DemoProduct) => void;
+}) {
+  const [cantidad, setCantidad] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
+  const price = Number(producto.precioUnitario || 0);
+  const originalPrice = Number(producto.precioOriginal || 0);
+  const hasDiscount = originalPrice > price;
+  const discountPct = hasDiscount ? Math.round((1 - price / originalPrice) * 100) : 0;
+  const productExtraImages = Array.isArray((producto as any).imagenesExtra) ? (producto as any).imagenesExtra : [];
+  const images = [producto.imagenUrl, ...productExtraImages].filter(Boolean);
+  const related = demo.products.filter(p => p.id !== producto.id).slice(0, 4);
+  const tienda = {
+    nombre: demo.storeName,
+    nombreComercial: demo.storeName,
+    razonSocial: demo.storeName,
+    logo: '',
+    diseno,
+  };
+  const carritoSize = carrito.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
+  const stock = Number(producto.stock || 0);
+  const isOutOfStock = stock <= 0;
+  const ratingCount = Number((producto as any).ratingCount || (producto as any).reviewsCount || 0);
+  const ratingAvg = ratingCount > 0 ? Number((producto as any).ratingAvg || (producto as any).ratingPromedio || 0) : 0;
+
+  const addQuantity = () => {
+    if (isOutOfStock) return;
+    onAddToCart({ ...producto, cantidad });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8F9FA]" style={{ fontFamily: `'${diseno.tipografia || 'Inter'}', sans-serif` }}>
+      <TecnologiaHeader
+        tienda={tienda}
+        slug="preview"
+        cp={cp}
+        carritoSize={carritoSize}
+        onOpenCart={() => setMostrarCarrito(!mostrarCarrito)}
+        searchQuery=""
+        setSearchQuery={() => { }}
+        onSearchSubmit={(event: any) => {
+          event.preventDefault();
+          onNav('catalogo');
+        }}
+        allCategories={demo.categories.filter(category => category !== 'Todos')}
+      />
+
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 xl:px-8 xl:py-10">
+        <nav className="mb-8 flex items-center gap-2 text-xs font-semibold text-gray-400">
+          <button onClick={() => onNav('home')} className="transition-colors hover:text-gray-900">Inicio</button>
+          <Icon icon="solar:alt-arrow-right-linear" width={12} />
+          <button onClick={() => onNav('catalogo')} className="transition-colors hover:text-gray-900">Catálogo</button>
+          <Icon icon="solar:alt-arrow-right-linear" width={12} />
+          <span className="max-w-[48vw] truncate text-gray-700">{producto.descripcion}</span>
+        </nav>
+
+        <section className="grid gap-10 lg:grid-cols-[minmax(0,1.04fr)_minmax(420px,0.96fr)] lg:gap-14">
+          <div>
+            <div className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+              {hasDiscount && (
+                <span className="absolute left-5 top-5 z-10 rounded-md px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-white" style={{ background: cp }}>
+                  -{discountPct}%
+                </span>
+              )}
+              <div className="flex aspect-square items-center justify-center rounded-2xl bg-gray-50">
+                <img
+                  src={images[activeImage] || producto.imagenUrl}
+                  alt={producto.descripcion}
+                  className="h-full w-full object-contain p-6 transition-transform duration-700 hover:scale-[1.03]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-4 gap-3">
+              {images.slice(0, 4).map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => setActiveImage(index)}
+                  className="aspect-square rounded-2xl border bg-white p-2 transition"
+                  style={{ borderColor: activeImage === index ? cp : '#E5E7EB' }}
+                >
+                  <img src={image} alt="" className="h-full w-full object-contain" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-600">
+                {isOutOfStock ? 'Agotado' : `En stock (${stock})`}
+              </span>
+              <span className="rounded-full bg-gray-900 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white">
+                {producto.marca?.nombre || producto.marca || 'Tech'}
+              </span>
+            </div>
+
+            <h1 className="text-3xl font-black leading-tight tracking-tight text-gray-950 md:text-4xl lg:text-5xl">
+              {producto.descripcion}
+            </h1>
+
+            <div className="mt-5 flex items-center gap-2">
+              <div className="flex text-[#F5B01D]">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Icon key={index} icon={index < Math.round(ratingAvg) ? 'solar:star-bold' : 'solar:star-linear'} width={18} />
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-gray-500">
+                {ratingCount > 0 ? `${ratingAvg.toFixed(1)} (${ratingCount} reseñas)` : 'Sin reseñas publicadas'}
+              </span>
+            </div>
+
+            <div className="mt-7 flex flex-wrap items-end gap-3">
+              <span className="text-4xl font-black tracking-tight text-gray-950 md:text-5xl">S/ {price.toFixed(2)}</span>
+              {hasDiscount && (
+                <>
+                  <span className="pb-1 text-lg font-bold text-gray-400 line-through">S/ {originalPrice.toFixed(2)}</span>
+                  <span className="mb-2 rounded-md bg-red-500 px-2.5 py-1 text-xs font-black text-white">-{discountPct}%</span>
+                </>
+              )}
+            </div>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="flex h-[54px] items-center justify-between rounded-xl border border-gray-200 bg-white px-4 sm:w-36">
+                <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="text-xl font-black text-gray-500 hover:text-gray-900">-</button>
+                <span className="text-sm font-black text-gray-900">{cantidad}</span>
+                <button onClick={() => setCantidad(isOutOfStock ? cantidad : Math.min(stock, cantidad + 1))} className="text-xl font-black text-gray-500 hover:text-gray-900">+</button>
+              </div>
+              <button
+                disabled={isOutOfStock}
+                onClick={addQuantity}
+                className="flex h-[54px] flex-1 items-center justify-center gap-2 rounded-xl text-sm font-black text-white shadow-lg transition hover:brightness-95 disabled:bg-gray-300 disabled:shadow-none"
+                style={isOutOfStock ? undefined : { background: cp, boxShadow: `0 18px 36px ${cp}28` }}
+              >
+                <Icon icon={isOutOfStock ? 'solar:close-circle-bold' : 'solar:cart-large-minimalistic-bold'} width={20} />
+                {isOutOfStock ? 'Agotado' : 'Agregar al carrito'}
+              </button>
+            </div>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {[
+                ['solar:shield-check-bold-duotone', 'Garantía real', 'Comprobante y soporte'],
+                ['solar:delivery-bold-duotone', 'Despacho seguro', 'Envío o recojo'],
+                ['solar:card-2-bold-duotone', 'Pagos confiables', 'Yape, Plin y más'],
+              ].map(([icon, title, text]) => (
+                <div key={title} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                  <Icon icon={icon} width={24} style={{ color: cp }} />
+                  <p className="mt-3 text-sm font-black text-gray-900">{title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-500">{text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 rounded-2xl bg-[#0B1120] p-6 text-white">
+              <h2 className="text-sm font-black uppercase tracking-widest text-white/80">Ficha técnica</h2>
+              <div className="mt-5 grid gap-3 text-sm">
+                <div className="flex justify-between border-b border-white/10 pb-3">
+                  <span className="text-white/45">Categoría</span>
+                  <span className="font-bold">{producto.categoria?.nombre || producto.categoria || 'Tecnología'}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/10 pb-3">
+                  <span className="text-white/45">Marca</span>
+                  <span className="font-bold">{producto.marca?.nombre || producto.marca || 'Tech'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/45">Disponibilidad</span>
+                  <span className="font-bold">{isOutOfStock ? 'Sin stock' : `${stock} unidades`}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {related.length > 0 && (
+          <section className="mt-16 border-t border-gray-200 pt-12">
+            <div className="mb-7 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em]" style={{ color: cp }}>También te puede interesar</p>
+                <h2 className="mt-2 text-2xl font-black text-gray-950">Productos relacionados</h2>
+              </div>
+              <button onClick={() => onNav('catalogo')} className="hidden text-sm font-black text-gray-500 hover:text-gray-900 sm:inline-flex">
+                Ver catálogo
+              </button>
+            </div>
+            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {related.map(product => (
+                <div key={product.id} className="w-[180px] sm:w-[240px] md:w-[260px] shrink-0 snap-start">
+                  <ProductCardXtra
+                    producto={product}
+                    slug="preview"
+                    diseno={{ ...diseno, colorPrimario: cp }}
+                    onAddToCart={() => onAddToCart(product)}
+                    onClick={() => {
+                      onProduct(product);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <TecnologiaFooter tienda={tienda} slug="preview" diseno={diseno} categories={demo.categories.filter(category => category !== 'Todos')} />
+
+      <TecnologiaCartModal
+        isOpen={mostrarCarrito}
+        onClose={() => setMostrarCarrito(false)}
+        carrito={carrito}
+        setCarrito={setCarrito}
+        actualizarCantidad={actualizarCantidad}
+        onCheckout={() => {
+          setMostrarCarrito(false);
+          onNav('checkout');
+        }}
+        cp={cp}
+      />
+    </div>
+  );
+}
+
 // ─── MAIN ──────────────────────────────────────────────────────────────────────
 export default function StorePreviewPage() {
   const [config, setConfig] = useState<PreviewConfig>({});
@@ -874,6 +1132,14 @@ export default function StorePreviewPage() {
   const [modaOpenFilter, setModaOpenFilter] = useState<string | null>('genero');
   const [modaFilters, setModaFilters] = useState<Record<string, string>>({});
   const [modaSort, setModaSort] = useState('relevancia');
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogSelectedCategories, setCatalogSelectedCategories] = useState<string[]>([]);
+  const [catalogSelectedBrands, setCatalogSelectedBrands] = useState<string[]>([]);
+  const [catalogPriceRange, setCatalogPriceRange] = useState<[number, number]>([0, 10000]);
+  const [catalogSortBy, setCatalogSortBy] = useState('relevance');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showPersonalizarModal, setShowPersonalizarModal] = useState(false);
+  const [productoAPersonalizar, setProductoAPersonalizar] = useState<any>(null);
 
   useEffect(() => {
     try {
@@ -889,6 +1155,8 @@ export default function StorePreviewPage() {
       if (Object.values(fromUrl).some(Boolean)) {
         setConfig(fromUrl);
         setDemo(getRubroDemo(fromUrl.rubroNombre ?? ''));
+        const pageFromUrl = params.get('page');
+        if (isPreviewPage(pageFromUrl)) setPage(pageFromUrl);
         setActiveCategory('Todos');
         sessionStorage.setItem('store-preview-config', JSON.stringify(fromUrl));
         return;
@@ -909,9 +1177,30 @@ export default function StorePreviewPage() {
       setPage(targetPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+    const handleProduct = (e: Event) => {
+      const detail = (e as CustomEvent<any>).detail;
+      const product = detail?.descripcion
+        ? detail
+        : demo.products.find(item => String(item.id) === String(detail?.id ?? detail));
+      if (product) {
+        setSelectedProduct(product);
+        setPage('producto');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
     window.addEventListener('preview-nav', handleNav);
-    return () => window.removeEventListener('preview-nav', handleNav);
-  }, []);
+    window.addEventListener('preview-product', handleProduct);
+    return () => {
+      window.removeEventListener('preview-nav', handleNav);
+      window.removeEventListener('preview-product', handleProduct);
+    };
+  }, [demo.products]);
+
+  useEffect(() => {
+    if (page === 'producto' && !selectedProduct && demo.products[0]) {
+      setSelectedProduct(demo.products[0]);
+    }
+  }, [demo.products, page, selectedProduct]);
 
   const cp = config.colorPrimario ?? demo.colorDefault ?? '#6A6CFF';
   const cs = config.colorSecundario ?? '#ffffff';
@@ -922,6 +1211,17 @@ export default function StorePreviewPage() {
     ...product,
     imagenUrl: URBANO_PREVIEW_ASSETS[index % URBANO_PREVIEW_ASSETS.length],
   }));
+  const catalogMaxPrice = useMemo(() => {
+    const max = Math.max(...demo.products.map(product => Number(product.precioOriginal || product.precioUnitario || 0)), 0);
+    return Math.max(100, Math.ceil(max / 100) * 100);
+  }, [demo.products]);
+  useEffect(() => {
+    setCatalogPriceRange([0, catalogMaxPrice]);
+    setCatalogSelectedCategories([]);
+    setCatalogSelectedBrands([]);
+    setCatalogSearch('');
+    setCatalogSortBy('relevance');
+  }, [catalogMaxPrice, demo.storeName]);
   const urbanoPreviewCategories = demo.categories
     .filter((category) => category !== 'Todos')
     .map((category, index) => ({
@@ -958,6 +1258,57 @@ export default function StorePreviewPage() {
       }
       : {}),
   };
+  const previewTemplateOwnsShell =
+    config.plantillaId === 'urbano' ||
+    config.plantillaId === 'tecnologia' ||
+    config.plantillaId === 'maye';
+  const previewStore = {
+    nombre: demo.storeName,
+    nombreComercial: demo.storeName,
+    razonSocial: demo.storeName,
+    slogan: demo.slogan,
+    logo: '',
+    diseno,
+  };
+  const previewCategories = demo.categories
+    .filter(category => category !== 'Todos')
+    .map(nombre => ({ nombre }));
+  const catalogBrands = useMemo(() => {
+    const names = demo.products
+      .map(product => typeof product.marca === 'string' ? product.marca : product.marca?.nombre)
+      .filter(Boolean)
+      .map(String);
+    return Array.from(new Set(names)).map(nombre => ({ nombre }));
+  }, [demo.products]);
+  const catalogSortedProducts = useMemo(() => {
+    const query = catalogSearch.trim().toLowerCase();
+    const filtered = demo.products.filter(product => {
+      const category = typeof product.categoria === 'string' ? product.categoria : product.categoria?.nombre || '';
+      const brand = typeof product.marca === 'string' ? product.marca : product.marca?.nombre || '';
+      const price = Number(product.precioUnitario || 0);
+      const matchesCategory = catalogSelectedCategories.length === 0 || catalogSelectedCategories.includes(category);
+      const matchesBrand = catalogSelectedBrands.length === 0 || catalogSelectedBrands.includes(brand);
+      const matchesPrice = price >= catalogPriceRange[0] && price <= catalogPriceRange[1];
+      const matchesSearch = !query || `${product.descripcion} ${category} ${brand}`.toLowerCase().includes(query);
+      return matchesCategory && matchesBrand && matchesPrice && matchesSearch;
+    });
+    if (catalogSortBy === 'price-asc') return filtered.sort((a, b) => Number(a.precioUnitario || 0) - Number(b.precioUnitario || 0));
+    if (catalogSortBy === 'price-desc') return filtered.sort((a, b) => Number(b.precioUnitario || 0) - Number(a.precioUnitario || 0));
+    if (catalogSortBy === 'name-asc') return filtered.sort((a, b) => String(a.descripcion || '').localeCompare(String(b.descripcion || '')));
+    return filtered;
+  }, [catalogPriceRange, catalogSearch, catalogSelectedBrands, catalogSelectedCategories, catalogSortBy, demo.products]);
+  const hasCatalogFilters =
+    !!catalogSearch ||
+    catalogSelectedCategories.length > 0 ||
+    catalogSelectedBrands.length > 0 ||
+    catalogPriceRange[0] > 0 ||
+    catalogPriceRange[1] < catalogMaxPrice;
+  const toggleCatalogCategory = (name: string) => {
+    setCatalogSelectedCategories(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
+  };
+  const toggleCatalogBrand = (name: string) => {
+    setCatalogSelectedBrands(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
+  };
 
   const goToProduct = (p: DemoProduct) => {
     setSelectedProduct(p);
@@ -967,7 +1318,34 @@ export default function StorePreviewPage() {
 
   const goToPage = (p: PreviewPage) => {
     setPage(p);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      params.set('page', p);
+      window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+    } catch { }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const goToFirstProduct = () => {
+    const product = selectedProduct || demo.products[0];
+    if (product) goToProduct(product);
+  };
+  const previewNavigate = (to: string) => {
+    const target = String(to || '');
+    const productId = target.match(/\/producto\/([^/?#]+)/)?.[1];
+    if (productId) {
+      const product = demo.products.find(item => String(item.id) === String(productId));
+      if (product) goToProduct(product);
+      return;
+    }
+    if (target.includes('/checkout')) {
+      goToPage('checkout');
+      return;
+    }
+    if (target.includes('/catalogo')) {
+      goToPage('catalogo');
+      return;
+    }
+    goToPage('home');
   };
 
   const addToCart = (p: DemoProduct) => {
@@ -988,6 +1366,10 @@ export default function StorePreviewPage() {
       setCarrito(prev => prev.map(item => item.id === id ? { ...item, cantidad } : item));
     }
   };
+  const goToPreviewCheckout = () => {
+    setIsCartOpen(false);
+    goToPage('checkout');
+  };
 
   return (
     <div style={{ fontFamily: `'${previewFont}', sans-serif`, background: cs, minHeight: '100vh', color: '#111' }}>
@@ -1005,6 +1387,23 @@ export default function StorePreviewPage() {
           <span className="px-2 py-0.5 rounded bg-white/10 text-white/80">
             {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : page === 'checkout' ? 'Checkout' : 'Detalle de Producto'}
           </span>
+          <div className="ml-2 hidden items-center gap-1 md:flex">
+            {([
+              ['home', 'Inicio'],
+              ['catalogo', 'Catálogo'],
+              ['producto', 'Detalle'],
+              ['checkout', 'Checkout'],
+            ] as const).map(([target, label]) => (
+              <button
+                key={target}
+                type="button"
+                onClick={() => target === 'producto' ? goToFirstProduct() : goToPage(target)}
+                className={`rounded-md px-2 py-0.5 transition-colors ${page === target ? 'bg-white text-[#0d1117]' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {page !== 'home' && (
@@ -1049,14 +1448,16 @@ export default function StorePreviewPage() {
               allCategories={demo.categories.filter(c => c !== 'Todos')}
             />
           ) : null
-        ) : config.plantillaId === 'urbano' ? (
-          null // Urbano handles its own headers
+        ) : previewTemplateOwnsShell ? (
+          null // These templates render their own header/footer shell.
         ) : (
           <PreviewHeader demo={demo} cp={cp} cartCount={carrito.reduce((sum, item) => sum + item.cantidad, 0)} currentPage={page} onNav={goToPage} activeCategory={activeCategory} onSelectCategory={setActiveCategory} />
         )}
 
         {isCartOpen && (
-          config.plantillaId === 'moda' ? (
+          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || (config.plantillaId === 'urbano' && page === 'home') ? (
+            null
+          ) : config.plantillaId === 'moda' ? (
             <ModaCartModal
               isOpen={isCartOpen}
               carrito={carrito}
@@ -1179,19 +1580,52 @@ export default function StorePreviewPage() {
             <ModaHomeSections slug="preview" productos={demo.products} />
           </div>
         ) : page === 'home' && config.plantillaId === 'urbano' ? (
-          <UrbanoCatalogoPage
+          <UrbanoHomePage
             slug="preview"
-            tienda={{ nombre: demo.storeName, slogan: demo.slogan, diseno }}
+            tienda={previewStore}
             productos={urbanoPreviewProducts}
             allCategories={urbanoPreviewCategories}
             cp={cp}
-            carritoSize={carrito.length}
-            onOpenCart={() => { }}
-            onAddToCart={(p) => addToCart(p)}
-            onProduct={(p) => goToProduct(p)}
-            searchQuery=""
-            setSearchQuery={() => { }}
-            onSearchSubmit={() => { }}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'tecnologia' ? (
+          <TecnologiaLayout
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'maye' ? (
+          <MayeLayout
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
           />
         ) : page === 'home' ? (
           <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(demo.products[0])} />
@@ -1371,6 +1805,128 @@ export default function StorePreviewPage() {
                 )}
               </div>
             </div>
+          ) : config.plantillaId === 'urbano' ? (
+            <UrbanoCatalogPage
+              slug="preview"
+              tienda={previewStore}
+              cp={cp}
+              productos={catalogSortedProducts}
+              total={catalogSortedProducts.length}
+              loading={false}
+              allCategorias={urbanoPreviewCategories}
+              allMarcas={catalogBrands}
+              selectedCategorias={catalogSelectedCategories}
+              setSelectedCategorias={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              hasActiveFilters={hasCatalogFilters}
+              carritoSize={carrito.reduce((sum, item) => sum + Number(item.cantidad || 1), 0)}
+              onOpenCart={() => setIsCartOpen(true)}
+              onAddToCart={addToCart}
+              onProduct={goToProduct}
+            />
+          ) : config.plantillaId === 'tecnologia' ? (
+            <TecnologiaCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
+          ) : config.plantillaId === 'maye' ? (
+            <MayeCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
           ) : (
             <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => { }} />
           )
@@ -1379,6 +1935,36 @@ export default function StorePreviewPage() {
         {page === 'producto' && selectedProduct && (
           config.plantillaId === 'urbano' ? (
             <UrbanoProductoPreviewPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(selectedProduct)} />
+          ) : config.plantillaId === 'tecnologia' ? (
+            <TecnologiaProductoPreviewPage
+              producto={selectedProduct}
+              demo={demo}
+              cp={cp}
+              diseno={diseno}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNav={goToPage}
+              onProduct={goToProduct}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'maye' ? (
+            <MayeProductoPreviewPage
+              producto={selectedProduct}
+              demo={demo}
+              cp={cp}
+              diseno={diseno}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNav={goToPage}
+              onProduct={goToProduct}
+              onAddToCart={addToCart}
+            />
           ) : config.plantillaId === 'moda' ? (
             <ModaProductoPreviewPage producto={selectedProduct} demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(selectedProduct)} />
           ) : (
@@ -1482,6 +2068,76 @@ export default function StorePreviewPage() {
               setShowPaymentModal={() => { }}
               enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
             />
+          ) : config.plantillaId === 'tecnologia' ? (
+            <TecnologiaCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'maye' ? (
+            <MayeCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
           ) : (
             <div className="py-20 text-center font-bold text-gray-500">Checkout Preview (Generic)</div>
           )
@@ -1492,8 +2148,8 @@ export default function StorePreviewPage() {
           page !== 'checkout' && <AutopartesFooter tienda={null} slug="preview" diseno={diseno} />
         ) : config.plantillaId === 'moda' ? (
           page !== 'checkout' && <ModaFooter tiendaNombre={demo.storeName} />
-        ) : config.plantillaId === 'urbano' ? (
-          null // Hombre Urbano handles its own footers inside its pages
+        ) : previewTemplateOwnsShell ? (
+          null // These templates render their own footer.
         ) : page !== 'producto' && (
           <footer className="py-10 border-t border-gray-100" style={{ background: '#fafafa' }}>
             <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">

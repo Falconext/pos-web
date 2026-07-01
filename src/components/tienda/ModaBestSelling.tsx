@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 
 interface ModaBestSellingProps {
+  diseno?: any;
   slug: string;
   cp: string;
   productos: any[];
@@ -64,7 +65,7 @@ function getPrice(product: any) {
 }
 
 function getOriginalPrice(product: any) {
-  return Number(product?.precioVenta || product?.precioUnitario || product?.precio || getPrice(product));
+  return Number(product?.precioRegular ?? product?.precioOriginal ?? product?.precioVenta ?? product?.precioUnitario ?? product?.precio ?? getPrice(product));
 }
 
 function getTitle(product: any) {
@@ -119,13 +120,11 @@ function getSaving(product: any, index: number) {
   return `SAVE $${saving.toFixed(2)}`;
 }
 
-export default function ModaBestSelling({
-  slug,
+export default function ModaBestSelling({ slug,
   productos,
   genero = 'hombre',
   titulo,
-  offset = 0,
-}: ModaBestSellingProps) {
+  offset = 0, diseno }: ModaBestSellingProps) {
   const navigate = useNavigate();
   const displayProducts = getSectionProducts(productos, genero, offset);
   const sectionTitle = titulo || (genero === 'hombre' ? 'Más vendidos hombre' : 'Más vendidos mujer');

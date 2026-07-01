@@ -206,7 +206,9 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
                 onCategorySelect={(category) => {
                     setSelectedCategorias([category]);
                     setShowMobileFilters(false);
-                    navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`);
+                    if (slug !== 'preview') {
+                        navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`);
+                    }
                 }}
             />
 
@@ -359,7 +361,7 @@ export default function UrbanoCatalogPage(props: UrbanoCatalogPageProps) {
                 </div>
             )}
 
-            <UrbanoFooter tienda={tienda} />
+            <UrbanoFooter tienda={tienda} diseno={diseno} slug={slug} categories={headerCategories} />
         </div>
     );
 }

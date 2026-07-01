@@ -771,8 +771,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                         </div>
 
                         {/* Items Table */}
-                        <div className="border border-gray-100 dark:border-slate-800 rounded-xl">
-                            <table className="w-full text-sm text-left">
+                        <div className="border border-gray-100 dark:border-slate-800 rounded-xl overflow-x-auto">
+                            <table className="w-full min-w-[640px] text-sm text-left">
                                 <thead className="bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-3 py-2">Producto</th>

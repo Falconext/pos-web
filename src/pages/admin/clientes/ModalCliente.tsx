@@ -139,17 +139,17 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
     return (
         <div>
             {isOpenModal && <Modal width="600px" height="auto" position="right" isOpenModal={isOpenModal} closeModal={closeModal} title={isEdit ? "Editar cliente" : "Nuevo cliente"}>
-                <div className="md:px-6 grid grid-cols-1 mt-5 gap-5">
+                <div className="mt-5 grid grid-cols-1 gap-5 px-4 pb-2 sm:px-6 md:grid-cols-2">
                     <div className="">
                         <InputPro autocomplete="off" error={errors.nroDoc} value={formValues?.nroDoc} name="nroDoc" onChange={handleChange} isLabel label="Nro. documento" />
                     </div>
                     <div className="">
                         <Select defaultValue={formValues?.persona} error={""} isSearch options={persons} id="persona" name="personaName" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Persona" />
                     </div>
-                    <div className="col-start-1 col-end-3">
+                    <div className="md:col-start-1 md:col-end-3">
                         <InputPro autocomplete="off" value={formValues?.nombre} error={errors.nombre} name="nombre" onChange={handleChange} isLabel label="Nombre o Razon social" />
                     </div>
-                    <div className="col-start-1 col-end-3">
+                    <div className="md:col-start-1 md:col-end-3">
                         <InputPro autocomplete="off" error={errors.direccion} value={formValues?.direccion} name="direccion" onChange={handleChange} isLabel label="Direccion" />
                     </div>
                     <div className="">
@@ -158,13 +158,13 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
                     <div className="">
                         <InputPro autocomplete="off" value={formValues?.telefono} error={errors.telefono} name="phone" onChange={handleChange} isLabel label="Celular" />
                     </div>
-                    <div className="col-start-1 col-end-3">
+                    <div className="md:col-start-1 md:col-end-3">
                         <SelectUbigeo value={formValues?.departamento ? `${formValues?.departamento}/${formValues?.provincia}/${formValues?.distrito}` : ""} isSearch options={ubigeos} name="nombreUbigeo" id="ubigeo" onChange={handleChangeSelect} label="Seleccionar ubigeo de la empresa" />
                     </div>
 
                     {isFarmacia && formValues.persona === 'CLIENTE' && (
                         <>
-                            <div className="col-start-1 col-end-3 border-t border-gray-100 dark:border-gray-700 pt-4">
+                            <div className="border-t border-gray-100 pt-4 dark:border-gray-700 md:col-start-1 md:col-end-3">
                                 <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-3">
                                     💊 Datos clínicos del paciente
                                 </p>
@@ -183,15 +183,15 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
                                     {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(g => <option key={g} value={g}>{g}</option>)}
                                 </select>
                             </div>
-                            <div className="col-start-1 col-end-3">
+                            <div className="md:col-start-1 md:col-end-3">
                                 <InputPro autocomplete="off" value={(formValues as any)?.alergias ?? ''} name="alergias" onChange={handleChange} isLabel label="Alergias conocidas" />
                             </div>
                         </>
                     )}
                 </div>
-                <div className="flex gap-5 justify-end mt-10 mb-5 md:pr-5">
-                    <Button color="gray" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
-                    <Button color="secondary" onClick={handleSubmitProduct}>{isEdit ? "Editar" : "Guardar"}</Button>
+                <div className="flex flex-col-reverse gap-3 px-4 pb-5 pt-6 sm:flex-row sm:justify-end sm:px-6">
+                    <Button color="gray" className="w-full sm:w-auto" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
+                    <Button color="secondary" className="w-full sm:w-auto" onClick={handleSubmitProduct}>{isEdit ? "Editar" : "Guardar"}</Button>
                 </div>
             </Modal>
             }

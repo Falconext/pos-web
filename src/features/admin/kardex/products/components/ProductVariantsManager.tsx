@@ -91,6 +91,11 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
       }))
     : [];
 
+  const hasColorOption = useMemo(
+    () => opcionesAtributos.some((option) => option.nombre.toLowerCase().includes('color')),
+    [opcionesAtributos],
+  );
+
   const colorOptionName = useMemo(() => {
     const colorOption = opcionesAtributos.find((option) =>
       option.nombre.toLowerCase().includes('color'),
@@ -99,9 +104,14 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
   }, [opcionesAtributos]);
 
   const combinations = useMemo(() => generateCombinations(opcionesAtributos), [opcionesAtributos]);
+  // Solo agrupamos imágenes por color cuando existe una opción "Color" real. Para
+  // productos solo-talla (p. ej. zapatillas sin color) no mostramos "Imágenes por color"
+  // y se usa la imagen principal del producto para todas las tallas.
   const colorValues = useMemo(
-    () => Array.from(new Set(combinations.map((combo) => combo[colorOptionName]).filter(Boolean))),
-    [colorOptionName, combinations],
+    () => (hasColorOption
+      ? Array.from(new Set(combinations.map((combo) => combo[colorOptionName]).filter(Boolean)))
+      : []),
+    [hasColorOption, colorOptionName, combinations],
   );
 
   const galleryByColor: Record<string, string[]> = useMemo(() => {
@@ -474,7 +484,7 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         Agrega fotos frontal, espalda o detalle para este color.
                       </p>
                     ) : (
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {savedGallery.map((url) => (
                           <div key={url} className="group relative h-16 overflow-hidden rounded-lg bg-white">
                             <img src={url} alt={`${color} galería`} className="h-full w-full object-cover" />

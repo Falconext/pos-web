@@ -7,6 +7,7 @@ import Footer from '@/components/tienda/Footer';
 import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
 import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
+import { withPricing, withPricingList } from '@/templates/shared/pricing';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -119,7 +120,7 @@ export default function AutopartesProductoDetalle() {
         setLoading(true);
         try {
             const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`);
-            setProducto(data.data || data);
+            setProducto(withPricing(data.data || data));
 
             // Fetch related
             const category = (data.data || data).categoria;
@@ -128,7 +129,7 @@ export default function AutopartesProductoDetalle() {
                     params: { category, limit: 4 }
                 });
                 const arr = Array.isArray(res.data?.data?.data) ? res.data.data.data : Array.isArray(res.data?.data) ? res.data.data : [];
-                setRelated(arr.filter((p: any) => p.id !== Number(id)).slice(0, 4));
+                setRelated(withPricingList(arr.filter((p: any) => p.id !== Number(id)).slice(0, 4)));
             }
         } catch {
             navigate(`/tienda/${slug}`);
@@ -366,6 +367,7 @@ export default function AutopartesProductoDetalle() {
                 actualizarCantidad={actualizarCantidad}
                 onCheckout={() => navigate(`/tienda/${slug}/checkout`)}
                 cp={cp}
+                tienda={tienda}
             />
         </div>
     );

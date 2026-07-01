@@ -9,6 +9,7 @@ import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelect
 import ReviewFeedbackModal from '@/components/tienda/ReviewFeedbackModal';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
+import { withPricing, withPricingList } from '@/templates/shared/pricing';
 import {
   findFashionVariant,
   getDefaultVariantSelection,
@@ -211,7 +212,7 @@ export default function ModaProductoDetalle() {
           axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
           axios.get(`${BASE_URL}/public/store/${slug}`),
         ]);
-        const prod = prodRes.data.data || prodRes.data;
+        const prod = withPricing(prodRes.data.data || prodRes.data);
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
         setTienda(tiendaData);
@@ -268,7 +269,7 @@ export default function ModaProductoDetalle() {
             `${BASE_URL}/public/store/${slug}/products/${id}/related`
           );
           const rel = relRes.data.data || relRes.data;
-          setRelated(Array.isArray(rel) ? rel.slice(0, 4) : []);
+          setRelated(Array.isArray(rel) ? withPricingList(rel.slice(0, 4)) : []);
         } catch {}
 
         // All products for header search
@@ -277,7 +278,7 @@ export default function ModaProductoDetalle() {
             params: { limit: 30 },
           });
           const items = allRes.data?.data?.data || allRes.data?.data || [];
-          setAllProducts(Array.isArray(items) ? items : []);
+          setAllProducts(Array.isArray(items) ? withPricingList(items) : []);
         } catch {}
 
         // Restore cart

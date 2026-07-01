@@ -73,22 +73,22 @@ export default function AdminIndex() {
 
   return (
     <>
-      <div className="min-h-screen pb-8 max-w-8xl mx-auto px-4 pt-2 font-inter bg-transparent">
+      <div className="min-h-screen pb-8 max-w-8xl mx-auto px-3 sm:px-4 pt-2 font-inter bg-transparent">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-4 mb-5 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2 leading-tight">
               ¡Hola, {auth?.nombre?.split(' ')[0] || 'Administrador'}! <span>👋</span>
             </h1>
-            <p className="text-[15px] text-gray-500 dark:text-gray-400 font-medium mt-1">Aquí tienes un resumen de tu negocio hoy.</p>
+            <p className="text-sm sm:text-[15px] text-gray-500 dark:text-gray-400 font-medium mt-1">Aquí tienes un resumen de tu negocio hoy.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="w-full xl:w-auto grid grid-cols-1 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] xl:flex items-stretch xl:items-center gap-3">
             {isAdmin && esPrincipal && (
-              <div className="w-48 rounded-xl shadow-sm">
+              <div className="w-full xl:w-48 rounded-xl shadow-sm">
                 <Select name="sedeId" label="Sede" options={sedesOptions} onChange={(id) => setSelectedSedeId(Number(id))} value={selectedSedeId ? sedes.find(s => s.id === selectedSedeId)?.nombre || '' : 'Todas las sedes'} error="" />
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 min-w-0">
               <Calendar name="fechaInicio" onChange={handleDate} value={moment(fechaInicio).format('DD/MM/YYYY')} text="Fecha Inicio" />
               <Calendar left name="fechaFin" onChange={handleDate} value={moment(fechaFin).format('DD/MM/YYYY')} text="Fecha Fin" />
             </div>
@@ -96,100 +96,100 @@ export default function AdminIndex() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-          <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-5 sm:mb-6">
+          <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+            <div className="flex justify-between items-start gap-2 mb-4">
               <h3 className="text-violet-600 text-[13px] font-bold tracking-wide">Ventas Totales</h3>
-              <div className="w-10 h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white  shadow-violet-200 group-hover:-translate-y-1 transition-transform">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-violet-600 flex items-center justify-center text-white shadow-violet-200 group-hover:-translate-y-1 transition-transform shrink-0">
                 <Icon icon="solar:dollar-bold" className="text-xl" />
               </div>
             </div>
             <div>
-              <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{formatMoney(kpis.ventas.value)}</h2>
-              <div className="flex items-center gap-1.5">
+              <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2 truncate">{formatMoney(kpis.ventas.value)}</h2>
+              <div className="flex flex-wrap items-center gap-1.5">
                 {renderTrend(kpis.ventas.trend)}
-                <span className="text-gray-400 text-xs font-medium">vs semana pasada</span>
+                <span className="text-gray-400 text-[11px] sm:text-xs font-medium">vs semana pasada</span>
               </div>
             </div>
-            <div className="mt-4 h-12 opacity-80">
+            <div className="mt-4 h-10 sm:h-12 opacity-80">
               <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['violet']} />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
+          <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+            <div className="flex justify-between items-start gap-2 mb-4">
               <h3 className="text-blue-500 text-[13px] font-bold tracking-wide">Pedidos</h3>
-              <div className="w-10 h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white  shadow-blue-200 group-hover:-translate-y-1 transition-transform">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-blue-200 group-hover:-translate-y-1 transition-transform shrink-0">
                 <Icon icon="solar:bag-bold" className="text-xl" />
               </div>
             </div>
             <div>
-              <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{kpis.pedidos.value.toLocaleString()}</h2>
-              <div className="flex items-center gap-1.5">
+              <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{kpis.pedidos.value.toLocaleString()}</h2>
+              <div className="flex flex-wrap items-center gap-1.5">
                 {renderTrend(kpis.pedidos.trend)}
-                <span className="text-gray-400 text-xs font-medium">vs semana pasada</span>
+                <span className="text-gray-400 text-[11px] sm:text-xs font-medium">vs semana pasada</span>
               </div>
             </div>
-            <div className="mt-4 h-12 opacity-80">
+            <div className="mt-4 h-10 sm:h-12 opacity-80">
               <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['blue']} />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
+          <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+            <div className="flex justify-between items-start gap-2 mb-4">
               <h3 className="text-emerald-500 text-[13px] font-bold tracking-wide">Clientes Nuevos</h3>
-              <div className="w-10 h-10 rounded-[14px] bg-emerald-500 flex items-center justify-center text-white  shadow-emerald-200 group-hover:-translate-y-1 transition-transform">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-emerald-500 flex items-center justify-center text-white shadow-emerald-200 group-hover:-translate-y-1 transition-transform shrink-0">
                 <Icon icon="solar:user-bold" className="text-xl" />
               </div>
             </div>
             <div>
-              <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{kpis.clientes.value.toLocaleString()}</h2>
-              <div className="flex items-center gap-1.5">
+              <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{kpis.clientes.value.toLocaleString()}</h2>
+              <div className="flex flex-wrap items-center gap-1.5">
                 {renderTrend(kpis.clientes.trend)}
-                <span className="text-gray-400 text-xs font-medium">vs semana pasada</span>
+                <span className="text-gray-400 text-[11px] sm:text-xs font-medium">vs semana pasada</span>
               </div>
             </div>
-            <div className="mt-4 h-12 opacity-80">
+            <div className="mt-4 h-10 sm:h-12 opacity-80">
               <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['emerald']} />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#131620] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
+          <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+            <div className="flex justify-between items-start gap-2 mb-4">
               <h3 className="text-amber-500 text-[13px] font-bold tracking-wide">Ticket Promedio</h3>
-              <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white  shadow-amber-200 group-hover:-translate-y-1 transition-transform">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-amber-200 group-hover:-translate-y-1 transition-transform shrink-0">
                 <Icon icon="solar:cart-check-bold" className="text-xl" />
               </div>
             </div>
             <div>
-              <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">{formatMoney(kpis.conversion.value)}</h2>
-              <div className="flex items-center gap-1.5">
+              <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2 truncate">{formatMoney(kpis.conversion.value)}</h2>
+              <div className="flex flex-wrap items-center gap-1.5">
                 {renderTrend(kpis.conversion.trend)}
-                <span className="text-gray-400 text-xs font-medium">vs semana pasada</span>
+                <span className="text-gray-400 text-[11px] sm:text-xs font-medium">vs semana pasada</span>
               </div>
             </div>
-            <div className="mt-4 h-12 opacity-80">
+            <div className="mt-4 h-10 sm:h-12 opacity-80">
               <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['amber']} />
             </div>
           </div>
         </div>
 
         {/* Middle Row Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-10 gap-5 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-10 gap-4 sm:gap-5 mb-5 sm:mb-6">
           {/* Main Area Chart */}
-          <div className="lg:col-span-2 xl:col-span-5 bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
-            <div className="flex justify-between items-start mb-2">
+          <div className="lg:col-span-2 xl:col-span-5 bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-800 min-w-0">
+            <div className="flex justify-between items-start gap-3 mb-2">
               <div>
                 <h3 className="text-gray-900 dark:text-white font-bold text-lg">Ventas</h3>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-2xl font-extrabold text-gray-900 dark:text-white">{formatMoney(kpis.ventas.value)}</span>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+                  <span className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">{formatMoney(kpis.ventas.value)}</span>
                   {renderTrend(kpis.ventas.trend)}
                 </div>
               </div>
             </div>
             {chartVentas.length > 0 ? (
               <AreaChart
-                className="h-64 mt-4"
+                className="h-56 sm:h-64 mt-4"
                 data={chartVentas}
                 index="date"
                 categories={['total']}
@@ -201,17 +201,17 @@ export default function AdminIndex() {
                 showAnimation={true}
               />
             ) : (
-              <div className="h-64 mt-4 flex items-center justify-center text-gray-400 text-sm">No hay ventas en este periodo</div>
+              <div className="h-56 sm:h-64 mt-4 flex items-center justify-center text-gray-400 text-sm">No hay ventas en este periodo</div>
             )}
           </div>
 
           {/* Donut Chart */}
-          <div className="lg:col-span-1 xl:col-span-3 bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
-            <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-6">Ventas por Canal</h3>
+          <div className="lg:col-span-1 xl:col-span-3 bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col min-w-0">
+            <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-4 sm:mb-6">Ventas por Canal</h3>
             <div className="flex-1 flex flex-col justify-center">
               {chartCanales.length > 0 ? (
                 <DonutChart
-                  className="h-44"
+                  className="h-40 sm:h-44"
                   data={chartCanales}
                   category="value"
                   index="name"
@@ -220,20 +220,20 @@ export default function AdminIndex() {
                   showAnimation
                 />
               ) : (
-                <div className="text-center text-gray-400 text-sm h-44 flex items-center justify-center">No hay datos</div>
+                <div className="text-center text-gray-400 text-sm h-40 sm:h-44 flex items-center justify-center">No hay datos</div>
               )}
 
-              <div className="mt-8 space-y-3">
+              <div className="mt-6 sm:mt-8 space-y-3">
                 {chartCanales.map((c: any, i: number) => {
                   const colorMap = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500'];
                   return (
-                    <div key={c.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div key={c.name} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div className={`w-2.5 h-2.5 rounded-full ${colorMap[i % 4]}`}></div>
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{c.name}</span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 truncate">{c.name}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-400 dark:text-gray-500">{formatMoney(c.value)}</span>
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                        <span className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">{formatMoney(c.value)}</span>
                         <span className="text-[13px] font-bold text-violet-600 dark:text-violet-400 w-10 text-right">{c.percentage.toFixed(1)}%</span>
                       </div>
                     </div>
@@ -244,9 +244,9 @@ export default function AdminIndex() {
           </div>
 
           {/* Activity Feed */}
-          <div className="lg:col-span-3 xl:col-span-2 bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
+          <div className="lg:col-span-3 xl:col-span-2 bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col min-w-0">
             <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-5">Actividad Reciente</h3>
-            <div className="flex-1 overflow-y-auto pr-1 space-y-5">
+            <div className="flex-1 overflow-y-auto pr-1 space-y-4 sm:space-y-5 max-h-[420px] xl:max-h-none">
               {actividad.length > 0 ? actividad.map((a: any, i: number) => {
                 const isRefund = a.tipo === 'Reembolso procesado';
                 const iconMap = [
@@ -257,7 +257,7 @@ export default function AdminIndex() {
                 ];
                 const idx = isRefund ? 3 : (i % 3);
                 return (
-                  <div key={a.id} className="flex items-start gap-3">
+                  <div key={a.id} className="flex items-start gap-3 min-w-0">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconMap[idx].bg}`}>
                       <Icon icon={iconMap[idx].icon} className="text-lg" />
                     </div>
@@ -265,7 +265,7 @@ export default function AdminIndex() {
                       <p className="text-[13px] font-bold text-gray-900 dark:text-white leading-snug truncate">{a.tipo}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{a.descripcion} • {a.cliente}</p>
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 max-w-[96px]">
                       <p className={`text-[13px] font-bold ${isRefund ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-500 dark:text-emerald-400'}`}>
                         {isRefund ? '-' : '+'}{formatMoney(Math.abs(a.monto))}
                       </p>
@@ -279,7 +279,7 @@ export default function AdminIndex() {
             </div>
             <button
               onClick={() => navigate('/administrador/facturacion/comprobantes')}
-              className="w-full mt-4 py-2 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-sm font-bold rounded-xl hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors"
+              className="w-full mt-4 py-2.5 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-sm font-bold rounded-xl hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors"
             >
               Ver toda la actividad <Icon icon="solar:alt-arrow-right-linear" className="inline ml-1" />
             </button>

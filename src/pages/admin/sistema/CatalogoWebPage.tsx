@@ -342,14 +342,14 @@ export default function CatalogoWebPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <InputPro isLabel label="Precio (S/) *" name="price" type="number" step="0.01" value={String(form.price)} onChange={handleChange as any} />
               <InputPro isLabel label="Precio anterior (S/)" name="oldPrice" type="number" step="0.01" value={String(form.oldPrice ?? '')} onChange={handleChange as any} placeholder="0.00" />
             </div>
 
             <InputPro isLabel label="URL de Imagen" name="imageUrl" value={form.imageUrl ?? ''} onChange={handleChange as any} placeholder="https://..." />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Categoría *"
                 name="category"
@@ -367,7 +367,7 @@ export default function CatalogoWebPage() {
               <InputPro isLabel label="Stock (vacío = ∞)" name="stock" type="number" value={String(form.stock ?? '')} onChange={handleChange as any} placeholder="∞" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <InputPro isLabel label="Badge" name="badge" value={form.badge ?? ''} onChange={handleChange as any} placeholder="Nuevo, Popular..." />
               <InputPro isLabel label="Orden" name="order" type="number" value={String(form.order ?? 0)} onChange={handleChange as any} />
             </div>

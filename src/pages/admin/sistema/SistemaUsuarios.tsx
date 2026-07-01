@@ -440,7 +440,7 @@ export default function SistemaUsuarios() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sistema de negocio</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <SistemaBtn value="" label="Todos" icon="solar:crown-bold-duotone" desc="Ambos sistemas" activeColor="violet" />
                     <SistemaBtn value="FALCONEXT" label="Falconext" icon="solar:rocket-bold-duotone" desc="Solo Falconext" activeColor="violet" />
                     <SistemaBtn value="KREZKA" label="Krezka" icon="solar:star-bold-duotone" desc="Solo Krezka" activeColor="blue" />
@@ -451,7 +451,7 @@ export default function SistemaUsuarios() {
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sistema de producto</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <SistemaProductoBtn value="" label="Todos" icon="solar:layers-bold-duotone" desc="Todos los productos" activeColor="sky" />
                     <SistemaProductoBtn value="FACTURACION" label="Facturación" icon="solar:bill-list-bold-duotone" desc="Solo facturación" activeColor="sky" />
                     <SistemaProductoBtn value="HOTEL" label="Hotel" icon="solar:bed-bold-duotone" desc="Solo hotel" activeColor="amber" />
@@ -492,7 +492,7 @@ export default function SistemaUsuarios() {
               error={errors.email}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <InputPro
                 isLabel
                 label="DNI *"

@@ -124,7 +124,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 ) : isEdit ? (
                     <div className={hasSedePolicy ? 'grid grid-cols-1 lg:grid-cols-4 gap-6' : ''}>
                         <div className={hasSedePolicy ? 'lg:col-span-1 space-y-4' : 'space-y-4'}>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
                                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stockOriginal}</div>
                                     <div className="text-xs text-gray-600 dark:text-gray-400">Stock Actual</div>
@@ -192,7 +192,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <InputPro autocomplete="off" type="number" value={formValues?.stockMinimo ?? ''} name="stockMinimo" onChange={handleChange} isLabel label="Stock mínimo" placeholder="Ej. 5" />
                                 <InputPro autocomplete="off" type="number" value={formValues?.stockMaximo ?? ''} name="stockMaximo" onChange={handleChange} isLabel label={isMobile ? "Stock máximo" : "Stock máximo"} placeholder="Ej. 100" />
                             </div>
@@ -208,7 +208,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <div className={hasSedePolicy ? 'lg:col-span-1' : ''}>
                             <InputPro autocomplete="off" type="number" readOnly={esFarmaceutico} value={formValues?.stock} error={errors.stock} name="stock" onChange={handleChange} isLabel label="Stock Inicial" placeholder="Cantidad inicial en inventario" />
                             {esFarmaceutico && <p className="text-[11px] text-amber-500 mt-1"><Icon icon="mdi:information" className="inline mr-1" />En farmacia, ingresa el stock inicial usando el botón "Gestión de Lotes".</p>}
-                            <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                 <InputPro autocomplete="off" type="number" value={formValues?.stockMinimo ?? ''} name="stockMinimo" onChange={handleChange} isLabel label="Stock mínimo" placeholder="Ej. 5" />
                                 <InputPro autocomplete="off" type="number" value={formValues?.stockMaximo ?? ''} name="stockMaximo" onChange={handleChange} isLabel label={isMobile ? "Stock máximo" : "Stock máximo"} placeholder="Ej. 100" />
                             </div>

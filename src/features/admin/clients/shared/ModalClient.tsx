@@ -159,7 +159,7 @@ export default function ModalClient({
 
                     {/* Banner de tipo — solo en modo farmacia */}
                     {grupoBadge && (
-                        <div className={`mx-6 mt-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl ${grupoBadge.color}`}>
+                        <div className={`mx-4 mt-4 flex items-center gap-2.5 rounded-xl px-4 py-2.5 sm:mx-6 ${grupoBadge.color}`}>
                             <span className="text-base">{grupoBadge.icon}</span>
                             <div>
                                 <p className="text-xs font-bold">{grupoBadge.label}</p>
@@ -168,18 +168,18 @@ export default function ModalClient({
                         </div>
                     )}
 
-                    <div className="md:px-6 mt-5 space-y-4">
+                    <div className="mt-5 space-y-4 px-4 pb-2 sm:px-6">
 
                         {/* Fila 1: Tipo de documento (botones) */}
                         <div>
                             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide mb-2">N° de Documento</p>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
                                 {visibleDocTypes.map((dt) => (
                                     <button
                                         key={dt.key}
                                         type="button"
                                         onClick={() => handleTipoDocChange(dt.key)}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 ${activeTipoDoc === dt.key
+                                        className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 ${activeTipoDoc === dt.key
                                             ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white'
                                             : 'bg-white dark:bg-transparent text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-500'
                                         }`}
@@ -191,7 +191,7 @@ export default function ModalClient({
                         </div>
 
                         {/* Fila 2: Nro. documento + Nombre (misma fila) */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
                                 <InputPro
                                     autocomplete="off"
@@ -223,7 +223,7 @@ export default function ModalClient({
                         <InputPro autocomplete="off" error={errors.direccion} value={formValues?.direccion} name="direccion" onChange={handleChange} isLabel label="Dirección" />
 
                         {/* Correo + Celular */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <InputPro autocomplete="off" value={formValues?.email} error={errors.email} name="email" onChange={handleChange} isLabel label="Correo principal" />
                             <InputPro autocomplete="off" value={formValues?.telefono} error={errors.telefono} name="telefono" onChange={handleChange} isLabel label="Celular" />
                         </div>
@@ -239,9 +239,9 @@ export default function ModalClient({
                             label="Seleccionar ubigeo"
                         />
                     </div>
-                    <div className="flex gap-5 justify-end mt-8 mb-5 md:pr-5">
-                        <Button color="gray" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
-                        <Button color="secondary" onClick={handleSubmit}>{isEdit ? 'Editar' : 'Guardar'}</Button>
+                    <div className="flex flex-col-reverse gap-3 px-4 pb-5 pt-6 sm:flex-row sm:justify-end sm:px-6">
+                        <Button color="gray" className="w-full sm:w-auto" onClick={() => setIsOpenModal(false)}>Cancelar</Button>
+                        <Button color="secondary" className="w-full sm:w-auto" onClick={handleSubmit}>{isEdit ? 'Editar' : 'Guardar'}</Button>
                     </div>
                 </Modal>
             )}

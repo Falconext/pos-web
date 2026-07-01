@@ -9,6 +9,8 @@ export type PlantillaId =
   | 'menu'
   | 'gadgets'
   | 'autopartes'
+  | 'tecnologia'
+  | 'maye'
   | 'moda'
   | 'urbano';
 
@@ -53,6 +55,12 @@ export interface TemplateConfig {
   planesPermitidos?: string[];
   /** Restricted to specific rubros (by name). If undefined or empty, allowed for all rubros. */
   rubrosPermitidos?: string[];
+  /** Requires a separate template purchase before activation. */
+  premium?: boolean;
+  /** One-time price in PEN for premium templates. */
+  precioSoles?: number;
+  /** Short premium positioning text for admin UI. */
+  premiumNote?: string;
 }
 
 export function normalizeRubroName(value?: string | null): string {
@@ -247,6 +255,44 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     planesPermitidos: ['CORPORATIVO', 'VIP'],
     rubrosPermitidos: ['Automotriz y repuestos'],
   },
+  tecnologia: {
+    cardComponent: 'ProductCardTecnologia',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Tecnología',
+    description: 'Diseño oscuro y moderno para productos tecnológicos.',
+    accentColor: '#3B82F6',
+    icon: 'solar:laptop-minimalistic-bold',
+    planesPermitidos: ['CORPORATIVO', 'VIP'],
+    rubrosPermitidos: ['Tecnología y software', 'Ventas de accesorios y repuestos de cómputo', 'Tecnologías de la información'],
+  },
+  maye: {
+    cardComponent: 'ProductCardMaye',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Maye',
+    description: 'Experiencia ecommerce premium para tecnología: home editorial, microinteracciones y personalización avanzada.',
+    accentColor: '#2563EB',
+    icon: 'solar:shop-bold',
+    premium: true,
+    precioSoles: 199,
+    premiumNote: 'Compra única aparte del plan',
+    rubrosPermitidos: [],
+  },
   moda: {
     cardComponent: 'ProductCardPio', // We can update this later if we create a specific card for moda
     gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
@@ -285,8 +331,16 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
 
 export const DEFAULT_TEMPLATE: PlantillaId = 'moderna';
 
+export function resolveTemplateId(plantillaId?: string | null): PlantillaId {
+  const raw = String(plantillaId || DEFAULT_TEMPLATE)
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .find(Boolean) || DEFAULT_TEMPLATE;
+  return Object.prototype.hasOwnProperty.call(TEMPLATES, raw) ? raw as PlantillaId : DEFAULT_TEMPLATE;
+}
+
 export function resolveTemplate(plantillaId?: string | null): TemplateConfig {
-  const key = (plantillaId ?? DEFAULT_TEMPLATE) as PlantillaId;
+  const key = resolveTemplateId(plantillaId);
   return TEMPLATES[key] ?? TEMPLATES[DEFAULT_TEMPLATE];
 }
 
@@ -298,6 +352,42 @@ export const ALL_PLANTILLAS = Object.entries(TEMPLATES).map(([id, cfg]) => ({
   id: id as PlantillaId,
   ...cfg,
 }));
+
+export const PREMIUM_TEMPLATE_PURCHASE_KEYS = [
+  'plantillasPremiumCompradas',
+  'premiumTemplatesPurchased',
+  'templatesComprados',
+  'plantillaPremiumComprada',
+  'templatePremiumPurchased',
+  'templateComprado',
+] as const;
+
+export function getPurchasedPremiumTemplates(diseno?: Record<string, any> | null): string[] {
+  if (!diseno || typeof diseno !== 'object') return [];
+
+  const values = PREMIUM_TEMPLATE_PURCHASE_KEYS.flatMap((key) => {
+    const raw = diseno[key];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') return raw.split(',');
+    return [];
+  });
+  const detailKeys = diseno.plantillasPremiumComprasDetalle && typeof diseno.plantillasPremiumComprasDetalle === 'object' && !Array.isArray(diseno.plantillasPremiumComprasDetalle)
+    ? Object.keys(diseno.plantillasPremiumComprasDetalle)
+    : [];
+
+  return Array.from(new Set([...values, ...detailKeys].map((value) => String(value).trim()).filter(Boolean)));
+}
+
+export function isTemplatePurchased(plantillaId: string, diseno?: Record<string, any> | null): boolean {
+  return getPurchasedPremiumTemplates(diseno).includes(plantillaId);
+}
+
+export function isTemplatePremiumLocked(
+  template: Pick<TemplateConfig, 'premium'> & { id: string },
+  diseno?: Record<string, any> | null,
+): boolean {
+  return Boolean(template.premium && !isTemplatePurchased(template.id, diseno));
+}
 
 export function isSliderTemplate(plantillaId?: string | null): boolean {
   return resolveTemplate(plantillaId).bannerIsSlider;

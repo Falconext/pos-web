@@ -38,7 +38,7 @@ export default function AutopartesCatalog({ demo, cp, onProduct, onAddToCart }: 
       {/* Dark Header Banner */}
       <div className="bg-[#111111] relative overflow-hidden text-white pt-20 pb-24 px-6 mb-12">
         <div className="absolute inset-0 z-0 opacity-40">
-           <img src="/assets/autopartes/widget1.png" className="w-full h-full object-cover mix-blend-luminosity" alt="Background" />
+           <img src="/assets/templates/autopartes/widget1.png" className="w-full h-full object-cover mix-blend-luminosity" alt="Background" />
            <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/80 to-transparent"></div>
         </div>
         

@@ -10,7 +10,7 @@ interface AutopartesFeaturedCategoriesProps {
 
 export default function AutopartesFeaturedCategories({ cp, slug, diseno }: AutopartesFeaturedCategoriesProps) {
   const navigate = useNavigate();
-  const categoryImage = diseno?.autopartesCategoryImageUrl || '/assets/autopartes/producto.png';
+  const categoryImage = diseno?.autopartesCategoryImageUrl || '/assets/templates/autopartes/producto.png';
 
   const categories = [
     {

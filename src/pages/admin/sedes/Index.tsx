@@ -71,11 +71,13 @@ const SedesIndex = () => {
             </div>
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden p-4">
                 {tableData.length > 0 ? (
-                    <DataTable actions={actions} bodyData={tableData} headerColumns={[
-                        { label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' },
-                        { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'Tipo' },
-                        { label: 'Estado', key: 'Estado' },
-                    ]} />
+                    <div className="overflow-x-auto">
+                        <DataTable actions={actions} bodyData={tableData} headerColumns={[
+                            { label: 'Nombre', key: 'nombre' }, { label: 'Dirección', key: 'direccion' },
+                            { label: 'Código', key: 'codigo' }, { label: 'Tipo', key: 'Tipo' },
+                            { label: 'Estado', key: 'Estado' },
+                        ]} />
+                    </div>
                 ) : <div className="text-center py-12 text-gray-500 dark:text-gray-400">No hay sedes registradas.</div>}
             </div>
             {vm.showModal && <SedeModal isOpen={vm.showModal} onClose={() => vm.setShowModal(false)} sede={vm.selectedSede} isEdit={vm.isEdit} />}

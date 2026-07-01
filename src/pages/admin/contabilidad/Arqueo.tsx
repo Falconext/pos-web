@@ -14,7 +14,7 @@ const ArqueoCaja = () => {
     return (
         <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             <div className="md:px-8 pt-0 md:pt-5 md:mt-0 pb-10">
-                <div className="mb-6 flex justify-between items-center">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
                     <div className="flex justify-start gap-3 mb-0 flex-wrap">
                         <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" />
                         <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" />

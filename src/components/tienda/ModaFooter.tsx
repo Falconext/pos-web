@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import { Link } from 'react-router-dom';
 
 interface ModaFooterProps {
+  diseno?: any;
   tiendaNombre: string;
 }
 
@@ -29,7 +30,7 @@ const socials = [
 
 const payments = ['VISA', 'MC', 'DISC', 'PP', 'DIN', 'JCB', 'AMEX', 'Klarna', 'Pay', 'GPay'];
 
-export default function ModaFooter({ tiendaNombre }: ModaFooterProps) {
+export default function ModaFooter({ tiendaNombre, diseno }: ModaFooterProps) {
   const year = new Date().getFullYear();
   const emailName = tiendaNombre
     .toLowerCase()

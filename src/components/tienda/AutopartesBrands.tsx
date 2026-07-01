@@ -10,24 +10,24 @@ interface Props {
 
 export default function AutopartesBrands({ cp, slug, diseno }: Props) {
   const navigate = useNavigate();
-  const brandsImage = diseno?.autopartesBrandsImageUrl || '/assets/autopartes/marcas.png';
+  const brandsImage = diseno?.autopartesBrandsImageUrl || '/assets/templates/autopartes/marcas.png';
 
   const brands = [
-    { name: 'AYD', logo: '/assets/autopartes/producto.png' },
-    { name: 'Rolex', logo: '/assets/autopartes/producto.png' },
-    { name: 'Xenery', logo: '/assets/autopartes/producto.png' },
-    { name: 'Aqua Plus', logo: '/assets/autopartes/producto.png' },
-    { name: 'APC', logo: '/assets/autopartes/producto.png' },
-    { name: 'Ariete', logo: '/assets/autopartes/producto.png' },
-    { name: 'Arnott', logo: '/assets/autopartes/producto.png' },
-    { name: 'As Catalizadores', logo: '/assets/autopartes/producto.png' },
-    { name: 'Apple', logo: '/assets/autopartes/producto.png' },
-    { name: 'Ashika', logo: '/assets/autopartes/producto.png' },
-    { name: 'Asmet', logo: '/assets/autopartes/producto.png' },
-    { name: 'Axpock', logo: '/assets/autopartes/producto.png' },
-    { name: 'Aster', logo: '/assets/autopartes/producto.png' },
-    { name: 'Autoteile', logo: '/assets/autopartes/producto.png' },
-    { name: 'Auger', logo: '/assets/autopartes/producto.png' },
+    { name: 'AYD', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Rolex', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Xenery', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Aqua Plus', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'APC', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Ariete', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Arnott', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'As Catalizadores', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Apple', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Ashika', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Asmet', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Axpock', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Aster', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Autoteile', logo: '/assets/templates/autopartes/producto.png' },
+    { name: 'Auger', logo: '/assets/templates/autopartes/producto.png' },
   ];
 
   return (

@@ -3,11 +3,12 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 
 interface ModaNewArrivalsProps {
+  diseno?: any;
   slug: string;
   productos: any[];
 }
 
-export default function ModaNewArrivals({ slug, productos }: ModaNewArrivalsProps) {
+export default function ModaNewArrivals({ slug, productos, diseno }: ModaNewArrivalsProps) {
   const navigate = useNavigate();
 
   // Mocking the specific products shown in the design

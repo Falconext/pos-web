@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import useEscapeKey from '@/hooks/useEscapeKey';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import axios from 'axios';
+import { withPricingList } from '@/templates/shared/pricing';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -71,7 +72,7 @@ export default function StoreHeader({
                     params: { search: term, limit: 8 }
                 });
                 const items = Array.isArray(data) ? data : data?.data?.data || data?.data || [];
-                setLiveResults(items);
+                setLiveResults(withPricingList(items));
             } catch (e) {
                 console.error('Error fetching live search', e);
             } finally {

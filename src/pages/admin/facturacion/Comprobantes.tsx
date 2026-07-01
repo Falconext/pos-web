@@ -103,6 +103,7 @@ const Comprobantes = () => {
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [selectedUsuarioId, setSelectedUsuarioId] = useState<number | null>(null);
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
     const [comprobanteWhatsApp, setComprobanteWhatsApp] = useState<any>(null);
@@ -338,6 +339,23 @@ const Comprobantes = () => {
             acciones,
         };
     });
+
+    const renderEstadoBadge = (estado?: string) => {
+        const value = String(estado || 'SIN ESTADO').toUpperCase();
+        const tone = value.includes('ACEPTADO') || value.includes('EMITIDO') || value.includes('PAGADO')
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+            : value.includes('PENDIENTE')
+                ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                : value.includes('ANULADO') || value.includes('RECHAZADO') || value.includes('FALLIDO')
+                    ? 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
+                    : 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+
+        return (
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${tone}`}>
+                {value}
+            </span>
+        );
+    };
 
 
     const handleGetReceipt = async (data: any) => {
@@ -607,6 +625,15 @@ const Comprobantes = () => {
         },
     ]
 
+    const activeFilterCount = [
+        searchClient.trim(),
+        fechaInicio,
+        fechaFin,
+        stateInvoice !== 'TODOS' ? stateInvoice : '',
+        selectedSedeId,
+        selectedUsuarioId,
+    ].filter(Boolean).length;
+
     return (
         <>
             <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
@@ -637,11 +664,11 @@ const Comprobantes = () => {
             />
             </div>
 
-        <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
+        <div className="min-h-screen px-3 sm:px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 sm:mb-6 pt-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
                         <Icon icon="solar:bill-list-bold-duotone" className="text-blue-600 dark:text-blue-400" />
                         Comprobantes Electrónicos
                     </h1>
@@ -650,29 +677,44 @@ const Comprobantes = () => {
                 <button
                     type="button"
                     onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA' } })}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                 >
                     <Icon icon="solar:add-circle-bold" className="text-lg" />
                     Nuevo comprobante
                 </button>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
-                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 mb-4 px-1">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
-                        <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
+                <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div className="mb-4 flex items-center justify-between gap-3 px-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
+                            <div className="min-w-0">
+                                <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
+                                <p className="truncate text-xs text-gray-400 md:hidden">
+                                    {activeFilterCount} activos · {moment(fechaInicio).format('DD/MM')} - {moment(fechaFin).format('DD/MM')}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileFiltersOpen((value) => !value)}
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-black text-white shadow-lg shadow-blue-500/20 md:hidden"
+                        >
+                            {isMobileFiltersOpen ? 'Ocultar' : 'Ver filtros'}
+                            <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="">
+                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:grid-cols-5`}>
+                        <div className="sm:col-span-2 xl:col-span-1">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
                         <div>
-                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} />
+                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} className="admin-date-filter" portal />
                         </div>      
                         <div>
-                            <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} />
+                            <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
@@ -709,7 +751,7 @@ const Comprobantes = () => {
                                 </select>
                             </div>
                         )}
-                        <div className="flex justify-end">
+                        <div className="sm:col-span-2 xl:col-span-1">
                             <Select onChange={handleSelectPrint} label="Formato impresión" name="" defaultValue={printSize} options={print} error="" />
                         </div>
                     </div>
@@ -717,7 +759,7 @@ const Comprobantes = () => {
                 </div>
 
                 {/* Table Content */}
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                     {invoicesLoading ? (
                         <div className="py-16 flex flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
                             <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-blue-500" />
@@ -725,7 +767,7 @@ const Comprobantes = () => {
                         </div>
                     ) : productsTable?.length > 0 ? (
                         <>
-                            <div className="overflow-x-auto">
+                            <div className="hidden md:block overflow-x-auto">
                                 <DataTable bodyData={productsTable}
                                     headerColumns={[
                                         'Fecha',
@@ -741,6 +783,53 @@ const Comprobantes = () => {
                                         'Estado',
                                         'Acciones'
                                     ]} />
+                            </div>
+                            <div className="md:hidden space-y-3">
+                                {productsTable.map((row: any) => (
+                                    <article key={row.id} className="rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0F1623] p-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">{row.fechaEmisión}</p>
+                                                <h3 className="mt-1 text-base font-black text-gray-900 dark:text-white truncate">
+                                                    {row.serie}-{String(row.correlativo).padStart(8, '0')}
+                                                </h3>
+                                                <p className="mt-0.5 text-xs font-bold text-blue-600 dark:text-blue-400">{row.comprobante}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleOpenMenu(e, row)}
+                                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-200"
+                                                aria-label="Acciones"
+                                            >
+                                                <Icon icon="mdi:dots-vertical" width={20} height={20} />
+                                            </button>
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between gap-3">
+                                            {renderEstadoBadge(row.estado)}
+                                            <p className="text-lg font-black text-gray-950 dark:text-white">{row.total}</p>
+                                        </div>
+
+                                        <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                                            <div className="rounded-xl bg-gray-50 dark:bg-slate-800/70 p-3">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">Cliente</p>
+                                                <p className="mt-1 font-bold text-gray-700 dark:text-gray-200 line-clamp-2">{row.client || '-'}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-gray-50 dark:bg-slate-800/70 p-3">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">Doc.</p>
+                                                <p className="mt-1 font-bold text-gray-700 dark:text-gray-200 truncate">{row.document || '-'}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-gray-50 dark:bg-slate-800/70 p-3">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">Sede</p>
+                                                <p className="mt-1 font-bold text-gray-700 dark:text-gray-200 truncate">{row.sede || '-'}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-gray-50 dark:bg-slate-800/70 p-3">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">Vendedor</p>
+                                                <p className="mt-1 font-bold text-gray-700 dark:text-gray-200 truncate">{row.vendedor || '-'}</p>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
                             </div>
                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
@@ -782,7 +871,7 @@ const Comprobantes = () => {
             )}
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information={`¿Estás seguro que deseas anular este comprobante del cliente ${formValues?.client || 'Desconocido'} por un importe de ${formValues?.total || 'S/ 0.00'}?`} isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
             {isOpenModalConfirmPayment && <ModalConfirm confirmSubmit={confirmCompleteInvoice} information="¿Cuál de estos metodos de pago se completo el pago?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirmPayment(false)} title="Completar pago">
-                <div className="grid grid-cols-3 gap-10 col-start-1 col-end-2 mb-5 mt-5">
+                <div className="grid grid-cols-3 gap-4 sm:gap-10 col-start-1 col-end-2 mb-5 mt-5">
                     {[
                         { key: 'Efectivo', src: 'https://img.freepik.com/vector-premium/efectivo-mano-logotipo-empresario-blanco_269543-105.jpg' },
                         { key: 'Yape', src: 'https://marketing-peru.beglobal.biz/wp-content/uploads/2025/01/logo-yape-bolivia.jpeg' },

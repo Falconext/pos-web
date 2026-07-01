@@ -1,21 +1,23 @@
 import { AreaChart } from '@tremor/react';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
+import { useState } from 'react';
 import { Calendar } from '@/components/Date';
 import Select from '@/components/Select';
 import { useFinanceDashboardViewModel } from './useFinanceDashboardViewModel';
 
 export default function FinanceDashboardView() {
     const vm = useFinanceDashboardViewModel();
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
     // Design tokens extracted from Velouré image
     const cardClass = "bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800 transition-all hover:shadow-md";
     const iconBgBase = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl mb-4";
 
     return (
-        <div className="min-h-screen bg-[#F8F9FB] dark:bg-[#0A0D14] p-6">
+        <div className="min-h-screen overflow-x-hidden bg-[#F8F9FB] p-3 dark:bg-[#0A0D14] sm:p-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div className="mb-6 flex flex-col items-start justify-between gap-4 md:mb-8 md:flex-row md:items-center">
                 <div>
                     <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mb-1">
                         <span>Finanzas</span>
@@ -25,8 +27,17 @@ export default function FinanceDashboardView() {
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Resumen Financiero</h1>
                 </div>
 
+                <button
+                    type="button"
+                    onClick={() => setIsMobileFiltersOpen((value) => !value)}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-lg shadow-indigo-500/20 md:hidden"
+                >
+                    <Icon icon="solar:filter-bold-duotone" className="text-lg" />
+                    {isMobileFiltersOpen ? 'Ocultar filtros' : 'Ver filtros'}
+                </button>
+
                 {/* Filters / Actions */}
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className={`${isMobileFiltersOpen ? 'flex' : 'hidden'} w-full flex-col gap-3 md:flex md:w-auto md:flex-row md:flex-wrap md:items-center`}>
                     {vm.isAdmin && vm.esPrincipal && (
                         <Select
                             onChange={vm.handleSelectSede}
@@ -37,34 +48,58 @@ export default function FinanceDashboardView() {
                             defaultValue="Todas las sedes"
                         />
                     )}
+                    {vm.isAdmin && (
+                        <Select
+                            onChange={vm.handleSelectUsuario}
+                            label="Vendedor"
+                            name="usuarioId"
+                            options={vm.usuariosOptions}
+                            error=""
+                            defaultValue="Todos los vendedores"
+                        />
+                    )}
                     <Calendar
                         text="Fecha Inicio"
                         name="fechaInicio"
                         value={moment(vm.fechaInicio).format('DD/MM/YYYY')}
                         onChange={vm.handleDateChange}
+                        className="admin-date-filter"
+                        portal
                     />
                     <Calendar
                         text="Fecha Fin"
                         name="fechaFin"
                         value={moment(vm.fechaFin).format('DD/MM/YYYY')}
                         onChange={vm.handleDateChange}
+                        className="admin-date-filter"
+                        portal
                     />
-                    <button
-                        onClick={vm.refreshData}
-                        className="bg-indigo-600 top-2 relative hover:bg-indigo-700 text-white p-3 rounded-xl transition-colors shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
-                    >
-                        <Icon icon="solar:refresh-bold" />
-                    </button>
-                    <button
-                        onClick={vm.handleExportPDF}
-                        disabled={vm.isGeneratingPDF || !vm.kpis}
-                        className="flex items-center gap-2 bg-rose-600 top-2 relative hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl transition-colors shadow-lg shadow-rose-200 dark:shadow-rose-900/20 text-sm font-medium"
-                    >
-                        <Icon icon={vm.isGeneratingPDF ? 'line-md:loading-twotone-loop' : 'solar:file-download-bold-duotone'} className="text-lg" />
-                        {vm.isGeneratingPDF ? 'Generando...' : 'PDF'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={vm.refreshData}
+                            className="rounded-xl bg-indigo-600 p-3 text-white shadow-lg shadow-indigo-200 transition-colors hover:bg-indigo-700 dark:shadow-indigo-900/20"
+                        >
+                            <Icon icon="solar:refresh-bold" />
+                        </button>
+                        <button
+                            onClick={vm.handleExportPDF}
+                            disabled={vm.isGeneratingPDF || !vm.kpis}
+                            className="flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-rose-200 transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-rose-900/20"
+                        >
+                            <Icon icon={vm.isGeneratingPDF ? 'line-md:loading-twotone-loop' : 'solar:file-download-bold-duotone'} className="text-lg" />
+                            {vm.isGeneratingPDF ? 'Generando...' : 'PDF'}
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Aviso: al filtrar por vendedor, los egresos son del negocio */}
+            {vm.isAdmin && vm.selectedUsuarioId && (
+                <div className="mb-5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+                    <Icon icon="solar:info-circle-bold-duotone" className="mt-0.5 shrink-0 text-base" />
+                    <span>Estás viendo las <strong>ventas/ingresos del vendedor seleccionado</strong>. Los egresos (gastos y compras) corresponden al negocio completo, no se atribuyen a un vendedor.</span>
+                </div>
+            )}
 
             {/* Main Content Grid */}
             {vm.isLoading ? (

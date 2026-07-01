@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 interface ModaHomeSectionsProps {
   slug: string;
   productos: any[];
+  diseno?: any;
 }
 
 type ProductSeed = [string, string, number, number, string];
@@ -57,7 +58,7 @@ function getPrice(product: any) {
 }
 
 function getOriginalPrice(product: any) {
-  return Number(product?.precioVenta || product?.precioUnitario || product?.precio || getPrice(product));
+  return Number(product?.precioRegular ?? product?.precioOriginal ?? product?.precioVenta ?? product?.precioUnitario ?? product?.precio ?? getPrice(product));
 }
 
 function getTitle(product: any) {
@@ -119,15 +120,30 @@ function useModaNavigation(slug: string) {
   return { goCatalog, goProduct };
 }
 
-export default function ModaHomeSections({ slug, productos }: ModaHomeSectionsProps) {
+export default function ModaHomeSections({ slug, productos, diseno }: ModaHomeSectionsProps) {
   const { goCatalog, goProduct } = useModaNavigation(slug);
   const newProducts = [...(productos || []).slice(10, 20), ...fallbackProducts()].slice(0, 10);
 
+  const activeTrendCards = trendCards.map(([title, image], i) => [
+    diseno?.[`modaTrend${i + 1}Text`] || title,
+    diseno?.[`modaTrend${i + 1}Image`] || image,
+  ]);
+
+  const activeStyleCards = styleCards.map(([title, image], i) => [
+    diseno?.[`modaStyle${i + 1}Text`] || title,
+    diseno?.[`modaStyle${i + 1}Image`] || image,
+  ]);
+
+  const activeCollectionCards = collectionCards.map(([title, image], i) => [
+    diseno?.[`modaCollection${i + 1}Text`] || title,
+    diseno?.[`modaCollection${i + 1}Image`] || image,
+  ]);
+
   return (
     <div className="bg-white text-black">
-      <ModaSectionShell title="En tendencia">
+      <ModaSectionShell title={diseno?.modaTrendsTitle || "En tendencia"}>
         <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
-          {trendCards.map(([title, image]) => (
+          {activeTrendCards.map(([title, image]) => (
             <button
               type="button"
               key={title}
@@ -163,10 +179,10 @@ export default function ModaHomeSections({ slug, productos }: ModaHomeSectionsPr
             </button>
           </div>
           <h2 className="text-[25px] font-black uppercase leading-none tracking-[-0.035em] md:text-[33px]">
-            Elige tu estilo
+            {diseno?.modaStylesTitle || "Elige tu estilo"}
           </h2>
           <div className="mt-8 grid grid-cols-2 gap-7 md:grid-cols-3 lg:grid-cols-5">
-            {styleCards.map(([title, image]) => (
+            {activeStyleCards.map(([title, image]) => (
               <button
                 type="button"
                 key={title}
@@ -184,9 +200,9 @@ export default function ModaHomeSections({ slug, productos }: ModaHomeSectionsPr
         </div>
       </section>
 
-      <ModaSectionShell title="Colecciones destacadas">
+      <ModaSectionShell title={diseno?.modaCollectionsTitle || "Colecciones destacadas"}>
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {collectionCards.map(([title, image]) => (
+          {activeCollectionCards.map(([title, image]) => (
             <button
               type="button"
               key={title}

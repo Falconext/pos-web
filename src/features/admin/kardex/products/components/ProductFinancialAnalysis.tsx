@@ -52,7 +52,7 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
                 </div>
 
                 {/* Métricas principales */}
-                <div className="grid grid-cols-2 gap-2 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
                     {/* Precio */}
                     <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-2 text-center flex flex-col justify-center">
                         <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mx-auto mb-1">
@@ -100,7 +100,7 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
                         <Icon icon="solar:layers-bold" width={10} />
                         Proyección stock {isEdit && tipoAjusteStock !== 'ninguno' ? 'resultante' : 'actual'} ({stockParaProyeccion})
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div className="text-center">
                             <p className="text-xs font-bold text-gray-700 dark:text-gray-200">S/ {(precioUnitario * stockParaProyeccion).toFixed(2)}</p>
                             <p className="text-[8px] text-gray-400 mt-0.5">Venta</p>

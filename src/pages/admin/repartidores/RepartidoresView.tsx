@@ -415,7 +415,7 @@ export default function RepartidoresView() {
             )}
           </div>
 
-          <div className="grid grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             {[
               { label: 'Total', value: globalDespacho.total, textColor: 'text-indigo-700 dark:text-indigo-300', bg: 'bg-indigo-100/70 dark:bg-indigo-900/30' },
               { label: 'Por preparar', value: globalDespacho.preparando, textColor: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-100/70 dark:bg-amber-900/30' },
@@ -583,7 +583,7 @@ export default function RepartidoresView() {
                   placeholder="9XXXXXXXX"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Tipo</label>
                   <select

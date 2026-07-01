@@ -130,8 +130,11 @@ export default function ShoppingCartModal({
                                                     <Icon icon="mdi:plus" width={12} />
                                                 </button>
                                             </div>
-                                            <div className="text-sm font-black text-[#1A1A1A]">
+                                            <div className="text-sm font-black text-[#1A1A1A] flex items-baseline gap-1.5">
                                                 S/ {(Number(item.precioUnitario) * (item.cantidad || 1)).toFixed(2)}
+                                                {item.enOferta && Number(item.precioRegular) > Number(item.precioUnitario) && (
+                                                    <span className="text-[11px] font-medium text-gray-400 line-through">S/ {(Number(item.precioRegular) * (item.cantidad || 1)).toFixed(2)}</span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

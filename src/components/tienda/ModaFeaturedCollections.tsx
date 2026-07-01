@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 
 interface ModaFeaturedCollectionsProps {
+  diseno?: any;
   slug: string;
   productos?: any[];
   onAddToCart?: (producto: any) => void;
@@ -42,11 +43,9 @@ const fallbackProducts = [
 
 const badges = ['BESTSELLER', 'POPULAR', 'NEW', 'NEW', 'NEW'];
 
-export default function ModaFeaturedCollections({
-  slug,
+export default function ModaFeaturedCollections({ slug,
   productos = [],
-  onAddToCart,
-}: ModaFeaturedCollectionsProps) {
+  onAddToCart, diseno }: ModaFeaturedCollectionsProps) {
   const navigate = useNavigate();
   const items = (productos.length ? productos : fallbackProducts).slice(0, 5);
 

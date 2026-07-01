@@ -8,6 +8,7 @@ import UrbanoFooter from './UrbanoFooter';
 import { getUrbanoTemplateCategories, getUrbanoTemplateProducts, isUrbanoTemplateProduct } from './urbanoTemplateProducts';
 
 interface UrbanoCatalogoPageProps {
+  diseno?: any;
   slug: string;
   tienda: any;
   productos: any[];
@@ -39,14 +40,15 @@ export default function UrbanoCatalogoPage({
   searchQuery,
   setSearchQuery,
   onSearchSubmit,
+  diseno,
 }: UrbanoCatalogoPageProps) {
   const navigate = useNavigate();
   const [hoveredCategory, setHoveredCategory] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const diseno = tienda?.diseno || {};
+  const activeDiseno = diseno || tienda?.diseno || {};
 
   const realProducts = productos || [];
-  const templateProducts = getUrbanoTemplateProducts(diseno);
+  const templateProducts = getUrbanoTemplateProducts(activeDiseno);
   const displayProducts = realProducts.length ? realProducts : templateProducts;
   const fallbackCategories = getUrbanoTemplateCategories(diseno);
   const categoryNameFromProduct = (product: any) =>
@@ -70,7 +72,29 @@ export default function UrbanoCatalogoPage({
       imagenUrl: imageForCategory(String(name), fallbackCategories[index]?.imagenUrl),
     }));
   const displayCategories = (categoriesFromApi.length ? categoriesFromApi : categoriesFromProducts.length ? categoriesFromProducts : fallbackCategories).slice(0, 8);
-  const splitCategories = displayCategories.slice(0, 4);
+
+  // Override manual desde el Live Editor: si el dueño define Categoría N (texto/imagen),
+  // esa reemplaza la tile correspondiente; si la deja vacía, usa la categoría real.
+  // El clic siempre navega a la categoría REAL (`nombre`) para no romper el filtro del catálogo.
+  const splitOverrides = [
+    { text: activeDiseno.urbanoCat1Text, img: activeDiseno.urbanoCat1Img },
+    { text: activeDiseno.urbanoCat2Text, img: activeDiseno.urbanoCat2Img },
+    { text: activeDiseno.urbanoCat3Text, img: activeDiseno.urbanoCat3Img },
+    { text: activeDiseno.urbanoCat4Text, img: activeDiseno.urbanoCat4Img },
+  ];
+  const catImageByName = new Map(displayCategories.map((c) => [String(c.nombre).toLowerCase(), c.imagenUrl]));
+  const baseSplit = displayCategories.slice(0, 4);
+  const splitCategories = Array.from({ length: 4 }, (_, i) => {
+    const base = baseSplit[i];
+    const ov = splitOverrides[i] || {};
+    const ovText = typeof ov.text === 'string' && ov.text.trim() ? ov.text.trim() : '';
+    const ovImg = typeof ov.img === 'string' && ov.img.trim() ? ov.img : '';
+    // Si el dueño eligió una categoría, navegamos y etiquetamos con ESA categoría.
+    const nombre = ovText || base?.nombre || '';
+    const selectedImg = ovText ? catImageByName.get(ovText.toLowerCase()) : '';
+    const imagenUrl = ovImg || selectedImg || base?.imagenUrl || fallbackCategories[i]?.imagenUrl || PRODUCT_PLACEHOLDER;
+    return nombre ? { label: nombre, nombre, imagenUrl } : null;
+  }).filter(Boolean) as { label: string; nombre: string; imagenUrl: string }[];
 
   const collectionProducts = displayProducts.slice(0, 12);
   
@@ -94,7 +118,18 @@ export default function UrbanoCatalogoPage({
   };
 
   const openCategory = (category: string) => {
+    if (slug === 'preview') {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+      return;
+    }
     navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`);
+  };
+  const openCatalog = () => {
+    if (slug === 'preview') {
+      window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+      return;
+    }
+    navigate(`/tienda/${slug}/catalogo`);
   };
 
   const scrollSlider = (dir: 1 | -1) => {
@@ -119,7 +154,7 @@ export default function UrbanoCatalogoPage({
 
   return (
     <div className="min-h-screen bg-white text-black" style={{ fontFamily: '"Inter", sans-serif' }}>
-      <UrbanoHeader
+      <UrbanoHeader diseno={activeDiseno}
         tienda={tienda}
         slug={slug}
         cp={cp}
@@ -132,7 +167,7 @@ export default function UrbanoCatalogoPage({
         onCategorySelect={openCategory}
       />
 
-      <UrbanoHero slug={slug} tienda={tienda} />
+      <UrbanoHero diseno={activeDiseno} slug={slug} tienda={tienda} />
 
       <main id="product-grid" className="mx-auto w-full max-w-[1600px] px-4 py-16 md:px-8 md:py-24">
         <div className="mb-12 flex flex-col items-center justify-between gap-6 md:flex-row">
@@ -192,7 +227,7 @@ export default function UrbanoCatalogoPage({
         {collectionProducts.length > 0 && (
           <div className="mt-20 flex w-full justify-center">
             <button
-              onClick={() => navigate(`/tienda/${slug}/catalogo`)}
+              onClick={openCatalog}
               className="border border-gray-200 bg-transparent px-10 py-3.5 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-900 transition-all duration-300 hover:border-black hover:bg-black hover:text-white"
             >
               Ver más
@@ -228,12 +263,12 @@ export default function UrbanoCatalogoPage({
           <div className="flex w-full max-w-sm flex-col items-end gap-4 text-right">
             {splitCategories.map((category, idx) => (
               <button
-                key={category.nombre}
+                key={`${category.label}-${idx}`}
                 onMouseEnter={() => setHoveredCategory(idx)}
                 onClick={() => openCategory(category.nombre)}
                 className={`text-4xl font-black uppercase tracking-tighter transition-colors duration-300 sm:text-5xl lg:text-6xl ${hoveredCategory === idx ? 'text-gray-900' : 'text-gray-300 hover:text-gray-400'}`}
               >
-                {category.nombre}
+                {category.label}
               </button>
             ))}
           </div>
@@ -242,10 +277,10 @@ export default function UrbanoCatalogoPage({
         <div className="relative flex min-h-[50vh] w-full items-center justify-center overflow-hidden bg-[#F4F5F6] p-8 md:w-1/2 lg:p-16">
           {splitCategories.map((category, idx) => (
             <div
-              key={`${category.nombre}-image-${idx}`}
+              key={`${category.label}-image-${idx}`}
               className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${hoveredCategory === idx ? 'z-10 opacity-100' : 'z-0 opacity-0'}`}
             >
-              <img src={category.imagenUrl} alt={category.nombre} className="h-full w-full object-cover opacity-90 mix-blend-multiply" />
+              <img src={category.imagenUrl} alt={category.label} className="h-full w-full object-cover opacity-90 mix-blend-multiply" />
             </div>
           ))}
         </div>
@@ -348,7 +383,7 @@ export default function UrbanoCatalogoPage({
         ))}
       </section>
 
-      <UrbanoFooter tienda={tienda} />
+      <UrbanoFooter diseno={activeDiseno} tienda={tienda} slug={slug} categories={displayCategories} />
     </div>
   );
 }

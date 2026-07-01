@@ -21,10 +21,10 @@ export default function AutopartesDealsOfTheWeek({ cp, slug, productos, diseno, 
   const { toggleFavorito, isFavorito } = useFavoritosStore();
   const { toggle: toggleCompare, isInCompare } = useCompareStore();
 
-  const productImage = diseno?.autopartesProductImageUrl || productos?.[0]?.imagenUrl || '/assets/autopartes/producto.png';
-  const widgetOneImage = diseno?.autopartesWidgetOneImageUrl || '/assets/autopartes/widget1.png';
-  const widgetTwoImage = diseno?.autopartesWidgetTwoImageUrl || '/assets/autopartes/widget2.png';
-  const widgetThreeImage = diseno?.autopartesWidgetThreeImageUrl || '/assets/autopartes/widget3.png';
+  const productImage = diseno?.autopartesProductImageUrl || productos?.[0]?.imagenUrl || '/assets/templates/autopartes/producto.png';
+  const widgetOneImage = diseno?.autopartesWidgetOneImageUrl || '/assets/templates/autopartes/widget1.png';
+  const widgetTwoImage = diseno?.autopartesWidgetTwoImageUrl || '/assets/templates/autopartes/widget2.png';
+  const widgetThreeImage = diseno?.autopartesWidgetThreeImageUrl || '/assets/templates/autopartes/widget3.png';
 
   const fallbackOfferEndRef = React.useRef<Date | null>(null);
   if (!fallbackOfferEndRef.current) {
@@ -65,8 +65,8 @@ export default function AutopartesDealsOfTheWeek({ cp, slug, productos, diseno, 
 
   const featuredDeal = sliderProducts[activeIndex] || productos[0];
   const dealImage = featuredDeal?.imagenUrl || productImage;
-  const precioNormal = Number(featuredDeal?.precioUnitario || 0);
-  const precioOferta = Number(featuredDeal?.precioOferta || precioNormal * 0.8);
+  const precioNormal = Number(featuredDeal?.precioRegular ?? featuredDeal?.precioOriginal ?? featuredDeal?.precioUnitario ?? 0);
+  const precioOferta = featuredDeal?.precioOferta != null ? Number(featuredDeal.precioOferta) : Number(precioNormal * 0.8);
   const porcentajeDescuento = precioNormal > 0 ? Math.round((1 - (precioOferta / precioNormal)) * 100) : 0;
 
   const finOferta = parseDate(featuredDeal?.fechaFinOferta, true) || fallbackOfferEndRef.current || now;
@@ -265,7 +265,7 @@ export default function AutopartesDealsOfTheWeek({ cp, slug, productos, diseno, 
               
               <div className="flex flex-col px-6 pb-6">
                 {topVentas.map((item, idx) => {
-                  const pNormal = Number(item.precioUnitario || 0);
+                  const pNormal = Number(item.precioRegular ?? item.precioOriginal ?? item.precioUnitario ?? 0);
                   const pOferta = item.precioOferta ? Number(item.precioOferta) : null;
                   
                   return (

@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function AutopartesTopSelling({ cp, diseno }: Props) {
-  const productImage = diseno?.autopartesProductImageUrl || '/assets/autopartes/producto.png';
+  const productImage = diseno?.autopartesProductImageUrl || '/assets/templates/autopartes/producto.png';
   const categories = [
     {
       title: 'Motor y Rendimiento',

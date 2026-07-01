@@ -146,6 +146,7 @@ const GuiaRemision = () => {
         window.history.replaceState({}, document.title);
     }, [location.state]);
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
     useEffect(() => {
         if (isAdmin) listarSedes();
@@ -269,8 +270,10 @@ const GuiaRemision = () => {
         )
     }));
 
+    const activeFilterCount = [searchTerm.trim(), fechaInicio, fechaFin, selectedSedeId].filter(Boolean).length;
+
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0A0D14] p-4">
+        <div className="min-h-screen overflow-x-hidden bg-gray-50 p-3 dark:bg-[#0A0D14] sm:p-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -286,12 +289,27 @@ const GuiaRemision = () => {
             </div>
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all">
-                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 mb-4 px-1">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
-                        <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
+                <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3 px-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600 dark:text-blue-400" />
+                            <div className="min-w-0">
+                                <h3 className="font-bold uppercase tracking-wider text-xs text-gray-800 dark:text-white">Filtros de búsqueda</h3>
+                                <p className="truncate text-xs text-gray-400 md:hidden">
+                                    {activeFilterCount} activos · {moment(fechaInicio).format('DD/MM')} - {moment(fechaFin).format('DD/MM')}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileFiltersOpen((value) => !value)}
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-black text-white shadow-lg shadow-blue-500/20 md:hidden"
+                        >
+                            {isMobileFiltersOpen ? 'Ocultar' : 'Ver filtros'}
+                            <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-5 lg:items-end`}>
                         <div className="lg:col-span-2">
                             <InputPro
                                 label="Búsqueda rápida"
@@ -308,6 +326,8 @@ const GuiaRemision = () => {
                                 name="fechaInicio"
                                 value={moment(fechaInicio).format('DD/MM/YYYY')}
                                 onChange={(date: any) => setFechaInicio(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
+                                className="admin-date-filter"
+                                portal
                             />
                         </div>
                         <div>
@@ -316,6 +336,8 @@ const GuiaRemision = () => {
                                 name="fechaFin"
                                 value={moment(fechaFin).format('DD/MM/YYYY')}
                                 onChange={(date: any) => setFechaFin(moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD'))}
+                                className="admin-date-filter"
+                                portal
                             />
                         </div>
                         {isAdmin && (

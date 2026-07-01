@@ -10,6 +10,7 @@ interface AutopartesCartModalProps {
   actualizarCantidad: (id: number | string, cantidad: number) => void;
   onCheckout: () => void;
   cp: string;
+  tienda?: any;
 }
 
 export default function AutopartesCartModal({
@@ -19,9 +20,26 @@ export default function AutopartesCartModal({
   setCarrito,
   actualizarCantidad,
   onCheckout,
-  cp
+  cp,
+  tienda,
 }: AutopartesCartModalProps) {
   const total = carrito.reduce((acc, curr) => acc + Number(curr.precioUnitario) * curr.cantidad, 0);
+
+  const cotizarPorWhatsApp = () => {
+    if (!carrito.length) return;
+    const raw = String(tienda?.whatsappTienda || tienda?.diseno?.whatsappTienda || tienda?.celular || tienda?.telefono || '').replace(/\D/g, '');
+    const nombreTienda = tienda?.nombreComercial || tienda?.nombre || 'Tienda';
+    const lineas = carrito
+      .map((item) => `• ${Number(item.cantidad || 1)}x ${item.descripcion} — S/ ${(Number(item.precioUnitario || 0) * Number(item.cantidad || 1)).toFixed(2)}`)
+      .join('\n');
+    const mensaje =
+      `*SOLICITUD DE COTIZACIÓN — ${nombreTienda}*\n\n` +
+      `${lineas}\n\n` +
+      `*Total estimado: S/ ${total.toFixed(2)}*\n\n` +
+      `Hola, quisiera cotizar estos productos. ¿Me confirman precio y disponibilidad?`;
+    const base = raw ? `https://wa.me/${raw.length === 9 ? `51${raw}` : raw}` : 'https://wa.me/';
+    window.open(`${base}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <AnimatePresence>
@@ -72,7 +90,7 @@ export default function AutopartesCartModal({
                 carrito.map((item) => (
                   <div key={item.cartId || item.id} className="flex gap-4 bg-black p-4 rounded-xl border border-gray-800 relative group">
                     <button 
-                      onClick={() => setCarrito(carrito.filter(c => (c.cartId || c.id) !== (item.cartId || item.id)))}
+                      onClick={() => actualizarCantidad(item.cartId || item.id, 0)}
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
                     >
                       <Icon icon="solar:trash-bin-trash-bold" width={14} />
@@ -96,8 +114,13 @@ export default function AutopartesCartModal({
                       )}
 
                       <div className="flex items-center justify-between mt-2">
-                        <span className="font-black text-white text-lg">S/ {Number(item.precioUnitario).toFixed(2)}</span>
-                        
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-black text-white text-lg">S/ {Number(item.precioUnitario).toFixed(2)}</span>
+                          {item.enOferta && Number(item.precioRegular) > Number(item.precioUnitario) && (
+                            <span className="text-xs font-bold text-gray-500 line-through">S/ {Number(item.precioRegular).toFixed(2)}</span>
+                          )}
+                        </div>
+
                         {/* Quantity Controls */}
                         <div className="flex items-center bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
                           <button 
@@ -139,6 +162,13 @@ export default function AutopartesCartModal({
                   style={{ backgroundColor: cp }}
                 >
                   Ir al Checkout <Icon icon="solar:alt-arrow-right-bold" />
+                </button>
+                <button
+                  onClick={cotizarPorWhatsApp}
+                  className="mt-3 w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-black text-base border border-gray-700 bg-gray-900 text-gray-100 transition-colors hover:border-gray-500 hover:bg-gray-800"
+                >
+                  <Icon icon="ic:baseline-whatsapp" width={20} className="text-emerald-400" />
+                  Cotizar por WhatsApp
                 </button>
               </div>
             )}

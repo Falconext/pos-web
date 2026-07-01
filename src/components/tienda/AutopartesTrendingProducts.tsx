@@ -18,8 +18,8 @@ export default function AutopartesTrendingProducts({ cp, slug, productos, diseno
 
   const comunidadTitle = diseno?.comunidadTitle || "Sé parte de nuestra\nComunidad Automotriz";
   const comunidadText = diseno?.comunidadText || "Únete al Club";
-  const comunidadImage = diseno?.autopartesCommunityImageUrl || '/assets/autopartes/comunidad.png';
-  const supportImage = diseno?.autopartesSupportImageUrl || '/assets/autopartes/asistencia.png';
+  const comunidadImage = diseno?.autopartesCommunityImageUrl || '/assets/templates/autopartes/comunidad.png';
+  const supportImage = diseno?.autopartesSupportImageUrl || '/assets/templates/autopartes/asistencia.png';
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6 mb-16">

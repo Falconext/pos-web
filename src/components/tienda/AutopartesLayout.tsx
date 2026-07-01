@@ -294,6 +294,7 @@ export default function AutopartesLayout({
         actualizarCantidad={actualizarCantidad}
         onCheckout={irACheckout}
         cp={cp}
+        tienda={tienda}
       />
     </div>
   );

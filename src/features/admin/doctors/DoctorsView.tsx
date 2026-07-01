@@ -26,7 +26,7 @@ export default function DoctorsView({ hideHeader, embedded }: Props = {}) {
           <p className="text-sm mt-1">Agrega el primer médico con el botón de arriba</p>
         </div>
       ) : (
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50">
               <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">Médico</th>
@@ -86,7 +86,7 @@ export default function DoctorsView({ hideHeader, embedded }: Props = {}) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </>
   );
@@ -118,7 +118,7 @@ export default function DoctorsView({ hideHeader, embedded }: Props = {}) {
               />
             </div>
             {/* CMP + Especialidad */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">CMP</label>
                 <input
@@ -141,7 +141,7 @@ export default function DoctorsView({ hideHeader, embedded }: Props = {}) {
               </div>
             </div>
             {/* Teléfono + Correo */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Teléfono</label>
                 <input

@@ -57,7 +57,7 @@ export default function ModaLayout({
       className="min-h-screen bg-[#FAF9F6] text-[14px] text-gray-900"
       style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14 }}
     >
-      <ModaHeader
+      <ModaHeader diseno={diseno}
         tienda={tienda}
         slug={slug}
         cp={cp}
@@ -77,12 +77,12 @@ export default function ModaLayout({
             <ModaHero cp={cp} slug={slug} diseno={diseno} productos={productos.slice(0, 3)} />
             <ModaBestSelling slug={slug} cp={cp} productos={productos} genero="hombre" titulo="Más vendidos hombre" />
             <ModaBestSelling slug={slug} cp={cp} productos={productos} genero="mujer" titulo="Más vendidos mujer" offset={10} />
-            <ModaHomeSections slug={slug} productos={productos} />
+            <ModaHomeSections slug={slug} productos={productos} diseno={diseno} />
           </>
         )}
       </main>
 
-      <ModaFooter tiendaNombre={tienda?.nombre || 'Styliq'} />
+      <ModaFooter diseno={diseno} tiendaNombre={tienda?.nombre || 'Styliq'} />
 
       <ShoppingCartModal
         isOpen={mostrarCarrito}

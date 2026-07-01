@@ -53,7 +53,7 @@ const ComprobantePrintPage = ({
         return cantidad.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     };
 
-    console.log(formValues)
+console.log(formValues)
     console.log(company)
     const rawBase64 = company?.empresa?.logo;
     const logoDataUrl = (() => {
@@ -165,10 +165,7 @@ const ComprobantePrintPage = ({
                             <span className="">RUC: {company?.empresa?.ruc}</span>
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
-                            {receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt === "ORDEN DE PAGO" ? "ORDEN DE PAGO" : `${receipt || 'NOTA'} DE VENTA ELECTRÓNICA`}
-                            <br />{formValues?.serie}-{formValues?.correlativo}
-                        </h2>
+                        <h2 className={`text-center font-bold ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{receipt === "COTIZACIÓN" ? "COTIZACIÓN" : receipt} DE VENTA ELECTRÓNICA<br />{formValues?.serie}-{formValues?.correlativo}</h2>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <div>
                             <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">FECHA/HORA:</span> {moment(formValues?.fechaEmision).format('DD/MM/YYYY HH:mm:ss')}</p>
@@ -249,12 +246,6 @@ const ComprobantePrintPage = ({
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
                         <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{round2(mtoOperGravadas).toFixed(2)}</div></label>
-                        {mtoOperExoneradas > 0 && (
-                            <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">OP. EXONERADAS:</div> <div>{round2(mtoOperExoneradas).toFixed(2)}</div></label>
-                        )}
-                        {mtoOperInafectas > 0 && (
-                            <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">OP. INAFECTAS:</div> <div>{round2(mtoOperInafectas).toFixed(2)}</div></label>
-                        )}
                         <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{round2(mtoIgv).toFixed(2)}</div></label>
                         {totalDescuentos > 0 && (
                             <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
@@ -278,60 +269,51 @@ const ComprobantePrintPage = ({
                             )
                         }
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><span className="">CONDICIÓN DE PAGO:</span> <span>{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</span></p>
-                        {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && (formValues?.cuotas?.length > 0 ? (
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</p>
+                        {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
                             <div className="mt-1 mb-1">
                                 <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
                                 {formValues.cuotas.map((cuota: any, idx: number) => (
-                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} flex justify-between`}>
-                                        <span>CUOTA {idx + 1}:</span>
-                                        <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}</span>
+                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'}`}>
+                                        Cuota {idx + 1}: {moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}
                                     </p>
                                 ))}
                             </div>
+                        )}
+                        {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                            <div>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
+                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                    const detail = splitPaymentDetails[idx] || sp;
+                                    return (
+                                        <div key={idx} className="mb-0.5">
+                                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                                <span>{sp.method?.toUpperCase()}:</span>
+                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                            </p>
+                                            {formatPaymentExtra(detail).map((line) => (
+                                                <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'} text-left`}>{line}</p>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         ) : (
-                            formValues?.fechaVencimientoCredito && (
-                                <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">VENCIMIENTO:</div> <div>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</div></label>
-                            )
-                        ))}
-                        {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
                             <>
-                                {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
-                                    <div>
-                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
-                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                            const detail = splitPaymentDetails[idx] || sp;
-                                            return (
-                                                <div key={idx} className="mb-0.5">
-                                                    <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                                                        <span>{sp.method?.toUpperCase()}:</span>
-                                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
-                                                    </p>
-                                                    {formatPaymentExtra(detail).map((line) => (
-                                                        <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'} text-left`}>{line}</p>
-                                                    ))}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <>
-                                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
-                                        {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                            <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
-                                        ))}
-                                    </>
-                                )}
-                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                                    <span>VUELTO:</span>
-                                    <span>S/ {displayVuelto.toFixed(2)}</span>
-                                </p>
-                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                                    <span>PAGADO:</span>
-                                    <span>S/ {displayPagado.toFixed(2)}</span>
-                                </p>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                    <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
+                                ))}
                             </>
                         )}
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                            <span>VUELTO:</span>
+                            <span>S/ {displayVuelto.toFixed(2)}</span>
+                        </p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                            <span>PAGADO:</span>
+                            <span>S/ {displayPagado.toFixed(2)}</span>
+                        </p>
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>VENDEDOR:</span>
                             <span className="text-right">{vendedorNombre}</span>
@@ -509,11 +491,11 @@ const ComprobantePrintPage = ({
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. EXONERADAS:</span>
-                                                <span>S/ {round2(mtoOperExoneradas).toFixed(2)}</span>
+                                                <span>S/ 0.00</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. INAFECTAS:</span>
-                                                <span>S/ {round2(mtoOperInafectas).toFixed(2)}</span>
+                                                <span>S/ 0.00</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="font-bold">OP. GRATUITAS:</span>
@@ -583,7 +565,7 @@ const ComprobantePrintPage = ({
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
                                         <div className="text-lg font-bold">{receipt}</div>
-                                        {receipt !== "ORDEN DE PAGO" && receipt !== "COTIZACIÓN" && <div className='font-bold text-lg'>ELECTRONICA</div>}
+                                        <div className='font-bold text-lg'>ELECTRONICA</div>
                                         <div>{formValues?.serie}-{formValues?.correlativo}</div>
                                     </div>
                                 </div>
@@ -625,69 +607,45 @@ const ComprobantePrintPage = ({
                                                     <span className="text-xs">SOLES</span>
 
                                                     <span className="font-bold text-xs">FORMA PAGO:</span>
-                                                    <span className="text-xs">{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</span>
+                                                    <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</span>
 
-                                                    {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && (formValues?.cuotas?.length > 0 ? (
+                                                    {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                                         <>
-                                                            <span className="font-bold text-xs">CUOTAS:</span>
+                                                            <span className="font-bold text-xs">MEDIOS PAGO:</span>
                                                             <span className="text-xs">
-                                                                {formValues.cuotas.map((cuota: any, idx: number) => (
-                                                                    <span key={idx} className="block">
-                                                                        Cuota {idx + 1}: {moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}
-                                                                    </span>
-                                                                ))}
+                                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                                    const detail = splitPaymentDetails[idx] || sp;
+                                                                    return (
+                                                                        <span key={idx} className="block">
+                                                                            <span className="flex justify-between">
+                                                                                <span>{sp.method?.toUpperCase()}:</span>
+                                                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                                            </span>
+                                                                            {formatPaymentExtra(detail).map((line) => (
+                                                                                <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                            ))}
+                                                                        </span>
+                                                                    );
+                                                                })}
                                                             </span>
                                                         </>
                                                     ) : (
-                                                        formValues?.fechaVencimientoCredito && (
-                                                            <>
-                                                                <span className="font-bold text-xs">VENCIMIENTO:</span>
-                                                                <span className="text-xs">{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</span>
-                                                            </>
-                                                        )
-                                                    ))}
-
-                                                    {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
                                                         <>
-                                                            {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
-                                                                <>
-                                                                    <span className="font-bold text-xs">MEDIOS PAGO:</span>
-                                                                    <span className="text-xs">
-                                                                        {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                                                            const detail = splitPaymentDetails[idx] || sp;
-                                                                            return (
-                                                                                <span key={idx} className="block">
-                                                                                    <span className="flex justify-between">
-                                                                                        <span>{sp.method?.toUpperCase()}:</span>
-                                                                                        <span>S/ {Number(sp.amount).toFixed(2)}</span>
-                                                                                    </span>
-                                                                                    {formatPaymentExtra(detail).map((line) => (
-                                                                                        <span key={line} className="block text-[10px] text-gray-700">{line}</span>
-                                                                                    ))}
-                                                                                </span>
-                                                                            );
-                                                                        })}
-                                                                    </span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <span className="font-bold text-xs">MEDIO PAGO:</span>
-                                                                    <span className="text-xs">
-                                                                        {formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(mtoImpVenta).toFixed(2)}
-                                                                        {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                                                            <span key={line} className="block text-[10px] text-gray-700">{line}</span>
-                                                                        ))}
-                                                                    </span>
-                                                                </>
-                                                            )}
-        
-                                                            <span className="font-bold text-xs">VUELTO:</span>
-                                                            <span className="text-xs">S/ {displayVuelto.toFixed(2)}</span>
-        
-                                                            <span className="font-bold text-xs">PAGADO:</span>
-                                                            <span className="text-xs">S/ {displayPagado.toFixed(2)}</span>
+                                                            <span className="font-bold text-xs">MEDIO PAGO:</span>
+                                                            <span className="text-xs">
+                                                                {formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(mtoImpVenta).toFixed(2)}
+                                                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                                    <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                ))}
+                                                            </span>
                                                         </>
                                                     )}
+
+                                                    <span className="font-bold text-xs">VUELTO:</span>
+                                                    <span className="text-xs">S/ {displayVuelto.toFixed(2)}</span>
+
+                                                    <span className="font-bold text-xs">PAGADO:</span>
+                                                    <span className="text-xs">S/ {displayPagado.toFixed(2)}</span>
 
                                                     <span className="font-bold text-xs">VENDEDOR:</span>
                                                     <span className="text-xs">{vendedorNombre}</span>

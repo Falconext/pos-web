@@ -31,6 +31,7 @@ const CuentasPorCobrar = () => {
     const [fechaFin, setFechaFin] = useState('');
     const [estadoPago, setEstadoPago] = useState('');
     const [clienteFilter, setClienteFilter] = useState('');
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [selectedComprobante, setSelectedComprobante] = useState<any>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showHistorialModal, setShowHistorialModal] = useState(false);
@@ -228,6 +229,14 @@ const CuentasPorCobrar = () => {
         }
     };
 
+    const activeFilterCount = [
+        searchTerm.trim(),
+        clienteFilter,
+        fechaInicio,
+        fechaFin,
+        estadoPago,
+    ].filter(Boolean).length;
+
     return (
         <div className="min-h-screen px-2 pb-4">
             {/* Header */}
@@ -314,12 +323,25 @@ const CuentasPorCobrar = () => {
                 </div>
 
                 {/* Filters Section */}
-                <div className="p-5 relative z-0 border-b border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
-                        <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
+                <div className="relative z-0 border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600 dark:text-blue-400" />
+                            <div className="min-w-0">
+                                <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
+                                <p className="truncate text-xs text-gray-400 md:hidden">{activeFilterCount} activos</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileFiltersOpen((value) => !value)}
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-black text-white shadow-lg shadow-blue-500/20 md:hidden"
+                        >
+                            {isMobileFiltersOpen ? 'Ocultar' : 'Ver filtros'}
+                            <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-5`}>
                         <div className="lg:col-span-1">
                             <InputPro
                                 name="search"
@@ -338,10 +360,10 @@ const CuentasPorCobrar = () => {
                             />
                         </div>
                         <div>
-                            <Calendar text="Desde" name="fechaInicio" onChange={handleDate} />
+                            <Calendar text="Desde" name="fechaInicio" onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
-                            <Calendar text="Hasta" name="fechaFin" onChange={handleDate} />
+                            <Calendar text="Hasta" name="fechaFin" onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
                             <Select

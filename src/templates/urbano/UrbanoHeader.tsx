@@ -8,6 +8,7 @@ import UrbanoFavoritesDrawer from '@/components/tienda/UrbanoFavoritesDrawer';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 interface UrbanoHeaderProps {
+  diseno?: any;
     tienda: any;
     slug: string;
     cp: string;
@@ -29,8 +30,7 @@ export default function UrbanoHeader({
     onCategorySelect,
     searchQuery = '',
     setSearchQuery,
-    onSearchSubmit
-}: UrbanoHeaderProps) {
+    onSearchSubmit, diseno }: UrbanoHeaderProps) {
     const navigate = useNavigate();
     const [isShopHovered, setIsShopHovered] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,6 +44,7 @@ export default function UrbanoHeader({
     const [globalQuery, setGlobalQuery] = useState('');
     const [globalResults, setGlobalResults] = useState<any[]>([]);
     const [globalLoading, setGlobalLoading] = useState(false);
+    const isPreview = slug === 'preview';
 
     useEffect(() => {
         const term = globalQuery.trim();
@@ -60,26 +61,68 @@ export default function UrbanoHeader({
     }, [globalQuery, slug]);
 
     const closeSearch = () => { setSearchOpen(false); setGlobalQuery(''); setGlobalResults([]); };
-    const irAProducto = (id: number) => { closeSearch(); window.scrollTo(0, 0); navigate(`/tienda/${slug}/producto/${id}`); };
+    const goHome = () => {
+        if (isPreview) {
+            window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'home' }));
+            return;
+        }
+        navigate(`/tienda/${slug}`);
+    };
+    const goCatalog = () => {
+        if (isPreview) {
+            window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+            return;
+        }
+        navigate(`/tienda/${slug}/catalogo`);
+    };
+    const goTracking = () => {
+        if (isPreview) {
+            window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'checkout' }));
+            return;
+        }
+        navigate(`/tienda/${slug}/seguimiento`);
+    };
+    const irAProducto = (id: number) => {
+        closeSearch();
+        window.scrollTo(0, 0);
+        if (isPreview) {
+            window.dispatchEvent(new CustomEvent('preview-product', { detail: { id } }));
+            return;
+        }
+        navigate(`/tienda/${slug}/producto/${id}`);
+    };
     const buscarTodo = () => {
         const term = globalQuery.trim();
         closeSearch();
+        if (isPreview) {
+            onSearchSubmit?.({ preventDefault: () => {} }, term);
+            window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+            return;
+        }
         navigate(`/tienda/${slug}/catalogo${term ? `?search=${encodeURIComponent(term)}` : ''}`);
     };
 
-    const storeName = tienda?.diseno?.urbanoStoreName || tienda?.nombreComercial || tienda?.razonSocial || tienda?.nombre || 'BLNK';
-    const logoUrl = tienda?.diseno?.logo || tienda?.logoUrl;
-
-    const fallbackCategories = [
-        { nombre: tienda?.diseno?.urbanoCat1Text || 'Poleras', imagenUrl: tienda?.diseno?.urbanoCat1Img },
-        { nombre: tienda?.diseno?.urbanoCat2Text || 'Pantalones', imagenUrl: tienda?.diseno?.urbanoCat2Img },
-        { nombre: tienda?.diseno?.urbanoCat3Text || 'Polos', imagenUrl: tienda?.diseno?.urbanoCat3Img },
-        { nombre: tienda?.diseno?.urbanoCat4Text || 'Casacas', imagenUrl: tienda?.diseno?.urbanoCat4Img },
+    const cfg = diseno || tienda?.diseno || {};
+    const storeName = cfg.urbanoStoreName || tienda?.nombreComercial || tienda?.razonSocial || tienda?.nombre || 'BLNK';
+    const logoUrl = cfg.logo || tienda?.logoUrl;
+    const clean = (value: any) => String(value || '').trim();
+    const configuredFallbackCategories = [
+        { nombre: clean(cfg.urbanoCat1Text), imagenUrl: cfg.urbanoCat1Img },
+        { nombre: clean(cfg.urbanoCat2Text), imagenUrl: cfg.urbanoCat2Img },
+        { nombre: clean(cfg.urbanoCat3Text), imagenUrl: cfg.urbanoCat3Img },
+        { nombre: clean(cfg.urbanoCat4Text), imagenUrl: cfg.urbanoCat4Img },
+    ].filter((cat) => cat.nombre);
+    const previewFallbackCategories = [
+        { nombre: clean(cfg.urbanoCat1Text) || 'Poleras', imagenUrl: cfg.urbanoCat1Img },
+        { nombre: clean(cfg.urbanoCat2Text) || 'Pantalones', imagenUrl: cfg.urbanoCat2Img },
+        { nombre: clean(cfg.urbanoCat3Text) || 'Polos', imagenUrl: cfg.urbanoCat3Img },
+        { nombre: clean(cfg.urbanoCat4Text) || 'Casacas', imagenUrl: cfg.urbanoCat4Img },
     ];
+    const fallbackCategories = isPreview ? previewFallbackCategories : configuredFallbackCategories;
     const megaMenuCategories = (categories.length > 0
         ? categories.map((cat) => typeof cat === 'string' ? { nombre: cat } : cat).filter((cat) => cat.nombre)
         : fallbackCategories
-    ).filter((cat) => cat.nombre.toLowerCase() !== 'todos').slice(0, 8);
+    ).filter((cat) => cat.nombre.toLowerCase() !== 'todos');
     const featuredCategories = megaMenuCategories.length > 0
         ? Array.from({ length: Math.min(3, megaMenuCategories.length) }, (_, offset) => (
             megaMenuCategories[(hoveredMegaIndex + offset) % megaMenuCategories.length]
@@ -93,6 +136,10 @@ export default function UrbanoHeader({
             onCategorySelect(category);
             return;
         }
+        if (isPreview) {
+            window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' }));
+            return;
+        }
         navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`);
     };
 
@@ -104,7 +151,7 @@ export default function UrbanoHeader({
                     <Icon icon="solar:alt-arrow-left-linear" width={14} />
                 </button>
                 <p className="uppercase text-center flex-1">
-                    [ VER COLECCIÓN ]
+                    {cfg.urbanoAnnouncementText || '[ VER COLECCIÓN ]'}
                 </p>
                 <button className="text-gray-400 hover:text-white transition-colors">
                     <Icon icon="solar:alt-arrow-right-linear" width={14} />
@@ -117,20 +164,20 @@ export default function UrbanoHeader({
                     
                     {/* Left: Navigation (Desktop) */}
                     <nav className="hidden lg:flex items-center gap-8 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-500 w-1/3">
-                        <button onClick={() => navigate(`/tienda/${slug}`)} className="hover:text-black transition-colors">Inicio</button>
+                        <button onClick={goHome} className="hover:text-black transition-colors">Inicio</button>
                         
                         <div
                             className="h-full flex items-center py-8 cursor-pointer relative"
                             onMouseEnter={() => setIsShopHovered(true)}
                             onMouseLeave={() => setIsShopHovered(false)}
-                            onClick={() => navigate(`/tienda/${slug}/catalogo`)}
+                            onClick={goCatalog}
                         >
                             <span className="hover:text-black transition-colors flex items-center gap-1.5 text-black">
                                 Tienda <Icon icon="solar:alt-arrow-down-linear" width={14} />
                             </span>
                         </div>
 
-                        <button onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="hover:text-black transition-colors">Colecciones</button>
+                        <button onClick={goCatalog} className="hover:text-black transition-colors">Colecciones</button>
                     </nav>
 
                     {/* Left: Hamburger (Mobile) */}
@@ -142,7 +189,7 @@ export default function UrbanoHeader({
 
                     {/* Center: Logo */}
                     <div className="flex justify-center w-1/3">
-                        <div onClick={() => navigate(`/tienda/${slug}`)} className="cursor-pointer flex items-center justify-center">
+                        <div onClick={goHome} className="cursor-pointer flex items-center justify-center">
                             {logoUrl ? (
                                 <img src={logoUrl} alt={storeName} className="h-8 sm:h-10 object-contain" />
                             ) : (
@@ -160,6 +207,14 @@ export default function UrbanoHeader({
                     <div className="flex items-center justify-end gap-5 w-1/3">
                         <button onClick={() => setSearchOpen(true)} aria-label="Buscar" className="text-black hover:text-gray-500 transition-colors">
                             <Icon icon="solar:magnifer-linear" width={20} />
+                        </button>
+                        <button
+                            onClick={goTracking}
+                            aria-label="Ver mi pedido"
+                            className="text-black hover:text-gray-500 transition-colors"
+                            title="Ver mi pedido"
+                        >
+                            <Icon icon="solar:delivery-linear" width={20} />
                         </button>
                         <button onClick={() => setFavOpen(true)} aria-label="Favoritos" className="text-black hover:text-gray-500 transition-colors relative">
                             <Icon icon="solar:heart-linear" width={20} />
@@ -237,7 +292,7 @@ export default function UrbanoHeader({
                         </button>
                     </div>
                     <div className="flex flex-col p-6 gap-6">
-                        <button onClick={() => { setIsMobileMenuOpen(false); navigate(`/tienda/${slug}`); }} className="text-left text-xs font-bold uppercase tracking-[0.15em] text-gray-900">Inicio</button>
+                        <button onClick={() => { setIsMobileMenuOpen(false); goHome(); }} className="text-left text-xs font-bold uppercase tracking-[0.15em] text-gray-900">Inicio</button>
                         <div className="flex flex-col gap-4 pl-4 border-l-2 border-gray-100">
                             {megaMenuCategories.map((cat, idx) => (
                                 <button
@@ -249,7 +304,7 @@ export default function UrbanoHeader({
                                 </button>
                             ))}
                         </div>
-                        <button onClick={() => { setIsMobileMenuOpen(false); navigate(`/tienda/${slug}/catalogo`); }} className="text-left text-xs font-bold uppercase tracking-[0.15em] text-gray-900 mt-2">Colecciones</button>
+                        <button onClick={() => { setIsMobileMenuOpen(false); goCatalog(); }} className="text-left text-xs font-bold uppercase tracking-[0.15em] text-gray-900 mt-2">Colecciones</button>
                     </div>
                 </div>
             </div>

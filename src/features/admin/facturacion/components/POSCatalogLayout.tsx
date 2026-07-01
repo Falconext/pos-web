@@ -22,11 +22,10 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
             const url = data?.data?.imagenUrl ?? data?.imagenUrl;
             if (url) {
                 setUploadedImages(prev => ({ ...prev, [productoId]: url }));
-                // remove broken flag so new image renders
                 setBrokenImages(prev => { const n = { ...prev }; delete n[`PRODUCTO-${productoId}`]; return n; });
             }
         } catch {
-            // silently ignore — user can retry
+    
         } finally {
             setUploadingId(null);
         }

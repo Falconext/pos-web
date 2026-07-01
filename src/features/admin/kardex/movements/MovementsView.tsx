@@ -67,23 +67,32 @@ export default function MovementsView() {
         }
     ];
 
+    const renderTipoBadge = (tipo: string) => {
+        const colors = helpers.getTipoMovimientoColor(tipo);
+        return (
+            <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${colors}`}>
+                {tipo}
+            </span>
+        );
+    };
+
     return (
-        <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
+        <div className="min-h-screen px-3 sm:px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Movimientos de Kardex</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 sm:mb-6">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Movimientos de Kardex</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Control de entradas, salidas y ajustes de inventario</p>
                 </div>
             </div>
 
             {/* Filtros */}
-            <div className="mb-6 p-5 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+            <div className="mb-5 sm:mb-6 p-4 sm:p-5 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 <div className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                     <div>
                         <Calendar
                             text="Fecha Inicio"
@@ -155,11 +164,11 @@ export default function MovementsView() {
                     placeholder="Escanear código de barras para filtrar movimientos..."
                 />
 
-                <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
-                    <Button onClick={actions.clearFilters} color="secondary">
+                <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
+                    <Button onClick={actions.clearFilters} color="secondary" className="w-full sm:w-auto">
                         <Icon icon="solar:refresh-linear" className="mr-1" /> Limpiar
                     </Button>
-                    <Button onClick={actions.applyFilters} color="primary">
+                    <Button onClick={actions.applyFilters} color="primary" className="w-full sm:w-auto">
                         <Icon icon="solar:magnifer-linear" className="mr-1" /> Buscar
                     </Button>
                 </div>
@@ -174,7 +183,7 @@ export default function MovementsView() {
                 <>
                     {/* Tabla de movimientos */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <Icon icon="solar:document-text-bold-duotone" className="text-blue-600 text-xl" />
                         <h3 className="font-semibold text-gray-800 dark:text-gray-200">Historial de Movimientos</h3>
@@ -184,10 +193,10 @@ export default function MovementsView() {
                     </span>
                 </div>
 
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                     {movimientosTable?.length > 0 ? (
                         <>
-                            <div className="overflow-hidden overflow-x-auto">
+                            <div className="hidden md:block overflow-hidden overflow-x-auto">
                                 <DataTable
                                     actions={tableActions}
                                     bodyData={movimientosTable}
@@ -205,6 +214,57 @@ export default function MovementsView() {
                                         'Ganancia/Unidad'
                                     ]}
                                 />
+                            </div>
+                            <div className="md:hidden space-y-3">
+                                {movimientosTable.map((row: any, index: number) => (
+                                    <article key={`${row.fecha}-${row.producto}-${index}`} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0F1623]">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">{row.fecha}</p>
+                                                <h3 className="mt-1 line-clamp-2 text-sm font-black text-gray-900 dark:text-white">{row.producto}</h3>
+                                                <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">{row.sede}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => actions.openModal(row._original)}
+                                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-400"
+                                                aria-label="Ver detalle"
+                                            >
+                                                <Icon icon="solar:eye-bold" width={20} height={20} />
+                                            </button>
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between gap-3">
+                                            {renderTipoBadge(row.tipo)}
+                                            <p className={`text-lg font-black ${Number(row.cantidad) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                                {Number(row.cantidad) > 0 ? '+' : ''}{row.cantidad}
+                                            </p>
+                                        </div>
+
+                                        <p className="mt-3 rounded-xl bg-gray-50 p-3 text-xs font-medium leading-relaxed text-gray-600 dark:bg-slate-800/70 dark:text-gray-300">
+                                            {row.concepto}
+                                        </p>
+
+                                        <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                                            <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Stock anterior</p>
+                                                <p className="mt-1 font-black text-gray-900 dark:text-white">{row.stockAnterior}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Stock actual</p>
+                                                <p className="mt-1 font-black text-gray-900 dark:text-white">{row.stockActual}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Costo</p>
+                                                <p className="mt-1 font-black text-gray-900 dark:text-white">{row.costoUnitario}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Precio</p>
+                                                <p className="mt-1 font-black text-gray-900 dark:text-white">{row.precioUnitario}</p>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
                             </div>
                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                                 <Pagination
