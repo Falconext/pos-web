@@ -2,7 +2,10 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
-  // más variables de entorno según las necesites
+  readonly VITE_PUBLIC_BRAND?: string
+  readonly VITE_WS_URL?: string
+  readonly VITE_FALCONEXT_DESKTOP?: string
+  readonly VITE_DISABLE_PUBLIC_BRANDING_FETCH?: string
 }
 
 interface ImportMeta {

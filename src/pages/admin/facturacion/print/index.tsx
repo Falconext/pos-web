@@ -249,16 +249,30 @@ const PrintPDF = ({
         if (Number.isInteger(cantidad)) return String(cantidad);
         return cantidad.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     };
-    const displayVuelto = Number(formValues?.vuelto || 0);
-    const splitPaidTotal = formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments)
+    const normalizePaymentLabel = (value: any): string =>
+        String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toUpperCase();
+    const paymentConditionCode = normalizePaymentLabel(formValues?.formaPagoTipo || formValues?.medioPago);
+    const medioPagoCode = normalizePaymentLabel(formValues?.medioPago);
+    const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO';
+    const isMixedPayment = medioPagoCode === 'MIXTO';
+    const paymentConditionLabel = isCreditPayment ? 'CRÉDITO' : 'CONTADO';
+    const paymentMethodLabel = isCreditPayment
+        ? 'CRÉDITO'
+        : (formValues?.medioPago ? String(formValues.medioPago).toUpperCase() : 'EFECTIVO');
+    const displayVuelto = isCreditPayment ? 0 : Number(formValues?.vuelto || 0);
+    const splitPaidTotal = isMixedPayment && Array.isArray(formValues?.splitPayments)
         ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + Number(sp.amount || 0), 0)
         : 0;
-    const displayPagado = splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto;
+    const displayPagado = isCreditPayment ? 0 : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
     const paymentDetails = formValues?.paymentDetails || {};
     const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
         ? paymentDetails.splitPayments
         : (Array.isArray(formValues?.splitPayments) ? formValues.splitPayments : []);
-    const singlePaymentDetail = paymentDetails?.mode === 'SIMPLE' ? paymentDetails : { method: formValues?.medioPago, amount: mtoImpVenta };
+    const singlePaymentDetail = paymentDetails?.mode === 'SIMPLE' ? paymentDetails : { method: paymentMethodLabel, amount: mtoImpVenta };
     const formatPaymentExtra = (payment: any) => {
         const extras: string[] = [];
         if (payment?.cuentaBancariaLabel) extras.push(`Cuenta: ${payment.cuentaBancariaLabel}`);
@@ -352,7 +366,7 @@ const PrintPDF = ({
                                         {receipt === "NOTA DE DEBITO" && (
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>MEDIO PAGO:</Text>
-                                                <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                             </View>
                                         )}
                                         <View style={styles.infoRow}>
@@ -385,15 +399,15 @@ const PrintPDF = ({
                             <>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>FORMA PAGO:</Text>
-                                    <Text style={styles.value}>{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</Text>
+                                    <Text style={styles.value}>{paymentConditionLabel}</Text>
                                 </View>
-                                {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && formValues?.fechaVencimientoCredito && (
+                                {isCreditPayment && formValues?.fechaVencimientoCredito && (
                                     <View style={styles.infoRow}>
                                         <Text style={styles.label}>VENCIMIENTO:</Text>
                                         <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
                                     </View>
                                 )}
-                                {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
+                                {isCreditPayment && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
                                     <View>
                                         <Text style={[styles.label, { marginTop: 4 }]}>CRONOGRAMA DE CUOTAS:</Text>
                                         {formValues.cuotas.map((cuota: any, idx: number) => (
@@ -404,9 +418,21 @@ const PrintPDF = ({
                                         ))}
                                     </View>
                                 )}
-                                {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
+                                {isCreditPayment && (
                                     <>
-                                        {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>MEDIO PAGO:</Text>
+                                            <Text style={styles.value}>CRÉDITO S/ 0.00</Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>PAGADO:</Text>
+                                            <Text style={styles.value}>S/ 0.00</Text>
+                                        </View>
+                                    </>
+                                )}
+                                {!isCreditPayment && (
+                                    <>
+                                        {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                             <>
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIOS PAGO:</Text>
@@ -430,7 +456,7 @@ const PrintPDF = ({
                                             <>
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIO PAGO:</Text>
-                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                    <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                                 </View>
                                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                     <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
@@ -592,7 +618,7 @@ const PrintPDF = ({
                                             {receipt === "NOTA DE DEBITO" && (
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                    <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                    <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                                 </View>
                                             )}
                                             <View style={styles.infoRow}>
@@ -608,15 +634,15 @@ const PrintPDF = ({
                                         <>
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>FORMA DE PAGO</Text>
-                                                <Text style={styles.value}>{formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' ? 'CRÉDITO' : 'CONTADO'}</Text>
+                                                <Text style={styles.value}>{paymentConditionLabel}</Text>
                                             </View>
-                                            {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && formValues?.fechaVencimientoCredito && (
+                                            {isCreditPayment && formValues?.fechaVencimientoCredito && (
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>VENCIMIENTO</Text>
                                                     <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
                                                 </View>
                                             )}
-                                            {formValues?.formaPagoTipo?.toUpperCase() === 'CREDITO' && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
+                                            {isCreditPayment && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
                                                 <View>
                                                     <Text style={[styles.label, { marginTop: 4 }]}>CRONOGRAMA DE CUOTAS</Text>
                                                     {formValues.cuotas.map((cuota: any, idx: number) => (
@@ -627,9 +653,21 @@ const PrintPDF = ({
                                                     ))}
                                                 </View>
                                             )}
-                                            {formValues?.formaPagoTipo?.toUpperCase() !== 'CREDITO' && (
+                                            {isCreditPayment && (
                                                 <>
-                                                    {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.label}>MEDIO DE PAGO</Text>
+                                                        <Text style={styles.value}>CRÉDITO S/ 0.00</Text>
+                                                    </View>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={styles.label}>PAGADO</Text>
+                                                        <Text style={styles.value}>S/ 0.00</Text>
+                                                    </View>
+                                                </>
+                                            )}
+                                            {!isCreditPayment && (
+                                                <>
+                                                    {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                                         <>
                                                             <View style={styles.infoRow}>
                                                                 <Text style={styles.label}>MEDIOS DE PAGO</Text>
@@ -653,7 +691,7 @@ const PrintPDF = ({
                                                         <>
                                                             <View style={styles.infoRow}>
                                                                 <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                                <Text style={styles.value}>{formValues?.medioPago?.toUpperCase() || ''} S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                                                <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                                             </View>
                                                             {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                                 <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>

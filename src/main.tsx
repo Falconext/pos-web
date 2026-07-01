@@ -82,7 +82,14 @@ const applyBrandToDocument = (brand: Partial<BrandConfig>) => {
 
 const bootstrapBranding = async () => {
   if (typeof window === 'undefined') return
-  if (String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true') return
+  if (String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true') {
+    const brandKey = String(import.meta.env.VITE_PUBLIC_BRAND || 'falconext').toLowerCase()
+    applyBrandToDocument({
+      name: brandKey === 'krezka' ? 'Krezka' : 'Falconext',
+      favicon: brandKey === 'krezka' ? '/assets/krezka/krezkalogo.png' : '/assets/logofalconext.png',
+    })
+    return
+  }
   const host = window.location.host
   const hostStorageKey = `${BRANDING_STORAGE_KEY}:${host}`
   const localWhiteLabelBrand = getLocalWhiteLabelBrand(host)

@@ -321,21 +321,22 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
         updateData.logo = await base64Promise;
       }
 
-      const response = await apiClient.put<Empresa>(`/empresa/${data.id}`, updateData, {
+      const response: any = await apiClient.put<Empresa>(`/empresa/${data.id}`, updateData, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
+      const updatedEmpresa = response?.data?.data || response?.data;
 
       // Actualizar la empresa en la lista si existe
       const { empresas } = get();
       const updatedEmpresas = empresas.map(emp =>
-        emp.id === data.id ? response.data : emp
+        emp.id === data.id ? updatedEmpresa : emp
       );
 
       set({
         empresas: updatedEmpresas,
-        empresa: response.data,
+        empresa: updatedEmpresa,
         loading: false
       });
     } catch (error: any) {

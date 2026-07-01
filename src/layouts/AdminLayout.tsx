@@ -13,6 +13,8 @@ import { accordionReveal, fadeIn, fadeUp, interactiveHover, navItemReveal, navSt
 import { useReducedMotionPreference } from '@/lib/motion/reducedMotion'
 import { MODULE_META, SUBMODULE_META, LEGACY_MODULE_ROUTES, LEGACY_SUBMODULE_ROUTES, type SidebarSubItem } from '@/layouts/sidebar/sidebarMeta'
 
+const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true'
+
 export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -355,34 +357,40 @@ export default function AdminLayout() {
                   <Icon icon="solar:database-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Catálogo Global</span>}
                 </NavLink>
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Planes">
-                  <Icon icon="solar:card-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                  {!isSidebarCollapsed && <span>Planes</span>}
-                </NavLink>
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Módulos">
-                  <Icon icon="solar:widget-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                  {!isSidebarCollapsed && <span>Módulos</span>}
-                </NavLink>
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/resellers" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Distribuidores">
-                  <Icon icon="solar:users-group-two-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                  {!isSidebarCollapsed && <span>Distribuidores</span>}
-                </NavLink>
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-web" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Catálogo Web">
-                  <Icon icon="solar:shop-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                  {!isSidebarCollapsed && <span>Catálogo Web</span>}
-                </NavLink>
+                {!isDesktopBuild && (
+                  <>
+                    <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Planes">
+                      <Icon icon="solar:card-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      {!isSidebarCollapsed && <span>Planes</span>}
+                    </NavLink>
+                    <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Módulos">
+                      <Icon icon="solar:widget-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      {!isSidebarCollapsed && <span>Módulos</span>}
+                    </NavLink>
+                    <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/resellers" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Distribuidores">
+                      <Icon icon="solar:users-group-two-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      {!isSidebarCollapsed && <span>Distribuidores</span>}
+                    </NavLink>
+                    <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-web" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Catálogo Web">
+                      <Icon icon="solar:shop-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      {!isSidebarCollapsed && <span>Catálogo Web</span>}
+                    </NavLink>
+                  </>
+                )}
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/rubros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Rubros de Negocio">
                   <Icon icon="solar:buildings-3-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Rubros</span>}
                 </NavLink>
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/disenos-tienda" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Diseño de Tiendas">
-                  <Icon icon="solar:palette-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                  {!isSidebarCollapsed && <span>Diseño Tiendas</span>}
-                </NavLink>
+                {!isDesktopBuild && (
+                  <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/disenos-tienda" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Diseño de Tiendas">
+                    <Icon icon="solar:palette-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Diseño Tiendas</span>}
+                  </NavLink>
+                )}
               </motion.div>
             )}
 
-            {auth?.rol === 'ADMIN_SISTEMA' && (
+            {auth?.rol === 'ADMIN_SISTEMA' && !isDesktopBuild && (
               <motion.div variants={navItemReveal} className="space-y-0.5">
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
                   <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
@@ -783,7 +791,7 @@ export default function AdminLayout() {
                         </button>
                       </li>
                     )}
-                    {!isAlmacen && (auth?.empresa?.slugTienda || hasPlanFeature(auth, 'tieneTienda')) && (
+                    {!isDesktopBuild && !isAlmacen && (auth?.empresa?.slugTienda || hasPlanFeature(auth, 'tieneTienda')) && (
                       <li>
                         <button
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-600 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"

@@ -6,6 +6,7 @@ import { devtools } from 'zustand/middleware';
 import { useClientsStore } from './clients';
 import { useProductsStore } from './products';
 import { useAuthStore } from './auth';
+import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
 
 const normalizeSunatEstado = (invoice: any) => {
     const rawEstado = String(invoice?.estadoEnvioSunat ?? '').toUpperCase();
@@ -355,15 +356,13 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
             if (resp.code === 1) {
                 // Mapeamos cada línea y calculamos su total
                 let products = resp.data.detalles.map((item: any) => {
+                    const mapped = mapDetalleToInvoiceProduct(item);
                     const total = (Number(item.mtoPrecioUnitario) * item.cantidad).toFixed(2);
                     return {
-                        ...item,
-                        descripcion: item.descripcion,
-                        cantidad: item.cantidad,
-                        unidadMedida: { nombre: item.unidad },
-                        stock: item.producto.stock,
+                        ...mapped,
+                        unidadMedida: { nombre: mapped.unidad || item.unidad },
+                        stock: mapped.stock,
                         precioUnitario: item.mtoPrecioUnitario,
-                        cantidadOriginal: item.cantidad,
                         sale: (Number(item.mtoPrecioUnitario * item.cantidad) / 1.18).toFixed(2),
                         igv: (
                             (Number(item.mtoPrecioUnitario) -

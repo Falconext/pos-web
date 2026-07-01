@@ -32,6 +32,7 @@ import { useUsersStore } from "@/zustand/users";
 import TableActionMenu from "@/components/TableActionMenu";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
+import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -791,14 +792,14 @@ const ComprobantesInformales = () => {
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button type="button" onClick={() => {
                                         const esRuc = item.cliente?.nroDoc?.length === 11;
-                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: esRuc ? item.cliente : null, clienteId: esRuc ? item.clienteId : null, observaciones: item.observaciones, productos: (item.detalles || []).map((d: any) => ({ productoId: d.producto?.id, descripcion: d.descripcion, cantidad: d.cantidad, precioUnitario: d.mtoPrecioUnitario, unidad: d.unidad })) } } });
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: esRuc ? item.cliente : null, clienteId: esRuc ? item.clienteId : null, observaciones: item.observaciones, productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
                                         handleCloseMenu();
                                     }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30">
                                         <Icon icon="mdi:file-document-edit-outline" width={16} height={16} />
                                         <span>Convertir a Factura</span>
                                     </button>
                                     <button type="button" onClick={() => {
-                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'BOLETA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, productos: (item.detalles || []).map((d: any) => ({ productoId: d.producto?.id, descripcion: d.descripcion, cantidad: d.cantidad, precioUnitario: d.mtoPrecioUnitario, unidad: d.unidad })) } } });
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'BOLETA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
                                         handleCloseMenu();
                                     }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/30">
                                         <Icon icon="mdi:receipt-outline" width={16} height={16} />

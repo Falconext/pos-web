@@ -33,6 +33,7 @@ import {
     type IDatosReceta,
 } from "./FacturacionModel";
 import { COURIERS } from "./components/EnvioModal";
+import { mapDetalleToInvoiceProduct } from "./utils/comprobanteProductMapper";
 
 type EnvioDespachoFormData = {
     transportista?: string;
@@ -598,16 +599,21 @@ export const useFacturacionViewModel = () => {
                     const productoEnCatalogo = products && Array.isArray(products)
                         ? products.find((p: any) => p.id === prodId)
                         : null;
+                    const mapped = mapDetalleToInvoiceProduct({
+                        ...det,
+                        producto: det.producto || productoEnCatalogo,
+                    });
 
                     return {
-                        id: prodId,
-                        productoId: prodId,
-                        descripcion: det.descripcion,
+                        ...mapped,
+                        id: prodId || mapped.productoId,
+                        productoId: prodId || mapped.productoId,
+                        descripcion: det.descripcion || mapped.descripcion,
                         cantidad: det.cantidad,
-                        precioUnitario: det.mtoPrecioUnitario,
+                        precioUnitario: det.mtoPrecioUnitario || mapped.precioUnitario,
                         descuento: 0,
-                        unidad: det.unidad,
-                        imagenUrl: productoEnCatalogo?.imagenUrl || null,
+                        unidad: det.unidad || mapped.unidad,
+                        imagenUrl: mapped.imagenUrl || productoEnCatalogo?.imagenUrl || null,
                     };
                 });
                 resetProductInvoice();
@@ -797,18 +803,20 @@ export const useFacturacionViewModel = () => {
             if (productos && Array.isArray(productos) && productos.length > 0) {
                 resetProductInvoice();
                 productos.forEach((d: any) => {
+                    const mapped = mapDetalleToInvoiceProduct(d);
                     addProductsInvoice({
-                        productoId: d.productoId || 0,
-                        descripcion: d.descripcion,
-                        cantidadInicial: d.cantidad,
-                        precioUnitario: d.precioUnitario,
+                        ...mapped,
+                        productoId: d.productoId || mapped.productoId || 0,
+                        descripcion: d.descripcion || mapped.descripcion,
+                        cantidadInicial: d.cantidad || mapped.cantidad,
+                        precioUnitario: d.precioUnitario || mapped.precioUnitario,
                         descuento: 0,
-                        unidadMedidaNombre: d.unidad || 'NIU',
+                        unidadMedidaNombre: d.unidad || mapped.unidadMedidaNombre || 'NIU',
                         afectacionNombre: 'Gravado – Operación Onerosa',
                         tipoAfectacionIGV: '10',
-                        stock: 999,
+                        stock: mapped.stock || 999,
                         estado: 'ACTIVO',
-                        atributosTecnicos: d.producto?.atributosTecnicos || undefined,
+                        atributosTecnicos: mapped.atributosTecnicos || d.producto?.atributosTecnicos || undefined,
                     });
                 });
             }
@@ -1424,6 +1432,11 @@ export const useFacturacionViewModel = () => {
             ? Number(pay.toFixed(2))
             : Number(totalAdjusted.toFixed(2));
     const vueltoCalculado = Number(Math.max(0, montoRecibido - totalAdjusted).toFixed(2));
+    const adelantoCreditoCalculado =
+        esInformal && (formValues.tipoDoc === "NP" || formValues.tipoDoc === "OT") && Number(adelanto) > 0
+            ? Math.min(Number(adelanto), totalAdjusted)
+            : 0;
+    const totalCredito = Number(Math.max(0, totalAdjusted - adelantoCreditoCalculado).toFixed(2));
     const buildPaymentDetails = () => {
         const normalizeLine = (line: PaymentLine): PaymentLine => {
             const method = normalizePaymentMethod(line.method);
@@ -1632,25 +1645,25 @@ export const useFacturacionViewModel = () => {
             : paymentMethod;
         const paymentDetails = buildPaymentDetails();
         const esPagoCredito = formValues.medioPago === 'Crédito';
+        const esDocumentoInformal = esInformal;
         const cuotasCredito = esPagoCredito
             ? (cuotas.length > 0
                 ? cuotas
                 : (fechaVencimientoCredito
-                    ? [{ monto: totalAdjusted, fechaVencimiento: fechaVencimientoCredito }]
+                    ? [{ monto: totalCredito, fechaVencimiento: fechaVencimientoCredito }]
                     : []))
             : [];
 
-        if (esPagoCredito) {
+        if (esPagoCredito && totalCredito > 0) {
             if (cuotasCredito.length === 0) {
                 return useAlertStore.getState().alert("Configura la fecha de vencimiento o el cronograma de cuotas para la venta al crédito.", "error");
             }
             const sumaCuotas = cuotasCredito.reduce((sum, cuota) => sum + Number(cuota.monto || 0), 0);
-            if (Math.abs(sumaCuotas - totalAdjusted) > 0.01) {
-                return useAlertStore.getState().alert(`La suma de cuotas (S/ ${sumaCuotas.toFixed(2)}) debe ser igual al total de la factura (S/ ${totalAdjusted.toFixed(2)}).`, "error");
+            if (Math.abs(sumaCuotas - totalCredito) > 0.01) {
+                return useAlertStore.getState().alert(`La suma de cuotas (S/ ${sumaCuotas.toFixed(2)}) debe ser igual al monto a crédito (S/ ${totalCredito.toFixed(2)}).`, "error");
             }
         }
 
-        const esDocumentoInformal = tiposInformales.includes(formValues.tipoDoc);
         const aplicacionMontoEnvio =
             envioData.aplicacionMontoCliente === 'ADELANTO' && !esDocumentoInformal
                 ? 'ITEM_ENVIO'
@@ -2058,7 +2071,7 @@ export const useFacturacionViewModel = () => {
         pages, indexOfFirstItem, indexOfLastItem,
 
         // Derived Logic
-        totalAdjusted, total, productDiscount, hasDiscount,
+        totalAdjusted, totalCredito, total, productDiscount, hasDiscount,
         opGravadaAdjusted, igvAdjusted, opExoneradaAdjusted, opInafectaAdjusted, finalDiscount, totalInWords,
         montoRecibido, vueltoCalculado, isCashPayment,
 

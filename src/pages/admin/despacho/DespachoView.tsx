@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { EditarDespachoModal } from './EditarDespachoModal';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
 import { useRepartidoresStore } from '@/zustand/repartidores';
+import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
 
 const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
 
@@ -729,13 +730,7 @@ export default function DespachoView() {
     };
 
     const mapProductosComprobante = (comprobante: any) => (
-        Array.isArray(comprobante?.detalles) ? comprobante.detalles.map((detalle: any) => ({
-            productoId: detalle.producto?.id || detalle.productoId || 0,
-            descripcion: detalle.descripcion || detalle.producto?.descripcion || 'Producto',
-            cantidad: Number(detalle.cantidad || 1),
-            precioUnitario: Number(detalle.mtoPrecioUnitario || detalle.precioUnitario || 0),
-            unidad: detalle.unidad || detalle.unidadMedida || 'NIU',
-        })) : []
+        Array.isArray(comprobante?.detalles) ? comprobante.detalles.map(mapDetalleToInvoiceProduct) : []
     );
 
     const navegarComprobanteDesdePos = async (item: DespachoItem, defaultType: 'BOLETA' | 'FACTURA') => {

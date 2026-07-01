@@ -51,6 +51,36 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
     };
     const esServicio = (item: any) => String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
+    // Devuelve los atajos de fracción según la unidad de medida del producto.
+    // `unidadMedida` puede venir como string ("KILOGRAMO") u objeto ({codigo,nombre}).
+    // Retorna null para unidades que se venden en enteros (unidad, gramo, ml, etc.).
+    const getUnidadAtajos = (item: any): { sufijo: string; opciones: { v: number; l: string }[] } | null => {
+        const um = item?.unidadMedida;
+        const raw = um && typeof um === 'object' ? (um.codigo ?? um.nombre) : um;
+        const u = String(
+            raw ?? item?.unidadMedidaNombre ?? item?.unidadMedidaCodigo ?? item?.unidad ?? ''
+        ).toUpperCase();
+
+        if (u.includes('KGM') || u.includes('KILO') || u === 'KG') {
+            return { sufijo: 'kg', opciones: [{ v: 0.25, l: '¼' }, { v: 0.5, l: '½' }, { v: 0.75, l: '¾' }, { v: 1, l: '1' }] };
+        }
+        if (u.includes('MTR') || u.includes('METRO') || u === 'M') {
+            return { sufijo: 'm', opciones: [{ v: 0.5, l: '0.5' }, { v: 1, l: '1' }, { v: 2, l: '2' }, { v: 5, l: '5' }] };
+        }
+        if (u.includes('LTR') || u.includes('LITRO') || u === 'L') {
+            return { sufijo: 'L', opciones: [{ v: 0.25, l: '¼' }, { v: 0.5, l: '½' }, { v: 1, l: '1' }, { v: 2, l: '2' }] };
+        }
+        return null;
+    };
+
+    // Fija la cantidad exacta (venta fraccionada), validando stock.
+    const setQty = (item: any, index: number, value: number) => {
+        const v = Math.round(value * 1000) / 1000;
+        if (v <= 0) return;
+        if (!esServicio(item) && item.stock !== undefined && Number(item.stock) < v) return;
+        vm.updateProductInvoice(index, vm.calculateLineItem(item, v));
+    };
+
     return (
         <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 scrollbar-thin">
             {vm.productsInvoice.length === 0 ? (
@@ -113,7 +143,29 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                     {item.esItemLibre && (
                                         <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">Ítem libre</span>
                                     )}
+                                    {getUnidadAtajos(item) && (
+                                        <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">⚖️ Por {getUnidadAtajos(item)!.sufijo}</span>
+                                    )}
                                 </div>
+                                {/* Venta fraccionada: atajos según la unidad (kg / m / L) */}
+                                {(() => {
+                                    const cfg = getUnidadAtajos(item);
+                                    if (!cfg) return null;
+                                    return (
+                                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                            {cfg.opciones.map((op) => (
+                                                <button
+                                                    key={op.v}
+                                                    onClick={() => setQty(item, index, op.v)}
+                                                    className="px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 active:scale-95 transition-all"
+                                                >
+                                                    {op.l} {cfg.sufijo}
+                                                </button>
+                                            ))}
+                                            <span className="text-[10px] text-gray-400 ml-0.5">o escribe la cantidad exacta →</span>
+                                        </div>
+                                    );
+                                })()}
                                 {requiereSerie(item) && (
                                     <textarea
                                         value={item.numerosSerie || ''}

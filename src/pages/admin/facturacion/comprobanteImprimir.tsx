@@ -92,17 +92,31 @@ console.log(formValues)
     const mtoIcbper = parseAmount(formValues?.icbper ?? formValues?.mtoIcbper, 0);
     const mtoIgv = parseAmount(formValues?.mtoIGV, netTotalFallback - (netTotalFallback / 1.18));
     const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, netTotalFallback);
-    const displayVuelto = parseAmount(formValues?.vuelto, 0);
-    const splitPaidTotal = formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments)
+    const normalizePaymentLabel = (value: any): string =>
+        String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toUpperCase();
+    const paymentConditionCode = normalizePaymentLabel(formValues?.formaPagoTipo || formValues?.medioPago);
+    const medioPagoCode = normalizePaymentLabel(formValues?.medioPago);
+    const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO';
+    const isMixedPayment = medioPagoCode === 'MIXTO';
+    const paymentConditionLabel = isCreditPayment ? 'CRÉDITO' : 'CONTADO';
+    const paymentMethodLabel = isCreditPayment
+        ? 'CRÉDITO'
+        : (formValues?.medioPago ? String(formValues.medioPago).toUpperCase() : 'EFECTIVO');
+    const displayVuelto = isCreditPayment ? 0 : parseAmount(formValues?.vuelto, 0);
+    const splitPaidTotal = isMixedPayment && Array.isArray(formValues?.splitPayments)
         ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + parseAmount(sp.amount, 0), 0)
         : 0;
-    const displayPagado = splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto;
+    const displayPagado = isCreditPayment ? 0 : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
     const paymentDetails = formValues?.paymentDetails || {};
     const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
         ? paymentDetails.splitPayments
         : (Array.isArray(formValues?.splitPayments) ? formValues.splitPayments : []);
     const singlePaymentDetail = paymentDetails?.mode === 'SIMPLE' ? paymentDetails : {
-        method: formValues?.medioPago,
+        method: paymentMethodLabel,
         amount: mtoImpVenta,
         referencia: paymentDetails?.referencia,
         cuentaBancariaLabel: paymentDetails?.cuentaBancariaLabel,
@@ -269,8 +283,11 @@ console.log(formValues)
                             )
                         }
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">CONDICIÓN DE PAGO: </span>{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</p>
-                        {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between gap-3`}>
+                            <span>CONDICIÓN DE PAGO:</span>
+                            <span className="text-right">{paymentConditionLabel}</span>
+                        </p>
+                        {isCreditPayment && formValues?.cuotas?.length > 0 && (
                             <div className="mt-1 mb-1">
                                 <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
                                 {formValues.cuotas.map((cuota: any, idx: number) => (
@@ -280,7 +297,7 @@ console.log(formValues)
                                 ))}
                             </div>
                         )}
-                        {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                        {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                             <div>
                                 <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>MEDIOS DE PAGO:</p>
                                 {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
@@ -300,7 +317,10 @@ console.log(formValues)
                             </div>
                         ) : (
                             <>
-                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">MEDIO DE PAGO: </span>{formValues?.medioPago?.toUpperCase()}</p>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between gap-3`}>
+                                    <span>MEDIO DE PAGO:</span>
+                                    <span className="text-right">{paymentMethodLabel}</span>
+                                </p>
                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                     <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
                                 ))}
@@ -607,9 +627,9 @@ console.log(formValues)
                                                     <span className="text-xs">SOLES</span>
 
                                                     <span className="font-bold text-xs">FORMA PAGO:</span>
-                                                    <span className="text-xs">{formValues?.medioPago?.toUpperCase() || 'CONTADO'}</span>
+                                                    <span className="text-xs">{paymentConditionLabel}</span>
 
-                                                    {formValues?.medioPago?.toUpperCase() === 'MIXTO' && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                    {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
                                                         <>
                                                             <span className="font-bold text-xs">MEDIOS PAGO:</span>
                                                             <span className="text-xs">
@@ -633,7 +653,7 @@ console.log(formValues)
                                                         <>
                                                             <span className="font-bold text-xs">MEDIO PAGO:</span>
                                                             <span className="text-xs">
-                                                                {formValues?.medioPago?.toUpperCase() || 'EFECTIVO'} S/ {round2(mtoImpVenta).toFixed(2)}
+                                                                {paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}
                                                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                                     <span key={line} className="block text-[10px] text-gray-700">{line}</span>
                                                                 ))}
@@ -654,7 +674,7 @@ console.log(formValues)
                                         </div>
                                     </div>
 
-                                    {formValues?.medioPago?.toLowerCase() === 'credito' && formValues?.cuotas?.length > 0 && (
+                                    {isCreditPayment && formValues?.cuotas?.length > 0 && (
                                         <div className="mt-2 border p-2 border-gray-300 rounded-md">
                                             <div className="text-xs font-bold mb-1">Cronograma de Cuotas:</div>
                                             <div className="grid grid-cols-2 gap-2">

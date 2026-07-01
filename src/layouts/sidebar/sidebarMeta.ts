@@ -1,6 +1,8 @@
 import { detectarFuncionesRubro, esRubroFabricacion } from '@/utils/rubro-features';
 import { hasPlanFeature } from '@/utils/permissions';
 
+const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true';
+
 export interface SidebarSubItem {
   codigo: string;
   nombre: string;
@@ -201,7 +203,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   tienda: {
-    condition: (auth) => hasPlanFeature(auth, 'tieneTienda'),
+    condition: (auth) => !isDesktopBuild && hasPlanFeature(auth, 'tieneTienda'),
     navRoute: () => '/administrador/tienda/pedidos',
     pathPrefix: () => '/administrador/tienda',
     extraItems: () => [

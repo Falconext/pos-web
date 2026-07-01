@@ -400,8 +400,8 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
             )}
 
-            {/* Condición de Pago (aplica para todos excepto NC/ND/NP) */}
-            {vm.formValues?.comprobante !== "NOTA DE CREDITO" && vm.formValues?.comprobante !== "NOTA DE DEBITO" && vm.formValues?.tipoDoc !== 'NP' && (
+            {/* Condición de Pago (aplica para documentos de venta, incluidos informales) */}
+            {vm.formValues?.comprobante !== "NOTA DE CREDITO" && vm.formValues?.comprobante !== "NOTA DE DEBITO" && vm.formValues?.tipoDoc !== 'COT' && (
                 <div className="mt-3 space-y-2">
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Condición de Pago</label>
@@ -435,7 +435,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                                 portal={true}
                                 className="w-full"
                             />
-                            {vm.formValues?.comprobante === "FACTURA" && (
+                            {vm.formValues?.tipoDoc !== 'COT' && (
                                 <div className="mt-3">
                                     <button
                                         type="button"

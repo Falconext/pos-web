@@ -250,6 +250,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                         <div
                             key={`${item.__catalogType}-${item.id}-${itemIndex}`}
                             className="group bg-white dark:bg-[#1E2435] rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300 dark:border-slate-700 shadow-sm flex flex-col"
+                            style={{ contentVisibility: 'auto', containIntrinsicSize: '0 280px' } as React.CSSProperties}
                         >
                             <div
                                 className="aspect-[4/3] bg-white dark:bg-slate-800/50 rounded-xl mb-2 overflow-hidden relative flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity active:scale-95"
@@ -265,6 +266,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                         alt={item.descripcion || "Producto"}
                                         className="w-full h-full object-contain"
                                         loading="lazy"
+                                        decoding="async"
                                         onError={() => setBrokenImages((prev) => ({ ...prev, [`${item.__catalogType}-${item.id}`]: true }))}
                                     />
                                 ) : (

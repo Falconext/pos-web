@@ -22,6 +22,7 @@ import ModalDetalleCuenta from '@/pages/admin/facturacion/ModalDetalleCuenta';
 import TableActionMenu from '@/components/TableActionMenu';
 import ModalConfirm from '@/components/ModalConfirm';
 import { useUsersStore } from '@/zustand/users';
+import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
 
 // ─── Config badges ────────────────────────────────────────────────────────────
 
@@ -166,13 +167,7 @@ const TIPOS_INFORMALES = new Set<TipoVenta>([
 
 function mapProductosComprobante(comprobante: any) {
     return Array.isArray(comprobante?.detalles)
-        ? comprobante.detalles.map((d: any) => ({
-              productoId: d.producto?.id || d.productoId || 0,
-              descripcion: d.descripcion || d.producto?.descripcion || 'Producto',
-              cantidad: Number(d.cantidad || 1),
-              precioUnitario: Number(d.mtoPrecioUnitario || d.precioUnitario || 0),
-              unidad: d.unidad || d.unidadMedida || 'NIU',
-          }))
+        ? comprobante.detalles.map(mapDetalleToInvoiceProduct)
         : [];
 }
 

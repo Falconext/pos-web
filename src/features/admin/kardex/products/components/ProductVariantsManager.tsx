@@ -23,6 +23,32 @@ type VariantConfig = {
   estado?: 'ACTIVO' | 'INACTIVO';
 };
 
+type FashionColor = {
+  name: string;
+  hex: string;
+  aliases?: string[];
+};
+
+const FASHION_COLOR_CATALOG: FashionColor[] = [
+  { name: 'Negro', hex: '#111827', aliases: ['black', 'negra'] },
+  { name: 'Blanco', hex: '#FFFFFF', aliases: ['white', 'blanca'] },
+  { name: 'Gris', hex: '#9CA3AF', aliases: ['gray', 'grey', 'plomo'] },
+  { name: 'Azul', hex: '#2563EB', aliases: ['blue', 'azulino'] },
+  { name: 'Celeste', hex: '#38BDF8', aliases: ['sky', 'azul claro'] },
+  { name: 'Rojo', hex: '#DC2626', aliases: ['red', 'roja'] },
+  { name: 'Vino', hex: '#7F1D1D', aliases: ['guinda', 'borgoña', 'burdeos'] },
+  { name: 'Verde', hex: '#16A34A', aliases: ['green', 'verde militar'] },
+  { name: 'Amarillo', hex: '#FACC15', aliases: ['yellow'] },
+  { name: 'Naranja', hex: '#F97316', aliases: ['orange'] },
+  { name: 'Rosa', hex: '#F472B6', aliases: ['pink', 'rosado', 'rosada'] },
+  { name: 'Morado', hex: '#7C3AED', aliases: ['purple', 'lila', 'violeta'] },
+  { name: 'Beige', hex: '#D6C3A5', aliases: ['crema', 'arena'] },
+  { name: 'Marrón', hex: '#8B5E34', aliases: ['marron', 'brown', 'café', 'cafe'] },
+  { name: 'Dorado', hex: '#D4AF37', aliases: ['gold'] },
+  { name: 'Plateado', hex: '#C0C0C0', aliases: ['silver', 'plata'] },
+  { name: 'Multicolor', hex: 'linear-gradient(135deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6)', aliases: ['multi color', 'estampado'] },
+];
+
 const comboKey = (combo: Record<string, string>) =>
   Object.entries(combo)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -36,6 +62,37 @@ const normalizeCodeToken = (value: string) =>
     .replace(/[^a-zA-Z0-9]+/g, '')
     .slice(0, 4)
     .toUpperCase();
+
+const normalizePlainText = (value: string) =>
+  String(value || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const uniqueValues = (values: string[]) => {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = normalizePlainText(value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const findFashionColor = (value: string) => {
+  const key = normalizePlainText(value);
+  return FASHION_COLOR_CATALOG.find((color) =>
+    normalizePlainText(color.name) === key ||
+    (color.aliases || []).some((alias) => normalizePlainText(alias) === key),
+  );
+};
+
+const normalizeFashionColorValue = (value: string) => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+  return findFashionColor(clean)?.name || clean.replace(/\s+/g, ' ');
+};
 
 const generateCombinations = (options: VariantOption[]) => {
   const validOptions = options.filter((option) => option.nombre && option.valores.length > 0);
@@ -70,6 +127,8 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
   // Texto en edición de cada opción. Solo se confirma (parsea) al salir del campo,
   // para no re-derivar la matriz/imágenes en cada tecla y perder fotos por colores intermedios.
   const [editingValues, setEditingValues] = useState<Record<number, string>>({});
+  const [customColorName, setCustomColorName] = useState('');
+  const [customColorHex, setCustomColorHex] = useState('#CBD5E1');
 
   const opcionesAtributos: VariantOption[] = Array.isArray((formValues as any).opcionesAtributos)
     ? (formValues as any).opcionesAtributos
@@ -92,13 +151,13 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     : [];
 
   const hasColorOption = useMemo(
-    () => opcionesAtributos.some((option) => option.nombre.toLowerCase().includes('color')),
+    () => opcionesAtributos.some((option) => /color|colour/i.test(option.nombre || '')),
     [opcionesAtributos],
   );
 
   const colorOptionName = useMemo(() => {
     const colorOption = opcionesAtributos.find((option) =>
-      option.nombre.toLowerCase().includes('color'),
+      /color|colour/i.test(option.nombre || ''),
     );
     return colorOption?.nombre || opcionesAtributos[0]?.nombre || 'Color';
   }, [opcionesAtributos]);
@@ -120,14 +179,43 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
   }, [formValues]);
 
+  const colorMap: Record<string, string> = useMemo(() => {
+    const attrs = ((formValues as any).atributosTecnicos || {}) as Record<string, any>;
+    const raw = attrs.coloresTienda;
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  }, [formValues]);
+
+  const colorOptionIndex = useMemo(
+    () => opcionesAtributos.findIndex((option) => /color|colour/i.test(option.nombre || '')),
+    [opcionesAtributos],
+  );
+
+  const selectedColorValues = useMemo(
+    () => (colorOptionIndex >= 0 ? opcionesAtributos[colorOptionIndex]?.valores || [] : []),
+    [colorOptionIndex, opcionesAtributos],
+  );
+
+  const getColorSwatchValue = (color: string) => colorMap[color] || findFashionColor(color)?.hex || '#CBD5E1';
+
+  const buildColorMap = (options: VariantOption[], previousMap: Record<string, string> = colorMap) => {
+    const colorOption = options.find((option) => /color|colour/i.test(option.nombre || ''));
+    if (!colorOption) return {};
+    return (colorOption.valores || []).reduce<Record<string, string>>((acc, color) => {
+      const known = findFashionColor(color);
+      acc[color] = previousMap[color] || known?.hex || '#CBD5E1';
+      return acc;
+    }, {});
+  };
+
   const buildConfig = (options: VariantOption[], previous: VariantConfig[] = variantesConfig) => {
     const combos = generateCombinations(options);
     const previousRows = previous.length > 0 ? previous : variantesExistentes;
     const previousByKey = new Map(previousRows.map((row) => [comboKey(row.valoresAtributos || {}), row]));
     const imageByColor = new Map<string, Pick<VariantConfig, 'imagenUrl' | 'imagenUrlDisplay'>>();
+    const nextColorOptionName = options.find((option) => /color|colour/i.test(option.nombre || ''))?.nombre || colorOptionName;
 
     previousRows.forEach((row) => {
-      const color = row.valoresAtributos?.[colorOptionName];
+      const color = row.valoresAtributos?.[nextColorOptionName] || row.valoresAtributos?.[colorOptionName];
       if (color && (row.imagenUrl || row.imagenUrlDisplay) && !imageByColor.has(color)) {
         imageByColor.set(color, {
           imagenUrl: row.imagenUrl,
@@ -139,7 +227,7 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     return combos.map((combo, index) => {
       const key = comboKey(combo);
       const previousRow = previousByKey.get(key);
-      const colorImage = imageByColor.get(combo[colorOptionName]);
+      const colorImage = imageByColor.get(combo[nextColorOptionName]);
       const codeSuffix = Object.values(combo).map(normalizeCodeToken).filter(Boolean).join('-');
 
       return {
@@ -158,11 +246,16 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
   const commitOptionsAndConfig = (nextOptions: VariantOption[], previousConfig = variantesConfig) => {
     const nextConfig = buildConfig(nextOptions, previousConfig);
     const stockTotal = nextConfig.reduce((sum, row) => sum + Number(row.stock || 0), 0);
+    const nextColorMap = buildColorMap(nextOptions);
     setFormValues({
       ...formValues,
       opcionesAtributos: nextOptions,
       variantesConfig: nextConfig,
       stock: nextConfig.length > 0 ? stockTotal : formValues.stock,
+      atributosTecnicos: {
+        ...((formValues as any).atributosTecnicos || {}),
+        coloresTienda: nextColorMap,
+      },
     } as any);
   };
 
@@ -175,15 +268,16 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
   const updateOptionValues = (index: number, valuesStr: string) => {
     const next = [...opcionesAtributos];
     const oldValues = next[index]?.valores || [];
-    const newValues = valuesStr
+    const isColorOption = /color|colour/i.test(next[index]?.nombre || '');
+    const newValues = uniqueValues(valuesStr
       .split(',')
       .map((value) => value.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((value) => isColorOption ? normalizeFashionColorValue(value) : value));
     next[index] = { ...next[index], valores: newValues };
 
     // Si es la opción de color y solo se renombró (misma cantidad de valores),
     // migrar la imagen del color viejo al nuevo para no perderla ni re-subirla.
-    const isColorOption = /color|colour/i.test(next[index]?.nombre || '');
     let previousConfig = variantesConfig;
 
     if (isColorOption && oldValues.length === newValues.length) {
@@ -230,6 +324,58 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
       { nombre: 'Color', valores: ['Negro', 'Blanco', 'Beige'] },
       { nombre: 'Talla', valores: ['S', 'M', 'L'] },
     ]);
+  };
+
+  const setColorValues = (values: string[]) => {
+    const normalized = uniqueValues(values.map(normalizeFashionColorValue).filter(Boolean));
+    if (colorOptionIndex >= 0) {
+      const next = [...opcionesAtributos];
+      next[colorOptionIndex] = { ...next[colorOptionIndex], valores: normalized };
+      commitOptionsAndConfig(next);
+      return;
+    }
+    commitOptionsAndConfig([{ nombre: 'Color', valores: normalized }, ...opcionesAtributos]);
+  };
+
+  const toggleCatalogColor = (colorName: string) => {
+    const exists = selectedColorValues.some((value) => normalizePlainText(value) === normalizePlainText(colorName));
+    setColorValues(exists
+      ? selectedColorValues.filter((value) => normalizePlainText(value) !== normalizePlainText(colorName))
+      : [...selectedColorValues, colorName]);
+  };
+
+  const addCustomColor = () => {
+    if (!customColorName.trim()) {
+      useAlertStore.getState().alert('Ingresa el nombre del color personalizado', 'error');
+      return;
+    }
+    if (!/^#[0-9A-F]{6}$/i.test(customColorHex.trim())) {
+      useAlertStore.getState().alert('El color personalizado debe tener formato HEX. Ej: #0F4C5C', 'error');
+      return;
+    }
+    const normalizedName = normalizeFashionColorValue(customColorName);
+    const nextColorMap = {
+      ...colorMap,
+      [normalizedName]: customColorHex.trim(),
+    };
+    const normalized = uniqueValues([...selectedColorValues, normalizedName]);
+    const nextOptions = colorOptionIndex >= 0
+      ? opcionesAtributos.map((option, index) => index === colorOptionIndex ? { ...option, valores: normalized } : option)
+      : [{ nombre: 'Color', valores: normalized }, ...opcionesAtributos];
+    const nextConfig = buildConfig(nextOptions);
+    const stockTotal = nextConfig.reduce((sum, row) => sum + Number(row.stock || 0), 0);
+    setFormValues({
+      ...formValues,
+      opcionesAtributos: nextOptions,
+      variantesConfig: nextConfig,
+      stock: nextConfig.length > 0 ? stockTotal : formValues.stock,
+      atributosTecnicos: {
+        ...((formValues as any).atributosTecnicos || {}),
+        coloresTienda: buildColorMap(nextOptions, nextColorMap),
+      },
+    } as any);
+    setCustomColorName('');
+    setCustomColorHex('#CBD5E1');
   };
 
   const updateVariant = (key: string, patch: Partial<VariantConfig>) => {
@@ -359,6 +505,98 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             Añadir opción
           </Button>
         </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-violet-100 bg-white/80 p-4 dark:border-violet-900/40 dark:bg-slate-900/50">
+        <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h6 className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+              Colores disponibles para tienda virtual
+            </h6>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              Usa estos colores para que los filtros y swatches de la tienda salgan ordenados.
+            </p>
+          </div>
+          <span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+            {selectedColorValues.length} seleccionados
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+          {FASHION_COLOR_CATALOG.map((color) => {
+            const selected = selectedColorValues.some((value) => normalizePlainText(value) === normalizePlainText(color.name));
+            return (
+              <button
+                key={color.name}
+                type="button"
+                onClick={() => toggleCatalogColor(color.name)}
+                className={`flex min-h-[42px] items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all ${
+                  selected
+                    ? 'border-violet-400 bg-violet-50 text-violet-900 ring-2 ring-violet-100 dark:border-violet-500 dark:bg-violet-950/30 dark:text-violet-200 dark:ring-violet-950'
+                    : 'border-gray-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                }`}
+              >
+                <span
+                  className="h-5 w-5 shrink-0 rounded-full border border-black/10 shadow-inner"
+                  style={{ background: color.hex }}
+                />
+                <span className="truncate text-xs font-black">{color.name}</span>
+                {selected && <Icon icon="solar:check-circle-bold" width={15} className="ml-auto shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 grid gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-950/20 md:grid-cols-[1fr_132px_auto]">
+          <input
+            type="text"
+            value={customColorName}
+            onChange={(event) => setCustomColorName(event.target.value)}
+            placeholder="Color personalizado. Ej: Azul petróleo"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <div className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 dark:border-slate-700 dark:bg-slate-900">
+            <span
+              className="h-5 w-5 shrink-0 rounded-full border border-black/10"
+              style={{ background: customColorHex }}
+            />
+            <input
+              type="text"
+              value={customColorHex}
+              onChange={(event) => setCustomColorHex(event.target.value.toUpperCase())}
+              placeholder="#CBD5E1"
+              maxLength={7}
+              className="min-w-0 flex-1 bg-transparent text-xs font-black text-slate-800 outline-none dark:text-white"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={addCustomColor}
+            className="h-10 rounded-xl bg-slate-900 px-4 text-xs font-black text-white transition hover:bg-violet-700 dark:bg-white dark:text-slate-950 dark:hover:bg-violet-200"
+          >
+            Agregar color
+          </button>
+        </div>
+
+        {selectedColorValues.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {selectedColorValues.map((color) => {
+              const swatch = getColorSwatchValue(color);
+              return (
+                <span
+                  key={color}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                >
+                  <span
+                    className="h-4 w-4 rounded-full border border-black/10"
+                    style={{ background: swatch }}
+                  />
+                  {color}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="mt-4 space-y-3">

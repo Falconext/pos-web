@@ -55,6 +55,44 @@ export const FacturacionNuevoView = () => {
         setPendingPrint(true);
     };
 
+    const isCreditSale = String(vm.formValues?.medioPago || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toUpperCase() === 'CREDITO';
+    const printMedioPago = isCreditSale
+        ? 'Crédito'
+        : (vm.formValues?.comprobante === "NOTA DE PEDIDO" ? "" : (vm.isMixedPayment ? 'MIXTO' : vm.paymentMethod));
+    const printFormValues = {
+        ...vm.formValues,
+        formaPagoTipo: isCreditSale ? 'Credito' : 'Contado',
+        fechaVencimientoCredito: vm.fechaVencimientoCredito,
+        cuotas: vm.cuotas,
+        vuelto: isCreditSale ? 0 : vm.vueltoCalculado,
+        vendedor: vm.auth?.nombre,
+        serie: vm.dataReceipt?.serie,
+        correlativo: vm.dataReceipt?.correlativo,
+        numDocAfectado: `${vm.serie}-${vm.correlative}`,
+        medioPago: printMedioPago,
+        splitPayments: vm.isMixedPayment && !isCreditSale ? vm.splitPayments : undefined,
+        paymentDetails: isCreditSale ? { mode: 'CREDITO', method: 'Crédito', amount: 0 } : vm.buildPaymentDetails?.(),
+        mtoOperGravadas: vm.opGravadaAdjusted,
+        mtoOperExoneradas: vm.opExoneradaAdjusted,
+        mtoOperInafectas: vm.opInafectaAdjusted,
+        mtoIGV: vm.igvAdjusted,
+        mtoImpVenta: vm.totalAdjusted,
+        mtoDescuentoGlobal: vm.finalDiscount,
+        totalDescuentos: vm.finalDiscount,
+        subTotal: vm.opGravadaAdjusted,
+        ...(vm.tipoDetraccionId ? {
+            tipoDetraccion: vm.tiposDetraccion.find((t: any) => t.id === vm.tipoDetraccionId),
+            montoDetraccion: vm.montoDetraccion,
+            cuentaBancoNacion: vm.cuentaBancoNacion,
+            medioPagoDetraccion: vm.mediosPagoDetraccion.find((m: any) => m.id === vm.medioPagoDetraccionId),
+            cuotas: vm.cuotas
+        } : {})
+    };
+
     return (
         <div className={`flex flex-col md:flex-row min-h-screen md:min-h-0 md:overflow-hidden pb-8 gap-4 md:gap-6 font-inter text-gray-800 dark:text-gray-200 transition-all duration-300 ${!vm.showMobileCart && vm.isMobile ? 'pb-24' : 'pb-0'}`}
             style={{ height: !vm.isMobile ? (vm.zoomLevel > 0 ? 'calc(125vh - 100px)' : 'calc(100vh - 85px)') : 'auto' }}
@@ -77,35 +115,7 @@ export const FacturacionNuevoView = () => {
                     quotationTerms={vm.quotationTerms}
                     quotationPaymentType={vm.quotationPaymentType}
                     quotationAdvance={vm.quotationAdvance}
-                    formValues={{
-                        ...vm.formValues,
-                        formaPagoTipo: vm.formValues.medioPago === 'Crédito' ? 'Credito' : 'Contado',
-                        fechaVencimientoCredito: vm.fechaVencimientoCredito,
-                        cuotas: vm.cuotas,
-                        vuelto: vm.vueltoCalculado,
-                        vendedor: vm.auth?.nombre,
-                        serie: vm.dataReceipt?.serie,
-                        correlativo: vm.dataReceipt?.correlativo,
-                        numDocAfectado: `${vm.serie}-${vm.correlative}`,
-                        medioPago: vm.formValues?.comprobante === "NOTA DE PEDIDO" ? "" : (vm.isMixedPayment ? 'MIXTO' : vm.paymentMethod),
-                        splitPayments: vm.isMixedPayment ? vm.splitPayments : undefined,
-                        paymentDetails: vm.buildPaymentDetails?.(),
-                        mtoOperGravadas: vm.opGravadaAdjusted,
-                        mtoOperExoneradas: vm.opExoneradaAdjusted,
-                        mtoOperInafectas: vm.opInafectaAdjusted,
-                        mtoIGV: vm.igvAdjusted,
-                        mtoImpVenta: vm.totalAdjusted,
-                        mtoDescuentoGlobal: vm.finalDiscount,
-                        totalDescuentos: vm.finalDiscount,
-                        subTotal: vm.opGravadaAdjusted,
-                        ...(vm.tipoDetraccionId ? {
-                            tipoDetraccion: vm.tiposDetraccion.find((t: any) => t.id === vm.tipoDetraccionId),
-                            montoDetraccion: vm.montoDetraccion,
-                            cuentaBancoNacion: vm.cuentaBancoNacion,
-                            medioPagoDetraccion: vm.mediosPagoDetraccion.find((m: any) => m.id === vm.medioPagoDetraccionId),
-                            cuotas: vm.cuotas
-                        } : {})
-                    }}
+                    formValues={printFormValues}
                     serie={vm.serie}
                     correlative={vm.correlative}
                     discount={vm.finalDiscount.toString()}
@@ -159,7 +169,7 @@ export const FacturacionNuevoView = () => {
                     client={vm.snapshotClient ?? vm.selectedClient}
                     company={vm.authWithBranding}
                     productsInvoice={vm.productsInvoice}
-                    formValues={{ ...vm.formValues, vuelto: vm.vueltoCalculado, vendedor: vm.auth?.nombre }}
+                    formValues={printFormValues}
                     observation={vm.formValues?.observaciones}
                     isPendiente={vm.isComprobantePendiente}
                     hasDespacho={vm.despachoCreado}
@@ -236,7 +246,7 @@ export const FacturacionNuevoView = () => {
                 onClose={() => vm.setIsModalCuotasOpen(false)}
                 onSave={(cuotas) => vm.setCuotas(cuotas)}
                 initialCuotas={vm.cuotas || []}
-                totalFactura={vm.totalAdjusted}
+                totalFactura={vm.totalCredito ?? vm.totalAdjusted}
             />
             <ModalConfiguracionCotizacion
                 isOpen={vm.isQuotationConfigModalOpen}
