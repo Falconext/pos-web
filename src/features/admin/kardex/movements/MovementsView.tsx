@@ -323,7 +323,7 @@ export default function MovementsView() {
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cantidad</label>
                                         <div className="text-sm font-bold text-gray-900 dark:text-gray-200">
-                                            {selectedMovimiento.cantidad} {selectedMovimiento.producto?.unidadMedida?.codigo || 'UN'}
+                                            {parseFloat(Number(selectedMovimiento.cantidad ?? 0).toFixed(3))} {selectedMovimiento.producto?.unidadMedida?.codigo || 'UN'}
                                         </div>
                                     </div>
                                 </div>
@@ -331,7 +331,7 @@ export default function MovementsView() {
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Concepto</label>
                                     <p className="text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 p-3 rounded-lg">
-                                        {selectedMovimiento.concepto}
+                                        {String(selectedMovimiento.concepto ?? '').replace(/(\d+\.\d{1,3})\d+/g, '$1')}
                                     </p>
                                 </div>
 
@@ -355,11 +355,11 @@ export default function MovementsView() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-gray-50 dark:bg-slate-800 p-3 rounded-lg text-center">
                                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Stock Anterior</label>
-                                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 leading-none">{selectedMovimiento.stockAnterior}</p>
+                                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 leading-none">{parseFloat(Number(selectedMovimiento.stockAnterior ?? 0).toFixed(3))}</p>
                                     </div>
                                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 text-center">
                                         <label className="block text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Stock Actual</label>
-                                        <p className="text-lg font-bold text-blue-700 dark:text-blue-400 leading-none">{selectedMovimiento.stockActual}</p>
+                                        <p className="text-lg font-bold text-blue-700 dark:text-blue-400 leading-none">{parseFloat(Number(selectedMovimiento.stockActual ?? 0).toFixed(3))}</p>
                                     </div>
                                 </div>
 

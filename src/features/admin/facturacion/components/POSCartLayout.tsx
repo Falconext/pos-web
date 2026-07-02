@@ -26,18 +26,19 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
     }
 
     return (
+        // Input de texto en modo decimal: sin flechas/spinner que puedan bajar
+        // 0.5 -> 0.499 por accidente (stepping). Acepta solo dígitos y un punto.
         <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             data-qty-index={index}
             value={localValue}
-            min="0.001"
-            step="0.001"
-            onChange={(e) => setLocalValue(e.target.value)}
+            onChange={(e) => setLocalValue(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'))}
             onBlur={(e) => commit(e.target.value)}
             onKeyDown={(e) => {
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             }}
-            className="w-14 md:w-12 text-center font-bold text-sm dark:text-white bg-transparent border-0 outline-none focus:bg-white dark:focus:bg-slate-600 focus:rounded focus:ring-1 focus:ring-violet-400 px-1 py-0.5 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-14 md:w-12 text-center font-bold text-sm dark:text-white bg-transparent border-0 outline-none focus:bg-white dark:focus:bg-slate-600 focus:rounded focus:ring-1 focus:ring-violet-400 px-1 py-0.5 transition-all"
         />
     );
 };

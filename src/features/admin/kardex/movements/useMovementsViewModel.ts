@@ -173,19 +173,26 @@ export const useMovementsViewModel = () => {
     };
 
     // Table Data Preparation
+    // Limpia el drift de punto flotante: 3.8000000000000003 -> 3.8, 5.401 -> 5.401
+    const fmtDec = (v: any) => parseFloat(Number(v ?? 0).toFixed(3));
+
     const movimientosTable = kardex?.movimientos?.map((item: MovimientoKardex) => {
-        const conceptoFormatted = item.concepto.replace(/([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g, match => match.toUpperCase());
+        const conceptoFormatted = item.concepto
+            // Recorta decimales largos incrustados en el texto (ej. "+3.8000000000000003" -> "+3.8")
+            .replace(/(\d+\.\d{1,3})\d+/g, '$1')
+            .replace(/([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g, match => match.toUpperCase());
         const costoUnitarioNumber = Number(item.costoUnitario ?? 0);
         const gananciaUnidadNumber = Number(item.gananciaUnidad ?? 0);
         const precioUnitarioNumber = Number(item.precioUnitario ?? (costoUnitarioNumber + gananciaUnidadNumber));
 
-        let cantidadDisplay = item.cantidad;
+        const cantidadNum = Number(item.cantidad);
+        let cantidadDisplay = cantidadNum;
         if (item.tipoMovimiento === 'INGRESO') {
-            cantidadDisplay = Math.abs(item.cantidad);
+            cantidadDisplay = Math.abs(cantidadNum);
         } else if (item.tipoMovimiento === 'SALIDA' || item.tipoMovimiento === 'TRANSFERENCIA') {
-            cantidadDisplay = -Math.abs(item.cantidad);
+            cantidadDisplay = -Math.abs(cantidadNum);
         } else if (item.tipoMovimiento === 'AJUSTE') {
-            cantidadDisplay = item.stockActual - item.stockAnterior;
+            cantidadDisplay = Number(item.stockActual) - Number(item.stockAnterior);
         }
 
         return {
@@ -194,9 +201,9 @@ export const useMovementsViewModel = () => {
         sede: item.sede?.nombre ?? '-',
         tipo: item.tipoMovimiento,
         concepto: conceptoFormatted,
-        cantidad: cantidadDisplay,
-        stockAnterior: item.stockAnterior,
-        stockActual: item.stockActual,
+        cantidad: fmtDec(cantidadDisplay),
+        stockAnterior: fmtDec(item.stockAnterior),
+        stockActual: fmtDec(item.stockActual),
         costoUnitario: formatCurrency(costoUnitarioNumber),
         precioUnitario: formatCurrency(precioUnitarioNumber),
         gananciaUnidad: formatCurrency(gananciaUnidadNumber),
