@@ -63,11 +63,18 @@ export const FacturacionNuevoView = () => {
     const printMedioPago = isCreditSale
         ? 'Crédito'
         : (vm.formValues?.comprobante === "NOTA DE PEDIDO" ? "" : (vm.isMixedPayment ? 'MIXTO' : vm.paymentMethod));
+    const printCuotas = isCreditSale
+        ? (Array.isArray(vm.cuotas) && vm.cuotas.length > 0
+            ? vm.cuotas
+            : (vm.fechaVencimientoCredito
+                ? [{ fechaVencimiento: vm.fechaVencimientoCredito, monto: vm.totalAdjusted }]
+                : []))
+        : [];
     const printFormValues = {
         ...vm.formValues,
         formaPagoTipo: isCreditSale ? 'Credito' : 'Contado',
         fechaVencimientoCredito: vm.fechaVencimientoCredito,
-        cuotas: vm.cuotas,
+        cuotas: printCuotas,
         vuelto: isCreditSale ? 0 : vm.vueltoCalculado,
         vendedor: vm.auth?.nombre,
         serie: vm.dataReceipt?.serie,
@@ -89,7 +96,7 @@ export const FacturacionNuevoView = () => {
             montoDetraccion: vm.montoDetraccion,
             cuentaBancoNacion: vm.cuentaBancoNacion,
             medioPagoDetraccion: vm.mediosPagoDetraccion.find((m: any) => m.id === vm.medioPagoDetraccionId),
-            cuotas: vm.cuotas
+            cuotas: printCuotas
         } : {})
     };
 

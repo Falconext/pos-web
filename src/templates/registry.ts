@@ -38,6 +38,11 @@ import UrbanoCatalogoPage from './urbano/UrbanoCatalogoPage';
 import UrbanoCheckoutPage from './urbano/UrbanoCheckoutPage';
 import UrbanoSeguimientoPage from './urbano/UrbanoSeguimientoPage';
 
+// Apicultura
+import ApiculturaHomePage from './apicultura/ApiculturaHomePage';
+import ApiculturaCatalogoPage from './apicultura/ApiculturaCatalogoPage';
+import ApiculturaCheckoutPage from './apicultura/ApiculturaCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -85,5 +90,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     CatalogoPage: UrbanoCatalogoPage as any,
     CheckoutPage: UrbanoCheckoutPage,
     SeguimientoPage: UrbanoSeguimientoPage,
+  },
+  apicultura: {
+    id: 'apicultura',
+    HomePage: ApiculturaHomePage,
+    CatalogoPage: ApiculturaCatalogoPage,
+    CheckoutPage: ApiculturaCheckoutPage,
   },
 };

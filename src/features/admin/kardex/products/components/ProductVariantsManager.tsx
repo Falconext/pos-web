@@ -111,6 +111,7 @@ const generateCombinations = (options: VariantOption[]) => {
 };
 
 export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
+  const isModaRubro = Boolean((vm as any)?.isModaRubro);
   const {
     formValues,
     setFormValues,
@@ -326,6 +327,12 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     ]);
   };
 
+  const applyPresentacionPreset = () => {
+    commitOptionsAndConfig([
+      { nombre: 'Presentación', valores: ['500g', '750g', '1kg'] },
+    ]);
+  };
+
   const setColorValues = (values: string[]) => {
     const normalized = uniqueValues(values.map(normalizeFashionColorValue).filter(Boolean));
     if (colorOptionIndex >= 0) {
@@ -479,7 +486,8 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     setFormValues({ ...formValues, variantesConfig: nextConfig } as any);
   };
 
-  if (vm.isFarmacia || vm.isRestaurante || !vm.isModaRubro) return null;
+  const usaVariantes = isModaRubro || Boolean(vm.features?.usaVariantes);
+  if (vm.isFarmacia || vm.isRestaurante || !usaVariantes) return null;
 
   const rows = buildConfig(opcionesAtributos);
 
@@ -489,16 +497,18 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
         <div>
           <h5 className="flex items-center gap-2 text-sm font-black text-violet-900 dark:text-violet-300">
             <Icon icon="solar:layers-minimalistic-bold-duotone" width={20} />
-            Variantes avanzadas para moda
+            {isModaRubro ? 'Variantes avanzadas para moda' : 'Variantes del producto'}
           </h5>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Crea matriz Color × Talla con stock, SKU, precio e imagen por color para ropa, calzado y carteras.
+            {isModaRubro
+              ? 'Crea matriz Color × Talla con stock, SKU, precio e imagen por color para ropa, calzado y carteras.'
+              : 'Crea variantes (presentación, peso, tamaño) con stock, SKU, precio e imagen propia.'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" outline color="primary" onClick={applyFashionPreset} className="px-3 py-1.5 text-xs">
+          <Button type="button" outline color="primary" onClick={isModaRubro ? applyFashionPreset : applyPresentacionPreset} className="px-3 py-1.5 text-xs">
             <Icon icon="solar:magic-stick-3-bold-duotone" width={15} className="mr-1.5" />
-            Preset moda
+            {isModaRubro ? 'Preset moda' : 'Preset presentación'}
           </Button>
           <Button type="button" outline color="primary" onClick={addOption} className="px-3 py-1.5 text-xs">
             <Icon icon="solar:add-circle-bold" width={15} className="mr-1.5" />
@@ -507,6 +517,7 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
         </div>
       </div>
 
+      {(isModaRubro || hasColorOption) && (
       <div className="mt-4 rounded-2xl border border-violet-100 bg-white/80 p-4 dark:border-violet-900/40 dark:bg-slate-900/50">
         <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
           <div>
@@ -598,17 +609,29 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
           </div>
         )}
       </div>
+      )}
 
       <div className="mt-4 space-y-3">
         {opcionesAtributos.length === 0 && (
-          <button
-            type="button"
-            onClick={applyFashionPreset}
-            className="w-full rounded-2xl border border-dashed border-violet-200 bg-white/70 p-5 text-left transition hover:border-violet-400 hover:bg-violet-50 dark:border-violet-900/40 dark:bg-slate-900/40 dark:hover:bg-violet-950/20"
-          >
-            <span className="block text-sm font-black text-gray-900 dark:text-white">Configurar tallas y colores</span>
-            <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">Ejemplo: Color Negro/Blanco/Beige y Talla S/M/L.</span>
-          </button>
+          isModaRubro ? (
+            <button
+              type="button"
+              onClick={applyFashionPreset}
+              className="w-full rounded-2xl border border-dashed border-violet-200 bg-white/70 p-5 text-left transition hover:border-violet-400 hover:bg-violet-50 dark:border-violet-900/40 dark:bg-slate-900/40 dark:hover:bg-violet-950/20"
+            >
+              <span className="block text-sm font-black text-gray-900 dark:text-white">Configurar tallas y colores</span>
+              <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">Ejemplo: Color Negro/Blanco/Beige y Talla S/M/L.</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={applyPresentacionPreset}
+              className="w-full rounded-2xl border border-dashed border-amber-200 bg-white/70 p-5 text-left transition hover:border-amber-400 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-slate-900/40 dark:hover:bg-amber-950/20"
+            >
+              <span className="block text-sm font-black text-gray-900 dark:text-white">Configurar presentaciones (peso)</span>
+              <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">Ejemplo: Presentación 500g / 750g / 1kg. Cada una con su stock y precio.</span>
+            </button>
+          )
         )}
 
         {opcionesAtributos.map((option, index) => (

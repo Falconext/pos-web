@@ -239,6 +239,29 @@ function TextosSection({ fields, diseno, onChange, categories }: { fields: TextF
             {items.map(f => {
               const current = String(diseno?.[f.key] ?? '');
 
+              if (f.type === 'toggle') {
+                const checked = Boolean(diseno?.[f.key]);
+                return (
+                  <div key={f.key} className="rounded-xl border border-gray-100 dark:border-slate-800 p-3">
+                    <label className="flex items-start justify-between gap-3 cursor-pointer">
+                      <span>
+                        <span className="block text-sm font-bold text-gray-800 dark:text-slate-200">{f.label}</span>
+                        {f.hint && <span className="mt-0.5 block text-[11px] font-semibold leading-4 text-gray-400">{f.hint}</span>}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={checked}
+                        onClick={() => onChange({ [f.key]: !checked })}
+                        className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${checked ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-slate-700'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      </button>
+                    </label>
+                  </div>
+                );
+              }
+
               if (f.type === 'categorySelect') {
                 const options = [
                   { id: AUTO_ID, value: 'Automática (categoría real)' },

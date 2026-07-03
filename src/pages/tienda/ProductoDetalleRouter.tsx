@@ -9,6 +9,7 @@ import AutopartesProductoDetalle from './AutopartesProductoDetalle';
 import ModaProductoDetalle from './ModaProductoDetalle';
 import TecnologiaProductoDetalle from './TecnologiaProductoDetalle';
 import MayeProductoDetalle from './MayeProductoDetalle';
+import ApiculturaProductoDetalle from './ApiculturaProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -22,6 +23,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   maye: MayeProductoDetalle,
   moda: ModaProductoDetalle,
   urbano: UrbanoProductoDetalle,
+  apicultura: ApiculturaProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

@@ -48,6 +48,7 @@ import ProductoDetalleRouter from './pages/tienda/ProductoDetalleRouter'
 import Checkout from './pages/tienda/Checkout'
 import Catalogo from './pages/tienda/Catalogo'
 import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
+import ContactoRouter from './pages/tienda/ContactoRouter'
 import TiendaLogin from './pages/TiendaLogin'
 import TiendaHome from './pages/TiendaHome'
 
@@ -271,6 +272,7 @@ function App() {
         <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalleRouter />} />
         <Route path="/tienda/:slug/checkout" element={<Checkout />} />
         <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
+        <Route path="/tienda/:slug/contacto" element={<ContactoRouter />} />
         {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}
         <Route path="/tienda/:slug/*" element={<TiendaPublica />} />
         <Route path="/" element={<Navigate to="/login" replace />} />

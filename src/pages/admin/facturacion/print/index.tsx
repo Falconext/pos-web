@@ -255,9 +255,11 @@ const PrintPDF = ({
             .replace(/[\u0300-\u036f]/g, '')
             .trim()
             .toUpperCase();
+    const cuotasCredito = Array.isArray(formValues?.cuotas) ? formValues.cuotas : [];
+    const hasCreditInstallments = cuotasCredito.length > 0;
     const paymentConditionCode = normalizePaymentLabel(formValues?.formaPagoTipo || formValues?.medioPago);
     const medioPagoCode = normalizePaymentLabel(formValues?.medioPago);
-    const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO';
+    const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO' || hasCreditInstallments;
     const isMixedPayment = medioPagoCode === 'MIXTO';
     const paymentConditionLabel = isCreditPayment ? 'CRÉDITO' : 'CONTADO';
     const paymentMethodLabel = isCreditPayment
@@ -407,13 +409,16 @@ const PrintPDF = ({
                                         <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
                                     </View>
                                 )}
-                                {isCreditPayment && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
+                                {hasCreditInstallments && (
                                     <View>
-                                        <Text style={[styles.label, { marginTop: 4 }]}>CRONOGRAMA DE CUOTAS:</Text>
-                                        {formValues.cuotas.map((cuota: any, idx: number) => (
-                                            <View style={[styles.infoRow, { paddingLeft: 4 }]} key={idx}>
-                                                <Text style={styles.label}>CUOTA {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}):</Text>
-                                                <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                        <Text style={[styles.value, { marginTop: 4 }]}>CUOTAS:</Text>
+                                        {cuotasCredito.map((cuota: any, idx: number) => (
+                                            <View key={idx}>
+                                                <Text style={styles.value}>CUOTA {idx + 1}</Text>
+                                                <View style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                    <Text style={styles.value}>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</Text>
+                                                    <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                                </View>
                                             </View>
                                         ))}
                                     </View>
@@ -642,13 +647,16 @@ const PrintPDF = ({
                                                     <Text style={styles.value}>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</Text>
                                                 </View>
                                             )}
-                                            {isCreditPayment && Array.isArray(formValues?.cuotas) && formValues.cuotas.length > 0 && (
+                                            {hasCreditInstallments && (
                                                 <View>
-                                                    <Text style={[styles.label, { marginTop: 4 }]}>CRONOGRAMA DE CUOTAS</Text>
-                                                    {formValues.cuotas.map((cuota: any, idx: number) => (
-                                                        <View style={[styles.infoRow, { paddingLeft: 4 }]} key={idx}>
-                                                            <Text style={styles.label}>CUOTA {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')})</Text>
-                                                            <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                                    <Text style={[styles.value, { marginTop: 4 }]}>CUOTAS</Text>
+                                                    {cuotasCredito.map((cuota: any, idx: number) => (
+                                                        <View key={idx}>
+                                                            <Text style={styles.value}>CUOTA {idx + 1}</Text>
+                                                            <View style={[styles.infoRow, { paddingLeft: 4 }]}>
+                                                                <Text style={styles.value}>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</Text>
+                                                                <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                                            </View>
                                                         </View>
                                                     ))}
                                                 </View>

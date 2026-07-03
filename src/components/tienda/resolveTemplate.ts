@@ -12,7 +12,8 @@ export type PlantillaId =
   | 'tecnologia'
   | 'maye'
   | 'moda'
-  | 'urbano';
+  | 'urbano'
+  | 'apicultura';
 
 export interface BannerSlotDef {
   orden: number;
@@ -326,6 +327,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#111827',
     icon: 'solar:t-shirt-bold',
     rubrosPermitidos: ['Moda', 'Ropa', 'Textil y confección', 'Moda Urbana'],
+  },
+  apicultura: {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Apicultura',
+    description: 'Diseño cálido tipo miel premium para productos naturales, apícolas y alimentos artesanales.',
+    accentColor: '#FFD72E',
+    icon: 'solar:jar-of-pills-bold',
+    rubrosPermitidos: ['Apicultura', 'Miel', 'Productos naturales', 'Agricultura', 'Alimentos naturales', 'Panadería y Pastelería', 'Restaurante y alimentos'],
   },
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type ComponentType } from 'react';
 import { Icon } from '@iconify/react';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import ProductCardCatalog from '@/components/tienda/ProductCardCatalog';
@@ -39,7 +39,26 @@ import MayeCatalogoPage from '@/templates/maye/MayeCatalogoPage';
 import TecnologiaCheckoutPage from '@/templates/tecnologia/TecnologiaCheckoutPage';
 import MayeCheckoutPage from '@/templates/maye/MayeCheckoutPage';
 import { MayeProductoPreviewPage } from '@/pages/tienda/MayeProductoPreviewPage';
+import ApiculturaHomePage from '@/templates/apicultura/ApiculturaHomePage';
+import ApiculturaCatalogoPage from '@/templates/apicultura/ApiculturaCatalogoPage';
+import ApiculturaCheckoutPage from '@/templates/apicultura/ApiculturaCheckoutPage';
+import ApiculturaContactPage from '@/templates/apicultura/ApiculturaContactPage';
+import { ApiculturaProductoPreviewPage } from '@/pages/tienda/ApiculturaProductoPreviewPage';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
+import ProductCardPio from '@/components/tienda/ProductCardPio';
+import ProductCardEmox from '@/components/tienda/ProductCardEmox';
+import ProductCardGlamora from '@/components/tienda/ProductCardGlamora';
+import { resolveTemplate } from '@/components/tienda/resolveTemplate';
+
+// Mapa de cards igual al de la tienda real ([slug].tsx) para que el preview
+// de las plantillas genéricas respete el cardComponent de cada plantilla.
+const PREVIEW_CARD_MAP: Record<string, ComponentType<any>> = {
+  ProductCardPio,
+  ProductCardEmox,
+  ProductCardGlamora,
+  ProductCardGromuse,
+  ProductCardXtra,
+};
 
 interface PreviewConfig {
   plantillaId?: string;
@@ -50,10 +69,10 @@ interface PreviewConfig {
   rubroNombre?: string;
 }
 
-type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout';
+type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto';
 
 const isPreviewPage = (value: string | null): value is PreviewPage =>
-  value === 'home' || value === 'catalogo' || value === 'producto' || value === 'checkout';
+  value === 'home' || value === 'catalogo' || value === 'producto' || value === 'checkout' || value === 'contacto';
 
 const URBANO_PREVIEW_ASSETS = [
   '/assets/templates/urbano/coleccion1.png',
@@ -373,6 +392,11 @@ function HomePage({ demo, cp, diseno, onNav, onProduct, onAddToCart }: { demo: R
   const offset = Math.ceil(demo.products.length / 2);
   const related = [...demo.products.slice(offset), ...demo.products.slice(0, offset)];
 
+  // Respetar el diseño de la plantilla seleccionada: card y grilla reales (como [slug].tsx)
+  const tpl = resolveTemplate(diseno?.plantillaId);
+  const CardComponent = PREVIEW_CARD_MAP[tpl.cardComponent] ?? ProductCardPio;
+  const gridClass = tpl.gridCols;
+
   return (
     <div>
       {/* Hero */}
@@ -432,9 +456,9 @@ function HomePage({ demo, cp, diseno, onNav, onProduct, onAddToCart }: { demo: R
             Ver todo <Icon icon="solar:alt-arrow-right-bold" className="text-sm" />
           </button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className={`grid ${gridClass} gap-4`}>
           {demo.products.slice(0, 8).map(p => (
-            <ProductCardXtra key={p.id} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
+            <CardComponent key={p.id} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
           ))}
         </div>
       </section>
@@ -451,13 +475,9 @@ function HomePage({ demo, cp, diseno, onNav, onProduct, onAddToCart }: { demo: R
               Ver todo <Icon icon="solar:alt-arrow-right-bold" className="text-sm" />
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className={`grid ${gridClass} gap-4`}>
             {related.slice(0, 8).map((p, i) => (
-              diseno.plantillaId === 'autopartes' ? (
-                <ProductCardGromuse key={`${p.id}-r${i}`} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
-              ) : (
-                <ProductCardXtra key={`${p.id}-r${i}`} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
-              )
+              <CardComponent key={`${p.id}-r${i}`} producto={p} slug="preview" diseno={diseno} onAddToCart={onAddToCart} onClick={() => onProduct(p)} />
             ))}
           </div>
         </div>
@@ -1261,7 +1281,8 @@ export default function StorePreviewPage() {
   const previewTemplateOwnsShell =
     config.plantillaId === 'urbano' ||
     config.plantillaId === 'tecnologia' ||
-    config.plantillaId === 'maye';
+    config.plantillaId === 'maye' ||
+    config.plantillaId === 'apicultura';
   const previewStore = {
     nombre: demo.storeName,
     nombreComercial: demo.storeName,
@@ -1341,6 +1362,10 @@ export default function StorePreviewPage() {
       goToPage('checkout');
       return;
     }
+    if (target.includes('/contacto') || target.includes('/contact')) {
+      goToPage('contacto');
+      return;
+    }
     if (target.includes('/catalogo')) {
       goToPage('catalogo');
       return;
@@ -1385,7 +1410,7 @@ export default function StorePreviewPage() {
           <span className="opacity-40">Plantilla: {config.plantillaId ?? 'gadgets'}</span>
           <span className="opacity-30">·</span>
           <span className="px-2 py-0.5 rounded bg-white/10 text-white/80">
-            {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : page === 'checkout' ? 'Checkout' : 'Detalle de Producto'}
+            {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : page === 'checkout' ? 'Checkout' : page === 'contacto' ? 'Contacto' : 'Detalle de Producto'}
           </span>
           <div className="ml-2 hidden items-center gap-1 md:flex">
             {([
@@ -1393,6 +1418,7 @@ export default function StorePreviewPage() {
               ['catalogo', 'Catálogo'],
               ['producto', 'Detalle'],
               ['checkout', 'Checkout'],
+              ['contacto', 'Contacto'],
             ] as const).map(([target, label]) => (
               <button
                 key={target}
@@ -1455,7 +1481,7 @@ export default function StorePreviewPage() {
         )}
 
         {isCartOpen && (
-          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || (config.plantillaId === 'urbano' && page === 'home') ? (
+          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || (config.plantillaId === 'urbano' && page === 'home') ? (
             null
           ) : config.plantillaId === 'moda' ? (
             <ModaCartModal
@@ -1613,6 +1639,22 @@ export default function StorePreviewPage() {
           />
         ) : page === 'home' && config.plantillaId === 'maye' ? (
           <MayeLayout
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'apicultura' ? (
+          <ApiculturaHomePage
             tienda={previewStore}
             slug="preview"
             productos={demo.products}
@@ -1927,8 +1969,78 @@ export default function StorePreviewPage() {
               setProductoAPersonalizar={setProductoAPersonalizar}
               modificadoresProducto={[]}
             />
+          ) : config.plantillaId === 'apicultura' ? (
+            <ApiculturaCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
           ) : (
             <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => { }} />
+          )
+        )}
+
+        {page === 'contacto' && (
+          config.plantillaId === 'apicultura' ? (
+            <ApiculturaContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
+          ) : (
+            <div className="mx-auto max-w-4xl px-6 py-24 text-center">
+              <h1 className="text-4xl font-black text-gray-950">Contacto</h1>
+              <p className="mt-3 text-sm font-semibold text-gray-500">Vista de contacto disponible para esta plantilla.</p>
+            </div>
           )
         )}
 
@@ -1952,6 +2064,21 @@ export default function StorePreviewPage() {
             />
           ) : config.plantillaId === 'maye' ? (
             <MayeProductoPreviewPage
+              producto={selectedProduct}
+              demo={demo}
+              cp={cp}
+              diseno={diseno}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNav={goToPage}
+              onProduct={goToProduct}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'apicultura' ? (
+            <ApiculturaProductoPreviewPage
               producto={selectedProduct}
               demo={demo}
               cp={cp}
@@ -2117,6 +2244,41 @@ export default function StorePreviewPage() {
               handleChange={() => { }}
               configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, culqiPublicKey: 'pk_test' }}
               configEnvio={{ aceptaEnvio: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'apicultura' ? (
+            <ApiculturaCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
               enviando={false}
               search=""
               setSearch={() => { }}

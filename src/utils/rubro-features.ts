@@ -13,6 +13,7 @@ export interface RubroFeatures {
     controlSeriesGarantia: boolean;  // Cómputo/electrónica
     controlStock: boolean;           // Todos (siempre true)
     descripcionRica: boolean;        // Cualquier rubro con tienda virtual
+    usaVariantes: boolean;           // Variantes (color/talla): Moda y rubros configurados
 }
 
 /**
@@ -129,6 +130,7 @@ function applyConfiguredFeatures(base: RubroFeatures, input: RubroInput): RubroF
             controlSeriesGarantia: false,
             controlStock: true,
             descripcionRica: false,
+            usaVariantes: false,
             ...getConfiguredFeatures(input),
         };
     }
@@ -162,6 +164,7 @@ export function detectarFuncionesRubro(
             controlSeriesGarantia: false,
             controlStock: true,
             descripcionRica: false,
+            usaVariantes: false,
         }, rubro);
     }
 
@@ -193,6 +196,17 @@ export function detectarFuncionesRubro(
     const esFabricacion = esRubroFabricacion(nombreRubro);
     const esComputo = esRubroComputo(nombreRubro);
 
+    // MODA / TEXTIL / CALZADO (usa variantes color/talla por defecto)
+    const esModa =
+        nombre.includes('moda') ||
+        nombre.includes('ropa') ||
+        nombre.includes('textil') ||
+        nombre.includes('confeccion') ||
+        nombre.includes('confección') ||
+        nombre.includes('calzado') ||
+        nombre.includes('zapater') ||
+        nombre.includes('boutique');
+
     const usaCodigoBarras =
         typeof overrides?.usaCodigoBarrasManual === 'boolean'
             ? overrides.usaCodigoBarrasManual
@@ -223,6 +237,9 @@ export function detectarFuncionesRubro(
 
         // Descripción rica: activado por configuración de rubro (default false)
         descripcionRica: false,
+
+        // Variantes (color/talla): por defecto solo Moda; otros rubros lo habilitan por configuración
+        usaVariantes: esModa,
     }, rubro);
 }
 

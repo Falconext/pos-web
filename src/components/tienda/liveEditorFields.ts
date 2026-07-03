@@ -17,8 +17,10 @@ export interface TextFieldDef {
   placeholder: string;
   /** Agrupador visual dentro del panel */
   group?: string;
-  /** 'categorySelect' = desplegable con las categorías reales de la tienda */
-  type?: 'text' | 'categorySelect';
+  /** 'categorySelect' = desplegable con las categorías reales de la tienda; 'toggle' = interruptor on/off */
+  type?: 'text' | 'categorySelect' | 'toggle';
+  /** Texto de ayuda debajo del control (usado por 'toggle') */
+  hint?: string;
 }
 
 export interface ProductFieldDef {
@@ -95,6 +97,16 @@ export const MAYE_IMAGE_FIELDS: ImageFieldDef[] = [
 
 export const TECNOLOGIA_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'tecnologiaHeroImageUrl', label: 'Banner principal', hint: 'Imagen grande del inicio (hero)', fallback: '/assets/templates/tecnologia/banner.png' },
+];
+
+export const APICULTURA_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'apiculturaHeroBackgroundUrl', label: 'Hero principal', hint: 'Fondo/poster del video principal', fallback: '/assets/templates/apicultura/bannerapicultura.png' },
+  { key: 'apiculturaHeroImageUrl', label: 'Hero respaldo', hint: 'Imagen alternativa si no usas fondo principal', fallback: '/assets/templates/apicultura/bannerapicultura.png' },
+  { key: 'apiculturaPromoLeftImageUrl', label: 'Promo izquierda', hint: 'Banner de oferta/campaña', fallback: '/assets/templates/apicultura/widget1.png' },
+  { key: 'apiculturaPromoRightImageUrl', label: 'Promo derecha', hint: 'Banner de producto natural', fallback: '/assets/templates/apicultura/widget2.png' },
+  { key: 'apiculturaWhyBannerUrl', label: 'Fondo beneficios', hint: 'Fondo del bloque por qué elegirnos', fallback: '/assets/templates/apicultura/elijeproducto.png' },
+  { key: 'apiculturaWhyImageUrl', label: 'Producto central', hint: 'Imagen del bloque por qué elegirnos', fallback: '/assets/templates/apicultura/productobase.png' },
+  { key: 'apiculturaAboutImageUrl', label: 'Imagen nosotros', hint: 'Imagen del bloque sobre la tienda', fallback: '/assets/templates/apicultura/nosotros.png' },
 ];
 
 export const URBANO_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -243,6 +255,55 @@ const TECNOLOGIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'tecnologiaTwitterUrl', label: 'X / Twitter', placeholder: 'https://x.com/tu-tienda', group: 'Redes' },
 ];
 
+const APICULTURA_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'apiculturaLogoText', label: 'Nombre logo', placeholder: 'Miel Dorada', group: 'Header' },
+  { key: 'apiculturaSearchPlaceholder', label: 'Placeholder buscador', placeholder: 'Buscar miel, propóleo...', group: 'Header' },
+  { key: 'apiculturaHeroEyebrow', label: 'Hero: texto cursivo', placeholder: 'Sabor natural de colmena', group: 'Hero' },
+  { key: 'apiculturaHeroTitle', label: 'Hero: título', placeholder: 'Miel pura para cada día', group: 'Hero' },
+  { key: 'apiculturaHeroVideoUrl', label: 'Hero: video URL', placeholder: '/assets/templates/apicultura/video/video.mp4', group: 'Hero' },
+  { key: 'apiculturaHeroButton', label: 'Hero: botón', placeholder: 'Ver catálogo', group: 'Hero' },
+  { key: 'apiculturaFeaturesEyebrow', label: 'Features: etiqueta', placeholder: 'Best Feature', group: 'Features' },
+  { key: 'apiculturaFeaturesTitle', label: 'Features: título', placeholder: 'We Provide The Best Quality', group: 'Features' },
+  { key: 'apiculturaLatestEyebrow', label: 'Últimos: etiqueta', placeholder: 'New Arrivals', group: 'Productos' },
+  { key: 'apiculturaLatestTitle', label: 'Últimos: título', placeholder: 'Latest Products', group: 'Productos' },
+  { key: 'apiculturaWhyEyebrow', label: 'Why choose: etiqueta', placeholder: 'Why Choose Us', group: 'Why choose' },
+  { key: 'apiculturaWhyTitle', label: 'Why choose: título', placeholder: 'Why Choose Our Products', group: 'Why choose' },
+  { key: 'apiculturaWhyOneTitle', label: 'Beneficio 1: título', placeholder: 'Honey Production', group: 'Why choose' },
+  { key: 'apiculturaWhyOneText', label: 'Beneficio 1: texto', placeholder: 'Procesos cuidados...', group: 'Why choose' },
+  { key: 'apiculturaWhyTwoTitle', label: 'Beneficio 2: título', placeholder: 'Naturally Sweet', group: 'Why choose' },
+  { key: 'apiculturaWhyTwoText', label: 'Beneficio 2: texto', placeholder: 'Ingredientes naturales...', group: 'Why choose' },
+  { key: 'apiculturaWhyThreeTitle', label: 'Beneficio 3: título', placeholder: 'Despacho confiable', group: 'Why choose' },
+  { key: 'apiculturaWhyThreeText', label: 'Beneficio 3: texto', placeholder: 'Entrega o recojo...', group: 'Why choose' },
+  { key: 'apiculturaWhyFourTitle', label: 'Beneficio 4: título', placeholder: '100% Natural', group: 'Why choose' },
+  { key: 'apiculturaWhyFourText', label: 'Beneficio 4: texto', placeholder: 'Comunicación transparente...', group: 'Why choose' },
+  { key: 'apiculturaAboutEyebrow', label: 'About: etiqueta', placeholder: 'About Us', group: 'About' },
+  { key: 'apiculturaAboutTitle', label: 'About: título', placeholder: 'Natural honey for your daily routine', group: 'About' },
+  { key: 'apiculturaAboutText', label: 'About: texto', placeholder: 'Presenta tu marca...', group: 'About' },
+  { key: 'apiculturaAboutButton', label: 'About: botón', placeholder: 'Comprar ahora', group: 'About' },
+  { key: 'apiculturaFeaturedEyebrow', label: 'Destacados: etiqueta', placeholder: 'Popular Products', group: 'Productos' },
+  { key: 'apiculturaFeaturedTitle', label: 'Destacados: título', placeholder: 'Featured Products', group: 'Productos' },
+  { key: 'apiculturaContactTitle', label: 'Contacto: título', placeholder: 'Get In Touch With Us', group: 'Contacto' },
+  { key: 'apiculturaContactText', label: 'Contacto: texto', placeholder: 'Completa el formulario o usa nuestros canales.', group: 'Contacto' },
+  { key: 'apiculturaContactAddress', label: 'Contacto: dirección', placeholder: 'Av. Principal 123', group: 'Contacto' },
+  { key: 'apiculturaContactPhone', label: 'Contacto: teléfono', placeholder: '+51 999 999 999', group: 'Contacto' },
+  { key: 'apiculturaContactEmail', label: 'Contacto: email', placeholder: 'contacto@tutienda.com', group: 'Contacto' },
+  { key: 'apiculturaContactHours', label: 'Contacto: horario', placeholder: '9:00 AM - 6:00 PM', group: 'Contacto' },
+  { key: 'apiculturaContactSubmitLabel', label: 'Contacto: botón', placeholder: 'Enviar', group: 'Contacto' },
+  { key: 'apiculturaOcultarEnvio', label: 'Ocultar costo de envío', placeholder: '', group: 'Checkout', type: 'toggle', hint: 'Actívalo si coordinas el envío internamente. Oculta la línea "Envío" y el mensaje de delivery gratis en el checkout.' },
+  { key: 'apiculturaNewsletterTitle', label: 'Newsletter: título', placeholder: 'Subscribe To Our Newsletter', group: 'Newsletter' },
+  { key: 'apiculturaNewsletterText', label: 'Newsletter: texto', placeholder: 'Recibe novedades y promociones...', group: 'Newsletter' },
+  { key: 'apiculturaNewsletterButton', label: 'Newsletter: botón', placeholder: 'Suscribirse', group: 'Newsletter' },
+  { key: 'apiculturaCheckoutTitle', label: 'Checkout: título', placeholder: 'Finalizar compra', group: 'Checkout' },
+  { key: 'apiculturaCheckoutCustomerTitle', label: 'Checkout: datos cliente', placeholder: 'Datos del cliente', group: 'Checkout' },
+  { key: 'apiculturaCheckoutDeliveryTitle', label: 'Checkout: entrega y pago', placeholder: 'Entrega y pago', group: 'Checkout' },
+  { key: 'apiculturaCheckoutSummaryTitle', label: 'Checkout: resumen', placeholder: 'Resumen del pedido', group: 'Checkout' },
+  { key: 'apiculturaCheckoutThankTitle', label: 'Checkout: cierre título', placeholder: 'Gracias por comprar en nuestra tienda', group: 'Checkout' },
+  { key: 'apiculturaCheckoutThankText', label: 'Checkout: cierre texto', placeholder: 'Recibirás el código de seguimiento...', group: 'Checkout' },
+  { key: 'apiculturaFooterText', label: 'Footer: descripción', placeholder: 'Productos naturales, miel pura...', group: 'Footer' },
+  { key: 'apiculturaFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
+  { key: 'apiculturaFooterEmail', label: 'Footer: email', placeholder: 'contacto@tutienda.com', group: 'Footer' },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUCTOS DESTACADOS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -261,6 +322,11 @@ const MAYE_PRODUCT_FIELDS: ProductFieldDef[] = [
 const TECNOLOGIA_PRODUCT_FIELDS: ProductFieldDef[] = [
   { key: 'tecnologiaPopularProducts', label: 'Productos populares de portada' },
   { key: 'tecnologiaSuggestedProducts', label: 'Productos sugeridos' },
+];
+
+const APICULTURA_PRODUCT_FIELDS: ProductFieldDef[] = [
+  { key: 'apiculturaLatestProducts', label: 'Últimos productos de portada' },
+  { key: 'apiculturaFeaturedProducts', label: 'Productos destacados de portada' },
 ];
 
 const MODA_LINK_FIELDS: LinkFieldDef[] = [
@@ -294,6 +360,13 @@ const TECNOLOGIA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'tecnologiaSuggestedAction', label: 'Ver todo productos sugeridos', group: 'Productos', defaultType: 'catalog' },
 ];
 
+const APICULTURA_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'apiculturaHeroAction', label: 'Hero principal', group: 'Hero', defaultType: 'catalog' },
+  { key: 'apiculturaPromoLeftAction', label: 'Promo izquierda', group: 'Promos', defaultType: 'catalog' },
+  { key: 'apiculturaPromoRightAction', label: 'Promo derecha', group: 'Promos', defaultType: 'catalog' },
+  { key: 'apiculturaAboutAction', label: 'Botón nosotros', group: 'About', defaultType: 'catalog' },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTRO POR PLANTILLA
 // ─────────────────────────────────────────────────────────────────────────────
@@ -312,6 +385,7 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   moda: { textFields: [], imageFields: MODA_IMAGE_FIELDS, productFields: [], linkFields: MODA_LINK_FIELDS },
   maye: { textFields: MAYE_TEXT_FIELDS, imageFields: MAYE_IMAGE_FIELDS, productFields: MAYE_PRODUCT_FIELDS, linkFields: MAYE_LINK_FIELDS },
   tecnologia: { textFields: TECNOLOGIA_TEXT_FIELDS, imageFields: TECNOLOGIA_IMAGE_FIELDS, productFields: TECNOLOGIA_PRODUCT_FIELDS, linkFields: TECNOLOGIA_LINK_FIELDS },
+  apicultura: { textFields: APICULTURA_TEXT_FIELDS, imageFields: APICULTURA_IMAGE_FIELDS, productFields: APICULTURA_PRODUCT_FIELDS, linkFields: APICULTURA_LINK_FIELDS },
 };
 
 export function getLiveEditorConfig(plantillaId?: string | null): LiveEditorPlantillaConfig {

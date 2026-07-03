@@ -98,9 +98,11 @@ console.log(formValues)
             .replace(/[\u0300-\u036f]/g, '')
             .trim()
             .toUpperCase();
+    const cuotasCredito = Array.isArray(formValues?.cuotas) ? formValues.cuotas : [];
+    const hasCreditInstallments = cuotasCredito.length > 0;
     const paymentConditionCode = normalizePaymentLabel(formValues?.formaPagoTipo || formValues?.medioPago);
     const medioPagoCode = normalizePaymentLabel(formValues?.medioPago);
-    const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO';
+    const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO' || hasCreditInstallments;
     const isMixedPayment = medioPagoCode === 'MIXTO';
     const paymentConditionLabel = isCreditPayment ? 'CRÉDITO' : 'CONTADO';
     const paymentMethodLabel = isCreditPayment
@@ -287,13 +289,19 @@ console.log(formValues)
                             <span>CONDICIÓN DE PAGO:</span>
                             <span className="text-right">{paymentConditionLabel}</span>
                         </p>
-                        {isCreditPayment && formValues?.cuotas?.length > 0 && (
+                        {hasCreditInstallments && (
                             <div className="mt-1 mb-1">
-                                <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} font-bold`}>CUOTAS:</p>
-                                {formValues.cuotas.map((cuota: any, idx: number) => (
-                                    <p key={idx} className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'}`}>
-                                        Cuota {idx + 1}: {moment(cuota.fechaVencimiento).format('DD/MM/YYYY')} - S/ {Number(cuota.monto).toFixed(2)}
-                                    </p>
+                                <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'}`}>CUOTAS:</p>
+                                {cuotasCredito.map((cuota: any, idx: number) => (
+                                    <div key={idx} className="mb-0.5">
+                                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} uppercase`}>
+                                            CUOTA {idx + 1}
+                                        </p>
+                                        <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} flex justify-between gap-3`}>
+                                            <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</span>
+                                            <span>S/ {Number(cuota.monto).toFixed(2)}</span>
+                                        </p>
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -674,14 +682,17 @@ console.log(formValues)
                                         </div>
                                     </div>
 
-                                    {isCreditPayment && formValues?.cuotas?.length > 0 && (
+                                    {hasCreditInstallments && (
                                         <div className="mt-2 border p-2 border-gray-300 rounded-md">
-                                            <div className="text-xs font-bold mb-1">Cronograma de Cuotas:</div>
+                                            <div className="text-xs mb-1">CUOTAS:</div>
                                             <div className="grid grid-cols-2 gap-2">
-                                                {formValues.cuotas.map((cuota: any, idx: number) => (
-                                                    <div key={idx} className="text-[10px] flex justify-between px-1">
-                                                        <span>Cuota {idx + 1} ({moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}):</span>
-                                                        <span>S/ {Number(cuota.monto).toFixed(2)}</span>
+                                                {cuotasCredito.map((cuota: any, idx: number) => (
+                                                    <div key={idx} className="text-[10px] px-1">
+                                                        <div className="uppercase">CUOTA {idx + 1}</div>
+                                                        <div className="flex justify-between gap-3">
+                                                            <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</span>
+                                                            <span>S/ {Number(cuota.monto).toFixed(2)}</span>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>

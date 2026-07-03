@@ -25,6 +25,7 @@ const RUBRO_FEATURES = [
     { key: 'gestionOfertas', label: 'Ofertas', group: 'Ventas' },
     { key: 'fichaTecnicaComputo', label: 'Ficha cómputo', group: 'Cómputo' },
     { key: 'controlSeriesGarantia', label: 'Series/garantía', group: 'Cómputo' },
+    { key: 'usaVariantes', label: 'Variantes', group: 'Inventario' },
 ];
 
 export default function SistemaRubros() {

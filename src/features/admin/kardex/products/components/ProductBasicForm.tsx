@@ -419,7 +419,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
 
 
-            {vm.isModaRubro && <ProductVariantsManager vm={vm} />}
+            {(vm.isModaRubro || vm.features?.usaVariantes) && <ProductVariantsManager vm={vm} />}
 
             {productSections.fichaComputo && (
                 <div className="col-span-1 md:col-span-2 rounded-2xl border border-violet-100 bg-white p-3 dark:border-violet-900/40 dark:bg-slate-950/20">

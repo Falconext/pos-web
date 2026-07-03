@@ -11,6 +11,7 @@ import ProductCardGlamora from '@/components/tienda/ProductCardGlamora';
 import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
 import ProductCardCatalog from '@/components/tienda/ProductCardCatalog';
 import { resolveTemplate, resolveTemplateId } from '@/components/tienda/resolveTemplate';
+import StoreWhatsAppButton from '@/components/tienda/StoreWhatsAppButton';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 import GadgetsCartModal from '@/components/tienda/GadgetsCartModal';
@@ -352,7 +353,12 @@ export default function Catalogo() {
     if (templateId !== 'urbano') {
         const TemplateCatalogo = templateRegistry[templateId]?.CatalogoPage;
         if (TemplateCatalogo) {
-            return <TemplateCatalogo {...templateCatalogoProps} />;
+            return (
+                <>
+                    <TemplateCatalogo {...templateCatalogoProps} />
+                    <StoreWhatsAppButton tienda={tienda} />
+                </>
+            );
         }
     }
 

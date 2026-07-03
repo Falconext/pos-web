@@ -19,6 +19,7 @@ import XtraHeader from '@/components/tienda/XtraHeader';
 import { templateRegistry } from '@/templates/registry';
 import { useAuthStore } from '@/zustand/auth';
 import StoreLiveEditorDrawer from '@/components/tienda/StoreLiveEditorDrawer';
+import StoreWhatsAppButton from '@/components/tienda/StoreWhatsAppButton';
 
 import StoreSidebar from '@/components/tienda/StoreSidebar';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
@@ -632,6 +633,7 @@ export default function TiendaPublica() {
           carrito={carrito} setCarrito={setCarrito} mostrarCarrito={mostrarCarrito} setMostrarCarrito={setMostrarCarrito}
           agregarAlCarrito={agregarAlCarrito} actualizarCantidad={actualizarCantidad} loading={loading}
         />
+        <StoreWhatsAppButton tienda={tienda} />
       </>
     );
   }
@@ -640,6 +642,7 @@ export default function TiendaPublica() {
     <div className="min-h-screen bg-[#F6F6F6]" style={{ fontFamily: '"Mona Sans", ' + (diseno.tipografia || 'Inter, sans-serif') }}>
 
       {liveEditor}
+      <StoreWhatsAppButton tienda={tienda} />
 
       {/* Header */}
       <StoreHeader
