@@ -44,6 +44,9 @@ import ApiculturaCatalogoPage from '@/templates/apicultura/ApiculturaCatalogoPag
 import ApiculturaCheckoutPage from '@/templates/apicultura/ApiculturaCheckoutPage';
 import ApiculturaContactPage from '@/templates/apicultura/ApiculturaContactPage';
 import { ApiculturaProductoPreviewPage } from '@/pages/tienda/ApiculturaProductoPreviewPage';
+import ConstruccionHomePage from '@/templates/construccion/ConstruccionHomePage';
+import ConstruccionCatalogoPage from '@/templates/construccion/ConstruccionCatalogoPage';
+import ConstruccionCheckoutPage from '@/templates/construccion/ConstruccionCheckoutPage';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
 import ProductCardEmox from '@/components/tienda/ProductCardEmox';
@@ -1282,7 +1285,8 @@ export default function StorePreviewPage() {
     config.plantillaId === 'urbano' ||
     config.plantillaId === 'tecnologia' ||
     config.plantillaId === 'maye' ||
-    config.plantillaId === 'apicultura';
+    config.plantillaId === 'apicultura' ||
+    config.plantillaId === 'construccion';
   const previewStore = {
     nombre: demo.storeName,
     nombreComercial: demo.storeName,
@@ -1481,7 +1485,7 @@ export default function StorePreviewPage() {
         )}
 
         {isCartOpen && (
-          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || (config.plantillaId === 'urbano' && page === 'home') ? (
+          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || config.plantillaId === 'construccion' || (config.plantillaId === 'urbano' && page === 'home') ? (
             null
           ) : config.plantillaId === 'moda' ? (
             <ModaCartModal
@@ -1655,6 +1659,22 @@ export default function StorePreviewPage() {
           />
         ) : page === 'home' && config.plantillaId === 'apicultura' ? (
           <ApiculturaHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'construccion' ? (
+          <ConstruccionHomePage
             tienda={previewStore}
             slug="preview"
             productos={demo.products}
@@ -2016,6 +2036,53 @@ export default function StorePreviewPage() {
               setProductoAPersonalizar={setProductoAPersonalizar}
               modificadoresProducto={[]}
             />
+          ) : config.plantillaId === 'construccion' ? (
+            <ConstruccionCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
           ) : (
             <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => { }} />
           )
@@ -2267,6 +2334,41 @@ export default function StorePreviewPage() {
             />
           ) : config.plantillaId === 'apicultura' ? (
             <ApiculturaCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'construccion' ? (
+            <ConstruccionCheckoutPage
               slug="preview"
               tienda={previewStore}
               diseno={diseno}

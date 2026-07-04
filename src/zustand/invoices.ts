@@ -34,7 +34,7 @@ const normalizeSunatEstado = (invoice: any) => {
 
     // ANULADO y NO_APLICA son estados de negocio definitivos — tienen prioridad sobre
     // cualquier código de respuesta de SUNAT (el CDR original sigue diciendo "aceptado").
-    if (rawEstado === 'ANULADO' || rawEstado === 'NO_APLICA') {
+    if (rawEstado === 'ANULADO' || rawEstado === 'NO_APLICA' || rawEstado === 'PENDIENTE_CONCILIACION') {
         estadoEnvioSunat = rawEstado;
     } else if (responseCode === '0' || responseLabel === 'ACEPTADO' || responseLabel === 'OBSERVADO' || rawEstado === 'EMITIDO') {
         estadoEnvioSunat = 'ACEPTADO';

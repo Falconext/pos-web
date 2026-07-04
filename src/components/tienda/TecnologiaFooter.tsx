@@ -22,14 +22,19 @@ export default function TecnologiaFooter({ tienda, slug, diseno, categories = []
   const year = new Date().getFullYear();
   const cp = diseno?.colorPrimario || '#2563EB';
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'TechStore Peru';
+  const isConstruccion = diseno?.plantillaId === 'construccion';
   const phone = clean(tienda?.whatsappTienda || tienda?.telefono || tienda?.celular || diseno?.tecnologiaFooterPhone);
   const email = clean(diseno?.tecnologiaFooterEmail || tienda?.email || tienda?.correo || tienda?.correoPrincipal);
-  const footerText = diseno?.tecnologiaFooterText || 'Equipos, componentes y accesorios tecnológicos con atención rápida, stock actualizado y experiencia de compra optimizada.';
+  const footerText = diseno?.tecnologiaFooterText || (
+    isConstruccion
+      ? 'Materiales, herramientas y soluciones para obra con atención rápida, stock actualizado y experiencia de compra optimizada.'
+      : 'Equipos, componentes y accesorios tecnológicos con atención rápida, stock actualizado y experiencia de compra optimizada.'
+  );
   const isPreview = slug === 'preview';
   const route = (path = '') => {
     if (isPreview) {
       const page = path.includes('checkout') ? 'checkout' : path.includes('catalogo') ? 'catalogo' : 'home';
-      return `/diseno-preview?plantillaId=tecnologia&page=${page}`;
+      return `/diseno-preview?plantillaId=${isConstruccion ? 'construccion' : 'tecnologia'}&page=${page}`;
     }
     return slug ? `/tienda/${slug}${path}` : '/';
   };
@@ -100,7 +105,9 @@ export default function TecnologiaFooter({ tienda, slug, diseno, categories = []
               )}
               <div>
                 <p className="text-sm font-black">{storeName}</p>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">Tecnología y cómputo</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                  {isConstruccion ? 'Construcción y ferretería' : 'Tecnología y cómputo'}
+                </p>
               </div>
             </div>
             <p className="max-w-sm text-sm leading-relaxed text-white/55">

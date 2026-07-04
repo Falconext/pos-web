@@ -59,7 +59,7 @@ const normalizeSunatEstado = (invoice: any) => {
 
     let estadoEnvioSunat = rawEstado;
 
-    if (rawEstado === 'ANULADO' || rawEstado === 'NO_APLICA') {
+    if (rawEstado === 'ANULADO' || rawEstado === 'NO_APLICA' || rawEstado === 'PENDIENTE_CONCILIACION') {
         estadoEnvioSunat = rawEstado;
     } else if (responseCode === '0' || responseLabel === 'ACEPTADO' || responseLabel === 'OBSERVADO' || rawEstado === 'EMITIDO') {
         estadoEnvioSunat = 'ACEPTADO';
@@ -344,6 +344,8 @@ const Comprobantes = () => {
         const value = String(estado || 'SIN ESTADO').toUpperCase();
         const tone = value.includes('ACEPTADO') || value.includes('EMITIDO') || value.includes('PAGADO')
             ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+            : value.includes('CONCILIACION')
+                ? 'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20'
             : value.includes('PENDIENTE')
                 ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
                 : value.includes('ANULADO') || value.includes('RECHAZADO') || value.includes('FALLIDO')
@@ -352,7 +354,7 @@ const Comprobantes = () => {
 
         return (
             <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${tone}`}>
-                {value}
+                {value === 'PENDIENTE_CONCILIACION' ? 'Conciliación SUNAT' : value}
             </span>
         );
     };
@@ -531,7 +533,7 @@ const Comprobantes = () => {
         setSelectedUsuarioId(value ? Number(value) : null);
     }
 
-    const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "ANULADO" }, { id: 5, value: "RECHAZADO" }]
+    const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "PENDIENTE_CONCILIACION" }, { id: 5, value: "ANULADO" }, { id: 6, value: "RECHAZADO" }]
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))

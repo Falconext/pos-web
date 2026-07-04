@@ -4,6 +4,7 @@ export type PlantillaId =
   | 'minimal'
   | 'elegante'
   | 'tecnica'
+  | 'construccion'
   | 'mercado'
   | 'salud'
   | 'menu'
@@ -169,6 +170,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#1E3A5F',
     icon: 'solar:cpu-bold',
     rubrosPermitidos: ['Ferretería', 'Tecnología y software', 'Ventas de accesorios y repuestos de cómputo', 'Tecnologías de la información', 'Automotriz y repuestos', 'Construcción y obras', 'Venta de materiales de construcción'],
+  },
+  construccion: {
+    cardComponent: 'ProductCardGromuse',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: CLASSIC_BANNER_SLOTS,
+    showCombos: true,
+    showSidebar: true,
+    imageAspect: 'aspect-[4/3]',
+    label: 'Construcción',
+    description: 'Plantilla industrial para ferreterías, materiales de obra y herramientas profesionales.',
+    accentColor: '#F59E0B',
+    icon: 'solar:buildings-3-bold',
+    rubrosPermitidos: ['Ferretería', 'Construcción y obras', 'Venta de materiales de construcción', 'Materiales de construcción'],
   },
   mercado: {
     cardComponent: 'ProductCardGromuse',

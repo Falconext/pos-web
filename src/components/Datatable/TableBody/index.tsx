@@ -205,7 +205,7 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                             className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold
                                                 ${cell === 'EMITIDO' || cell === 'ACTIVO' || cell === 'ACEPTADO' || cell === 'INGRESO' || cell === 'TRANSFERENCIA' || cell === 'SENT' || cell === 'Present' || cell === 'COMPLETADO' || cell === 'PRODUCCIÓN'
                                                     ? 'bg-emerald-50 text-emerald-600'
-                                                    : cell === 'PENDIENTE'
+                                                    : cell === 'PENDIENTE' || cell === 'PENDIENTE_CONCILIACION'
                                                         ? 'bg-blue-50 text-blue-600'
                                                         : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'AJUSTE' || cell === 'ENVIANDO' || cell === 'DEMO'
                                                             ? 'bg-amber-50 text-amber-600'
@@ -216,7 +216,8 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                                                     : 'bg-gray-100 text-gray-500'
                                                 }`}
                                         >
-                                            {cell === 'PENDIENTE' ? 'En procesamiento'
+                                            {cell === 'PENDIENTE_CONCILIACION' ? 'Conciliación SUNAT'
+                                                : cell === 'PENDIENTE' ? 'En procesamiento'
                                                 : cell === 'INGRESO' ? 'Ingreso'
                                                 : cell === 'SALIDA' ? 'Salida'
                                                 : cell === 'AJUSTE' ? 'Ajuste'

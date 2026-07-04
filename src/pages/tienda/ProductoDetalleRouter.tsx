@@ -20,6 +20,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   gadgets: GadgetsProductoDetalle,
   autopartes: AutopartesProductoDetalle,
   tecnologia: TecnologiaProductoDetalle,
+  construccion: TecnologiaProductoDetalle,
   maye: MayeProductoDetalle,
   moda: ModaProductoDetalle,
   urbano: UrbanoProductoDetalle,

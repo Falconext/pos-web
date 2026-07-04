@@ -5,7 +5,7 @@ import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import { Icon } from '@iconify/react';
-import { useEmpresasStore } from '@/zustand/empresas';
+import { useEmpresasStore, type EmpresaSerieConfig } from '@/zustand/empresas';
 import { useAuthStore } from '@/zustand/auth';
 import { useExtentionsStore } from '@/zustand/extentions';
 import useAlertStore from '@/zustand/alert';
@@ -100,12 +100,56 @@ interface EditFormData {
   };
 }
 
+const DOCUMENTO_SERIES: Array<{
+  tipoDoc: string;
+  label: string;
+  help: string;
+  serie: string;
+}> = [
+  { tipoDoc: '01', label: 'Factura', help: 'Factura electrónica', serie: 'F001' },
+  { tipoDoc: '03', label: 'Boleta', help: 'Boleta de venta electrónica', serie: 'B001' },
+  { tipoDoc: '07:01', label: 'Nota de crédito factura', help: 'Cuando afecta una factura', serie: 'FCA1' },
+  { tipoDoc: '07:03', label: 'Nota de crédito boleta', help: 'Cuando afecta una boleta', serie: 'BCA1' },
+  { tipoDoc: '08:01', label: 'Nota de débito factura', help: 'Cuando afecta una factura', serie: 'FDA1' },
+  { tipoDoc: '08:03', label: 'Nota de débito boleta', help: 'Cuando afecta una boleta', serie: 'BDA1' },
+  { tipoDoc: '09', label: 'Guía remitente', help: 'Guía de remisión remitente', serie: 'T001' },
+  { tipoDoc: '31', label: 'Guía transportista', help: 'Guía de remisión transportista', serie: 'V001' },
+];
+
+const resolverSerieDefault = (tipoDoc: string, billingProvider?: string) => {
+  if (tipoDoc === '01') return billingProvider === 'JAMBLE' ? 'F001' : 'F0A1';
+  if (tipoDoc === '03') return billingProvider === 'JAMBLE' ? 'B001' : 'B0A1';
+  return DOCUMENTO_SERIES.find((item) => item.tipoDoc === tipoDoc)?.serie || 'F0A1';
+};
+
+const crearSeriesIniciales = (billingProvider?: string): EmpresaSerieConfig[] =>
+  DOCUMENTO_SERIES.map((item) => ({
+    tipoDoc: item.tipoDoc,
+    serie: resolverSerieDefault(item.tipoDoc, billingProvider),
+    correlativo: 1,
+    activo: true,
+  }));
+
+const unirSeriesEmpresa = (series?: EmpresaSerieConfig[] | null, billingProvider?: string): EmpresaSerieConfig[] => {
+  const byTipo = new Map((series || []).map((item) => [item.tipoDoc, item]));
+  return DOCUMENTO_SERIES.map((item) => {
+    const saved = byTipo.get(item.tipoDoc);
+    return {
+      id: saved?.id,
+      tipoDoc: item.tipoDoc,
+      serie: (saved?.serie || resolverSerieDefault(item.tipoDoc, billingProvider)).toUpperCase(),
+      correlativo: Number(saved?.correlativo || 1),
+      activo: saved?.activo ?? true,
+    };
+  });
+};
+
 
 export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSaved }: EmpresaFormModalProps) {
   const isEdit = mode === 'edit';
   const navigate = useNavigate();
   const { success, alert } = useAlertStore();
-  const { crearEmpresa, actualizarEmpresa, obtenerEmpresa, empresa, listarEmpresas } = useEmpresasStore();
+  const { crearEmpresa, actualizarEmpresa, obtenerEmpresa, empresa, listarSeriesEmpresa, guardarSeriesEmpresa } = useEmpresasStore();
   const { planes, rubros, ubigeos, getPlanes, getRubros, getUbigeos } = useExtentionsStore();
   const { getClientFromDoc } = useClientsStore();
   const { auth } = useAuthStore();
@@ -113,10 +157,11 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const hasNegocioScope = isAdminSistema && !!auth?.sistemaNegocio;
   const hasProductoScope = isAdminSistema && !!auth?.sistemaProducto;
 
-  const [activeTab, setActiveTab] = useState<'datos' | 'suscripcion' | 'sunat' | 'admin'>('datos');
+  const [activeTab, setActiveTab] = useState<'datos' | 'suscripcion' | 'sunat' | 'series' | 'admin'>('datos');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [searchingRuc, setSearchingRuc] = useState(false);
+  const [seriesConfig, setSeriesConfig] = useState<EmpresaSerieConfig[]>(() => crearSeriesIniciales());
 
   const initialCreate: CreateFormData = useMemo(() => ({
     ruc: '',
@@ -195,6 +240,9 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
     if (isEdit && empresaId) {
       obtenerEmpresa(empresaId);
+      listarSeriesEmpresa(empresaId)
+        .then((series) => setSeriesConfig(unirSeriesEmpresa(series)))
+        .catch(() => setSeriesConfig(crearSeriesIniciales()));
     } else {
       setCreateData({
         ...initialCreate,
@@ -202,8 +250,9 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         producto: hasProductoScope ? ((String(auth?.sistemaProducto || '').toLowerCase() === 'hotel') ? 'hotel' : 'facturacion') : initialCreate.producto,
       });
       setLogoPreview('');
+      setSeriesConfig(crearSeriesIniciales());
     }
-  }, [open, isEdit, empresaId, getRubros, getUbigeos, getPlanes, obtenerEmpresa, initialCreate, hasNegocioScope, hasProductoScope, auth?.sistemaNegocio, auth?.sistemaProducto]);
+  }, [open, isEdit, empresaId, getRubros, getUbigeos, getPlanes, obtenerEmpresa, listarSeriesEmpresa, initialCreate, hasNegocioScope, hasProductoScope, auth?.sistemaNegocio, auth?.sistemaProducto]);
 
   useEffect(() => {
     if (open && isEdit && empresa && empresaId && empresa.id === empresaId) {
@@ -251,6 +300,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       });
       setInitialEditPlanId(empresa.plan?.id || 0);
       setLogoPreview(empresa.logo ? empresa.logo : '');
+      setSeriesConfig(unirSeriesEmpresa((empresa as any).series, (empresa as any).billingProvider));
     }
   }, [open, isEdit, empresa, empresaId]);
 
@@ -339,6 +389,34 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
+  const updateSerieConfig = (
+    tipoDoc: string,
+    field: 'serie' | 'correlativo' | 'activo',
+    value: string | number | boolean,
+  ) => {
+    setSeriesConfig((prev) =>
+      prev.map((item) =>
+        item.tipoDoc === tipoDoc
+          ? {
+              ...item,
+              [field]:
+                field === 'serie'
+                  ? String(value).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
+                  : field === 'correlativo'
+                    ? Math.max(1, Number(value) || 1)
+                    : Boolean(value),
+            }
+          : item,
+      ),
+    );
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`serie.${tipoDoc}`];
+      delete next[`correlativo.${tipoDoc}`];
+      return next;
+    });
+  };
+
   const handleEsPrueba = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCreateData(prev => ({ ...prev, esPrueba: e.target.checked }));
   };
@@ -414,6 +492,18 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       if (!isDemo && isAdminSistema && !hasProductoScope && !createData.producto) e.producto = 'Selecciona el producto de destino';
     }
 
+    if (isEdit) {
+      for (const item of seriesConfig) {
+        if (!item.activo) continue;
+        if (!/^[A-Z0-9]{4}$/.test(String(item.serie || ''))) {
+          e[`serie.${item.tipoDoc}`] = 'Serie inválida';
+        }
+        if (!Number.isInteger(Number(item.correlativo)) || Number(item.correlativo) < 1) {
+          e[`correlativo.${item.tipoDoc}`] = 'Correlativo inválido';
+        }
+      }
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -425,6 +515,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     try {
       if (isEdit) {
         await actualizarEmpresa(editData as any);
+        await guardarSeriesEmpresa(editData.id, seriesConfig);
         alert('Empresa actualizada correctamente', 'success');
       } else {
         await crearEmpresa(createData as any);
@@ -468,6 +559,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
               { id: 'datos', label: 'Datos de Empresa', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
               { id: 'suscripcion', label: 'Plan y Vigencia', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
               { id: 'sunat', label: 'Integración SUNAT', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+              ...(isEdit ? [{ id: 'series', label: 'Series SUNAT', icon: 'M7 8h10M7 12h6m-6 4h10M5 3h14a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 012-2z' }] : []),
               { id: 'admin', label: 'Administrador', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
             ].map((t: any) => (
               <button key={t.id} type="button"
@@ -787,6 +879,88 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputPro name="usuarioPse" label="Usuario PSE (QPSE)" isLabel value={isEdit ? (editData.usuarioPse || '') : (createData.usuarioPse || '')} onChange={handleChange} placeholder="Ej. 0HGRQ55B" />
                     <InputPro name="contrasenaPse" label="Contraseña PSE (QPSE)" type="password" isLabel value={isEdit ? (editData.contrasenaPse || '') : (createData.contrasenaPse || '')} onChange={handleChange} placeholder="Ej. R8101ZBD" />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'series' && isEdit && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Series y Correlativos SUNAT</h3>
+
+                  <div className="bg-sky-50/70 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <Icon icon="solar:info-circle-bold" width={18} className="text-sky-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-sky-900 dark:text-sky-200 leading-relaxed">
+                        Úsalo cuando la empresa viene de otro facturador. Si el último documento usado fue <strong>B001-250</strong>, configura boleta con serie <strong>B001</strong> y siguiente correlativo <strong>251</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                    {DOCUMENTO_SERIES.map((doc) => {
+                      const item = seriesConfig.find((serie) => serie.tipoDoc === doc.tipoDoc) || {
+                        tipoDoc: doc.tipoDoc,
+                        serie: doc.serie,
+                        correlativo: 1,
+                        activo: true,
+                      };
+                      return (
+                        <div
+                          key={doc.tipoDoc}
+                          className={`rounded-2xl border p-4 transition-all ${
+                            item.activo
+                              ? 'border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/70'
+                              : 'border-slate-200 bg-slate-50 opacity-70 dark:border-slate-800 dark:bg-slate-900/50'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">{doc.label}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{doc.help}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => updateSerieConfig(doc.tipoDoc, 'activo', !item.activo)}
+                              className={`relative h-6 w-11 rounded-full transition-colors ${
+                                item.activo ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                              }`}
+                              aria-label={`Activar ${doc.label}`}
+                            >
+                              <span
+                                className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                                  item.activo ? 'left-6' : 'left-1'
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            <label className="block">
+                              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Serie</span>
+                              <input
+                                value={item.serie}
+                                onChange={(event) => updateSerieConfig(doc.tipoDoc, 'serie', event.target.value)}
+                                disabled={!item.activo}
+                                className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold uppercase text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:disabled:bg-slate-800"
+                              />
+                              {errors[`serie.${doc.tipoDoc}`] && <p className="mt-1 text-[11px] font-semibold text-red-500">{errors[`serie.${doc.tipoDoc}`]}</p>}
+                            </label>
+                            <label className="block">
+                              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Siguiente</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={item.correlativo}
+                                onChange={(event) => updateSerieConfig(doc.tipoDoc, 'correlativo', event.target.value)}
+                                disabled={!item.activo}
+                                className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:disabled:bg-slate-800"
+                              />
+                              {errors[`correlativo.${doc.tipoDoc}`] && <p className="mt-1 text-[11px] font-semibold text-red-500">{errors[`correlativo.${doc.tipoDoc}`]}</p>}
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

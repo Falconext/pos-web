@@ -43,6 +43,11 @@ import ApiculturaHomePage from './apicultura/ApiculturaHomePage';
 import ApiculturaCatalogoPage from './apicultura/ApiculturaCatalogoPage';
 import ApiculturaCheckoutPage from './apicultura/ApiculturaCheckoutPage';
 
+// Construccion
+import ConstruccionHomePage from './construccion/ConstruccionHomePage';
+import ConstruccionCatalogoPage from './construccion/ConstruccionCatalogoPage';
+import ConstruccionCheckoutPage from './construccion/ConstruccionCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -96,5 +101,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: ApiculturaHomePage,
     CatalogoPage: ApiculturaCatalogoPage,
     CheckoutPage: ApiculturaCheckoutPage,
+  },
+  construccion: {
+    id: 'construccion',
+    HomePage: ConstruccionHomePage,
+    CatalogoPage: ConstruccionCatalogoPage,
+    CheckoutPage: ConstruccionCheckoutPage,
   },
 };

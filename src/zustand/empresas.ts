@@ -55,6 +55,16 @@ interface Empresa {
     email?: string | null;
     celular?: string | null;
   }>;
+  series?: EmpresaSerieConfig[];
+}
+
+export interface EmpresaSerieConfig {
+  id?: number;
+  empresaId?: number;
+  tipoDoc: string;
+  serie: string;
+  correlativo: number;
+  activo: boolean;
 }
 
 interface Plan {
@@ -212,6 +222,8 @@ interface EmpresasState {
   crearEmpresa: (data: CreateEmpresaDto) => Promise<Empresa>;
   obtenerEmpresa: (id: number) => Promise<void>;
   actualizarEmpresa: (data: UpdateEmpresaDto) => Promise<void>;
+  listarSeriesEmpresa: (id: number) => Promise<EmpresaSerieConfig[]>;
+  guardarSeriesEmpresa: (id: number, series: EmpresaSerieConfig[]) => Promise<EmpresaSerieConfig[]>;
   cambiarEstadoEmpresa: (id: number, estado: 'ACTIVO' | 'INACTIVO') => Promise<void>;
   eliminarEmpresa: (id: number) => Promise<void>;
   obtenerMiEmpresa: () => Promise<void>;
@@ -344,6 +356,30 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
         error: error?.response?.data?.message || 'Error al actualizar empresa',
         loading: false
       });
+      throw error;
+    }
+  },
+
+  listarSeriesEmpresa: async (id: number) => {
+    try {
+      const response: any = await apiClient.get(`/empresa/${id}/series`);
+      return response?.data?.data || response?.data || [];
+    } catch (error: any) {
+      set({ error: error?.response?.data?.message || 'Error al obtener series SUNAT' });
+      throw error;
+    }
+  },
+
+  guardarSeriesEmpresa: async (id: number, series: EmpresaSerieConfig[]) => {
+    try {
+      const response: any = await apiClient.put(`/empresa/${id}/series`, { series });
+      const payload = response?.data?.data || response?.data || [];
+      set((state) => ({
+        empresa: state.empresa?.id === id ? { ...state.empresa, series: payload } : state.empresa,
+      }));
+      return payload;
+    } catch (error: any) {
+      set({ error: error?.response?.data?.message || 'Error al guardar series SUNAT' });
       throw error;
     }
   },

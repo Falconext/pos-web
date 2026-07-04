@@ -30,7 +30,7 @@ const ferreteriaDemo: RubroDemo = {
   heroKeyword: 'Las Mejores Herramientas',
   heroDesc: 'Herramientas profesionales, materiales de calidad y todo lo que necesitas para tu obra o proyecto. Entrega rápida a todo el país.',
   categories: ['Todos', 'Herramientas', 'Pinturas', 'Electricidad', 'Plomería', 'Tornillería'],
-  plantillaDefault: 'tecnica',
+  plantillaDefault: 'construccion',
   colorDefault: '#E65100',
   products: [
     { id: 1, descripcion: 'Taladro Percutor 800W Bosch', precioUnitario: 289.90, precioOriginal: 350.00, imagenUrl: img(400,400,'FFF3E0','E65100','Taladro'), stock: 8, categoria: { nombre: 'Herramientas' }, marca: { nombre: 'Bosch' } },
