@@ -642,7 +642,7 @@ export default function ProductoDetalle() {
                           { label: 'Categoría', fn: (i: any) => i.categoria || '—' },
                           { label: 'Marca', fn: (i: any) => i.marca || '—' },
                           { label: 'Stock', fn: (i: any) => i.stock ?? '—' },
-                          { label: 'Rating', fn: (i: any) => i.ratingAvg ? `★ ${Number(i.ratingAvg).toFixed(1)}` : '—' },
+                          { label: 'Calificación', fn: (i: any) => i.ratingAvg ? `★ ${Number(i.ratingAvg).toFixed(1)}` : '—' },
                         ].map(row => (
                           <tr key={row.label} className="border-t border-gray-50">
                             <td className="py-3 pr-4 text-xs font-bold text-gray-500 uppercase">{row.label}</td>
@@ -714,6 +714,34 @@ export default function ProductoDetalle() {
                 </div>
               )}
             </div>
+
+            {/* Miniaturas de galería (imagen principal + adicionales) */}
+            {(() => {
+              const extras = Array.isArray(producto.imagenesExtra) ? producto.imagenesExtra : [];
+              const todas = Array.from(
+                new Set([producto.imagenUrl, ...extras].filter(Boolean)),
+              ) as string[];
+              if (todas.length <= 1) return null;
+              const actual = selectedImage || producto.imagenUrl;
+              return (
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                  {todas.map((img) => (
+                    <button
+                      key={img}
+                      type="button"
+                      onClick={() => setSelectedImage(img)}
+                      className={`shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden bg-white transition-colors ${
+                        actual === img
+                          ? 'border-[#FF9500]'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-contain p-1" />
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Details Column */}

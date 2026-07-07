@@ -48,6 +48,11 @@ import ConstruccionHomePage from './construccion/ConstruccionHomePage';
 import ConstruccionCatalogoPage from './construccion/ConstruccionCatalogoPage';
 import ConstruccionCheckoutPage from './construccion/ConstruccionCheckoutPage';
 
+// Falcon (tecnología)
+import FalconHomePage from './falcon/FalconHomePage';
+import FalconCatalogoPage from './falcon/FalconCatalogoPage';
+import FalconCheckoutPage from './falcon/FalconCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -107,5 +112,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: ConstruccionHomePage,
     CatalogoPage: ConstruccionCatalogoPage,
     CheckoutPage: ConstruccionCheckoutPage,
+  },
+  falcon: {
+    id: 'falcon',
+    HomePage: FalconHomePage,
+    CatalogoPage: FalconCatalogoPage,
+    CheckoutPage: FalconCheckoutPage,
   },
 };

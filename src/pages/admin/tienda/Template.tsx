@@ -22,12 +22,51 @@ type PlantillaVentaConfig = {
   premiumNote?: string;
 };
 
+const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: string[]; pages: string[] }> = {
+  maye: {
+    headline: 'Experiencia ecommerce premium para tiendas tecnológicas con portada editorial, secciones comerciales y microinteracciones.',
+    features: ['Home premium con banners compuestos', 'Productos destacados y ofertas configurables', 'Animaciones profesionales', 'Personalización en vivo de textos, imágenes y productos'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Carrito lateral'],
+  },
+  falcon: {
+    headline: 'Marketplace tecnológico completo tipo Gadgetize, pensado para vender gadgets, cómputo y accesorios con una experiencia más robusta.',
+    features: ['Home con hero, banners laterales y categorías circulares', 'Blog integrado editable', 'Carrito lateral premium', 'Checkout profesional', 'Selector de productos destacados'],
+    pages: ['Inicio', 'Catálogo', 'Blog', 'Detalle de producto', 'Checkout', 'Carrito lateral'],
+  },
+  construccion: {
+    headline: 'Plantilla profesional tipo ferretería para herramientas, materiales de obra y ventas con alto ticket.',
+    features: ['Diseño especializado para ferretería', 'Catálogo con filtros profesionales', 'Checkout adaptado a pedidos de tienda', 'Página de contacto', 'Carrito lateral personalizado'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  apicultura: {
+    headline: 'Diseño cálido y premium para miel, productos naturales, alimentos artesanales y marcas orgánicas.',
+    features: ['Portada visual con enfoque natural', 'Secciones de beneficios y confianza', 'Checkout limpio', 'Página de contacto', 'Personalización visual avanzada'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto'],
+  },
+};
+
 const mergePlantillaConfig = (plantilla: any, config?: PlantillaVentaConfig) => ({
   ...plantilla,
   premium: config?.premium ?? plantilla.premium,
   precioSoles: config?.precioSoles ?? plantilla.precioSoles,
   premiumNote: config?.premiumNote ?? plantilla.premiumNote,
 });
+
+const getTemplateDetails = (plantilla: any) => {
+  const specific = PREMIUM_TEMPLATE_DETAILS[plantilla.id];
+  if (specific) return specific;
+  return {
+    headline: plantilla.description || 'Diseño avanzado para mejorar la presentación de tu tienda y diferenciar tu marca.',
+    features: [
+      'Diseño optimizado para mobile y escritorio',
+      'Secciones comerciales listas para vender',
+      'Estilo visual profesional según el rubro',
+      'Compatible con catálogo, carrito y checkout',
+    ],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout'],
+  };
+};
+
 
 export default function TemplateTienda() {
   const vm = useConfiguracionTiendaViewModel();
@@ -43,6 +82,7 @@ export default function TemplateTienda() {
   const [rubroPlantillaId, setRubroPlantillaId] = useState<string | null>(null);
   const [loadingRubroPlantilla, setLoadingRubroPlantilla] = useState(false);
   const [plantillasConfig, setPlantillasConfig] = useState<Record<string, PlantillaVentaConfig>>({});
+  const [previewPlantilla, setPreviewPlantilla] = useState<any | null>(null);
   const plantillasPremiumCompradas = useMemo(
     () => getPurchasedPremiumTemplates(vm.config?.diseno),
     [vm.config?.diseno],
@@ -137,6 +177,27 @@ export default function TemplateTienda() {
       `Hola, quiero comprar la plantilla premium ${plantilla.label} para mi tienda. Precio: S/ ${Number(plantilla.precioSoles || 0).toFixed(2)}.`,
     );
     window.open(`https://wa.me/?text=${mensaje}`, '_blank');
+  };
+
+  const getPreviewUrl = (plantillaId: string) => {
+    if (formData.slugTienda) {
+      const params = new URLSearchParams({
+        previewPlantilla: plantillaId,
+        previewOrigen: 'template',
+      });
+      return `/tienda/${formData.slugTienda}?${params.toString()}`;
+    }
+
+    const diseno = vm.config?.diseno || {};
+    const params = new URLSearchParams({
+      plantillaId,
+      colorPrimario: diseno.colorPrimario || '#6A6CFF',
+      colorSecundario: diseno.colorSecundario || '#ffffff',
+      colorAccento: diseno.colorAccento || '#FF6B6B',
+      tipografia: diseno.tipografia || 'Inter',
+      rubroNombre: rubroNombre || 'Tienda',
+    });
+    return `/diseno-preview?${params.toString()}`;
   };
 
   const { formData, saving } = vm;
@@ -242,6 +303,7 @@ export default function TemplateTienda() {
               const isPremium = Boolean(plantilla.premium);
               const isPurchased = plantillasPremiumCompradas.includes(plantilla.id);
               const isLocked = isTemplatePremiumLocked(plantilla, vm.config?.diseno);
+              const details = getTemplateDetails(plantilla);
 
               return (
                 <div
@@ -272,15 +334,32 @@ export default function TemplateTienda() {
                   </p>
 
                   {isPremium && (
-                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-900/10">
-                      <p className="text-lg font-black text-gray-900 dark:text-white">S/ {Number(plantilla.precioSoles || 0).toFixed(2)}</p>
-                      <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-                        {plantilla.premiumNote || 'Compra única aparte del plan'}
-                      </p>
+                    <div className="mt-3 space-y-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-900/10">
+                      <div>
+                        <p className="text-lg font-black text-gray-900 dark:text-white">S/ {Number(plantilla.precioSoles || 0).toFixed(2)}</p>
+                        <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                          {plantilla.premiumNote || 'Compra única aparte del plan'}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        {details.features.slice(0, 3).map((feature) => (
+                          <p key={feature} className="flex items-start gap-1.5 text-[10px] font-semibold leading-snug text-gray-700 dark:text-gray-300">
+                            <Icon icon="solar:check-circle-bold" className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                            {feature}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPlantilla(plantilla)}
+                      className="rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-700 ring-1 ring-gray-200 transition hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-200 dark:ring-slate-700"
+                    >
+                      {isPremium ? 'Ver qué incluye' : 'Vista previa'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => elegirPlantilla(plantilla.id)}
@@ -640,6 +719,137 @@ export default function TemplateTienda() {
             </>
         </div>}
       </div>
+      {previewPlantilla && (() => {
+        const details = getTemplateDetails(previewPlantilla);
+        const isPremium = Boolean(previewPlantilla.premium);
+        const isPurchased = plantillasPremiumCompradas.includes(previewPlantilla.id);
+        const isLocked = isTemplatePremiumLocked(previewPlantilla, vm.config?.diseno);
+        const isActivePreview = activeTemplateId === previewPlantilla.id;
+
+        return (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-3 sm:p-5">
+            <div className="flex max-h-[94vh] w-full max-w-[min(1800px,96vw)] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#111827]">
+              <div className="flex flex-col gap-4 border-b border-gray-100 p-4 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: `${previewPlantilla.accentColor}18`, color: previewPlantilla.accentColor }}>
+                      <Icon icon={previewPlantilla.icon} className="text-2xl" />
+                    </span>
+                    <div>
+                      <h3 className="text-xl font-black text-gray-950 dark:text-white">{previewPlantilla.label}</h3>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">{previewPlantilla.description}</p>
+                    </div>
+                  </div>
+                  {isPremium && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                        <Icon icon="solar:crown-bold" />
+                        Premium · S/ {Number(previewPlantilla.precioSoles || 0).toFixed(2)}
+                      </span>
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{previewPlantilla.premiumNote || 'Compra única aparte del plan'}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPlantilla(null)}
+                  className="self-end rounded-2xl bg-gray-100 p-3 text-gray-500 transition hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 sm:self-start"
+                >
+                  <Icon icon="solar:close-circle-bold" className="text-xl" />
+                </button>
+              </div>
+
+              <div className="grid min-h-0 flex-1 lg:grid-cols-[360px_minmax(0,1fr)]">
+                <aside className="space-y-5 overflow-y-auto border-b border-gray-100 p-5 dark:border-slate-800 lg:border-b-0 lg:border-r">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-gray-400">Por qué cuesta más</p>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-gray-700 dark:text-gray-300">{details.headline}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-gray-400">Incluye</p>
+                    <div className="mt-3 space-y-2">
+                      {details.features.map((feature) => (
+                        <div key={feature} className="flex items-start gap-2 rounded-2xl bg-gray-50 p-3 text-sm font-semibold text-gray-700 dark:bg-slate-900 dark:text-gray-300">
+                          <Icon icon="solar:check-circle-bold" className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-gray-400">Páginas listas</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {details.pages.map((page) => (
+                        <span key={page} className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                          {page}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    {isLocked ? (
+                      <button
+                        type="button"
+                        onClick={() => solicitarPlantillaPremium(previewPlantilla)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white transition hover:bg-amber-600"
+                      >
+                        <Icon icon="solar:cart-check-bold" className="text-lg" />
+                        Comprar plantilla
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          elegirPlantilla(previewPlantilla.id);
+                          setPreviewPlantilla(null);
+                        }}
+                        disabled={isActivePreview || vm.saving}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-950 px-4 py-3 text-sm font-black text-white transition hover:bg-black disabled:opacity-60 dark:bg-white dark:text-gray-950"
+                      >
+                        <Icon icon={isPurchased || !isPremium ? 'solar:check-circle-bold' : 'solar:unlock-bold'} className="text-lg" />
+                        {isActivePreview ? 'Ya está activa' : 'Usar esta plantilla'}
+                      </button>
+                    )}
+                    <a
+                      href={getPreviewUrl(previewPlantilla.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-black text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800"
+                    >
+                      <Icon icon="solar:eye-bold" className="text-lg" />
+                      Abrir preview completo
+                    </a>
+                  </div>
+                </aside>
+
+                <div className="min-h-[620px] bg-gray-100 p-3 dark:bg-slate-950 sm:p-5">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white px-4 py-3 text-xs font-bold text-gray-500 shadow-sm dark:bg-slate-900 dark:text-gray-300">
+                    <span className="inline-flex items-center gap-2">
+                      <Icon icon="solar:monitor-bold" className="text-base text-indigo-500" />
+                      Vista escritorio
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <Icon icon={formData.slugTienda ? 'solar:box-bold' : 'solar:test-tube-bold'} className="text-base text-emerald-500" />
+                      {formData.slugTienda ? 'Con tus productos reales' : 'Con productos demo'}
+                    </span>
+                  </div>
+                  <div className="h-[calc(100%-56px)] min-h-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800">
+                    <iframe
+                      title={`Preview ${previewPlantilla.label}`}
+                      src={getPreviewUrl(previewPlantilla.id)}
+                      loading="lazy"
+                      className="h-full min-h-[560px] w-full bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

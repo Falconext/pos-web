@@ -36,6 +36,13 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
       { id: "CLIENTE_PROVEEDOR", value: "CLIENTE-PROVEEDOR" },
       { id: "EMPRESA", value: "EMPRESA" },
     ]
+    const inferTipoDoc = (doc: string) => {
+        if (/^\d{8}$/.test(doc)) return 'DNI';
+        if (/^(10|20)\d{9}$/.test(doc)) return 'RUC';
+        if (/^[A-Za-z0-9]{6,12}$/.test(doc)) return 'CE';
+        return 'OTRO';
+    };
+
     const handleChange = async (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const updatedFormValues = {
@@ -46,7 +53,7 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
         if (name === "nroDoc") {
             const cleanValue = value.trim();
             if (cleanValue.length === 8 || cleanValue.length === 11) {
-                const result = await getClientFromDoc(cleanValue);
+                const result = await getClientFromDoc(cleanValue, cleanValue.length === 11 ? 'RUC' : 'DNI');
                 console.log(result)
                 if (result) {
                     setFormValues({
@@ -96,7 +103,8 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
                         }
                         return "";
                     }
-                    return "El documento debe ser un DNI (8 dígitos) o RUC (11 dígitos)";
+                    if (/^[A-Za-z0-9]{6,12}$/.test(doc)) return "";
+                    return "El documento debe ser DNI, RUC o Carnet de Extranjería";
                 }
                 return "";
             })(),
@@ -113,13 +121,13 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
         if (Number(formValues?.id) !== 0 && isEdit) {
             editClients({
                 ...formValues,
-                tipoDoc: formValues.nroDoc.length === 8 ? "DNI" : "RUC"
+                tipoDoc: inferTipoDoc(formValues.nroDoc)
             });
             closeModal();
         } else {
             addClients({
                 ...formValues,
-                tipoDoc: formValues.nroDoc.length === 8 ? "DNI" : "RUC",
+                tipoDoc: inferTipoDoc(formValues.nroDoc),
                 estado: "ACTIVO"
             });
             closeModal();

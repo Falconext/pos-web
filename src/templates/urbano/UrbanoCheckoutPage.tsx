@@ -6,6 +6,7 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import { BancoLogo } from '@/components/shared/BancoLogo';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_NUMBER } from '@/utils/storeWhatsapp';
 
 type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
 
@@ -95,12 +96,6 @@ export default function UrbanoCheckoutPage({
   };
 
   const cotizarPorWhatsApp = () => {
-    const raw = String(safeFormData.clienteTelefono || '').replace(/\D/g, '');
-    if (raw.length < 9) {
-      alert('Ingresa tu número de WhatsApp en "Teléfono" para enviarte la cotización.');
-      return;
-    }
-    const phone = raw.length === 9 ? `51${raw}` : raw;
     const nombreTienda = tienda?.nombreComercial || tienda?.nombre || 'Tienda';
     const lineas = cartItems.map((item: any) =>
       `• ${item.cantidad}x ${item.descripcion} — S/ ${(Number(item.precioUnitario) * item.cantidad).toFixed(2)}`
@@ -113,7 +108,7 @@ export default function UrbanoCheckoutPage({
       `Envío: ${envio === 0 ? 'Gratis' : `S/ ${envio.toFixed(2)}`}\n` +
       `*Total: S/ ${total.toFixed(2)}*\n\n` +
       `Cotización generada desde la tienda online.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    window.open(buildStorePurchaseWhatsappUrl(mensaje), '_blank');
   };
 
   return (
@@ -515,7 +510,7 @@ export default function UrbanoCheckoutPage({
           isOpen={showPaymentModal}
           onClose={() => { setShowPaymentModal(false); window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`; }}
           orderData={{ id: pedidoCreado.id, codigoSeguimiento: pedidoCreado.codigoSeguimiento, total: pedidoCreado.total || calcularTotal(), medioPago: safeFormData.medioPago, tipoEntrega: safeFormData.tipoEntrega, clienteNombre: safeFormData.clienteNombre }}
-          paymentConfig={configPago ? { yapeQR: configPago.yapeQR || configPago.yapeQrUrl || undefined, plinQR: configPago.plinQR || configPago.plinQrUrl || undefined, yapeNumero: configPago.yapeNumero || undefined, plinNumero: configPago.plinNumero || undefined, whatsappTienda: configPago.whatsappTienda || undefined } : undefined}
+          paymentConfig={configPago ? { yapeQR: configPago.yapeQR || configPago.yapeQrUrl || undefined, plinQR: configPago.plinQR || configPago.plinQrUrl || undefined, yapeNumero: configPago.yapeNumero || undefined, plinNumero: configPago.plinNumero || undefined, whatsappTienda: STORE_PURCHASE_WHATSAPP_NUMBER } : undefined}
           storeSlug={slug || ''}
         />
       )}

@@ -61,6 +61,7 @@ const mergePlantillaConfig = (plantilla: any, config?: PlantillaVentaConfig) => 
 
 const TIPOGRAFIAS = [
   'Inter', 
+  'Heebo',
   'Poppins', 
   'Outfit',
   'Plus Jakarta Sans',
@@ -609,7 +610,7 @@ export default function DisenoRubroPage() {
                               step="0.01"
                               value={premiumForm.precioSoles}
                               onChange={e => setPremiumForm(prev => ({ ...prev, precioSoles: e.target.value }))}
-                          disabled={!drawerPremiumPersistido}
+                              disabled={!premiumForm.premium}
                               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-bold text-gray-900 outline-none transition focus:border-amber-400 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                             />
                           </label>
@@ -619,7 +620,7 @@ export default function DisenoRubroPage() {
                               type="text"
                               value={premiumForm.premiumNote}
                               onChange={e => setPremiumForm(prev => ({ ...prev, premiumNote: e.target.value }))}
-                              disabled={!drawerPremiumPersistido}
+                              disabled={!premiumForm.premium}
                               placeholder="Compra única aparte del plan"
                               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none transition focus:border-amber-400 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                             />

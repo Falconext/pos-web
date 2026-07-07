@@ -37,6 +37,7 @@ import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import TemplateTienda from './pages/admin/tienda/Template'
 import PedidosTienda from './pages/admin/tienda/Pedidos'
 import ReviewsTienda from './pages/admin/tienda/Reviews'
+import BlogTienda from './pages/admin/tienda/Blog'
 import PanelVentasView from './pages/admin/despacho/PanelVentasView'
 import DespachoConfigPage from './pages/admin/despacho/DespachoConfigPage'
 import RepartidoresView from './pages/admin/repartidores/RepartidoresView'
@@ -49,6 +50,7 @@ import Checkout from './pages/tienda/Checkout'
 import Catalogo from './pages/tienda/Catalogo'
 import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
 import ContactoRouter from './pages/tienda/ContactoRouter'
+import BlogRouter from './pages/tienda/BlogRouter'
 import TiendaLogin from './pages/TiendaLogin'
 import TiendaHome from './pages/TiendaHome'
 
@@ -186,6 +188,7 @@ function App() {
           <Route path="tienda/template" element={<TemplateTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
           <Route path="tienda/reviews" element={<ReviewsTienda />} />
+          <Route path="tienda/blog" element={<BlogTienda />} />
           <Route path="ventas" element={<PanelVentasView />} />
           <Route path="despacho/config" element={<DespachoConfigPage />} />
           <Route path="repartidores" element={<RepartidoresView />} />
@@ -266,6 +269,7 @@ function App() {
         {/* Home de tienda para emprendedor (requiere estar logueado, usa mismo token) */}
         <Route path="/diseno-preview" element={<StorePreviewPage />} />
         <Route path="/tienda/home" element={<TiendaHome />} />
+        <Route path="/tienda/preview/:previewPage" element={<StorePreviewPage />} />
         {/* Rutas públicas de tienda para clientes finales */}
         <Route path="/tienda/:slug" element={<TiendaPublica />} />
         <Route path="/tienda/:slug/catalogo" element={<Catalogo />} />
@@ -273,6 +277,8 @@ function App() {
         <Route path="/tienda/:slug/checkout" element={<Checkout />} />
         <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
         <Route path="/tienda/:slug/contacto" element={<ContactoRouter />} />
+        <Route path="/tienda/:slug/blog" element={<BlogRouter />} />
+        <Route path="/tienda/:slug/blog/:blogId" element={<BlogRouter />} />
         {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}
         <Route path="/tienda/:slug/*" element={<TiendaPublica />} />
         <Route path="/" element={<Navigate to="/login" replace />} />

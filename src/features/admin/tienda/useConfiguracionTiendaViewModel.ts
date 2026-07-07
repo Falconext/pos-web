@@ -246,7 +246,7 @@ export const useConfiguracionTiendaViewModel = (): any => {
         }
     };
 
-    const actualizarDiseno = async (campos: Record<string, any>, options?: { silent?: boolean }) => {
+    const actualizarDiseno = async (campos: Record<string, any>, options?: { silent?: boolean }): Promise<boolean> => {
         try {
             setSaving(true);
             await apiClient.patch('/tienda/diseno', campos);
@@ -255,8 +255,10 @@ export const useConfiguracionTiendaViewModel = (): any => {
                 diseno: { ...(prev?.diseno || {}), ...campos },
             }));
             if (!options?.silent) alert('Configuración de diseño guardada', 'success');
+            return true;
         } catch (e: any) {
             alert(e.response?.data?.message || 'Error al guardar diseño', 'error');
+            return false;
         } finally {
             setSaving(false);
         }
@@ -299,6 +301,23 @@ export const useConfiguracionTiendaViewModel = (): any => {
             alert(e.response?.data?.message || 'Error al subir imagen del template', 'error');
         } finally {
             setUploadingTemplateImageField('');
+        }
+    };
+
+    // Sube una imagen suelta (p. ej. de un post del blog) y devuelve su URL.
+    // No la escribe en el diseño: el consumidor decide dónde guardarla.
+    const subirMediaTemplate = async (file: File): Promise<string | null> => {
+        if (!file) { alert('Selecciona una imagen primero', 'warning'); return null; }
+        if (file.size > 5 * 1024 * 1024) { alert('El archivo es demasiado grande. Máximo 5MB', 'error'); return null; }
+        if (!file.type.startsWith('image/')) { alert('El archivo debe ser una imagen', 'error'); return null; }
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const { data } = await apiClient.post('/tienda/template/media', fd);
+            return data?.data?.url || data?.url || null;
+        } catch (e: any) {
+            alert(e.response?.data?.message || 'Error al subir la imagen', 'error');
+            return null;
         }
     };
 
@@ -369,6 +388,6 @@ export const useConfiguracionTiendaViewModel = (): any => {
         productSearch, setProductSearch, productResults, searchingProducts, subirBanner, eliminarBanner, handleBannerFileChange,
         editingBanner, setEditingBanner, editBannerTitle, setEditBannerTitle, editBannerSubtitle, setEditBannerSubtitle, editBannerLink, setEditBannerLink, editBannerOrden, setEditBannerOrden,
         editBannerFile, setEditBannerFile, editSearch, setEditSearch, editResults, searchingEdit, openEditModal, handleUpdateBanner,
-        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno, actualizarDisenoTexto, subirImagenTemplate, uploadingTemplateImageField,
+        storeCategories, getCategoryLabel, generarLinkCatalogoCategoria, actualizarDiseno, actualizarDisenoTexto, subirImagenTemplate, subirMediaTemplate, uploadingTemplateImageField,
     };
 };

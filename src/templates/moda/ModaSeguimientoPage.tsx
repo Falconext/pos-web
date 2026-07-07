@@ -4,6 +4,7 @@ import ModaHeader from '@/components/tienda/ModaHeader';
 import ModaFooter from '@/components/tienda/ModaFooter';
 import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 import type { TemplateSeguimientoPageProps } from '@/templates/shared/types';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_NUMBER } from '@/utils/storeWhatsapp';
 
 export default function ModaSeguimientoPage({
   slug, tienda, diseno, cp,
@@ -150,10 +151,10 @@ export default function ModaSeguimientoPage({
                 </div>
                 
                 {/* Botón WhatsApp si está disponible */}
-                {pedido.empresa?.whatsappTienda && (
+                {STORE_PURCHASE_WHATSAPP_NUMBER && (
                   <div className="pt-4">
                     <a
-                      href={`https://wa.me/${pedido.empresa.whatsappTienda.replace(/\D/g, '')}`}
+                      href={buildStorePurchaseWhatsappUrl(`Hola, necesito ayuda con mi pedido ${pedido.codigoSeguimiento || ''}.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-2 py-4 bg-green-600 text-white font-bold text-sm tracking-wide hover:bg-green-700 transition-colors"

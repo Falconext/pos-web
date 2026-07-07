@@ -50,7 +50,7 @@ export default function ProductCardPio({ producto, slug, diseno, onAddToCart, on
                     ) : (
                         <>
                             <span className="text-white text-[9px] font-black px-2.5 py-1 rounded-full" style={{ background: cp }}>
-                                Top Seller
+                                Más vendido
                             </span>
                             {isVetApproved && (
                                 <span className="bg-[#22C55E] text-white text-[9px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">

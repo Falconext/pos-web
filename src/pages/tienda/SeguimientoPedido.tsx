@@ -6,6 +6,8 @@ import LineaTiempoEstados from '@/components/LineaTiempoEstados';
 import Footer from '@/components/tienda/Footer';
 import { templateRegistry } from '@/templates/registry';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_NUMBER } from '@/utils/storeWhatsapp';
+import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const TERMINAL_STATES = ['ENTREGADO', 'ENTREGADO_COMPLETADO', 'CANCELADO', 'CANCELADO_INTERNO', 'CANCELADO_CLIENTE'];
@@ -15,6 +17,8 @@ export default function SeguimientoPedido() {
     const { slug } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const previewPlantillaId = searchParams.get('previewPlantilla');
+    useStorePreviewNavigation(previewPlantillaId);
     const codigoParam = searchParams.get('codigo');
 
     const [codigo, setCodigo] = useState(codigoParam || '');
@@ -405,9 +409,9 @@ export default function SeguimientoPedido() {
                                     </div>
 
                                     <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {pedido.empresa?.whatsappTienda && (
+                                        {STORE_PURCHASE_WHATSAPP_NUMBER && (
                                             <a
-                                                href={`https://wa.me/${pedido.empresa.whatsappTienda.replace(/\D/g, '')}`}
+                                                href={buildStorePurchaseWhatsappUrl(`Hola, necesito ayuda con mi pedido ${pedido.codigoSeguimiento || ''}.`)}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className={`flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 ${btnRadius} font-bold hover:bg-green-700 transition-colors`}

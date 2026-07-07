@@ -13,12 +13,19 @@ import {
 } from './ClientsModel';
 
 const CODIGO_TO_TIPO_DOC: Record<string, string> = { '1': 'DNI', '6': 'RUC', '4': 'CE', '7': 'PASAPORTE', '0': 'OTRO' };
+const DOC_LABELS: Record<string, string> = { DNI: 'DNI', RUC: 'RUC', CE: 'C.E.', PASAPORTE: 'Pasaporte', OTRO: 'Otro' };
 const mapCodigoToTipoDoc = (data: IClient): string => {
+    const tipoDoc = String((data as any).tipoDoc || '').toUpperCase();
+    if (tipoDoc && DOC_LABELS[tipoDoc]) return tipoDoc;
     const codigo = data.tipoDocumento?.codigo;
     if (codigo && CODIGO_TO_TIPO_DOC[codigo]) return CODIGO_TO_TIPO_DOC[codigo];
     if (data.nroDoc?.length === 8) return 'DNI';
     if (data.nroDoc?.length === 11) return 'RUC';
     return 'DNI';
+};
+const getDocLabel = (data: IClient): string => {
+    const tipo = mapCodigoToTipoDoc(data);
+    return DOC_LABELS[tipo] || tipo || '';
 };
 
 export const useClientsViewModel = () => {
@@ -121,7 +128,7 @@ export const useClientsViewModel = () => {
         const allData: any = {
             id: item?.id,
             'Nombre o Razon social': item?.nombre,
-            'Documento': item?.nroDoc.length === 8 ? 'DNI' : item?.nroDoc.length === 11 ? 'RUC' : '',
+            'Documento': getDocLabel(item),
             'Num. doc': item?.nroDoc,
             'Direccion': item?.direccion,
             'Correo principal': item.email,

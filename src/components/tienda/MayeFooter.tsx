@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from '@iconify/react';
 import { Link } from 'react-router-dom';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_RAW } from '@/utils/storeWhatsapp';
 
 interface Props {
   tienda: any;
@@ -14,9 +15,9 @@ export default function MayeFooter({ tienda, slug, diseno }: Props) {
   const accentShadow = `${cp}4D`;
   const helpTitle = diseno?.mayeFooterHelpTitle || 'Información de Ayuda';
   const helpText = diseno?.mayeFooterHelpText || 'Encuentra productos disponibles, soporte de compra y atención directa desde nuestra tienda virtual.';
-  const phone = diseno?.mayeFooterPhone || tienda?.whatsappTienda || tienda?.telefono || tienda?.celular || '';
+  const phone = STORE_PURCHASE_WHATSAPP_RAW;
   const email = diseno?.mayeFooterEmail || tienda?.email || tienda?.correo || '';
-  const whatsapp = String(phone || '').replace(/[^\d]/g, '');
+  const whatsappUrl = buildStorePurchaseWhatsappUrl(`Hola, vengo de ${tienda?.nombreComercial || 'la tienda'} y quisiera información.`);
   const socialLinks = [
     { url: tienda?.twitterUrl || diseno?.twitterUrl, icon: 'mdi:twitter', label: 'Twitter' },
     { url: tienda?.facebookUrl || diseno?.facebookUrl, icon: 'mdi:facebook', label: 'Facebook' },
@@ -100,7 +101,7 @@ export default function MayeFooter({ tienda, slug, diseno }: Props) {
               
               <div className="flex flex-col gap-4 mb-8">
                 {phone && (
-                  <a href={whatsapp ? `https://wa.me/${whatsapp}` : `tel:${phone}`} className="flex items-center gap-3 text-gray-300 hover:text-white transition-colors">
+                  <a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-gray-300 hover:text-white transition-colors">
                     <Icon icon="solar:phone-calling-linear" className="text-xl" />
                     <span className="text-sm">{phone}</span>
                   </a>
@@ -154,7 +155,7 @@ export default function MayeFooter({ tienda, slug, diseno }: Props) {
               <ul className="flex flex-col gap-3">
                 <li><Link to={`/tienda/${slug}/seguimiento`} className="text-xs text-gray-400 hover:text-white transition-colors">Rastrear pedido</Link></li>
                 <li><Link to={`/tienda/${slug}/checkout`} className="text-xs text-gray-400 hover:text-white transition-colors">Finalizar compra</Link></li>
-                {phone && <li><a href={whatsapp ? `https://wa.me/${whatsapp}` : `tel:${phone}`} className="text-xs text-gray-400 hover:text-white transition-colors">Contactar tienda</a></li>}
+                {phone && <li><a href={whatsappUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:text-white transition-colors">Contactar tienda</a></li>}
               </ul>
             </div>
 

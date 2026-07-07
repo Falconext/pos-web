@@ -1,5 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import StoreHeader from '@/components/tienda/StoreHeader';
@@ -11,6 +11,8 @@ import { templateRegistry } from '@/templates/registry';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
 import { clearTiendaCart, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 import { withPricingList } from '@/templates/shared/pricing';
+import { STORE_PURCHASE_WHATSAPP_NUMBER, withStorePurchaseWhatsapp } from '@/utils/storeWhatsapp';
+import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -58,11 +60,14 @@ export default function Checkout() {
     const { slug } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const previewPlantillaId = searchParams.get('previewPlantilla');
+    useStorePreviewNavigation(previewPlantillaId);
     const { carrito: carritoStateInitial, tienda: tiendaFromState } = location.state || {};
     const [carritoState, setCarritoState] = useState<any[]>(carritoStateInitial || []);
 
     // Mejora 1: tienda como estado — se carga desde API si no viene por navegación
-    const [tienda, setTienda] = useState<any>(tiendaFromState || null);
+    const [tienda, setTienda] = useState<any>(withStorePurchaseWhatsapp(tiendaFromState) || null);
 
     const [configPago, setConfigPago] = useState<PaymentConfig | null>(null);
     const [configEnvio, setConfigEnvio] = useState<any>(null);
@@ -93,7 +98,7 @@ export default function Checkout() {
     useEffect(() => {
         if (!tienda && slug) {
             axios.get(`${BASE_URL}/public/store/${slug}`)
-                .then(({ data }) => setTienda(data.data || data))
+                .then(({ data }) => setTienda(withStorePurchaseWhatsapp(data.data || data)))
                 .catch(console.error);
         }
     }, [slug]);
@@ -200,7 +205,7 @@ export default function Checkout() {
                 plinQR: rawConfig.plinQrUrl || rawConfig.plinQR,
                 yapeNumero: rawConfig.yapeNumero || rawConfig.yapePhone,
                 plinNumero: rawConfig.plinNumero || rawConfig.plinPhone,
-                whatsappTienda: rawConfig.whatsappTienda || rawConfig.whatsapp || rawConfig.telefono,
+                whatsappTienda: STORE_PURCHASE_WHATSAPP_NUMBER,
             };
             setConfigPago(normalizedConfig);
             if (normalizedConfig.aceptaEfectivo) {
@@ -434,7 +439,13 @@ export default function Checkout() {
         });
     };
 
-    const diseno = tienda?.diseno || {};
+    const disenoBase = tienda?.diseno || {};
+    const diseno = previewPlantillaId ? {
+        ...disenoBase,
+        plantillaId: previewPlantillaId,
+        __previewPlantillaId: previewPlantillaId,
+        __previewQuery: `previewPlantilla=${encodeURIComponent(previewPlantillaId)}&previewOrigen=template`,
+    } : disenoBase;
 
     // ── Template Dispatcher ───────────────────────────────────────────────────
     const cp = diseno.colorPrimario || '#FF9500';
@@ -815,7 +826,7 @@ export default function Checkout() {
                         plinQR: configPago.plinQR || configPago.plinQrUrl || undefined,
                         yapeNumero: configPago.yapeNumero || undefined,
                         plinNumero: configPago.plinNumero || undefined,
-                        whatsappTienda: configPago.whatsappTienda || undefined,
+                        whatsappTienda: STORE_PURCHASE_WHATSAPP_NUMBER,
                     } : undefined}
                     storeSlug={slug || ''}
                 />

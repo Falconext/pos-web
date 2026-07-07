@@ -2,6 +2,7 @@ import TecnologiaCheckout from '@/pages/tienda/TecnologiaCheckout';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
+import { STORE_PURCHASE_WHATSAPP_NUMBER } from '@/utils/storeWhatsapp';
 
 export default function TecnologiaCheckoutPage(props: TemplateCheckoutPageProps) {
   return (
@@ -29,7 +30,7 @@ export default function TecnologiaCheckoutPage(props: TemplateCheckoutPageProps)
                   plinQR: props.configPago.plinQR || props.configPago.plinQrUrl || undefined,
                   yapeNumero: props.configPago.yapeNumero || undefined,
                   plinNumero: props.configPago.plinNumero || undefined,
-                  whatsappTienda: props.configPago.whatsappTienda || undefined,
+                  whatsappTienda: STORE_PURCHASE_WHATSAPP_NUMBER,
                 }
               : undefined
           }

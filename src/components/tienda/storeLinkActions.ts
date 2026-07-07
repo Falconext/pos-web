@@ -17,6 +17,7 @@ interface RunOptions {
   slug: string;
   navigate: NavigateFunction;
   fallback?: StoreLinkAction;
+  previewQuery?: string;
 }
 
 const VALID_TYPES = new Set<LinkFieldTarget>(['catalog', 'category', 'search', 'product', 'url', 'none']);
@@ -60,19 +61,24 @@ export function runStoreLinkAction(action: StoreLinkAction, options: RunOptions)
   const base = `/tienda/${options.slug}`;
   const value = String(target.value || '').trim();
   const productId = String(target.productId || '').trim();
+  const appendPreview = (url: string) => {
+    const query = String(options.previewQuery || '').replace(/^\?/, '');
+    if (!query) return url;
+    return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+  };
 
   if (target.type === 'product' && productId) {
-    options.navigate(`${base}/producto/${encodeURIComponent(productId)}`);
+    options.navigate(appendPreview(`${base}/producto/${encodeURIComponent(productId)}`));
     return;
   }
 
   if (target.type === 'category' && value) {
-    options.navigate(`${base}/catalogo?category=${encodeURIComponent(value)}`);
+    options.navigate(appendPreview(`${base}/catalogo?category=${encodeURIComponent(value)}`));
     return;
   }
 
   if (target.type === 'search' && value) {
-    options.navigate(`${base}/catalogo?search=${encodeURIComponent(value)}`);
+    options.navigate(appendPreview(`${base}/catalogo?search=${encodeURIComponent(value)}`));
     return;
   }
 
@@ -81,7 +87,7 @@ export function runStoreLinkAction(action: StoreLinkAction, options: RunOptions)
     return;
   }
 
-  options.navigate(`${base}/catalogo`);
+  options.navigate(appendPreview(`${base}/catalogo`));
 }
 
 function normalizeAction(action: StoreLinkAction, fallback?: StoreLinkAction): StoreLinkAction {

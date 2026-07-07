@@ -30,6 +30,8 @@ import { useCompareStore } from '@/zustand/compare';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 import { withPricing, withPricingList } from '@/templates/shared/pricing';
+import { withStorePurchaseWhatsapp } from '@/utils/storeWhatsapp';
+import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -47,6 +49,7 @@ export default function TiendaPublica() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [mostrarCarrito, setMostrarCarrito] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const previewPlantillaId = searchParams.get('previewPlantilla');
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -67,6 +70,7 @@ export default function TiendaPublica() {
   const { getBySlug, clear: clearCompare } = useCompareStore();
   const { refreshImagenes } = useFavoritosStore();
   const auth = useAuthStore(s => s.auth);
+  useStorePreviewNavigation(previewPlantillaId);
 
   // Estado para el Live Editor (panel flotante "modo WordPress")
   const [disenoLive, setDisenoLive] = useState<any>(null);
@@ -226,7 +230,7 @@ export default function TiendaPublica() {
   const cargarTienda = async () => {
     try {
       const { data } = await axios.get(`${BASE_URL}/public/store/${slug}`);
-      setTienda(data.data || data);
+      setTienda(withStorePurchaseWhatsapp(data.data || data));
     } catch (error) {
       console.error('Error al cargar tienda:', error);
     }
@@ -503,7 +507,13 @@ export default function TiendaPublica() {
     );
   }
 
-  const diseno = disenoLive || tienda.diseno || {};
+  const disenoBase = disenoLive || tienda.diseno || {};
+  const diseno = previewPlantillaId ? {
+    ...disenoBase,
+    plantillaId: previewPlantillaId,
+    __previewPlantillaId: previewPlantillaId,
+    __previewQuery: `previewPlantilla=${encodeURIComponent(previewPlantillaId)}&previewOrigen=template`,
+  } : disenoBase;
   const cp = diseno.colorPrimario || '#FF9500';
   const template = resolveTemplate(diseno?.plantillaId);
   const bannerIsSlider: boolean = diseno?.bannerIsSlider ?? template.bannerIsSlider;
@@ -682,7 +692,7 @@ export default function TiendaPublica() {
 
         {/* ── Popular Section ── */}
         <section id="productos-populares" className="max-w-screen-xl mx-auto px-5 md:px-8 mb-10 scroll-mt-32">
-          <SectionHeader title="Popular" onMore={() => navigate(`/tienda/${slug}/catalogo`)} />
+          <SectionHeader title="Populares" onMore={() => navigate(`/tienda/${slug}/catalogo`)} />
           {loading ? <SkeletonGrid /> : filteredProductos.length === 0 ? (
             <div className="py-20 text-center">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4">

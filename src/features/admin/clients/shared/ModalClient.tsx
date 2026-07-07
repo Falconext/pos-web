@@ -29,10 +29,21 @@ const persons = [
 const DOC_TYPES = [
     { key: 'DNI', label: 'DNI', digits: 8, hint: 'Ingresa 8 dígitos para consultar automáticamente' },
     { key: 'RUC', label: 'RUC', digits: 11, hint: 'Ingresa 11 dígitos para consultar RUC automáticamente' },
-    { key: 'CE', label: 'C.E.', digits: null, hint: null },
+    { key: 'CE', label: 'C.E.', digits: null, hint: 'Carnet de Extranjería: se registra manualmente, sin consulta automática' },
     { key: 'PASAPORTE', label: 'Pasaporte', digits: null, hint: null },
     { key: 'OTRO', label: 'Otro', digits: null, hint: null },
 ];
+
+const normalizeDoc = (tipoDoc: string, value: string) => {
+    const raw = String(value || '').trim().toUpperCase();
+    if (tipoDoc === 'DNI' || tipoDoc === 'RUC') return raw.replace(/\D/g, '');
+    if (tipoDoc === 'CE' || tipoDoc === 'PASAPORTE') {
+        return raw
+            .replace(/^(NRO\.?|NO\.?|NUMERO|NÚMERO|N\.?[°º]?)\s*/i, '')
+            .replace(/[^A-Z0-9]/g, '');
+    }
+    return raw;
+};
 
 export default function ModalClient({
     isOpenModal,
@@ -80,7 +91,7 @@ export default function ModalClient({
         setFormValues(updatedFormValues);
 
         if (name === 'nroDoc') {
-            const clean = value.trim();
+            const clean = normalizeDoc(activeTipoDoc, value);
             const shouldLookup =
                 (activeTipoDoc === 'DNI' && clean.length === 8) ||
                 (activeTipoDoc === 'RUC' && clean.length === 11);
@@ -103,7 +114,7 @@ export default function ModalClient({
     };
 
     const validateForm = () => {
-        const doc = formValues?.nroDoc?.trim() || '';
+        const doc = normalizeDoc(activeTipoDoc, formValues?.nroDoc || '');
         let nroDocError = '';
 
         if (!doc) {
@@ -112,6 +123,10 @@ export default function ModalClient({
             nroDocError = /^\d{8}$/.test(doc) ? '' : 'El DNI debe contener exactamente 8 dígitos numéricos';
         } else if (activeTipoDoc === 'RUC') {
             nroDocError = /^(10|20)\d{9}$/.test(doc) ? '' : 'El RUC debe contener 11 dígitos y comenzar con 10 o 20';
+        } else if (activeTipoDoc === 'CE') {
+            nroDocError = /^[A-Za-z0-9]{6,12}$/.test(doc) ? '' : 'El Carnet de Extranjería debe contener entre 6 y 12 caracteres alfanuméricos';
+        } else if (activeTipoDoc === 'PASAPORTE') {
+            nroDocError = /^[A-Za-z0-9]{6,12}$/.test(doc) ? '' : 'El pasaporte debe contener entre 6 y 12 caracteres alfanuméricos';
         }
 
         const newErrors: any = {
@@ -124,7 +139,7 @@ export default function ModalClient({
 
     const handleSubmit = async () => {
         if (!validateForm()) return;
-        const payload = { ...formValues, tipoDoc: activeTipoDoc };
+        const payload = { ...formValues, nroDoc: normalizeDoc(activeTipoDoc, formValues?.nroDoc || ''), tipoDoc: activeTipoDoc };
 
         if (Number(formValues?.id) !== 0 && isEdit) {
             editClients(payload);

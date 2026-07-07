@@ -115,7 +115,7 @@ export default function StoreHeader({
                     style={{ background: cp }}
                 >
                     <Icon icon="solar:tag-bold" width={16} />
-                    Deals
+                    Ofertas
                 </button>
 
                 {/* Search Bar */}

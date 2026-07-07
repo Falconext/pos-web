@@ -276,7 +276,7 @@ export default function TecnologiaCheckout({
                     >
                       <input type="radio" className="hidden" name="tipoEntrega" value="ENVIO" checked={formData.tipoEntrega === 'ENVIO'} onChange={handleChange} />
                       <Icon icon="solar:delivery-bold" width={18} />
-                      Delivery
+                      Envío
                       {configEnvio.costoEnvio > 0 && (
                         <span className="text-xs opacity-70">S/ {Number(configEnvio.costoEnvio).toFixed(2)}</span>
                       )}

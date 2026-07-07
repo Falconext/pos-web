@@ -10,12 +10,19 @@ import {
 } from './ComprasModel';
 
 const CODIGO_TO_TIPO_DOC: Record<string, string> = { '1': 'DNI', '6': 'RUC', '4': 'CE', '7': 'PASAPORTE', '0': 'OTRO' };
+const DOC_LABELS: Record<string, string> = { DNI: 'DNI', RUC: 'RUC', CE: 'C.E.', PASAPORTE: 'Pasaporte', OTRO: 'Otro' };
 const mapCodigoToTipoDoc = (data: IClient): string => {
+    const tipoDoc = String((data as any).tipoDoc || '').toUpperCase();
+    if (tipoDoc && DOC_LABELS[tipoDoc]) return tipoDoc;
     const codigo = data.tipoDocumento?.codigo;
     if (codigo && CODIGO_TO_TIPO_DOC[codigo]) return CODIGO_TO_TIPO_DOC[codigo];
     if (data.nroDoc?.length === 8) return 'DNI';
     if (data.nroDoc?.length === 11) return 'RUC';
     return 'RUC';
+};
+const getDocLabel = (data: IClient): string => {
+    const tipo = mapCodigoToTipoDoc(data);
+    return DOC_LABELS[tipo] || tipo || '';
 };
 
 export const useProveedoresViewModel = () => {
@@ -67,7 +74,7 @@ export const useProveedoresViewModel = () => {
     const proveedoresTable = clients?.map((item: IClient) => ({
         id: item.id,
         'Razón Social / Nombre': item.nombre,
-        'Documento': item.nroDoc.length === 8 ? 'DNI' : 'RUC',
+        'Documento': getDocLabel(item),
         'Nro. Doc': item.nroDoc,
         'Celular': item.telefono,
         'Dirección': item.direccion,

@@ -14,7 +14,8 @@ export type PlantillaId =
   | 'maye'
   | 'moda'
   | 'urbano'
-  | 'apicultura';
+  | 'apicultura'
+  | 'falcon';
 
 export interface BannerSlotDef {
   orden: number;
@@ -182,8 +183,8 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     showCombos: true,
     showSidebar: true,
     imageAspect: 'aspect-[4/3]',
-    label: 'Construcción',
-    description: 'Plantilla industrial para ferreterías, materiales de obra y herramientas profesionales.',
+    label: 'Ferretería',
+    description: 'Plantilla tipo Hammer para ferreterías, herramientas profesionales y materiales de obra.',
     accentColor: '#F59E0B',
     icon: 'solar:buildings-3-bold',
     rubrosPermitidos: ['Ferretería', 'Construcción y obras', 'Venta de materiales de construcción', 'Materiales de construcción'],
@@ -362,6 +363,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#FFD72E',
     icon: 'solar:jar-of-pills-bold',
     rubrosPermitidos: ['Apicultura', 'Miel', 'Productos naturales', 'Agricultura', 'Alimentos naturales', 'Panadería y Pastelería', 'Restaurante y alimentos'],
+  },
+  falcon: {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Falcon',
+    description: 'Marketplace tecnológico tipo Gadgetize: hero con banners, círculos de categorías y grilla de productos. Ideal para tecnología, cómputo y gadgets.',
+    accentColor: '#1a8d4e',
+    icon: 'solar:bolt-bold',
+    rubrosPermitidos: ['Tecnología y software', 'Ventas de accesorios y repuestos de cómputo', 'Tecnologías de la información'],
   },
 };
 

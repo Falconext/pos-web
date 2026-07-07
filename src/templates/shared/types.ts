@@ -37,6 +37,8 @@ export interface TemplateCatalogoPageProps {
   // Products
   productos: any[];
   sortedProductos: any[];
+  /** Lista completa sin filtros (para círculos de categoría y mega-menú del header). */
+  allProductos?: any[];
   loading: boolean;
   total: number;
   page: number;

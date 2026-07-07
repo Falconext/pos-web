@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_NUMBER } from '@/utils/storeWhatsapp';
 
 /**
  * Botón flotante de WhatsApp para la tienda virtual (todos los templates).
@@ -6,20 +7,8 @@ import { Icon } from '@iconify/react';
  * Si no hay número configurado, no se renderiza.
  */
 export default function StoreWhatsAppButton({ tienda }: { tienda?: any }) {
-  const raw = String(
-    tienda?.whatsappTienda ||
-      tienda?.diseno?.whatsappTienda ||
-      tienda?.celular ||
-      tienda?.telefono ||
-      '',
-  ).replace(/\D/g, '');
-
-  if (!raw) return null;
-
-  const numero = raw.length === 9 ? `51${raw}` : raw; // Perú: 9 dígitos -> +51
   const nombre = tienda?.nombreComercial || tienda?.razonSocial || 'la tienda';
-  const mensaje = encodeURIComponent(`Hola 👋, vengo de ${nombre} y quisiera más información.`);
-  const href = `https://wa.me/${numero}?text=${mensaje}`;
+  const href = buildStorePurchaseWhatsappUrl(`Hola, vengo de ${nombre} y quisiera más información.`);
 
   return (
     <a
@@ -27,7 +16,7 @@ export default function StoreWhatsAppButton({ tienda }: { tienda?: any }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escríbenos por WhatsApp"
-      title="Escríbenos por WhatsApp"
+      title={`Escríbenos por WhatsApp: ${STORE_PURCHASE_WHATSAPP_NUMBER}`}
       className="fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-green-900/30 transition-transform hover:scale-110 active:scale-95"
     >
       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#25D366] opacity-40" aria-hidden />

@@ -20,6 +20,7 @@ import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
 import { useCompareStore } from '@/zustand/compare';
 import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 import { withPricingList } from '@/templates/shared/pricing';
+import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 import { getRubroDemo } from '@/data/rubroDemo';
 import AutopartesCatalog from '@/components/tienda/AutopartesCatalog';
@@ -39,9 +40,14 @@ export default function Catalogo() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const previewPlantillaId = searchParams.get('previewPlantilla');
+    useStorePreviewNavigation(previewPlantillaId);
 
     const [tienda, setTienda] = useState<any>(null);
     const [productos, setProductos] = useState<any[]>([]);
+    // Lista completa (sin filtros) para círculos de categoría y mega-menú del header,
+    // que deben mostrar TODAS las categorías aunque haya un filtro activo.
+    const [allProductos, setAllProductos] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -83,6 +89,7 @@ export default function Catalogo() {
         cargarMarcas();
         cargarCategorias();
         cargarRangoPrecios();
+        cargarTodosProductos();
         try {
             const saved = localStorage.getItem(tiendaCartKey(slug || ''));
             if (saved) setCarrito(JSON.parse(saved));
@@ -113,6 +120,16 @@ export default function Catalogo() {
         }, 350);
         return () => clearTimeout(t);
     }, [search, selectedMarcas, selectedCategorías, priceRange, wholesaleOnly]);
+
+    // Sincroniza el parámetro ?category de la URL con el filtro seleccionado.
+    // Así los círculos de categoría (que solo navegan a ?category=X) y los enlaces
+    // directos filtran en vivo, no solo al montar la página.
+    useEffect(() => {
+        const c = searchParams.get('category');
+        const next = c ? c.split(',').map(s => s.trim()).filter(Boolean) : [];
+        setSelectedCategorías(prev => (prev.join('||') === next.join('||') ? prev : next));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams.get('category')]);
 
     useEffect(() => {
         const params = new URLSearchParams();
@@ -155,6 +172,16 @@ export default function Catalogo() {
             const pd = data?.data || { min: 0, max: 1000 };
             setMinPrice(pd.min); setMaxPrice(pd.max); setPriceRange([pd.min, pd.max]);
         } catch { setMinPrice(0); setMaxPrice(1000); setPriceRange([0, 1000]); }
+    };
+
+    // Carga todos los productos (sin filtros) una sola vez, para poblar los
+    // círculos de categoría y el mega-menú del header con todas las categorías.
+    const cargarTodosProductos = async () => {
+        try {
+            const { data } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, { params: { page: 1, limit: 200 } });
+            const items = Array.isArray(data?.data?.data) ? data.data.data : Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+            setAllProductos(withPricingList(items));
+        } catch { }
     };
 
     const cargarProductos = async (p = 1, reset = false) => {
@@ -244,7 +271,13 @@ export default function Catalogo() {
 
     const hasActiveFilters = selectedMarcas.length > 0 || selectedCategorías.length > 0 || priceRange[0] !== minPrice || priceRange[1] !== maxPrice;
     const pageTitle = selectedCategorías[0] || selectedMarcas[0] || 'Todos los productos';
-    const diseno = tienda?.diseno || {};
+    const disenoBase = tienda?.diseno || {};
+    const diseno = previewPlantillaId ? {
+        ...disenoBase,
+        plantillaId: previewPlantillaId,
+        __previewPlantillaId: previewPlantillaId,
+        __previewQuery: `previewPlantilla=${encodeURIComponent(previewPlantillaId)}&previewOrigen=template`,
+    } : disenoBase;
     const cp = diseno.colorPrimario || '#6A6CFF';
     const { getBySlug, clear: clearCompare } = useCompareStore();
     const [showCompareModal, setShowCompareModal] = useState(false);
@@ -308,6 +341,7 @@ export default function Catalogo() {
         slug: slug || '',
         diseno,
         cp,
+        allProductos,
         navigate,
         productos,
         sortedProductos,
@@ -1275,7 +1309,7 @@ export default function Catalogo() {
 
         const AutopartesFilterSidebar = () => (
             <aside className="w-64 flex-shrink-0 space-y-6 text-sm hidden lg:block bg-white rounded-xl border border-gray-100 p-5 h-fit sticky top-24 shadow-sm">
-                <h3 className="font-black text-gray-900 text-lg tracking-wide uppercase border-b border-gray-100 pb-3 mb-4">Filters</h3>
+                <h3 className="font-black text-gray-900 text-lg tracking-wide uppercase border-b border-gray-100 pb-3 mb-4">Filtros</h3>
                 
                 {allCategorías.length > 0 && (
                     <div className="mb-6">
@@ -1447,7 +1481,7 @@ export default function Catalogo() {
                                                 className="px-8 py-3.5 rounded-md font-black text-sm text-white transition-transform hover:scale-[1.02] shadow-md"
                                                 style={{ backgroundColor: cp }}
                                             >
-                                                Load More Parts
+                                                Cargar más
                                             </button>
                                         </div>
                                     )}

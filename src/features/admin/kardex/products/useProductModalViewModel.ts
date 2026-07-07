@@ -175,6 +175,14 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [variantGalleryImageFiles, setVariantGalleryImageFiles] = useState<Record<string, File[]>>({});
   const [variantGalleryImagePreviews, setVariantGalleryImagePreviews] = useState<Record<string, string[]>>({});
 
+  // Galería del producto (imagen principal + imágenes adicionales). Límite por rubro.
+  const [galleryImages, setGalleryImages] = useState<{ url: string; display: string }[]>([]);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [galleryDirty, setGalleryDirty] = useState(false);
+  // Máximo de imágenes EXTRA (galería, sin contar la principal). Default 4 (=5 total).
+  const [maxImagenesExtra, setMaxImagenesExtra] = useState<number>(4);
+
   // --- Stock State ---
   const [tipoAjusteStock, setTipoAjusteStock] =
     useState<TipoAjusteStock>("ninguno");
@@ -368,6 +376,49 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     previewPrincipal,
   ]);
 
+  // Límite de imágenes según el rubro de la empresa (1 principal + N adicionales).
+  useEffect(() => {
+    if (!isOpenModal) return;
+    let cancel = false;
+    apiClient
+      .get("/productos/limite-imagenes")
+      .then((res) => {
+        const maxExtra =
+          res?.data?.data?.maxExtra ?? res?.data?.maxExtra;
+        if (!cancel && typeof maxExtra === "number") setMaxImagenesExtra(maxExtra);
+      })
+      .catch(() => {});
+    return () => {
+      cancel = true;
+    };
+  }, [isOpenModal]);
+
+  // Cargar galería existente al abrir en modo edición.
+  const galleryLoadedForRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isOpenModal || !isEdit) return;
+    const productId = Number(formValues?.productoId || 0);
+    if (!productId || galleryLoadedForRef.current === productId) return;
+    galleryLoadedForRef.current = productId;
+    setGalleryFiles([]);
+    setGalleryPreviews([]);
+    setGalleryDirty(false);
+    setGalleryImages([]);
+    // La fila de la lista no trae la galería; se carga fresca (con URLs firmadas)
+    // desde el detalle del producto.
+    apiClient
+      .get(`/productos/${productId}`)
+      .then((res) => {
+        const data = res?.data?.data ?? res?.data ?? {};
+        const urls: string[] = Array.isArray(data.imagenesExtra) ? data.imagenesExtra : [];
+        const displays: string[] = Array.isArray(data.imagenesExtraDisplay)
+          ? data.imagenesExtraDisplay
+          : [];
+        setGalleryImages(urls.map((url, i) => ({ url, display: displays[i] || url })));
+      })
+      .catch(() => {});
+  }, [isOpenModal, isEdit, formValues?.productoId]);
+
   useEffect(() => {
     if (!isOpenModal) {
       setPreviewPrincipal(null);
@@ -385,6 +436,14 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       setCantidadAjuste(0);
       setShowMedicamentoModal(false);
       setShowLotesModal(false);
+      setGalleryImages([]);
+      setGalleryFiles([]);
+      setGalleryPreviews((prev) => {
+        prev.forEach((u) => URL.revokeObjectURL(u));
+        return [];
+      });
+      setGalleryDirty(false);
+      galleryLoadedForRef.current = null;
     }
   }, [isOpenModal]);
 
@@ -853,6 +912,84 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     return nextAttrs;
   };
 
+  // ── Galería del producto (imágenes adicionales a la principal) ──────────────
+  const galleryTotal = galleryImages.length + galleryFiles.length;
+  const canAddGallery = galleryTotal < maxImagenesExtra;
+
+  const addGalleryFiles = (files: File[] | FileList | null) => {
+    if (!files) return;
+    const list = Array.from(files);
+    const room = maxImagenesExtra - (galleryImages.length + galleryFiles.length);
+    if (room <= 0) {
+      useAlertStore
+        .getState()
+        .alert(`Máximo ${maxImagenesExtra} imágenes adicionales`, "error");
+      return;
+    }
+    const valid: File[] = [];
+    for (const f of list) {
+      if (!f.type.startsWith("image/")) continue;
+      if (f.size > 2 * 1024 * 1024) {
+        useAlertStore.getState().alert("Cada imagen debe pesar máx. 2MB", "error");
+        continue;
+      }
+      valid.push(f);
+    }
+    const toAdd = valid.slice(0, room);
+    if (valid.length > room) {
+      useAlertStore
+        .getState()
+        .alert(`Solo se agregaron ${room} (límite ${maxImagenesExtra} adicionales)`, "warning");
+    }
+    if (!toAdd.length) return;
+    setGalleryFiles((prev) => [...prev, ...toAdd]);
+    setGalleryPreviews((prev) => [...prev, ...toAdd.map((f) => URL.createObjectURL(f))]);
+    setGalleryDirty(true);
+  };
+
+  const removeGalleryImage = (url: string) => {
+    setGalleryImages((prev) => prev.filter((g) => g.url !== url));
+    setGalleryDirty(true);
+  };
+
+  const removeGalleryFile = (idx: number) => {
+    setGalleryPreviews((prev) => {
+      const u = prev[idx];
+      if (u) URL.revokeObjectURL(u);
+      return prev.filter((_, i) => i !== idx);
+    });
+    setGalleryFiles((prev) => prev.filter((_, i) => i !== idx));
+    setGalleryDirty(true);
+  };
+
+  // Sube las imágenes nuevas y persiste la lista final. Solo actúa si el usuario
+  // tocó la galería (para no alterar imagenesExtra de productos existentes).
+  const uploadProductGallery = async (parentIdArg?: number) => {
+    if (!galleryDirty) return;
+    const parentId = Number(parentIdArg ?? formValues.productoId);
+    if (!parentId) return;
+    const uploadedUrls: string[] = [];
+    for (const file of galleryFiles) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const resp = await apiClient.post(`/productos/${parentId}/imagen-extra`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const url =
+        resp?.data?.data?.url ||
+        resp?.data?.url ||
+        resp?.data?.data?.imagenUrl ||
+        resp?.data?.imagenUrl ||
+        null;
+      if (url) uploadedUrls.push(url);
+    }
+    const finalList = [...galleryImages.map((g) => g.url), ...uploadedUrls];
+    await apiClient.patch(`/productos/${parentId}/imagenes-extra`, {
+      imagenesExtra: finalList,
+    });
+    return finalList;
+  };
+
   const persistExternalProductImage = (productoId: number, externalUrl: string) => {
     if (!productoId || !externalUrl || externalUrl.includes("amazonaws.com")) return;
 
@@ -1114,6 +1251,17 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             );
         }
 
+        try {
+          await uploadProductGallery(Number(formValues.productoId));
+        } catch {
+          useAlertStore
+            .getState()
+            .alert(
+              "Producto guardado, pero no se pudo actualizar la galería de imágenes",
+              "warning",
+            );
+        }
+
         upsertProductLocal({
           ...(updatedProduct || {}),
           id: Number(formValues.productoId),
@@ -1364,6 +1512,17 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               );
           }
 
+          try {
+            await uploadProductGallery(Number(newId));
+          } catch {
+            useAlertStore
+              .getState()
+              .alert(
+                "Producto creado, pero no se pudo subir la galería de imágenes",
+                "warning",
+              );
+          }
+
           const optimisticStock = (esFarmaceutico && features.gestionLotes)
             ? (creationLote.lote ? Number(creationLote.stockInicial || 0) : 0)
             : Number(formValues.stock);
@@ -1503,6 +1662,15 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     previewPrincipal,
     loadingImage,
     filePrincipalInputRef,
+    // Galería del producto
+    galleryImages,
+    galleryPreviews,
+    maxImagenesExtra,
+    galleryTotal,
+    canAddGallery,
+    addGalleryFiles,
+    removeGalleryImage,
+    removeGalleryFile,
     variantImageFiles,
     variantImagePreviews,
     variantGalleryImageFiles,

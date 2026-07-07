@@ -137,7 +137,13 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
     getClientFromDoc: async (nroDoc: string, tipoDoc?: string) => {
         useAlertStore.setState({ loading: true });
         try {
-            const type = tipoDoc === 'RUC' ? 'RUC' : tipoDoc === 'DNI' ? 'DNI' : nroDoc.length === 11 ? 'RUC' : 'DNI';
+            const explicitType = String(tipoDoc || '').toUpperCase();
+            const type = explicitType || (nroDoc.length === 11 ? 'RUC' : nroDoc.length === 8 ? 'DNI' : '');
+            if (type !== 'DNI' && type !== 'RUC') {
+                useAlertStore.setState({ loading: false });
+                useAlertStore.getState().alert('La consulta automática solo está disponible para DNI y RUC. Registra este documento manualmente.', 'warning');
+                return null;
+            }
             const endpoint = `clientes/consultar/${type}/${nroDoc}`;
             const resp: any = await get(endpoint);
             console.log("Respuesta backend:", resp);
@@ -233,5 +239,4 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
         }
     },
 }))); 
-
 

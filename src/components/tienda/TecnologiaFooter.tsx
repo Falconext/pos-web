@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import { Link } from 'react-router-dom';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_RAW } from '@/utils/storeWhatsapp';
 
 interface Props {
   tienda: any;
@@ -11,11 +12,6 @@ interface Props {
 const clean = (value: any) => String(value || '').trim();
 const categoryName = (item: any) =>
   typeof item === 'string' ? item : clean(item?.nombre || item?.name || item?.descripcion);
-const normalizePhone = (phone: string) => {
-  const digits = phone.replace(/\D/g, '');
-  if (!digits) return '';
-  return digits.length === 9 ? `51${digits}` : digits;
-};
 const normalizeUrl = (url: string) => /^https?:\/\//i.test(url) ? url : `https://${url}`;
 
 export default function TecnologiaFooter({ tienda, slug, diseno, categories = [] }: Props) {
@@ -23,7 +19,7 @@ export default function TecnologiaFooter({ tienda, slug, diseno, categories = []
   const cp = diseno?.colorPrimario || '#2563EB';
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'TechStore Peru';
   const isConstruccion = diseno?.plantillaId === 'construccion';
-  const phone = clean(tienda?.whatsappTienda || tienda?.telefono || tienda?.celular || diseno?.tecnologiaFooterPhone);
+  const phone = STORE_PURCHASE_WHATSAPP_RAW;
   const email = clean(diseno?.tecnologiaFooterEmail || tienda?.email || tienda?.correo || tienda?.correoPrincipal);
   const footerText = diseno?.tecnologiaFooterText || (
     isConstruccion
@@ -38,8 +34,8 @@ export default function TecnologiaFooter({ tienda, slug, diseno, categories = []
     }
     return slug ? `/tienda/${slug}${path}` : '/';
   };
-  const whatsapp = normalizePhone(phone);
-  const contactHref = whatsapp ? `https://wa.me/${whatsapp}` : email ? `mailto:${email}` : '';
+  const whatsapp = phone;
+  const contactHref = buildStorePurchaseWhatsappUrl(`Hola, vengo de ${storeName} y quisiera información.`);
   const realCategories = Array.from(new Set(categories.map(categoryName).filter(Boolean)))
     .filter((name) => name.toLowerCase() !== 'todos')
     .slice(0, 4);
@@ -116,7 +112,7 @@ export default function TecnologiaFooter({ tienda, slug, diseno, categories = []
             {(phone || email) && (
               <div className="mt-6 space-y-3 text-sm text-white/65">
                 {phone && (
-                  <a href={whatsapp ? `https://wa.me/${whatsapp}` : undefined} target={whatsapp ? '_blank' : undefined} rel="noreferrer" className="flex items-center gap-3 hover:text-white">
+                  <a href={buildStorePurchaseWhatsappUrl(`Hola, vengo de ${storeName} y quisiera información.`)} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-white">
                     <Icon icon="solar:phone-calling-linear" width={18} style={{ color: cp }} />
                     {phone}
                   </a>

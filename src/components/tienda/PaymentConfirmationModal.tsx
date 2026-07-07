@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { BancoLogo } from '@/components/shared/BancoLogo';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_NUMBER } from '@/utils/storeWhatsapp';
 
 interface PaymentConfirmationModalProps {
     isOpen: boolean;
@@ -80,10 +81,7 @@ export default function PaymentConfirmationModal({
     };
 
     const openWhatsApp = () => {
-        if (!paymentConfig?.whatsappTienda) return;
-        const message = encodeURIComponent(generateWhatsAppMessage());
-        const whatsappUrl = `https://wa.me/${paymentConfig.whatsappTienda}?text=${message}`;
-        window.open(whatsappUrl, '_blank');
+        window.open(buildStorePurchaseWhatsappUrl(generateWhatsAppMessage()), '_blank');
     };
 
     const qrCode = getQRCode();
@@ -293,7 +291,7 @@ export default function PaymentConfirmationModal({
 
                     {/* Actions */}
                     <div className="space-y-3">
-                        {paymentConfig?.whatsappTienda && (
+                        {STORE_PURCHASE_WHATSAPP_NUMBER && (
                             <button
                                 onClick={openWhatsApp}
                                 className="w-full bg-[#25D366] hover:bg-[#1da851] text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-green-100"

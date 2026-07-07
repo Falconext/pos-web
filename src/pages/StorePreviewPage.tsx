@@ -47,6 +47,13 @@ import { ApiculturaProductoPreviewPage } from '@/pages/tienda/ApiculturaProducto
 import ConstruccionHomePage from '@/templates/construccion/ConstruccionHomePage';
 import ConstruccionCatalogoPage from '@/templates/construccion/ConstruccionCatalogoPage';
 import ConstruccionCheckoutPage from '@/templates/construccion/ConstruccionCheckoutPage';
+import ConstruccionContactPage from '@/templates/construccion/ConstruccionContactPage';
+import { ConstruccionProductoDetalleView } from '@/pages/tienda/ConstruccionProductoDetalle';
+import FalconHomePage from '@/templates/falcon/FalconHomePage';
+import { FalconProductoDetalleView } from '@/pages/tienda/FalconProductoDetalle';
+import { FalconBlogView } from '@/pages/tienda/FalconBlog';
+import FalconCheckoutPage from '@/templates/falcon/FalconCheckoutPage';
+import FalconCatalogoPage from '@/templates/falcon/FalconCatalogoPage';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
 import ProductCardEmox from '@/components/tienda/ProductCardEmox';
@@ -72,10 +79,16 @@ interface PreviewConfig {
   rubroNombre?: string;
 }
 
-type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto';
+type PreviewPage = 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto' | 'blog';
 
 const isPreviewPage = (value: string | null): value is PreviewPage =>
-  value === 'home' || value === 'catalogo' || value === 'producto' || value === 'checkout' || value === 'contacto';
+  value === 'home' || value === 'catalogo' || value === 'producto' || value === 'checkout' || value === 'contacto' || value === 'blog';
+
+const getPreviewPageFromPath = (): PreviewPage | null => {
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  const value = segments[segments.length - 1] ?? null;
+  return isPreviewPage(value) ? value : null;
+};
 
 const URBANO_PREVIEW_ASSETS = [
   '/assets/templates/urbano/coleccion1.png',
@@ -1167,6 +1180,7 @@ export default function StorePreviewPage() {
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
+      const pageFromRequest = params.get('page') ?? getPreviewPageFromPath();
       const fromUrl: PreviewConfig = {
         plantillaId: params.get('plantillaId') || undefined,
         colorPrimario: params.get('colorPrimario') || undefined,
@@ -1178,8 +1192,7 @@ export default function StorePreviewPage() {
       if (Object.values(fromUrl).some(Boolean)) {
         setConfig(fromUrl);
         setDemo(getRubroDemo(fromUrl.rubroNombre ?? ''));
-        const pageFromUrl = params.get('page');
-        if (isPreviewPage(pageFromUrl)) setPage(pageFromUrl);
+        if (isPreviewPage(pageFromRequest)) setPage(pageFromRequest);
         setActiveCategory('Todos');
         sessionStorage.setItem('store-preview-config', JSON.stringify(fromUrl));
         return;
@@ -1189,8 +1202,11 @@ export default function StorePreviewPage() {
         const parsed: PreviewConfig = JSON.parse(raw);
         setConfig(parsed);
         setDemo(getRubroDemo(parsed.rubroNombre ?? ''));
+        if (isPreviewPage(pageFromRequest)) setPage(pageFromRequest);
         setActiveCategory('Todos');
+        return;
       }
+      if (isPreviewPage(pageFromRequest)) setPage(pageFromRequest);
     } catch { }
   }, []);
 
@@ -1280,13 +1296,25 @@ export default function StorePreviewPage() {
         urbanoGallery5: '/assets/templates/urbano/coleccion6.png',
       }
       : {}),
+    ...(config.plantillaId === 'falcon'
+      ? {
+        falconHeroBannerUrl: '/assets/templates/falcon/banner1.png',
+        falconSideOneBannerUrl: '/assets/templates/falcon/banner2.png',
+        falconSideTwoBannerUrl: '/assets/templates/falcon/banner3.png',
+        falconSpecialBannerUrl: '/assets/templates/falcon/silla.png',
+        falconSpecialTitle: 'Silla Gamer RGB Reclinable',
+        falconBannerImageUrl: '/assets/templates/falcon/ahorros.png',
+        falconCountdownBannerUrl: '/assets/templates/falcon/apurate.png',
+      }
+      : {}),
   };
   const previewTemplateOwnsShell =
     config.plantillaId === 'urbano' ||
     config.plantillaId === 'tecnologia' ||
     config.plantillaId === 'maye' ||
     config.plantillaId === 'apicultura' ||
-    config.plantillaId === 'construccion';
+    config.plantillaId === 'construccion' ||
+    config.plantillaId === 'falcon';
   const previewStore = {
     nombre: demo.storeName,
     nombreComercial: demo.storeName,
@@ -1401,26 +1429,27 @@ export default function StorePreviewPage() {
   };
 
   return (
-    <div style={{ fontFamily: `'${previewFont}', sans-serif`, background: cs, minHeight: '100vh', color: '#111' }}>
+    <div className="overflow-x-clip" style={{ fontFamily: `'${previewFont}', sans-serif`, background: cs, minHeight: '100vh', color: '#111' }}>
 
       {/* Admin preview bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-2 text-xs font-semibold text-white" style={{ background: '#0d1117' }}>
-        <div className="flex items-center gap-2">
+      <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between gap-2 px-3 py-2 text-xs font-semibold text-white sm:px-5" style={{ background: '#0d1117' }}>
+        <div className="flex min-w-0 items-center gap-2">
           <Icon icon="solar:eye-bold" className="text-sm" />
-          <span>MODO PREVIEW</span>
+          <span className="shrink-0">MODO PREVIEW</span>
           <span className="opacity-30">·</span>
-          <span className="opacity-60">{config.rubroNombre ?? 'Tienda Demo'}</span>
-          <span className="opacity-30">·</span>
-          <span className="opacity-40">Plantilla: {config.plantillaId ?? 'gadgets'}</span>
-          <span className="opacity-30">·</span>
-          <span className="px-2 py-0.5 rounded bg-white/10 text-white/80">
-            {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : page === 'checkout' ? 'Checkout' : page === 'contacto' ? 'Contacto' : 'Detalle de Producto'}
+          <span className="truncate opacity-60">{config.rubroNombre ?? 'Tienda Demo'}</span>
+          <span className="hidden opacity-30 sm:inline">·</span>
+          <span className="hidden opacity-40 sm:inline">Plantilla: {config.plantillaId ?? 'gadgets'}</span>
+          <span className="hidden opacity-30 sm:inline">·</span>
+          <span className="shrink-0 rounded bg-white/10 px-2 py-0.5 text-white/80">
+            {page === 'home' ? 'Inicio' : page === 'catalogo' ? 'Catálogo' : page === 'checkout' ? 'Checkout' : page === 'contacto' ? 'Contacto' : page === 'blog' ? 'Blog' : 'Detalle de Producto'}
           </span>
           <div className="ml-2 hidden items-center gap-1 md:flex">
             {([
               ['home', 'Inicio'],
               ['catalogo', 'Catálogo'],
               ['producto', 'Detalle'],
+              ...(config.plantillaId === 'falcon' ? [['blog', 'Blog'] as const] : []),
               ['checkout', 'Checkout'],
               ['contacto', 'Contacto'],
             ] as const).map(([target, label]) => (
@@ -1435,16 +1464,16 @@ export default function StorePreviewPage() {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {page !== 'home' && (
-            <button onClick={() => goToPage(page === 'producto' ? 'catalogo' : 'home')} className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+            <button onClick={() => goToPage(page === 'producto' ? 'catalogo' : 'home')} className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 transition-colors hover:bg-white/20 sm:px-3">
               <Icon icon="solar:alt-arrow-left-bold" />
-              Volver
+              <span className="hidden sm:inline">Volver</span>
             </button>
           )}
-          <button onClick={() => window.close()} className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+          <button onClick={() => window.close()} className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 transition-colors hover:bg-white/20 sm:px-3">
             <Icon icon="solar:close-circle-bold" />
-            Cerrar
+            <span className="hidden sm:inline">Cerrar</span>
           </button>
         </div>
       </div>
@@ -1485,7 +1514,7 @@ export default function StorePreviewPage() {
         )}
 
         {isCartOpen && (
-          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || config.plantillaId === 'construccion' || (config.plantillaId === 'urbano' && page === 'home') ? (
+          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || config.plantillaId === 'construccion' || config.plantillaId === 'falcon' || (config.plantillaId === 'urbano' && page === 'home') ? (
             null
           ) : config.plantillaId === 'moda' ? (
             <ModaCartModal
@@ -1689,9 +1718,38 @@ export default function StorePreviewPage() {
             actualizarCantidad={actualizarCantidad}
             loading={false}
           />
+        ) : page === 'home' && config.plantillaId === 'falcon' ? (
+          <FalconHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
         ) : page === 'home' ? (
           <HomePage demo={demo} cp={cp} diseno={diseno} onNav={goToPage} onProduct={goToProduct} onAddToCart={() => addToCart(demo.products[0])} />
         ) : null}
+        {page === 'blog' && config.plantillaId === 'falcon' && (
+          <FalconBlogView
+            tienda={previewStore}
+            slug="preview"
+            carrito={carrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            actualizarCantidad={actualizarCantidad}
+            allCategories={previewCategories}
+            previewMode
+            onNavigate={goToPage}
+          />
+        )}
         {page === 'catalogo' && (
           config.plantillaId === 'autopartes' ? (
             <AutopartesCatalog demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={addToCart} />
@@ -2083,6 +2141,53 @@ export default function StorePreviewPage() {
               setProductoAPersonalizar={setProductoAPersonalizar}
               modificadoresProducto={[]}
             />
+          ) : config.plantillaId === 'falcon' ? (
+            <FalconCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
           ) : (
             <CatalogoPage demo={demo} cp={cp} onProduct={goToProduct} onAddToCart={() => { }} />
           )
@@ -2091,6 +2196,20 @@ export default function StorePreviewPage() {
         {page === 'contacto' && (
           config.plantillaId === 'apicultura' ? (
             <ApiculturaContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
+          ) : config.plantillaId === 'construccion' ? (
+            <ConstruccionContactPage
               tienda={previewStore}
               slug="preview"
               diseno={diseno}
@@ -2157,6 +2276,36 @@ export default function StorePreviewPage() {
               actualizarCantidad={actualizarCantidad}
               onNav={goToPage}
               onProduct={goToProduct}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'construccion' ? (
+            <ConstruccionProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 4)}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'falcon' ? (
+            <FalconProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 5)}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
               onAddToCart={addToCart}
             />
           ) : config.plantillaId === 'moda' ? (
@@ -2380,6 +2529,41 @@ export default function StorePreviewPage() {
               erroresForm={{}}
               handleChange={() => { }}
               configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'falcon' ? (
+            <FalconCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{ tipoEntrega: 'ENVIO', medioPago: 'YAPE', clienteNombre: '', clienteTelefono: '', clienteEmail: '', clienteDireccion: '', clienteReferencia: '', observaciones: '' }}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, yapeNumero: '999999999', plinNumero: '999999999', culqiPublicKey: 'pk_test' }}
               configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
               enviando={false}
               search=""

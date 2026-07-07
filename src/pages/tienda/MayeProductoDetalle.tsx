@@ -9,6 +9,7 @@ import MayeCartModal from '@/components/tienda/MayeCartModal';
 import ProductCardMaye from '@/components/tienda/ProductCardMaye';
 import TiendaFloatingButtons from '@/components/tienda/TiendaFloatingButtons';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
+import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { getProductPricing, withPricing, withPricingList } from '@/templates/shared/pricing';
 import { mayeCard, mayePage, mayeSection, mayeStagger, mayeTap, mayeViewport } from '@/lib/motion/maye';
 import { useFavoritosStore } from '@/zustand/favoritos';
@@ -32,9 +33,6 @@ const QUILL_PROSE = [
   '[&_td]:border [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2',
   '[&_th]:border [&_th]:border-gray-200 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-gray-50 [&_th]:font-black [&_th]:text-gray-950',
 ].join(' ');
-
-
-const normalizePhone = (value?: string | null) => String(value || '').replace(/[^\d]/g, '');
 
 const openExternal = (url?: string | null) => {
   if (!url) return;
@@ -216,9 +214,8 @@ export default function MayeProductoDetalle() {
   });
   const specPairs: { label: string; value: any; pill?: boolean }[][] = [];
   for (let i = 0; i < specs.length; i += 2) specPairs.push(specs.slice(i, i + 2));
-  const whatsappPhone = normalizePhone(tienda?.whatsappTienda || diseno?.whatsappTienda);
   const whatsappText = `Hola, quiero asesoría sobre ${producto.descripcion}`;
-  const whatsappUrl = whatsappPhone ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappText)}` : '';
+  const whatsappUrl = buildStorePurchaseWhatsappUrl(whatsappText);
   const googleReviewsUrl = diseno?.googleReviewsUrl
     || diseno?.googleOpinionesUrl
     || (storeDisplayName ? `https://www.google.com/search?q=${encodeURIComponent(`${storeDisplayName} opiniones Google`)}` : '');

@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 
 interface Props {
   isOpen: boolean;
@@ -20,7 +21,6 @@ export default function GadgetsCartModal({
 
   const cotizarPorWhatsApp = () => {
     if (!carrito.length) return;
-    const raw = String(tienda?.whatsappTienda || tienda?.diseno?.whatsappTienda || tienda?.celular || tienda?.telefono || '').replace(/\D/g, '');
     const nombreTienda = tienda?.nombreComercial || tienda?.nombre || 'Tienda';
     const lineas = carrito
       .map((item) => `• ${Number(item.cantidad || 1)}x ${item.descripcion} — S/ ${(Number(item.precioUnitario || 0) * Number(item.cantidad || 1)).toFixed(2)}`)
@@ -30,8 +30,7 @@ export default function GadgetsCartModal({
       `${lineas}\n\n` +
       `*Total estimado: S/ ${subtotal.toFixed(2)}*\n\n` +
       `Hola, quisiera cotizar estos productos. ¿Me confirman precio y disponibilidad?`;
-    const base = raw ? `https://wa.me/${raw.length === 9 ? `51${raw}` : raw}` : 'https://wa.me/';
-    window.open(`${base}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+    window.open(buildStorePurchaseWhatsappUrl(mensaje), '_blank', 'noopener,noreferrer');
   };
 
   return (

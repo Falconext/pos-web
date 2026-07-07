@@ -290,6 +290,7 @@ function TextosSection({ fields, diseno, onChange, categories }: { fields: TextF
                 <InputPro
                   key={f.key}
                   name={f.key}
+                  type={f.type === 'date' ? 'date' : 'text'}
                   label={f.label}
                   isLabel
                   placeholder={f.placeholder}

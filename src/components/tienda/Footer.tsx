@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { buildStorePurchaseWhatsappUrl, STORE_PURCHASE_WHATSAPP_RAW } from '@/utils/storeWhatsapp';
 
 interface FooterProps {
     tienda: any;
@@ -111,15 +112,15 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                     <div>
                         <h4 className="text-xs font-bold text-[#999] uppercase tracking-widest mb-4">Contacto</h4>
                         <ul className="space-y-3">
-                            {tienda.whatsappTienda && (
+                            {STORE_PURCHASE_WHATSAPP_RAW && (
                                 <li>
                                     <a
-                                        href={`https://wa.me/${tienda.whatsappTienda.replace(/\D/g, '')}`}
+                                        href={buildStorePurchaseWhatsappUrl(`Hola, vengo de ${tienda.nombreComercial || 'la tienda'} y quisiera información.`)}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-sm text-[#333] transition-colors"
                                     >
-                                        {tienda.whatsappTienda}
+                                        {STORE_PURCHASE_WHATSAPP_RAW}
                                     </a>
                                 </li>
                             )}
