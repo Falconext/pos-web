@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import QRCode from 'qrcode';
@@ -10,7 +10,7 @@ import useAlertStore from "@/zustand/alert";
 import { useAuthStore } from "@/zustand/auth";
 import { usePaymentFlow, PaymentType } from "@/hooks/usePaymentFlow";
 import { useDebounce } from "@/hooks/useDebounce";
-import { post } from "@/utils/fetch";
+import { del, post } from "@/utils/fetch";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 import { IComprobanteWhatsApp, IEstadoInvoiceOption, IPrintFormatOption, PrintFormatSize } from "./CotizacionesModel";
@@ -34,6 +34,8 @@ export function useCotizacionesViewModel() {
     const [modalDefaultTab, setModalDefaultTab] = useState<'whatsapp' | 'email'>('whatsapp');
     const [isOpenModalPagoParcial, setIsOpenModalPagoParcial] = useState(false);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
+    const [isOpenModalDelete, setIsOpenModalDelete] = useState(false);
+    const [isOpenModalClean, setIsOpenModalClean] = useState(false);
 
     // States
     const [comprobante, setComprobante] = useState<string>("");
@@ -46,6 +48,8 @@ export function useCotizacionesViewModel() {
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
     const [shouldPrint, setShouldPrint] = useState(false);
+    const [deleteCandidate, setDeleteCandidate] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Print Size & Dimensions
     const [printSize, setPrintSize] = useState<string>('A4');
@@ -98,8 +102,7 @@ export function useCotizacionesViewModel() {
         }
     }, [printSize]);
 
-    // Fetch invoices on change
-    useEffect(() => {
+    const reloadCotizaciones = useCallback(() => {
         getAllInvoices({
             tipoComprobante: "COTIZACION",
             page: currentPage,
@@ -109,7 +112,12 @@ export function useCotizacionesViewModel() {
             fechaFin,
             estado: ""
         });
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin]);
+    }, [currentPage, debounce, fechaFin, fechaInicio, getAllInvoices, itemsPerPage]);
+
+    // Fetch invoices on change
+    useEffect(() => {
+        reloadCotizaciones();
+    }, [reloadCotizaciones]);
 
     // Generate QR Code
     const ruc = "204812192919";
@@ -257,6 +265,49 @@ export function useCotizacionesViewModel() {
                 }
             }
         });
+    };
+
+    const handleRequestDeleteCotizacion = (data: any) => {
+        setDeleteCandidate(data);
+        setIsOpenModalDelete(true);
+    };
+
+    const handleConfirmDeleteCotizacion = async () => {
+        if (!deleteCandidate?.id) return;
+        setIsDeleting(true);
+        try {
+            const res = await del<any>(`comprobante/cotizaciones/${deleteCandidate.id}`);
+            if (!res.success) throw new Error(res.error || 'No se pudo eliminar la cotización');
+            useAlertStore.getState().alert('Cotización eliminada correctamente', 'success');
+            setIsOpenModalDelete(false);
+            setDeleteCandidate(null);
+            reloadCotizaciones();
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.message || 'No se pudo eliminar la cotización', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleConfirmCleanCotizaciones = async () => {
+        setIsDeleting(true);
+        try {
+            const res: any = await post('comprobante/cotizaciones/limpiar-pruebas', {
+                confirmar: true,
+                fechaInicio,
+                fechaFin,
+                search: debounce,
+            });
+            if (!res.success) throw new Error(res.error || 'No se pudieron limpiar las cotizaciones');
+            const eliminados = res?.data?.eliminados ?? res?.eliminados ?? 0;
+            useAlertStore.getState().alert(`${eliminados} cotización(es) eliminada(s)`, 'success');
+            setIsOpenModalClean(false);
+            reloadCotizaciones();
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.message || 'No se pudieron limpiar las cotizaciones', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handlePartialPayment = async (data: any) => {
@@ -407,6 +458,10 @@ export function useCotizacionesViewModel() {
         setIsOpenModalPagoParcial,
         isOpenModalPdf,
         setIsOpenModalPdf,
+        isOpenModalDelete,
+        setIsOpenModalDelete,
+        isOpenModalClean,
+        setIsOpenModalClean,
 
         // Print and Files state
         pdfUrl,
@@ -417,6 +472,8 @@ export function useCotizacionesViewModel() {
         qrCodeDataUrl,
         comprobante,
         comprobanteWhatsApp,
+        deleteCandidate,
+        isDeleting,
 
         // Payment state
         paymentMethod,
@@ -434,6 +491,9 @@ export function useCotizacionesViewModel() {
         handleConvertirAFactura,
         handleConvertirABoleta,
         handleEditCotizacion,
+        handleRequestDeleteCotizacion,
+        handleConfirmDeleteCotizacion,
+        handleConfirmCleanCotizaciones,
         handleEnviarWhatsApp,
         handlePartialPayment,
         handleConfirmPago,

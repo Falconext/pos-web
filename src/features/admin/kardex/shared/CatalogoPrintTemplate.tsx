@@ -85,7 +85,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                         <div className="w-full aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 border border-gray-100 flex items-center justify-center p-1">
                                             {p.imagenUrl ? (
                                                 <>
-                                                    <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover rounded-lg" crossOrigin="anonymous" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); e.currentTarget.nextElementSibling?.classList.add('flex'); }} />
+                                                    <img src={p.imagenUrl} alt={p.descripcion || p.nombre || p.codigo} className="w-full h-full object-cover rounded-lg" crossOrigin="anonymous" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); e.currentTarget.nextElementSibling?.classList.add('flex'); }} />
                                                     <div className="hidden flex-col items-center justify-center text-gray-300 opacity-50 w-full h-full">
                                                         <Icon icon="solar:gallery-broken" className="text-3xl" />
                                                     </div>
@@ -96,7 +96,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                                 </div>
                                             )}
                                         </div>
-                                        <h3 className="font-semibold text-sm leading-tight text-gray-800 line-clamp-2 h-10">{p.nombre}</h3>
+                                        <h3 className="font-semibold text-sm leading-tight text-gray-800 line-clamp-2 h-10">{p.descripcion || p.nombre || p.codigo}</h3>
                                         {showPrice && <p className="text-blue-600 font-extrabold mt-1">S/ {Number(p.precioUnitario || 0).toFixed(2)}</p>}
                                         {showStock && <p className="text-[11px] font-semibold text-gray-500 mt-0.5">Stock: {Number(p.stock ?? 0)}</p>}
                                     </div>
@@ -130,7 +130,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                                 </div>
                                             </td>
                                             <td className="py-2 px-4 font-mono text-xs text-gray-500">{p.codigo || '-'}</td>
-                                            <td className="py-2 px-4 font-semibold text-gray-800">{p.nombre}</td>
+                                            <td className="py-2 px-4 font-semibold text-gray-800">{p.descripcion || p.nombre || p.codigo}</td>
                                             <td className="py-2 px-4 text-center text-gray-600 text-xs">{p.marca?.nombre || '-'}</td>
                                             {showStock && <td className="py-2 px-4 text-center font-semibold text-gray-600">{Number(p.stock ?? 0)}</td>}
                                             {showPrice && <td className="py-2 px-4 text-right font-bold text-blue-600 whitespace-nowrap">S/ {Number(p.precioUnitario || 0).toFixed(2)}</td>}
@@ -145,7 +145,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                 {items.map(p => (
                                     <div key={p.id} className="avoid-break flex justify-between items-center py-2 border-b border-dashed border-gray-200">
                                         <div className="pr-4 flex-1">
-                                            <p className="font-bold text-gray-800 text-sm">{p.nombre}</p>
+                                            <p className="font-bold text-gray-800 text-sm">{p.descripcion || p.nombre || p.codigo}</p>
                                             {p.codigo && <p className="text-[10px] text-gray-400 mt-0.5 font-mono">Ref: {p.codigo}</p>}
                                         </div>
                                         <div className="whitespace-nowrap text-right">
@@ -173,10 +173,10 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                         </div>
                                         <div className="flex-1 flex flex-col justify-center">
                                             <div className="flex justify-between items-start mb-1 gap-2">
-                                                <h3 className="font-bold text-gray-900 leading-tight flex-1">{p.nombre}</h3>
+                                                <h3 className="font-bold text-gray-900 leading-tight flex-1">{p.descripcion || p.nombre || p.codigo}</h3>
                                                 {showPrice && <span className="font-bold text-orange-600 whitespace-nowrap bg-orange-50 px-2 py-0.5 rounded text-sm">S/ {Number(p.precioUnitario || 0).toFixed(2)}</span>}
                                             </div>
-                                            {p.descripcion && <p className="text-xs text-gray-500 line-clamp-3 leading-relaxed mt-1">{p.descripcion}</p>}
+                                            {p.descripcionLarga && <p className="text-xs text-gray-500 line-clamp-3 leading-relaxed mt-1">{String(p.descripcionLarga).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()}</p>}
                                             {showStock && <p className="text-[11px] font-semibold text-gray-500 mt-1">Stock: {Number(p.stock ?? 0)}</p>}
                                         </div>
                                     </div>
@@ -217,7 +217,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                             <div className="mt-5 text-center px-2 w-full">
                                                 <div className="text-[13px] leading-tight">
                                                     <span className="font-extrabold text-gray-900">{p.marca?.nombre || 'TECH'}</span>{' '}
-                                                    <span className="font-medium text-gray-500">{p.nombre}</span>
+                                                    <span className="font-medium text-gray-500">{p.descripcion || p.nombre || p.codigo}</span>
                                                 </div>
                                                 <div className="flex items-center justify-center mt-3 mb-2 gap-2 opacity-60">
                                                     <div className="w-8 h-px bg-gray-300"></div>

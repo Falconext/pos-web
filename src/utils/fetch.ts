@@ -25,7 +25,7 @@ export async function get<T>(endpoint: string): Promise<ApiResponse<T>> {
     if (result.code === 0) {
       throw new Error(result.message || 'Error desconocido')
     }
-    return result
+    return { ...result, success: true }
   } catch (e: any) {
     return { success: false, error: e.response?.data?.message || e.message }
   }
@@ -38,7 +38,7 @@ export async function post<T>(endpoint: string, data: any): Promise<ApiResponse<
     if (result.code === 0) {
       throw new Error(result.message || 'Error desconocido')
     }
-    return result
+    return { ...result, success: true }
   } catch (e: any) {
     return { success: false, error: e.response?.data?.message || e.message }
   }
@@ -51,7 +51,7 @@ export async function put<T>(endpoint: string, data: any): Promise<ApiResponse<T
     if (result.code === 0) {
       throw new Error(result.message || 'Error desconocido')
     }
-    return result
+    return { ...result, success: true }
   } catch (e: any) {
     return { success: false, error: e.response?.data?.message || e.message }
   }
@@ -64,7 +64,7 @@ export async function patch<T>(endpoint: string, data: any = {}): Promise<ApiRes
     if (result.code === 0) {
       throw new Error(result.message || 'Error desconocido')
     }
-    return result
+    return { ...result, success: true }
   } catch (e: any) {
     return { success: false, error: e.response?.data?.message || e.message }
   }
@@ -77,7 +77,7 @@ export async function del<T>(endpoint: string): Promise<ApiResponse<T>> {
     if (result.code === 0) {
       throw new Error(result.message || 'Error desconocido')
     }
-    return result
+    return { ...result, success: true }
   } catch (e: any) {
     return { success: false, error: e.response?.data?.message || e.message }
   }

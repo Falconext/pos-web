@@ -10,7 +10,7 @@ import ModalConfirm from '@/components/ModalConfirm';
 import type {
     IVehiculo, IVehiculosResponse, EstadoContrato, TipoActa, NivelCombustible,
 } from '@/interfaces/vehiculo';
-import { CHECKLIST_CATALOG, ESTADOS_CHECK, keyOf } from './checklistCatalog';
+import ChecklistPicker, { type ChecklistState, checklistToPayload } from './ChecklistPicker';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (v: string) =>
@@ -38,6 +38,8 @@ function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | 
         placa: vehiculo?.placa ?? '', marca: vehiculo?.marca ?? '', modelo: vehiculo?.modelo ?? '',
         color: vehiculo?.color ?? '', anio: vehiculo?.anio?.toString() ?? '', observaciones: vehiculo?.observaciones ?? '',
     });
+    // Checklist de inspección inicial: solo al registrar un vehículo nuevo.
+    const [checks, setChecks] = useState<ChecklistState>({});
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setForm((f) => ({ ...f, [name]: name === 'placa' ? value.toUpperCase() : value }));
@@ -53,8 +55,24 @@ function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | 
                 modelo: form.modelo.trim() || undefined, color: form.color.trim() || undefined,
                 anio: form.anio ? parseInt(form.anio) : undefined, observaciones: form.observaciones.trim() || undefined,
             };
-            if (vehiculo) { await patch(`vehiculos/${vehiculo.id}`, payload); alert('Vehículo actualizado', 'success'); }
-            else { await post('vehiculos', payload); alert('Vehículo registrado', 'success'); }
+            if (vehiculo) {
+                await patch(`vehiculos/${vehiculo.id}`, payload);
+                alert('Vehículo actualizado', 'success');
+            } else {
+                const res: any = await post('vehiculos', payload);
+                // Registra un acta de INGRESO inicial con la inspección hecha al registrar.
+                const nuevoId = res?.data?.id;
+                const checklist = checklistToPayload(checks);
+                if (nuevoId && checklist.length) {
+                    await post(`vehiculos/${nuevoId}/acta`, {
+                        tipo: 'INGRESO',
+                        observaciones: 'Inspección inicial al registrar el vehículo.',
+                        fotos: [],
+                        checklist,
+                    });
+                }
+                alert('Vehículo registrado', 'success');
+            }
             onSaved();
         } catch (err: any) {
             alert(err?.response?.data?.message || 'Error al guardar', 'error');
@@ -63,8 +81,8 @@ function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
-                <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4">
+            <div className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900 ${vehiculo ? 'max-w-lg' : 'max-w-3xl'}`}>
+                <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4">
                     <div className="flex items-center gap-3">
                         <div className="rounded-xl bg-white/10 p-2"><Icon icon="solar:car-bold-duotone" className="text-2xl text-white" /></div>
                         <div>
@@ -74,18 +92,26 @@ function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | 
                     </div>
                     <button onClick={onClose} className="text-slate-400 transition-colors hover:text-white"><Icon icon="solar:close-circle-bold" className="text-2xl" /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-4 p-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <InputPro name="placa" value={form.placa} onChange={handleChange} isLabel label="Placa *" placeholder="ABC-123" error={null} />
-                        <InputPro name="marca" value={form.marca} onChange={handleChange} isLabel label="Marca *" placeholder="Toyota, Hyundai..." error={null} />
+                <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+                    <div className="flex-1 space-y-4 overflow-y-auto p-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputPro name="placa" value={form.placa} onChange={handleChange} isLabel label="Placa *" placeholder="ABC-123" error={null} />
+                            <InputPro name="marca" value={form.marca} onChange={handleChange} isLabel label="Marca *" placeholder="Toyota, Hyundai..." error={null} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputPro name="modelo" value={form.modelo} onChange={handleChange} isLabel label="Modelo" placeholder="Corolla, Accent..." error={null} />
+                            <InputPro name="color" value={form.color} onChange={handleChange} isLabel label="Color" placeholder="Blanco, Negro..." error={null} />
+                        </div>
+                        <InputPro name="anio" type="number" value={form.anio} onChange={handleChange} isLabel label="Año" placeholder="2024" error={null} />
+                        {/* Checklist de inspección inicial — solo al registrar un vehículo nuevo */}
+                        {!vehiculo && (
+                            <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+                                <ChecklistPicker checks={checks} onChange={setChecks} />
+                            </div>
+                        )}
+                        <InputPro name="observaciones" type="textarea" rows={3} value={form.observaciones} onChange={handleChange} isLabel label="Observaciones" placeholder="Estado general, accesorios instalados..." error={null} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <InputPro name="modelo" value={form.modelo} onChange={handleChange} isLabel label="Modelo" placeholder="Corolla, Accent..." error={null} />
-                        <InputPro name="color" value={form.color} onChange={handleChange} isLabel label="Color" placeholder="Blanco, Negro..." error={null} />
-                    </div>
-                    <InputPro name="anio" type="number" value={form.anio} onChange={handleChange} isLabel label="Año" placeholder="2024" error={null} />
-                    <InputPro name="observaciones" type="textarea" rows={3} value={form.observaciones} onChange={handleChange} isLabel label="Observaciones" placeholder="Estado general, accesorios instalados..." error={null} />
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex flex-shrink-0 gap-3 border-t border-slate-100 p-4 dark:border-slate-800">
                         <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Cancelar</button>
                         <button type="submit" disabled={loading} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-800 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60">
                             {loading ? <Icon icon="eos-icons:loading" /> : <Icon icon="solar:check-circle-bold" />}{vehiculo ? 'Actualizar' : 'Registrar'}
@@ -106,30 +132,13 @@ function ActaModal({ vehiculo, onClose, onSaved }: { vehiculo: IVehiculo; onClos
     const [nivelCombustible, setNivelCombustible] = useState<NivelCombustible | ''>('');
     const [observaciones, setObservaciones] = useState('');
     // Checklist: solo se guardan los ítems marcados con novedad.
-    const [checks, setChecks] = useState<Record<string, { estado: string; nota: string }>>({});
-
-    const toggleItem = (categoria: string, item: string) => {
-        const k = keyOf(categoria, item);
-        setChecks((prev) => {
-            const next = { ...prev };
-            if (next[k]) delete next[k];
-            else next[k] = { estado: ESTADOS_CHECK[0], nota: '' };
-            return next;
-        });
-    };
-    const setCheck = (k: string, patch: Partial<{ estado: string; nota: string }>) =>
-        setChecks((prev) => ({ ...prev, [k]: { ...prev[k], ...patch } }));
-
-    const novedades = Object.keys(checks).length;
+    const [checks, setChecks] = useState<ChecklistState>({});
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const checklist = Object.entries(checks).map(([k, { estado, nota }]) => {
-                const [categoria, item] = k.split('::');
-                return { categoria, item, estado, nota: nota.trim() || undefined };
-            });
+            const checklist = checklistToPayload(checks);
             await post(`vehiculos/${vehiculo.id}/acta`, {
                 tipo, km: km ? parseInt(km) : undefined,
                 nivelCombustible: nivelCombustible || undefined,
@@ -176,51 +185,7 @@ function ActaModal({ vehiculo, onClose, onSaved }: { vehiculo: IVehiculo; onClos
                         </div>
 
                         {/* Checklist de inspección */}
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Checklist de inspección</label>
-                                    <p className="text-[11px] text-slate-400">Marca solo lo que presenta novedad. Lo no marcado se asume en buen estado.</p>
-                                </div>
-                                <span className={`rounded-full px-3 py-1 text-xs font-bold ${novedades ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'}`}>
-                                    {novedades ? `${novedades} novedad${novedades !== 1 ? 'es' : ''}` : 'Sin novedades'}
-                                </span>
-                            </div>
-                            <div className="space-y-4">
-                                {CHECKLIST_CATALOG.map((grupo) => (
-                                    <div key={grupo.categoria} className="rounded-xl border border-slate-100 dark:border-slate-800">
-                                        <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 dark:border-slate-800">
-                                            <Icon icon={grupo.icon} className="text-lg text-slate-400" />
-                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{grupo.categoria}</span>
-                                        </div>
-                                        <div className="grid gap-1 p-2 sm:grid-cols-2">
-                                            {grupo.items.map((item) => {
-                                                const k = keyOf(grupo.categoria, item);
-                                                const marked = !!checks[k];
-                                                return (
-                                                    <div key={item} className={`rounded-lg p-2 transition ${marked ? 'bg-amber-50 ring-1 ring-amber-200 dark:bg-amber-500/5 dark:ring-amber-500/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
-                                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-                                                            <input type="checkbox" checked={marked} onChange={() => toggleItem(grupo.categoria, item)} className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400" />
-                                                            <span className={marked ? 'font-semibold text-amber-800 dark:text-amber-300' : ''}>{item}</span>
-                                                        </label>
-                                                        {marked && (
-                                                            <div className="mt-2 flex flex-col gap-2 pl-6">
-                                                                <select value={checks[k].estado} onChange={(e) => setCheck(k, { estado: e.target.value })}
-                                                                    className="w-full rounded-lg border border-amber-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 outline-none focus:border-amber-400 dark:border-amber-500/30 dark:bg-slate-800 dark:text-slate-100">
-                                                                    {ESTADOS_CHECK.map((es) => <option key={es} value={es}>{es}</option>)}
-                                                                </select>
-                                                                <input value={checks[k].nota} onChange={(e) => setCheck(k, { nota: e.target.value })} placeholder="Detalle (opcional): lado, tamaño…"
-                                                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-amber-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <ChecklistPicker checks={checks} onChange={setChecks} />
 
                         <InputPro name="observaciones" type="textarea" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} isLabel label="Observaciones adicionales" placeholder="Cualquier detalle extra no cubierto por el checklist..." error={null} />
                     </div>
@@ -416,12 +381,9 @@ export default function VehiculosPage() {
     return (
         <div className="space-y-6 p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-slate-800 p-2.5"><Icon icon="solar:car-bold-duotone" className="text-2xl text-white" /></div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Vehículos</h1>
-                        <p className="text-sm text-slate-400">Trazabilidad vehicular · {total} vehículo{total !== 1 ? 's' : ''} registrado{total !== 1 ? 's' : ''}</p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Vehículos</h1>
+                    <p className="text-sm text-slate-400">Trazabilidad vehicular · {total} vehículo{total !== 1 ? 's' : ''} registrado{total !== 1 ? 's' : ''}</p>
                 </div>
                 <button onClick={() => setModalCrear(true)} className="flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"><Icon icon="solar:add-circle-bold" className="text-lg" />Nuevo vehículo</button>
             </div>

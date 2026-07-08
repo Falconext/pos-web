@@ -120,10 +120,21 @@ export default function CotizacionesView() {
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona y convierte tus cotizaciones en facturas</p>
                 </div>
-                <Button color="primary" onClick={() => navigate('/administrador/cotizaciones/nuevo')} className="w-full md:w-auto shadow-lg shadow-blue-500/20">
-                    <Icon icon="heroicons:plus" className="mr-2" />
-                    Nueva Cotización
-                </Button>
+                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2">
+                    <Button
+                        outline
+                        color="danger"
+                        onClick={() => vm.setIsOpenModalClean(true)}
+                        className="w-full md:w-auto"
+                    >
+                        <Icon icon="solar:trash-bin-trash-bold-duotone" className="mr-2" />
+                        Limpiar pruebas
+                    </Button>
+                    <Button color="primary" onClick={() => navigate('/administrador/cotizaciones/nuevo')} className="w-full md:w-auto shadow-lg shadow-blue-500/20">
+                        <Icon icon="heroicons:plus" className="mr-2" />
+                        Nueva Cotización
+                    </Button>
+                </div>
             </div>
 
             {/* Main Content Card */}
@@ -244,6 +255,30 @@ export default function CotizacionesView() {
                         ))}
                     </div>
                 </ModalConfirm>
+            )}
+
+            {vm.isOpenModalDelete && (
+                <ModalConfirm
+                    confirmSubmit={vm.handleConfirmDeleteCotizacion}
+                    information={`Se eliminará definitivamente ${vm.deleteCandidate?.serie || ''}-${String(vm.deleteCandidate?.correlativo || '').padStart(8, '0')}. No se puede deshacer.`}
+                    isOpenModal
+                    setIsOpenModal={() => vm.setIsOpenModalDelete(false)}
+                    title="Eliminar cotización"
+                    confirmText="Eliminar cotización"
+                    confirmLoading={vm.isDeleting}
+                />
+            )}
+
+            {vm.isOpenModalClean && (
+                <ModalConfirm
+                    confirmSubmit={vm.handleConfirmCleanCotizaciones}
+                    information="Se eliminarán definitivamente las cotizaciones encontradas con los filtros actuales de fecha y búsqueda. Las cotizaciones convertidas no se eliminan."
+                    isOpenModal
+                    setIsOpenModal={() => vm.setIsOpenModalClean(false)}
+                    title="Limpiar cotizaciones de prueba"
+                    confirmText="Limpiar cotizaciones"
+                    confirmLoading={vm.isDeleting}
+                />
             )}
 
             {vm.isOpenModalWhatsApp && vm.comprobanteWhatsApp && (
@@ -427,6 +462,18 @@ export default function CotizacionesView() {
                             >
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span className="font-medium">Enviar WhatsApp</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    vm.handleRequestDeleteCotizacion(rowData);
+                                    vm.setOpenAccionesId(null);
+                                    vm.setAnchorEl(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 border-t border-gray-100 dark:border-slate-800"
+                            >
+                                <Icon icon="solar:trash-bin-trash-bold-duotone" width={16} height={16} />
+                                <span className="font-medium">Eliminar</span>
                             </button>
                         </>
                     );

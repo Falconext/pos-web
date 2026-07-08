@@ -30,7 +30,7 @@ export default function ModalPreviewCatalogo({ isOpen, onClose }: Props) {
 
     const selectedProductos = productos.filter(p => selectedIds.includes(p.id));
     const listProductos = productos.filter(p =>
-        `${p.nombre || ''} ${p.codigo || ''}`.toLowerCase().includes(prodSearch.toLowerCase()));
+        `${p.descripcion || p.nombre || ''} ${p.codigo || ''}`.toLowerCase().includes(prodSearch.toLowerCase()));
 
     // Auto-detect theme based on rubro
     useEffect(() => {
@@ -185,7 +185,7 @@ export default function ModalPreviewCatalogo({ isOpen, onClose }: Props) {
                                             onChange={() => toggleOne(p.id)}
                                             className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 shrink-0"
                                         />
-                                        <span className="truncate text-gray-700 dark:text-gray-300">{p.nombre}</span>
+                                        <span className="truncate text-gray-700 dark:text-gray-300">{p.descripcion || p.nombre || p.codigo}</span>
                                     </label>
                                 ))}
                             </div>
