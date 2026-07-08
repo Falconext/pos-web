@@ -13,6 +13,8 @@ export default function UsersView() {
     const {
         usuarios,
         totalUsuarios,
+        limiteUsuarios,
+        limiteAlcanzado,
         loading,
         currentPage,
         itemsPerPage,
@@ -101,13 +103,25 @@ export default function UsersView() {
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administra los usuarios y sus permisos del sistema</p>
                 </div>
-                <button
-                    onClick={handleCreateUser}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
-                >
-                    <Icon icon="solar:user-plus-bold" className="text-lg" />
-                    Nuevo Usuario
-                </button>
+                <div className="flex flex-col items-start sm:items-end gap-1">
+                    <button
+                        onClick={handleCreateUser}
+                        title={limiteAlcanzado ? `Límite del plan alcanzado (${limiteUsuarios} usuarios)` : 'Crear nuevo usuario'}
+                        className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg active:scale-95 ${
+                            limiteAlcanzado
+                                ? 'bg-gray-400 dark:bg-slate-700 cursor-not-allowed shadow-none'
+                                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
+                        }`}
+                    >
+                        <Icon icon={limiteAlcanzado ? 'solar:lock-keyhole-bold' : 'solar:user-plus-bold'} className="text-lg" />
+                        Nuevo Usuario
+                    </button>
+                    {limiteAlcanzado && (
+                        <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                            Alcanzaste el máximo de tu plan ({limiteUsuarios} usuario{limiteUsuarios !== 1 ? 's' : ''}).
+                        </p>
+                    )}
+                </div>
             </div>
 
             {/* Estadísticas rápidas - Simplified logic here or moved to VM if complex */}
@@ -116,7 +130,14 @@ export default function UsersView() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Usuarios</p>
-                            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{totalUsuarios}</p>
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                                {totalUsuarios}{limiteUsuarios > 0 && <span className="text-lg font-semibold text-gray-400 dark:text-gray-500"> / {limiteUsuarios}</span>}
+                            </p>
+                            {limiteUsuarios > 0 && (
+                                <p className={`text-[11px] font-semibold mt-0.5 ${limiteAlcanzado ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                                    {limiteAlcanzado ? 'Límite del plan alcanzado' : `${limiteUsuarios - totalUsuarios} disponible${limiteUsuarios - totalUsuarios !== 1 ? 's' : ''}`}
+                                </p>
+                            )}
                         </div>
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                             <Icon icon="solar:users-group-rounded-bold" width={24} className="text-white" />

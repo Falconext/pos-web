@@ -35,7 +35,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     const [enviandoWhatsApp, setEnviandoWhatsApp] = useState(false);
     const [enviandoEmail, setEnviandoEmail] = useState(false);
 
-    // Reset y pre-llenar al abrir — siempre regenerar PDF para asegurar el formato correcto
+    // Reset y pre-llenar al abrir. Si no hay PDF persistido, lo preparamos en segundo plano.
     useEffect(() => {
         if (!isOpen) return;
         setTab(defaultTab);
@@ -43,15 +43,16 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
         setNumeroDestino(comprobante.clienteCelular || '');
         setEmailDestino(comprobante.clienteEmail || '');
         if (!comprobante.pdfUrl) {
-            generarPdf();
+            void generarPdf();
         }
     }, [isOpen, comprobante.id, comprobante.pdfUrl, defaultTab]);
 
-    const generarPdf = async () => {
+    const generarPdf = async (): Promise<string | null> => {
+        if (pdfUrl) return pdfUrl;
         setGenerando(true);
         try {
             const res = await post<{ pdfUrl: string }>(
-                `/comprobante/${comprobante.id}/generar-pdf`,
+                `comprobante/${comprobante.id}/generar-pdf`,
                 {},
             );
             const error = (res as any)?.error;
@@ -59,18 +60,24 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
 
             if (error) {
                 alert(error, 'error');
-                return;
+                return null;
             }
 
             if (url) {
                 setPdfUrl(url);
-                return;
+                return url;
             }
 
             alert('No se pudo obtener el enlace del PDF', 'error');
+            return null;
         } finally {
             setGenerando(false);
         }
+    };
+
+    const asegurarPdf = async () => {
+        if (pdfUrl) return pdfUrl;
+        return generarPdf();
     };
 
     const handleEnviarWhatsApp = async () => {
@@ -80,7 +87,8 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
             return;
         }
         setEnviandoWhatsApp(true);
-        const res = await post(`/comprobante/${comprobante.id}/enviar-whatsapp`, { celular: num });
+        await asegurarPdf();
+        const res = await post(`comprobante/${comprobante.id}/enviar-whatsapp`, { celular: num });
         setEnviandoWhatsApp(false);
         if ((res as any).error) {
             alert((res as any).error, 'error');
@@ -97,7 +105,8 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
             return;
         }
         setEnviandoEmail(true);
-        const res = await post(`/comprobante/${comprobante.id}/enviar-email`, { email });
+        await asegurarPdf();
+        const res = await post(`comprobante/${comprobante.id}/enviar-email`, { email });
         setEnviandoEmail(false);
         if ((res as any).error) {
             alert((res as any).error, 'error');
@@ -168,7 +177,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-amber-600 text-xs italic">PDF no disponible</span>
+                                    <span className="text-amber-600 text-xs italic">PDF pendiente</span>
                                     <button
                                         onClick={generarPdf}
                                         className="text-xs text-violet-600 font-semibold hover:underline"
@@ -249,15 +258,17 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                 </div>
                                 
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         const num = numeroDestino.trim().replace(/\D/g, '');
+                                        const url = await asegurarPdf();
+                                        if (!url) return;
                                         const finalNum = num.startsWith('51') ? num : `51${num}`;
                                         const mensaje = encodeURIComponent(
-                                            `Hola ${comprobante.clienteNombre}, te enviamos tu ${comprobante.comprobante} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${pdfUrl}`
+                                            `Hola ${comprobante.clienteNombre}, te enviamos tu ${comprobante.comprobante} ${serie} por ${monto}.\n\nPuedes descargarlo aquí: ${url}`
                                         );
                                         window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
                                     }}
-                                    disabled={!numeroDestino.trim() || generando || !pdfUrl}
+                                    disabled={!numeroDestino.trim() || generando}
                                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-green-500 text-green-600 dark:text-green-400 font-bold hover:bg-green-50 dark:hover:bg-green-900/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Icon icon="solar:share-circle-bold-duotone" className="text-xl" />

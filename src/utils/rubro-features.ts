@@ -14,6 +14,8 @@ export interface RubroFeatures {
     controlStock: boolean;           // Todos (siempre true)
     descripcionRica: boolean;        // Cualquier rubro con tienda virtual
     usaVariantes: boolean;           // Variantes (color/talla): Moda y rubros configurados
+    trazabilidadVehicular: boolean;          // Seguridad Electrónica / GPS / Alarmas vehiculares
+    gestionContratosVehiculares: boolean;    // Contratos y suscripciones anuales por vehículo
 }
 
 /**
@@ -131,6 +133,8 @@ function applyConfiguredFeatures(base: RubroFeatures, input: RubroInput): RubroF
             controlStock: true,
             descripcionRica: false,
             usaVariantes: false,
+            trazabilidadVehicular: false,
+            gestionContratosVehiculares: false,
             ...getConfiguredFeatures(input),
         };
     }
@@ -165,6 +169,8 @@ export function detectarFuncionesRubro(
             controlStock: true,
             descripcionRica: false,
             usaVariantes: false,
+            trazabilidadVehicular: false,
+            gestionContratosVehiculares: false,
         }, rubro);
     }
 
@@ -207,6 +213,22 @@ export function detectarFuncionesRubro(
         nombre.includes('zapater') ||
         nombre.includes('boutique');
 
+    // SEGURIDAD VEHICULAR / GPS / ALARMAS
+    const esVehicular =
+        nombre.includes('vehicular') ||
+        nombre.includes('vehiculo') ||
+        nombre.includes('vehículo') ||
+        nombre.includes('alarma') ||
+        nombre.includes('gps') ||
+        nombre.includes('rastreo') ||
+        nombre.includes('monitoreo') ||
+        (nombre.includes('seguridad') && (
+            nombre.includes('integral') ||
+            nombre.includes('electronica') ||
+            nombre.includes('electrónica') ||
+            nombre.includes('tecsi')
+        ));
+
     const usaCodigoBarras =
         typeof overrides?.usaCodigoBarrasManual === 'boolean'
             ? overrides.usaCodigoBarrasManual
@@ -240,6 +262,10 @@ export function detectarFuncionesRubro(
 
         // Variantes (color/talla): por defecto solo Moda; otros rubros lo habilitan por configuración
         usaVariantes: esModa,
+
+        // Vehicular: GPS/Alarmas/Seguridad electrónica
+        trazabilidadVehicular: esVehicular,
+        gestionContratosVehiculares: esVehicular,
     }, rubro);
 }
 

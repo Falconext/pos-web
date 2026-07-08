@@ -6,9 +6,11 @@ interface Props {
     productos: any[];
     theme: 'moderna' | 'tecnica' | 'minimal' | 'menu' | 'premium-tech';
     company: any;
+    showPrice?: boolean;
+    showStock?: boolean;
 }
 
-export default function CatalogoPrintTemplate({ componentRef, productos, theme, company }: Props) {
+export default function CatalogoPrintTemplate({ componentRef, productos, theme, company, showPrice = true, showStock = false }: Props) {
     // Agrupar por categoría
     const groupedProducts = productos.reduce((acc, curr) => {
         const cat = curr.categoria?.nombre || 'General';
@@ -75,7 +77,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                         ) : (
                             <h2 className="text-2xl font-bold border-b border-gray-200 pb-2 mb-6 text-gray-800 uppercase tracking-wider">{categoria}</h2>
                         )}
-                        
+
                         {theme === 'moderna' && (
                             <div className="grid grid-cols-4 gap-6">
                                 {items.map(p => (
@@ -95,7 +97,8 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                             )}
                                         </div>
                                         <h3 className="font-semibold text-sm leading-tight text-gray-800 line-clamp-2 h-10">{p.nombre}</h3>
-                                        <p className="text-blue-600 font-extrabold mt-1">S/ {Number(p.precioUnitario || 0).toFixed(2)}</p>
+                                        {showPrice && <p className="text-blue-600 font-extrabold mt-1">S/ {Number(p.precioUnitario || 0).toFixed(2)}</p>}
+                                        {showStock && <p className="text-[11px] font-semibold text-gray-500 mt-0.5">Stock: {Number(p.stock ?? 0)}</p>}
                                     </div>
                                 ))}
                             </div>
@@ -109,7 +112,8 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                         <th className="py-3 px-4 w-32">Código</th>
                                         <th className="py-3 px-4">Producto / Modelo</th>
                                         <th className="py-3 px-4 w-32 text-center">Marca</th>
-                                        <th className="py-3 px-4 w-28 text-right">Precio</th>
+                                        {showStock && <th className="py-3 px-4 w-24 text-center">Stock</th>}
+                                        {showPrice && <th className="py-3 px-4 w-28 text-right">Precio</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -128,7 +132,8 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                             <td className="py-2 px-4 font-mono text-xs text-gray-500">{p.codigo || '-'}</td>
                                             <td className="py-2 px-4 font-semibold text-gray-800">{p.nombre}</td>
                                             <td className="py-2 px-4 text-center text-gray-600 text-xs">{p.marca?.nombre || '-'}</td>
-                                            <td className="py-2 px-4 text-right font-bold text-blue-600 whitespace-nowrap">S/ {Number(p.precioUnitario || 0).toFixed(2)}</td>
+                                            {showStock && <td className="py-2 px-4 text-center font-semibold text-gray-600">{Number(p.stock ?? 0)}</td>}
+                                            {showPrice && <td className="py-2 px-4 text-right font-bold text-blue-600 whitespace-nowrap">S/ {Number(p.precioUnitario || 0).toFixed(2)}</td>}
                                         </tr>
                                     ))}
                                 </tbody>
@@ -143,8 +148,9 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                             <p className="font-bold text-gray-800 text-sm">{p.nombre}</p>
                                             {p.codigo && <p className="text-[10px] text-gray-400 mt-0.5 font-mono">Ref: {p.codigo}</p>}
                                         </div>
-                                        <div className="font-extrabold text-gray-900 whitespace-nowrap text-right">
-                                            S/ {Number(p.precioUnitario || 0).toFixed(2)}
+                                        <div className="whitespace-nowrap text-right">
+                                            {showPrice && <div className="font-extrabold text-gray-900">S/ {Number(p.precioUnitario || 0).toFixed(2)}</div>}
+                                            {showStock && <div className="text-[10px] font-semibold text-gray-500">Stock: {Number(p.stock ?? 0)}</div>}
                                         </div>
                                     </div>
                                 ))}
@@ -168,9 +174,10 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                         <div className="flex-1 flex flex-col justify-center">
                                             <div className="flex justify-between items-start mb-1 gap-2">
                                                 <h3 className="font-bold text-gray-900 leading-tight flex-1">{p.nombre}</h3>
-                                                <span className="font-bold text-orange-600 whitespace-nowrap bg-orange-50 px-2 py-0.5 rounded text-sm">S/ {Number(p.precioUnitario || 0).toFixed(2)}</span>
+                                                {showPrice && <span className="font-bold text-orange-600 whitespace-nowrap bg-orange-50 px-2 py-0.5 rounded text-sm">S/ {Number(p.precioUnitario || 0).toFixed(2)}</span>}
                                             </div>
                                             {p.descripcion && <p className="text-xs text-gray-500 line-clamp-3 leading-relaxed mt-1">{p.descripcion}</p>}
+                                            {showStock && <p className="text-[11px] font-semibold text-gray-500 mt-1">Stock: {Number(p.stock ?? 0)}</p>}
                                         </div>
                                     </div>
                                 ))}
@@ -185,14 +192,16 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                     return (
                                         <div key={p.id} className="avoid-break flex flex-col items-center">
                                             <div className="w-full aspect-[4/3] bg-white flex items-center justify-center relative group">
-                                                <div className="absolute -top-3 -right-3 w-[65px] h-[65px] rounded-full bg-gradient-to-br from-[#4facfe] to-[#00f2fe] text-white flex flex-col items-center justify-center shadow-lg z-10 border-4 border-white transform rotate-3">
-                                                    <div className="flex items-start leading-none font-bold">
-                                                        <span className="text-[10px] mt-1 mr-0.5">S/</span>
-                                                        <span className="text-lg">{enteros}</span>
-                                                        <span className="text-[9px] mt-1">.{decimales}</span>
+                                                {showPrice && (
+                                                    <div className="absolute -top-3 -right-3 w-[65px] h-[65px] rounded-full bg-gradient-to-br from-[#4facfe] to-[#00f2fe] text-white flex flex-col items-center justify-center shadow-lg z-10 border-4 border-white transform rotate-3">
+                                                        <div className="flex items-start leading-none font-bold">
+                                                            <span className="text-[10px] mt-1 mr-0.5">S/</span>
+                                                            <span className="text-lg">{enteros}</span>
+                                                            <span className="text-[9px] mt-1">.{decimales}</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                
+                                                )}
+
                                                 {p.imagenUrl ? (
                                                     <>
                                                         <img src={p.imagenUrl} className="w-[85%] h-[85%] object-contain drop-shadow-xl" crossOrigin="anonymous" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); e.currentTarget.nextElementSibling?.classList.add('flex'); }} />
@@ -204,7 +213,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                                     <Icon icon="solar:smartphone-broken" className="text-gray-200 text-5xl" />
                                                 )}
                                             </div>
-                                            
+
                                             <div className="mt-5 text-center px-2 w-full">
                                                 <div className="text-[13px] leading-tight">
                                                     <span className="font-extrabold text-gray-900">{p.marca?.nombre || 'TECH'}</span>{' '}
@@ -218,6 +227,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                                 <p className="text-[9px] text-gray-400 leading-relaxed line-clamp-3">
                                                     {p.descripcion || 'Dispositivo de alto rendimiento, optimizado para brindarte la mejor experiencia y durabilidad garantizada.'}
                                                 </p>
+                                                {showStock && <p className="text-[9px] font-semibold text-gray-500 mt-1">Stock: {Number(p.stock ?? 0)}</p>}
                                             </div>
                                         </div>
                                     );

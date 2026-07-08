@@ -36,6 +36,25 @@ const isFarmacia = (auth: any) => {
   return r.includes('farmacia') || r.includes('botica') || r.includes('medicament') || r.includes('drogueria') || r.includes('droguería');
 };
 
+const isVehicular = (auth: any) => {
+  const r = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
+  return (
+    r.includes('vehicular') ||
+    r.includes('vehiculo') ||
+    r.includes('vehículo') ||
+    r.includes('alarma') ||
+    r.includes('gps') ||
+    r.includes('rastreo') ||
+    r.includes('monitoreo') ||
+    (r.includes('seguridad') && (
+      r.includes('integral') ||
+      r.includes('electronica') ||
+      r.includes('electrónica') ||
+      r.includes('tecsi')
+    ))
+  );
+};
+
 // Fallback routes for modules that don't have ruta set in DB yet
 export const LEGACY_MODULE_ROUTES: Record<string, string> = {
   dashboard: '/administrador',
@@ -59,6 +78,8 @@ export const LEGACY_MODULE_ROUTES: Record<string, string> = {
   'mi-negocio': '/administrador/ecommerce/resumen',
   ecommerce: '/administrador/mi-negocio/resumen',
   marketing: '/administrador/mi-negocio/marketing/campanas',
+  vehiculos: '/administrador/vehiculos',
+  'contratos-vehiculares': '/administrador/vehiculos/contratos',
 };
 
 // Fallback routes for submodules that don't have ruta set in DB yet
@@ -228,6 +249,16 @@ export const MODULE_META: Record<string, ModuleMeta> = {
         { codigo: 'clientes:medicos', nombre: '🩺 Médicos', ruta: '/administrador/medicos' },
       ];
     },
+  },
+
+  vehiculos: {
+    condition: (auth) => isVehicular(auth),
+    navRoute: () => '/administrador/vehiculos',
+    pathPrefix: () => '/administrador/vehiculos',
+    extraItems: () => [
+      { codigo: 'vehiculos:lista', nombre: 'Vehículos registrados', ruta: '/administrador/vehiculos' },
+      { codigo: 'vehiculos:contratos', nombre: 'Contratos / Suscripciones', ruta: '/administrador/vehiculos/contratos' },
+    ],
   },
 };
 

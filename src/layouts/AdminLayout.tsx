@@ -162,6 +162,15 @@ export default function AdminLayout() {
     return [...mods].sort((a, b) => (a.modulo.orden ?? 0) - (b.modulo.orden ?? 0));
   }, [auth?.empresa?.plan?.modulosAsignados]);
 
+  // Comisiones (Mis Comisiones / Comisiones del equipo) viven dentro del dashboard
+  // de finanzas, que pertenece al módulo "mi-negocio" (actual) o "reportes" (legacy).
+  // Solo se muestran si el plan incluye ese módulo financiero — así el plan Negocio
+  // las tiene y el plan Emprendedor (que no accede a finanzas) no.
+  const planTieneFinanzas = useMemo(
+    () => planModules.some(({ modulo }) => modulo.codigo === 'mi-negocio' || modulo.codigo === 'reportes'),
+    [planModules],
+  );
+
   const planSubModulesAll = useMemo(() => {
     return auth?.empresa?.plan?.subModulosAsignados ?? [];
   }, [auth?.empresa?.plan?.subModulosAsignados]);
@@ -515,41 +524,36 @@ export default function AdminLayout() {
                   </NavLink>
                 )}
 
+                {/* Comisiones — parte del módulo financiero (reportes); sigue el patrón de las demás opciones */}
+                {planTieneFinanzas && (auth?.rol === 'USUARIO_EMPRESA' || auth?.rol === 'ADMIN_EMPRESA') && (
+                  <NavLink
+                    onClick={() => { setIsSidebarOpen(false); setNameNavbar('Mis Comisiones'); }}
+                    to="/administrador/mis-comisiones"
+                    className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
+                    title="Mis Comisiones"
+                  >
+                    <Icon icon="solar:hand-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Mis Comisiones</span>}
+                  </NavLink>
+                )}
+
+                {planTieneFinanzas && auth?.rol === 'ADMIN_EMPRESA' && (
+                  <NavLink
+                    onClick={() => { setIsSidebarOpen(false); setNameNavbar('Comisiones del equipo'); }}
+                    to="/administrador/finanzas/dashboard?tab=comisiones"
+                    className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
+                    title="Comisiones del equipo"
+                  >
+                    <Icon icon="solar:users-group-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Comisiones del equipo</span>}
+                  </NavLink>
+                )}
+
               </>
             )}
 
           </motion.nav>
         </div>
-
-        {/* Mis Comisiones — vendedores y también el dueño (que puede vender) */}
-        {(auth?.rol === 'USUARIO_EMPRESA' || auth?.rol === 'ADMIN_EMPRESA') && (
-          <div className="px-2 pb-1">
-            <NavLink
-              onClick={() => setIsSidebarOpen(false)}
-              to="/administrador/mis-comisiones"
-              className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
-              title="Mis Comisiones"
-            >
-              <Icon icon="solar:hand-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-              {!isSidebarCollapsed && <span>Mis Comisiones</span>}
-            </NavLink>
-          </div>
-        )}
-
-        {/* Comisiones del equipo — vista global para el dueño */}
-        {auth?.rol === 'ADMIN_EMPRESA' && (
-          <div className="px-2 pb-1">
-            <NavLink
-              onClick={() => setIsSidebarOpen(false)}
-              to="/administrador/finanzas/dashboard?tab=comisiones"
-              className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
-              title="Comisiones del equipo"
-            >
-              <Icon icon="solar:users-group-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-              {!isSidebarCollapsed && <span>Comisiones del equipo</span>}
-            </NavLink>
-          </div>
-        )}
 
         {/* Divider y configuración abajo */}
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">

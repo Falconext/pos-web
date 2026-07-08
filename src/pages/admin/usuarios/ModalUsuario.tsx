@@ -136,7 +136,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   };
 
   const handleSelectAllSubModulos = (modulo: IModulo) => {
-    const subIds = modulo.subModulos.filter(s => s.activo).map(s => s.id);
+    const subIds: number[] = submodulosDelPlan(modulo).map((s: any) => s.id as number);
     setFormData(prev => {
       const current = prev.subModuloIds || [];
       const allSelected = subIds.every(id => current.includes(id));
@@ -241,11 +241,41 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   // Módulos que tienen al menos un submódulo activo
   const modulosConSubs = modulos.filter(m => m.subModulos && m.subModulos.some(s => s.activo));
 
+  // ── Alcance del plan de la empresa ──────────────────────────────────────────
+  // Un USUARIO_EMPRESA solo puede recibir accesos a módulos/submódulos que el plan
+  // de su empresa realmente incluye. Sin este filtro el modal mostraba TODO el
+  // catálogo del sistema, dejando "asignar" módulos ajenos al plan.
+  const planModuloCodigos = new Set<string>(
+    (auth?.empresa?.plan?.modulosAsignados ?? [])
+      .map((m: any) => m?.modulo?.codigo)
+      .filter(Boolean),
+  );
+  const planSubModulosAsignados = (auth?.empresa?.plan?.subModulosAsignados ?? []) as any[];
+
+  // Submódulos visibles para un módulo, respetando el plan. Espeja la lógica del
+  // sidebar (getModuleSubItems): si el plan asigna submódulos para ese módulo,
+  // solo esos; si no asigna ninguno, cae a todos los submódulos activos.
+  const submodulosDelPlan = (modulo: any) => {
+    const activos = (modulo.subModulos || []).filter((s: any) => s.activo);
+    const asignados = planSubModulosAsignados.filter((psm: any) => psm?.subModulo?.moduloId === modulo.id);
+    if (asignados.length > 0) {
+      const codigos = new Set(asignados.map((psm: any) => psm.subModulo.codigo));
+      return activos.filter((s: any) => codigos.has(s.codigo));
+    }
+    return activos;
+  };
+
   // Determinar qué módulos mostrar en permisos: los del backend o fallback a hardcoded
   // IMPORTANTE: el fallback mapea `id` → `codigo` para que permisos.includes(modulo.codigo) funcione
-  const modulosParaPermisos = modulos.length > 0
+  const modulosBase = modulos.length > 0
     ? modulos
     : MODULOS_SISTEMA.map(m => ({ ...m, codigo: m.id, id: 0, icono: '', orden: 0, subModulos: [] }));
+
+  // Solo se filtra cuando la empresa tiene un plan con módulos definidos
+  // (ADMIN_SISTEMA / casos sin plan ven el catálogo completo como fallback).
+  const modulosParaPermisos = planModuloCodigos.size > 0
+    ? modulosBase.filter((m: any) => planModuloCodigos.has(m.codigo))
+    : modulosBase;
 
   return (
     <Modal
@@ -377,7 +407,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
             {modulosParaPermisos.map((modulo: any) => {
               const moduloCodigo = modulo.codigo;
               const tienePermiso = tieneAccesoCompleto || formData.permisos.includes(moduloCodigo);
-              const subActivos = (modulo.subModulos || []).filter((s: any) => s.activo);
+              const subActivos = submodulosDelPlan(modulo);
               const isExpanded = expandedModulos.has(moduloCodigo);
               const subSeleccionados = (formData.subModuloIds || []).filter(id => subActivos.some((s: any) => s.id === id));
               const todosSubSel = subActivos.length > 0 && subActivos.every((s: any) => (formData.subModuloIds || []).includes(s.id));

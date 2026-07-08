@@ -83,6 +83,8 @@ import ResetPasswordPage from './pages/ResetPassword'
 import ProduccionRecetasPage from './pages/admin/produccion/Recetas'
 import ProduccionOrdenesPage from './pages/admin/produccion/Ordenes'
 import ReservasPage from './pages/admin/reservas/ReservasPage'
+import VehiculosPage from './pages/admin/vehiculos/Vehiculos'
+import ContratosVehicularesPage from './pages/admin/vehiculos/ContratosVehiculares'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -194,6 +196,10 @@ function App() {
           <Route path="repartidores" element={<RepartidoresView />} />
           <Route path="tienda/combos" element={<CombosTienda />} />
           <Route path="tienda/modificadores" element={<ModificadoresTienda />} />
+          {/* Módulo Vehicular (GPS / Alarmas / Seguridad Electrónica) */}
+          <Route path="vehiculos" element={<VehiculosPage />} />
+          <Route path="vehiculos/contratos" element={<ContratosVehicularesPage />} />
+
           {/* Rutas de ADMIN_SISTEMA */}
 
           <Route

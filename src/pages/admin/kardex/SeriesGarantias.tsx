@@ -57,23 +57,23 @@ const daysUntil = (v?: string | null) =>
   !v ? null : Math.ceil((new Date(v).getTime() - Date.now()) / 86400000);
 
 const serieBadge: Record<string, string> = {
-  DISPONIBLE: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-  VENDIDO: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
-  RESERVADO: 'bg-amber-50 text-amber-700 ring-amber-100',
-  BAJA: 'bg-slate-100 text-slate-600 ring-slate-200',
+  DISPONIBLE: 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
+  VENDIDO: 'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/20',
+  RESERVADO: 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
+  BAJA: 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-700/40 dark:text-slate-300 dark:ring-slate-600',
 };
 
 const garantiaBadge: Record<string, string> = {
-  VIGENTE: 'bg-green-50 text-green-700 ring-green-100',
-  VENCIDA: 'bg-rose-50 text-rose-700 ring-rose-100',
-  SIN_GARANTIA: 'bg-gray-50 text-gray-600 ring-gray-200',
+  VIGENTE: 'bg-green-50 text-green-700 ring-green-100 dark:bg-green-500/10 dark:text-green-300 dark:ring-green-500/20',
+  VENCIDA: 'bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20',
+  SIN_GARANTIA: 'bg-gray-50 text-gray-600 ring-gray-200 dark:bg-slate-700/40 dark:text-slate-300 dark:ring-slate-600',
 };
 
 const reclamoBadge: Record<string, string> = {
-  ABIERTO: 'bg-rose-50 text-rose-700',
-  EN_PROCESO: 'bg-amber-50 text-amber-700',
-  RESUELTO: 'bg-emerald-50 text-emerald-700',
-  CERRADO: 'bg-slate-100 text-slate-500',
+  ABIERTO: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300',
+  EN_PROCESO: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300',
+  RESUELTO: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
+  CERRADO: 'bg-slate-100 text-slate-500 dark:bg-slate-700/40 dark:text-slate-300',
 };
 
 const estadoOptions = [
@@ -338,41 +338,41 @@ export default function SeriesGarantias() {
     return {
       serie: (
         <div>
-          <div className="font-mono text-xs font-black uppercase tracking-wide text-slate-800">{item.numeroSerie}</div>
+          <div className="font-mono text-xs font-black uppercase tracking-wide text-slate-800 dark:text-slate-100">{item.numeroSerie}</div>
           <div className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ring-1 ${serieBadge[item.estado]}`}>{item.estado}</div>
-          {item.compraId && <div className="mt-0.5 text-[10px] text-slate-400">Ingresado por compra</div>}
+          {item.compraId && <div className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">Ingresado por compra</div>}
         </div>
       ),
       producto: (
         <div>
-          <div className="max-w-[260px] truncate text-sm font-bold text-slate-800" title={item.producto.descripcion}>{item.producto.descripcion}</div>
-          <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">{item.producto.codigo}</div>
+          <div className="max-w-[260px] truncate text-sm font-bold text-slate-800 dark:text-slate-100" title={item.producto.descripcion}>{item.producto.descripcion}</div>
+          <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">{item.producto.codigo}</div>
         </div>
       ),
       cliente: (
         <div>
-          <div className="max-w-[200px] truncate text-sm font-bold text-slate-700">{item.comprobante?.cliente.nombre ?? 'Sin venta'}</div>
-          <div className="mt-0.5 text-[11px] text-slate-400">{item.comprobante?.cliente.nroDoc ?? '—'}</div>
+          <div className="max-w-[200px] truncate text-sm font-bold text-slate-700 dark:text-slate-300">{item.comprobante?.cliente.nombre ?? 'Sin venta'}</div>
+          <div className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{item.comprobante?.cliente.nroDoc ?? '—'}</div>
         </div>
       ),
       garantiaBadge: (
         <div>
           <div className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${garantiaBadge[item.estadoGarantia]}`}>{garantiaLabel}</div>
-          <div className="mt-1 text-[11px] text-slate-400">Hasta: {fmt(item.garantiaHasta)}</div>
+          <div className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Hasta: {fmt(item.garantiaHasta)}</div>
         </div>
       ),
       acciones: (
         <div className="flex gap-1">
           <button onClick={() => abrirDetalle(item)} title="Ver detalle y reclamos"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition">
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition">
             <Icon icon="solar:eye-bold" width={15} />
           </button>
           <button onClick={() => abrirEditar(item)} title="Editar"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-100 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition">
             <Icon icon="solar:pen-new-square-linear" width={15} />
           </button>
           <button onClick={() => confirmarEliminar(item)} title="Eliminar"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 transition">
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-100 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition">
             <Icon icon="solar:trash-bin-trash-broken" width={15} />
           </button>
         </div>
@@ -387,13 +387,13 @@ export default function SeriesGarantias() {
 
   if (!canUse) {
     return (
-      <div className="min-h-screen bg-[#F7F8FC] px-6 py-10">
-        <div className="mx-auto grid max-w-xl place-items-center rounded-[2rem] border border-white bg-white px-8 py-14 text-center shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
-          <div className="grid h-20 w-20 place-items-center rounded-[1.7rem] bg-slate-100 text-slate-500">
+      <div className="min-h-screen bg-[#F7F8FC] dark:bg-slate-950 px-6 py-10">
+        <div className="mx-auto grid max-w-xl place-items-center rounded-[2rem] border border-white dark:border-slate-800 bg-white dark:bg-slate-900 px-8 py-14 text-center shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
+          <div className="grid h-20 w-20 place-items-center rounded-[1.7rem] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
             <Icon icon="solar:lock-keyhole-bold-duotone" className="text-4xl" />
           </div>
-          <h1 className="mt-5 text-2xl font-black text-slate-950">No disponible para este rubro</h1>
-          <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+          <h1 className="mt-5 text-2xl font-black text-slate-950 dark:text-white">No disponible para este rubro</h1>
+          <p className="mt-2 text-sm font-semibold leading-6 text-slate-500 dark:text-slate-400">
             Series y garantías solo aparece cuando el rubro tiene activa la característica de control por serie.
           </p>
         </div>
@@ -402,16 +402,16 @@ export default function SeriesGarantias() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F8FC] px-4 py-6 text-slate-900">
+    <div className="min-h-screen bg-[#F7F8FC] dark:bg-slate-950 px-4 py-6 text-slate-900 dark:text-white">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
             <Icon icon="solar:shield-star-bold-duotone" className="text-base" />
             Kardex
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950">Series y Garantías</h1>
-          <p className="mt-1 text-sm font-medium text-slate-500">Trazabilidad completa de productos vendidos por número de serie.</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">Series y Garantías</h1>
+          <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">Trazabilidad completa de productos vendidos por número de serie.</p>
         </div>
         <button onClick={abrirNueva}
           className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">
@@ -423,27 +423,27 @@ export default function SeriesGarantias() {
       {/* KPI cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-3xl border border-white bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
+          <div key={card.label} className="rounded-3xl border border-white dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.06)]">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{card.label}</span>
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">{card.label}</span>
               <span className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br ${card.tone} text-white shadow-lg`}>
                 <Icon icon={card.icon} className="text-2xl" />
               </span>
             </div>
-            <div className="mt-5 text-3xl font-black text-slate-950">{card.value}</div>
+            <div className="mt-5 text-3xl font-black text-slate-950 dark:text-white">{card.value}</div>
           </div>
         ))}
       </div>
 
       <div className="flex gap-4">
         {/* Tabla principal */}
-        <div className="min-w-0 flex-1 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="min-w-0 flex-1 rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-2">
-              <Icon icon="solar:shield-check-bold-duotone" className="text-xl text-indigo-600" />
-              <h3 className="font-semibold text-gray-800">Control de series</h3>
+              <Icon icon="solar:shield-check-bold-duotone" className="text-xl text-indigo-600 dark:text-indigo-300" />
+              <h3 className="font-semibold text-gray-800 dark:text-slate-100">Control de series</h3>
             </div>
-            <span className="text-sm font-medium text-gray-500">{response.paginacion.total} registros</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">{response.paginacion.total} registros</span>
           </div>
 
           <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_200px_200px]">
@@ -455,7 +455,7 @@ export default function SeriesGarantias() {
               onChange={(id) => setGarantia(String(id) as EstadoGarantia)} options={garantiaOptions} withLabel />
           </div>
 
-          {error && <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
+          {error && <div className="mb-4 rounded-xl border border-rose-100 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-700 dark:text-rose-300">{error}</div>}
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -472,7 +472,7 @@ export default function SeriesGarantias() {
                   { label: 'Acciones', key: 'acciones' },
                 ]} />
               </div>
-              <div className="mt-4 border-t border-gray-100 pt-4">
+              <div className="mt-4 border-t border-gray-100 dark:border-slate-800 pt-4">
                 <Pagination data={seriesTable} optionSelect currentPage={page}
                   indexOfFirstItem={response.paginacion.total === 0 ? 0 : (page - 1) * itemsPerPage}
                   indexOfLastItem={Math.min(page * itemsPerPage, response.paginacion.total)}
@@ -482,56 +482,56 @@ export default function SeriesGarantias() {
             </>
           ) : (
             <div className="py-16 text-center">
-              <Icon icon="solar:shield-minimalistic-bold-duotone" className="mx-auto mb-3 text-5xl text-gray-300" />
-              <p className="font-semibold text-gray-500">Sin series registradas</p>
-              <p className="mt-1 text-sm text-gray-400">Usa el botón "Nueva serie" para registrar manualmente, o registra desde una compra.</p>
+              <Icon icon="solar:shield-minimalistic-bold-duotone" className="mx-auto mb-3 text-5xl text-gray-300 dark:text-slate-600" />
+              <p className="font-semibold text-gray-500 dark:text-slate-400">Sin series registradas</p>
+              <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">Usa el botón "Nueva serie" para registrar manualmente, o registra desde una compra.</p>
             </div>
           )}
         </div>
 
         {/* Panel lateral — detalle + reclamos */}
         {selectedSerie && (
-          <div className="w-80 shrink-0 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="w-80 shrink-0 rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <div className="mb-4 flex items-start justify-between">
               <div>
-                <div className="font-mono text-sm font-black text-slate-800">{selectedSerie.numeroSerie}</div>
-                <div className="mt-0.5 truncate text-xs text-slate-500">{selectedSerie.producto.descripcion}</div>
+                <div className="font-mono text-sm font-black text-slate-800 dark:text-slate-100">{selectedSerie.numeroSerie}</div>
+                <div className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{selectedSerie.producto.descripcion}</div>
               </div>
-              <button onClick={() => setSelectedSerie(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSelectedSerie(null)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <Icon icon="solar:close-circle-bold" width={20} />
               </button>
             </div>
 
             {/* Info rápida */}
-            <div className="mb-4 space-y-1.5 rounded-xl bg-slate-50 p-3 text-xs">
+            <div className="mb-4 space-y-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 p-3 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-500">Estado</span>
+                <span className="text-slate-500 dark:text-slate-400">Estado</span>
                 <span className={`rounded-full px-2 py-0.5 font-black ring-1 ${serieBadge[selectedSerie.estado]}`}>{selectedSerie.estado}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Garantía</span>
+                <span className="text-slate-500 dark:text-slate-400">Garantía</span>
                 <span className={`rounded-full px-2 py-0.5 font-black ring-1 ${garantiaBadge[selectedSerie.estadoGarantia]}`}>{selectedSerie.estadoGarantia}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Hasta</span>
-                <span className="font-semibold text-slate-700">{fmt(selectedSerie.garantiaHasta)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Hasta</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(selectedSerie.garantiaHasta)}</span>
               </div>
               {selectedSerie.comprobante && (
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Comprobante</span>
-                  <span className="font-semibold text-slate-700">{selectedSerie.comprobante.numero}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Comprobante</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedSerie.comprobante.numero}</span>
                 </div>
               )}
               {selectedSerie.comprobante?.cliente && (
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Cliente</span>
-                  <span className="max-w-[130px] truncate font-semibold text-slate-700">{selectedSerie.comprobante.cliente.nombre}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Cliente</span>
+                  <span className="max-w-[130px] truncate font-semibold text-slate-700 dark:text-slate-300">{selectedSerie.comprobante.cliente.nombre}</span>
                 </div>
               )}
               {selectedSerie.observacion && (
-                <div className="border-t border-slate-200 pt-1.5">
-                  <span className="text-slate-500">Observación: </span>
-                  <span className="text-slate-700">{selectedSerie.observacion}</span>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-1.5">
+                  <span className="text-slate-500 dark:text-slate-400">Observación: </span>
+                  <span className="text-slate-700 dark:text-slate-300">{selectedSerie.observacion}</span>
                 </div>
               )}
             </div>
@@ -539,7 +539,7 @@ export default function SeriesGarantias() {
             <button
               onClick={() => abrirConstancia(selectedSerie)}
               disabled={generatingConstanciaId === selectedSerie.id}
-              className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs font-black text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2.5 text-xs font-black text-indigo-700 dark:text-indigo-300 transition hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Icon
                 icon={generatingConstanciaId === selectedSerie.id ? 'line-md:loading-twotone-loop' : 'solar:document-text-bold-duotone'}
@@ -550,7 +550,7 @@ export default function SeriesGarantias() {
 
             {/* Reclamos */}
             <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-black text-slate-800">Reclamos / Atenciones</h4>
+              <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">Reclamos / Atenciones</h4>
               <button onClick={() => { setShowReclamoForm(true); setEditReclamo(null); setReclamoForm(EMPTY_RECLAMO); }}
                 className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-rose-700 transition">
                 <Icon icon="solar:add-circle-bold" width={13} />
@@ -559,22 +559,22 @@ export default function SeriesGarantias() {
             </div>
 
             {showReclamoForm && (
-              <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 p-3 space-y-2">
+              <div className="mb-4 rounded-xl border border-rose-100 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 p-3 space-y-2">
                 <textarea
-                  className="w-full rounded-lg border border-rose-200 bg-white px-2.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  className="w-full rounded-lg border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-slate-900 px-2.5 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   rows={3} placeholder="Descripción del problema..."
                   value={reclamoForm.descripcion}
                   onChange={(e) => setReclamoForm((p) => ({ ...p, descripcion: e.target.value }))}
                 />
                 <input
-                  className="w-full rounded-lg border border-rose-200 bg-white px-2.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  className="w-full rounded-lg border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-slate-900 px-2.5 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   placeholder="Técnico responsable (opcional)"
                   value={reclamoForm.tecnico}
                   onChange={(e) => setReclamoForm((p) => ({ ...p, tecnico: e.target.value }))}
                 />
                 {editReclamo && (
                   <select
-                    className="w-full rounded-lg border border-rose-200 bg-white px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-lg border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-slate-900 px-2.5 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-300"
                     value={reclamoForm.estadoReclamo}
                     onChange={(e) => setReclamoForm((p) => ({ ...p, estadoReclamo: e.target.value as EstadoReclamo }))}>
                     {estadoReclamoOptions.map((o) => <option key={o.id} value={o.id}>{o.value}</option>)}
@@ -586,7 +586,7 @@ export default function SeriesGarantias() {
                     {savingReclamo ? 'Guardando...' : editReclamo ? 'Actualizar' : 'Registrar'}
                   </button>
                   <button onClick={() => { setShowReclamoForm(false); setEditReclamo(null); }}
-                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                     Cancelar
                   </button>
                 </div>
@@ -596,11 +596,11 @@ export default function SeriesGarantias() {
             {loadingReclamos ? (
               <div className="flex justify-center py-6"><Icon icon="line-md:loading-twotone-loop" className="text-2xl text-indigo-500" /></div>
             ) : reclamos.length === 0 ? (
-              <p className="py-4 text-center text-xs text-slate-400">Sin reclamos registrados</p>
+              <p className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">Sin reclamos registrados</p>
             ) : (
               <div className="space-y-2 overflow-y-auto max-h-72">
                 {reclamos.map((r) => (
-                  <div key={r.id} className="rounded-xl border border-gray-100 p-3">
+                  <div key={r.id} className="rounded-xl border border-gray-100 dark:border-slate-800 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${reclamoBadge[r.estadoReclamo]}`}>{r.estadoReclamo}</span>
                       <div className="flex gap-1">
@@ -609,10 +609,10 @@ export default function SeriesGarantias() {
                         <button onClick={() => setReclamoToDelete(r)} className="text-rose-400 hover:text-rose-600"><Icon icon="solar:trash-bin-2-linear" width={14} /></button>
                       </div>
                     </div>
-                    <p className="mt-1.5 text-xs text-slate-700">{r.descripcion}</p>
-                    {r.tecnico && <p className="mt-1 text-[11px] text-slate-500">Técnico: {r.tecnico}</p>}
+                    <p className="mt-1.5 text-xs text-slate-700 dark:text-slate-300">{r.descripcion}</p>
+                    {r.tecnico && <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Técnico: {r.tecnico}</p>}
                     {r.resolucion && <p className="mt-1 text-[11px] text-emerald-600">Resolución: {r.resolucion}</p>}
-                    <p className="mt-1 text-[10px] text-slate-400">{fmt(r.fechaReclamo)}</p>
+                    <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">{fmt(r.fechaReclamo)}</p>
                   </div>
                 ))}
               </div>
@@ -624,10 +624,10 @@ export default function SeriesGarantias() {
       {/* Modal nueva / editar serie */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-black text-slate-900">{editSerie ? 'Editar serie' : 'Registrar nueva serie'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">{editSerie ? 'Editar serie' : 'Registrar nueva serie'}</h2>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <Icon icon="solar:close-circle-bold" width={22} />
               </button>
             </div>
@@ -635,35 +635,35 @@ export default function SeriesGarantias() {
             <div className="space-y-4">
               {!editSerie && (
                 <div className="relative" ref={productoDropdownRef}>
-                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500">Producto *</label>
+                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Producto *</label>
                   {productoSelected ? (
-                    <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5">
+                    <div className="flex items-center gap-2 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2.5">
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-slate-800 truncate">{productoSelected.descripcion}</div>
-                        <div className="text-[11px] font-mono text-slate-400 uppercase">{productoSelected.codigo}</div>
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{productoSelected.descripcion}</div>
+                        <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500 uppercase">{productoSelected.codigo}</div>
                       </div>
                       <button type="button" onClick={() => { setProductoSelected(null); setProductoSearch(''); }}
-                        className="text-slate-400 hover:text-rose-500 transition">
+                        className="text-slate-400 dark:text-slate-500 hover:text-rose-500 transition">
                         <Icon icon="solar:close-circle-bold" width={18} />
                       </button>
                     </div>
                   ) : (
                     <>
                       <input
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                        className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         placeholder="Buscar producto por nombre o código..."
                         value={productoSearch}
                         onChange={(e) => { setProductoSearch(e.target.value); setShowProductoDropdown(true); }}
                         onFocus={() => productoOptions.length > 0 && setShowProductoDropdown(true)}
                       />
                       {showProductoDropdown && productoOptions.length > 0 && (
-                        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden">
+                        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
                           {productoOptions.map((p) => (
                             <button key={p.id} type="button"
-                              className="w-full px-3 py-2.5 text-left hover:bg-indigo-50 transition border-b border-slate-50 last:border-0"
+                              className="w-full px-3 py-2.5 text-left hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition border-b border-slate-50 dark:border-slate-800 last:border-0"
                               onClick={() => { setProductoSelected(p); setProductoSearch(''); setShowProductoDropdown(false); setForm((f) => ({ ...f, productoId: String(p.id) })); }}>
-                              <div className="text-sm font-bold text-slate-800">{p.descripcion}</div>
-                              <div className="text-[11px] font-mono text-slate-400 uppercase">{p.codigo} · ID:{p.id}</div>
+                              <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{p.descripcion}</div>
+                              <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500 uppercase">{p.codigo} · ID:{p.id}</div>
                             </button>
                           ))}
                         </div>
@@ -675,14 +675,14 @@ export default function SeriesGarantias() {
 
               {!editSerie && (
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500">Series *</label>
+                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Series *</label>
                   <textarea rows={4}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-mono font-bold uppercase text-slate-800 placeholder:font-normal placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm font-mono font-bold uppercase text-slate-800 dark:text-slate-100 placeholder:font-normal placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-indigo-300"
                     placeholder={"Una serie por línea o separadas por coma:\nSN123ABC\nSN456DEF\nSN789GHI"}
                     value={bulkSeries}
                     onChange={(e) => setBulkSeries(e.target.value.toUpperCase())}
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
                     {bulkSeries.split(/[\n,]+/).filter((s) => s.trim()).length > 0
                       ? `${bulkSeries.split(/[\n,]+/).filter((s) => s.trim()).length} serie(s) a registrar`
                       : 'Ingresa los números de serie separados por salto de línea o coma'}
@@ -692,8 +692,8 @@ export default function SeriesGarantias() {
 
               {editSerie && (
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500">Estado</label>
-                  <select className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Estado</label>
+                  <select className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                     value={(form as any).estado ?? editSerie.estado}
                     onChange={(e) => setForm((p) => ({ ...p, estado: e.target.value } as any))}>
                     {estadoOptions.filter((o) => o.id !== 'TODOS').map((o) => <option key={o.id} value={o.id}>{o.value}</option>)}
@@ -702,18 +702,18 @@ export default function SeriesGarantias() {
               )}
 
               <div>
-                <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500">Meses de garantía</label>
+                <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Meses de garantía</label>
                 <input type="number" min={0} max={120}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   placeholder="Ej. 12"
                   value={form.garantiaMeses}
                   onChange={(e) => setForm((p) => ({ ...p, garantiaMeses: e.target.value }))} />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500">Observación</label>
+                <label className="mb-1.5 block text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Observación</label>
                 <textarea rows={2}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   placeholder="Notas adicionales..."
                   value={form.observacion}
                   onChange={(e) => setForm((p) => ({ ...p, observacion: e.target.value }))} />
@@ -722,7 +722,7 @@ export default function SeriesGarantias() {
 
             <div className="mt-6 flex gap-3">
               <button onClick={() => setShowModal(false)}
-                className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition">
+                className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 Cancelar
               </button>
               <button onClick={guardarSerie} disabled={saving}

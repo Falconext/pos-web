@@ -3,6 +3,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useUsersStore } from '@/zustand/users';
 import { IUsuario, IUsersViewModelState } from './UsersModel';
 import { MODULOS_SISTEMA } from '@/zustand/users';
+import { useAuthStore } from '@/zustand/auth';
+import useAlertStore from '@/zustand/alert';
 
 export const useUsersViewModel = () => {
     const {
@@ -12,6 +14,12 @@ export const useUsersViewModel = () => {
         getAllUsers,
         toggleUserState,
     } = useUsersStore();
+    const { auth } = useAuthStore();
+    const { alert } = useAlertStore();
+
+    // Límite de usuarios del plan de la empresa (0/undefined = ilimitado)
+    const limiteUsuarios = auth?.empresa?.plan?.limiteUsuarios ?? 0;
+    const limiteAlcanzado = limiteUsuarios > 0 && totalUsuarios >= limiteUsuarios;
 
     const [state, setState] = useState<IUsersViewModelState>({
         currentPage: 1,
@@ -34,6 +42,13 @@ export const useUsersViewModel = () => {
     }, [state.currentPage, state.itemsPerPage, debouncedSearchTerm, getAllUsers]);
 
     const handleCreateUser = () => {
+        if (limiteAlcanzado) {
+            alert(
+                `Has alcanzado el máximo de usuarios de tu plan (${limiteUsuarios}). No puedes crear más usuarios; mejora tu plan para ampliar el límite.`,
+                'warning',
+            );
+            return;
+        }
         setState(prev => ({
             ...prev,
             selectedUser: null,
@@ -118,6 +133,8 @@ export const useUsersViewModel = () => {
         // State
         usuarios,
         totalUsuarios,
+        limiteUsuarios,
+        limiteAlcanzado,
         loading,
         currentPage: state.currentPage,
         itemsPerPage: state.itemsPerPage,
