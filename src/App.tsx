@@ -96,6 +96,7 @@ import ClientesLogisticaPage from './features/admin/logistica/clientes/ClientesL
 import PedidosLogisticaPage from './features/admin/logistica/pedidos/PedidosLogisticaPage'
 import DespachosPage from './features/admin/logistica/despachos/DespachosPage'
 import TrackingPage from './features/admin/logistica/tracking/TrackingPage'
+import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -221,6 +222,7 @@ function App() {
           <Route path="logistica/pedidos" element={<PedidosLogisticaPage />} />
           <Route path="logistica/despachos" element={<DespachosPage />} />
           <Route path="logistica/tracking" element={<TrackingPage />} />
+          <Route path="logistica/integraciones" element={<IntegracionesPage />} />
 
           {/* Rutas de ADMIN_SISTEMA */}
 

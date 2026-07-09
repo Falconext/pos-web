@@ -127,6 +127,7 @@ export const LEGACY_SUBMODULE_ROUTES: Record<string, string> = {
   'logistica:almacenes': '/administrador/logistica/almacenes',
   'logistica:zonas': '/administrador/logistica/zonas',
   'logistica:clientes': '/administrador/logistica/clientes',
+  'logistica:integraciones': '/administrador/logistica/integraciones',
 };
 
 export const MODULE_META: Record<string, ModuleMeta> = {
@@ -272,9 +273,11 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   logistica: {
-    condition: () => false, // Ocultar temporalmente a pedido del usuario
     navRoute: () => '/administrador/logistica/dashboard',
     pathPrefix: () => '/administrador/logistica',
+    extraItems: () => [
+      { codigo: 'logistica:integraciones', nombre: 'Integraciones', ruta: '/administrador/logistica/integraciones' },
+    ],
   },
 };
 

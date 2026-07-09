@@ -36,11 +36,11 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [blobLoading, setBlobLoading] = useState<'ticket' | 'label' | null>(null);
+    const [retryKey, setRetryKey] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
-        // Reintento transparente: la primera consulta a Shalom a veces falla (token/cold-start).
-        const fetchTrack = async (attempt = 1): Promise<void> => {
+        const fetchTrack = async (): Promise<void> => {
             try {
                 const res = await apiClient.post('/shalom/track', { orderNumber, orderCode });
                 if (cancelled) return;
@@ -48,11 +48,6 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
                 setError('');
             } catch (err: any) {
                 if (cancelled) return;
-                if (attempt < 3) {
-                    await new Promise(r => setTimeout(r, 700));
-                    if (!cancelled) return fetchTrack(attempt + 1);
-                    return;
-                }
                 setError(err?.response?.data?.message || 'No se pudo obtener el tracking. Verifica el N° de orden.');
             }
             if (!cancelled) setLoading(false);
@@ -61,7 +56,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
         setError('');
         void fetchTrack();
         return () => { cancelled = true; };
-    }, [orderNumber, orderCode]);
+    }, [orderNumber, orderCode, retryKey]);
 
     const blobErrorMsg = async (e: any, fallback: string): Promise<string> => {
         try {
@@ -74,7 +69,9 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
     const openTicket = async () => {
         setBlobLoading('ticket');
         try {
-            const res = await apiClient.get(`/shalom/ticket/${orderNumber}/${orderCode}`, { responseType: 'blob' });
+            const oseId = trackData?.ose_id ?? trackData?.order?.ose_id;
+            const qs = oseId ? `?oseId=${encodeURIComponent(oseId)}` : '';
+            const res = await apiClient.get(`/shalom/ticket/${orderNumber}/${orderCode}${qs}`, { responseType: 'blob' });
             openBlob(res.data, `voucher-${orderNumber}.pdf`, 'application/pdf');
         } catch (e) { useAlertStore.getState().alert(await blobErrorMsg(e, 'No se pudo obtener el ticket'), 'error'); }
         finally { setBlobLoading(null); }
@@ -83,7 +80,9 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
     const openLabel = async () => {
         setBlobLoading('label');
         try {
-            const res = await apiClient.get(`/shalom/label/${orderNumber}/${orderCode}`, { responseType: 'blob' });
+            const oseId = trackData?.ose_id ?? trackData?.order?.ose_id;
+            const qs = oseId ? `?oseId=${encodeURIComponent(oseId)}` : '';
+            const res = await apiClient.get(`/shalom/label/${orderNumber}/${orderCode}${qs}`, { responseType: 'blob' });
             openBlob(res.data, `etiqueta-${orderNumber}.pdf`, 'application/pdf');
         } catch (e) { useAlertStore.getState().alert(await blobErrorMsg(e, 'No se pudo obtener la etiqueta'), 'error'); }
         finally { setBlobLoading(null); }
@@ -118,7 +117,19 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
                             <span className="text-sm">Consultando Shalom...</span>
                         </div>
                     )}
-                    {error && <p className="text-sm text-red-500 text-center py-6">{error}</p>}
+                    {error && (
+                        <div className="text-center py-6 space-y-3">
+                            <p className="text-sm text-red-500">{error}</p>
+                            <button
+                                type="button"
+                                onClick={() => setRetryKey(k => k + 1)}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                <Icon icon="solar:refresh-linear" />
+                                Reintentar
+                            </button>
+                        </div>
+                    )}
 
                     {search && !loading && (
                         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 text-xs space-y-1.5">
