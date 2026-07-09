@@ -1028,6 +1028,7 @@ export const useFacturacionViewModel = () => {
 
             const qtyActualEnCarrito = getCartQtyByProductId(Number(producto.id));
             const stockDisponible = Number(producto?.stock || 0);
+            // Los servicios no tienen stock: solo se valida stock para productos físicos.
             if (!esServicioTecnico(producto) && qtyActualEnCarrito + qtyRequerida > stockDisponible) {
                 return useAlertStore.getState().alert(
                     `Stock insuficiente para ${String(producto.descripcion || "producto").toUpperCase()} al agregar el kit`,

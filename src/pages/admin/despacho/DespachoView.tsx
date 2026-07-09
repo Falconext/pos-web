@@ -176,13 +176,13 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
                 <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <button type="button" onClick={openTicket} disabled={blobLoading === 'ticket'}
                         className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-60">
-                        {blobLoading === 'ticket' ? <Icon icon="eos-icons:loading" className="animate-spin" /> : <Icon icon="solar:ticket-bold-duotone" />}
-                        Ver ticket
+                        {blobLoading === 'ticket' ? <Icon icon="eos-icons:loading" className="animate-spin" /> : <Icon icon="solar:bill-list-bold-duotone" />}
+                        Comprobante
                     </button>
                     <button type="button" onClick={openLabel} disabled={blobLoading === 'label'}
                         className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors disabled:opacity-60">
                         {blobLoading === 'label' ? <Icon icon="eos-icons:loading" className="animate-spin" /> : <Icon icon="solar:tag-price-bold-duotone" />}
-                        Etiqueta PDF
+                        Rótulo
                     </button>
                 </div>
             </div>

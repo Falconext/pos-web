@@ -259,10 +259,24 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                 {/* Credenciales */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <Field label="Clave de envío">
-                                        <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío Shalom" />
+                                        <input
+                                            type="text"
+                                            value={envioData.claveEnvio}
+                                            onChange={e => set('claveEnvio', e.target.value)}
+                                            placeholder="Clave envío Shalom"
+                                            autoComplete="off"
+                                            className={inp}
+                                        />
                                     </Field>
                                     <Field label="Clave de orden">
-                                        <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="Clave orden Shalom" />
+                                        <input
+                                            type="text"
+                                            value={envioData.claveOrden}
+                                            onChange={e => set('claveOrden', e.target.value)}
+                                            placeholder="Clave orden Shalom"
+                                            autoComplete="off"
+                                            className={inp}
+                                        />
                                     </Field>
                                 </div>
                                 {/* N° Orden + Tipo paquetería */}

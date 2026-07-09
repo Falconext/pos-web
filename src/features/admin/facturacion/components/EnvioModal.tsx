@@ -229,10 +229,24 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 {/* Credenciales */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <Field label="Clave de envío">
-                                        <PasswordField value={envioData.claveEnvio} onChange={v => set('claveEnvio', v)} placeholder="Clave envío Shalom" />
+                                        <input
+                                            type="text"
+                                            value={envioData.claveEnvio}
+                                            onChange={e => set('claveEnvio', e.target.value)}
+                                            placeholder="Clave envío Shalom"
+                                            autoComplete="off"
+                                            className={inp}
+                                        />
                                     </Field>
                                     <Field label="Código Shalom">
-                                        <PasswordField value={envioData.claveOrden} onChange={v => set('claveOrden', v)} placeholder="37N7" />
+                                        <input
+                                            type="text"
+                                            value={envioData.claveOrden}
+                                            onChange={e => set('claveOrden', e.target.value)}
+                                            placeholder="37N7"
+                                            autoComplete="off"
+                                            className={inp}
+                                        />
                                     </Field>
                                 </div>
 
