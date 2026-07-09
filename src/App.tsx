@@ -86,6 +86,17 @@ import ReservasPage from './pages/admin/reservas/ReservasPage'
 import VehiculosPage from './pages/admin/vehiculos/Vehiculos'
 import ContratosVehicularesPage from './pages/admin/vehiculos/ContratosVehiculares'
 
+// Módulo Logística
+import LogisticaDashboard from './features/admin/logistica/dashboard/LogisticaDashboard'
+import ConductoresPage from './features/admin/logistica/conductores/ConductoresPage'
+import VehiculosLogisticaPage from './features/admin/logistica/vehiculos/VehiculosPage'
+import AlmacenesPage from './features/admin/logistica/almacenes/AlmacenesPage'
+import ZonasPage from './features/admin/logistica/zonas/ZonasPage'
+import ClientesLogisticaPage from './features/admin/logistica/clientes/ClientesLogisticaPage'
+import PedidosLogisticaPage from './features/admin/logistica/pedidos/PedidosLogisticaPage'
+import DespachosPage from './features/admin/logistica/despachos/DespachosPage'
+import TrackingPage from './features/admin/logistica/tracking/TrackingPage'
+
 function App() {
   console.log('App initialized - Checkpoint')
   return (
@@ -199,6 +210,17 @@ function App() {
           {/* Módulo Vehicular (GPS / Alarmas / Seguridad Electrónica) */}
           <Route path="vehiculos" element={<VehiculosPage />} />
           <Route path="vehiculos/contratos" element={<ContratosVehicularesPage />} />
+
+          {/* Módulo Logística */}
+          <Route path="logistica/dashboard" element={<LogisticaDashboard />} />
+          <Route path="logistica/conductores" element={<ConductoresPage />} />
+          <Route path="logistica/vehiculos" element={<VehiculosLogisticaPage />} />
+          <Route path="logistica/almacenes" element={<AlmacenesPage />} />
+          <Route path="logistica/zonas" element={<ZonasPage />} />
+          <Route path="logistica/clientes" element={<ClientesLogisticaPage />} />
+          <Route path="logistica/pedidos" element={<PedidosLogisticaPage />} />
+          <Route path="logistica/despachos" element={<DespachosPage />} />
+          <Route path="logistica/tracking" element={<TrackingPage />} />
 
           {/* Rutas de ADMIN_SISTEMA */}
 

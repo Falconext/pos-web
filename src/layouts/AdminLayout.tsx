@@ -159,8 +159,27 @@ export default function AdminLayout() {
   // Sidebar dinámico: módulos y submódulos del plan, ordenados
   const planModules = useMemo(() => {
     const mods = auth?.empresa?.plan?.modulosAsignados ?? [];
-    return [...mods].sort((a, b) => (a.modulo.orden ?? 0) - (b.modulo.orden ?? 0));
-  }, [auth?.empresa?.plan?.modulosAsignados]);
+    const sorted = [...mods].sort((a, b) => (a.modulo.orden ?? 0) - (b.modulo.orden ?? 0));
+    
+    // Inyectar módulo Logística temporalmente para el MVP
+    if (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') {
+      if (!sorted.find(m => m.modulo.codigo === 'logistica')) {
+        sorted.push({
+          modulo: {
+            id: 9999,
+            codigo: 'logistica',
+            nombre: 'Logística',
+            icono: 'solar:map-arrow-bold-duotone',
+            ruta: '/administrador/logistica/dashboard',
+            orden: 99,
+            descripcion: 'Módulo de logística'
+          }
+        });
+      }
+    }
+    
+    return sorted;
+  }, [auth?.empresa?.plan?.modulosAsignados, auth?.rol]);
 
   // Comisiones (Mis Comisiones / Comisiones del equipo) viven dentro del dashboard
   // de finanzas, que pertenece al módulo "mi-negocio" (actual) o "reportes" (legacy).
@@ -557,9 +576,9 @@ export default function AdminLayout() {
 
         {/* Divider y configuración abajo */}
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">
-          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración Settings') }} to="/administrador/perfil" className={() => theme.inactiveLink} title="Settings">
+          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración') }} to="/administrador/perfil" className={() => theme.inactiveLink} title="Configuración">
             <Icon icon="solar:settings-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
-            {!isSidebarCollapsed && <span>Settings</span>}
+            {!isSidebarCollapsed && <span>Configuración</span>}
           </NavLink>
           <button onClick={() => { setIsSidebarOpen(false); logout() }} className={theme.inactiveLink} title="Logout">
             <Icon icon="solar:logout-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px] text-red-400'}`} />

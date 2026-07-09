@@ -80,6 +80,7 @@ export const LEGACY_MODULE_ROUTES: Record<string, string> = {
   marketing: '/administrador/mi-negocio/marketing/campanas',
   vehiculos: '/administrador/vehiculos',
   'contratos-vehiculares': '/administrador/vehiculos/contratos',
+  logistica: '/administrador/logistica/dashboard',
 };
 
 // Fallback routes for submodules that don't have ruta set in DB yet
@@ -117,6 +118,15 @@ export const LEGACY_SUBMODULE_ROUTES: Record<string, string> = {
   'tienda:despacho': '/administrador/ventas',
   'tienda:repartidores': '/administrador/repartidores',
   'tienda:vendedores': '/administrador/usuarios/vendedores',
+  'logistica:dashboard': '/administrador/logistica/dashboard',
+  'logistica:pedidos': '/administrador/logistica/pedidos',
+  'logistica:despachos': '/administrador/logistica/despachos',
+  'logistica:tracking': '/administrador/logistica/tracking',
+  'logistica:conductores': '/administrador/logistica/conductores',
+  'logistica:vehiculos': '/administrador/logistica/vehiculos',
+  'logistica:almacenes': '/administrador/logistica/almacenes',
+  'logistica:zonas': '/administrador/logistica/zonas',
+  'logistica:clientes': '/administrador/logistica/clientes',
 };
 
 export const MODULE_META: Record<string, ModuleMeta> = {
@@ -259,6 +269,12 @@ export const MODULE_META: Record<string, ModuleMeta> = {
       { codigo: 'vehiculos:lista', nombre: 'Vehículos registrados', ruta: '/administrador/vehiculos' },
       { codigo: 'vehiculos:contratos', nombre: 'Contratos / Suscripciones', ruta: '/administrador/vehiculos/contratos' },
     ],
+  },
+
+  logistica: {
+    condition: () => false, // Ocultar temporalmente a pedido del usuario
+    navRoute: () => '/administrador/logistica/dashboard',
+    pathPrefix: () => '/administrador/logistica',
   },
 };
 

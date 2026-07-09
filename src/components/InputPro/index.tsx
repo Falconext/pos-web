@@ -1,7 +1,7 @@
 import { ChangeEvent, FC, FocusEvent, useEffect, useRef, useState, RefObject } from "react";
 
 interface IInput {
-  type?: "text" | "date" | "email" | "password" | "number" | "textarea";
+  type?: "text" | "date" | "time" | "email" | "password" | "number" | "textarea";
   mode?: string;
   name: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -31,6 +31,7 @@ interface IInput {
   item?: string;
   searching?: boolean;
   autoFocus?: boolean;
+  register?: any;
 }
 
 const InputPro: FC<IInput> = ({
@@ -61,6 +62,7 @@ const InputPro: FC<IInput> = ({
   onCopy,
   onSelect,
   onlyNumbers,
+  register,
 }) => {
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const [localValue, setLocalValue] = useState<string | number>(value);
@@ -127,8 +129,14 @@ const InputPro: FC<IInput> = ({
       },
       step,
       onCopy,
-      onBlur: handleBlur,
-      onChange: handleInputChange,
+      onBlur: (e: any) => {
+        handleBlur(e);
+        if (register && register.onBlur) register.onBlur(e);
+      },
+      onChange: (e: any) => {
+        handleInputChange(e);
+        if (register && register.onChange) register.onChange(e);
+      },
       value: localValue,
     };
 
@@ -138,7 +146,7 @@ const InputPro: FC<IInput> = ({
       ...baseProps,
       type,
       className: className ? `${defaultInputClasses} ${className}` : defaultInputClasses,
-      ref: (reference || refInput || inputRef) as RefObject<HTMLInputElement>,
+      ref: (register?.ref || reference || refInput || inputRef) as any,
       onClick: onClick as React.MouseEventHandler<HTMLInputElement> | undefined,
       onSelect: onSelect as React.ReactEventHandler<HTMLInputElement> | undefined,
     };
@@ -147,7 +155,7 @@ const InputPro: FC<IInput> = ({
     const textareaProps = {
       ...baseProps,
       className: className ? className : `${commonClasses} !h-24 py-2.5 resize-none align-top`,
-      ref: (reference || refInput || inputRef) as RefObject<HTMLTextAreaElement>,
+      ref: (register?.ref || reference || refInput || inputRef) as any,
       rows: rows, // Solo se pasa si está definido
     };
 
@@ -171,6 +179,7 @@ const InputPro: FC<IInput> = ({
         return <textarea {...textareaProps} />;
       case "text":
       case "date":
+      case "time":
       case "email":
       case "password":
       case "number":

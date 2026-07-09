@@ -206,21 +206,49 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
     const [markingEntregado, setMarkingEntregado] = useState(false);
 
     useEffect(() => {
-        apiClient.post('/shalom/track', { orderNumber, orderCode })
-            .then(res => {
-                const payload = res.data?.data ?? res.data;
-                setTrackData(payload);
-            })
-            .catch((err) => setError(err?.response?.data?.message || 'No se pudo obtener el tracking. Verifica el N° de orden.'))
-            .finally(() => setLoading(false));
+        let cancelled = false;
+        // La primera consulta a Shalom a veces falla (token de sesión expirado del
+        // lado del proveedor / cold-start). Reintentamos de forma transparente para
+        // que el usuario no tenga que volver a abrir el modal.
+        const fetchTrack = async (attempt = 1): Promise<void> => {
+            try {
+                const res = await apiClient.post('/shalom/track', { orderNumber, orderCode });
+                if (cancelled) return;
+                setTrackData(res.data?.data ?? res.data);
+                setError('');
+            } catch (err: any) {
+                if (cancelled) return;
+                if (attempt < 3) {
+                    await new Promise(r => setTimeout(r, 700));
+                    if (!cancelled) return fetchTrack(attempt + 1);
+                    return;
+                }
+                setError(err?.response?.data?.message || 'No se pudo obtener el tracking. Verifica el N° de orden.');
+            }
+            if (!cancelled) setLoading(false);
+        };
+        setLoading(true);
+        setError('');
+        void fetchTrack();
+        return () => { cancelled = true; };
     }, [orderNumber, orderCode]);
+
+    // Cuando responseType='blob', el error del backend también llega como Blob:
+    // lo leemos para mostrar el motivo real (no un genérico).
+    const blobErrorMsg = async (e: any, fallback: string): Promise<string> => {
+        try {
+            const blob = e?.response?.data;
+            if (blob instanceof Blob) { const txt = await blob.text(); return JSON.parse(txt)?.message || fallback; }
+        } catch { /* no-op */ }
+        return e?.response?.data?.message || fallback;
+    };
 
     const openTicket = async () => {
         setBlobLoading('ticket');
         try {
             const res = await apiClient.get(`/shalom/ticket/${orderNumber}/${orderCode}`, { responseType: 'blob' });
             openBlob(res.data, `voucher-${orderNumber}.pdf`, 'application/pdf');
-        } catch { useAlertStore.getState().alert('No se pudo obtener el ticket', 'error'); }
+        } catch (e) { useAlertStore.getState().alert(await blobErrorMsg(e, 'No se pudo obtener el ticket'), 'error'); }
         finally { setBlobLoading(null); }
     };
 
@@ -229,7 +257,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
         try {
             const res = await apiClient.get(`/shalom/label/${orderNumber}/${orderCode}`, { responseType: 'blob' });
             openBlob(res.data, `etiqueta-${orderNumber}.pdf`, 'application/pdf');
-        } catch { useAlertStore.getState().alert('No se pudo obtener la etiqueta', 'error'); }
+        } catch (e) { useAlertStore.getState().alert(await blobErrorMsg(e, 'No se pudo obtener la etiqueta'), 'error'); }
         finally { setBlobLoading(null); }
     };
 

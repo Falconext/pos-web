@@ -11,8 +11,10 @@ interface IProps {
     name: string
     autoComplete?: string
     onClick?: any
+    onBlur?: any
     readOnly?: any
-    icon: string
+    icon?: string
+    step?: string | number
     disabled?: boolean
     ref?: any
     isIcon?: boolean
@@ -39,7 +41,9 @@ const Input = ({
     isIcon,
     icon,
     error,
-    form, // Añade esta prop
+    form,
+    step,
+    onBlur,
 }: IProps) => {
     const normalizedError = typeof error === 'string' ? error : '';
 
@@ -50,7 +54,7 @@ const Input = ({
                     isIcon && (
                         <div className="absolute top-3.5 left-3">
                             <div>
-                                <Icon icon={icon} width="20" height="20" />
+                                <Icon icon={icon || ""} width="20" height="20" />
                             </div>
                         </div>
                     )
@@ -75,6 +79,8 @@ const Input = ({
                             defaultValue={value || ""} // Usa value en lugar de defaultValue
                             onChange={onChange}
                             max={max}
+                            step={step}
+                            onBlur={onBlur}
                             onKeyDown={onKeyDown}
                         />
                     )
@@ -96,6 +102,8 @@ const Input = ({
                             value={value} // Usa value en lugar de defaultValue
                             onChange={onChange}
                             max={max}
+                            step={step}
+                            onBlur={onBlur}
                             onKeyDown={onKeyDown}
                         />
                     )
@@ -118,6 +126,8 @@ const Input = ({
                             value={value} // Usa value en lugar de defaultValue
                             onChange={onChange}
                             max={max}
+                            step={step}
+                            onBlur={onBlur}
                             onKeyDown={onKeyDown}
                         />
                     )
