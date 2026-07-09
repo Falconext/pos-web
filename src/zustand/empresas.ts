@@ -171,6 +171,8 @@ interface UpdateEmpresaDto {
   whatsappPhoneNumberId?: string | null;
   whatsappBusinessId?: string | null;
   whatsappActivo?: boolean;
+  shalomEmail?: string;
+  shalomPassword?: string;
 }
 
 interface ListEmpresaDto {
@@ -463,16 +465,32 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
 
       set({ miEmpresa: payload, loading: false });
 
-      // Mantener sincronizado auth.empresa sin llamada adicional al backend
+      // Mantener sincronizado auth.empresa sin llamada adicional al backend.
+      // OJO: PUT /empresa/mia puede devolver `plan` SIN `modulosAsignados`/
+      // `subModulosAsignados`. Un merge superficial borraría esos arrays y el
+      // sidebar (que se arma desde plan.modulosAsignados) quedaría solo con
+      // Dashboard. Por eso preservamos los módulos del plan previo.
       useAuthStore.setState((state: any) => {
         if (!state?.auth) return state;
+        const prevEmpresa = state.auth.empresa || {};
+        const prevPlan = prevEmpresa.plan || {};
+        const nextPlan = (payload as any)?.plan;
+        const mergedPlan = nextPlan
+          ? {
+              ...prevPlan,
+              ...nextPlan,
+              modulosAsignados: nextPlan.modulosAsignados ?? prevPlan.modulosAsignados,
+              subModulosAsignados: nextPlan.subModulosAsignados ?? prevPlan.subModulosAsignados,
+            }
+          : prevPlan;
         return {
           ...state,
           auth: {
             ...state.auth,
             empresa: {
-              ...(state.auth.empresa || {}),
+              ...prevEmpresa,
               ...(payload || {}),
+              plan: mergedPlan,
             },
           },
         };

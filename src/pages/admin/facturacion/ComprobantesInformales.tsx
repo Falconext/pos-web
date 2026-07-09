@@ -52,7 +52,7 @@ const ComprobantesInformales = () => {
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
     const { usuarios, getAllUsers } = useUsersStore();
-    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, completePay }: IInvoicesState = useInvoiceStore();
+    const { getAllInvoices, totalInvoices, invoices, getInvoice, invoice, resetInvoice, cancelInvoice, discardInvoice, completePay }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
     const paymentFlow = usePaymentFlow();
 
@@ -62,6 +62,8 @@ const ComprobantesInformales = () => {
     const [formValues, setFormValues] = useState<any>({});
     const [isOpenModal, setIsOpenModal] = useState(false);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
+    const [isOpenModalDelete, setIsOpenModalDelete] = useState(false);
+    const [deletingInvoice, setDeletingInvoice] = useState(false);
     const [isOpenModalPagoParcial, setIsOpenModalPagoParcial] = useState(false);
     const [fechaInicio, setFechaInicio] = useState<string>(moment().startOf('month').format("YYYY-MM-DD"));
     const [fechaFin, setFechaFin] = useState<string>(moment().endOf('month').format("YYYY-MM-DD"));
@@ -208,6 +210,23 @@ const ComprobantesInformales = () => {
     const handleAnular = (data: any) => {
         setFormValues(data);
         setIsOpenModalConfirm(true);
+    }
+
+    // Eliminar (hard-delete): borra el comprobante y libera su correlativo,
+    // a diferencia de "Anular" que lo deja en estado ANULADO ocupando el número.
+    const handleEliminar = (data: any) => {
+        setFormValues(data);
+        setIsOpenModalDelete(true);
+    }
+    const confirmDeleteInvoice = async () => {
+        if (deletingInvoice) return;
+        setDeletingInvoice(true);
+        try {
+            await discardInvoice(formValues?.id);
+        } finally {
+            setDeletingInvoice(false);
+            setIsOpenModalDelete(false);
+        }
     }
 
     const handleCompletePay = async (data: any) => {
@@ -650,6 +669,7 @@ const ComprobantesInformales = () => {
             </div>
 
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
+            {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteInvoice} confirmLoading={deletingInvoice} confirmText="Eliminar" information={`¿Eliminar la nota de venta ${formValues?.serie ?? ''}-${formValues?.correlativo ?? ''}? Se borrará de forma permanente y su correlativo quedará disponible para volver a usarse. Esta acción no se puede deshacer.`} isOpenModal setIsOpenModal={() => setIsOpenModalDelete(false)} title="Eliminar nota de venta" />}
 
             {(isOpenModalPagoParcial && paymentFlow.payment) && (
                 <ModalPaymentUnified
@@ -777,16 +797,21 @@ const ComprobantesInformales = () => {
                                     <span>Ver despacho</span>
                                 </button>
                             )}
-                            {row.estadoEnvioSunat !== 'ANULADO' && (
-                                <>
-                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                            <>
+                                <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                {row.estadoEnvioSunat !== 'ANULADO' && (
                                     <button type="button" onClick={() => { handleAnular(row); handleCloseMenu(); }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30">
                                         <Icon icon="mdi:cancel" width={16} height={16} />
                                         <span>Anular</span>
                                     </button>
-                                </>
-                            )}
+                                )}
+                                <button type="button" onClick={() => { handleEliminar(row); handleCloseMenu(); }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30">
+                                    <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} />
+                                    <span>Eliminar</span>
+                                </button>
+                            </>
                             {item?.comprobante === 'NOTA DE VENTA' && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />

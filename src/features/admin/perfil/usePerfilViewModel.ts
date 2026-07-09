@@ -18,7 +18,7 @@ interface WhatsAppSettingsForm {
 interface PerfilData {
     id: number; nombre: string; email: string; rol: string; celular?: string; telefono?: string;
     empresaId: number; estado: string; fechaCreacion: string; fechaActualizacion: string;
-    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; directorTecnico?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
+    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; directorTecnico?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
 }
 
 const whatsappFormFromPerfil = (perfil: PerfilData): WhatsAppSettingsForm => ({
@@ -46,6 +46,8 @@ export const usePerfilViewModel = () => {
         apiToken: '',
         activo: true,
     });
+    const [savingShalomConfig, setSavingShalomConfig] = useState(false);
+    const [shalomForm, setShalomForm] = useState({ email: '', password: '' });
     const [usageStats, setUsageStats] = useState<any>(null);
     const fefoToggleInFlight = useRef(false);
     const barcodeToggleInFlight = useRef(false);
@@ -60,6 +62,7 @@ export const usePerfilViewModel = () => {
             if (response.code === 1) {
                 setPerfil(response.data);
                 setWhatsAppForm(whatsappFormFromPerfil(response.data));
+                setShalomForm({ email: response.data?.empresa?.shalomEmail ?? '', password: '' });
             }
             else alert('Error al cargar el perfil', 'error');
         } catch { alert('Error al cargar el perfil', 'error'); }
@@ -274,6 +277,53 @@ export const usePerfilViewModel = () => {
         }
     };
 
+    // ── Conexión Shalom Pro (courier) ────────────────────────────────────────
+    const updateShalomField = (field: 'email' | 'password', value: string) => {
+        setShalomForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const shalomConfigDirty = useMemo(() => {
+        if (!perfil) return false;
+        const emailChanged = shalomForm.email.trim() !== String(perfil.empresa?.shalomEmail ?? '').trim();
+        const passwordChanged = shalomForm.password.trim().length > 0;
+        return emailChanged || passwordChanged;
+    }, [perfil, shalomForm]);
+
+    const handleShalomConfigSave = async () => {
+        if (!perfil || savingShalomConfig) return;
+        const email = shalomForm.email.trim();
+        const password = shalomForm.password.trim();
+        if (!email) {
+            useAlertStore.getState().alert('Ingresa el correo de tu cuenta Shalom Pro', 'error');
+            return;
+        }
+        if (!perfil.empresa.shalomConfigured && !password) {
+            useAlertStore.getState().alert('Ingresa la contraseña de tu cuenta Shalom Pro', 'error');
+            return;
+        }
+        try {
+            setSavingShalomConfig(true);
+            const payload: { shalomEmail: string; shalomPassword?: string } = { shalomEmail: email };
+            if (password) payload.shalomPassword = password;
+            await useEmpresasStore.getState().actualizarMiEmpresa(payload as any);
+            setPerfil(prev => prev ? {
+                ...prev,
+                empresa: {
+                    ...prev.empresa,
+                    shalomEmail: email,
+                    shalomConfigured: prev.empresa.shalomConfigured || Boolean(password),
+                },
+            } : prev);
+            setShalomForm(prev => ({ ...prev, password: '' }));
+            useAlertStore.getState().alert('Conexión con Shalom actualizada', 'success');
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'No se pudo guardar la conexión con Shalom';
+            useAlertStore.getState().alert(message, 'error');
+        } finally {
+            setSavingShalomConfig(false);
+        }
+    };
+
     const handleChangePassword = async () => {
         const errs: Record<string, string> = {};
         if (!passwordForm.actual) errs.actual = 'Ingresa tu contraseña actual';
@@ -301,5 +351,5 @@ export const usePerfilViewModel = () => {
         }
     };
 
-    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize };
+    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave };
 };

@@ -27,6 +27,11 @@ export default function PerfilIndex() {
     const limiteRaw = Number(usageStats?.limiteMaximo ?? 0);
     const comprobantesIlimitados = !!usageStats && (!Number.isFinite(limiteRaw) || limiteRaw <= 0);
     const fefoPermitidoPorPlan = hasPlanFeature(perfil as any, 'tieneGestionLotes');
+    // Conexión Shalom: solo disponible en planes Negocio y Corporativo.
+    const planNombre = String(perfil?.empresa?.plan?.nombre ?? '').toLowerCase();
+    const puedeShalom = /negocio|corporativo/.test(planNombre);
+    // Envío automático por WhatsApp: desactivado temporalmente (a pedido).
+    const SHOW_WHATSAPP: boolean = false;
 
     if (perfil?.rol === 'ADMIN_SISTEMA') {
         return (
@@ -163,6 +168,8 @@ export default function PerfilIndex() {
                             <Field label="Estado"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.estado === 'ACTIVO' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>{perfil.estado}</span></Field>
                         </div>
                     </div>
+                    {/* ── Envío automático por WhatsApp — DESACTIVADO temporalmente (a pedido) ── */}
+                    {SHOW_WHATSAPP && (
                     <div className="lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827]">
                         <div className="relative border-b border-emerald-100/70 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 dark:border-emerald-900/30 dark:from-emerald-950/30 dark:via-[#111827] dark:to-sky-950/20">
                             <div className="absolute right-5 top-5 hidden rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-slate-900/70 dark:text-emerald-300 sm:inline-flex">
@@ -292,6 +299,72 @@ export default function PerfilIndex() {
                             </div>
                         </div>
                     </div>
+                    )}
+
+                    {/* ── Conexión Shalom Pro (courier) — solo planes Negocio / Corporativo ── */}
+                    {puedeShalom && (
+                    <div className="lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm dark:border-red-900/30 dark:bg-[#111827]">
+                        <div className="relative border-b border-red-100/70 bg-gradient-to-br from-red-50 via-white to-orange-50 p-5 dark:border-red-900/30 dark:from-red-950/30 dark:via-[#111827] dark:to-orange-950/20">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-500 text-white shadow-lg shadow-red-500/20">
+                                    <Icon icon="solar:delivery-bold-duotone" width={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-gray-950 dark:text-white">Conexión con Shalom (Courier)</h2>
+                                    <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                                        Conecta tu cuenta de <strong>Shalom Pro</strong> (pro.shalom.pe) para consultar el tracking y generar guías de tus envíos. Es la misma cuenta con la que gestionas tus envíos en Shalom.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-5 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">Estado</span>
+                                <span className={`rounded-full px-3 py-1 text-xs font-bold ${perfil.empresa.shalomConfigured ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                                    {perfil.empresa.shalomConfigured ? 'Cuenta conectada' : 'Sin conectar'}
+                                </span>
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <label className="space-y-1.5">
+                                    <span className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Correo de Shalom Pro</span>
+                                    <input
+                                        value={vm.shalomForm.email}
+                                        onChange={e => vm.updateShalomField('email', e.target.value)}
+                                        placeholder="tu-correo@ejemplo.com"
+                                        autoComplete="off"
+                                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-red-900/30"
+                                    />
+                                </label>
+                                <label className="space-y-1.5">
+                                    <span className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Contraseña de Shalom Pro</span>
+                                    <input
+                                        value={vm.shalomForm.password}
+                                        onChange={e => vm.updateShalomField('password', e.target.value)}
+                                        type="password"
+                                        autoComplete="new-password"
+                                        placeholder={perfil.empresa.shalomConfigured ? 'Dejar vacío para conservar la actual' : 'Tu contraseña de Shalom'}
+                                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-red-900/30"
+                                    />
+                                </label>
+                            </div>
+                            <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
+                                    Tu contraseña se guarda cifrada y solo se usa para autenticar tus operaciones con Shalom.
+                                </p>
+                                <button
+                                    type="button"
+                                    disabled={!vm.shalomConfigDirty || vm.savingShalomConfig}
+                                    onClick={vm.handleShalomConfigSave}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-red-600/15 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none dark:disabled:bg-slate-700"
+                                >
+                                    <Icon icon={vm.savingShalomConfig ? 'svg-spinners:180-ring' : 'solar:diskette-bold'} width={18} />
+                                    {vm.savingShalomConfig ? 'Guardando...' : 'Guardar conexión'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    )}
                     <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
                         <div className="space-y-4">

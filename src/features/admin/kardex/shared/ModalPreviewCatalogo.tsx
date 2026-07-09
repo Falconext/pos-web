@@ -22,15 +22,44 @@ export default function ModalPreviewCatalogo({ isOpen, onClose }: Props) {
     const [showStock, setShowStock] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [prodSearch, setProdSearch] = useState('');
+    const [catFilter, setCatFilter] = useState('');       // categoría seleccionada
+    const [marcaFilter, setMarcaFilter] = useState('');   // marca seleccionada
+    const [stockFilter, setStockFilter] = useState<'todos' | 'con' | 'sin'>('todos');
+
+    const catOf = (p: any) => (typeof p?.categoria === 'object' ? p?.categoria?.nombre : p?.categoria) || 'Sin categoría';
+    const marcaOf = (p: any) => (typeof p?.marca === 'object' ? p?.marca?.nombre : p?.marca) || 'Sin marca';
+    const stockOf = (p: any) => Number(p?.stock ?? 0);
+
+    // Opciones únicas de categorías y marcas (para los selectores)
+    const categorias = Array.from(new Set(productos.map(catOf))).sort();
+    const marcas = Array.from(new Set(productos.map(marcaOf))).sort();
 
     const toggleOne = (id: number) =>
         setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    const toggleAll = () =>
-        setSelectedIds(prev => prev.length === productos.length ? [] : productos.map(p => p.id));
+
+    // Lista visible según buscador + filtros (categoría / marca / stock)
+    const listProductos = productos.filter(p => {
+        const matchSearch = `${p.descripcion || p.nombre || ''} ${p.codigo || ''}`.toLowerCase().includes(prodSearch.toLowerCase());
+        const matchCat = !catFilter || catOf(p) === catFilter;
+        const matchMarca = !marcaFilter || marcaOf(p) === marcaFilter;
+        const matchStock = stockFilter === 'todos' || (stockFilter === 'con' ? stockOf(p) > 0 : stockOf(p) <= 0);
+        return matchSearch && matchCat && matchMarca && matchStock;
+    });
+
+    // "Todos/Ninguno" opera sobre la lista FILTRADA: permite seleccionar rápido
+    // por categoría, marca o estado de stock.
+    const filteredIds = listProductos.map(p => p.id);
+    const allFilteredSelected = filteredIds.length > 0 && filteredIds.every(id => selectedIds.includes(id));
+    const toggleAll = () => {
+        setSelectedIds(prev => allFilteredSelected
+            ? prev.filter(id => !filteredIds.includes(id))
+            : Array.from(new Set([...prev, ...filteredIds])));
+    };
+    // Selección rápida: reemplaza la selección por los que cumplen el criterio de stock.
+    const selectByStock = (modo: 'con' | 'sin') =>
+        setSelectedIds(productos.filter(p => modo === 'con' ? stockOf(p) > 0 : stockOf(p) <= 0).map(p => p.id));
 
     const selectedProductos = productos.filter(p => selectedIds.includes(p.id));
-    const listProductos = productos.filter(p =>
-        `${p.descripcion || p.nombre || ''} ${p.codigo || ''}`.toLowerCase().includes(prodSearch.toLowerCase()));
 
     // Auto-detect theme based on rubro
     useEffect(() => {
@@ -155,6 +184,39 @@ export default function ModalPreviewCatalogo({ isOpen, onClose }: Props) {
                             </div>
                         </div>
 
+                        {/* Selección rápida + filtros por categoría / marca / stock */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Filtrar / seleccionar</label>
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                                <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="p-2 text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Todas las categorías</option>
+                                    {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <select value={marcaFilter} onChange={(e) => setMarcaFilter(e.target.value)} className="p-2 text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Todas las marcas</option>
+                                    {marcas.map((m) => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex items-center gap-1.5 mb-2">
+                                {([['todos', 'Todos'], ['con', 'Con stock'], ['sin', 'Sin stock']] as const).map(([v, label]) => (
+                                    <button key={v} type="button" onClick={() => setStockFilter(v)}
+                                        className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${stockFilter === v ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-100'}`}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <button type="button" onClick={() => selectByStock('sin')} disabled={productos.length === 0}
+                                    className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-40 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
+                                    Seleccionar sin stock
+                                </button>
+                                <button type="button" onClick={() => selectByStock('con')} disabled={productos.length === 0}
+                                    className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                    Seleccionar con stock
+                                </button>
+                            </div>
+                        </div>
+
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -162,10 +224,10 @@ export default function ModalPreviewCatalogo({ isOpen, onClose }: Props) {
                                 </label>
                                 <button
                                     onClick={toggleAll}
-                                    disabled={productos.length === 0}
+                                    disabled={listProductos.length === 0}
                                     className="text-[11px] font-semibold text-blue-600 hover:underline disabled:opacity-40"
                                 >
-                                    {selectedIds.length === productos.length && productos.length > 0 ? 'Ninguno' : 'Todos'}
+                                    {allFilteredSelected ? 'Quitar lista' : 'Seleccionar lista'}
                                 </button>
                             </div>
                             <input
@@ -185,7 +247,8 @@ export default function ModalPreviewCatalogo({ isOpen, onClose }: Props) {
                                             onChange={() => toggleOne(p.id)}
                                             className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 shrink-0"
                                         />
-                                        <span className="truncate text-gray-700 dark:text-gray-300">{p.descripcion || p.nombre || p.codigo}</span>
+                                        <span className="truncate flex-1 text-gray-700 dark:text-gray-300">{p.descripcion || p.nombre || p.codigo}</span>
+                                        {stockOf(p) <= 0 && <span className="shrink-0 text-[10px] font-bold text-red-500">Sin stock</span>}
                                     </label>
                                 ))}
                             </div>

@@ -40,7 +40,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
     useEffect(() => {
         apiClient.post('/shalom/track', { orderNumber, orderCode })
             .then(res => setTrackData(res.data?.data ?? res.data))
-            .catch(() => setError('No se pudo obtener el tracking. Verifica el N° de orden.'))
+            .catch((err) => setError(err?.response?.data?.message || 'No se pudo obtener el tracking. Verifica el N° de orden.'))
             .finally(() => setLoading(false));
     }, [orderNumber, orderCode]);
 
@@ -48,7 +48,7 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose }: { orderNumber:
         setBlobLoading('ticket');
         try {
             const res = await apiClient.get(`/shalom/ticket/${orderNumber}/${orderCode}`, { responseType: 'blob' });
-            openBlob(res.data, `ticket-${orderNumber}.png`, 'image/png');
+            openBlob(res.data, `voucher-${orderNumber}.pdf`, 'application/pdf');
         } catch { useAlertStore.getState().alert('No se pudo obtener el ticket', 'error'); }
         finally { setBlobLoading(null); }
     };
