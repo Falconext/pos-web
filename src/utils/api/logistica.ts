@@ -84,3 +84,17 @@ export const updateEstadoDespacho = (id: number, data: { estado: string; motivo?
 // Tracking
 export const registrarUbicacion = (data: any) => post(`${BASE}/tracking/ubicacion`, data);
 export const getConductoresTracking = () => get(`${BASE}/tracking/conductores`);
+
+// ── Integraciones: API Keys ──────────────────────────────────────────────
+import type { IApiKey, IApiKeyCreada, IWebhook, IWebhookCreado } from '@/features/admin/logistica/integraciones/IntegracionesModel';
+
+export const getApiKeys = () => get<IApiKey[]>(`${BASE}/api-keys`);
+export const createApiKey = (data: { nombre?: string; entorno?: 'live' | 'test' }) =>
+  post<IApiKeyCreada>(`${BASE}/api-keys`, data);
+export const deleteApiKey = (id: string) => del(`${BASE}/api-keys/${id}`);
+
+// ── Integraciones: Webhooks ──────────────────────────────────────────────
+export const getWebhooks = () => get<IWebhook[]>(`${BASE}/webhooks`);
+export const createWebhook = (data: { url: string; events: string[] }) =>
+  post<IWebhookCreado>(`${BASE}/webhooks`, data);
+export const deleteWebhook = (id: string) => del(`${BASE}/webhooks/${id}`);
