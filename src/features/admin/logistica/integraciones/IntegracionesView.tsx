@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import ModalConfirm from '@/components/ModalConfirm';
@@ -38,6 +39,88 @@ function Spinner() {
   );
 }
 
+/** Valor copiable en un click (URL base, comando de instalación, etc.). */
+function CopyRow({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard?.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copiar"
+      className="group flex items-center gap-2 w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 px-3 py-2 text-left transition-colors hover:border-violet-400 dark:hover:border-violet-500"
+    >
+      <span className="flex-1 truncate font-mono text-xs text-gray-700 dark:text-gray-200">{value}</span>
+      <Icon
+        icon={copied ? 'solar:check-circle-bold' : 'solar:copy-bold-duotone'}
+        className={cn('text-base shrink-0', copied ? 'text-emerald-500' : 'text-gray-400 group-hover:text-violet-500')}
+      />
+    </button>
+  );
+}
+
+/** Card de arranque rápido: todo lo que el integrador (p. ej. Bata) necesita. */
+function Quickstart() {
+  return (
+    <section className="mb-6 rounded-2xl border border-violet-200 dark:border-violet-900/50 bg-gradient-to-br from-violet-50 to-white dark:from-violet-900/20 dark:to-[#111827] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <Icon icon="solar:rocket-2-bold-duotone" className="text-xl text-violet-600 dark:text-violet-400" />
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">Conecta tu sistema en minutos</h2>
+        </div>
+        <a
+          href="https://developers.falconext.pe"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline"
+        >
+          Ver documentación completa
+          <Icon icon="solar:arrow-right-up-linear" className="text-sm" />
+        </a>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div>
+          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+            1 · Genera tu API key
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            Abajo. Usa <b>test</b> para probar sin efectos reales y <b>live</b> para producción. La clave se muestra una sola vez.
+          </p>
+        </div>
+        <div>
+          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+            2 · URL base de la API
+          </p>
+          <CopyRow value="https://api.falconext.pe/api/v1/logistics" />
+          <p className="text-[0.7rem] text-gray-500 dark:text-gray-400 mt-1.5">
+            Autentica con <code className="font-mono">Authorization: Bearer TU_API_KEY</code>
+          </p>
+        </div>
+        <div>
+          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+            3 · SDK oficial (opcional)
+          </p>
+          <div className="space-y-1.5">
+            <CopyRow value="npm install @falconext/logistica" />
+            <CopyRow value="pip install falconext-logistica" />
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+        <Icon icon="solar:info-circle-bold-duotone" className="inline text-sm text-violet-500 mr-1 -mt-0.5" />
+        Para dar acceso a un integrador (tu cliente, ERP externo, etc.): genera una API key con un nombre que lo identifique, y compártele esa key + la URL base + el link de documentación.
+      </p>
+    </section>
+  );
+}
+
 function EmptyState({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-14 px-6">
@@ -62,6 +145,9 @@ export default function IntegracionesView() {
           Genera credenciales y configura webhooks para conectar Falconext Logística con tus sistemas.
         </p>
       </div>
+
+      {/* ── Quickstart / onboarding ── */}
+      <Quickstart />
 
       {/* ── Sección API Keys ── */}
       <section className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 mb-6">
