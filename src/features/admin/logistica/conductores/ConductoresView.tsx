@@ -44,14 +44,14 @@ export default function ConductoresView() {
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900 dark:text-white">{conductor.nombre} {conductor.apellido}</p>
-            <p className="text-xs text-gray-500">{conductor.tipoDocumento} {conductor.nroDocumento}</p>
+            <p className="text-xs text-gray-500">{conductor.dni ? `DNI ${conductor.dni}` : ''}</p>
           </div>
         </div>
       ),
       'Contacto / Licencia': (
         <div className="flex flex-col gap-0.5">
-          {conductor.telefono && <span className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1"><Icon icon="solar:phone-bold" width={14}/> {conductor.telefono}</span>}
-          {conductor.licenciaNro && <span className="text-xs text-gray-500 flex items-center gap-1"><Icon icon="solar:card-bold" width={14}/> Lic: {conductor.licenciaNro}</span>}
+          {conductor.celular && <span className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1"><Icon icon="solar:phone-bold" width={14}/> {conductor.celular}</span>}
+          {conductor.nroLicencia && <span className="text-xs text-gray-500 flex items-center gap-1"><Icon icon="solar:card-bold" width={14}/> Lic: {conductor.nroLicencia}</span>}
         </div>
       ),
       'Score GPS': (

@@ -6,16 +6,15 @@ import { IClienteLogistica } from './ClientesModel';
 
 export function useClientesViewModel() {
   const alertStore = useAlertStore();
-  const { clientes, isLoadingClientes, fetchClientes, zonas, fetchZonas } = useLogisticaStore();
-  
+  const { clientes, isLoadingClientes, fetchClientes } = useLogisticaStore();
+
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<IClienteLogistica | null>(null);
 
   useEffect(() => {
     fetchClientes(searchTerm);
-    fetchZonas(true); // Cargar zonas activas para el select
   }, [searchTerm]);
 
   const handleCreateOrUpdate = async (data: any) => {
@@ -63,7 +62,6 @@ export function useClientesViewModel() {
 
   return {
     clientes,
-    zonasActivas: zonas,
     isLoading: isLoadingClientes,
     searchTerm,
     setSearchTerm,

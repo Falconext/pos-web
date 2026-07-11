@@ -40,14 +40,14 @@ export default function AlmacenesView() {
           </div>
         </div>
       ),
-      'Capacidad': (
+      'Tipo': (
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {almacen.capacidadM3 ? `${almacen.capacidadM3.toLocaleString()} m³` : 'No especificada'}
+          {almacen.tipo || '-'}
         </span>
       ),
       'Ubicación': (
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {almacen.codigoUbicacion || '-'}
+          {[almacen.distrito, almacen.ciudad].filter(Boolean).join(', ') || almacen.codigo || '-'}
         </span>
       ),
       'Estado': almacen.activo ? (
@@ -111,7 +111,7 @@ export default function AlmacenesView() {
             actions={tableActions}
             headerColumns={[
               { label: 'Almacén', key: 'Almacén' },
-              { label: 'Capacidad', key: 'Capacidad' },
+              { label: 'Tipo', key: 'Tipo' },
               { label: 'Ubicación', key: 'Ubicación' },
               { label: 'Estado', key: 'Estado' },
               { label: 'Registro', key: 'Registro' }

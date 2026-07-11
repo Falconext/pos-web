@@ -5,11 +5,11 @@ import InputPro from '@/components/InputPro';
 import DataTable from '@/components/Datatable';
 import { useVehiculosViewModel } from './useVehiculosViewModel';
 import ModalVehiculo from './shared/ModalVehiculo';
-import { ESTADOS_VEHICULO, TIPOS_VEHICULO } from './VehiculosModel';
+import { ESTADOS_VEHICULO } from './VehiculosModel';
 
 export default function VehiculosView() {
   const vm = useVehiculosViewModel();
-  const { vehiculos, actions } = vm;
+  const { vehiculos, tiposVehiculo, actions } = vm;
 
   const tableActions = [
     {
@@ -27,19 +27,12 @@ export default function VehiculosView() {
   ];
 
   const tableData = vehiculos.map(vehiculo => {
-    const tipoObj = TIPOS_VEHICULO.find(t => t.value === vehiculo.tipo);
     const estadoObj = ESTADOS_VEHICULO.find(e => e.value === vehiculo.estado);
-    const iconMap: Record<string, string> = {
-      MOTO: 'solar:scooter-bold-duotone',
-      AUTO: 'solar:car-bold-duotone',
-      CAMIONETA: 'solar:car-bold-duotone',
-      CAMION_LIGERO: 'solar:bus-bold-duotone',
-      CAMION_PESADO: 'solar:bus-bold-duotone'
-    };
     const estadoColors: Record<string, string> = {
       green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
       blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
       amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+      red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
       gray: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700'
     };
 
@@ -48,7 +41,7 @@ export default function VehiculosView() {
       'Vehículo': (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
-            <Icon icon={iconMap[vehiculo.tipo] || 'solar:car-bold-duotone'} width={22} />
+            <Icon icon="solar:bus-bold-duotone" width={22} />
           </div>
           <div>
             <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">{vehiculo.placa}</p>
@@ -58,12 +51,12 @@ export default function VehiculosView() {
       ),
       'Tipo / Capacidad': (
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{tipoObj?.label || vehiculo.tipo}</span>
-          {(vehiculo.capacidadCargaKg || vehiculo.capacidadVolumenM3) && (
+          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{vehiculo.tipoVehiculo?.nombre || '-'}</span>
+          {(vehiculo.capacidadPesoKg || vehiculo.capacidadVolumenM3) && (
             <span className="text-xs text-gray-500 flex items-center gap-1">
               <Icon icon="solar:box-minimalistic-bold" width={12} />
-              {vehiculo.capacidadCargaKg ? `${vehiculo.capacidadCargaKg}kg` : ''} 
-              {vehiculo.capacidadCargaKg && vehiculo.capacidadVolumenM3 ? ' - ' : ''}
+              {vehiculo.capacidadPesoKg ? `${vehiculo.capacidadPesoKg}kg` : ''}
+              {vehiculo.capacidadPesoKg && vehiculo.capacidadVolumenM3 ? ' - ' : ''}
               {vehiculo.capacidadVolumenM3 ? `${vehiculo.capacidadVolumenM3}m³` : ''}
             </span>
           )}
@@ -136,11 +129,13 @@ export default function VehiculosView() {
         </div>
       </div>
 
-      <ModalVehiculo 
+      <ModalVehiculo
         isOpen={vm.isModalOpen}
         onClose={() => vm.setIsModalOpen(false)}
         onSubmit={actions.handleCreateOrUpdate}
         vehiculo={vm.selectedVehiculo}
+        tiposVehiculo={tiposVehiculo}
+        onCreateTipo={actions.handleCreateTipo}
       />
     </div>
   );

@@ -26,6 +26,15 @@ export const createVehiculo = (data: any) => post(`${BASE}/vehiculos`, data);
 export const updateVehiculo = (id: number, data: any) => patch(`${BASE}/vehiculos/${id}`, data);
 export const deleteVehiculo = (id: number) => del(`${BASE}/vehiculos/${id}`);
 
+// Tipos de vehículo (lazy-seed en backend)
+export const getTiposVehiculo = () => get(`${BASE}/vehiculos/tipos`);
+export const createTipoVehiculo = (data: {
+  nombre: string;
+  capacidadPesoKg: number;
+  capacidadVolumenM3: number;
+  costoPromedioKm?: number;
+}) => post(`${BASE}/vehiculos/tipos`, data);
+
 // Almacenes
 export const getAlmacenes = (search?: string, activo?: boolean) => {
   const query = new URLSearchParams();
@@ -69,7 +78,19 @@ export const getPedidos = (search?: string, estado?: string) => {
 };
 export const getPedido = (id: number) => get(`${BASE}/pedidos/${id}`);
 export const createPedido = (data: any) => post(`${BASE}/pedidos`, data);
-export const updateEstadoPedido = (id: number, data: { estado: string; motivo?: string; notas?: string }) => patch(`${BASE}/pedidos/${id}/estado`, data);
+export const updateEstadoPedido = (id: number, data: { estado: string; motivo?: string; notas?: string; lat?: number; lng?: number }) => patch(`${BASE}/pedidos/${id}/estado`, data);
+export const registrarEntrega = (id: number, data: {
+  nombreReceptor?: string;
+  dniReceptor?: string;
+  parentesco?: string;
+  firmaUrl?: string;
+  fotosUrls?: string[];
+  montoCobrado?: number;
+  metodoPago?: string;
+  lat?: number;
+  lng?: number;
+  notas?: string;
+}) => post(`${BASE}/pedidos/${id}/entrega`, data);
 
 // Despachos
 export const getDespachos = (estado?: string) => {
@@ -84,6 +105,7 @@ export const updateEstadoDespacho = (id: number, data: { estado: string; motivo?
 // Tracking
 export const registrarUbicacion = (data: any) => post(`${BASE}/tracking/ubicacion`, data);
 export const getConductoresTracking = () => get(`${BASE}/tracking/conductores`);
+export const getTrackingPublico = (codigoTracking: string) => get(`${BASE}/tracking/publico/${codigoTracking}`);
 
 // ── Integraciones: API Keys ──────────────────────────────────────────────
 import type { IApiKey, IApiKeyCreada, IWebhook, IWebhookCreado } from '@/features/admin/logistica/integraciones/IntegracionesModel';

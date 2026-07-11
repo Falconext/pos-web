@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 
 export default function ClientesLogisticaView() {
   const vm = useClientesViewModel();
-  const { clientes, zonasActivas, actions } = vm;
+  const { clientes, actions } = vm;
 
   const tableActions = [
     {
@@ -42,19 +42,20 @@ export default function ClientesLogisticaView() {
       ),
       'Contacto': (
         <div className="flex flex-col gap-0.5">
-          {cliente.telefono ? <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1"><Icon icon="solar:phone-bold" width={14}/> {cliente.telefono}</span> : <span className="text-sm text-gray-400">-</span>}
+          {cliente.celular ? <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1"><Icon icon="solar:phone-bold" width={14}/> {cliente.celular}</span> : <span className="text-sm text-gray-400">-</span>}
+          {cliente.whatsapp && <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1"><Icon icon="solar:chat-round-bold" width={14}/> {cliente.whatsapp}</span>}
           {cliente.email && <span className="text-xs text-gray-500 flex items-center gap-1"><Icon icon="solar:letter-bold" width={14}/> {cliente.email}</span>}
         </div>
       ),
-      'Dirección Principal / Zona': (
+      'Direcciones': (
         <div className="flex flex-col gap-0.5 max-w-xs">
-          <span className="text-sm text-gray-700 dark:text-gray-300 truncate" title={cliente.direccionPrincipal}>
-            {cliente.direccionPrincipal || 'Sin dirección'}
+          <span className="text-sm text-gray-700 dark:text-gray-300 truncate" title={cliente.direcciones?.[0]?.direccion}>
+            {cliente.direcciones?.[0]?.direccion || 'Sin direcciones'}
           </span>
-          {cliente.zona && (
+          {cliente.direcciones && cliente.direcciones.length > 1 && (
             <span className="text-xs font-semibold text-pink-600 dark:text-pink-400 flex items-center gap-1">
               <Icon icon="solar:map-bold-duotone" width={12} />
-              {cliente.zona.nombre}
+              +{cliente.direcciones.length - 1} más
             </span>
           )}
         </div>
@@ -101,7 +102,7 @@ export default function ClientesLogisticaView() {
             headerColumns={[
               { label: 'Cliente', key: 'Cliente' },
               { label: 'Contacto', key: 'Contacto' },
-              { label: 'Dirección Principal / Zona', key: 'Dirección Principal / Zona' },
+              { label: 'Direcciones', key: 'Direcciones' },
               { label: 'Registro', key: 'Registro' }
             ]}
             bodyData={tableData}
@@ -109,12 +110,11 @@ export default function ClientesLogisticaView() {
         </div>
       </div>
 
-      <ModalClienteLogistica 
+      <ModalClienteLogistica
         isOpen={vm.isModalOpen}
         onClose={() => vm.setIsModalOpen(false)}
         onSubmit={actions.handleCreateOrUpdate}
         cliente={vm.selectedCliente}
-        zonasActivas={zonasActivas}
       />
     </div>
   );

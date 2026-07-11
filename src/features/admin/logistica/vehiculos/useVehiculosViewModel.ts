@@ -2,21 +2,31 @@ import { useState, useEffect } from 'react';
 import { useLogisticaStore } from '@/zustand/logistica';
 import useAlertStore from '@/zustand/alert';
 import * as api from '@/utils/api/logistica';
-import { IVehiculo } from './VehiculosModel';
+import { IVehiculo, ITipoVehiculo } from './VehiculosModel';
 
 export function useVehiculosViewModel() {
   const alertStore = useAlertStore();
   const { vehiculos, isLoadingVehiculos, fetchVehiculos } = useLogisticaStore();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<IVehiculo | null>(null);
+  const [tiposVehiculo, setTiposVehiculo] = useState<ITipoVehiculo[]>([]);
+
+  const fetchTipos = async () => {
+    const res = await api.getTiposVehiculo();
+    if (res.success) setTiposVehiculo((res.data as ITipoVehiculo[]) || []);
+  };
 
   useEffect(() => {
     fetchVehiculos(searchTerm, estadoFilter);
   }, [searchTerm, estadoFilter]);
+
+  useEffect(() => {
+    if (isModalOpen) fetchTipos();
+  }, [isModalOpen]);
 
   const handleCreateOrUpdate = async (data: any) => {
     alertStore.load(true);
@@ -61,8 +71,24 @@ export function useVehiculosViewModel() {
     setIsModalOpen(true);
   };
 
+  const handleCreateTipo = async (data: {
+    nombre: string;
+    capacidadPesoKg: number;
+    capacidadVolumenM3: number;
+    costoPromedioKm?: number;
+  }) => {
+    const res = await api.createTipoVehiculo(data);
+    if (res.success) {
+      await fetchTipos();
+      return res.data as ITipoVehiculo;
+    }
+    alertStore.alert(res.error || 'Error al crear tipo de vehículo', 'error');
+    return null;
+  };
+
   return {
     vehiculos,
+    tiposVehiculo,
     isLoading: isLoadingVehiculos,
     searchTerm,
     setSearchTerm,
@@ -75,7 +101,8 @@ export function useVehiculosViewModel() {
       openNewModal,
       openEditModal,
       handleCreateOrUpdate,
-      handleDelete
+      handleDelete,
+      handleCreateTipo
     }
   };
 }

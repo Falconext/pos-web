@@ -40,7 +40,7 @@ export default function DespachosView() {
           <div>
             <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">{despacho.codigo}</p>
             <p className="text-xs text-gray-500 font-semibold text-teal-600 dark:text-teal-400">
-              {format(new Date(despacho.fechaProgramada + 'T00:00:00'), 'dd/MMM/yyyy')}
+              {despacho.fechaProgramada ? format(new Date(despacho.fechaProgramada), 'dd/MMM/yyyy') : '-'}
             </p>
           </div>
         </div>

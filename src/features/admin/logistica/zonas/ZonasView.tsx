@@ -35,13 +35,14 @@ export default function ZonasView() {
           </div>
           <div>
             <p className="text-sm font-bold text-gray-900 dark:text-white">{zona.nombre}</p>
-            <p className="text-xs text-gray-500 truncate max-w-xs">{zona.descripcion || 'Sin descripción'}</p>
+            <p className="text-xs text-gray-500 truncate max-w-xs">{zona.codigo ? `Cód: ${zona.codigo}` : ''} {zona.dificultad ? `· Dificultad ${zona.dificultad}` : ''}</p>
           </div>
         </div>
       ),
-      'Tarifa Base': (
+      'Costo Base': (
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {zona.tarifaBase ? `S/ ${Number(zona.tarifaBase).toFixed(2)}` : '-'}
+          {zona.costoBase != null ? `S/ ${Number(zona.costoBase).toFixed(2)}` : '-'}
+          {zona.costoPorKm != null ? <span className="text-xs text-gray-400 block">+ S/ {Number(zona.costoPorKm).toFixed(2)}/km</span> : null}
         </span>
       ),
       'Estado': zona.activa ? (
@@ -95,7 +96,7 @@ export default function ZonasView() {
             actions={tableActions}
             headerColumns={[
               { label: 'Zona de Entrega', key: 'Zona de Entrega' },
-              { label: 'Tarifa Base', key: 'Tarifa Base' },
+              { label: 'Costo Base', key: 'Costo Base' },
               { label: 'Estado', key: 'Estado' },
               { label: 'Registro', key: 'Registro' }
             ]}

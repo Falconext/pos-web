@@ -5,7 +5,7 @@ import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import Modal from '@/components/Modal';
-import { IAlmacen } from '../AlmacenesModel';
+import { IAlmacen, TIPOS_ALMACEN } from '../AlmacenesModel';
 import { Controller } from 'react-hook-form';
 
 interface Props {
@@ -23,17 +23,23 @@ export default function ModalAlmacen({ isOpen, onClose, onSubmit, almacen }: Pro
       if (almacen) {
         reset({
           nombre: almacen.nombre,
+          codigo: almacen.codigo || '',
+          tipo: almacen.tipo || 'PRINCIPAL',
           direccion: almacen.direccion,
-          codigoUbicacion: almacen.codigoUbicacion || '',
-          capacidadM3: almacen.capacidadM3 || '',
+          distrito: almacen.distrito || '',
+          ciudad: almacen.ciudad || '',
+          departamento: almacen.departamento || '',
           activo: almacen.activo ? 'true' : 'false'
         });
       } else {
         reset({
           nombre: '',
+          codigo: '',
+          tipo: 'PRINCIPAL',
           direccion: '',
-          codigoUbicacion: '',
-          capacidadM3: '',
+          distrito: '',
+          ciudad: '',
+          departamento: '',
           activo: 'true'
         });
       }
@@ -92,35 +98,51 @@ export default function ModalAlmacen({ isOpen, onClose, onSubmit, almacen }: Pro
 
         <div className="grid grid-cols-2 gap-4">
           <Controller
-      control={control}
-      name="codigoUbicacion"
-      
-      render={({ field }) => (
-        <InputPro
-          name={field.name}
-          value={field.value}
-          onChange={field.onChange}
-          label="Código Ubigeo / Zip"
-          error={errors.codigoUbicacion?.message as string}
-          isLabel
-        />
-      )}
-    />
+            control={control}
+            name="codigo"
+            render={({ field }) => (
+              <InputPro name={field.name} value={field.value} onChange={field.onChange} label="Código (opc)" error={errors.codigo?.message as string} isLabel />
+            )}
+          />
           <Controller
-      control={control}
-      name="capacidadM3"
-      
-      render={({ field }) => (
-        <InputPro
-          name={field.name}
-          value={field.value}
-          onChange={field.onChange}
-          label="Capacidad (m³)" type="number" step="0.01"
-          error={errors.capacidadM3?.message as string}
-          isLabel
-        />
-      )}
-    />
+            control={control}
+            name="tipo"
+            render={({ field }) => (
+              <Select
+                name={field.name}
+                label="Tipo de Almacén"
+                withLabel
+                value={field.value}
+                onChange={(id) => field.onChange(id)}
+                options={TIPOS_ALMACEN.map(t => ({ id: t.value, value: t.label }))}
+                error={errors.tipo?.message as string}
+              />
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Controller
+            control={control}
+            name="distrito"
+            render={({ field }) => (
+              <InputPro name={field.name} value={field.value} onChange={field.onChange} label="Distrito (opc)" isLabel />
+            )}
+          />
+          <Controller
+            control={control}
+            name="ciudad"
+            render={({ field }) => (
+              <InputPro name={field.name} value={field.value} onChange={field.onChange} label="Ciudad (opc)" isLabel />
+            )}
+          />
+          <Controller
+            control={control}
+            name="departamento"
+            render={({ field }) => (
+              <InputPro name={field.name} value={field.value} onChange={field.onChange} label="Departamento (opc)" isLabel />
+            )}
+          />
         </div>
 
         <Controller

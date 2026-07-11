@@ -6,12 +6,13 @@ import DataTable from '@/components/Datatable';
 import { usePedidosViewModel } from './usePedidosViewModel';
 import ModalPedido from './shared/ModalPedido';
 import ModalEstadoPedido from './shared/ModalEstadoPedido';
-import { ESTADOS_PEDIDO, PRIORIDADES_PEDIDO } from './PedidosModel';
+import ModalConfirmarEntrega from './shared/ModalConfirmarEntrega';
+import { ESTADOS_PEDIDO, PRIORIDADES_PEDIDO, ESTADOS_TERMINALES } from './PedidosModel';
 import { format } from 'date-fns';
 
 export default function PedidosLogisticaView() {
   const vm = usePedidosViewModel();
-  const { pedidos, clientes, zonasActivas, actions } = vm;
+  const { pedidos, clientes, actions } = vm;
 
   const tableActions = [
     {
@@ -19,6 +20,13 @@ export default function PedidosLogisticaView() {
       icon: <Icon icon="solar:refresh-circle-bold-duotone" width={18} />,
       tooltip: 'Cambiar Estado',
       color: 'blue' as const
+    },
+    {
+      onClick: (data: any) => actions.openEntregaModal(data._original),
+      icon: <Icon icon="solar:check-circle-bold-duotone" width={18} />,
+      tooltip: 'Confirmar Entrega',
+      color: 'emerald' as const,
+      hide: (data: any) => ESTADOS_TERMINALES.includes(data?._original?.estado)
     }
   ];
 
@@ -58,22 +66,17 @@ export default function PedidosLogisticaView() {
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={pedido.cliente?.nombre}>
             {pedido.cliente?.nombre || 'Sin cliente'}
           </p>
-          <p className="text-xs text-gray-500 truncate" title={pedido.direccionEntrega}>
-            {pedido.direccionEntrega}
+          <p className="text-xs text-gray-500 truncate" title={pedido.direccionEntrega?.direccion}>
+            {pedido.direccionEntrega?.direccion || 'Sin dirección'}
           </p>
-          {pedido.zona && (
-            <span className="text-[10px] text-pink-600 dark:text-pink-400 font-semibold flex items-center gap-1 mt-0.5">
-              <Icon icon="solar:map-bold-duotone" width={10} /> {pedido.zona.nombre}
-            </span>
-          )}
         </div>
       ),
       'Programación': (
         <div className="flex flex-col gap-0.5">
-          {pedido.fechaPrometida ? (
+          {pedido.fechaSolicitada ? (
             <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
               <Icon icon="solar:calendar-date-bold-duotone" className="text-violet-500" width={14}/>
-              {format(new Date(pedido.fechaPrometida + 'T00:00:00'), 'dd/MM/yyyy')}
+              {format(new Date(pedido.fechaSolicitada), 'dd/MM/yyyy')}
             </span>
           ) : <span className="text-xs text-gray-400">Sin fecha</span>}
           
@@ -87,7 +90,7 @@ export default function PedidosLogisticaView() {
       ),
       'Carga': (
         <div className="flex flex-col gap-0.5">
-          {pedido.bultos ? <span className="text-xs text-gray-600 dark:text-gray-400">{pedido.bultos} bulto(s)</span> : null}
+          {pedido.items?.length ? <span className="text-xs text-gray-600 dark:text-gray-400">{pedido.items.length} ítem(s)</span> : null}
           {pedido.pesoTotalKg ? <span className="text-xs text-gray-500">{pedido.pesoTotalKg} kg</span> : null}
         </div>
       ),
@@ -154,18 +157,24 @@ export default function PedidosLogisticaView() {
         </div>
       </div>
 
-      <ModalPedido 
+      <ModalPedido
         isOpen={vm.isModalOpen}
         onClose={() => vm.setIsModalOpen(false)}
         onSubmit={actions.handleCreate}
         clientes={clientes}
-        zonasActivas={zonasActivas}
       />
 
-      <ModalEstadoPedido 
+      <ModalEstadoPedido
         isOpen={vm.isStatusModalOpen}
         onClose={() => vm.setIsStatusModalOpen(false)}
         onSubmit={actions.handleUpdateStatus}
+        pedido={vm.selectedPedido}
+      />
+
+      <ModalConfirmarEntrega
+        isOpen={vm.isEntregaModalOpen}
+        onClose={() => vm.setIsEntregaModalOpen(false)}
+        onSubmit={actions.handleConfirmarEntrega}
         pedido={vm.selectedPedido}
       />
     </div>
