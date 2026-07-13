@@ -14,6 +14,7 @@ interface Props {
     tiposDetraccion: any[];
     mediosPagoDetraccion: any[];
     mode?: 'DETRACCION' | 'RETENCION';
+    defaultCuentaBancoNacion?: string;
 }
 
 export interface DetraccionData {
@@ -34,7 +35,8 @@ const ModalDetraccion = ({
     totalFactura,
     tiposDetraccion,
     mediosPagoDetraccion,
-    mode = 'DETRACCION'
+    mode = 'DETRACCION',
+    defaultCuentaBancoNacion = ''
 }: Props) => {
     const [formData, setFormData] = useState<DetraccionData>({
         tipoDetraccionId: 0,
@@ -54,6 +56,8 @@ const ModalDetraccion = ({
             if (initialData) {
                 setFormData({
                     ...initialData,
+                    // Si aún no tiene cuenta configurada, pre-cargar la de la empresa
+                    cuentaBancoNacion: initialData.cuentaBancoNacion || defaultCuentaBancoNacion || '',
                     formaPago: initialData.formaPago || 'Contado',
                     cuotas: initialData.cuotas || [],
                 });
@@ -61,7 +65,7 @@ const ModalDetraccion = ({
                 setFormData({
                     tipoDetraccionId: 0,
                     medioPagoDetraccionId: 0,
-                    cuentaBancoNacion: '',
+                    cuentaBancoNacion: defaultCuentaBancoNacion || '',
                     porcentajeDetraccion: 0,
                     montoDetraccion: 0,
                     formaPago: 'Contado',
@@ -69,7 +73,7 @@ const ModalDetraccion = ({
                 });
             }
         }
-    }, [initialData, isOpen]);
+    }, [initialData, isOpen, defaultCuentaBancoNacion]);
 
     // Initializing 3% and calculating if it's Retencion
     useEffect(() => {

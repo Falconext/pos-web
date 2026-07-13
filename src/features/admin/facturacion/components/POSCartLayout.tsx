@@ -217,6 +217,11 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                             <div className="flex items-center gap-3">
                                 <div className="text-right min-w-[70px]">
                                     <p className="font-extrabold text-gray-900 dark:text-white text-base md:text-sm">S/ {Number(item.total).toFixed(2)}</p>
+                                    {item.monedaOriginal === 'USD' && (
+                                        <p className="text-[10px] font-medium text-blue-500 dark:text-blue-400 leading-tight">
+                                            ${Number(item.precioOriginalUSD).toFixed(2)} × {Number(item.tipoCambio).toFixed(3)}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Desktop Actions */}

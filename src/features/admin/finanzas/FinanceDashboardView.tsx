@@ -17,74 +17,85 @@ export default function FinanceDashboardView() {
     return (
         <div className="min-h-screen overflow-x-hidden bg-[#F8F9FB] p-3 dark:bg-[#0A0D14] sm:p-6">
             {/* Header */}
-            <div className="mb-6 flex flex-col items-start justify-between gap-4 md:mb-8 md:flex-row md:items-center">
-                <div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mb-1">
-                        <span>Finanzas</span>
-                        <Icon icon="solar:alt-arrow-right-linear" />
-                        <span className="text-indigo-600">Dashboard</span>
+            <div className="mb-6 md:mb-8">
+                {/* Title row */}
+                <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mb-1">
+                            <span>Finanzas</span>
+                            <Icon icon="solar:alt-arrow-right-linear" />
+                            <span className="text-indigo-600">Dashboard</span>
+                        </div>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Resumen Financiero</h1>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Resumen Financiero</h1>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsMobileFiltersOpen((value) => !value)}
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-lg shadow-indigo-500/20 sm:w-auto md:hidden"
+                    >
+                        <Icon icon="solar:filter-bold-duotone" className="text-lg" />
+                        {isMobileFiltersOpen ? 'Ocultar filtros' : 'Ver filtros'}
+                    </button>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => setIsMobileFiltersOpen((value) => !value)}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-lg shadow-indigo-500/20 md:hidden"
-                >
-                    <Icon icon="solar:filter-bold-duotone" className="text-lg" />
-                    {isMobileFiltersOpen ? 'Ocultar filtros' : 'Ver filtros'}
-                </button>
-
                 {/* Filters / Actions */}
-                <div className={`${isMobileFiltersOpen ? 'flex' : 'hidden'} w-full flex-col gap-3 md:flex md:w-auto md:flex-row md:flex-wrap md:items-center`}>
+                <div className={`${isMobileFiltersOpen ? 'flex' : 'hidden'} flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#111827] md:flex md:flex-row md:flex-wrap md:items-end`}>
                     {vm.isAdmin && vm.esPrincipal && (
-                        <Select
-                            onChange={vm.handleSelectSede}
-                            label="Sede"
-                            name="sedeId"
-                            options={vm.sedesOptions}
-                            error=""
-                            defaultValue="Todas las sedes"
-                        />
+                        <div className="w-full md:min-w-[200px] md:flex-1 md:basis-[200px]">
+                            <Select
+                                onChange={vm.handleSelectSede}
+                                label="Sede"
+                                name="sedeId"
+                                options={vm.sedesOptions}
+                                error=""
+                                defaultValue="Todas las sedes"
+                            />
+                        </div>
                     )}
                     {vm.isAdmin && (
-                        <Select
-                            onChange={vm.handleSelectUsuario}
-                            label="Vendedor"
-                            name="usuarioId"
-                            options={vm.usuariosOptions}
-                            error=""
-                            defaultValue="Todos los vendedores"
-                        />
+                        <div className="w-full md:min-w-[200px] md:flex-1 md:basis-[200px]">
+                            <Select
+                                onChange={vm.handleSelectUsuario}
+                                label="Vendedor"
+                                name="usuarioId"
+                                options={vm.usuariosOptions}
+                                error=""
+                                defaultValue="Todos los vendedores"
+                            />
+                        </div>
                     )}
-                    <Calendar
-                        text="Fecha Inicio"
-                        name="fechaInicio"
-                        value={moment(vm.fechaInicio).format('DD/MM/YYYY')}
-                        onChange={vm.handleDateChange}
-                        className="admin-date-filter"
-                        portal
-                    />
-                    <Calendar
-                        text="Fecha Fin"
-                        name="fechaFin"
-                        value={moment(vm.fechaFin).format('DD/MM/YYYY')}
-                        onChange={vm.handleDateChange}
-                        className="admin-date-filter"
-                        portal
-                    />
-                    <div className="flex gap-3">
+                    <div className="w-full md:min-w-[170px] md:flex-1 md:basis-[180px]">
+                        <Calendar
+                            text="Fecha Inicio"
+                            name="fechaInicio"
+                            value={moment(vm.fechaInicio).format('DD/MM/YYYY')}
+                            onChange={vm.handleDateChange}
+                            className="admin-date-filter"
+                            portal
+                        />
+                    </div>
+                    <div className="w-full md:min-w-[170px] md:flex-1 md:basis-[180px]">
+                        <Calendar
+                            text="Fecha Fin"
+                            name="fechaFin"
+                            value={moment(vm.fechaFin).format('DD/MM/YYYY')}
+                            onChange={vm.handleDateChange}
+                            className="admin-date-filter"
+                            portal
+                        />
+                    </div>
+                    <div className="flex gap-3 md:ml-auto">
                         <button
                             onClick={vm.refreshData}
-                            className="rounded-xl bg-indigo-600 p-3 text-white shadow-lg shadow-indigo-200 transition-colors hover:bg-indigo-700 dark:shadow-indigo-900/20"
+                            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-colors hover:bg-indigo-700 dark:shadow-indigo-900/20"
                         >
                             <Icon icon="solar:refresh-bold" />
                         </button>
                         <button
                             onClick={vm.handleExportPDF}
                             disabled={vm.isGeneratingPDF || !vm.kpis}
-                            className="flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-rose-200 transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-rose-900/20"
+                            className="flex h-[46px] flex-1 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-medium text-white shadow-lg shadow-rose-200 transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-rose-900/20 md:flex-none"
                         >
                             <Icon icon={vm.isGeneratingPDF ? 'line-md:loading-twotone-loop' : 'solar:file-download-bold-duotone'} className="text-lg" />
                             {vm.isGeneratingPDF ? 'Generando...' : 'PDF'}

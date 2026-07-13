@@ -310,6 +310,10 @@ const PrintPDF = ({
         return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
     })();
 
+    const logoScale = (Number(company?.empresa?.ticketLogoSize) || 96) / 96;
+    const ticketLogoDim = 70 * logoScale;
+    const documentLogoDim = 100 * logoScale;
+
     return (
         <Document>
             <Page size={print} style={styles.page}>
@@ -320,7 +324,7 @@ const PrintPDF = ({
                             <View style={styles.header}>
                                 {logoDataUrl && (
                                     <View style={{ alignItems: 'center', marginBottom: 8 }}>
-                                        <Image src={logoDataUrl} style={{ width: 70, height: 70 }} />
+                                        <Image src={logoDataUrl} style={{ width: ticketLogoDim, height: ticketLogoDim, objectFit: 'contain' }} />
                                     </View>
                                 )}
                                 <Text style={styles.title}>{company?.empresa?.nombreComercial}</Text>
@@ -330,6 +334,7 @@ const PrintPDF = ({
                                     DIRECCION: {company?.empresa?.direccion.toUpperCase()}
                                     {'\n'}
                                     {empresaNumero ? `CELULAR: ${empresaNumero}\n` : ''}
+                                    {(company?.empresa as any)?.paginaWeb ? `WEB: ${(company?.empresa as any).paginaWeb}\n` : ''}
                                     RUC: {company?.empresa?.ruc.toUpperCase()}
                                     {'\n'}
                                 </Text>
@@ -565,7 +570,7 @@ const PrintPDF = ({
                                         <View>
                                             <Image
                                                 src={logoDataUrl}
-                                                style={{ width: 100, height: 100, objectFit: 'contain' }}
+                                                style={{ width: documentLogoDim, height: documentLogoDim, objectFit: 'contain' }}
                                             />
                                         </View>
                                     </Text>
@@ -586,6 +591,7 @@ const PrintPDF = ({
                                         {'\n'}
                                         {empresaNumero ? `CELULAR: ${empresaNumero}\n` : ''}
                                         EMAIL: {company?.email || ''}
+                                        {(company?.empresa as any)?.paginaWeb ? `\nWEB: ${(company?.empresa as any).paginaWeb}` : ''}
                                     </Text>
                                 </View>
                                 <View>

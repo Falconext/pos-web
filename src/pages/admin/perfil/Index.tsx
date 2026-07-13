@@ -161,11 +161,75 @@ export default function PerfilIndex() {
                     <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-1">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:user-id-bold-duotone" width="20" /></div>Información Personal</h2>
                         <div className="space-y-4">
-                            <Field label="Nombre completo"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.nombre}</p></Field>
-                            <Field label="Email"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.email}</p></Field>
-                            {perfil.celular && <Field label="Celular"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.celular}</p></Field>}
-                            {perfil.telefono && <Field label="Teléfono"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.telefono}</p></Field>}
-                            <Field label="Estado"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.estado === 'ACTIVO' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>{perfil.estado}</span></Field>
+                            <div>
+                                <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Nombre completo</label>
+                                <input
+                                    type="text"
+                                    value={vm.personalForm.nombre}
+                                    onChange={e => vm.updatePersonalField('nombre', e.target.value)}
+                                    placeholder="Tu nombre y apellidos"
+                                    className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 border-gray-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                    Email
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 normal-case"><Icon icon="solar:lock-keyhole-minimalistic-bold" width={12} /> No editable</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={perfil.email}
+                                    disabled
+                                    className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-500 cursor-not-allowed"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Celular</label>
+                                    <input
+                                        type="tel"
+                                        value={vm.personalForm.celular}
+                                        onChange={e => vm.updatePersonalField('celular', e.target.value)}
+                                        placeholder="Ej: 987654321"
+                                        className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 border-gray-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Teléfono</label>
+                                    <input
+                                        type="tel"
+                                        value={vm.personalForm.telefono}
+                                        onChange={e => vm.updatePersonalField('telefono', e.target.value)}
+                                        placeholder="Ej: 044-123456"
+                                        className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 border-gray-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                    <Icon icon="solar:global-bold" width={13} /> Página web
+                                </label>
+                                <input
+                                    type="text"
+                                    value={vm.personalForm.paginaWeb}
+                                    onChange={e => vm.updatePersonalField('paginaWeb', e.target.value)}
+                                    placeholder="Ej: www.miempresa.com"
+                                    className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 border-gray-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-blue-400 focus:ring-blue-100 dark:focus:ring-blue-900/30"
+                                />
+                                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Aparecerá en tus comprobantes y cotizaciones de todos los formatos.</p>
+                            </div>
+                            <div className="flex items-center justify-between pt-1">
+                                <Field label="Estado"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.estado === 'ACTIVO' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>{perfil.estado}</span></Field>
+                                <button
+                                    type="button"
+                                    onClick={vm.handleSavePersonal}
+                                    disabled={!vm.personalDirty || vm.savingPersonal}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Icon icon={vm.savingPersonal ? 'solar:refresh-bold' : 'solar:diskette-bold'} className={vm.savingPersonal ? 'animate-spin' : ''} width={16} />
+                                    {vm.savingPersonal ? 'Guardando...' : 'Guardar cambios'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {/* ── Envío automático por WhatsApp — DESACTIVADO temporalmente (a pedido) ── */}
@@ -414,7 +478,7 @@ export default function PerfilIndex() {
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                     <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                         <Icon icon="solar:printer-bold-duotone" width={14} />
-                                        Tamaño del Logo en Ticket (Comprobante)
+                                        Tamaño del Logo en Comprobantes
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <select
@@ -434,7 +498,7 @@ export default function PerfilIndex() {
                                         </select>
                                         {vm.savingTicketLogoSize && <span className="text-xs text-blue-600 dark:text-blue-400">Guardando...</span>}
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ajusta qué tan grande se imprime el logo de tu empresa en los tickets térmicos de 80mm.</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ajusta el tamaño con el que se imprime tu logo en todos los formatos: ticket 80mm, A4, A5, cotizaciones y guías de remisión.</p>
                                 </div>
                                 {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
                                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">

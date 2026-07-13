@@ -50,6 +50,7 @@ export const initialProductForm: IFormProduct = {
     categoriaNombre: "",
     afectacionNombre: "Gravado – Operación Onerosa",
     tipoAfectacionIGV: "10",
+    moneda: "PEN",
     stock: 0,
     localizacion: '',
     porcentajeVenta: 100,
@@ -79,6 +80,7 @@ export const initialProductForm: IFormProduct = {
     laboratorio: "",
     // Campos Bodega/Supermercado
     codigoBarras: "",
+    codProdSunat: "",
     unidadCompra: "",
     unidadVenta: "",
     factorConversion: 1,

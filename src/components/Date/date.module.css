@@ -7,33 +7,37 @@
 }
 
 :global(.admin-date-filter) label {
-    margin-bottom: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1f2937;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #64748b;
 }
 
 :global(.admin-date-filter) input {
-    height: 44px;
+    height: 40px;
     border-radius: 12px;
-    border-color: #e5e7eb;
+    border: 1px solid #e2e8f0;
     background: #fff;
-    padding: 0 42px 0 16px;
+    padding: 0 40px 0 12px;
     font-size: 14px;
     font-weight: 400;
-    color: #374151;
+    color: #1e293b;
     box-shadow: none;
+    transition: all 0.15s ease;
 }
 
 :global(.admin-date-filter) input:focus {
-    border-color: #c4b5fd;
-    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
 }
 
 :global(.admin-date-filter) svg {
-    top: 36px;
+    top: 32px;
     right: 12px;
-    color: #9ca3af;
+    color: #94a3b8;
 }
 
 :global(.admin-date-filter) > div:nth-child(2) {
@@ -285,18 +289,18 @@
 
 /* admin-date-filter dark */
 :global(.dark) :global(.admin-date-filter) label {
-    color: #e2e8f0;
+    color: #94a3b8;
 }
 
 :global(.dark) :global(.admin-date-filter) input {
-    background: #1e2435;
-    border-color: #374151;
-    color: #e2e8f0;
+    background: #1e293b;
+    border-color: #334155;
+    color: #ffffff;
 }
 
 :global(.dark) :global(.admin-date-filter) input:focus {
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
 }
 
 :global(.dark) :global(.admin-date-filter) svg {

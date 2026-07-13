@@ -50,7 +50,7 @@ interface CreateFormData {
   usaDemo: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
-  producto?: 'facturacion' | 'hotel';
+  producto?: 'facturacion' | 'hotel' | 'logistica';
   usuario: {
     nombre: string;
     email: string;
@@ -90,7 +90,7 @@ interface EditFormData {
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
-  producto?: 'facturacion' | 'hotel';
+  producto?: 'facturacion' | 'hotel' | 'logistica';
   usuario?: {
     nombre?: string;
     email?: string;
@@ -247,7 +247,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       setCreateData({
         ...initialCreate,
         brand: hasNegocioScope ? (String(auth?.sistemaNegocio || '').toLowerCase() || initialCreate.brand) : initialCreate.brand,
-        producto: hasProductoScope ? ((String(auth?.sistemaProducto || '').toLowerCase() === 'hotel') ? 'hotel' : 'facturacion') : initialCreate.producto,
+        producto: hasProductoScope ? ((() => { const p = String(auth?.sistemaProducto || '').toLowerCase(); return p === 'hotel' || p === 'logistica' ? p : 'facturacion'; })()) : initialCreate.producto,
       });
       setLogoPreview('');
       setSeriesConfig(crearSeriesIniciales());
@@ -666,10 +666,11 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       {!hasProductoScope && (
                         <>
                           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2">Producto de destino <span className="text-red-500">*</span></p>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {([
                               { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                               { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                              { id: 'logistica', label: 'Logística', icon: 'solar:routing-2-bold-duotone', color: '#6366F1' },
                             ] as const).map((p) => {
                               const selectedProducto = isEdit ? editData.producto : createData.producto;
                               const sel = selectedProducto === p.id;
@@ -789,6 +790,12 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                     {planesDisponibles && Array.isArray(planesDisponibles) && planesDisponibles.map((plan: any) => {
                       const selectedPlanId = Number(isEdit ? editData.planId : createData.planId);
                       const selected = selectedPlanId === Number(plan.id);
+                      const dias = Number(plan.duracionDias || 0);
+                      const periodoLabel = dias >= 330 ? 'anual'
+                        : dias >= 150 ? 'semestral'
+                        : dias >= 75 ? 'trimestral'
+                        : plan.tipoFacturacion ? String(plan.tipoFacturacion).toLowerCase()
+                        : 'mensual';
                       return (
                         <div key={plan.id}
                           onClick={() => (isEdit ? setEditData(prev => ({ ...prev, planId: plan.id })) : setCreateData(prev => ({ ...prev, planId: plan.id })))}
@@ -806,7 +813,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                             <div className="text-xl font-black text-blue-700 dark:text-blue-400">
                               <span className="text-sm text-blue-600 dark:text-blue-400 font-bold mr-0.5">S/</span>
                               {Number(plan.costo || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                              {plan.tipoFacturacion && <span className="text-xs font-medium text-gray-500 dark:text-gray-400 ml-1">/{plan.tipoFacturacion.toLowerCase()}</span>}
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 ml-1">/{periodoLabel}</span>
                             </div>
                             <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400 mt-3 pt-2 border-t border-gray-100 dark:border-slate-700">
                               {plan.limiteUsuarios ? <span>{plan.limiteUsuarios} Usu.</span> : <span />}

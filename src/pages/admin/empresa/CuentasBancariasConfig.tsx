@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useCuentasBancariasStore, BANCOS_PERU, ICuentaBancaria, ICreateCuentaBancaria } from '@/zustand/cuentasBancarias';
+import useEmpresasStore from '@/zustand/empresas';
+import { useAuthStore } from '@/zustand/auth';
+import useAlertStore from '@/zustand/alert';
 
 // Dominios oficiales para obtener logos reales via Clearbit
 const BANCO_DOMINIOS: Record<string, string> = {
@@ -57,9 +60,11 @@ const EMPTY_FORM: ICreateCuentaBancaria = {
   banco: 'BCP',
   numeroCuenta: '',
   cci: '',
+  titular: '',
   tipoCuenta: 'AHORROS',
   moneda: 'PEN',
   alias: '',
+  mostrarEnCotizacion: true,
 };
 
 export default function CuentasBancariasConfig() {
@@ -69,7 +74,32 @@ export default function CuentasBancariasConfig() {
   const [form, setForm] = useState<ICreateCuentaBancaria>(EMPTY_FORM);
   const [mostrarInactivas, setMostrarInactivas] = useState(false);
 
+  // Cuenta de detracciones (Banco de la Nación) — dato de la empresa, se pre-carga en el modal de detracción
+  const cuentaDetraccionActual = ((useAuthStore.getState().auth as any)?.empresa?.cuentaDetraccionBN ?? '') as string;
+  const [bnCuenta, setBnCuenta] = useState<string>(cuentaDetraccionActual);
+  const [savingBN, setSavingBN] = useState(false);
+
   useEffect(() => { listar(); }, [listar]);
+
+  const guardarCuentaDetraccion = async () => {
+    if (savingBN) return;
+    try {
+      setSavingBN(true);
+      const valor = bnCuenta.trim();
+      await useEmpresasStore.getState().actualizarMiEmpresa({ cuentaDetraccionBN: valor });
+      // Reflejar en la sesión para que el modal de detracción la pre-cargue al instante
+      useAuthStore.setState((state: any) =>
+        state.auth
+          ? { auth: { ...state.auth, empresa: { ...state.auth.empresa, cuentaDetraccionBN: valor } } }
+          : state,
+      );
+      useAlertStore.getState().alert('Cuenta de detracciones guardada', 'success');
+    } catch (error: any) {
+      useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudo guardar', 'error');
+    } finally {
+      setSavingBN(false);
+    }
+  };
 
   const cuentasVisibles = mostrarInactivas ? cuentas : cuentas.filter((c) => c.activo);
 
@@ -81,9 +111,11 @@ export default function CuentasBancariasConfig() {
       banco: cuenta.banco,
       numeroCuenta: cuenta.numeroCuenta,
       cci: cuenta.cci ?? '',
+      titular: cuenta.titular ?? '',
       tipoCuenta: cuenta.tipoCuenta,
       moneda: cuenta.moneda,
       alias: cuenta.alias ?? '',
+      mostrarEnCotizacion: cuenta.mostrarEnCotizacion ?? true,
     });
     setShowForm(true);
   };
@@ -93,7 +125,7 @@ export default function CuentasBancariasConfig() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.numeroCuenta.trim()) return;
-    const payload = { ...form, cci: form.cci || undefined, alias: form.alias || undefined };
+    const payload = { ...form, cci: form.cci || undefined, alias: form.alias || undefined, titular: form.titular || undefined };
     if (editando) {
       await actualizar(editando.id, payload);
     } else {
@@ -110,6 +142,10 @@ export default function CuentasBancariasConfig() {
     }
   };
 
+  const handleToggleCotizacion = async (cuenta: ICuentaBancaria) => {
+    await actualizar(cuenta.id, { mostrarEnCotizacion: !(cuenta.mostrarEnCotizacion ?? true) });
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -120,7 +156,7 @@ export default function CuentasBancariasConfig() {
             Cuentas Bancarias
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Agrega las cuentas donde recibes transferencias. Se mostrarán al registrar pagos.
+            Agrega las cuentas donde recibes transferencias. Usa el interruptor "En cotización" para elegir cuáles aparecen en tus cotizaciones.
           </p>
         </div>
         <button
@@ -130,6 +166,32 @@ export default function CuentasBancariasConfig() {
           <Icon icon="solar:add-circle-bold" width={16} />
           Nueva cuenta
         </button>
+      </div>
+
+      {/* Cuenta de detracciones (Banco de la Nación) */}
+      <div className="rounded-2xl border border-orange-100 dark:border-orange-900/30 bg-orange-50/40 dark:bg-orange-900/10 p-4">
+        <label className="flex items-center gap-1.5 text-xs font-bold text-orange-700 dark:text-orange-300 uppercase tracking-wider mb-1.5">
+          <Icon icon="solar:bank-bold-duotone" width={14} /> Cuenta de detracciones (Banco de la Nación)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={bnCuenta}
+            onChange={(e) => setBnCuenta(e.target.value)}
+            placeholder="00-000-000000"
+            className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none"
+          />
+          <button
+            onClick={guardarCuentaDetraccion}
+            disabled={savingBN || bnCuenta.trim() === cuentaDetraccionActual.trim()}
+            className="px-4 py-2.5 rounded-xl bg-orange-600 text-white text-sm font-semibold hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {savingBN ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5">
+          Se rellena automáticamente al configurar la detracción en cotizaciones y comprobantes. Es tu cuenta SPOT en el Banco de la Nación (única y solo para detracciones).
+        </p>
       </div>
 
       {/* Lista */}
@@ -170,6 +232,22 @@ export default function CuentasBancariasConfig() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400">
                   INACTIVA
                 </span>
+              )}
+
+              {cuenta.activo && (
+                <button
+                  onClick={() => handleToggleCotizacion(cuenta)}
+                  disabled={loading}
+                  title={(cuenta.mostrarEnCotizacion ?? true) ? 'Se muestra en las cotizaciones — clic para ocultar' : 'Oculta en las cotizaciones — clic para mostrar'}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold transition-colors disabled:opacity-50 ${
+                    (cuenta.mostrarEnCotizacion ?? true)
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                      : 'bg-gray-100 dark:bg-slate-700 text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  <Icon icon={(cuenta.mostrarEnCotizacion ?? true) ? 'solar:check-circle-bold' : 'solar:eye-closed-bold'} width={12} />
+                  <span className="hidden sm:inline">En cotización</span>
+                </button>
               )}
 
               <div className="flex items-center gap-1">
@@ -266,6 +344,20 @@ export default function CuentasBancariasConfig() {
                   />
                 </div>
 
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                    Titular (a nombre de)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.titular ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, titular: e.target.value }))}
+                    placeholder="Ej: Diego Jesús Ortega Roldán"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Nombre que aparece en "DEPOSITAR A NOMBRE DE" en la cotización. Si lo dejas vacío, se usa la razón social.</p>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
                     Tipo
@@ -305,6 +397,21 @@ export default function CuentasBancariasConfig() {
                     placeholder="Ej: BCP Principal, Cuenta Ventas"
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-900/10 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={form.mostrarEnCotizacion ?? true}
+                      onChange={(e) => setForm((f) => ({ ...f, mostrarEnCotizacion: e.target.checked }))}
+                      className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 dark:border-slate-700 focus:ring-emerald-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-900 dark:text-white">Mostrar en cotizaciones</span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">Si lo desactivas, esta cuenta no aparecerá en el PDF de las cotizaciones.</span>
+                    </span>
+                  </label>
                 </div>
               </div>
 

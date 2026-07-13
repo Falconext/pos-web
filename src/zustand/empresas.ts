@@ -147,6 +147,8 @@ interface UpdateEmpresaDto {
   ubigeo: string;
   rubroId: number;
   nombreComercial: string;
+  paginaWeb?: string;
+  cuentaDetraccionBN?: string;
   fechaActivacion: string;
   fechaExpiracion: string;
   providerId?: string;
@@ -155,6 +157,7 @@ interface UpdateEmpresaDto {
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   usarPrecioLoteFefo?: boolean;
+  ticketLogoSize?: number;
   directorTecnico?: string;
   brand?: string;
   producto?: string;

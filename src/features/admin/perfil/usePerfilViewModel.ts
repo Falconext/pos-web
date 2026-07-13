@@ -18,7 +18,7 @@ interface WhatsAppSettingsForm {
 interface PerfilData {
     id: number; nombre: string; email: string; rol: string; celular?: string; telefono?: string;
     empresaId: number; estado: string; fechaCreacion: string; fechaActualizacion: string;
-    empresa: { id: number; razonSocial: string; nombreComercial: string; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; directorTecnico?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
+    empresa: { id: number; razonSocial: string; nombreComercial: string; paginaWeb?: string | null; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; ticketLogoSize?: number | null; directorTecnico?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
 }
 
 const whatsappFormFromPerfil = (perfil: PerfilData): WhatsAppSettingsForm => ({
@@ -48,6 +48,9 @@ export const usePerfilViewModel = () => {
     });
     const [savingShalomConfig, setSavingShalomConfig] = useState(false);
     const [shalomForm, setShalomForm] = useState({ email: '', password: '' });
+    // Información personal editable (usuario) + página web (empresa)
+    const [personalForm, setPersonalForm] = useState({ nombre: '', celular: '', telefono: '', paginaWeb: '' });
+    const [savingPersonal, setSavingPersonal] = useState(false);
     const [usageStats, setUsageStats] = useState<any>(null);
     const fefoToggleInFlight = useRef(false);
     const barcodeToggleInFlight = useRef(false);
@@ -63,6 +66,12 @@ export const usePerfilViewModel = () => {
                 setPerfil(response.data);
                 setWhatsAppForm(whatsappFormFromPerfil(response.data));
                 setShalomForm({ email: response.data?.empresa?.shalomEmail ?? '', password: '' });
+                setPersonalForm({
+                    nombre: response.data?.nombre ?? '',
+                    celular: response.data?.celular ?? '',
+                    telefono: response.data?.telefono ?? '',
+                    paginaWeb: response.data?.empresa?.paginaWeb ?? '',
+                });
             }
             else alert('Error al cargar el perfil', 'error');
         } catch { alert('Error al cargar el perfil', 'error'); }
@@ -324,6 +333,67 @@ export const usePerfilViewModel = () => {
         }
     };
 
+    // ── Información personal (nombre/celular/teléfono) + página web de la empresa ──
+    const updatePersonalField = (field: 'nombre' | 'celular' | 'telefono' | 'paginaWeb', value: string) => {
+        setPersonalForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const personalDirty = useMemo(() => {
+        if (!perfil) return false;
+        return (
+            personalForm.nombre.trim() !== (perfil.nombre ?? '').trim() ||
+            personalForm.celular.trim() !== (perfil.celular ?? '').trim() ||
+            personalForm.telefono.trim() !== (perfil.telefono ?? '').trim() ||
+            personalForm.paginaWeb.trim() !== (perfil.empresa?.paginaWeb ?? '').trim()
+        );
+    }, [perfil, personalForm]);
+
+    const handleSavePersonal = async () => {
+        if (!perfil || savingPersonal) return;
+        if (!personalForm.nombre.trim()) {
+            useAlertStore.getState().alert('El nombre no puede estar vacío', 'error');
+            return;
+        }
+        try {
+            setSavingPersonal(true);
+            const nombre = personalForm.nombre.trim();
+            const celular = personalForm.celular.trim();
+            const telefono = personalForm.telefono.trim();
+            const paginaWeb = personalForm.paginaWeb.trim();
+
+            // Datos del usuario (nunca el email, no editable)
+            await patch('usuario/me', { nombre, celular, telefono });
+
+            // Página web es un dato de la empresa
+            if (paginaWeb !== (perfil.empresa?.paginaWeb ?? '').trim()) {
+                await useEmpresasStore.getState().actualizarMiEmpresa({ paginaWeb });
+            }
+
+            setPerfil(prev => prev ? {
+                ...prev,
+                nombre,
+                celular,
+                telefono,
+                empresa: { ...prev.empresa, paginaWeb },
+            } : prev);
+
+            // Reflejar en la sesión global para que salga en comprobantes/cotizaciones
+            useAuthStore.setState(state => ({
+                auth: state.auth ? {
+                    ...state.auth,
+                    nombre,
+                    empresa: { ...(state.auth as any).empresa, paginaWeb },
+                } : state.auth,
+            }));
+
+            useAlertStore.getState().alert('Información personal actualizada', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudo actualizar la información', 'error');
+        } finally {
+            setSavingPersonal(false);
+        }
+    };
+
     const handleChangePassword = async () => {
         const errs: Record<string, string> = {};
         if (!passwordForm.actual) errs.actual = 'Ingresa tu contraseña actual';
@@ -351,5 +421,5 @@ export const usePerfilViewModel = () => {
         }
     };
 
-    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave };
+    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, handleDirectorTecnicoSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave, personalForm, savingPersonal, personalDirty, updatePersonalField, handleSavePersonal };
 };

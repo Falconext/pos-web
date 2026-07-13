@@ -28,6 +28,7 @@ export interface IResumenReporteInformales {
 export interface IAccountingState {
     // Reportes formales (existente)
     exportExcelReport: (params: any) => void
+    exportPdfReport: (params: any, formato: 'zip' | 'pdf') => Promise<void>
     reportInvoices: [];
     resumenReporte: IResumenReporte | null,
     getAllReportInvoice: (params: any, callback?: Function,
@@ -125,7 +126,48 @@ export const useAccountingStore = create<IAccountingState>()(devtools((set, _get
             useAlertStore.setState({ loading: false });
         }
     },
-    
+
+    exportPdfReport: async (params, formato) => {
+        try {
+            useAlertStore.setState({ loading: true });
+            const base: any = { ...params, tipoComprobante: 'FORMAL', formato };
+            const filteredParams: any = Object.entries(base)
+                .filter(([_, value]) => value !== undefined && value !== null && value !== '')
+                .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
+
+            const query = new URLSearchParams(filteredParams).toString();
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/comprobante/exportar-pdf?${query}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
+                },
+            });
+            if (!response.ok) {
+                let msg = 'No se pudo exportar los comprobantes';
+                try { const j = await response.json(); msg = j?.message || msg; } catch { /* respuesta binaria/no-JSON */ }
+                throw new Error(msg);
+            }
+            const blob = await response.blob();
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const filename = match?.[1] || `comprobantes_${filteredParams.fechaInicio}_a_${filteredParams.fechaFin}.${formato === 'pdf' ? 'pdf' : 'zip'}`;
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            useAlertStore.getState().alert('Exportación generada correctamente', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error.message || 'No se pudo exportar los comprobantes', 'error');
+        } finally {
+            useAlertStore.setState({ loading: false });
+        }
+    },
+
     // Funciones para reportes informales
     getAllReportInvoiceInformal: async (params: any, callback?: Function,
         _allProperties?: boolean) => {

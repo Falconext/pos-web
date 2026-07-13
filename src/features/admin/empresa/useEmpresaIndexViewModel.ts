@@ -57,7 +57,7 @@ export const useEmpresaIndexViewModel = (): any => {
     const [searchTerm, setSearchTerm] = useState('');
     const [tipoFiltro, setTipoFiltro] = useState<'FORMAL' | 'INFORMAL' | ''>('');
     const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'INACTIVO' | 'TODOS'>('TODOS');
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(50);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
     const [currentPageState, setCurrentPageState] = useState(1);

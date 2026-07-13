@@ -2,6 +2,22 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { get, post, put, del } from '../utils/fetch';
 import useAlertStore from './alert';
+import { useAuthStore } from './auth';
+
+/**
+ * Mantiene sincronizadas las cuentas activas dentro de la sesión (auth.empresa),
+ * que es de donde leen los comprobantes/cotizaciones para mostrar los datos
+ * bancarios. Así, al crear/editar/desactivar una cuenta, el PDF y la vista de
+ * "cotizaciones/nuevo" se actualizan al instante sin recargar la página.
+ */
+const sincronizarAuth = (cuentas: ICuentaBancaria[]) => {
+  const activas = cuentas.filter((c) => c.activo);
+  useAuthStore.setState((state: any) =>
+    state.auth
+      ? { auth: { ...state.auth, empresa: { ...state.auth.empresa, cuentasBancarias: activas } } }
+      : state,
+  );
+};
 
 export const BANCOS_PERU = ['BCP', 'INTERBANK', 'BBVA', 'SCOTIABANK', 'PICHINCHA', 'BANBIF', 'NACION', 'OTROS'] as const;
 export type BancoPeru = typeof BANCOS_PERU[number];
@@ -17,6 +33,7 @@ export interface ICuentaBancaria {
   moneda: string;
   alias?: string | null;
   activo: boolean;
+  mostrarEnCotizacion: boolean;
   creadoEn: string;
 }
 
@@ -28,6 +45,7 @@ export interface ICreateCuentaBancaria {
   tipoCuenta?: string;
   moneda?: string;
   alias?: string;
+  mostrarEnCotizacion?: boolean;
 }
 
 export interface IUpdateCuentaBancaria extends Partial<ICreateCuentaBancaria> {
@@ -45,7 +63,7 @@ interface CuentasBancariasState {
 
 export const useCuentasBancariasStore = create<CuentasBancariasState>()(
   devtools(
-    (set, _getState: () => CuentasBancariasState) => ({
+    (set, getState: () => CuentasBancariasState) => ({
       cuentas: [],
       loading: false,
 
@@ -55,6 +73,7 @@ export const useCuentasBancariasStore = create<CuentasBancariasState>()(
           const res: any = await get('empresa/cuentas-bancarias');
           if (res.code === 1) {
             set({ cuentas: res.data || [] });
+            sincronizarAuth(res.data || []);
           }
         } catch {
           // silencioso
@@ -69,6 +88,7 @@ export const useCuentasBancariasStore = create<CuentasBancariasState>()(
           const res: any = await post('empresa/cuentas-bancarias', data);
           if (res.code === 1) {
             set((state) => ({ cuentas: [...state.cuentas, res.data] }));
+            sincronizarAuth(getState().cuentas);
             useAlertStore.getState().alert('Cuenta bancaria creada', 'success');
           } else {
             useAlertStore.getState().alert(res.message || 'Error al crear cuenta', 'error');
@@ -86,6 +106,7 @@ export const useCuentasBancariasStore = create<CuentasBancariasState>()(
             set((state) => ({
               cuentas: state.cuentas.map((c) => (c.id === id ? res.data : c)),
             }));
+            sincronizarAuth(getState().cuentas);
             useAlertStore.getState().alert('Cuenta bancaria actualizada', 'success');
           } else {
             useAlertStore.getState().alert(res.message || 'Error al actualizar', 'error');
@@ -103,6 +124,7 @@ export const useCuentasBancariasStore = create<CuentasBancariasState>()(
             set((state) => ({
               cuentas: state.cuentas.map((c) => (c.id === id ? { ...c, activo: false } : c)),
             }));
+            sincronizarAuth(getState().cuentas);
             useAlertStore.getState().alert('Cuenta bancaria desactivada', 'success');
           } else {
             useAlertStore.getState().alert(res.message || 'Error al eliminar', 'error');

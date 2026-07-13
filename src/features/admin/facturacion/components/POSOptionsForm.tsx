@@ -324,7 +324,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
             )}
 
             {/* Operación Fiscal — trigger modal (Tipo de Operación + Detracción + Retención) */}
-            {vm.formValues?.comprobante === "FACTURA" && (
+            {(vm.formValues?.comprobante === "FACTURA" || vm.isQuotationRoute) && (
                 <OperacionFiscalTrigger vm={vm} />
             )}
 

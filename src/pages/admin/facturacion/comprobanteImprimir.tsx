@@ -178,6 +178,7 @@ console.log(formValues)
                             RAZON SOCIAL: {company?.empresa?.razonSocial?.toUpperCase()}<br />
                             DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br />
                             {empresaNumero && <>CELULAR: {empresaNumero}<br /></>}
+                            {(company?.empresa as any)?.paginaWeb && <>WEB: {(company?.empresa as any).paginaWeb}<br /></>}
                             <span className="">RUC: {company?.empresa?.ruc}</span>
                         </p>
                         <hr className="my-1 border-dashed border-[#222]" />
@@ -375,10 +376,10 @@ console.log(formValues)
                                 {/* Header with Emisor and Cliente Boxes */}
                                 {/* RESTORED: Header with Logo and Company Info */}
                                 <div className="flex justify-between items-start mb-4">
-                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" style={{ width: 150, height: 150, objectFit: 'contain', objectPosition: 'left' }} />}
+                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="object-contain object-left" style={{ width: company?.empresa?.ticketLogoSize ?? 150, height: company?.empresa?.ticketLogoSize ?? 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}</p>
+                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}{(company?.empresa as any)?.paginaWeb && <><br />WEB: {(company?.empresa as any).paginaWeb}</>}</p>
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
@@ -500,16 +501,57 @@ console.log(formValues)
                                                 </div>
                                             )}
 
-                                            {/* Footer Info */}
-                                            <div className="mt-8">
-                                                <p className="font-bold">DEPOSITAR A NOMBRE DE {company?.empresa?.razonSocial}</p>
-                                                <p className="mt-1 font-bold">BANCO {(company?.empresa as any)?.bancoNombre?.toUpperCase() || ''}</p>
-                                                <p className="font-bold">MONEDA {(company?.empresa as any)?.monedaCuenta || 'SOLES'}</p>
-                                                <p className="font-bold">N° CUENTA</p>
-                                                <p>{(company?.empresa as any)?.numeroCuenta || ''}</p>
-                                                <p className="font-bold">CCI</p>
-                                                <p>{(company?.empresa as any)?.cci || ''}</p>
-                                            </div>
+                                            {/* Footer Info — cuentas bancarias (tabla nueva con fallback legacy) */}
+                                            {(() => {
+                                                const emp = company?.empresa as any;
+                                                const razonSocial = (company?.empresa?.razonSocial || '').toUpperCase();
+                                                const nuevas = (Array.isArray(emp?.cuentasBancarias) ? emp.cuentasBancarias : [])
+                                                    .filter((c: any) => c.mostrarEnCotizacion !== false);
+                                                const cuentas = nuevas.length > 0
+                                                    ? nuevas.map((c: any) => ({
+                                                        banco: (c.banco || '').toUpperCase(),
+                                                        moneda: c.moneda === 'USD' ? 'DÓLARES' : 'SOLES',
+                                                        numeroCuenta: c.numeroCuenta || '',
+                                                        cci: c.cci || '',
+                                                        titular: (c.titular || razonSocial).toUpperCase(),
+                                                    }))
+                                                    : (emp?.bancoNombre
+                                                        ? [{
+                                                            banco: String(emp.bancoNombre).toUpperCase(),
+                                                            moneda: emp?.monedaCuenta || 'SOLES',
+                                                            numeroCuenta: emp?.numeroCuenta || '',
+                                                            cci: emp?.cci || '',
+                                                            titular: razonSocial,
+                                                        }]
+                                                        : []);
+                                                if (cuentas.length === 0) return null;
+                                                return (
+                                                    <div className="mt-8">
+                                                        {cuentas.map((c: any, i: number) => (
+                                                            <div key={i} className="mt-2">
+                                                                <p className="font-bold">DEPOSITAR A NOMBRE DE {c.titular}</p>
+                                                                <p className="font-bold">BANCO {c.banco}</p>
+                                                                <p className="font-bold">MONEDA {c.moneda}</p>
+                                                                <p className="font-bold">N° CUENTA</p>
+                                                                <p>{c.numeroCuenta}</p>
+                                                                <p className="font-bold">CCI</p>
+                                                                <p>{c.cci}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Detracción — solo si la cotización tiene detracción configurada */}
+                                            {formValues?.tipoDetraccion && (
+                                                <div className="mt-4">
+                                                    <p className="font-bold">DETRACCIÓN</p>
+                                                    <p>{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</p>
+                                                    <p>MONTO A DETRAER: S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</p>
+                                                    {formValues.cuentaBancoNacion && <p>CTA. BANCO DE LA NACIÓN: {formValues.cuentaBancoNacion}</p>}
+                                                    {formValues.medioPagoDetraccion && <p>MEDIO DE PAGO: {formValues.medioPagoDetraccion?.codigo} - {formValues.medioPagoDetraccion?.descripcion}</p>}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="w-1/3 text-right space-y-1">
@@ -585,10 +627,10 @@ console.log(formValues)
                             /* Standard invoice footer (Existing Logic for non-quotation) */
                             <div className="w-full">
                                 <div className="flex justify-between items-start">
-                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="w-[150px] h-[150px] object-contain object-left" style={{ width: 150, height: 150, objectFit: 'contain', objectPosition: 'left' }} />}
+                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="object-contain object-left" style={{ width: company?.empresa?.ticketLogoSize ?? 150, height: company?.empresa?.ticketLogoSize ?? 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}</p>
+                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}{(company?.empresa as any)?.paginaWeb && <><br />WEB: {(company?.empresa as any).paginaWeb}</>}</p>
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>

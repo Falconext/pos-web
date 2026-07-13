@@ -34,6 +34,7 @@ import {
 } from "./FacturacionModel";
 import { COURIERS } from "./components/EnvioModal";
 import { mapDetalleToInvoiceProduct } from "./utils/comprobanteProductMapper";
+import { tipoCambioService } from "@/services/tipoCambio.service";
 
 type EnvioDespachoFormData = {
     transportista?: string;
@@ -901,6 +902,16 @@ export const useFacturacionViewModel = () => {
         return rulePrice;
     };
 
+    // Tipo de cambio del día (venta). Se usa para convertir a soles los productos en dólares
+    // al agregarlos al carrito. El comprobante siempre se emite en soles (PEN).
+    const [tcVenta, setTcVenta] = useState<number | null>(null);
+    useEffect(() => {
+        tipoCambioService
+            .consultar()
+            .then((tc) => setTcVenta(Number(tc?.venta) || null))
+            .catch(() => setTcVenta(null));
+    }, []);
+
     const getApplicablePrice = (item: any, qty: number): number => {
         const base = Number(item.precioBase ?? item.precioUnitario ?? 0);
         if (!Number.isFinite(base) || base <= 0) return 0;
@@ -1143,8 +1154,30 @@ export const useFacturacionViewModel = () => {
         }
         // ── Fin multi-lote ──────────────────────────────────────────────────────
 
+        // Moneda del producto: si es USD, convertimos su precio (y precios mayorista) a soles
+        // con el tipo de cambio del día. Todo el carrito y el comprobante quedan en soles.
+        const esUSD = String(product?.moneda || 'PEN').toUpperCase() === 'USD';
+        const tc = esUSD ? Number(tcVenta) : 1;
+        if (esUSD && (!Number.isFinite(tc) || tc <= 0)) {
+            // Aún no cargó el tipo de cambio: lo pedimos y avisamos que reintente.
+            tipoCambioService
+                .consultar()
+                .then((r) => setTcVenta(Number(r?.venta) || null))
+                .catch(() => setTcVenta(null));
+            return useAlertStore.getState().alert(
+                "Obteniendo el tipo de cambio del día para el producto en dólares. Intenta agregarlo de nuevo en un momento.",
+                "warning",
+            );
+        }
+        const preciosMayoristaConv = esUSD && Array.isArray(product?.preciosMayorista)
+            ? product.preciosMayorista.map((r: any) => ({
+                ...r,
+                precio: Number(r?.precio ?? 0) * tc,
+            }))
+            : product?.preciosMayorista;
+
         const precioDesdeLoteFefo = Number(product?.loteFefoCostoUnitario ?? 0);
-        const precioBaseProducto = Number(product?.precioUnitario ?? 0);
+        const precioBaseProducto = Number(product?.precioUnitario ?? 0) * tc;
         const precioBaseCaja = usarPrecioLoteFefo && precioDesdeLoteFefo > 0
             ? precioDesdeLoteFefo
             : precioBaseProducto;
@@ -1183,10 +1216,15 @@ export const useFacturacionViewModel = () => {
             const base = precioBaseSeleccionado;
             addProductsInvoice({
                 ...product,
+                // Precio ya convertido a soles (si era USD). El carrito trabaja en soles.
+                moneda: 'PEN',
+                preciosMayorista: preciosMayoristaConv,
                 precioBase: base,
-                precioUnitario: getApplicablePrice({ precioBase: base, preciosMayorista: product.preciosMayorista }, 1),
+                precioUnitario: getApplicablePrice({ precioBase: base, preciosMayorista: preciosMayoristaConv }, 1),
                 precioOrigen: origenPrecio,
                 unidadMedida: unidadMedidaNombre,
+                // Trazabilidad para mostrar el precio original en dólares en el carrito
+                ...(esUSD ? { monedaOriginal: 'USD', precioOriginalUSD: Number(product?.precioUnitario ?? 0), tipoCambio: tc } : {}),
                 ...farmaciaExtra,
                 ...fraccionExtra,
             });

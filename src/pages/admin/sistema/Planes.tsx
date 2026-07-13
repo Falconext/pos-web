@@ -78,7 +78,9 @@ const Planes = () => {
             : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Falconext</span>,
         'Producto': p.producto === 'hotel'
             ? <span className="text-amber-700 bg-amber-100 px-2 py-1 rounded text-xs font-semibold">Hotel</span>
-            : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Facturación</span>,
+            : p.producto === 'logistica'
+                ? <span className="text-indigo-700 bg-indigo-100 px-2 py-1 rounded text-xs font-semibold">Logística</span>
+                : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Facturación</span>,
         'Costo': `S/ ${Number(p.costo).toFixed(2)}`,
         'Duración': `${p.duracionDias} días`,
         'Anual': p.duracionDias >= 360 ? <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">Anual</span> : <span className="text-gray-500 text-xs">Mensual</span>,
@@ -127,6 +129,7 @@ const Planes = () => {
                                 { id: '', label: 'Todos' },
                                 { id: 'facturacion', label: 'Facturación' },
                                 { id: 'hotel', label: 'Hotel' },
+                                { id: 'logistica', label: 'Logística' },
                             ] as const).map((item) => (
                                 <button
                                     key={item.id || 'all'}
@@ -159,10 +162,11 @@ const Planes = () => {
                             {!hasProductoScope && (
                                 <div>
                                     <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">Producto del plan</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         {([
                                             { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                                             { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                                            { id: 'logistica', label: 'Logística', icon: 'solar:routing-2-bold-duotone', color: '#6366F1' },
                                         ] as const).map((product) => {
                                             const selected = (vm.form.producto || 'facturacion') === product.id;
                                             return (
@@ -354,7 +358,7 @@ const Planes = () => {
                         <p className="text-sm text-purple-700 dark:text-purple-400">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
                     </div>
                     <ModuloSelector
-                        producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel'}
+                        producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel' | 'logistica'}
                         selectedModulos={vm.form.moduloIds || []}
                         onModulosChange={(modulos) => vm.setForm(prev => ({ ...prev, moduloIds: modulos }))}
                         selectedSubModulos={vm.form.subModuloIds || []}

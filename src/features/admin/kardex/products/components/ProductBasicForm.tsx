@@ -11,6 +11,7 @@ import { ProductStockManager } from './ProductStockManager';
 
 import { ProductVariantsManager } from './ProductVariantsManager';
 import { ProductFinancialAnalysis } from './ProductFinancialAnalysis';
+import { tipoCambioService } from '@/services/tipoCambio.service';
 
 const afectaciones = [
     { id: "10", value: "Gravado - Operación Onerosa" },
@@ -38,6 +39,20 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const [provisionOpen, setProvisionOpen] = useState(false);
 
     const esServicio = String(((formValues as any)?.atributosTecnicos || {})?.tipoProducto || '').toUpperCase() === 'SERVICIO';
+
+    // Moneda del producto: 'PEN' (soles) o 'USD' (dólares). Al facturar, USD se convierte a soles con el TC del día.
+    const moneda = ((formValues as any)?.moneda === 'USD') ? 'USD' : 'PEN';
+    const simbolo = moneda === 'USD' ? '$' : 'S/';
+    const setMoneda = (m: 'PEN' | 'USD') => setFormValues({ ...formValues, moneda: m } as any);
+    const [tcVenta, setTcVenta] = useState<number | null>(null);
+    useEffect(() => {
+        if (moneda === 'USD' && tcVenta == null) {
+            tipoCambioService
+                .consultar()
+                .then((tc) => setTcVenta(Number(tc?.venta) || null))
+                .catch(() => setTcVenta(null));
+        }
+    }, [moneda, tcVenta]);
 
     const setAtributoTecnico = (key: string, value: string) => {
         setFormValues({
@@ -375,6 +390,18 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </div>
             )}
 
+            <div className="col-span-1 md:col-span-1">
+                <InputPro
+                    autocomplete="off"
+                    value={(formValues as any)?.codProdSunat || ''}
+                    name="codProdSunat"
+                    onChange={handleChange}
+                    isLabel
+                    label="Código de producto SUNAT"
+                    placeholder="Requerido para detracción (ej. UNSPSC / cód. SUNAT)"
+                />
+            </div>
+
             <div className={`col-span-1 ${productSections.codigos ? 'md:col-span-1' : 'md:col-span-2'} relative`}>
                 <div className="flex justify-between items-center mb-1">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{labels.nombre}</label>
@@ -666,7 +693,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             <div className="w-full flex flex-col justify-between rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gradient-to-br from-white to-gray-50/30 dark:from-slate-800/60 dark:to-slate-900/40 p-4 space-y-3">
                                 <div>
                                     {/* Header con toggle */}
-                                    <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                                         <div className="flex items-center gap-2">
                                             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                                                 <Icon icon="solar:dollar-minimalistic-bold-duotone" className="text-white" width={14} />
@@ -685,6 +712,21 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                         </div>
                                     </div>
 
+                                    {/* Selector de moneda: soles (S/) o dólares ($) */}
+                                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                                        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Moneda del precio</span>
+                                        <div className="flex items-center gap-1 p-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
+                                            <button type="button" onClick={() => setMoneda('PEN')}
+                                                className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${moneda === 'PEN' ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
+                                                S/ Soles
+                                            </button>
+                                            <button type="button" onClick={() => setMoneda('USD')}
+                                                className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${moneda === 'USD' ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>
+                                                $ Dólares
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     {/* Input precio */}
                                     <InputPro
                                         type="number"
@@ -692,27 +734,42 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                         name="precioUnitario"
                                         placeholder="0.00"
                                         isLabel
-                                        label={modoConIgv ? `Precio de venta con IGV (S/)${esGravado ? '' : ' — ' + ((formValues as any).tipoAfectacionIGV === '20' ? 'Exonerado' : 'Inafecto')}` : 'Precio neto sin IGV (S/)'}
+                                        label={modoConIgv ? `Precio de venta con IGV (${simbolo})${esGravado ? '' : ' — ' + ((formValues as any).tipoAfectacionIGV === '20' ? 'Exonerado' : 'Inafecto')}` : `Precio neto sin IGV (${simbolo})`}
                                         value={modoConIgv ? (precio || '') : (precioSinIgv || '')}
                                         onChange={handlePrecioChange}
                                         handleOnBlur={handlePrecioUnitarioBlur}
                                         error={errors.precioUnitario}
                                     />
 
+                                    {/* Referencia en soles cuando el precio está en dólares */}
+                                    {moneda === 'USD' && (
+                                        <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 px-3 py-2">
+                                            <Icon icon="solar:info-circle-bold" className="text-blue-500 mt-0.5 shrink-0" width={13} />
+                                            <p className="text-[11px] leading-snug text-blue-700 dark:text-blue-300">
+                                                Se facturará en <strong>soles</strong> al tipo de cambio del día.
+                                                {tcVenta && precio > 0
+                                                    ? ` Hoy ≈ S/ ${(precio * tcVenta).toFixed(2)} (TC venta S/ ${tcVenta.toFixed(3)}).`
+                                                    : tcVenta
+                                                        ? ` TC venta de hoy: S/ ${tcVenta.toFixed(3)}.`
+                                                        : ''}
+                                            </p>
+                                        </div>
+                                    )}
+
                                     {/* Desglose IGV */}
                                     {esGravado && precio > 0 && (
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-8">
                                             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-center">
                                                 <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Neto</p>
-                                                <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mt-0.5">S/ {precioSinIgv.toFixed(2)}</p>
+                                                <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mt-0.5">{simbolo} {precioSinIgv.toFixed(2)}</p>
                                             </div>
                                             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 text-center">
                                                 <p className="text-[10px] text-blue-500 font-medium uppercase tracking-wide">IGV 18%</p>
-                                                <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">S/ {igvMonto.toFixed(2)}</p>
+                                                <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">{simbolo} {igvMonto.toFixed(2)}</p>
                                             </div>
                                             <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2 text-center">
                                                 <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide">Total</p>
-                                                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">S/ {precioConIgv.toFixed(2)}</p>
+                                                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{simbolo} {precioConIgv.toFixed(2)}</p>
                                             </div>
                                         </div>
                                     )}
@@ -727,7 +784,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                     name="costoUnitario"
                                                     placeholder="0.00"
                                                     isLabel
-                                                    label="Costo unitario S/ (neto sin IGV)"
+                                                    label={`Costo unitario ${simbolo} (neto sin IGV)`}
                                                     value={(formValues as any)?.costoUnitario != null ? parseFloat(Number((formValues as any).costoUnitario).toFixed(2)) : ''}
                                                     onChange={(e) => setFormValues({ ...formValues, costoUnitario: parseFloat(e.target.value) || 0 } as any)}
                                                 />

@@ -237,6 +237,7 @@ export const FacturacionNuevoView = () => {
                 totalFactura={vm.total || 0}
                 tiposDetraccion={vm.tiposDetraccion}
                 mediosPagoDetraccion={vm.mediosPagoDetraccion}
+                defaultCuentaBancoNacion={(vm.auth as any)?.empresa?.cuentaDetraccionBN || ''}
             />
             <ModalDetraccion
                 isOpen={vm.isModalRetencionOpen}

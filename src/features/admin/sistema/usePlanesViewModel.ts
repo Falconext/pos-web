@@ -7,7 +7,7 @@ import { useAuthStore } from '@/zustand/auth';
 export interface Plan {
     id: number; nombre: string; descripcion?: string; costo: number;
     plataforma?: 'falconext' | 'krezka';
-    producto?: 'facturacion' | 'hotel';
+    producto?: 'facturacion' | 'hotel' | 'logistica';
     duracionDias: number; limiteUsuarios: number; maxSedes: number;
     maxImagenesProducto: number;
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
@@ -69,9 +69,12 @@ export const usePlanesViewModel = () => {
     const { getAllModulos } = useModulosStore();
     const { auth } = useAuthStore();
     const plataformaScope = (String(auth?.sistemaNegocio || '').toLowerCase() === 'krezka' ? 'krezka' : String(auth?.sistemaNegocio || '').toLowerCase() === 'falconext' ? 'falconext' : '') as '' | 'falconext' | 'krezka';
-    const productoScope = (String(auth?.sistemaProducto || '').toLowerCase() === 'hotel' ? 'hotel' : String(auth?.sistemaProducto || '').toLowerCase() === 'facturacion' ? 'facturacion' : '') as '' | 'facturacion' | 'hotel';
+    const productoScope = (() => {
+        const p = String(auth?.sistemaProducto || '').toLowerCase();
+        return (p === 'hotel' || p === 'facturacion' || p === 'logistica' ? p : '') as '' | 'facturacion' | 'hotel' | 'logistica';
+    })();
     const [plataformaFiltro, setPlataformaFiltro] = useState<'' | 'falconext' | 'krezka'>(plataformaScope);
-    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel'>(productoScope);
+    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel' | 'logistica'>(productoScope);
 
     useEffect(() => {
         setPlataformaFiltro(plataformaScope);
@@ -126,7 +129,7 @@ export const usePlanesViewModel = () => {
 
     const handleOpenEdit = (plan: Plan) => {
         const plataforma = (plan.plataforma || 'falconext') as 'falconext' | 'krezka';
-        const producto = (plan.producto || 'facturacion') as 'facturacion' | 'hotel';
+        const producto = (plan.producto || 'facturacion') as 'facturacion' | 'hotel' | 'logistica';
         setIsEdit(true);
         setCurrentId(plan.id);
         setForm({
@@ -154,7 +157,7 @@ export const usePlanesViewModel = () => {
                     return acc;
                 }, {} as Record<string, boolean>),
                 plataforma: (plataformaScope || form.plataforma || 'falconext') as 'falconext' | 'krezka',
-                producto: (productoScope || form.producto || 'facturacion') as 'facturacion' | 'hotel',
+                producto: (productoScope || form.producto || 'facturacion') as 'facturacion' | 'hotel' | 'logistica',
                 costo: Number(form.costo),
                 duracionDias: Number(form.duracionDias),
                 limiteUsuarios: Number(form.limiteUsuarios),

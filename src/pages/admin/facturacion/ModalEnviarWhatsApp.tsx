@@ -241,10 +241,13 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                     <Button onClick={handleClose} className="flex-1 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700">
                                         Cancelar
                                     </Button>
-                                    {/* 
+                                    {/* Botón "Enviar (API)" oculto temporalmente hasta terminar el
+                                        setup de producción de Zavu (número + plantilla + key zv_live_).
+                                        Reactivar descomentando cuando Zavu esté listo. */}
+                                    {/*
                                     <Button
                                         onClick={handleEnviarWhatsApp}
-                                        disabled={enviandoWhatsApp || !numeroDestino.trim()}
+                                        disabled={enviandoWhatsApp || generando || !numeroDestino.trim()}
                                         className="flex-1 bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 disabled:opacity-60"
                                     >
                                         {enviandoWhatsApp ? (

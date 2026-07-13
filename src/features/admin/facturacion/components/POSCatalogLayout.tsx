@@ -332,7 +332,8 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                                 const factor = Number(item.factorConversion ?? 1);
                                                 const modo = vm.modoFraccionPorProducto?.[item.id] ?? 'CAJA';
                                                 const precio = Number(item.precioUnitario);
-                                                return `S/${(vm.isFarmaciaRetail && factor > 1 && modo === 'UNIDAD' ? precio / factor : precio).toFixed(2)}`;
+                                                const simbolo = String(item.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/';
+                                                return `${simbolo}${(vm.isFarmaciaRetail && factor > 1 && modo === 'UNIDAD' ? precio / factor : precio).toFixed(2)}`;
                                             })()}
                                         </p>
                                         <div className="text-[10px] leading-tight font-medium space-y-0.5">

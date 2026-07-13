@@ -29,6 +29,8 @@ const GuiaRemisionPrint = forwardRef<HTMLDivElement, GuiaRemisionPrintProps>(({ 
         return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
     })();
 
+    const logoSizePx = Number(company?.ticketLogoSize) || 96;
+
     // Helper para formatear fechas
     const fmtDate = (date: string) => date ? moment.utc(date).format('DD/MM/YYYY') : '-';
 
@@ -39,7 +41,7 @@ const GuiaRemisionPrint = forwardRef<HTMLDivElement, GuiaRemisionPrintProps>(({ 
                 <div className="flex justify-between items-stretch mb-4 gap-4">
                     {/* Logo Box */}
                     <div className="w-1/4 flex items-center justify-center p-2">
-                        {logoUrl && <img src={logoUrl} alt="Logo" className="max-h-24 max-w-full object-contain" />}
+                        {logoUrl && <img src={logoUrl} alt="Logo" className="max-w-full object-contain" style={{ maxHeight: `${logoSizePx}px` }} />}
                     </div>
 
                     {/* Company Info */}

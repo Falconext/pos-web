@@ -113,6 +113,7 @@ export default function ProductsView() {
             const formatMoney = (value: number) => value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const costo = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
             const precio = Number(item?.precioUnitario || 0);
+            const simbolo = String(itemAny?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/';
             const stock = Number(item?.stock || 0);
             const esServicio = String(itemAny?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
             const costoFijo = Number(itemAny?.costoFijo || 0);
@@ -172,17 +173,17 @@ export default function ProductsView() {
                 unidadMedidaId: item?.unidadMedida?.id || item?.unidadMedidaId,
                 marcaId: (item as any)?.marca?.id || (item as any)?.marcaId || null,
                 marcaNombre: (item as any)?.marca?.nombre || "",
-                'Precio Venta': `S/ ${precio.toFixed(2)}`,
-                'Costo': costo > 0 ? `S/ ${costo.toFixed(2)}` : '-',
-                'Valor Inventario': esServicio ? '-' : valorInventario > 0 ? `S/ ${formatMoney(valorInventario)}` : '-',
+                'Precio Venta': `${simbolo} ${precio.toFixed(2)}`,
+                'Costo': costo > 0 ? `${simbolo} ${costo.toFixed(2)}` : '-',
+                'Valor Inventario': esServicio ? '-' : valorInventario > 0 ? `${simbolo} ${formatMoney(valorInventario)}` : '-',
                 'Costo Total Fijo': !esServicio && costoTotalFijo > 0 ? (
                     <div className="flex flex-col">
-                        <span className="font-semibold text-gray-800 dark:text-gray-100">S/ {formatMoney(costoTotalFijo)}</span>
-                        <span className="text-[10px] text-gray-400">Unit. S/ {formatMoney(costoFijoUnitario)}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100">{simbolo} {formatMoney(costoTotalFijo)}</span>
+                        <span className="text-[10px] text-gray-400">Unit. {simbolo} {formatMoney(costoFijoUnitario)}</span>
                     </div>
                 ) : '-',
                 'Margen': margen > 0 ? `${margen.toFixed(1)}%` : '-',
-                'Ganancia/Unidad': gananciaUnidad > 0 ? `S/ ${gananciaUnidad.toFixed(2)}` : '-',
+                'Ganancia/Unidad': gananciaUnidad > 0 ? `${simbolo} ${gananciaUnidad.toFixed(2)}` : '-',
                 'Stock': (
                     <span
                         style={{
@@ -420,11 +421,11 @@ export default function ProductsView() {
                             <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Precio venta</p>
-                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">S/ {Number(item?.precioUnitario || 0).toFixed(2)}</p>
+                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{String((item as any)?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} {Number(item?.precioUnitario || 0).toFixed(2)}</p>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Costo</p>
-                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">S/ {Number(item?.costoUnitario || item?.costoPromedio || 0).toFixed(2)}</p>
+                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{String((item as any)?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} {Number(item?.costoUnitario || item?.costoPromedio || 0).toFixed(2)}</p>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Marca</p>

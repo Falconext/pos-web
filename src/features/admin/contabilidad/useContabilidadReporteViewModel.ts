@@ -7,8 +7,8 @@ import { useSedesStore } from '@/zustand/sedes';
 const useDateFilter = () => {
     const { auth } = useAuthStore();
     const [isHoveredExp, setIsHoveredExp] = useState(false);
-    const [fechaInicio, setFechaInicio] = useState<string>(moment(new Date()).format('YYYY-MM-DD'));
-    const [fechaFin, setFechaFin] = useState<string>(moment(new Date()).format('YYYY-MM-DD'));
+    const [fechaInicio, setFechaInicio] = useState<string>(moment().startOf('month').format('YYYY-MM-DD'));
+    const [fechaFin, setFechaFin] = useState<string>(moment().format('YYYY-MM-DD'));
 
     const handleDate = (date: string, name: string) => {
         if (!moment(date, 'DD/MM/YYYY', true).isValid()) return;
@@ -20,10 +20,11 @@ const useDateFilter = () => {
 };
 
 export const useReporteViewModel = () => {
-    const { reportInvoices, getAllReportInvoice, resumenReporte, exportExcelReport } = useAccountingStore();
+    const { reportInvoices, getAllReportInvoice, resumenReporte, exportExcelReport, exportPdfReport } = useAccountingStore();
     const { auth, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate } = useDateFilter();
     const { sedes, listarSedes } = useSedesStore();
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
 
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
     const canFilterSede = isAdmin || auth?.rol === 'USUARIO_EMPRESA';
@@ -66,6 +67,7 @@ export const useReporteViewModel = () => {
             correlativo: item?.correlativo,
             ruc: item?.cliente?.nroDoc || '-',
             cliente: item?.cliente?.nombre || '-',
+            vendedor: item?.usuario?.nombre || '-',
             fecha: moment(item?.fechaEmision).utcOffset(-5 * 60).format('DD/MM/YYYY'),
             moneda,
             formaPago,
@@ -87,7 +89,18 @@ export const useReporteViewModel = () => {
         exportExcelReport(params);
     };
 
-    return { reports, resumenReporte, isHoveredExp, setIsHoveredExp, handleDate, handleExport, canFilterSede, sedesOptions, handleSelectSede };
+    const handleExportPdf = async (formato: 'zip' | 'pdf') => {
+        const params: any = { fechaInicio, fechaFin };
+        if (selectedSedeId) params.sedeId = selectedSedeId;
+        setIsExportingPdf(true);
+        try {
+            await exportPdfReport(params, formato);
+        } finally {
+            setIsExportingPdf(false);
+        }
+    };
+
+    return { reports, resumenReporte, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate, handleExport, handleExportPdf, isExportingPdf, canFilterSede, sedesOptions, handleSelectSede };
 };
 
 export const useReporteInformalesViewModel = () => {
@@ -134,5 +147,5 @@ export const useReporteInformalesViewModel = () => {
         exportExcelReportInformal(params);
     };
 
-    return { reports, resumenReporteInformal, isHoveredExp, setIsHoveredExp, handleDate, handleExport, canFilterSede, sedesOptions, handleSelectSede };
+    return { reports, resumenReporteInformal, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate, handleExport, canFilterSede, sedesOptions, handleSelectSede };
 };

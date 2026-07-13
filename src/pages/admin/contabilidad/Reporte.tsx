@@ -1,10 +1,12 @@
 "use client";
 import { useState } from 'react';
+import moment from 'moment';
 import { useReporteViewModel, useReporteInformalesViewModel } from '@/features/admin/contabilidad/useContabilidadReporteViewModel';
 import DataTable from "@/components/Datatable";
 import { Calendar } from "@/components/Date";
 import { Icon } from "@iconify/react";
 import Select from "@/components/Select";
+import useOutsideClick from "@/hooks/useOutsideClick";
 
 const FORMAL_COLUMNS = [
     { label: 'Sede', key: 'sede' },
@@ -13,6 +15,7 @@ const FORMAL_COLUMNS = [
     { label: 'Correlativo', key: 'correlativo' },
     { label: 'RUC/DNI', key: 'ruc' },
     { label: 'Cliente', key: 'cliente' },
+    { label: 'Vendedor', key: 'vendedor' },
     { label: 'Fecha', key: 'fecha' },
     { label: 'Moneda', key: 'moneda' },
     { label: 'Forma Pago', key: 'formaPago' },
@@ -114,6 +117,7 @@ const MobileReportCards = ({ reports, type }: { reports: any[]; type: 'formal' |
 
 const TabFormal = () => {
     const vm = useReporteViewModel();
+    const [pdfMenuOpen, setPdfMenuOpen, pdfMenuRef] = useOutsideClick(false);
     return (
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
             <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
@@ -121,18 +125,56 @@ const TabFormal = () => {
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto] xl:items-end">
-                    <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
-                    <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto_auto] xl:items-end">
+                    <Calendar name="fechaInicio" value={moment(vm.fechaInicio).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
+                    <Calendar name="fechaFin" value={moment(vm.fechaFin).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
                     {vm.canFilterSede && (
                         <div className="w-full">
                             <Select error="" label="Sede" name="sedeId" defaultValue="Todas las sedes" onChange={vm.handleSelectSede} options={vm.sedesOptions} />
                         </div>
                     )}
+                    <div className="relative w-full md:w-auto xl:ml-auto" ref={pdfMenuRef}>
+                        <button
+                            type="button"
+                            onClick={() => setPdfMenuOpen(!pdfMenuOpen)}
+                            disabled={vm.isExportingPdf}
+                            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-200 transition-all hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                        >
+                            <Icon icon={vm.isExportingPdf ? 'line-md:loading-twotone-loop' : 'solar:export-bold-duotone'} className="text-base text-blue-600 dark:text-blue-400" />
+                            {vm.isExportingPdf ? 'Exportando...' : 'Exportar PDF'}
+                            {!vm.isExportingPdf && <Icon icon="solar:alt-arrow-down-linear" className="text-sm text-gray-400" />}
+                        </button>
+                        {pdfMenuOpen && !vm.isExportingPdf && (
+                            <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => { setPdfMenuOpen(false); vm.handleExportPdf('pdf'); }}
+                                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                >
+                                    <Icon icon="mdi:file-pdf-box" className="text-xl text-rose-600 mt-0.5" />
+                                    <span>
+                                        <span className="block text-sm font-bold text-gray-800 dark:text-gray-100">PDF único (combinado)</span>
+                                        <span className="block text-xs text-gray-400">Todos los comprobantes en un solo archivo</span>
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setPdfMenuOpen(false); vm.handleExportPdf('zip'); }}
+                                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-t border-gray-100 dark:border-slate-700"
+                                >
+                                    <Icon icon="mdi:zip-box-outline" className="text-xl text-amber-600 mt-0.5" />
+                                    <span>
+                                        <span className="block text-sm font-bold text-gray-800 dark:text-gray-100">ZIP (archivos separados)</span>
+                                        <span className="block text-xs text-gray-400">Un PDF por cada comprobante</span>
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <button
                         type="button"
                         onClick={vm.handleExport}
-                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-95 md:w-auto xl:ml-auto"
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-95 md:w-auto"
                     >
                         <Icon icon="solar:export-bold" className="text-base" />
                         Exportar Excel
@@ -142,6 +184,12 @@ const TabFormal = () => {
             <div className="p-4">
                 {vm.reports?.length > 0 ? (
                     <>
+                        <div className="mb-3 flex items-center gap-2">
+                            <Icon icon="solar:documents-bold-duotone" className="text-lg text-indigo-600 dark:text-indigo-400" />
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white">
+                                Comprobantes <span className="text-indigo-600 dark:text-indigo-400">({vm.reports.length})</span>
+                            </h3>
+                        </div>
                         <MobileReportCards reports={vm.reports} type="formal" />
                         <div className="hidden overflow-x-auto md:block">
                             <DataTable actions={[]} bodyData={vm.reports} headerColumns={FORMAL_COLUMNS} />
@@ -187,8 +235,8 @@ const TabInformal = () => {
                     <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto] xl:items-end">
-                    <Calendar name="fechaInicio" onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
-                    <Calendar name="fechaFin" onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
+                    <Calendar name="fechaInicio" value={moment(vm.fechaInicio).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
+                    <Calendar name="fechaFin" value={moment(vm.fechaFin).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
                     {vm.canFilterSede && (
                         <div className="w-full">
                             <Select error="" label="Sede" name="sedeId" defaultValue="Todas las sedes" onChange={vm.handleSelectSede} options={vm.sedesOptions} />
@@ -207,6 +255,12 @@ const TabInformal = () => {
             <div className="p-4">
                 {vm.reports?.length > 0 ? (
                     <>
+                        <div className="mb-3 flex items-center gap-2">
+                            <Icon icon="solar:documents-bold-duotone" className="text-lg text-indigo-600 dark:text-indigo-400" />
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white">
+                                Comprobantes <span className="text-indigo-600 dark:text-indigo-400">({vm.reports.length})</span>
+                            </h3>
+                        </div>
                         <MobileReportCards reports={vm.reports} type="informal" />
                         <div className="hidden overflow-x-auto md:block">
                             <DataTable actions={[]} bodyData={vm.reports} headerColumns={INFORMAL_COLUMNS} />

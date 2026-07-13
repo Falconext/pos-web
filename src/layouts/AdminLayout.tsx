@@ -159,27 +159,10 @@ export default function AdminLayout() {
   // Sidebar dinámico: módulos y submódulos del plan, ordenados
   const planModules = useMemo(() => {
     const mods = auth?.empresa?.plan?.modulosAsignados ?? [];
-    const sorted = [...mods].sort((a, b) => (a.modulo.orden ?? 0) - (b.modulo.orden ?? 0));
-    
-    // Inyectar módulo Logística temporalmente para el MVP
-    if (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') {
-      if (!sorted.find(m => m.modulo.codigo === 'logistica')) {
-        sorted.push({
-          modulo: {
-            id: 9999,
-            codigo: 'logistica',
-            nombre: 'Logística',
-            icono: 'solar:map-arrow-bold-duotone',
-            ruta: '/administrador/logistica/dashboard',
-            orden: 99,
-            descripcion: 'Módulo de logística'
-          }
-        });
-      }
-    }
-    
-    return sorted;
-  }, [auth?.empresa?.plan?.modulosAsignados, auth?.rol]);
+    // El sidebar refleja los módulos del plan (incluye "logistica" solo si el
+    // plan lo tiene asignado). Ya no se inyecta manualmente.
+    return [...mods].sort((a, b) => (a.modulo.orden ?? 0) - (b.modulo.orden ?? 0));
+  }, [auth?.empresa?.plan?.modulosAsignados]);
 
   // Comisiones (Mis Comisiones / Comisiones del equipo) viven dentro del dashboard
   // de finanzas, que pertenece al módulo "mi-negocio" (actual) o "reportes" (legacy).

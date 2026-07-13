@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboardStore, type IDashboardState } from '@/zustand/dashboard'
 import { useAuthStore } from '@/zustand/auth'
 import { useSedesStore } from '@/zustand/sedes'
+import { hasPermission } from '@/utils/permissions'
 import { Icon } from '@iconify/react'
 import moment from 'moment'
 import Select from '@/components/Select'
@@ -26,6 +27,12 @@ export default function AdminIndex() {
   const [period, setPeriod] = useState<string>('Esta semana')
 
   const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null)
+
+  // Empresa "solo logística" (plan sin dashboard core): llevar a su panel
+  const soloLogistica = !!auth && !hasPermission(auth, 'dashboard') && hasPermission(auth, 'logistica')
+  useEffect(() => {
+    if (soloLogistica) navigate('/administrador/logistica/dashboard', { replace: true })
+  }, [soloLogistica, navigate])
 
   useEffect(() => {
     if (isAdmin && esPrincipal) listarSedes()

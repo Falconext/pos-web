@@ -5,6 +5,7 @@ export type IProduct = {
   categoriaId: number
   unidadMedidaId: number
   tipoAfectacionIGV: string
+  moneda?: string
   precioUnitario: string
   valorUnitario: string
   igvPorcentaje: string
@@ -66,6 +67,7 @@ export type IProduct = {
   refrigerado?: boolean
   // Campos Bodega/Supermercado
   codigoBarras?: string
+  codProdSunat?: string
   unidadCompra?: string
   unidadVenta?: string
   factorConversion?: number
@@ -97,6 +99,7 @@ export type IFormProduct = {
   unidadMedidaNombre: string
   estado: string
   tipoAfectacionIGV: string
+  moneda?: string
   precioUnitario: number,
   stock: number,
   localizacion?: string,
@@ -127,6 +130,7 @@ export type IFormProduct = {
   refrigerado?: boolean
   // Campos Bodega/Supermercado
   codigoBarras?: string
+  codProdSunat?: string
   unidadCompra?: string
   unidadVenta?: string
   factorConversion?: number
