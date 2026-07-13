@@ -130,17 +130,6 @@ const ModalConfiguracionCotizacion = ({
                     <div className="grid grid-cols-2 gap-6">
                         <div>
                             <InputPro
-                                name="quotationDiscount"
-                                label="Descuento Global (%)"
-                                type="number"
-                                value={config.quotationDiscount.toString()}
-                                onChange={(e: any) => handleChange('quotationDiscount', parseFloat(e.target.value) || 0)}
-                                isLabel
-                                error=""
-                            />
-                        </div>
-                        <div>
-                            <InputPro
                                 name="quotationAdvance"
                                 label="Adelanto (%)"
                                 type="number"

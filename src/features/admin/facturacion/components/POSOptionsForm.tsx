@@ -102,8 +102,8 @@ function OperacionFiscalTrigger({ vm }: { vm: any }) {
                 <Icon icon="solar:alt-arrow-right-linear" className="text-gray-400 text-sm flex-shrink-0" />
             </button>
 
-            {/* Modal overlay */}
-            {open && (
+            {/* Modal overlay — se oculta cuando el modal de detracción está abierto */}
+            {open && !vm.isModalDetraccionOpen && (
                 <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
                     <div className="relative w-full md:w-[420px] bg-white dark:bg-[#1E2435] rounded-t-3xl md:rounded-3xl shadow-2xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">

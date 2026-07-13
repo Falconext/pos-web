@@ -477,6 +477,13 @@ export default function PerfilIndex() {
                                 </label>
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                     <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Icon icon="solar:document-text-bold-duotone" width={14} />
+                                        Formato de Cotización
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Ahora se configura desde <span className="font-semibold text-gray-700 dark:text-gray-300">Cotizaciones → Configurar formato</span>, con vista previa en vivo (mostrar/ocultar y tamaño de cada elemento).</p>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                         <Icon icon="solar:printer-bold-duotone" width={14} />
                                         Tamaño del Logo en Comprobantes
                                     </p>

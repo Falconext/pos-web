@@ -89,6 +89,10 @@ interface EditFormData {
   usaDemo: boolean;
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
+  cotizMostrarEmail?: boolean;
+  cotizMostrarCuentas?: boolean;
+  cotizMostrarRazonSocial?: boolean;
+  cotizMostrarDetraccion?: boolean;
   brand?: string;
   producto?: 'facturacion' | 'hotel' | 'logistica';
   usuario?: {
@@ -223,6 +227,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     producto: 'facturacion',
     esAgenteRetencion: false,
     usaCodigoBarrasManual: false,
+    cotizMostrarEmail: true,
+    cotizMostrarCuentas: true,
+    cotizMostrarRazonSocial: true,
+    cotizMostrarDetraccion: true,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -297,6 +305,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
           password: '',
         },
         esAgenteRetencion: (empresa as any).esAgenteRetencion || false,
+        cotizMostrarEmail: (empresa as any).cotizMostrarEmail ?? true,
+        cotizMostrarCuentas: (empresa as any).cotizMostrarCuentas ?? true,
+        cotizMostrarRazonSocial: (empresa as any).cotizMostrarRazonSocial ?? true,
+        cotizMostrarDetraccion: (empresa as any).cotizMostrarDetraccion ?? true,
       });
       setInitialEditPlanId(empresa.plan?.id || 0);
       setLogoPreview(empresa.logo ? empresa.logo : '');
@@ -751,6 +763,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                         {[
                           { key: 'usaCodigoBarrasManual', label: 'Habilitar código de barras en productos', desc: 'Fuerza la visualización del campo "Código de Barras" en productos, sin depender del rubro.' },
                           { key: 'esAgenteRetencion', label: 'Agente de Retención (SUNAT)', desc: 'Activa esta opción si la empresa ha sido designada como Agente de Retención por SUNAT.' },
+                          { key: 'cotizMostrarRazonSocial', label: 'Mostrar razón social en cotizaciones', desc: 'Útil para ocultarla cuando es igual al nombre comercial y se ve duplicada.' },
+                          { key: 'cotizMostrarEmail', label: 'Mostrar email en cotizaciones', desc: 'Muestra u oculta la línea "EMAIL:" en el encabezado del formato de cotización.' },
+                          { key: 'cotizMostrarCuentas', label: 'Mostrar cuentas bancarias en cotizaciones', desc: 'Muestra u oculta la sección de cuentas para depósito en el formato de cotización.' },
+                          { key: 'cotizMostrarDetraccion', label: 'Mostrar detracción en cotizaciones', desc: 'Muestra u oculta el bloque de detracción (solo si la cotización tiene detracción configurada).' },
                         ].map(({ key, label, desc }) => (
                           <label key={key} className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
                             <input type="checkbox" name={key} checked={Boolean((editData as any)[key])}

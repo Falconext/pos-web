@@ -2,6 +2,7 @@ import moment from 'moment';
 import React, { useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { BRAND } from '@/lib/branding';
+import { elemCfg } from '@/features/admin/cotizaciones/cotizFormatoElementos';
 
 const ComprobantePrintPage = ({
     productsInvoice,
@@ -38,6 +39,10 @@ const ComprobantePrintPage = ({
 
     const totalReceipt = productsInvoice?.reduce((sum: any, p: any) => sum + Number(p.total || p.mtoPrecioUnitario * p.cantidad || 0), 0);
     const totalPrices = productsInvoice?.reduce((sum: any, p: any) => sum + (Number(p.precioUnitario || p.mtoPrecioUnitario || 0) * (p.cantidad || 0)), 0);
+
+    // Configuración del formato de cotización (visibilidad + tamaño por elemento)
+    const fc = (key: string) => elemCfg((company?.empresa as any)?.cotizFormatoConfig, key);
+    const px = (key: string) => `${fc(key).size}px`;
 
     const round2 = (n: any) => parseFloat(n?.toFixed(2)) || 0;
     const parseAmount = (value: any, fallback = 0): number => {
@@ -92,6 +97,10 @@ console.log(formValues)
     const mtoIcbper = parseAmount(formValues?.icbper ?? formValues?.mtoIcbper, 0);
     const mtoIgv = parseAmount(formValues?.mtoIGV, netTotalFallback - (netTotalFallback / 1.18));
     const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, netTotalFallback);
+    // Porcentaje de descuento (respecto al bruto), para mostrarlo junto al monto en soles
+    const descuentoPct = totalDescuentos > 0 && totalPrices > 0
+        ? Math.round((totalDescuentos / totalPrices) * 1000) / 10
+        : (Number(quotationDiscount) > 0 ? Number(quotationDiscount) : 0);
     const normalizePaymentLabel = (value: any): string =>
         String(value || '')
             .normalize('NFD')
@@ -376,10 +385,17 @@ console.log(formValues)
                                 {/* Header with Emisor and Cliente Boxes */}
                                 {/* RESTORED: Header with Logo and Company Info */}
                                 <div className="flex justify-between items-start mb-4">
-                                    {logoDataUrl && <img src={logoDataUrl} alt="logo" className="object-contain object-left" style={{ width: company?.empresa?.ticketLogoSize ?? 150, height: company?.empresa?.ticketLogoSize ?? 150, objectFit: 'contain', objectPosition: 'left' }} />}
+                                    {fc('logo').visible && logoDataUrl && <img src={logoDataUrl} alt="logo" className="object-contain object-left" style={{ width: fc('logo').size, height: fc('logo').size, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
-                                        <h6 className="text-xl font-bold">{company?.empresa?.nombreComercial.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />RAZON SOCIAL: {company?.empresa?.razonSocial}<br />{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}{(company?.empresa as any)?.paginaWeb && <><br />WEB: {(company?.empresa as any).paginaWeb}</>}</p>
+                                        {fc('nombreComercial').visible && <h6 className="font-bold leading-tight" style={{ fontSize: px('nombreComercial') }}>{company?.empresa?.nombreComercial?.toUpperCase()}</h6>}
+                                        <div className="leading-snug">
+                                            {fc('direccion').visible && <div style={{ fontSize: px('direccion') }}>{company?.empresa?.direccion}</div>}
+                                            {fc('rubro').visible && <div style={{ fontSize: px('rubro') }}>{company?.empresa?.rubro?.nombre?.toUpperCase()}</div>}
+                                            {fc('razonSocial').visible && <div style={{ fontSize: px('razonSocial') }}>RAZON SOCIAL: {company?.empresa?.razonSocial}</div>}
+                                            {fc('celular').visible && empresaNumero && <div style={{ fontSize: px('celular') }}>CELULAR: {empresaNumero}</div>}
+                                            {fc('email').visible && company?.email && <div style={{ fontSize: px('email') }}>EMAIL: {company?.email}</div>}
+                                            {fc('web').visible && (company?.empresa as any)?.paginaWeb && <div style={{ fontSize: px('web') }}>WEB: {(company?.empresa as any).paginaWeb}</div>}
+                                        </div>
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
@@ -389,62 +405,59 @@ console.log(formValues)
                                     </div>
                                 </div>
 
-                                {/* Data Section: Cliente (Left) and Datos Cotización (Right) */}
-                                <div className="flex gap-4 mb-8 items-stretch">
-                                    {/* Cliente Box */}
-                                    <div className="w-1/2 flex flex-col">
-                                        <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DEL CLIENTE</div>
-                                        <div className="border border-black rounded-lg p-3 flex-1 h-auto">
-                                            <div className="grid grid-cols-[70px_1fr] gap-y-1">
-                                                <span className="font-bold">CLIENTE:</span>
-                                                <span className="break-words">{selectedClient?.nombre?.toUpperCase()}</span>
+                                {/* Datos de Cliente + Cotización en un solo cuadro (sin labels) */}
+                                {(fc('datosCliente').visible || fc('datosCotizacion').visible) && (
+                                <div className="flex gap-6 mb-4 border border-black rounded-lg p-3">
+                                    {fc('datosCliente').visible && (
+                                    <div className="flex-1" style={{ fontSize: px('datosCliente') }}>
+                                        <div className="grid grid-cols-[70px_1fr] gap-y-1">
+                                            <span className="font-bold">CLIENTE:</span>
+                                            <span className="break-words">{selectedClient?.nombre?.toUpperCase()}</span>
 
-                                                <span className="font-bold">RUC:</span>
-                                                <span>{selectedClient?.nroDoc}</span>
+                                            <span className="font-bold">RUC:</span>
+                                            <span>{selectedClient?.nroDoc}</span>
 
-                                                <span className="font-bold">EMAIL:</span>
-                                                <span className="break-all">{selectedClient?.email || '-'}</span>
+                                            <span className="font-bold">EMAIL:</span>
+                                            <span className="break-all">{selectedClient?.email || '-'}</span>
 
-                                                <span className="font-bold">TELF:</span>
-                                                <span>{selectedClient?.telefono || '-'}</span>
+                                            <span className="font-bold">TELF:</span>
+                                            <span>{selectedClient?.telefono || '-'}</span>
 
-                                                <span className="font-bold">DIR:</span>
-                                                <span className="break-words leading-tight">{selectedClient?.direccion?.toUpperCase() || '-'}</span>
-                                            </div>
+                                            <span className="font-bold">DIR:</span>
+                                            <span className="break-words leading-tight">{selectedClient?.direccion?.toUpperCase() || '-'}</span>
                                         </div>
                                     </div>
+                                    )}
+                                    {fc('datosCotizacion').visible && (
+                                    <div className={`flex-1 ${fc('datosCliente').visible ? 'border-l border-gray-300 pl-6' : ''}`} style={{ fontSize: px('datosCotizacion') }}>
+                                        <div className="grid grid-cols-[110px_1fr] gap-y-1">
+                                            <span className="font-bold">FECHA EMISIÓN:</span>
+                                            <span>{moment(formValues?.fechaEmision).format('DD/MM/YYYY')}</span>
 
-                                    {/* Datos de la Cotización Box */}
-                                    <div className="w-1/2 flex flex-col">
-                                        <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DE LA COTIZACIÓN</div>
-                                        <div className="border border-black rounded-lg p-3 flex-1 h-auto">
-                                            <div className="grid grid-cols-[110px_1fr] gap-y-1">
-                                                <span className="font-bold">FECHA EMISIÓN:</span>
-                                                <span>{moment(formValues?.fechaEmision).format('DD/MM/YYYY')}</span>
+                                            <span className="font-bold">CONDICIÓN:</span>
+                                            <span>
+                                                {quotationPaymentType === 'CONTADO' ? 'CONTADO' :
+                                                    quotationPaymentType === 'CREDITO_30' ? 'CREDITO 30 DIAS' :
+                                                        quotationPaymentType === 'CREDITO_60' ? 'CREDITO 60 DIAS' :
+                                                            quotationPaymentType === 'CREDITO_90' ? 'CREDITO 90 DIAS' :
+                                                                quotationPaymentType === 'ADELANTO' ? `ADELANTO ${quotationAdvance}%` : 'CONTADO'}
+                                            </span>
 
-                                                <span className="font-bold">CONDICIÓN:</span>
-                                                <span>
-                                                    {quotationPaymentType === 'CONTADO' ? 'CONTADO' :
-                                                        quotationPaymentType === 'CREDITO_30' ? 'CREDITO 30 DIAS' :
-                                                            quotationPaymentType === 'CREDITO_60' ? 'CREDITO 60 DIAS' :
-                                                                quotationPaymentType === 'CREDITO_90' ? 'CREDITO 90 DIAS' :
-                                                                    quotationPaymentType === 'ADELANTO' ? `ADELANTO ${quotationAdvance}%` : 'CONTADO'}
-                                                </span>
+                                            <span className="font-bold">VALIDEZ:</span>
+                                            <span>{quotationValidity} días</span>
 
-                                                <span className="font-bold">VALIDEZ:</span>
-                                                <span>{quotationValidity} días</span>
-
-                                                <span className="font-bold">MONEDA:</span>
-                                                <span>SOLES</span>
-                                            </div>
+                                            <span className="font-bold">MONEDA:</span>
+                                            <span>SOLES</span>
                                         </div>
                                     </div>
+                                    )}
                                 </div>
+                                )}
 
                                 {/* Product Table */}
-                                <div className="w-full mb-4">
+                                <div className="w-full mb-4" style={{ fontSize: px('productos') }}>
                                     {/* Table Header */}
-                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 text-xs py-1">
+                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 py-1">
                                         <div className="w-[8%] text-center border-r border-gray-400">N°</div>
                                         <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
                                         <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
@@ -464,7 +477,7 @@ console.log(formValues)
                                         const totalItem = Number(item?.total || (pUnit * cant));
 
                                         return (
-                                            <div key={i} className="flex border-b border-l border-r border-gray-300 text-xs">
+                                            <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
                                                 <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
@@ -485,15 +498,19 @@ console.log(formValues)
                                 </div>
 
                                 {/* Total in Words & Footer Section */}
-                                <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center text-lg bg-gray-50">
+                                {fc('sonTexto').visible && (
+                                <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center bg-gray-50" style={{ fontSize: px('sonTexto') }}>
                                     SON: {totalInWords}
                                 </div>
+                                )}
 
                                 <div className="border border-black rounded-lg p-3">
                                     <div className="flex justify-between items-start">
                                         <div className="w-2/3 pr-4">
-                                            <div className="font-bold mb-1">OBSERVACIONES:</div>
-                                            <div className="text-xs">{observation?.toUpperCase() || 'TIEMPO DE ENTREGA 1 DIAS DESPUES DE HABER RECIBIDO Y CONFIRMADO LA OC'}</div>
+                                            {fc('observaciones').visible && (<>
+                                            <div className="font-bold mb-1" style={{ fontSize: px('observaciones') }}>OBSERVACIONES:</div>
+                                            <div style={{ fontSize: px('observaciones') }}>{observation?.toUpperCase() || ''}</div>
+                                            </>)}
 
                                             {quotationTerms && (
                                                 <div className="mt-2 text-xs">
@@ -501,50 +518,11 @@ console.log(formValues)
                                                 </div>
                                             )}
 
-                                            {/* Footer Info — cuentas bancarias (tabla nueva con fallback legacy) */}
-                                            {(() => {
-                                                const emp = company?.empresa as any;
-                                                const razonSocial = (company?.empresa?.razonSocial || '').toUpperCase();
-                                                const nuevas = (Array.isArray(emp?.cuentasBancarias) ? emp.cuentasBancarias : [])
-                                                    .filter((c: any) => c.mostrarEnCotizacion !== false);
-                                                const cuentas = nuevas.length > 0
-                                                    ? nuevas.map((c: any) => ({
-                                                        banco: (c.banco || '').toUpperCase(),
-                                                        moneda: c.moneda === 'USD' ? 'DÓLARES' : 'SOLES',
-                                                        numeroCuenta: c.numeroCuenta || '',
-                                                        cci: c.cci || '',
-                                                        titular: (c.titular || razonSocial).toUpperCase(),
-                                                    }))
-                                                    : (emp?.bancoNombre
-                                                        ? [{
-                                                            banco: String(emp.bancoNombre).toUpperCase(),
-                                                            moneda: emp?.monedaCuenta || 'SOLES',
-                                                            numeroCuenta: emp?.numeroCuenta || '',
-                                                            cci: emp?.cci || '',
-                                                            titular: razonSocial,
-                                                        }]
-                                                        : []);
-                                                if (cuentas.length === 0) return null;
-                                                return (
-                                                    <div className="mt-8">
-                                                        {cuentas.map((c: any, i: number) => (
-                                                            <div key={i} className="mt-2">
-                                                                <p className="font-bold">DEPOSITAR A NOMBRE DE {c.titular}</p>
-                                                                <p className="font-bold">BANCO {c.banco}</p>
-                                                                <p className="font-bold">MONEDA {c.moneda}</p>
-                                                                <p className="font-bold">N° CUENTA</p>
-                                                                <p>{c.numeroCuenta}</p>
-                                                                <p className="font-bold">CCI</p>
-                                                                <p>{c.cci}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            })()}
+                                            {/* Cuentas bancarias: se muestran como tabla compacta al pie del documento */}
 
-                                            {/* Detracción — solo si la cotización tiene detracción configurada */}
-                                            {formValues?.tipoDetraccion && (
-                                                <div className="mt-4">
+                                            {/* Detracción — toggle configurable + solo si la cotización tiene detracción */}
+                                            {fc('detraccion').visible && formValues?.tipoDetraccion && (
+                                                <div className="mt-4" style={{ fontSize: px('detraccion') }}>
                                                     <p className="font-bold">DETRACCIÓN</p>
                                                     <p>{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</p>
                                                     <p>MONTO A DETRAER: S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</p>
@@ -555,52 +533,99 @@ console.log(formValues)
                                         </div>
 
                                         <div className="w-1/3 text-right space-y-1">
-                                            <div className="flex justify-between">
+                                            {fc('opGravadas').visible && (
+                                            <div className="flex justify-between" style={{ fontSize: px('opGravadas') }}>
                                                 <span className="font-bold">OP. GRAVADAS:</span>
                                                 <span>S/ {round2(mtoOperGravadas).toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
+                                            </div>)}
+                                            {fc('opExoneradas').visible && (
+                                            <div className="flex justify-between" style={{ fontSize: px('opExoneradas') }}>
                                                 <span className="font-bold">OP. EXONERADAS:</span>
                                                 <span>S/ 0.00</span>
-                                            </div>
-                                            <div className="flex justify-between">
+                                            </div>)}
+                                            {fc('opInafectas').visible && (
+                                            <div className="flex justify-between" style={{ fontSize: px('opInafectas') }}>
                                                 <span className="font-bold">OP. INAFECTAS:</span>
                                                 <span>S/ 0.00</span>
-                                            </div>
-                                            <div className="flex justify-between">
+                                            </div>)}
+                                            {fc('opGratuitas').visible && (
+                                            <div className="flex justify-between" style={{ fontSize: px('opGratuitas') }}>
                                                 <span className="font-bold">OP. GRATUITAS:</span>
                                                 <span>S/ 0.00</span>
-                                            </div>
-                                            <div className="flex justify-between font-bold">
+                                            </div>)}
+                                            {fc('subTotal').visible && (
+                                            <div className="flex justify-between font-bold" style={{ fontSize: px('subTotal') }}>
                                                 <span>SUB TOTAL:</span>
                                                 <span>S/ {round2(mtoOperGravadas).toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>DESCUENTOS TOTAL:</span>
+                                            </div>)}
+                                            {fc('descuentos').visible && (
+                                            <div className="flex justify-between" style={{ fontSize: px('descuentos') }}>
+                                                <span>DESCUENTO{descuentoPct > 0 ? ` (${descuentoPct}%)` : ''}:</span>
                                                 <span>S/ {round2(totalDescuentos).toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
+                                            </div>)}
+                                            {fc('igv').visible && (
+                                            <div className="flex justify-between" style={{ fontSize: px('igv') }}>
                                                 <span className="font-bold">IGV 18%:</span>
                                                 <span>S/ {round2(mtoIgv).toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-lg font-bold border-t border-black pt-1 mt-1">
+                                            </div>)}
+                                            {fc('montoTotal').visible && (
+                                            <div className="flex justify-between font-bold border-t border-black pt-1 mt-1" style={{ fontSize: px('montoTotal') }}>
                                                 <span>MONTO TOTAL:</span>
                                                 <span>S/ {round2(mtoImpVenta).toFixed(2)}</span>
-                                            </div>
+                                            </div>)}
                                         </div>
                                     </div>
                                 </div>
-                                {/* <div className="mt-4 flex justify-center">
-                                        {qrCodeDataUrl && <img src={qrCodeDataUrl} className="w-24 h-24" alt="QR" />}
-                                    </div> */}
+
+                                {/* Cuentas bancarias — tabla compacta al pie del documento */}
+                                {fc('cuentas').visible && (() => {
+                                    const emp = company?.empresa as any;
+                                    const nuevas = (Array.isArray(emp?.cuentasBancarias) ? emp.cuentasBancarias : [])
+                                        .filter((c: any) => c.mostrarEnCotizacion !== false);
+                                    const cuentas = nuevas.length > 0
+                                        ? nuevas.map((c: any) => ({
+                                            banco: (c.banco || '').toUpperCase(),
+                                            moneda: c.moneda === 'USD' ? 'DÓLARES' : 'SOLES',
+                                            numeroCuenta: c.numeroCuenta || '',
+                                            cci: c.cci || '',
+                                        }))
+                                        : (emp?.bancoNombre
+                                            ? [{ banco: String(emp.bancoNombre).toUpperCase(), moneda: emp?.monedaCuenta || 'SOLES', numeroCuenta: emp?.numeroCuenta || '', cci: emp?.cci || '' }]
+                                            : []);
+                                    if (cuentas.length === 0) return null;
+                                    return (
+                                        <table className="w-full mt-4 border-collapse" style={{ fontSize: px('cuentas') }}>
+                                            <thead>
+                                                <tr>
+                                                    <th className="border border-black px-2 py-0.5 text-center bg-gray-100">BANCO</th>
+                                                    <th className="border border-black px-2 py-0.5 text-center bg-gray-100">MONEDA</th>
+                                                    <th className="border border-black px-2 py-0.5 text-center bg-gray-100">CUENTA</th>
+                                                    <th className="border border-black px-2 py-0.5 text-center bg-gray-100">CCI</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {cuentas.map((c: any, i: number) => (
+                                                    <tr key={i}>
+                                                        <td className="border border-black px-2 py-0.5 text-center font-bold">{c.banco}</td>
+                                                        <td className="border border-black px-2 py-0.5 text-center">{c.moneda}</td>
+                                                        <td className="border border-black px-2 py-0.5 text-center">{c.numeroCuenta}</td>
+                                                        <td className="border border-black px-2 py-0.5 text-center">{c.cci}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    );
+                                })()}
 
 
                                 {/* Custom Footer: Gracias / Vuelva Pronto / FalcoNext */}
-                                <div className="mt-8 text-center text-xs">
-                                    <div className="font-bold mb-1">
+                                <div className="mt-8 text-center text-[10px]">
+                                    {fc('gracias').visible && (<>
+                                    <div className="font-bold mb-1" style={{ fontSize: px('gracias') }}>
                                         GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS DE {company?.empresa?.rubro?.nombre?.toUpperCase() || 'SERVICIOS'}
                                     </div>
-                                    <div className="font-bold mb-8">VUELVA PRONTO</div>
+                                    <div className="font-bold mb-8" style={{ fontSize: px('gracias') }}>VUELVA PRONTO</div>
+                                    </>)}
 
                                     <div className="flex justify-between items-end border-t border-gray-400 pt-1">
                                         <div className="text-left text-[10px] text-gray-500 font-mono">
@@ -784,7 +809,7 @@ console.log(formValues)
                                         const totalItem = Number(item?.total || (pUnit * cant));
 
                                         return (
-                                            <div key={i} className="flex border-b border-l border-r border-gray-300 text-xs">
+                                            <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
                                                 <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
@@ -875,11 +900,13 @@ console.log(formValues)
                                     </div>
                                 </div>
 
-                                <div className="mt-8 text-center text-xs">
-                                    <div className="font-bold mb-1">
+                                <div className="mt-8 text-center text-[10px]">
+                                    {fc('gracias').visible && (<>
+                                    <div className="font-bold mb-1" style={{ fontSize: px('gracias') }}>
                                         GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS DE {company?.empresa?.rubro?.nombre?.toUpperCase() || 'SERVICIOS'}
                                     </div>
-                                    <div className="font-bold mb-8">VUELVA PRONTO</div>
+                                    <div className="font-bold mb-8" style={{ fontSize: px('gracias') }}>VUELVA PRONTO</div>
+                                    </>)}
 
                                     <div className="flex justify-between items-end border-t border-gray-400 pt-1">
                                         <div className="text-left text-[10px] text-gray-500 font-mono">

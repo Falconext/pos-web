@@ -18,10 +18,12 @@ import TableActionMenu from "@/components/TableActionMenu";
 import Button from "@/components/Button";
 
 import { useCotizacionesViewModel } from "./useCotizacionesViewModel";
+import ModalConfigCotizacion from "./ModalConfigCotizacion";
 import { IInvoices } from "@/interfaces/invoices";
 
 export default function CotizacionesView() {
     const vm = useCotizacionesViewModel();
+    const [configFormatoOpen, setConfigFormatoOpen] = useState(false);
     const navigate = useNavigate();
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
@@ -120,7 +122,16 @@ export default function CotizacionesView() {
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona y convierte tus cotizaciones en facturas</p>
                 </div>
-                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2">
+                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3">
+                    <Button
+                        outline
+                        color="primary"
+                        onClick={() => setConfigFormatoOpen(true)}
+                        className="w-full md:w-auto"
+                    >
+                        <Icon icon="solar:tuning-square-bold-duotone" className="mr-2" />
+                        Configurar formato
+                    </Button>
                     <Button
                         outline
                         color="danger"
@@ -480,6 +491,12 @@ export default function CotizacionesView() {
                 })()}
             </TableActionMenu>
             </div>
+
+            <ModalConfigCotizacion
+                isOpen={configFormatoOpen}
+                onClose={() => setConfigFormatoOpen(false)}
+                auth={vm.auth}
+            />
         </>
     );
 }
