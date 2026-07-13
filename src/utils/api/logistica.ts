@@ -102,6 +102,112 @@ export const getDespacho = (id: number) => get(`${BASE}/despachos/${id}`);
 export const createDespacho = (data: any) => post(`${BASE}/despachos`, data);
 export const updateEstadoDespacho = (id: number, data: { estado: string; motivo?: string }) => patch(`${BASE}/despachos/${id}/estado`, data);
 
+// Mantenimientos de flota
+export const getMantenimientos = (params?: {
+  search?: string;
+  estado?: string;
+  tipo?: string;
+  vehiculoId?: number;
+}) => {
+  const query = new URLSearchParams();
+  if (params?.search) query.append('search', params.search);
+  if (params?.estado) query.append('estado', params.estado);
+  if (params?.tipo) query.append('tipo', params.tipo);
+  if (params?.vehiculoId !== undefined)
+    query.append('vehiculoId', params.vehiculoId.toString());
+  return get(`${BASE}/mantenimientos?${query.toString()}`);
+};
+export const getMantenimiento = (id: number) => get(`${BASE}/mantenimientos/${id}`);
+export const getResumenMantenimiento = () => get(`${BASE}/mantenimientos/resumen`);
+export const createMantenimiento = (data: any) => post(`${BASE}/mantenimientos`, data);
+export const updateMantenimiento = (id: number, data: any) => patch(`${BASE}/mantenimientos/${id}`, data);
+export const deleteMantenimiento = (id: number) => del(`${BASE}/mantenimientos/${id}`);
+
+// Combustible
+export const getCombustibles = (params?: { search?: string; vehiculoId?: number }) => {
+  const query = new URLSearchParams();
+  if (params?.search) query.append('search', params.search);
+  if (params?.vehiculoId !== undefined) query.append('vehiculoId', params.vehiculoId.toString());
+  return get(`${BASE}/combustibles?${query.toString()}`);
+};
+export const getResumenCombustible = () => get(`${BASE}/combustibles/resumen`);
+export const createCombustible = (data: any) => post(`${BASE}/combustibles`, data);
+export const updateCombustible = (id: number, data: any) => patch(`${BASE}/combustibles/${id}`, data);
+export const deleteCombustible = (id: number) => del(`${BASE}/combustibles/${id}`);
+
+// Peajes / Multas
+export const getPeajes = (params?: { search?: string; tipo?: string; estado?: string; vehiculoId?: number }) => {
+  const query = new URLSearchParams();
+  if (params?.search) query.append('search', params.search);
+  if (params?.tipo) query.append('tipo', params.tipo);
+  if (params?.estado) query.append('estado', params.estado);
+  if (params?.vehiculoId !== undefined) query.append('vehiculoId', params.vehiculoId.toString());
+  return get(`${BASE}/peajes?${query.toString()}`);
+};
+export const getResumenPeaje = () => get(`${BASE}/peajes/resumen`);
+export const createPeaje = (data: any) => post(`${BASE}/peajes`, data);
+export const updatePeaje = (id: number, data: any) => patch(`${BASE}/peajes/${id}`, data);
+export const deletePeaje = (id: number) => del(`${BASE}/peajes/${id}`);
+
+// Documentos y alertas de vencimiento
+export const getDocumentos = (params?: {
+  entidad?: string;
+  vehiculoId?: number;
+  conductorId?: number;
+  tipo?: string;
+  estado?: string;
+  search?: string;
+}) => {
+  const query = new URLSearchParams();
+  if (params?.entidad) query.append('entidad', params.entidad);
+  if (params?.vehiculoId !== undefined) query.append('vehiculoId', params.vehiculoId.toString());
+  if (params?.conductorId !== undefined) query.append('conductorId', params.conductorId.toString());
+  if (params?.tipo) query.append('tipo', params.tipo);
+  if (params?.estado) query.append('estado', params.estado);
+  if (params?.search) query.append('search', params.search);
+  return get(`${BASE}/documentos?${query.toString()}`);
+};
+export const getDocumento = (id: number) => get(`${BASE}/documentos/${id}`);
+export const getAlertasDocumentos = (dias?: number) => get(`${BASE}/documentos/alertas${dias ? `?dias=${dias}` : ''}`);
+export const getResumenDocumentos = (dias?: number) => get(`${BASE}/documentos/resumen${dias ? `?dias=${dias}` : ''}`);
+export const createDocumento = (data: any) => post(`${BASE}/documentos`, data);
+export const updateDocumento = (id: number, data: any) => patch(`${BASE}/documentos/${id}`, data);
+export const deleteDocumento = (id: number) => del(`${BASE}/documentos/${id}`);
+
+// Dispositivos GPS
+export const getDispositivos = (search?: string) => {
+  const query = new URLSearchParams();
+  if (search) query.append('search', search);
+  return get(`${BASE}/dispositivos?${query.toString()}`);
+};
+export const getResumenDispositivos = () => get(`${BASE}/dispositivos/resumen`);
+export const getPosicionesDispositivo = (id: number, limit?: number) => get(`${BASE}/dispositivos/${id}/posiciones${limit ? `?limit=${limit}` : ''}`);
+export const createDispositivo = (data: any) => post(`${BASE}/dispositivos`, data);
+export const updateDispositivo = (id: number, data: any) => patch(`${BASE}/dispositivos/${id}`, data);
+export const deleteDispositivo = (id: number) => del(`${BASE}/dispositivos/${id}`);
+
+// Geocercas
+export const getGeocercas = (activo?: boolean) => {
+  const query = new URLSearchParams();
+  if (activo !== undefined) query.append('activo', activo.toString());
+  return get(`${BASE}/geocercas?${query.toString()}`);
+};
+export const getEventosGeocercas = (params?: { geocercaId?: number; limit?: number }) => {
+  const query = new URLSearchParams();
+  if (params?.geocercaId !== undefined) query.append('geocercaId', params.geocercaId.toString());
+  if (params?.limit !== undefined) query.append('limit', params.limit.toString());
+  return get(`${BASE}/geocercas/eventos?${query.toString()}`);
+};
+export const getResumenGeocercas = () => get(`${BASE}/geocercas/resumen`);
+export const createGeocerca = (data: any) => post(`${BASE}/geocercas`, data);
+export const updateGeocerca = (id: number, data: any) => patch(`${BASE}/geocercas/${id}`, data);
+export const deleteGeocerca = (id: number) => del(`${BASE}/geocercas/${id}`);
+
+// Importación masiva (Excel)
+export const getPlantillaImport = (tipo: 'vehiculos' | 'conductores') => get(`${BASE}/importar/plantilla?tipo=${tipo}`);
+export const importarVehiculosExcel = (archivoBase64: string) => post(`${BASE}/importar/vehiculos`, { archivoBase64 });
+export const importarConductoresExcel = (archivoBase64: string) => post(`${BASE}/importar/conductores`, { archivoBase64 });
+
 // Tracking
 export const registrarUbicacion = (data: any) => post(`${BASE}/tracking/ubicacion`, data);
 export const getConductoresTracking = () => get(`${BASE}/tracking/conductores`);

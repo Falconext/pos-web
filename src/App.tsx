@@ -6,6 +6,7 @@ import StorePreviewPage from './pages/StorePreviewPage'
 import { ProtectedRoute } from './app/ProtectedRoute'
 import { RoleRoute } from './app/RoleRoute'
 import { ProduccionRoute } from './app/ProduccionRoute'
+import { ModuleRoute } from './app/ModuleRoute'
 import AdminIndex from './pages/admin/Index'
 import AdminLayout from './layouts/AdminLayout'
 import ClientesPage from './pages/admin/Clientes'
@@ -96,6 +97,13 @@ import ClientesLogisticaPage from './features/admin/logistica/clientes/ClientesL
 import PedidosLogisticaPage from './features/admin/logistica/pedidos/PedidosLogisticaPage'
 import DespachosPage from './features/admin/logistica/despachos/DespachosPage'
 import TrackingPage from './features/admin/logistica/tracking/TrackingPage'
+import MantenimientoPage from './features/admin/logistica/mantenimiento/MantenimientoPage'
+import CombustiblePage from './features/admin/logistica/combustible/CombustiblePage'
+import PeajesPage from './features/admin/logistica/peajes/PeajesPage'
+import DocumentosPage from './features/admin/logistica/documentos/DocumentosPage'
+import DispositivosPage from './features/admin/logistica/dispositivos/DispositivosPage'
+import GeocercasPage from './features/admin/logistica/geocercas/GeocercasPage'
+import ImportarPage from './features/admin/logistica/importar/ImportarPage'
 import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
 
 function App() {
@@ -212,17 +220,26 @@ function App() {
           <Route path="vehiculos" element={<VehiculosPage />} />
           <Route path="vehiculos/contratos" element={<ContratosVehicularesPage />} />
 
-          {/* Módulo Logística */}
-          <Route path="logistica/dashboard" element={<LogisticaDashboard />} />
-          <Route path="logistica/conductores" element={<ConductoresPage />} />
-          <Route path="logistica/vehiculos" element={<VehiculosLogisticaPage />} />
-          <Route path="logistica/almacenes" element={<AlmacenesPage />} />
-          <Route path="logistica/zonas" element={<ZonasPage />} />
-          <Route path="logistica/clientes" element={<ClientesLogisticaPage />} />
-          <Route path="logistica/pedidos" element={<PedidosLogisticaPage />} />
-          <Route path="logistica/despachos" element={<DespachosPage />} />
-          <Route path="logistica/tracking" element={<TrackingPage />} />
-          <Route path="logistica/integraciones" element={<IntegracionesPage />} />
+          {/* Módulo Logística — gateado por el módulo 'logistica' del plan */}
+          <Route element={<ModuleRoute module="logistica" />}>
+            <Route path="logistica/dashboard" element={<LogisticaDashboard />} />
+            <Route path="logistica/conductores" element={<ConductoresPage />} />
+            <Route path="logistica/vehiculos" element={<VehiculosLogisticaPage />} />
+            <Route path="logistica/almacenes" element={<AlmacenesPage />} />
+            <Route path="logistica/zonas" element={<ZonasPage />} />
+            <Route path="logistica/clientes" element={<ClientesLogisticaPage />} />
+            <Route path="logistica/pedidos" element={<PedidosLogisticaPage />} />
+            <Route path="logistica/despachos" element={<DespachosPage />} />
+            <Route path="logistica/tracking" element={<TrackingPage />} />
+            <Route path="logistica/mantenimiento" element={<MantenimientoPage />} />
+            <Route path="logistica/combustible" element={<CombustiblePage />} />
+            <Route path="logistica/peajes" element={<PeajesPage />} />
+            <Route path="logistica/documentos" element={<DocumentosPage />} />
+            <Route path="logistica/dispositivos" element={<DispositivosPage />} />
+            <Route path="logistica/geocercas" element={<GeocercasPage />} />
+            <Route path="logistica/importar" element={<ImportarPage />} />
+            <Route path="logistica/integraciones" element={<IntegracionesPage />} />
+          </Route>
 
           {/* Rutas de ADMIN_SISTEMA */}
 
