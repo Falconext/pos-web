@@ -108,6 +108,7 @@ export default function CotizacionesView() {
                     quotationTerms={vm.invoice?.cotizTerminos || ''}
                     quotationPaymentType={vm.invoice?.cotizTipoPago || 'CONTADO'}
                     quotationAdvance={vm.invoice?.cotizAdelanto || 0}
+                    quotationCurrency={vm.invoice?.cotizMoneda || 'PEN'}
                 />
             )}
             </div>

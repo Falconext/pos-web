@@ -262,6 +262,7 @@ export function useCotizacionesViewModel() {
                     cotizTerminos: c.cotizTerminos,
                     cotizTipoPago: c.cotizTipoPago,
                     cotizAdelanto: c.cotizAdelanto,
+                    cotizMoneda: c.cotizMoneda,
                 }
             }
         });

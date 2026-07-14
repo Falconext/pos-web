@@ -784,6 +784,10 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
       {rows.length > 0 && (
         <div className="mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center gap-2 border-b border-gray-100 bg-violet-50/60 px-4 py-2 text-[11px] font-semibold text-violet-700 dark:border-slate-800 dark:bg-violet-950/20 dark:text-violet-300">
+            <span>💡</span>
+            <span>Consejo: haz clic en el primer campo <b>Barras</b> y escanea cada prenda con el lector — el foco salta solo a la siguiente variante.</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 text-[10px] font-black uppercase tracking-wide text-gray-500 dark:border-slate-700 dark:bg-slate-800">
@@ -797,7 +801,7 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => {
+                {rows.map((row, rowIndex) => {
                   const key = comboKey(row.valoresAtributos);
                   return (
                     <tr key={key} className="border-b border-gray-100 last:border-0 dark:border-slate-800">
@@ -837,7 +841,20 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <input
                           value={row.codigoBarras || ''}
                           onChange={(event) => updateVariant(key, { codigoBarras: event.target.value })}
-                          placeholder="Opcional"
+                          data-barras-idx={rowIndex}
+                          onKeyDown={(event) => {
+                            // Los lectores USB envían Enter al final del código: saltamos
+                            // al campo de barras de la siguiente variante para escanear en cadena.
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              const next = document.querySelector<HTMLInputElement>(
+                                `input[data-barras-idx="${rowIndex + 1}"]`,
+                              );
+                              if (next) { next.focus(); next.select(); }
+                              else (event.target as HTMLInputElement).blur();
+                            }
+                          }}
+                          placeholder="Escanea o escribe"
                           className="w-36 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
                       </td>

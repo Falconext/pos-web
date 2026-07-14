@@ -663,6 +663,7 @@ const Comprobantes = () => {
                 quotationTerms={invoice?.cotizTerminos || ''}
                 quotationPaymentType={invoice?.cotizTipoPago || 'CONTADO'}
                 quotationAdvance={invoice?.cotizAdelanto || 0}
+                quotationCurrency={invoice?.cotizMoneda || 'PEN'}
             />
             </div>
 

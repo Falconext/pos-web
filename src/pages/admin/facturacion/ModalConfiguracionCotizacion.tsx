@@ -19,6 +19,7 @@ export interface QuotationConfig {
     quotationTerms: string;
     quotationPaymentType: string;
     quotationAdvance: number;
+    quotationCurrency: string;
     observaciones: string;
 }
 
@@ -37,6 +38,7 @@ const ModalConfiguracionCotizacion = ({
             quotationTerms: '',
             quotationPaymentType: 'CONTADO',
             quotationAdvance: 0,
+            quotationCurrency: 'PEN',
             observaciones: ''
         }
     );
@@ -65,6 +67,7 @@ const ModalConfiguracionCotizacion = ({
             quotationTerms: '',
             quotationPaymentType: 'CONTADO',
             quotationAdvance: 0,
+            quotationCurrency: 'PEN',
             observaciones: ''
         });
     };
@@ -136,6 +139,19 @@ const ModalConfiguracionCotizacion = ({
                                 value={config.quotationAdvance.toString()}
                                 onChange={(e: any) => handleChange('quotationAdvance', parseFloat(e.target.value) || 0)}
                                 isLabel
+                                error=""
+                            />
+                        </div>
+                        <div>
+                            <Select
+                                name="quotationCurrency"
+                                label="Moneda"
+                                value={config.quotationCurrency}
+                                onChange={(_id, value) => handleChange('quotationCurrency', value)}
+                                options={[
+                                    { id: 'PEN', value: 'SOLES (S/)' },
+                                    { id: 'USD', value: 'DÓLARES (US$)' },
+                                ]}
                                 error=""
                             />
                         </div>

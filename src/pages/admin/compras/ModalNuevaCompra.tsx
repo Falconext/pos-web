@@ -153,8 +153,31 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
         setSupplierOptions((clients || []).map(c => ({ id: c.id, value: `${c.nroDoc} - ${c.nombre}` })));
     }, [clients]);
 
+    // Etiqueta talla/color de una variante: {Color:"Rojo",Talla:"M"} -> "Rojo / M"
+    const etiquetaAtributos = (v: any): string =>
+        v?.valoresAtributos && typeof v.valoresAtributos === 'object'
+            ? Object.values(v.valoresAtributos).filter(Boolean).join(' / ')
+            : '';
+
     useEffect(() => {
-        setProductOptions((products || []).map(p => ({ id: p.id, value: `${p.codigo} - ${p.descripcion} (Stock: ${p.stock})`, data: p })));
+        // Los productos con variantes (talla/color) se expanden: una opción por variante,
+        // así la compra ingresa el stock a la variante correcta.
+        setProductOptions((products || []).flatMap((p: any) => {
+            const variantes = Array.isArray(p?.variantes)
+                ? p.variantes.filter((v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO')
+                : [];
+            if (variantes.length > 0) {
+                return variantes.map((v: any) => {
+                    const label = etiquetaAtributos(v);
+                    return {
+                        id: v.id,
+                        value: `${v.codigo} - ${p.descripcion}${label ? ' (' + label + ')' : ''} (Stock: ${v.stock ?? 0})`,
+                        data: { ...v, descripcion: `${p.descripcion}${label ? ' - ' + label : ''}` },
+                    };
+                });
+            }
+            return [{ id: p.id, value: `${p.codigo} - ${p.descripcion} (Stock: ${p.stock})`, data: p }];
+        }));
     }, [products]);
 
     // Handlers
@@ -172,13 +195,29 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     };
 
     const onProductChange = (id: any, value: string) => {
-        const prod = products.find(p => p.id === Number(id));
+        const nid = Number(id);
+        let prod: any = products.find(p => p.id === nid);
+        let descripcion = prod?.descripcion;
+        let costo = prod?.costoUnitario;
+        // Si no es un producto padre, buscar entre las variantes
+        if (!prod) {
+            for (const p of (products as any[])) {
+                const v = (p?.variantes || []).find((x: any) => x.id === nid);
+                if (v) {
+                    prod = v;
+                    const label = etiquetaAtributos(v);
+                    descripcion = `${p.descripcion}${label ? ' - ' + label : ''}`;
+                    costo = v.costoUnitario ?? p.costoUnitario;
+                    break;
+                }
+            }
+        }
         if (prod) {
             setCurrentItem({
                 ...currentItem,
                 productoId: prod.id,
-                descripcion: prod.descripcion,
-                precioUnitario: prod.costoUnitario || 0
+                descripcion,
+                precioUnitario: costo || 0
             });
         }
     };
@@ -191,6 +230,15 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
             if (resp.code === 1 && resp.data) {
                 const prod = resp.data;
+                // Si se escaneó un producto padre con variantes, no ingresar stock al padre:
+                // pedir que se elija la variante desde el buscador (cada variante tiene su código).
+                const tieneVariantes = Array.isArray(prod?.variantes)
+                    && prod.variantes.some((v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO');
+                if (tieneVariantes) {
+                    alert(`"${prod.descripcion}" tiene variantes (talla/color). Selecciónala desde el buscador de productos, o escanea el código de la variante específica.`, 'warning');
+                    setBarcodeInput('');
+                    return;
+                }
                 setCurrentItem(prev => ({
                     ...prev,
                     productoId: prod.id,

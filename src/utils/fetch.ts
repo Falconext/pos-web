@@ -31,9 +31,9 @@ export async function get<T>(endpoint: string): Promise<ApiResponse<T>> {
   }
 }
 
-export async function post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+export async function post<T>(endpoint: string, data: any, config?: any): Promise<ApiResponse<T>> {
   try {
-    const resp = await apiClient.post<T>(endpoint, data)
+    const resp = await apiClient.post<T>(endpoint, data, config)
     const result: any = await handleResponse(resp)
     if (result.code === 0) {
       throw new Error(result.message || 'Error desconocido')

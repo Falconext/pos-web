@@ -14,6 +14,7 @@ import ComprobantePrintPage from "@/pages/admin/facturacion/comprobanteImprimir"
 import ModalEditLineItem from "@/pages/admin/facturacion/ModalEditLineItem";
 import ModalDetraccion from "@/pages/admin/facturacion/ModalDetraccion";
 import ModalConfiguracionCotizacion from "@/pages/admin/facturacion/ModalConfiguracionCotizacion";
+import ModalSeleccionVariante from "@/features/admin/facturacion/components/ModalSeleccionVariante";
 import { ModalRecetaMedica } from "@/pages/admin/facturacion/ModalRecetaMedica";
 import ModalCuotas from "@/pages/admin/facturacion/ModalCuotas";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
@@ -122,6 +123,7 @@ export const FacturacionNuevoView = () => {
                     quotationTerms={vm.quotationTerms}
                     quotationPaymentType={vm.quotationPaymentType}
                     quotationAdvance={vm.quotationAdvance}
+                    quotationCurrency={vm.quotationCurrency}
                     formValues={printFormValues}
                     serie={vm.serie}
                     correlative={vm.correlative}
@@ -256,6 +258,12 @@ export const FacturacionNuevoView = () => {
                 initialCuotas={vm.cuotas || []}
                 totalFactura={vm.totalCredito ?? vm.totalAdjusted}
             />
+            <ModalSeleccionVariante
+                isOpen={!!vm.varianteModalProduct}
+                onClose={() => vm.setVarianteModalProduct(null)}
+                product={vm.varianteModalProduct}
+                onSelect={vm.handleSelectVariante}
+            />
             <ModalConfiguracionCotizacion
                 isOpen={vm.isQuotationConfigModalOpen}
                 onClose={() => vm.setIsQuotationConfigModalOpen(false)}
@@ -268,6 +276,7 @@ export const FacturacionNuevoView = () => {
                     quotationTerms: vm.quotationTerms,
                     quotationPaymentType: vm.quotationPaymentType,
                     quotationAdvance: vm.quotationAdvance,
+                    quotationCurrency: vm.quotationCurrency,
                     observaciones: vm.formValues.observaciones
                 }}
             />

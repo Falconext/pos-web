@@ -235,7 +235,9 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
         try {
             const sedeActivaId = useAuthStore.getState().sedeActiva?.id;
             const payload = data?.sedeId ? data : { ...data, ...(sedeActivaId ? { sedeId: sedeActivaId } : {}) };
-            const resp: any = await post(`comprobante/${data.tipoDoc === "01" ? "factura" : data.tipoDoc === "03" ? "boleta" : data.tipoDoc === "07" ? "nota-credito" : "nota-debito"}`, payload);
+            // Emisión a SUNAT puede tardar más que el timeout global (12s). Damos 40s
+            // para esperar la respuesta real y evitar el "timeout" y estados falsos.
+            const resp: any = await post(`comprobante/${data.tipoDoc === "01" ? "factura" : data.tipoDoc === "03" ? "boleta" : data.tipoDoc === "07" ? "nota-credito" : "nota-debito"}`, payload, { timeout: 40000 });
             console.log(resp);
             if (resp.code === 1) {
                 const isPendiente = (resp.data?.status ?? resp.status) === 'PENDIENTE';
@@ -266,7 +268,7 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
         try {
             const sedeActivaId = useAuthStore.getState().sedeActiva?.id;
             const payload = data?.sedeId ? data : { ...data, ...(sedeActivaId ? { sedeId: sedeActivaId } : {}) };
-            const resp: any = await post('/comprobante/informal', payload);
+            const resp: any = await post('/comprobante/informal', payload, { timeout: 40000 });
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
                 useAlertStore.setState({ loading: false });

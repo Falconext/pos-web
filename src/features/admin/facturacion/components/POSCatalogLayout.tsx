@@ -337,9 +337,24 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                             })()}
                                         </p>
                                         <div className="text-[10px] leading-tight font-medium space-y-0.5">
-                                            <p className={esServicio(item) ? "text-violet-600 dark:text-violet-400" : "text-emerald-600 dark:text-emerald-400"}>
-                                                {esServicio(item) ? "Servicio técnico" : `Disponible: ${item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}`}
-                                            </p>
+                                            {(() => {
+                                                const variantesActivas = Array.isArray(item?.variantes)
+                                                    ? item.variantes.filter((v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO')
+                                                    : [];
+                                                if (!esServicio(item) && variantesActivas.length > 0) {
+                                                    const stockVariantes = variantesActivas.reduce((s: number, v: any) => s + Number(v?.stock ?? 0), 0);
+                                                    return (
+                                                        <p className="text-indigo-600 dark:text-indigo-400">
+                                                            {variantesActivas.length} variantes · Stock: {stockVariantes}
+                                                        </p>
+                                                    );
+                                                }
+                                                return (
+                                                    <p className={esServicio(item) ? "text-violet-600 dark:text-violet-400" : "text-emerald-600 dark:text-emerald-400"}>
+                                                        {esServicio(item) ? "Servicio técnico" : `Disponible: ${item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}`}
+                                                    </p>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1.5">

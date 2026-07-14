@@ -387,6 +387,9 @@ export const useFacturacionViewModel = () => {
     const [quotationTerms, setQuotationTerms] = useState('');
     const [quotationPaymentType, setQuotationPaymentType] = useState('CONTADO');
     const [quotationAdvance, setQuotationAdvance] = useState(0);
+    const [quotationCurrency, setQuotationCurrency] = useState('PEN');
+    // Producto padre cuyo selector de variantes (talla/color) está abierto en el POS
+    const [varianteModalProduct, setVarianteModalProduct] = useState<any>(null);
     const [isQuotationConfigModalOpen, setIsQuotationConfigModalOpen] = useState(false);
     const [hasOpenedConfigModal, setHasOpenedConfigModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -636,6 +639,7 @@ export const useFacturacionViewModel = () => {
                 if (cotizConfig.cotizTerminos !== undefined) setQuotationTerms(cotizConfig.cotizTerminos);
                 if (cotizConfig.cotizTipoPago !== undefined) setQuotationPaymentType(cotizConfig.cotizTipoPago);
                 if (cotizConfig.cotizAdelanto !== undefined) setQuotationAdvance(cotizConfig.cotizAdelanto);
+                if (cotizConfig.cotizMoneda !== undefined) setQuotationCurrency(cotizConfig.cotizMoneda);
             }
 
             window.history.replaceState({}, document.title);
@@ -1062,6 +1066,21 @@ export const useFacturacionViewModel = () => {
     };
 
     const handleProductClick = (product: any) => {
+        // ── Variantes (talla/color) ───────────────────────────────────────────
+        // Si el producto tiene variantes activas y aún no se eligió una, abrir el
+        // selector. Al elegir, handleSelectVariante re-inyecta la variante (que es
+        // un producto real) por este mismo flujo, reutilizando toda la lógica.
+        if (
+            !product?.__esVariante &&
+            Array.isArray(product?.variantes) &&
+            product.variantes.some(
+                (v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO',
+            )
+        ) {
+            setVarianteModalProduct(product);
+            return;
+        }
+
         const esServicio = esServicioTecnico(product);
         // Farmacia: el stock siempre viene de lotes activos (FEFO/trazabilidad)
         if (!esServicio && usaLotesFarmacia) {
@@ -1231,6 +1250,25 @@ export const useFacturacionViewModel = () => {
         }
     }
 
+    // Se elige una variante en el modal: se fusiona con el padre (unidad, categoría,
+    // afectación vienen del padre; id, código, precio, stock, moneda de la variante)
+    // y se re-inyecta al flujo normal de agregar producto.
+    const handleSelectVariante = (padre: any, variante: any) => {
+        setVarianteModalProduct(null);
+        const valores = variante?.valoresAtributos && typeof variante.valoresAtributos === 'object'
+            ? Object.values(variante.valoresAtributos).filter(Boolean).join(' / ')
+            : '';
+        handleProductClick({
+            ...padre,
+            ...variante,
+            id: variante.id,
+            codigo: variante.codigo ?? padre.codigo,
+            descripcion: `${padre.descripcion}${valores ? ' - ' + valores : ''}`,
+            variantes: undefined,
+            __esVariante: true,
+        });
+    };
+
     const handleAddFreeQuoteItem = () => {
         const descripcion = cleanText(freeQuoteItem.descripcion);
         const cantidad = Number(freeQuoteItem.cantidad);
@@ -1398,6 +1436,7 @@ export const useFacturacionViewModel = () => {
         setQuotationTerms(config.quotationTerms);
         setQuotationPaymentType(config.quotationPaymentType);
         setQuotationAdvance(config.quotationAdvance);
+        setQuotationCurrency(config.quotationCurrency);
         setFormValues(prev => ({
             ...prev,
             observaciones: config.observaciones
@@ -1771,6 +1810,7 @@ export const useFacturacionViewModel = () => {
             cotizTerminos: isQuotationRoute ? quotationTerms : undefined,
             cotizTipoPago: isQuotationRoute ? quotationPaymentType : undefined,
             cotizAdelanto: isQuotationRoute ? quotationAdvance : undefined,
+            cotizMoneda: isQuotationRoute ? quotationCurrency : undefined,
             ...(selectedOperacion?.codigo === '0112' && !retencionData ? {
                 tipoDetraccionId: tipoDetraccionId || undefined,
                 medioPagoDetraccionId: medioPagoDetraccionId || undefined,
@@ -2083,6 +2123,7 @@ export const useFacturacionViewModel = () => {
 
         // Handlers
         handleProductClick,
+        varianteModalProduct, setVarianteModalProduct, handleSelectVariante,
         handleAddFreeQuoteItem,
         handleComboClick,
         handleDeleteProduct,
@@ -2127,6 +2168,7 @@ export const useFacturacionViewModel = () => {
         quotationDiscount, quotationValidity,
         quotationSignature, quotationTerms,
         quotationPaymentType, quotationAdvance,
+        quotationCurrency,
 
         // Sub-states
         tipoDetraccionId, montoDetraccion, cuentaBancoNacion, cuotas, retencionData,

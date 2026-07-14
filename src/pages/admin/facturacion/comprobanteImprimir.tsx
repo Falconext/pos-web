@@ -26,8 +26,17 @@ const ComprobantePrintPage = ({
     quotationTerms = '',
     quotationPaymentType = 'CONTADO',
     quotationAdvance = 0,
+    quotationCurrency = 'PEN',
     retencionData = null
 }: any) => {
+
+    // Moneda de la cotización: solo afecta el formato COTIZACIÓN (no la facturación SUNAT)
+    const esUSD = String(quotationCurrency).toUpperCase() === 'USD';
+    const monedaSimbolo = esUSD ? 'US$' : 'S/';
+    const monedaNombre = esUSD ? 'DÓLARES' : 'SOLES';
+    const sonEnMoneda = esUSD
+        ? String(totalInWords || '').replace(/SOLES/gi, 'DÓLARES AMERICANOS').replace(/SOL\b/gi, 'DÓLAR AMERICANO')
+        : totalInWords;
 
 
     const localComponentRef = useRef(null);
@@ -447,7 +456,7 @@ console.log(formValues)
                                             <span>{quotationValidity} días</span>
 
                                             <span className="font-bold">MONEDA:</span>
-                                            <span>SOLES</span>
+                                            <span>{monedaNombre}</span>
                                         </div>
                                     </div>
                                     )}
@@ -466,6 +475,7 @@ console.log(formValues)
                                         <div className={`flex-1 text-center border-r border-gray-400 px-2`}>DESCRIPCIÓN</div>
                                         {/* <div className="w-[10%] text-center border-r border-gray-400">V.UNIT.</div> */}
                                         {/* <div className="w-[8%] text-center border-r border-gray-400">IGV.</div> */}
+                                        <div className="w-[9%] text-center border-r border-gray-400">MONEDA</div>
                                         <div className="w-[10%] text-center border-r border-gray-400">P.UNIT.</div>
                                         <div className="w-[10%] text-center">TOTAL</div>
                                     </div>
@@ -490,6 +500,7 @@ console.log(formValues)
                                                 <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">{item?.descripcion?.toUpperCase()}</div>
                                                 {/* <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit / 1.18).toFixed(2)}</div> */}
                                                 {/* <div className="w-[8%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit - (pUnit / 1.18)).toFixed(2)}</div> */}
+                                                <div className="w-[9%] text-center border-r border-gray-300 py-1">{monedaSimbolo}</div>
                                                 <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
                                                 <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
                                             </div>
@@ -500,7 +511,7 @@ console.log(formValues)
                                 {/* Total in Words & Footer Section */}
                                 {fc('sonTexto').visible && (
                                 <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center bg-gray-50" style={{ fontSize: px('sonTexto') }}>
-                                    SON: {totalInWords}
+                                    SON: {sonEnMoneda}
                                 </div>
                                 )}
 
@@ -536,42 +547,42 @@ console.log(formValues)
                                             {fc('opGravadas').visible && (
                                             <div className="flex justify-between" style={{ fontSize: px('opGravadas') }}>
                                                 <span className="font-bold">OP. GRAVADAS:</span>
-                                                <span>S/ {round2(mtoOperGravadas).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span>
                                             </div>)}
                                             {fc('opExoneradas').visible && (
                                             <div className="flex justify-between" style={{ fontSize: px('opExoneradas') }}>
                                                 <span className="font-bold">OP. EXONERADAS:</span>
-                                                <span>S/ 0.00</span>
+                                                <span>{monedaSimbolo} 0.00</span>
                                             </div>)}
                                             {fc('opInafectas').visible && (
                                             <div className="flex justify-between" style={{ fontSize: px('opInafectas') }}>
                                                 <span className="font-bold">OP. INAFECTAS:</span>
-                                                <span>S/ 0.00</span>
+                                                <span>{monedaSimbolo} 0.00</span>
                                             </div>)}
                                             {fc('opGratuitas').visible && (
                                             <div className="flex justify-between" style={{ fontSize: px('opGratuitas') }}>
                                                 <span className="font-bold">OP. GRATUITAS:</span>
-                                                <span>S/ 0.00</span>
+                                                <span>{monedaSimbolo} 0.00</span>
                                             </div>)}
                                             {fc('subTotal').visible && (
                                             <div className="flex justify-between font-bold" style={{ fontSize: px('subTotal') }}>
                                                 <span>SUB TOTAL:</span>
-                                                <span>S/ {round2(mtoOperGravadas).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span>
                                             </div>)}
                                             {fc('descuentos').visible && (
                                             <div className="flex justify-between" style={{ fontSize: px('descuentos') }}>
                                                 <span>DESCUENTO{descuentoPct > 0 ? ` (${descuentoPct}%)` : ''}:</span>
-                                                <span>S/ {round2(totalDescuentos).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {round2(totalDescuentos).toFixed(2)}</span>
                                             </div>)}
                                             {fc('igv').visible && (
                                             <div className="flex justify-between" style={{ fontSize: px('igv') }}>
                                                 <span className="font-bold">IGV 18%:</span>
-                                                <span>S/ {round2(mtoIgv).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {round2(mtoIgv).toFixed(2)}</span>
                                             </div>)}
                                             {fc('montoTotal').visible && (
                                             <div className="flex justify-between font-bold border-t border-black pt-1 mt-1" style={{ fontSize: px('montoTotal') }}>
                                                 <span>MONTO TOTAL:</span>
-                                                <span>S/ {round2(mtoImpVenta).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {round2(mtoImpVenta).toFixed(2)}</span>
                                             </div>)}
                                         </div>
                                     </div>
