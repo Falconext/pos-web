@@ -144,7 +144,7 @@ export const FacturacionNuevoView = () => {
                 <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111827] border-t border-gray-200 dark:border-slate-800 p-4 z-[50] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center justify-between pb-8">
                     <div className="flex flex-col">
                         <span className="text-gray-500 dark:text-gray-400 text-xs font-semibold">{vm.productsInvoice.length} Items</span>
-                        <span className="text-xl font-bold text-gray-900 dark:text-white">S/ {vm.totalAdjusted.toFixed(2)}</span>
+                        <span className="text-xl font-bold text-gray-900 dark:text-white">{vm.monedaSimbolo} {vm.totalAdjusted.toFixed(2)}</span>
                     </div>
                     <button
                         onClick={() => vm.setShowMobileCart(true)}

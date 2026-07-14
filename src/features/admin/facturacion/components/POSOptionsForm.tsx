@@ -340,6 +340,29 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
             )}
 
+            {/* Moneda de la cotización — relabela todo el formato (S/ o US$) */}
+            {vm.isQuotationRoute && (
+                <div className="mt-3">
+                    <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Moneda</label>
+                    <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 h-9">
+                        {([['PEN', 'Soles (S/)'], ['USD', 'Dólares (US$)']] as const).map(([code, label]) => (
+                            <button
+                                key={code}
+                                type="button"
+                                onClick={() => vm.handleChangeQuotationCurrency(code)}
+                                className={`flex-1 text-xs font-bold transition-colors ${
+                                    String(vm.quotationCurrency).toUpperCase() === code
+                                        ? 'bg-violet-600 text-white'
+                                        : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Descuento y Condición de Pago — solo documentos informales (no van a SUNAT) */}
             {vm.esInformal && vm.formValues?.tipoDoc !== 'NP' && (
                 <div className="mt-2 space-y-2">
@@ -363,7 +386,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                                                     : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                                             }`}
                                         >
-                                            {modo === 'PCT' ? '%' : 'S/'}
+                                            {modo === 'PCT' ? '%' : vm.monedaSimbolo}
                                         </button>
                                     ))}
                                 </div>
@@ -383,14 +406,14 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                                     </>
                                 ) : (
                                     <>
-                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">S/</span>
+                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">{vm.monedaSimbolo}</span>
                                         <input
                                             type="number"
                                             min={0} step={0.01}
                                             value={vm.descuentoSolesNV || ''}
                                             onChange={e => vm.setDescuentoSolesNV(Math.max(0, Number(e.target.value)))}
                                             placeholder="0.00"
-                                            className="w-full h-9 pl-7 pr-3 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                                            className={`w-full h-9 ${vm.monedaSimbolo?.length > 2 ? 'pl-10' : 'pl-7'} pr-3 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all`}
                                         />
                                     </>
                                 )}

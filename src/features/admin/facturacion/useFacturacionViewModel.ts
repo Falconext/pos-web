@@ -1173,11 +1173,15 @@ export const useFacturacionViewModel = () => {
         }
         // ── Fin multi-lote ──────────────────────────────────────────────────────
 
-        // Moneda del producto: si es USD, convertimos su precio (y precios mayorista) a soles
-        // con el tipo de cambio del día. Todo el carrito y el comprobante quedan en soles.
+        // Moneda del producto vs. moneda del documento.
+        // Solo convertimos un producto en USD a soles cuando el documento NO es en dólares
+        // (facturación, o cotización en soles). Si la cotización es en dólares, el producto
+        // en USD conserva su precio original ($472 sigue siendo $472, sin multiplicar por TC).
         const esUSD = String(product?.moneda || 'PEN').toUpperCase() === 'USD';
-        const tc = esUSD ? Number(tcVenta) : 1;
-        if (esUSD && (!Number.isFinite(tc) || tc <= 0)) {
+        const cotizEnDolares = isQuotationRoute && String(quotationCurrency).toUpperCase() === 'USD';
+        const convertirUSD = esUSD && !cotizEnDolares;
+        const tc = convertirUSD ? Number(tcVenta) : 1;
+        if (convertirUSD && (!Number.isFinite(tc) || tc <= 0)) {
             // Aún no cargó el tipo de cambio: lo pedimos y avisamos que reintente.
             tipoCambioService
                 .consultar()
@@ -1188,7 +1192,7 @@ export const useFacturacionViewModel = () => {
                 "warning",
             );
         }
-        const preciosMayoristaConv = esUSD && Array.isArray(product?.preciosMayorista)
+        const preciosMayoristaConv = convertirUSD && Array.isArray(product?.preciosMayorista)
             ? product.preciosMayorista.map((r: any) => ({
                 ...r,
                 precio: Number(r?.precio ?? 0) * tc,
@@ -1242,7 +1246,9 @@ export const useFacturacionViewModel = () => {
                 precioUnitario: getApplicablePrice({ precioBase: base, preciosMayorista: preciosMayoristaConv }, 1),
                 precioOrigen: origenPrecio,
                 unidadMedida: unidadMedidaNombre,
-                // Trazabilidad para mostrar el precio original en dólares en el carrito
+                // Trazabilidad del precio original en dólares. tipoCambio = 1 cuando el
+                // producto se agrega a una cotización en dólares (no se convirtió); = TC del
+                // día cuando se convirtió a soles. Permite reconvertir al cambiar de moneda.
                 ...(esUSD ? { monedaOriginal: 'USD', precioOriginalUSD: Number(product?.precioUnitario ?? 0), tipoCambio: tc } : {}),
                 ...farmaciaExtra,
                 ...fraccionExtra,
@@ -1436,11 +1442,59 @@ export const useFacturacionViewModel = () => {
         setQuotationTerms(config.quotationTerms);
         setQuotationPaymentType(config.quotationPaymentType);
         setQuotationAdvance(config.quotationAdvance);
-        setQuotationCurrency(config.quotationCurrency);
+        handleChangeQuotationCurrency(config.quotationCurrency);
         setFormValues(prev => ({
             ...prev,
             observaciones: config.observaciones
         }));
+    };
+
+    // Reconvierte los ítems del carrito con origen USD al cambiar la moneda de la cotización.
+    // Los productos en soles no se tocan; solo los USD-origen: al pasar a dólares vuelven a su
+    // precio original ($472) y al pasar a soles se multiplican por el tipo de cambio del día.
+    const convertirCarritoAMoneda = (targetUSD: boolean) => {
+        const tc = Number(tcVenta);
+        productsInvoice.forEach((it: any, idx: number) => {
+            if (String(it?.monedaOriginal || '').toUpperCase() !== 'USD') return;
+            const factor = targetUSD ? 1 : (Number.isFinite(tc) && tc > 0 ? tc : Number(it.tipoCambio) || 1);
+            const currentFactor = Number(it.tipoCambio) || 1;
+            if (factor === currentFactor) return;
+            const ratio = factor / currentFactor;
+            const nuevoBase = Number(it.precioBase ?? it.precioUnitario ?? 0) * ratio;
+            const nuevosMayorista = Array.isArray(it.preciosMayorista)
+                ? it.preciosMayorista.map((r: any) => ({ ...r, precio: Number(r?.precio ?? 0) * ratio }))
+                : it.preciosMayorista;
+            const patched = { ...it, precioBase: nuevoBase, preciosMayorista: nuevosMayorista, tipoCambio: factor };
+            updateProductInvoice(idx, { ...patched, ...calculateLineItem(patched, Number(it.cantidad) || 1) });
+        });
+    };
+
+    const handleChangeQuotationCurrency = (next: string) => {
+        const nxt = String(next).toUpperCase();
+        const cur = String(quotationCurrency).toUpperCase();
+        if (nxt === cur) return;
+        const targetUSD = nxt === 'USD';
+        const hayUSDOrigen = productsInvoice.some(
+            (it: any) => String(it?.monedaOriginal || '').toUpperCase() === 'USD',
+        );
+        const tc = Number(tcVenta);
+        // Solo necesitamos el tipo de cambio si hay ítems USD-origen que reconvertir.
+        if (hayUSDOrigen && (!Number.isFinite(tc) || tc <= 0)) {
+            tipoCambioService
+                .consultar()
+                .then((r) => setTcVenta(Number(r?.venta) || null))
+                .catch(() => setTcVenta(null));
+            useAlertStore.getState().alert(
+                "Obteniendo el tipo de cambio del día. Vuelve a cambiar la moneda en un momento.",
+                "warning",
+            );
+            return;
+        }
+        convertirCarritoAMoneda(targetUSD);
+        // Reiniciamos el descuento manual para evitar montos ambiguos entre monedas.
+        setDescuentoSolesNV(0);
+        setDescuentoPctNV(0);
+        setQuotationCurrency(nxt);
     };
 
     const handleChangeSelect = (idValue: any, value: any, name: any, id: any) => {
@@ -1489,6 +1543,10 @@ export const useFacturacionViewModel = () => {
 
     const { total, discount: productDiscount, hasDiscount } = useMemo(() => calculateTotals(productsInvoice), [productsInvoice]);
     const esInformal = tiposInformales.includes(formValues.tipoDoc);
+    // Símbolo de moneda para la cotización (solo relabela; el carrito trabaja en soles).
+    // Fuera de cotizaciones siempre es S/.
+    const monedaSimbolo =
+        isQuotationRoute && String(quotationCurrency).toUpperCase() === 'USD' ? 'US$' : 'S/';
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
     const montoDescuentoNV = esInformal
@@ -2168,7 +2226,8 @@ export const useFacturacionViewModel = () => {
         quotationDiscount, quotationValidity,
         quotationSignature, quotationTerms,
         quotationPaymentType, quotationAdvance,
-        quotationCurrency,
+        quotationCurrency, setQuotationCurrency, handleChangeQuotationCurrency,
+        monedaSimbolo,
 
         // Sub-states
         tipoDetraccionId, montoDetraccion, cuentaBancoNacion, cuotas, retencionData,

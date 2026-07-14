@@ -156,33 +156,33 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
             <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
                 <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
                     <span>Op. Gravada</span>
-                    <span>S/ {vm.opGravadaAdjusted.toFixed(2)}</span>
+                    <span>{vm.monedaSimbolo} {vm.opGravadaAdjusted.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
                     <span>IGV (18%)</span>
-                    <span>S/ {vm.igvAdjusted.toFixed(2)}</span>
+                    <span>{vm.monedaSimbolo} {vm.igvAdjusted.toFixed(2)}</span>
                 </div>
                 {vm.opExoneradaAdjusted > 0 && (
                     <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
                         <span>Op. Exonerada</span>
-                        <span>S/ {vm.opExoneradaAdjusted.toFixed(2)}</span>
+                        <span>{vm.monedaSimbolo} {vm.opExoneradaAdjusted.toFixed(2)}</span>
                     </div>
                 )}
                 {vm.opInafectaAdjusted > 0 && (
                     <div className="flex justify-between text-sm text-gray-700 dark:text-white font-medium">
                         <span>Op. Inafecta</span>
-                        <span>S/ {vm.opInafectaAdjusted.toFixed(2)}</span>
+                        <span>{vm.monedaSimbolo} {vm.opInafectaAdjusted.toFixed(2)}</span>
                     </div>
                 )}
                 {(vm.hasDiscount || (vm.formValues.motivoId === 6 && vm.descountGlobal > 0)) && (
                     <div className="flex justify-between text-sm text-green-600 font-medium">
                         <span>Descuento</span>
-                        <span>- S/ {vm.finalDiscount.toFixed(2)}</span>
+                        <span>- {vm.monedaSimbolo} {vm.finalDiscount.toFixed(2)}</span>
                     </div>
                 )}
                 <div className="flex justify-between text-xl font-black text-gray-800 dark:text-white pt-2 border-t border-gray-200 dark:border-slate-800">
                     <span>TOTAL</span>
-                    <span>S/ {total.toFixed(2)}</span>
+                    <span>{vm.monedaSimbolo} {total.toFixed(2)}</span>
                 </div>
 
                 {/* Adelanto field for NP and OT */}
