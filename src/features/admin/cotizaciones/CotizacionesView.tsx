@@ -38,7 +38,7 @@ export default function CotizacionesView() {
             document: item?.cliente?.nroDoc,
             s3PdfUrl: item?.s3PdfUrl,
             client: item?.cliente?.nombre,
-            total: `S/ ${item.mtoImpVenta.toFixed(2)}`,
+            total: `${String((item as any).cotizMoneda || item.tipoMoneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} ${item.mtoImpVenta.toFixed(2)}`,
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
                 : item.estadoPago,
@@ -99,7 +99,7 @@ export default function CotizacionesView() {
                     discount={vm.invoice?.discount}
                     receipt={vm.comprobante || vm.invoice?.comprobante}
                     selectedClient={vm.invoice?.cliente}
-                    totalInWords={numberToWords(parseFloat(vm.invoice?.mtoImpVenta as any)) + " SOLES"}
+                    totalInWords={numberToWords(parseFloat(vm.invoice?.mtoImpVenta as any)) + (String((vm.invoice as any)?.cotizMoneda || 'PEN').toUpperCase() === 'USD' ? " DÓLARES" : " SOLES")}
                     observation={vm.invoice?.observaciones}
                     includeProductImages={vm.invoice?.cotizIncluirImagenes || false}
                     quotationDiscount={vm.invoice?.cotizDescuento || 0}
