@@ -495,12 +495,32 @@ export const useProductsViewModel = () => {
                 const resp = await apiClient.get(`/productos/${originalProduct.id}`);
                 const full = resp?.data?.data || resp?.data;
                 if (full) {
+                    // Fuente autoritativa: re-sembramos las variantes desde el GET individual
+                    // para asegurar que traen todos los campos (incl. codigoBarras). Así la
+                    // columna BARRAS no queda vacía al reabrir el editor.
+                    const fullVariantes = Array.isArray(full.variantes) ? full.variantes : null;
                     setState(prev => ({
                         ...prev,
                         formValues: {
                             ...prev.formValues,
                             descripcionLarga: full.descripcionLarga ?? (prev.formValues as any).descripcionLarga ?? '',
                             atributosTecnicos: full.atributosTecnicos ?? (prev.formValues as any).atributosTecnicos,
+                            ...(fullVariantes
+                                ? {
+                                    variantes: fullVariantes,
+                                    variantesConfig: fullVariantes.map((variante: any) => ({
+                                        id: variante.id,
+                                        valoresAtributos: variante.valoresAtributos || {},
+                                        codigo: variante.codigo || '',
+                                        precioUnitario: Number(variante.precioUnitario || full.precioUnitario || 0),
+                                        stock: Number(variante.stock || 0),
+                                        imagenUrl: variante.imagenUrl || '',
+                                        imagenUrlDisplay: variante.imagenUrlDisplay || variante.imagenUrl || '',
+                                        codigoBarras: variante.codigoBarras || '',
+                                        estado: variante.estado || 'ACTIVO',
+                                    })),
+                                }
+                                : {}),
                         } as any,
                     }));
                 }

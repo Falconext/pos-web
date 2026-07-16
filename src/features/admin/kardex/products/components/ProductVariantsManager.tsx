@@ -386,15 +386,28 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
   };
 
   const updateVariant = (key: string, patch: Partial<VariantConfig>) => {
-    const nextConfig = buildConfig(opcionesAtributos).map((row) =>
-      comboKey(row.valoresAtributos) === key ? { ...row, ...patch } : row,
-    );
-    const stockTotal = nextConfig.reduce((sum, row) => sum + Number(row.stock || 0), 0);
-    setFormValues({
-      ...formValues,
-      variantesConfig: nextConfig,
-      stock: stockTotal,
-    } as any);
+    // Usamos la forma funcional de setFormValues para leer SIEMPRE la config más
+    // reciente. Al escanear con lector el foco salta variante por variante y dispara
+    // varios updateVariant en ráfaga; con el spread de `formValues` (closure) cada
+    // llamada partía de un snapshot viejo y descartaba los códigos de barras recién
+    // escritos, por eso "no se seteaban" hasta un segundo guardado.
+    setFormValues((prev: any) => {
+      const prevOptions: VariantOption[] = Array.isArray(prev?.opcionesAtributos)
+        ? prev.opcionesAtributos
+        : opcionesAtributos;
+      const prevConfig: VariantConfig[] = Array.isArray(prev?.variantesConfig)
+        ? prev.variantesConfig
+        : variantesConfig;
+      const nextConfig = buildConfig(prevOptions, prevConfig).map((row) =>
+        comboKey(row.valoresAtributos) === key ? { ...row, ...patch } : row,
+      );
+      const stockTotal = nextConfig.reduce((sum, row) => sum + Number(row.stock || 0), 0);
+      return {
+        ...prev,
+        variantesConfig: nextConfig,
+        stock: stockTotal,
+      };
+    });
   };
 
   const handleColorImage = (color: string, file?: File | null) => {

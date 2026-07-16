@@ -1310,7 +1310,43 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           imagenUrlDisplay: hasRemovedImage
             ? null
             : imagenUrlDisplayFinal ?? imagenUrlFinal ?? currentImageUrl ?? updatedProduct?.imagenUrl ?? undefined,
-          variantes: (updatedProduct as any)?.variantes || (formValues as any)?.variantes || [],
+          // La respuesta del PUT no siempre trae la relación anidada `variantes`.
+          // Cuando falta, NO usamos `formValues.variantes` (snapshot original al abrir
+          // el modal) porque perdería las variantes agregadas/editadas — reconstruimos
+          // desde `variantesConfig`, que es donde el editor guarda los cambios reales.
+          // Así la fila del listado refleja las nuevas variantes sin recargar la página.
+          variantes: (() => {
+            const apiVariantes = (updatedProduct as any)?.variantes;
+            if (Array.isArray(apiVariantes) && apiVariantes.length > 0) return apiVariantes;
+
+            const config = (formValues as any)?.variantesConfig;
+            if (Array.isArray(config) && config.length > 0) {
+              const attrKey = (attrs: any) =>
+                JSON.stringify(
+                  Object.keys(attrs || {})
+                    .sort()
+                    .reduce((acc: any, k) => ((acc[k] = attrs[k]), acc), {}),
+                );
+              const prevIdByKey = new Map(
+                (Array.isArray((formValues as any)?.variantes) ? (formValues as any).variantes : [])
+                  .filter((v: any) => v?.id != null)
+                  .map((v: any) => [attrKey(v.valoresAtributos), v.id]),
+              );
+              return config.map((c: any) => ({
+                id: c.id ?? prevIdByKey.get(attrKey(c.valoresAtributos)),
+                valoresAtributos: c.valoresAtributos || {},
+                codigo: c.codigo || "",
+                precioUnitario: Number(c.precioUnitario || 0),
+                stock: Number(c.stock || 0),
+                imagenUrl: c.imagenUrl || "",
+                imagenUrlDisplay: c.imagenUrlDisplay || c.imagenUrl || "",
+                codigoBarras: c.codigoBarras || "",
+                estado: c.estado || "ACTIVO",
+              }));
+            }
+
+            return (formValues as any)?.variantes || [];
+          })(),
           precioOferta: formValues.precioOferta ? Number(formValues.precioOferta) : undefined,
           fechaInicioOferta: formValues.fechaInicioOferta || undefined,
           fechaFinOferta: formValues.fechaFinOferta || undefined,
