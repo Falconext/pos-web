@@ -14,6 +14,9 @@ export default function ProveedoresView() {
     const vm = useProveedoresViewModel();
     const { actions, clients, proveedoresTable, totalClients } = vm;
 
+    const [proveedorEliminar, setProveedorEliminar] = React.useState<any>(null);
+    const [eliminando, setEliminando] = React.useState(false);
+
     return (
         <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             {/* Header */}
@@ -134,6 +137,15 @@ export default function ProveedoresView() {
                                 <Icon icon="mdi:power" width={16} height={16} />
                                 <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
                             </button>
+                            <div className="my-1 border-t border-gray-100 dark:border-slate-700" />
+                            <button
+                                type="button"
+                                onClick={() => { setProveedorEliminar(rowBase); actions.closeMenu(); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                            >
+                                <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} />
+                                <span>Eliminar</span>
+                            </button>
                         </>
                     );
                 })()}
@@ -159,6 +171,21 @@ export default function ProveedoresView() {
                     setIsOpenModal={actions.setIsOpenModalConfirm}
                     title="Confirmación"
                     information="¿Estás seguro que deseas cambiar el estado del proveedor?"
+                />
+            )}
+            {proveedorEliminar && (
+                <ModalConfirm
+                    isOpenModal={!!proveedorEliminar}
+                    setIsOpenModal={(v: boolean) => { if (!v) setProveedorEliminar(null); }}
+                    confirmSubmit={async () => {
+                        setEliminando(true);
+                        try { await actions.deleteClient(Number(proveedorEliminar.id)); setProveedorEliminar(null); }
+                        finally { setEliminando(false); }
+                    }}
+                    title="Eliminar proveedor"
+                    information={`¿Eliminar definitivamente a "${proveedorEliminar.nombre || 'este proveedor'}"? Solo se puede si no tiene compras ni comprobantes asociados; de lo contrario usa Desactivar.`}
+                    confirmText="Eliminar"
+                    confirmLoading={eliminando}
                 />
             )}
         </div>

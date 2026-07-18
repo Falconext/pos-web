@@ -29,7 +29,7 @@ const getDocLabel = (data: IClient): string => {
 };
 
 export const useClientsViewModel = () => {
-    const { getAllClients, clients, totalClients, toggleStateClient, exportClients, importClients } = useClientsStore();
+    const { getAllClients, clients, totalClients, toggleStateClient, deleteClient, exportClients, importClients } = useClientsStore();
     const { success } = useAlertStore();
     const { auth } = useAuthStore();
 
@@ -197,6 +197,9 @@ export const useClientsViewModel = () => {
             toggleStateClient(Number(state.formValues?.id));
             setState(prev => ({ ...prev, isOpenModalConfirm: false }));
         },
+        // Eliminación con candado: el backend rechaza si el cliente/proveedor tiene historial.
+        deleteClient: (id: number) => deleteClient(id),
+        closeMenu: () => setState(prev => ({ ...prev, openAccionesId: null, anchorEl: null })),
         setIsOpenModalConfirm: (v: boolean) => {
             setState(prev => ({ ...prev, isOpenModalConfirm: v }));
         },
