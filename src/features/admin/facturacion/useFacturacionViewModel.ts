@@ -1543,19 +1543,31 @@ export const useFacturacionViewModel = () => {
 
     const { total, discount: productDiscount, hasDiscount } = useMemo(() => calculateTotals(productsInvoice), [productsInvoice]);
     const esInformal = tiposInformales.includes(formValues.tipoDoc);
+    // Factura (01) / Boleta (03): comprobantes formales que también admiten descuento
+    // global. Como SUNAT no acepta un descuento global sin AllowanceCharge, el monto se
+    // prorratea en el valor unitario de cada línea (ver factorDescuentoProrrateo).
+    const esFacturaOBoleta = formValues.tipoDoc === '01' || formValues.tipoDoc === '03';
     // Símbolo de moneda para la cotización (solo relabela; el carrito trabaja en soles).
     // Fuera de cotizaciones siempre es S/.
     const monedaSimbolo =
         isQuotationRoute && String(quotationCurrency).toUpperCase() === 'USD' ? 'US$' : 'S/';
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
-    const montoDescuentoNV = esInformal
+    const montoDescuentoNV = (esInformal || esFacturaOBoleta)
         ? descuentoModoNV === 'SOLES'
             ? Math.min(descuentoSolesNV, totalOriginal)
             : descuentoPctNV > 0
                 ? parseFloat((totalOriginal * descuentoPctNV / 100).toFixed(2))
                 : 0
         : 0;
+    // En Factura/Boleta el descuento global se prorratea bajando el valor unitario de
+    // cada línea (factor < 1). El backend recalcula base e IGV desde las líneas, por lo
+    // que el XML queda consistente y válido ante SUNAT sin necesidad de AllowanceCharge.
+    // Los informales, en cambio, lo envían aparte como montoDescuentoGlobal.
+    const factorDescuentoProrrateo =
+        esFacturaOBoleta && montoDescuentoNV > 0 && totalOriginal > 0
+            ? (totalOriginal - montoDescuentoNV) / totalOriginal
+            : 1;
     const totalAdjusted = isDiscountGlobalApplicable
         ? Math.max(totalOriginal - descountGlobal, 0)
         : Math.max(totalOriginal - montoDescuentoNV, 0);
@@ -1821,7 +1833,8 @@ export const useFacturacionViewModel = () => {
                     productoId: Number(item?.productoId || item?.id) || null,
                     descripcion: item.descripcion,
                     cantidad: Number(item.cantidad),
-                    nuevoValorUnitario: Number(item.precioUnitario),
+                    // Factura/Boleta: prorratea el descuento global en el precio unitario.
+                    nuevoValorUnitario: Number(item.precioUnitario) * factorDescuentoProrrateo,
                     descuento: Number(item.descuento ?? 0),
                     // Farmacia: trazabilidad de lote y receta médica
                     ...(item.loteId != null ? { loteId: item.loteId } : {}),
@@ -2166,12 +2179,13 @@ export const useFacturacionViewModel = () => {
         // Envío nacional
         envioActivo, setEnvioActivo,
         envioData, setEnvioData,
-        // Descuento % y condición de pago para informales
+        // Descuento % y condición de pago (informales + Factura/Boleta)
         descuentoPctNV, setDescuentoPctNV,
         descuentoSolesNV, setDescuentoSolesNV,
         descuentoModoNV, setDescuentoModoNV,
         fechaVencimientoCredito, setFechaVencimientoCredito,
         esInformal,
+        esFacturaOBoleta,
 
         // Farmacia: receta modal
         isRecetaModalOpen, setIsRecetaModalOpen,

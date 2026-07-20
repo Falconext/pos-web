@@ -363,8 +363,8 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
             )}
 
-            {/* Descuento y Condición de Pago — solo documentos informales (no van a SUNAT) */}
-            {vm.esInformal && vm.formValues?.tipoDoc !== 'NP' && (
+            {/* Descuento global — informales y Factura/Boleta (en formales se prorratea a las líneas) */}
+            {(vm.esInformal || vm.esFacturaOBoleta) && vm.formValues?.tipoDoc !== 'NP' && (
                 <div className="mt-2 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                         <div>
