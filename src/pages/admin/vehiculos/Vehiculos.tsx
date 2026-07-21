@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type ChangeEvent } from 'react';
 import { Icon } from '@iconify/react';
-import { get, post, patch, del } from '@/utils/fetch';
+import { get, post } from '@/utils/fetch';
+import { useVehiculosStore } from '@/zustand/vehiculos';
 import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
 import DataTable from '@/components/Datatable';
@@ -11,7 +12,7 @@ import Button from '@/components/Button';
 import ModalConfirm from '@/components/ModalConfirm';
 import TableActionMenu from '@/components/TableActionMenu';
 import type {
-    IVehiculo, IVehiculosResponse, EstadoContrato, TipoActa, NivelCombustible,
+    IVehiculo, EstadoContrato, TipoActa, NivelCombustible,
 } from '@/interfaces/vehiculo';
 import ChecklistPicker, { type ChecklistState, checklistToPayload } from './ChecklistPicker';
 import ModalClient from '@/features/admin/clients/shared/ModalClient';
@@ -66,11 +67,14 @@ function ModalFooter({ onCancel, loading, submitLabel }: { onCancel: () => void;
 // ─── Modal Vehículo (CRUD) ────────────────────────────────────────────────────
 function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | null; onClose: () => void; onSaved: () => void }) {
     const { alert } = useAlertStore();
+    const addVehiculo = useVehiculosStore((s) => s.addVehiculo);
+    const updateVehiculo = useVehiculosStore((s) => s.updateVehiculo);
     const [loading, setLoading] = useState(false);
     const [clientes, setClientes] = useState<{ id: number; nombre: string; nroDoc: string }[]>([]);
     const [form, setForm] = useState({
         placa: vehiculo?.placa ?? '', marca: vehiculo?.marca ?? '', modelo: vehiculo?.modelo ?? '',
         color: vehiculo?.color ?? '', anio: vehiculo?.anio?.toString() ?? '', observaciones: vehiculo?.observaciones ?? '',
+        kilometraje: vehiculo?.kilometraje?.toString() ?? '', nivelCombustible: vehiculo?.nivelCombustible ?? '',
         clienteId: vehiculo?.clienteId?.toString() ?? '',
     });
     // Checklist de inspección inicial: solo al registrar un vehículo nuevo.
@@ -132,25 +136,26 @@ function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | 
                 placa: form.placa.toUpperCase().trim(), marca: form.marca.trim(),
                 modelo: form.modelo.trim() || undefined, color: form.color.trim() || undefined,
                 anio: form.anio ? parseInt(form.anio) : undefined, observaciones: form.observaciones.trim() || undefined,
+                kilometraje: form.kilometraje ? parseInt(form.kilometraje) : undefined,
+                nivelCombustible: form.nivelCombustible || undefined,
                 clienteId: form.clienteId ? parseInt(form.clienteId) : undefined,
             };
             if (vehiculo) {
-                await patch(`vehiculos/${vehiculo.id}`, payload);
-                alert('Vehículo actualizado', 'success');
+                const ok = await updateVehiculo(vehiculo.id, payload);
+                if (!ok) return; // el store ya mostró el error
             } else {
-                const res: any = await post('vehiculos', payload);
+                const creado = await addVehiculo(payload);
+                if (!creado) return; // el store ya mostró el error
                 // Registra un acta de INGRESO inicial con la inspección hecha al registrar.
-                const nuevoId = res?.data?.id;
                 const checklist = checklistToPayload(checks);
-                if (nuevoId && checklist.length) {
-                    await post(`vehiculos/${nuevoId}/acta`, {
+                if (creado.id && checklist.length) {
+                    await post(`vehiculos/${creado.id}/acta`, {
                         tipo: 'INGRESO',
                         observaciones: 'Inspección inicial al registrar el vehículo.',
                         fotos: [],
                         checklist,
                     });
                 }
-                alert('Vehículo registrado', 'success');
             }
             onSaved();
         } catch (err: any) {
@@ -195,6 +200,18 @@ function VehiculoModal({ vehiculo, onClose, onSaved }: { vehiculo?: IVehiculo | 
                                 <Icon icon="solar:user-plus-bold" className="text-sm" />¿No está? Registrar cliente nuevo
                             </button>
                         </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <InputPro name="kilometraje" type="number" value={form.kilometraje} onChange={handleChange} isLabel label="Kilometraje" placeholder="0" error={null} />
+                        <Select
+                            name="nivelCombustible"
+                            label="Nivel de combustible"
+                            options={NIVEL_OPTS}
+                            value={form.nivelCombustible}
+                            onChange={(id: any) => setForm((f) => ({ ...f, nivelCombustible: String(id) }))}
+                            placeholder="— Seleccionar —"
+                            error={null}
+                        />
                     </div>
                     {/* Checklist de inspección inicial — solo al registrar un vehículo nuevo */}
                     {!vehiculo && (
@@ -347,7 +364,9 @@ function DetalleModal({ vehiculo, onClose, onNuevaActa }: { vehiculo: IVehiculo;
     }, [vehiculo.id]);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const ultimoContrato = detalle?.contratos?.[0];
+    // Contrato del vehículo: como principal (contratos) o como unidad de un
+    // contrato multi-vehículo (contratoItems). Se toma el más reciente.
+    const ultimoContrato = detalle?.contratos?.[0] ?? detalle?.contratoItems?.[0]?.contrato;
 
     return (
         <Modal
@@ -463,12 +482,15 @@ function DetalleModal({ vehiculo, onClose, onNuevaActa }: { vehiculo: IVehiculo;
 
 // ─── Página Principal ─────────────────────────────────────────────────────────
 export default function VehiculosPage() {
-    const { alert } = useAlertStore();
-    const [data, setData] = useState<IVehiculo[]>([]);
-    const [total, setTotal] = useState(0);
+    // Estado de la lista desde el store (se actualiza reactivamente en cada CRUD).
+    const data = useVehiculosStore((s) => s.vehiculos);
+    const total = useVehiculosStore((s) => s.totalVehiculos);
+    const loading = useVehiculosStore((s) => s.loadingVehiculos);
+    const getVehiculos = useVehiculosStore((s) => s.getVehiculos);
+    const deleteVehiculo = useVehiculosStore((s) => s.deleteVehiculo);
+
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 350);
-    const [loading, setLoading] = useState(false);
 
     const [modalCrear, setModalCrear] = useState(false);
     const [vehiculoEditar, setVehiculoEditar] = useState<IVehiculo | null>(null);
@@ -483,28 +505,20 @@ export default function VehiculosPage() {
     const openMenu = (e: React.MouseEvent<HTMLElement>, row: IVehiculo) => { setMenuAnchor(e.currentTarget); setMenuRow(row); };
     const closeMenu = () => { setMenuAnchor(null); setMenuRow(null); };
 
-    const cargar = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({ page: '1', limit: '100', ...(debouncedSearch ? { search: debouncedSearch } : {}) });
-            const resp: any = await get(`vehiculos?${params}`);
-            const body: IVehiculosResponse = resp.data;
-            setData(body.data);
-            setTotal(body.paginacion?.total ?? body.data.length);
-        } catch { alert('Error al cargar vehículos', 'error'); }
-        finally { setLoading(false); }
-    }, [debouncedSearch]);
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => { getVehiculos({ search: debouncedSearch }); }, [debouncedSearch, getVehiculos]);
 
     const handleEliminar = async () => {
         if (!vehiculoEliminar) return;
         setEliminando(true);
-        try { await del(`vehiculos/${vehiculoEliminar.id}`); alert('Vehículo eliminado', 'success'); setVehiculoEliminar(null); cargar(); }
-        catch (err: any) { alert(err?.response?.data?.message || 'Error al eliminar', 'error'); }
-        finally { setEliminando(false); }
+        const ok = await deleteVehiculo(vehiculoEliminar.id);
+        if (ok) setVehiculoEliminar(null);
+        setEliminando(false);
     };
 
-    const contratoActivo = (v: IVehiculo) => v.contratos?.find((c) => c.estado === 'VIGENTE' || c.estado === 'POR_VENCER');
+    const esActivo = (c?: { estado: EstadoContrato } | null) => !!c && (c.estado === 'VIGENTE' || c.estado === 'POR_VENCER');
+    const contratoActivo = (v: IVehiculo) =>
+        v.contratos?.find((c) => esActivo(c)) ??
+        v.contratoItems?.map((i) => i.contrato).find((c) => esActivo(c));
 
     const bodyData = data.map((v) => {
         const contrato = contratoActivo(v);
@@ -519,7 +533,11 @@ export default function VehiculosPage() {
                 </div>
             ),
             Propietario: v.cliente ? (
-                <div><p className="text-sm font-medium text-gray-700 dark:text-gray-200">{v.cliente.nombre}</p><p className="text-xs text-gray-400">{v.cliente.telefono || '—'}</p></div>
+                <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{v.cliente.nombre}</p>
+                    <p className="text-xs text-gray-400">{v.cliente.email || '—'}</p>
+                    <p className="text-xs text-gray-400">{v.cliente.telefono || '—'}</p>
+                </div>
             ) : <span className="text-sm text-gray-300">—</span>,
             Contrato: contrato ? (
                 <div className="flex flex-col gap-0.5">
@@ -599,10 +617,10 @@ export default function VehiculosPage() {
             </TableActionMenu>
 
             {(modalCrear || vehiculoEditar) && (
-                <VehiculoModal vehiculo={vehiculoEditar} onClose={() => { setModalCrear(false); setVehiculoEditar(null); }} onSaved={() => { setModalCrear(false); setVehiculoEditar(null); cargar(); }} />
+                <VehiculoModal vehiculo={vehiculoEditar} onClose={() => { setModalCrear(false); setVehiculoEditar(null); }} onSaved={() => { setModalCrear(false); setVehiculoEditar(null); }} />
             )}
             {vehiculoDetalle && <DetalleModal vehiculo={vehiculoDetalle} onClose={() => setVehiculoDetalle(null)} onNuevaActa={() => setVehiculoActa(vehiculoDetalle)} />}
-            {vehiculoActa && <ActaModal vehiculo={vehiculoActa} onClose={() => setVehiculoActa(null)} onSaved={() => { setVehiculoActa(null); cargar(); }} />}
+            {vehiculoActa && <ActaModal vehiculo={vehiculoActa} onClose={() => setVehiculoActa(null)} onSaved={() => setVehiculoActa(null)} />}
             {vehiculoEliminar && (
                 <ModalConfirm
                     isOpenModal={!!vehiculoEliminar}
