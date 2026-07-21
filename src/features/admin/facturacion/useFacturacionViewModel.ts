@@ -1833,9 +1833,19 @@ export const useFacturacionViewModel = () => {
                     productoId: Number(item?.productoId || item?.id) || null,
                     descripcion: item.descripcion,
                     cantidad: Number(item.cantidad),
-                    // Factura/Boleta: prorratea el descuento global en el precio unitario.
-                    nuevoValorUnitario: Number(item.precioUnitario) * factorDescuentoProrrateo,
+                    // El backend recalcula base/IGV/total desde nuevoValorUnitario y NO lee el
+                    // campo `descuento` por línea, por lo que el descuento por ítem debe quedar
+                    // plegado dentro del precio unitario (igual que el descuento global vía
+                    // factorDescuentoProrrateo). Así la lista y la reimpresión persisten el total
+                    // con descuento y no el precio de lista.
+                    nuevoValorUnitario:
+                        Number(item.precioUnitario) *
+                        (1 - Number(item.descuento || 0) / 100) *
+                        factorDescuentoProrrateo,
                     descuento: Number(item.descuento ?? 0),
+                    // Precio de lista (sin descuento) para que el ticket guardado muestre el
+                    // precio original y el ahorro, igual que el ticket de creación.
+                    precioUnitarioOriginal: Number(item.precioUnitario),
                     // Farmacia: trazabilidad de lote y receta médica
                     ...(item.loteId != null ? { loteId: item.loteId } : {}),
                     ...(item.datosReceta?.numeroReceta ? { numeroReceta: item.datosReceta.numeroReceta } : {}),
