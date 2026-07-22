@@ -59,7 +59,7 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/20">
                     {isLoading ? (
                         <>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
+                            {[1, 2, 3, 4, 5, 6, 7].map(i => (
                                 <div key={i} className="space-y-2">
                                     <SkeletonBlock className="h-3 w-16" />
                                     <SkeletonBlock className="h-10 w-full" />
@@ -72,6 +72,16 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
                                 <label className="text-[10px] text-gray-400 font-bold uppercase mb-1.5 ml-1">Proveedor</label>
                                 <div className="p-3 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-200/60 dark:border-slate-700 shadow-sm truncate">
                                     {localCompra?.proveedor?.nombre || localCompra?.proveedor?.nroDoc || '-'}
+                                </div>
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="text-[10px] text-gray-400 font-bold uppercase mb-1.5 ml-1">Almacén / Sede destino</label>
+                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-200/60 dark:border-slate-700 shadow-sm truncate flex items-center gap-1.5">
+                                    <Icon icon="solar:box-bold-duotone" className="text-blue-500 shrink-0" width={16} />
+                                    <span className="truncate">{localCompra?.sede?.nombre || '-'}</span>
+                                    {localCompra?.sede?.tipo === 'ALMACEN' && (
+                                        <span className="ml-auto shrink-0 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded">Almacén</span>
+                                    )}
                                 </div>
                             </div>
                             <InputPro label="Serie" name="serie" value={localCompra?.serie} disabled isLabel />

@@ -11,10 +11,20 @@ export interface IContratosParams {
     limit?: number;
 }
 
+export interface IContratoEstadisticas {
+    total: number;
+    vigentes: number;
+    vencidos: number;
+    vencenEsteMes: number;
+    porVencer: number;
+    proximo: { placa: string | null; fechaFin: string; dias: number } | null;
+}
+
 export interface IContratosState {
     contratos: IContratoVehicular[];
     alertas: IContratoVehicular[];
     totalContratos: number;
+    estadisticas: IContratoEstadisticas | null;
     loadingContratos: boolean;
     getContratos: (params?: IContratosParams) => Promise<void>;
     addContrato: (payload: any) => Promise<IContratoVehicular | null>;
@@ -63,14 +73,16 @@ export const useContratosVehicularesStore = create<IContratosState>()(
         contratos: [],
         alertas: [],
         totalContratos: 0,
+        estadisticas: null,
         loadingContratos: false,
 
         getContratos: async (params?: IContratosParams) => {
             set({ loadingContratos: true }, false, 'GET_CONTRATOS_START');
             try {
-                const [resp, alertasResp]: any[] = await Promise.all([
+                const [resp, alertasResp, estResp]: any[] = await Promise.all([
                     get(`contratos-vehiculares?${buildQuery(params)}`),
                     get('contratos-vehiculares/alertas'),
+                    get('contratos-vehiculares/estadisticas'),
                 ]);
                 const body = resp?.data ?? {};
                 set(
@@ -78,6 +90,7 @@ export const useContratosVehicularesStore = create<IContratosState>()(
                         contratos: body.data ?? [],
                         totalContratos: body.paginacion?.total ?? body.data?.length ?? 0,
                         alertas: ordenarAlertas(alertasResp?.data ?? []),
+                        estadisticas: estResp?.data ?? null,
                         loadingContratos: false,
                     },
                     false,

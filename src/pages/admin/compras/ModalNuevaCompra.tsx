@@ -10,6 +10,8 @@ import { useAuthStore } from "@/zustand/auth";
 import { useComprasStore } from "@/zustand/compras";
 import { useClientsStore } from "@/zustand/clients";
 import { useProductsStore } from "@/zustand/products";
+import { useSedesStore } from "@/zustand/sedes";
+import { useCuentasBancariasStore } from "@/zustand/cuentasBancarias";
 import { get } from "@/utils/fetch";
 import moment from "moment";
 import { Calendar } from "@/components/Date";
@@ -35,7 +37,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const { getAllClients, clients, resetClients, getClientFromDoc } = useClientsStore();
     const { getAllProducts, products, resetProducts } = useProductsStore();
     const { alert } = useAlertStore();
-    const { auth } = useAuthStore();
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
+    const { cuentas, listar: listarCuentas } = useCuentasBancariasStore();
     const rubroNombre = (auth as any)?.empresa?.rubro?.nombre;
     const esRubroFarmaceutico = usaLotesFarmaciaRubro(rubroNombre);
     const tieneGestionLotes = hasPlanFeature(auth as any, 'tieneGestionLotes') || esRubroFarmaceutico;
@@ -60,8 +64,13 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
     const [payment, setPayment] = useState({
         condicionPago: 'CONTADO',
         montoPagadoInicial: 0,
-        metodoPagoInicial: 'EFECTIVO'
+        metodoPagoInicial: 'EFECTIVO',
+        cuentaBancariaId: 0,
+        numeroOperacion: ''
     });
+
+    // Almacén/sede destino: dónde ingresa el stock de esta compra.
+    const [sedeDestinoId, setSedeDestinoId] = useState<number>(0);
 
     const [cuotas, setCuotas] = useState<any[]>([]);
 
@@ -122,8 +131,13 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             setPayment({
                 condicionPago: 'CONTADO',
                 montoPagadoInicial: 0,
-                metodoPagoInicial: 'EFECTIVO'
+                metodoPagoInicial: 'EFECTIVO',
+                cuentaBancariaId: 0,
+                numeroOperacion: ''
             });
+            setSedeDestinoId(sedeActiva?.id || 0);
+            listarSedes();
+            listarCuentas();
             setItems([]);
             setIncluyeIgv(false);
             setCuotas([]);
@@ -147,6 +161,14 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
             setTimeout(() => barcodeRef.current?.focus(), 150);
         }
     }, [isOpen]);
+
+    // Al pagar por Transferencia, autoseleccionar la primera cuenta bancaria activa.
+    useEffect(() => {
+        if (payment.metodoPagoInicial === 'TRANSFERENCIA' && !payment.cuentaBancariaId) {
+            const activas = (cuentas || []).filter((c) => c.activo);
+            if (activas.length > 0) setPayment((p) => ({ ...p, cuentaBancariaId: activas[0].id }));
+        }
+    }, [payment.metodoPagoInicial, cuentas]);
 
     // Update options when store changes
     useEffect(() => {
@@ -579,9 +601,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                 numerosSerie: (i.numerosSerie && i.numerosSerie.length) ? i.numerosSerie : undefined,
                 garantiaMeses: i.garantiaMeses || undefined,
             })),
+            sedeId: sedeDestinoId || undefined,
             formaPago: payment.condicionPago,
             montoPagadoInicial: payment.condicionPago === 'CONTADO' ? total : Number(payment.montoPagadoInicial),
             metodoPagoInicial: payment.metodoPagoInicial,
+            cuentaBancariaIdInicial: payment.metodoPagoInicial === 'TRANSFERENCIA' ? (payment.cuentaBancariaId || undefined) : undefined,
+            referenciaInicial: payment.metodoPagoInicial === 'TRANSFERENCIA' ? (payment.numeroOperacion || undefined) : undefined,
             cuotas: payment.condicionPago === 'CREDITO' ? cuotas : undefined,
             subtotal,
             igv,
@@ -1054,6 +1079,24 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                             </div>
                         </div>
 
+                        {/* Almacén / Sede destino del stock */}
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide flex items-center gap-2">
+                                <Icon icon="solar:box-bold-duotone" className="text-blue-600 dark:text-blue-400" />
+                                Almacén / Sede destino
+                            </h3>
+                            <Select
+                                label="El stock ingresará a"
+                                name="sedeDestino"
+                                options={(sedes || []).filter((s: any) => s.activo !== false).map((s: any) => ({ id: s.id, value: `${s.nombre}${s.tipo === 'ALMACEN' ? ' (Almacén)' : ''}` }))}
+                                onChange={(id) => setSedeDestinoId(Number(id))}
+                                value={(() => { const s = (sedes || []).find((x: any) => x.id === sedeDestinoId); return s ? `${s.nombre}${s.tipo === 'ALMACEN' ? ' (Almacén)' : ''}` : ''; })()}
+                                withLabel
+                                error={null}
+                            />
+                            <p className="text-[11px] text-gray-400 mt-1.5">El inventario de esta compra se sumará al almacén/sede seleccionado.</p>
+                        </div>
+
                         {/* Condiciones de Pago */}
                         <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
                             <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3 uppercase tracking-wide">Condiciones de Pago</h3>
@@ -1095,6 +1138,36 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess }: ModalNuevaCompraProps)
                                         withLabel
                                         error={null}
                                     />
+                                )}
+
+                                {/* Pago por banco: cuenta + N° de operación */}
+                                {payment.condicionPago === 'CONTADO' && payment.metodoPagoInicial === 'TRANSFERENCIA' && (
+                                    <div className="space-y-3 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-3">
+                                        {(cuentas || []).filter((c) => c.activo).length === 0 ? (
+                                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                                                No hay cuentas bancarias registradas. Agrégalas en <strong>Mi Negocio → Cuentas Bancarias</strong> para elegir el banco.
+                                            </p>
+                                        ) : (
+                                            <Select
+                                                label="Banco / Cuenta"
+                                                name="cuentaBancaria"
+                                                options={(cuentas || []).filter((c) => c.activo).map((c) => ({ id: c.id, value: `${c.alias || c.banco} — ${c.numeroCuenta} (${c.moneda})` }))}
+                                                onChange={(id) => setPayment((p) => ({ ...p, cuentaBancariaId: Number(id) }))}
+                                                value={(() => { const c = (cuentas || []).find((x) => x.id === payment.cuentaBancariaId); return c ? `${c.alias || c.banco} — ${c.numeroCuenta} (${c.moneda})` : ''; })()}
+                                                withLabel
+                                                error={null}
+                                            />
+                                        )}
+                                        <InputPro
+                                            autocomplete="off"
+                                            label="N° de Operación"
+                                            name="numeroOperacion"
+                                            value={payment.numeroOperacion}
+                                            onChange={(e) => setPayment({ ...payment, numeroOperacion: e.target.value })}
+                                            isLabel
+                                            placeholder="Ej: 00123456"
+                                        />
+                                    </div>
                                 )}
 
                                 {payment.condicionPago === 'CREDITO' && (

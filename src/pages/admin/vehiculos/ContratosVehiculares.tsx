@@ -5,6 +5,7 @@ import { useContratosVehicularesStore } from '@/zustand/contratosVehiculares';
 import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
 import DataTable from '@/components/Datatable';
+import Pagination from '@/components/Pagination';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import Modal from '@/components/Modal';
@@ -42,7 +43,7 @@ const ESTADO_OPTS = [
     { id: 'VENCIDO', value: 'Vencidos' },
     { id: 'CANCELADO', value: 'Cancelados' },
 ];
-const DURACION_OPTS = [{ id: 6, value: '6 meses' }, { id: 12, value: '12 meses' }, { id: 24, value: '24 meses' }];
+const DURACION_OPTS = [{ id: 1, value: '1 mes' }, { id: 2, value: '2 meses' }, { id: 3, value: '3 meses' }, { id: 6, value: '6 meses' }, { id: 12, value: '12 meses' }, { id: 24, value: '24 meses' }];
 
 const mesesEntre = (inicio: string, fin: string) => {
     const a = new Date(inicio); const b = new Date(fin);
@@ -295,6 +296,7 @@ export default function ContratosVehicularesPage() {
     const data = useContratosVehicularesStore((s) => s.contratos);
     const alertas = useContratosVehicularesStore((s) => s.alertas);
     const total = useContratosVehicularesStore((s) => s.totalContratos);
+    const estadisticas = useContratosVehicularesStore((s) => s.estadisticas);
     const loading = useContratosVehicularesStore((s) => s.loadingContratos);
     const getContratos = useContratosVehicularesStore((s) => s.getContratos);
     const renovarContrato = useContratosVehicularesStore((s) => s.renovarContrato);
@@ -304,6 +306,9 @@ export default function ContratosVehicularesPage() {
     const [estadoFilter, setEstadoFilter] = useState<EstadoContrato | 'TODOS'>('TODOS');
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 350);
+    // Paginación client-side (mismo patrón que Comprobantes / Kardex Productos).
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(15);
 
     const [modalNuevo, setModalNuevo] = useState(false);
     const [contratoEditar, setContratoEditar] = useState<IContratoVehicular | null>(null);
@@ -323,6 +328,11 @@ export default function ContratosVehicularesPage() {
     useEffect(() => {
         getContratos({ estado: estadoFilter, search: debouncedSearch });
     }, [estadoFilter, debouncedSearch, getContratos]);
+
+    // Al cambiar filtros o tamaño de página, volver a la página 1.
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [estadoFilter, debouncedSearch, itemsPerPage]);
 
     // Renovar pasa siempre por confirmación para evitar renovaciones por error.
     const confirmarRenovar = async () => {
@@ -450,6 +460,16 @@ export default function ContratosVehicularesPage() {
         };
     });
 
+    // Paginación client-side: se pasa al DataTable solo la porción de la página
+    // actual (sin usar la paginación interna del DataTable) y se controla con el
+    // componente <Pagination>, igual que Comprobantes / Kardex Productos.
+    const totalItems = bodyData.length;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const pages: number[] = [];
+    for (let i = 1; i <= Math.ceil(totalItems / itemsPerPage); i++) pages.push(i);
+    const paginatedBody = bodyData.slice(indexOfFirstItem, indexOfLastItem);
+
     return (
         <div className="min-h-screen px-2 pb-4 relative z-1 dark:bg-[#0A0D14]">
             {/* Header */}
@@ -462,6 +482,31 @@ export default function ContratosVehicularesPage() {
                     <Icon icon="solar:add-circle-bold" className="text-lg" />Nuevo contrato
                 </Button>
             </div>
+
+            {/* KPIs / cuadritos informativos */}
+            {estadisticas && (() => {
+                const mes = new Date().toLocaleDateString('es-PE', { month: 'long' });
+                const cards = [
+                    { label: 'Vigentes', value: estadisticas.vigentes, sub: `de ${estadisticas.total} en total`, icon: 'solar:check-circle-bold', iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' },
+                    { label: 'Vencen este mes', value: estadisticas.vencenEsteMes, sub: `en ${mes}`, icon: 'solar:calendar-bold', iconClass: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' },
+                    { label: 'Por vencer (30 días)', value: estadisticas.porVencer, sub: estadisticas.proximo ? `Próximo: ${estadisticas.proximo.placa} · ${estadisticas.proximo.dias}d` : 'Sin próximos', icon: 'solar:alarm-bold', iconClass: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' },
+                    { label: 'Vencidos', value: estadisticas.vencidos, sub: 'Renuévalos o cancélalos', icon: 'solar:danger-triangle-bold', iconClass: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400' },
+                ];
+                return (
+                    <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        {cards.map((c) => (
+                            <div key={c.label} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{c.label}</p>
+                                    <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${c.iconClass}`}><Icon icon={c.icon} width={18} /></span>
+                                </div>
+                                <p className="mt-2 text-2xl font-black text-gray-900 dark:text-white">{c.value}</p>
+                                <p className="mt-0.5 truncate text-[11px] text-gray-400" title={c.sub}>{c.sub}</p>
+                            </div>
+                        ))}
+                    </div>
+                );
+            })()}
 
             {/* Alertas de vencimiento */}
             {alertas.length > 0 && (
@@ -513,8 +558,23 @@ export default function ContratosVehicularesPage() {
                             <p className="text-sm text-gray-400 mt-1">Crea el primero con “Nuevo contrato”</p>
                         </div>
                     ) : (
-                        <div className="min-h-[450px]">
-                            <DataTable headerColumns={['Vehículo', 'Propietario', 'Servicio', 'Inicio', 'Vencimiento', 'Estado', 'Acciones']} bodyData={bodyData} pageSize={15} />
+                        <div>
+                            <DataTable headerColumns={['Vehículo', 'Propietario', 'Servicio', 'Inicio', 'Vencimiento', 'Estado', 'Acciones']} bodyData={paginatedBody} />
+                            {pages.length > 1 && (
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
+                                    <Pagination
+                                        data={paginatedBody}
+                                        optionSelect
+                                        currentPage={currentPage}
+                                        indexOfFirstItem={indexOfFirstItem}
+                                        indexOfLastItem={indexOfLastItem}
+                                        setcurrentPage={setCurrentPage}
+                                        setitemsPerPage={setItemsPerPage}
+                                        pages={pages}
+                                        total={totalItems}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

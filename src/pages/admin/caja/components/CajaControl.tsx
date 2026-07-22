@@ -125,9 +125,11 @@ const CajaControl: React.FC = () => {
         if (estadoCaja && estadoCaja.ventasDelDia) {
             const { mediosPago } = estadoCaja.ventasDelDia;
             const montoInicial = Number(estadoCaja.movimiento?.montoInicial || 0);
+            // Efectivo esperado = monto inicial + ventas en efectivo − egresos (gastos/pagos en efectivo del turno).
+            const egresos = Number(estadoCaja.totalEgresos || 0);
 
             setFormCierre({
-                montoEfectivo: (montoInicial + Number(mediosPago.EFECTIVO || 0)).toFixed(2),
+                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos).toFixed(2),
                 montoYape: Number(mediosPago.YAPE || 0).toFixed(2),
                 montoPlin: Number(mediosPago.PLIN || 0).toFixed(2),
                 montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0).toFixed(2),
