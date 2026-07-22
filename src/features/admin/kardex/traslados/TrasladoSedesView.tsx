@@ -12,6 +12,15 @@ import useAlertStore from '@/zustand/alert';
 import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import TrasladoPrintPage from './TrasladoPrintPage';
+import {
+    InventoryCard,
+    InventoryEmptyState,
+    InventoryHero,
+    InventoryInfoPill,
+    InventoryPage,
+    InventoryToolbar,
+    InventoryToolbarButton,
+} from '../shared/InventoryChrome';
 
 
 interface SelectedProduct {
@@ -220,27 +229,29 @@ export default function TrasladoSedesView() {
     const hasStockIssues = selectedProducts.some(p => p.cantidad > p.stockActual);
 
     return (
-        <div className="min-h-screen px-4 pb-8 font-inter dark:bg-[#0A0D14]">
-
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-800/30">
-                        <Icon icon="solar:transfer-horizontal-bold" className="text-[#4F6EF7]" width={20} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Traslado entre Sedes</h1>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Mueve mercadería de forma segura entre sucursales</p>
-                    </div>
-                </div>
-                <Button outline onClick={() => navigate('/administrador/kardex')}>
-                    <Icon icon="solar:alt-arrow-left-linear" className="mr-1.5" width={15} />
-                    Volver al Kardex
-                </Button>
-            </div>
+        <InventoryPage>
+            <InventoryHero
+                icon="solar:transfer-horizontal-bold-duotone"
+                title="Traslado entre sedes"
+                subtitle="Coordina movimientos internos de inventario con una vista más limpia y enfocada en operación."
+                badge="Seguro"
+                actions={
+                    <>
+                        <InventoryToolbarButton
+                            icon="solar:alt-arrow-left-linear"
+                            label="Volver al kardex"
+                            onClick={() => navigate('/administrador/kardex')}
+                        />
+                        <InventoryInfoPill
+                            icon="solar:box-linear"
+                            label={`${selectedProducts.length} productos`}
+                        />
+                    </>
+                }
+            />
 
             {isSuccess && transferData ? (
-                <div className="bg-white dark:bg-[#111827] p-10 rounded-2xl border border-gray-100 dark:border-slate-800 flex flex-col items-center justify-center min-h-[400px]">
+                <InventoryCard className="p-10 flex flex-col items-center justify-center min-h-[400px]">
                     <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 text-green-500 rounded-2xl flex items-center justify-center mb-5">
                         <Icon icon="solar:check-circle-bold" width={44} />
                     </div>
@@ -274,15 +285,36 @@ export default function TrasladoSedesView() {
                         products={transferData.products}
                         observacion={transferData.observacion}
                     />
-                </div>
+                </InventoryCard>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <InventoryCard>
+                    <InventoryToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <InventoryInfoPill
+                                icon="solar:shop-2-linear"
+                                label={sedeActiva?.nombre || 'Sin sede origen'}
+                            />
+                            {sedeDestino ? (
+                                <InventoryInfoPill
+                                    icon="solar:route-linear"
+                                    label={`Destino: ${sedeDestino.nombre}`}
+                                />
+                            ) : null}
+                        </div>
+                        <InventoryToolbarButton
+                            icon="solar:transfer-horizontal-bold"
+                            label={selectedProducts.length ? 'Traslado en preparación' : 'Agrega productos'}
+                            onClick={() => barcodeRef.current?.focus()}
+                        />
+                    </InventoryToolbar>
+
+                <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-3">
 
                     {/* Panel Izquierdo */}
                     <div className="lg:col-span-1 space-y-4">
 
                         {/* Configuración */}
-                        <div className="bg-white dark:bg-[#111827] p-5 rounded-2xl border border-gray-100 dark:border-slate-800">
+                        <div className="rounded-[26px] border border-slate-100 bg-[#fbfcff] p-5 dark:border-slate-800 dark:bg-slate-900/40">
                             <div className="flex items-center gap-2.5 mb-4">
                                 <span className="w-5 h-5 bg-[#4F6EF7] text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">1</span>
                                 <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Configuración del Traslado</span>
@@ -340,7 +372,7 @@ export default function TrasladoSedesView() {
                         </div>
 
                         {/* Buscador */}
-                        <div className="bg-white dark:bg-[#111827] p-5 rounded-2xl border border-gray-100 dark:border-slate-800 relative" ref={searchRef}>
+                        <div className="rounded-[26px] border border-slate-100 bg-[#fbfcff] p-5 dark:border-slate-800 dark:bg-slate-900/40 relative" ref={searchRef}>
                             <div className="flex items-center gap-2.5 mb-4">
                                 <span className="w-5 h-5 bg-[#4F6EF7] text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">2</span>
                                 <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Agregar Productos</span>
@@ -404,7 +436,7 @@ export default function TrasladoSedesView() {
 
                     {/* Panel Derecho: Lista */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden flex flex-col min-h-[460px]">
+                        <div className="rounded-[26px] border border-slate-100 bg-[#fbfcff] dark:border-slate-800 dark:bg-slate-900/40 overflow-hidden flex flex-col min-h-[460px]">
 
                             {/* Table header */}
                             <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
@@ -430,13 +462,11 @@ export default function TrasladoSedesView() {
                             {/* Table or empty state */}
                             <div className="flex-1 overflow-x-auto">
                                 {selectedProducts.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full py-16 px-8 text-center">
-                                        <div className="w-14 h-14 bg-gray-50 dark:bg-slate-800 border border-dashed border-gray-200 dark:border-slate-700 rounded-2xl flex items-center justify-center mb-4">
-                                            <Icon icon="solar:box-minimalistic-linear" width={26} className="text-gray-300 dark:text-slate-600" />
-                                        </div>
-                                        <p className="text-sm font-semibold text-gray-400 dark:text-slate-500">Sin productos agregados</p>
-                                        <p className="text-xs text-gray-300 dark:text-slate-600 mt-1 max-w-[220px]">Busca por nombre, código o escanea un código de barras</p>
-                                    </div>
+                                    <InventoryEmptyState
+                                        icon="solar:box-minimalistic-linear"
+                                        title="Sin productos agregados"
+                                        subtitle="Busca por nombre, código o escanea un código de barras para preparar el traslado."
+                                    />
                                 ) : (
                                     <table className="w-full">
                                         <thead>
@@ -576,7 +606,8 @@ export default function TrasladoSedesView() {
                         </div>
                     </div>
                 </div>
+                </InventoryCard>
             )}
-        </div>
+        </InventoryPage>
     );
 }

@@ -36,7 +36,13 @@ export default function ProductsView() {
         setBarcodeLoading(true);
         try {
             const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}`);
-            if (resp.code === 1 && resp.data) {
+            if (resp.code === 1 && resp.data?.multipleMatches) {
+                // Prefijo (4+) coincide con varios: vuelca el prefijo en el buscador
+                // para que el debounce liste todas las coincidencias y el usuario elija.
+                actions.setSearchClient({ target: { value: trimmed } });
+                alert(`Hay ${resp.data.count} productos cuyo código empieza con "${trimmed}". Se muestran en la lista.`, 'warning');
+                setBarcodeInput('');
+            } else if (resp.code === 1 && resp.data) {
                 // Vuelca la descripción en el buscador existente → el debounce filtra la lista
                 actions.setSearchClient({ target: { value: resp.data.descripcion } });
                 setBarcodeInput('');
@@ -581,9 +587,6 @@ export default function ProductsView() {
                                 </div>
                                 <Button color="default" onClick={() => setIsOpenModalPreviewCatalogo(true)} className="text-sm !bg-blue-600 !text-white border-none shadow-sm shadow-blue-200/50">
                                     <Icon icon="solar:shop-bold" className="mr-1.5 !text-white" /> Catálogo PDF
-                                </Button>
-                                <Button color="default" onClick={() => actions.setIsOpenModalCatalog(true)} className="text-sm !bg-slate-500 !text-white border-none shadow-sm shadow-slate-200/50">
-                                    <Icon icon="solar:magic-stick-3-bold" className="mr-1.5 !text-white" /> Autocompletar
                                 </Button>
                             </div>
                         </div>

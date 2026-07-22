@@ -41,7 +41,7 @@ export const BarcodeScannerInput: React.FC<BarcodeScannerInputProps> = ({
             <div className="relative">
                 {!hideIcon && (
                     <Icon
-                        icon="solar:barcode-bold-duotone"
+                        icon="mdi:barcode-scan"
                         className={cn(
                             "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
                             loading ? "text-indigo-500" : error ? "text-red-500" : "text-slate-400 dark:text-slate-500"

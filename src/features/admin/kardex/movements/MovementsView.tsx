@@ -13,6 +13,16 @@ import DataTable from '@/components/Datatable';
 import { useMovementsViewModel } from './useMovementsViewModel';
 import { get } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
+import {
+    InventoryCard,
+    InventoryEmptyState,
+    InventoryHero,
+    InventoryInfoPill,
+    InventoryPage,
+    InventorySearchBox,
+    InventoryToolbar,
+    InventoryToolbarButton,
+} from '../shared/InventoryChrome';
 
 export default function MovementsView() {
     const vm = useMovementsViewModel();
@@ -77,17 +87,50 @@ export default function MovementsView() {
     };
 
     return (
-        <div className="min-h-screen px-3 sm:px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 sm:mb-6">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Movimientos de Kardex</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Control de entradas, salidas y ajustes de inventario</p>
-                </div>
-            </div>
+        <InventoryPage>
+            <InventoryHero
+                icon="solar:box-bold-duotone"
+                title="Movimientos de kardex"
+                subtitle="Revisa entradas, salidas, ajustes y transferencias con un formato más claro y operativo."
+                badge="En vivo"
+                actions={
+                    <>
+                        <InventoryToolbarButton
+                            icon="solar:refresh-linear"
+                            label="Actualizar"
+                            onClick={actions.applyFilters}
+                        />
+                        <InventoryInfoPill
+                            icon="solar:document-text-linear"
+                            label={`${pagination.total} registros`}
+                        />
+                    </>
+                }
+            />
+
+            <InventoryCard className="mb-6">
+                <InventoryToolbar>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <InventoryToolbarButton
+                            icon="solar:refresh-linear"
+                            label="Limpiar"
+                            onClick={actions.clearFilters}
+                        />
+                        <InventoryInfoPill
+                            icon="solar:filter-linear"
+                            label={filters.tipoMovimiento || 'Todos los movimientos'}
+                        />
+                    </div>
+                    <InventorySearchBox
+                        value={productQuery}
+                        onChange={(value) => actions.handleProductSearchChange({ target: { value } } as any)}
+                        placeholder="Buscar producto o código..."
+                        className="w-full sm:max-w-md"
+                    />
+                </InventoryToolbar>
 
             {/* Filtros */}
-            <div className="mb-5 sm:mb-6 p-4 sm:p-5 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+            <div className="p-4 sm:p-5">
                 <div className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
@@ -125,7 +168,7 @@ export default function MovementsView() {
                     <div className="relative">
                         <InputPro
                             name="productoSearch"
-                            label="Buscar Producto"
+                            label="Producto filtrado"
                             isLabel
                             value={productQuery}
                             onChange={actions.handleProductSearchChange}
@@ -165,14 +208,15 @@ export default function MovementsView() {
                 />
 
                 <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
-                    <Button onClick={actions.clearFilters} color="secondary" className="w-full sm:w-auto">
+                    <Button onClick={actions.clearFilters} color="secondary" className="w-full sm:w-auto rounded-2xl">
                         <Icon icon="solar:refresh-linear" className="mr-1" /> Limpiar
                     </Button>
-                    <Button onClick={actions.applyFilters} color="primary" className="w-full sm:w-auto">
+                    <Button onClick={actions.applyFilters} color="primary" className="w-full sm:w-auto rounded-2xl">
                         <Icon icon="solar:magnifer-linear" className="mr-1" /> Buscar
                     </Button>
                 </div>
             </div>
+            </InventoryCard>
 
             {loading && !kardex ? (
                 <div className="flex justify-center items-center py-20">
@@ -182,7 +226,7 @@ export default function MovementsView() {
             ) : (
                 <>
                     {/* Tabla de movimientos */}
-            <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+            <InventoryCard>
                 <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <Icon icon="solar:document-text-bold-duotone" className="text-blue-600 text-xl" />
@@ -281,14 +325,14 @@ export default function MovementsView() {
                             </div>
                         </>
                     ) : (
-                        <div className="py-12 text-center">
-                            <Icon icon="solar:box-linear" className="text-5xl text-gray-300 dark:text-slate-600 mx-auto mb-3" />
-                            <p className="text-gray-500 dark:text-gray-400">No se encontraron movimientos</p>
-                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Ajusta los filtros o selecciona un rango de fechas diferente</p>
-                        </div>
+                        <InventoryEmptyState
+                            icon="solar:box-linear"
+                            title="No se encontraron movimientos"
+                            subtitle="Ajusta los filtros, cambia el rango de fechas o prueba con otro producto."
+                        />
                     )}
                 </div>
-            </div>
+            </InventoryCard>
             </>
             )}
 
@@ -404,6 +448,6 @@ export default function MovementsView() {
                     </div>
                 )}
             </Modal>
-        </div>
+        </InventoryPage>
     );
 }

@@ -49,6 +49,12 @@ const PrintPDF = ({
     discount: string
 }) => {
 
+    // Símbolo de moneda del documento (US$ si el comprobante/los ítems son en dólares).
+    const sm = (
+        String((formValues as any)?.tipoMoneda || (formValues as any)?.currencyCode || '').toUpperCase() === 'USD' ||
+        (Array.isArray(productsInvoice) && productsInvoice.some((p: any) => String(p?.moneda || '').toUpperCase() === 'USD'))
+    ) ? 'US$' : 'S/';
+
     const styles = StyleSheet.create({
         subtitleTicket: {
             fontSize: size === "A5" ? 7 : 8,
@@ -389,7 +395,7 @@ const PrintPDF = ({
                                         {receipt === "NOTA DE DEBITO" && (
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.label}>MEDIO PAGO:</Text>
-                                                <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
+                                                <Text style={styles.value}>{paymentMethodLabel} {sm} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                             </View>
                                         )}
                                         <View style={styles.infoRow}>
@@ -442,7 +448,7 @@ const PrintPDF = ({
                                                 <Text style={styles.value}>CUOTA {idx + 1}</Text>
                                                 <View style={[styles.infoRow, { paddingLeft: 4 }]}>
                                                     <Text style={styles.value}>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</Text>
-                                                    <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                                    <Text style={styles.value}>{sm} {Number(cuota.monto).toFixed(2)}</Text>
                                                 </View>
                                             </View>
                                         ))}
@@ -452,11 +458,11 @@ const PrintPDF = ({
                                     <>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>MEDIO PAGO:</Text>
-                                            <Text style={styles.value}>CRÉDITO S/ 0.00</Text>
+                                            <Text style={styles.value}>CRÉDITO {sm} 0.00</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>PAGADO:</Text>
-                                            <Text style={styles.value}>S/ 0.00</Text>
+                                            <Text style={styles.value}>{sm} 0.00</Text>
                                         </View>
                                     </>
                                 )}
@@ -473,7 +479,7 @@ const PrintPDF = ({
                                                         <View key={idx}>
                                                             <View style={[styles.infoRow, { paddingLeft: 4 }]}>
                                                                 <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
-                                                                <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                                <Text style={styles.value}>{sm} {Number(sp.amount).toFixed(2)}</Text>
                                                             </View>
                                                             {formatPaymentExtra(detail).map((line) => (
                                                                 <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
@@ -486,7 +492,7 @@ const PrintPDF = ({
                                             <>
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIO PAGO:</Text>
-                                                    <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
+                                                    <Text style={styles.value}>{paymentMethodLabel} {sm} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                                 </View>
                                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                     <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
@@ -495,11 +501,11 @@ const PrintPDF = ({
                                         )}
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>VUELTO:</Text>
-                                            <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {displayVuelto.toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>PAGADO:</Text>
-                                            <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {displayPagado.toFixed(2)}</Text>
                                         </View>
                                     </>
                                 )}
@@ -513,50 +519,50 @@ const PrintPDF = ({
                                 {!isDocumentoFiscal && (discount && Number(discount) > 0) && (
                                     <View style={styles.infoRow}>
                                         <Text style={styles.label}>DESCUENTO:</Text>
-                                        <Text style={styles.value}>- S/ {round2(totalDescuentos).toFixed(2)}</Text>
+                                        <Text style={styles.value}>- {sm} {round2(totalDescuentos).toFixed(2)}</Text>
                                     </View>
                                 )}
                                 {!isDocumentoFiscal && !explicitDiscount && totalReceipt < totalPrices && (
                                     <View style={styles.infoRow}>
                                         <Text style={styles.label}>DESCUENTO:</Text>
-                                        <Text style={styles.value}>S/ {(totalPrices - totalReceipt).toFixed(2)}</Text>
+                                        <Text style={styles.value}>{sm} {(totalPrices - totalReceipt).toFixed(2)}</Text>
                                     </View>
                                 )}
                                 {isDocumentoFiscal && (
                                     <>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>OP. GRAVADA:</Text>
-                                            <Text style={styles.value}>S/ {round2(mtoOperGravadas).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(mtoOperGravadas).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>OP. GRATUITA:</Text>
-                                            <Text style={styles.value}>S/ {round2(mtoOperGratuitas).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(mtoOperGratuitas).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>OP. INAFECTA:</Text>
-                                            <Text style={styles.value}>S/ {round2(mtoOperInafectas).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(mtoOperInafectas).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>OP. EXONERADA:</Text>
-                                            <Text style={styles.value}>S/ {round2(mtoOperExoneradas).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(mtoOperExoneradas).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>ICBPER:</Text>
-                                            <Text style={styles.value}>S/ {round2(mtoIcbper).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(mtoIcbper).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>IGV (18%):</Text>
-                                            <Text style={styles.value}>S/ {round2(mtoIgv).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(mtoIgv).toFixed(2)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.label}>DESCUENTOS:</Text>
-                                            <Text style={styles.value}>S/ {round2(totalDescuentos).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {round2(totalDescuentos).toFixed(2)}</Text>
                                         </View>
                                     </>
                                 )}
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>IMPORTE TOTAL:</Text>
-                                    <Text style={styles.value}>S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                    <Text style={styles.value}>{sm} {round2(mtoImpVenta).toFixed(2)}</Text>
                                 </View>
                             </View>
 
@@ -649,7 +655,7 @@ const PrintPDF = ({
                                             {receipt === "NOTA DE DEBITO" && (
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                    <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
+                                                    <Text style={styles.value}>{paymentMethodLabel} {sm} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                                 </View>
                                             )}
                                             <View style={styles.infoRow}>
@@ -681,7 +687,7 @@ const PrintPDF = ({
                                                             <Text style={styles.value}>CUOTA {idx + 1}</Text>
                                                             <View style={[styles.infoRow, { paddingLeft: 4 }]}>
                                                                 <Text style={styles.value}>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</Text>
-                                                                <Text style={styles.value}>S/ {Number(cuota.monto).toFixed(2)}</Text>
+                                                                <Text style={styles.value}>{sm} {Number(cuota.monto).toFixed(2)}</Text>
                                                             </View>
                                                         </View>
                                                     ))}
@@ -691,11 +697,11 @@ const PrintPDF = ({
                                                 <>
                                                     <View style={styles.infoRow}>
                                                         <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                        <Text style={styles.value}>CRÉDITO S/ 0.00</Text>
+                                                        <Text style={styles.value}>CRÉDITO {sm} 0.00</Text>
                                                     </View>
                                                     <View style={styles.infoRow}>
                                                         <Text style={styles.label}>PAGADO</Text>
-                                                        <Text style={styles.value}>S/ 0.00</Text>
+                                                        <Text style={styles.value}>{sm} 0.00</Text>
                                                     </View>
                                                 </>
                                             )}
@@ -712,7 +718,7 @@ const PrintPDF = ({
                                                                     <View key={idx}>
                                                                         <View style={[styles.infoRow, { paddingLeft: 4 }]}>
                                                                             <Text style={styles.label}>{sp.method?.toUpperCase()}:</Text>
-                                                                            <Text style={styles.value}>S/ {Number(sp.amount).toFixed(2)}</Text>
+                                                                            <Text style={styles.value}>{sm} {Number(sp.amount).toFixed(2)}</Text>
                                                                         </View>
                                                                         {formatPaymentExtra(detail).map((line) => (
                                                                             <Text key={line} style={[styles.value, { paddingLeft: 8 }]}>{line}</Text>
@@ -725,7 +731,7 @@ const PrintPDF = ({
                                                         <>
                                                             <View style={styles.infoRow}>
                                                                 <Text style={styles.label}>MEDIO DE PAGO</Text>
-                                                                <Text style={styles.value}>{paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
+                                                                <Text style={styles.value}>{paymentMethodLabel} {sm} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}</Text>
                                                             </View>
                                                             {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                                 <Text key={line} style={[styles.value, { paddingLeft: 4 }]}>{line}</Text>
@@ -734,11 +740,11 @@ const PrintPDF = ({
                                                     )}
                                                     <View style={styles.infoRow}>
                                                         <Text style={styles.label}>VUELTO</Text>
-                                                        <Text style={styles.value}>S/ {displayVuelto.toFixed(2)}</Text>
+                                                        <Text style={styles.value}>{sm} {displayVuelto.toFixed(2)}</Text>
                                                     </View>
                                                     <View style={styles.infoRow}>
                                                         <Text style={styles.label}>PAGADO</Text>
-                                                        <Text style={styles.value}>S/ {displayPagado.toFixed(2)}</Text>
+                                                        <Text style={styles.value}>{sm} {displayPagado.toFixed(2)}</Text>
                                                     </View>
                                                 </>
                                             )}
@@ -820,30 +826,30 @@ const PrintPDF = ({
                                     {(discount && Number(discount) > 0) && (
                                         <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                             <Text style={styles.label}>DESCUENTO:</Text>
-                                            <Text style={styles.value}>- S/ {round2(totalDescuentos).toFixed(2)}</Text>
+                                            <Text style={styles.value}>- {sm} {round2(totalDescuentos).toFixed(2)}</Text>
                                         </View>
                                     )}
                                     {!explicitDiscount && totalReceipt < totalPrices && (
                                         <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                             <Text style={styles.label}>DESCUENTO:</Text>
-                                            <Text style={styles.value}>S/ {(totalPrices - totalReceipt).toFixed(2)}</Text>
+                                            <Text style={styles.value}>{sm} {(totalPrices - totalReceipt).toFixed(2)}</Text>
                                         </View>
                                     )}
                                     {!['ORDEN DE TRABAJO', 'NOTA DE VENTA', 'NOTA DE PEDIDO', 'TICKET', 'COMPROBANTE DE PAGO', 'RECIBO POR HONORARIOS', 'BOLETA'].includes(formValues?.comprobante) && (
                                         <>
                                             <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                                 <Text style={styles.label}>OP. GRAVADA:</Text>
-                                                <Text style={styles.value}>S/ {round2(mtoOperGravadas).toFixed(2)}</Text>
+                                                <Text style={styles.value}>{sm} {round2(mtoOperGravadas).toFixed(2)}</Text>
                                             </View>
                                             <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                                 <Text style={styles.label}>IGV:</Text>
-                                                <Text style={styles.value}>S/ {round2(mtoIgv).toFixed(2)}</Text>
+                                                <Text style={styles.value}>{sm} {round2(mtoIgv).toFixed(2)}</Text>
                                             </View>
                                         </>
                                     )}
                                     <View style={{ flexDirection: "row", fontWeight: "900" }}>
                                         <Text style={styles.label}>IMPORTE TOTAL:</Text>
-                                        <Text style={styles.value}>S/ {round2(mtoImpVenta).toFixed(2)}</Text>
+                                        <Text style={styles.value}>{sm} {round2(mtoImpVenta).toFixed(2)}</Text>
                                     </View>
                                 </View>
                             </View>

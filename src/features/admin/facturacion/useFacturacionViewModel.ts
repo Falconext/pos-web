@@ -152,6 +152,9 @@ export const useFacturacionViewModel = () => {
     // Comprobante labels que usan "Clientes Varios" por defecto (todos los informales excepto FACTURA/NC/ND)
     const LABELS_CLIENTES_VARIOS = ["BOLETA", "TICKET", "NOTA DE VENTA", "NOTA DE PEDIDO", "ORDEN DE TRABAJO", "COMPROBANTE DE PAGO", "RECIBO POR HONORARIO"];
     const tipoEmpresa = auth?.empresa?.tipoEmpresa || "";
+    // Régimen RUS: solo puede emitir Boletas (no Factura). Se usa para ocultar Factura del
+    // selector y para que el tipo de comprobante por defecto sea Boleta en vez de Factura.
+    const esRUS = String((auth?.empresa as any)?.regimenTributario || "").toUpperCase() === "RUS";
 
     // Detección de rubros farmacéuticos
     const rubroNombre = ((auth?.empresa as any)?.rubro?.nombre ?? '').toLowerCase();
@@ -238,7 +241,7 @@ export const useFacturacionViewModel = () => {
         : (_stateDefaultType
             ? (_comprobanteLabelInitMap[_stateDefaultType] ?? _stateDefaultType)
             : (receipt === ""
-                ? (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA")
+                ? (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "BOLETA" : "FACTURA"))
                 : receipt.toUpperCase()));
 
     const [paymentMethod, setPaymentMethod] = useState<string>('Efectivo');
@@ -562,18 +565,18 @@ export const useFacturacionViewModel = () => {
 
         const newComprobante = isQuotationRoute
             ? "COTIZACIÓN"
-            : (tipoEmpresa === "INFORMAL" ? "TICKET" : "FACTURA");
+            : (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "BOLETA" : "FACTURA"));
 
         const newTipoDoc = isQuotationRoute
             ? "COT"
-            : (tipoEmpresa === "INFORMAL" ? "TICKET" : "01");
+            : (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "03" : "01"));
 
         setFormValues(prev => ({
             ...prev,
             comprobante: newComprobante,
             tipoDoc: newTipoDoc
         }));
-    }, [isQuotationRoute, tipoEmpresa]);
+    }, [isQuotationRoute, tipoEmpresa, esRUS]);
 
     useEffect(() => {
         if (isQuotationRoute) {
@@ -882,6 +885,11 @@ export const useFacturacionViewModel = () => {
         ? tiposCotizacion
         : (tipoEmpresa === "INFORMAL" ? tiposComprobantesInformales : tipoEmpresa === "FORMAL" ? tiposComprobanteFormales : tiposComprobanteFormales.concat(tiposComprobantesInformales))
 
+    // RUS: no puede emitir Factura (01) — se retira de las opciones del POS.
+    if (esRUS) {
+        comprobantesGenerar = comprobantesGenerar.filter((t: any) => t.id !== "01");
+    }
+
     useEffect(() => {
         if (!formValues.currencyCode) setFormValues({ ...formValues, currencyCode: "PEN" })
     }, [])
@@ -1173,34 +1181,40 @@ export const useFacturacionViewModel = () => {
         }
         // ── Fin multi-lote ──────────────────────────────────────────────────────
 
-        // Moneda del producto vs. moneda del documento.
-        // Solo convertimos un producto en USD a soles cuando el documento NO es en dólares
-        // (facturación, o cotización en soles). Si la cotización es en dólares, el producto
-        // en USD conserva su precio original ($472 sigue siendo $472, sin multiplicar por TC).
-        const esUSD = String(product?.moneda || 'PEN').toUpperCase() === 'USD';
-        const cotizEnDolares = isQuotationRoute && String(quotationCurrency).toUpperCase() === 'USD';
-        const convertirUSD = esUSD && !cotizEnDolares;
-        const tc = convertirUSD ? Number(tcVenta) : 1;
-        if (convertirUSD && (!Number.isFinite(tc) || tc <= 0)) {
+        // Moneda del producto (nativa) vs. moneda del documento (PEN/USD).
+        // Convertimos el precio a la moneda del comprobante/cotización con el TC del día:
+        //  · producto USD en documento PEN  → precio × TC
+        //  · producto PEN en documento USD  → precio ÷ TC
+        //  · misma moneda                    → sin cambio
+        const nativeUSD = String(product?.moneda || 'PEN').toUpperCase() === 'USD';
+        const docUSD = String(quotationCurrency).toUpperCase() === 'USD';
+        const tc = Number(tcVenta);
+        const necesitaTC = docUSD || nativeUSD;
+        if (necesitaTC && (!Number.isFinite(tc) || tc <= 0)) {
             // Aún no cargó el tipo de cambio: lo pedimos y avisamos que reintente.
             tipoCambioService
                 .consultar()
                 .then((r) => setTcVenta(Number(r?.venta) || null))
                 .catch(() => setTcVenta(null));
             return useAlertStore.getState().alert(
-                "Obteniendo el tipo de cambio del día para el producto en dólares. Intenta agregarlo de nuevo en un momento.",
+                "Obteniendo el tipo de cambio del día para convertir la moneda. Intenta agregar el producto de nuevo en un momento.",
                 "warning",
             );
         }
-        const preciosMayoristaConv = convertirUSD && Array.isArray(product?.preciosMayorista)
+        // Factor aplicado al precio NATIVO del producto para expresarlo en la moneda del documento.
+        const factorNative = nativeUSD ? (docUSD ? 1 : tc) : (docUSD ? 1 / tc : 1);
+        // Factor para montos que siempre están en soles (p. ej. costo de lote FEFO).
+        const factorPEN = docUSD ? 1 / tc : 1;
+
+        const preciosMayoristaConv = factorNative !== 1 && Array.isArray(product?.preciosMayorista)
             ? product.preciosMayorista.map((r: any) => ({
                 ...r,
-                precio: Number(r?.precio ?? 0) * tc,
+                precio: Number(r?.precio ?? 0) * factorNative,
             }))
             : product?.preciosMayorista;
 
-        const precioDesdeLoteFefo = Number(product?.loteFefoCostoUnitario ?? 0);
-        const precioBaseProducto = Number(product?.precioUnitario ?? 0) * tc;
+        const precioDesdeLoteFefo = Number(product?.loteFefoCostoUnitario ?? 0) * factorPEN;
+        const precioBaseProducto = Number(product?.precioUnitario ?? 0) * factorNative;
         const precioBaseCaja = usarPrecioLoteFefo && precioDesdeLoteFefo > 0
             ? precioDesdeLoteFefo
             : precioBaseProducto;
@@ -1239,17 +1253,18 @@ export const useFacturacionViewModel = () => {
             const base = precioBaseSeleccionado;
             addProductsInvoice({
                 ...product,
-                // Precio ya convertido a soles (si era USD). El carrito trabaja en soles.
-                moneda: 'PEN',
+                // Precio ya expresado en la moneda del documento (PEN o USD).
+                moneda: docUSD ? 'USD' : 'PEN',
                 preciosMayorista: preciosMayoristaConv,
                 precioBase: base,
                 precioUnitario: getApplicablePrice({ precioBase: base, preciosMayorista: preciosMayoristaConv }, 1),
                 precioOrigen: origenPrecio,
                 unidadMedida: unidadMedidaNombre,
-                // Trazabilidad del precio original en dólares. tipoCambio = 1 cuando el
-                // producto se agrega a una cotización en dólares (no se convirtió); = TC del
-                // día cuando se convirtió a soles. Permite reconvertir al cambiar de moneda.
-                ...(esUSD ? { monedaOriginal: 'USD', precioOriginalUSD: Number(product?.precioUnitario ?? 0), tipoCambio: tc } : {}),
+                // Trazabilidad de moneda para reconvertir al cambiar la moneda del documento.
+                // `tipoCambio` = factor aplicado al precio nativo (1, TC, o 1/TC).
+                monedaOriginal: nativeUSD ? 'USD' : 'PEN',
+                tipoCambio: factorNative,
+                ...(nativeUSD ? { precioOriginalUSD: Number(product?.precioUnitario ?? 0) } : {}),
                 ...farmaciaExtra,
                 ...fraccionExtra,
             });
@@ -1337,7 +1352,17 @@ export const useFacturacionViewModel = () => {
             const queryParams = sedeActiva?.id ? `?sedeId=${sedeActiva.id}` : '';
             const resp: any = await get(`productos/barcode/${encodeURIComponent(trimmed)}${queryParams}`);
             const producto = resp?.data ?? resp;
-            if (producto?.id) {
+            if (producto?.multipleMatches) {
+                // Prefijo (4+) coincide con varios productos: no se agrega ninguno para
+                // no facturar el equivocado; se pide precisar más caracteres.
+                useAlertStore.getState().alert(
+                    `Hay ${producto.count} productos cuyo código empieza con "${trimmed}". Escribe más caracteres para identificarlo.`,
+                    'warning',
+                );
+                setBarcodeInput('');
+                setBarcodeError(true);
+                setTimeout(() => setBarcodeError(false), 2000);
+            } else if (producto?.id) {
                 handleProductClick(producto);
                 setBarcodeInput('');
             } else {
@@ -1449,22 +1474,31 @@ export const useFacturacionViewModel = () => {
         }));
     };
 
-    // Reconvierte los ítems del carrito con origen USD al cambiar la moneda de la cotización.
-    // Los productos en soles no se tocan; solo los USD-origen: al pasar a dólares vuelven a su
-    // precio original ($472) y al pasar a soles se multiplican por el tipo de cambio del día.
+    // Reconvierte TODOS los ítems del carrito al cambiar la moneda del documento (PEN⇄USD),
+    // según la moneda nativa de cada producto y el tipo de cambio del día:
+    //  · nativo USD → objetivo USD: precio original ($X);  → objetivo PEN: ×TC
+    //  · nativo PEN → objetivo PEN: precio original (S/X);  → objetivo USD: ÷TC
+    // `tipoCambio` guarda el factor actual aplicado al precio nativo; se escala por el ratio
+    // entre el factor objetivo y el actual (reconversión reversible).
     const convertirCarritoAMoneda = (targetUSD: boolean) => {
         const tc = Number(tcVenta);
         productsInvoice.forEach((it: any, idx: number) => {
-            if (String(it?.monedaOriginal || '').toUpperCase() !== 'USD') return;
-            const factor = targetUSD ? 1 : (Number.isFinite(tc) && tc > 0 ? tc : Number(it.tipoCambio) || 1);
+            const nativeUSD = String(it?.monedaOriginal || 'PEN').toUpperCase() === 'USD';
+            const tcValido = Number.isFinite(tc) && tc > 0;
+            let targetFactor: number;
+            if (nativeUSD) {
+                targetFactor = targetUSD ? 1 : (tcValido ? tc : Number(it.tipoCambio) || 1);
+            } else {
+                targetFactor = targetUSD ? (tcValido ? 1 / tc : Number(it.tipoCambio) || 1) : 1;
+            }
             const currentFactor = Number(it.tipoCambio) || 1;
-            if (factor === currentFactor) return;
-            const ratio = factor / currentFactor;
+            if (targetFactor === currentFactor) return;
+            const ratio = targetFactor / currentFactor;
             const nuevoBase = Number(it.precioBase ?? it.precioUnitario ?? 0) * ratio;
             const nuevosMayorista = Array.isArray(it.preciosMayorista)
                 ? it.preciosMayorista.map((r: any) => ({ ...r, precio: Number(r?.precio ?? 0) * ratio }))
                 : it.preciosMayorista;
-            const patched = { ...it, precioBase: nuevoBase, preciosMayorista: nuevosMayorista, tipoCambio: factor };
+            const patched = { ...it, precioBase: nuevoBase, preciosMayorista: nuevosMayorista, tipoCambio: targetFactor };
             updateProductInvoice(idx, { ...patched, ...calculateLineItem(patched, Number(it.cantidad) || 1) });
         });
     };
@@ -1478,8 +1512,9 @@ export const useFacturacionViewModel = () => {
             (it: any) => String(it?.monedaOriginal || '').toUpperCase() === 'USD',
         );
         const tc = Number(tcVenta);
-        // Solo necesitamos el tipo de cambio si hay ítems USD-origen que reconvertir.
-        if (hayUSDOrigen && (!Number.isFinite(tc) || tc <= 0)) {
+        // Necesitamos el TC si vamos a USD (para convertir productos en soles) o si hay
+        // ítems USD-origen a reconvertir a soles.
+        if ((targetUSD || hayUSDOrigen) && (!Number.isFinite(tc) || tc <= 0)) {
             tipoCambioService
                 .consultar()
                 .then((r) => setTcVenta(Number(r?.venta) || null))
@@ -1547,10 +1582,10 @@ export const useFacturacionViewModel = () => {
     // global. Como SUNAT no acepta un descuento global sin AllowanceCharge, el monto se
     // prorratea en el valor unitario de cada línea (ver factorDescuentoProrrateo).
     const esFacturaOBoleta = formValues.tipoDoc === '01' || formValues.tipoDoc === '03';
-    // Símbolo de moneda para la cotización (solo relabela; el carrito trabaja en soles).
-    // Fuera de cotizaciones siempre es S/.
+    // Símbolo de la moneda del documento (comprobante o cotización). El carrito ya guarda
+    // los precios en la moneda elegida (PEN o USD).
     const monedaSimbolo =
-        isQuotationRoute && String(quotationCurrency).toUpperCase() === 'USD' ? 'US$' : 'S/';
+        String(quotationCurrency).toUpperCase() === 'USD' ? 'US$' : 'S/';
     const isDiscountGlobalApplicable = formValues.motivoId === 6;
     const totalOriginal = Number(total);
     const montoDescuentoNV = (esInformal || esFacturaOBoleta)
@@ -1867,8 +1902,11 @@ export const useFacturacionViewModel = () => {
                 }] : []),
             ],
             formaPagoTipo: esPagoCredito ? 'Credito' : (formValues.medioPago || 'Contado'),
-            formaPagoMoneda: "PEN",
-            tipoMoneda: "PEN",
+            // Moneda del comprobante (PEN por defecto; USD si se eligió el toggle de moneda).
+            formaPagoMoneda: String(quotationCurrency).toUpperCase() === 'USD' ? 'USD' : 'PEN',
+            tipoMoneda: String(quotationCurrency).toUpperCase() === 'USD' ? 'USD' : 'PEN',
+            // TC del día registrado en el comprobante cuando se emite en dólares.
+            tipoCambio: String(quotationCurrency).toUpperCase() === 'USD' ? (Number(tcVenta) || undefined) : 1,
             descuento: finalDiscount,
             ...(esInformal && montoDescuentoNV > 0 ? { montoDescuentoGlobal: montoDescuentoNV } : {}),
             leyenda: totalInWords,

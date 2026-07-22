@@ -30,8 +30,12 @@ const ComprobantePrintPage = ({
     retencionData = null
 }: any) => {
 
-    // Moneda de la cotización: solo afecta el formato COTIZACIÓN (no la facturación SUNAT)
-    const esUSD = String(quotationCurrency).toUpperCase() === 'USD';
+    // Moneda del documento: cotización (quotationCurrency) o comprobante (formValues.tipoMoneda).
+    // Cubre tanto la emisión (POS) como la reimpresión desde la lista.
+    const esUSD =
+        String(quotationCurrency).toUpperCase() === 'USD' ||
+        String(formValues?.tipoMoneda || '').toUpperCase() === 'USD' ||
+        String(formValues?.formaPagoMoneda || '').toUpperCase() === 'USD';
     const monedaSimbolo = esUSD ? 'US$' : 'S/';
     const monedaNombre = esUSD ? 'DÓLARES' : 'SOLES';
     const sonEnMoneda = esUSD
@@ -239,7 +243,7 @@ console.log(formValues)
                                         </div>
                                         <div className="flex justify-between">
                                             <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>Monto Detracción:</span>
-                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</span>
+                                            <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>{monedaSimbolo} {Number(formValues.montoDetraccion || 0).toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} font-bold`}>Cuenta BN:</span>
@@ -305,7 +309,7 @@ console.log(formValues)
                             ))}
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {totalInWords || ''}</p>
+                        <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {sonEnMoneda || ''}</p>
                         <hr className="my-1 border-dashed border-[#222]" />
                         {totalDescuentos > 0 && (
                             <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
@@ -351,7 +355,7 @@ console.log(formValues)
                                         </p>
                                         <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} flex justify-between gap-3`}>
                                             <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</span>
-                                            <span>S/ {Number(cuota.monto).toFixed(2)}</span>
+                                            <span>{monedaSimbolo} {Number(cuota.monto).toFixed(2)}</span>
                                         </p>
                                     </div>
                                 ))}
@@ -366,7 +370,7 @@ console.log(formValues)
                                         <div key={idx} className="mb-0.5">
                                             <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                                                 <span>{sp.method?.toUpperCase()}:</span>
-                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {Number(sp.amount).toFixed(2)}</span>
                                             </p>
                                             {formatPaymentExtra(detail).map((line) => (
                                                 <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'} text-left`}>{line}</p>
@@ -388,11 +392,11 @@ console.log(formValues)
                         )}
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>VUELTO:</span>
-                            <span>S/ {displayVuelto.toFixed(2)}</span>
+                            <span>{monedaSimbolo} {displayVuelto.toFixed(2)}</span>
                         </p>
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>PAGADO:</span>
-                            <span>S/ {displayPagado.toFixed(2)}</span>
+                            <span>{monedaSimbolo} {displayPagado.toFixed(2)}</span>
                         </p>
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>VENDEDOR:</span>
@@ -500,7 +504,7 @@ console.log(formValues)
                                 <div className="w-full mb-4" style={{ fontSize: px('productos') }}>
                                     {/* Table Header */}
                                     <div className="flex bg-gray-300 text-black font-bold border border-gray-400 py-1">
-                                        <div className="w-[8%] text-center border-r border-gray-400">N°</div>
+                                        <div className="w-[8%] text-center border-r border-gray-400">CÓDIGO</div>
                                         <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
                                         <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
                                         {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
@@ -526,7 +530,7 @@ console.log(formValues)
 
                                         return (
                                             <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
-                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
+                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
                                                 <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
                                                 {includeProductImages && (
@@ -574,7 +578,7 @@ console.log(formValues)
                                                 <div className="mt-4" style={{ fontSize: px('detraccion') }}>
                                                     <p className="font-bold">DETRACCIÓN</p>
                                                     <p>{formValues.tipoDetraccion?.codigo} - {formValues.tipoDetraccion?.descripcion} ({formValues.tipoDetraccion?.porcentaje}%)</p>
-                                                    <p>MONTO A DETRAER: S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</p>
+                                                    <p>MONTO A DETRAER: {monedaSimbolo} {Number(formValues.montoDetraccion || 0).toFixed(2)}</p>
                                                     {formValues.cuentaBancoNacion && <p>CTA. BANCO DE LA NACIÓN: {formValues.cuentaBancoNacion}</p>}
                                                     {formValues.medioPagoDetraccion && <p>MEDIO DE PAGO: {formValues.medioPagoDetraccion?.codigo} - {formValues.medioPagoDetraccion?.descripcion}</p>}
                                                 </div>
@@ -748,7 +752,7 @@ console.log(formValues)
                                                     <span className="text-xs">{moment(formValues?.fechaEmision || new Date()).format('h:mm:ss a')}</span>
 
                                                     <span className="font-bold text-xs">MONEDA:</span>
-                                                    <span className="text-xs">SOLES</span>
+                                                    <span className="text-xs">{monedaNombre}</span>
 
                                                     <span className="font-bold text-xs">FORMA PAGO:</span>
                                                     <span className="text-xs">{paymentConditionLabel}</span>
@@ -763,7 +767,7 @@ console.log(formValues)
                                                                         <span key={idx} className="block">
                                                                             <span className="flex justify-between">
                                                                                 <span>{sp.method?.toUpperCase()}:</span>
-                                                                                <span>S/ {Number(sp.amount).toFixed(2)}</span>
+                                                                                <span>{monedaSimbolo} {Number(sp.amount).toFixed(2)}</span>
                                                                             </span>
                                                                             {formatPaymentExtra(detail).map((line) => (
                                                                                 <span key={line} className="block text-[10px] text-gray-700">{line}</span>
@@ -777,7 +781,7 @@ console.log(formValues)
                                                         <>
                                                             <span className="font-bold text-xs">MEDIO PAGO:</span>
                                                             <span className="text-xs">
-                                                                {paymentMethodLabel} S/ {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}
+                                                                {paymentMethodLabel} {monedaSimbolo} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}
                                                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                                     <span key={line} className="block text-[10px] text-gray-700">{line}</span>
                                                                 ))}
@@ -786,10 +790,10 @@ console.log(formValues)
                                                     )}
 
                                                     <span className="font-bold text-xs">VUELTO:</span>
-                                                    <span className="text-xs">S/ {displayVuelto.toFixed(2)}</span>
+                                                    <span className="text-xs">{monedaSimbolo} {displayVuelto.toFixed(2)}</span>
 
                                                     <span className="font-bold text-xs">PAGADO:</span>
-                                                    <span className="text-xs">S/ {displayPagado.toFixed(2)}</span>
+                                                    <span className="text-xs">{monedaSimbolo} {displayPagado.toFixed(2)}</span>
 
                                                     <span className="font-bold text-xs">VENDEDOR:</span>
                                                     <span className="text-xs">{vendedorNombre}</span>
@@ -807,7 +811,7 @@ console.log(formValues)
                                                         <div className="uppercase">CUOTA {idx + 1}</div>
                                                         <div className="flex justify-between gap-3">
                                                             <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</span>
-                                                            <span>S/ {Number(cuota.monto).toFixed(2)}</span>
+                                                            <span>{monedaSimbolo} {Number(cuota.monto).toFixed(2)}</span>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -830,7 +834,7 @@ console.log(formValues)
                                             </div>
                                             <div className="flex">
                                                 <span className="text-xs font-bold w-[130px]">Monto Detracción:</span>
-                                                <span className="text-xs">S/ {Number(formValues.montoDetraccion || 0).toFixed(2)}</span>
+                                                <span className="text-xs">{monedaSimbolo} {Number(formValues.montoDetraccion || 0).toFixed(2)}</span>
                                             </div>
                                             {formValues.medioPagoDetraccion && (
                                                 <div className="flex">
@@ -904,7 +908,7 @@ console.log(formValues)
                                 </div>
 
                                 <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center text-lg bg-gray-50">
-                                    SON: {totalInWords || ''}
+                                    SON: {sonEnMoneda || ''}
                                 </div>
 
                                 <div className="border border-black rounded-lg p-3 relative mb-10">
@@ -924,30 +928,30 @@ console.log(formValues)
                                         <div className="w-1/3 text-right space-y-0.5">
                                             {isDocumentoFiscal && (
                                                 <>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. GRAVADAS:</span><span>S/ {round2(mtoOperGravadas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. EXONERADAS:</span><span>S/ {round2(mtoOperExoneradas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. INAFECTAS:</span><span>S/ {round2(mtoOperInafectas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. GRATUITAS:</span><span>S/ {round2(mtoOperGratuitas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">ICBPER:</span><span>S/ {round2(mtoIcbper).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">SUB TOTAL:</span><span>S/ {round2(mtoOperGravadas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span>DESCUENTOS TOTAL:</span><span>S/ {round2(totalDescuentos).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">IGV 18%:</span><span>S/ {round2(mtoIgv).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. GRAVADAS:</span><span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. EXONERADAS:</span><span>{monedaSimbolo} {round2(mtoOperExoneradas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. INAFECTAS:</span><span>{monedaSimbolo} {round2(mtoOperInafectas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">OP. GRATUITAS:</span><span>{monedaSimbolo} {round2(mtoOperGratuitas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">ICBPER:</span><span>{monedaSimbolo} {round2(mtoIcbper).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">SUB TOTAL:</span><span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span>DESCUENTOS TOTAL:</span><span>{monedaSimbolo} {round2(totalDescuentos).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">IGV 18%:</span><span>{monedaSimbolo} {round2(mtoIgv).toFixed(2)}</span></div>
                                                 </>
                                             )}
                                             {!isDocumentoFiscal && totalDescuentos > 0 && (
                                                 <div className="flex justify-between">
                                                     <span>DESCUENTO:</span>
-                                                    <span>- S/ {round2(totalDescuentos).toFixed(2)}</span>
+                                                    <span>- {monedaSimbolo} {round2(totalDescuentos).toFixed(2)}</span>
                                                 </div>
                                             )}
                                             <div className="flex justify-between text-md font-bold border-t border-black pt-1 mt-1">
                                                 <span>MONTO TOTAL:</span>
-                                                <span>S/ {round2(mtoImpVenta).toFixed(2)}</span>
+                                                <span>{monedaSimbolo} {round2(mtoImpVenta).toFixed(2)}</span>
                                             </div>
                                             {shouldShowRetention && (
                                                 <>
-                                                    <div className="flex justify-between"><span className="font-bold">RETENCIÓN (3%):</span><span>S/ {displayRetencionMonto.toFixed(2)}</span></div>
-                                                    <div className="flex justify-between font-bold"><span>IMPORTE NETO:</span><span>S/ {Number(mtoImpVenta - displayRetencionMonto).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between"><span className="font-bold">RETENCIÓN (3%):</span><span>{monedaSimbolo} {displayRetencionMonto.toFixed(2)}</span></div>
+                                                    <div className="flex justify-between font-bold"><span>IMPORTE NETO:</span><span>{monedaSimbolo} {Number(mtoImpVenta - displayRetencionMonto).toFixed(2)}</span></div>
                                                 </>
                                             )}
                                         </div>
