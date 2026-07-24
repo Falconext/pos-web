@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboardStore, type IDashboardState } from '@/zustand/dashboard'
+import { get } from '@/utils/fetch'
 import { useAuthStore } from '@/zustand/auth'
 import { useSedesStore } from '@/zustand/sedes'
 import { hasPermission } from '@/utils/permissions'
@@ -26,7 +27,48 @@ export default function AdminIndex() {
 
   const [period, setPeriod] = useState<string>('Esta semana')
 
+  // "Productos Más Vendidos" — modal de detalle + exportable
+  const [showTopModal, setShowTopModal] = useState(false)
+  const [topDetalle, setTopDetalle] = useState<any[]>([])
+  const [loadingTop, setLoadingTop] = useState(false)
+
   const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null)
+
+  const abrirTopDetalle = async () => {
+    setShowTopModal(true)
+    setLoadingTop(true)
+    try {
+      const params = new URLSearchParams({ fechaInicio, fechaFin, limit: '100' })
+      if (effectiveSedeId) params.append('sedeId', String(effectiveSedeId))
+      const resp: any = await get(`dashboard/top-productos?${params}`)
+      setTopDetalle(resp?.code === 1 && Array.isArray(resp.data) ? resp.data : [])
+    } catch {
+      setTopDetalle([])
+    } finally {
+      setLoadingTop(false)
+    }
+  }
+
+  const exportarTopCSV = () => {
+    const encabezado = ['#', 'Producto', 'Código', 'Unidades vendidas', 'Total (S/)']
+    const filas = topDetalle.map((p: any, i: number) => [
+      i + 1,
+      p.producto?.descripcion || 'Producto sin nombre',
+      p.producto?.codigo || '',
+      p.cantidad ?? 0,
+      Number(p.total ?? 0).toFixed(2),
+    ])
+    const csv = [encabezado, ...filas]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `productos-vendidos-${fechaInicio}-a-${fechaFin}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   // Empresa "solo logística" (plan sin dashboard core): llevar a su panel
   const soloLogistica = !!auth && !hasPermission(auth, 'dashboard') && hasPermission(auth, 'logistica')
@@ -425,7 +467,16 @@ export default function AdminIndex() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Top Products */}
           <div className="bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
-            <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-5">Productos Más Vendidos</h3>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-gray-900 dark:text-white font-bold text-lg">Productos Más Vendidos</h3>
+              <button
+                onClick={abrirTopDetalle}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+              >
+                Ver más detalles
+                <Icon icon="solar:alt-arrow-right-linear" width={14} />
+              </button>
+            </div>
             <div className="space-y-5">
               {topProductos.map((p: any, i: number) => {
                 const colorMap = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500'];
@@ -522,6 +573,68 @@ export default function AdminIndex() {
       )}
       {tourStep !== null && (
         <TourSpotlight step={tourStep} onNext={nextStep} onPrev={prevStep} onEnd={endTour} />
+      )}
+
+      {/* Modal: detalle de productos más vendidos + exportable */}
+      {showTopModal && (
+        <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={() => setShowTopModal(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#131620] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 p-5">
+              <div>
+                <h3 className="text-gray-900 dark:text-white font-bold text-lg">Productos Más Vendidos</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{moment(fechaInicio).format('DD/MM/YYYY')} – {moment(fechaFin).format('DD/MM/YYYY')}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportarTopCSV}
+                  disabled={loadingTop || topDetalle.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <Icon icon="solar:file-download-bold" width={16} />
+                  Exportar
+                </button>
+                <button onClick={() => setShowTopModal(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" aria-label="Cerrar">
+                  <Icon icon="solar:close-circle-bold" width={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto p-2 sm:p-4">
+              {loadingTop ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-gray-400 text-sm">
+                  <Icon icon="line-md:loading-twotone-loop" className="text-2xl text-violet-600" />
+                  Cargando…
+                </div>
+              ) : topDetalle.length === 0 ? (
+                <div className="text-center text-gray-400 text-sm py-12">No hay productos vendidos en este periodo</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100 dark:border-slate-800">
+                      <th className="py-2.5 px-3 w-8">#</th>
+                      <th className="py-2.5 px-3">Producto</th>
+                      <th className="py-2.5 px-3 text-right whitespace-nowrap">Unidades</th>
+                      <th className="py-2.5 px-3 text-right whitespace-nowrap">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topDetalle.map((p: any, i: number) => (
+                      <tr key={p.productoId || i} className="border-b border-gray-50 dark:border-slate-800/60 hover:bg-gray-50 dark:hover:bg-slate-800/40">
+                        <td className="py-2.5 px-3 font-bold text-gray-400">{i + 1}</td>
+                        <td className="py-2.5 px-3">
+                          <p className="font-bold text-gray-900 dark:text-white leading-tight">{p.producto?.descripcion || 'Producto sin nombre'}</p>
+                          {p.producto?.codigo && <p className="text-[11px] text-gray-400">{p.producto.codigo}</p>}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{p.cantidad ?? 0}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-gray-900 dark:text-white whitespace-nowrap">{formatMoney(Number(p.total ?? 0))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </>
   )

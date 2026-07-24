@@ -8,6 +8,7 @@ import { ProductStockManager } from "./ProductStockManager";
 import { ProductWholesalePricing } from "./ProductWholesalePricing";
 import { ProductBasicForm } from "./ProductBasicForm";
 import { ProductRichDescription } from "./ProductRichDescription";
+import { ProductPasteSpecs } from "./ProductPasteSpecs";
 import ModalMedicamento from "@/pages/admin/kardex/modal-productos/components/ModalMedicamento";
 import ModalLotes from "@/pages/admin/kardex/modal-productos/components/ModalLotes";
 
@@ -92,6 +93,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                                 </div>
                             )}
                             <ProductRichDescription vm={vm} />
+                            <ProductPasteSpecs vm={vm} />
 
                         </div>
                     </div>

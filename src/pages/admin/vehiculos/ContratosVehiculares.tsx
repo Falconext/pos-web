@@ -94,7 +94,7 @@ function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVeh
         observaciones: contrato?.observaciones ?? '',
     });
 
-    useEffect(() => { if (!esEdicion) get('vehiculos?limit=200').then((resp: any) => setVehiculos(resp.data?.data ?? [])); }, [esEdicion]);
+    useEffect(() => { get('vehiculos?limit=200').then((resp: any) => setVehiculos(resp.data?.data ?? [])); }, []);
     useEffect(() => {
         get('productos?limit=200&soloVendibles=true')
             .then((resp: any) => setProductos(resp.data?.productos ?? []))
@@ -135,7 +135,7 @@ function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVeh
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!esEdicion && unidades.length === 0) { alert('Agrega al menos un vehículo', 'warning'); return; }
+        if (unidades.length === 0) { alert('Agrega al menos un vehículo', 'warning'); return; }
         setLoading(true);
         try {
             const base: any = {
@@ -143,23 +143,16 @@ function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVeh
                 duracionMeses: parseInt(form.duracionMeses),
                 productoId: form.productoId ? parseInt(form.productoId) : undefined,
                 observaciones: form.observaciones || undefined,
+                // El set de vehículos ahora es editable también en edición: se envían las
+                // unidades y el backend las sincroniza (agrega/quita/actualiza montos).
+                vehiculos: unidades.map((u) => ({
+                    vehiculoId: u.vehiculoId,
+                    montoAnual: u.montoAnual ? parseFloat(u.montoAnual) : undefined,
+                })),
             };
-            let ok: unknown;
-            if (esEdicion) {
-                // En edición no se cambia el set de vehículos; se ajusta el monto total.
-                ok = await updateContrato(contrato!.id, {
-                    ...base,
-                    montoAnual: form.montoAnual ? parseFloat(form.montoAnual) : undefined,
-                });
-            } else {
-                ok = await addContrato({
-                    ...base,
-                    vehiculos: unidades.map((u) => ({
-                        vehiculoId: u.vehiculoId,
-                        montoAnual: u.montoAnual ? parseFloat(u.montoAnual) : undefined,
-                    })),
-                });
-            }
+            const ok = esEdicion
+                ? await updateContrato(contrato!.id, base)
+                : await addContrato(base);
             if (ok) onSaved(); // el store ya mostró el toast (éxito o error)
         } finally { setLoading(false); }
     };
@@ -192,29 +185,26 @@ function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVeh
                     error={null}
                 />
 
-                {/* Selector de vehículos (multi-vehículo) — solo al crear */}
-                {!esEdicion && (
-                    <div>
-                        <Select
-                            name="vehiculoPick"
-                            label="Agregar vehículo(s) *"
-                            options={vehiculoOpts}
-                            value={vehiculoPickLabel}
-                            isSearch
-                            onChange={(id: any) => { setVehiculoPick(String(id)); agregarVehiculo(Number(id)); }}
-                            placeholder="— Buscar y agregar vehículo —"
-                            error={null}
-                        />
-                        <p className="mt-1 text-xs text-gray-400">Puedes agregar varios vehículos a un mismo contrato.</p>
-                    </div>
-                )}
+                {/* Selector de vehículos (multi-vehículo) — disponible al crear y al editar */}
+                <div>
+                    <Select
+                        name="vehiculoPick"
+                        label="Agregar vehículo(s) *"
+                        options={vehiculoOpts}
+                        value={vehiculoPickLabel}
+                        isSearch
+                        onChange={(id: any) => { setVehiculoPick(String(id)); agregarVehiculo(Number(id)); }}
+                        placeholder="— Buscar y agregar vehículo —"
+                        error={null}
+                    />
+                    <p className="mt-1 text-xs text-gray-400">Puedes agregar, quitar o cambiar los vehículos del contrato.</p>
+                </div>
 
                 {/* Lista de vehículos del contrato */}
                 {unidades.length > 0 && (
                     <div className="rounded-xl border border-gray-200 dark:border-slate-700">
                         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2 dark:border-slate-800">
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Vehículos ({unidades.length})</span>
-                            {esEdicion && <span className="text-[11px] text-gray-400">No editable en edición</span>}
                         </div>
                         <div className="divide-y divide-gray-100 dark:divide-slate-800">
                             {unidades.map((u) => (
@@ -229,15 +219,12 @@ function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVeh
                                             onChange={(e) => setUnidadMonto(u.vehiculoId, e.target.value)}
                                             isLabel={false}
                                             placeholder="Monto S/"
-                                            disabled={esEdicion}
                                             error={null}
                                         />
                                     </div>
-                                    {!esEdicion && (
-                                        <button type="button" onClick={() => quitarVehiculo(u.vehiculoId)} aria-label="Quitar" className="text-gray-400 transition hover:text-rose-500">
-                                            <Icon icon="solar:trash-bin-trash-bold" width={18} />
-                                        </button>
-                                    )}
+                                    <button type="button" onClick={() => quitarVehiculo(u.vehiculoId)} aria-label="Quitar" className="text-gray-400 transition hover:text-rose-500">
+                                        <Icon icon="solar:trash-bin-trash-bold" width={18} />
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -260,10 +247,7 @@ function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVeh
                         <span className="text-sm text-gray-600 dark:text-gray-300">Vence el <strong className="text-gray-800 dark:text-gray-100">{fechaFinPreview}</strong></span>
                     </div>
                 )}
-                {/* En edición se ajusta el monto total del contrato directamente */}
-                {esEdicion && (
-                    <InputPro name="montoAnual" type="number" value={form.montoAnual} onChange={(e) => setForm((f) => ({ ...f, montoAnual: e.target.value }))} isLabel label="Monto anual total (S/)" placeholder="500.00" error={null} />
-                )}
+                {/* El monto total es la suma de los montos por vehículo (ver "Total anual"). */}
                 <InputPro name="observaciones" type="textarea" rows={3} value={form.observaciones} onChange={(e) => setForm((f) => ({ ...f, observaciones: e.target.value }))} isLabel label="Observaciones" placeholder="GPS marca X instalado, alarma modelo Y..." error={null} />
                 <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 dark:border-slate-800 sm:flex-row sm:justify-end">
                     <Button color="gray" className="w-full sm:w-auto" onClick={onClose}>Cancelar</Button>

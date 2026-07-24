@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import MayeHeader from '@/components/tienda/MayeHeader';
 import MayeFooter from '@/components/tienda/MayeFooter';
 import MayeCartModal from '@/components/tienda/MayeCartModal';
+import MayeCompareWidget from '@/components/tienda/MayeCompareWidget';
 import ProductCardMaye from '@/components/tienda/ProductCardMaye';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
@@ -20,6 +21,7 @@ export default function MayeCatalogoPage({
   priceRange, setPriceRange, minPrice, maxPrice,
   sortBy, setSortBy, hasActiveFilters,
   toggleCategory, toggleBrand,
+  atributoFacets = [], selectedAtributos = {}, setSelectedAtributos, toggleAtributo,
   search, setSearch,
   carrito, setCarrito, mostrarCarrito, setMostrarCarrito,
   actualizarCantidad, irACheckout, handleAgregarProducto, agregarAlCarritoDirecto,
@@ -31,6 +33,7 @@ export default function MayeCatalogoPage({
     setSearch('');
     setSelectedMarcas([]);
     setSelectedCategorías([]);
+    setSelectedAtributos?.({});
     setPriceRange([minPrice, maxPrice]);
   };
 
@@ -94,6 +97,27 @@ export default function MayeCatalogoPage({
             </div>
           </div>
         )}
+
+        {atributoFacets.map((facet: any) => (
+          <div key={facet.key} className="mb-6">
+            <p className="mb-3 text-xs font-black uppercase tracking-wider text-gray-400">{facet.label}</p>
+            <div className="max-h-56 space-y-2.5 overflow-y-auto pr-1">
+              {facet.options.map((opt: any) => {
+                const checked = (selectedAtributos[facet.key] || []).includes(opt.value);
+                return (
+                  <label key={opt.value} className="group flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-gray-50">
+                    <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${checked ? 'border-transparent text-white' : 'border-gray-300 bg-white'}`} style={checked ? { backgroundColor: cp } : undefined}>
+                      {checked && <Icon icon="mdi:check" width={12} />}
+                    </span>
+                    <input type="checkbox" checked={checked} onChange={() => toggleAtributo?.(facet.key, opt.value)} className="hidden" />
+                    <span className={`flex-1 text-sm ${checked ? 'font-black text-gray-950' : 'font-semibold text-gray-500 group-hover:text-gray-900'}`}>{opt.label}</span>
+                    <span className="text-[11px] font-bold text-gray-300">{opt.count}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
         <div className="rounded-2xl bg-gray-50 p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -195,6 +219,13 @@ export default function MayeCatalogoPage({
             <div className="mt-2 flex flex-wrap gap-2">
               {selectedCategorías.map((item: string) => <span key={item} className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-black text-gray-600">{item}</span>)}
               {selectedMarcas.map((item: string) => <span key={item} className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-black text-gray-600">{item}</span>)}
+              {Object.entries(selectedAtributos).flatMap(([key, vals]: [string, any]) =>
+                (Array.isArray(vals) ? vals : []).map((v: string) => (
+                  <button key={`${key}-${v}`} onClick={() => toggleAtributo?.(key, v)} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-black text-white" style={{ backgroundColor: cp }}>
+                    {v} <Icon icon="mdi:close" width={12} />
+                  </button>
+                )),
+              )}
             </div>
           </div>
 
@@ -268,6 +299,12 @@ export default function MayeCatalogoPage({
         </motion.div>
       )}
       </AnimatePresence>
+
+      <MayeCompareWidget
+        slug={slug || ''}
+        cp={cp}
+        onGoProduct={(item: any) => navigate(`/tienda/${slug}/producto/${item.id}`)}
+      />
 
       <MayeFooter tienda={tienda || {}} slug={slug || ''} diseno={diseno} />
 

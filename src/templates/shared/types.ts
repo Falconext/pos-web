@@ -62,6 +62,13 @@ export interface TemplateCatalogoPageProps {
   toggleCategory: (name: string) => void;
   toggleBrand: (name: string) => void;
 
+  // Facetas de atributos técnicos (dinámicas por categoría). Opcionales: solo
+  // las usan las plantillas que las renderizan (p.ej. Maye).
+  atributoFacets?: import('@/lib/catalogFacets').AtributoFacet[];
+  selectedAtributos?: Record<string, string[]>;
+  setSelectedAtributos?: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
+  toggleAtributo?: (key: string, value: string) => void;
+
   // Search
   search: string;
   setSearch: (s: string) => void;

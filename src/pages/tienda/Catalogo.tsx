@@ -20,6 +20,7 @@ import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
 import { useCompareStore } from '@/zustand/compare';
 import { onTiendaCartCleared, persistTiendaCart, tiendaCartKey } from '@/utils/tiendaCart';
 import { withPricingList } from '@/templates/shared/pricing';
+import { deriveAtributoFacets, buildAtributosParam, parseAtributosParam } from '@/lib/catalogFacets';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 import { getRubroDemo } from '@/data/rubroDemo';
@@ -71,6 +72,9 @@ export default function Catalogo() {
         const c = searchParams.get('category');
         return c ? [c] : [];
     });
+    const [selectedAtributos, setSelectedAtributos] = useState<Record<string, string[]>>(
+        () => parseAtributosParam(searchParams.get('attrs') || ''),
+    );
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
     const [minPrice, setMinPrice] = useState(0);
     const [maxPrice, setMaxPrice] = useState(1000);
@@ -119,7 +123,7 @@ export default function Catalogo() {
             cargarProductos(1, true);
         }, 350);
         return () => clearTimeout(t);
-    }, [search, selectedMarcas, selectedCategorías, priceRange, wholesaleOnly]);
+    }, [search, selectedMarcas, selectedCategorías, priceRange, wholesaleOnly, selectedAtributos]);
 
     // Sincroniza el parámetro ?category de la URL con el filtro seleccionado.
     // Así los círculos de categoría (que solo navegan a ?category=X) y los enlaces
@@ -141,9 +145,11 @@ export default function Catalogo() {
         if (priceRange[0] !== minPrice) params.set('minPrice', String(priceRange[0]));
         if (priceRange[1] !== maxPrice) params.set('maxPrice', String(priceRange[1]));
         if (sortBy !== 'relevance') params.set('sort', sortBy);
+        const attrsParam = buildAtributosParam(selectedAtributos);
+        if (attrsParam) params.set('attrs', attrsParam);
 
         setSearchParams(params, { replace: true });
-    }, [search, selectedMarcas, selectedCategorías, priceRange, minPrice, maxPrice, sortBy, setSearchParams]);
+    }, [search, selectedMarcas, selectedCategorías, priceRange, minPrice, maxPrice, sortBy, selectedAtributos, setSearchParams]);
 
     const cargarTienda = async () => {
         try {
@@ -195,6 +201,7 @@ export default function Catalogo() {
                     minPrice: priceRange[0] !== minPrice ? priceRange[0] : undefined,
                     maxPrice: priceRange[1] !== maxPrice ? priceRange[1] : undefined,
                     wholesale: wholesaleOnly ? 'true' : undefined,
+                    atributos: buildAtributosParam(selectedAtributos) || undefined,
                 },
             });
             let items: any[] = [];
@@ -245,6 +252,13 @@ export default function Catalogo() {
     const toggleSection = (section: keyof typeof openSections) => setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
     const toggleBrand = (name: string) => setSelectedMarcas(prev => prev.includes(name) ? prev.filter(b => b !== name) : [...prev, name]);
     const toggleCategory = (name: string) => setSelectedCategorías(prev => prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]);
+    const toggleAtributo = (key: string, value: string) => setSelectedAtributos(prev => {
+        const current = prev[key] || [];
+        const next = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+        const copy = { ...prev };
+        if (next.length) copy[key] = next; else delete copy[key];
+        return copy;
+    });
 
     const filteredMarcas = allMarcas.filter(b => {
         const name = typeof b === 'string' ? b : b.nombre;
@@ -269,7 +283,11 @@ export default function Catalogo() {
         return list;
     }, [productos, sortBy]);
 
-    const hasActiveFilters = selectedMarcas.length > 0 || selectedCategorías.length > 0 || priceRange[0] !== minPrice || priceRange[1] !== maxPrice;
+    const atributoFacets = useMemo(
+        () => deriveAtributoFacets(allProductos, selectedCategorías),
+        [allProductos, selectedCategorías],
+    );
+    const hasActiveFilters = selectedMarcas.length > 0 || selectedCategorías.length > 0 || priceRange[0] !== minPrice || priceRange[1] !== maxPrice || Object.keys(selectedAtributos).length > 0;
     const pageTitle = selectedCategorías[0] || selectedMarcas[0] || 'Todos los productos';
     const disenoBase = tienda?.diseno || {};
     const diseno = previewPlantillaId ? {
@@ -365,6 +383,10 @@ export default function Catalogo() {
         hasActiveFilters,
         toggleCategory,
         toggleBrand,
+        atributoFacets,
+        selectedAtributos,
+        setSelectedAtributos,
+        toggleAtributo,
         search,
         setSearch,
         carrito,

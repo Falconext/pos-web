@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import MayeHeader from '@/components/tienda/MayeHeader';
 import MayeFooter from '@/components/tienda/MayeFooter';
 import MayeCartModal from '@/components/tienda/MayeCartModal';
+import MayeCompareWidget from '@/components/tienda/MayeCompareWidget';
 import ProductCardMaye from '@/components/tienda/ProductCardMaye';
 import TiendaFloatingButtons from '@/components/tienda/TiendaFloatingButtons';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
@@ -13,6 +14,7 @@ import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { getProductPricing, withPricing, withPricingList } from '@/templates/shared/pricing';
 import { mayeCard, mayePage, mayeSection, mayeStagger, mayeTap, mayeViewport } from '@/lib/motion/maye';
 import { useFavoritosStore } from '@/zustand/favoritos';
+import { parsePastedPairs } from '@/lib/pastedSpecs';
 
 type MayeTab = 'description' | 'specifications' | 'reviews';
 
@@ -53,7 +55,7 @@ export default function MayeProductoDetalle() {
   const [search, setSearch] = useState('');
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [activeTab, setActiveTab] = useState<MayeTab>('specifications');
+  const [activeTab, setActiveTab] = useState<MayeTab>('description');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewSummary, setReviewSummary] = useState({ ratingAvg: 0, ratingCount: 0 });
   const { toggleFavorito, isFavorito } = useFavoritosStore();
@@ -192,28 +194,39 @@ export default function MayeProductoDetalle() {
   const discount = pricing.porcentajeDescuento;
   const isOutOfStock = Number(producto.stock ?? 0) <= 0;
   const fichaTecnica = producto?.fichaTecnica;
+  // Texto "pegado" desde el admin (tiene prioridad si el comerciante lo cargó).
+  const pastedEspec = parsePastedPairs(producto?.atributosTecnicos?.__especificacionesTexto);
+  const pastedDest = parsePastedPairs(producto?.atributosTecnicos?.__destacadosTexto);
   // Una sola lista plana con TODO (base + características + ficha técnica), sin secciones sueltas.
-  const rawSpecs: { label: string; value: any; pill?: boolean }[] = [
-    { label: 'Código', value: producto.codigo || producto.partNumber, pill: true },
-    { label: 'Marca', value: brandName },
-    { label: 'Categoría', value: categoryName },
-    { label: 'Stock', value: `${Number(producto.stock || 0)} unidades` },
-    ...(Array.isArray(producto.caracteristicas) ? producto.caracteristicas.map((item: any) => ({ label: item.nombre, value: item.valor })) : []),
-    ...(fichaTecnica && Array.isArray(fichaTecnica.destacados) ? fichaTecnica.destacados.map((it: any) => ({ label: it.label, value: it.value })) : []),
-    ...(fichaTecnica && Array.isArray(fichaTecnica.grupos)
-      ? fichaTecnica.grupos.flatMap((g: any) => Array.isArray(g.items) ? g.items.map((it: any) => ({ label: it.label, value: it.value })) : [])
-      : []),
-  ];
+  const rawSpecs: { label: string; value: any; pill?: boolean }[] = pastedEspec.length
+    ? pastedEspec.map((p) => ({ label: p.label, value: p.value }))
+    : [
+        { label: 'Código', value: producto.codigo || producto.partNumber, pill: true },
+        { label: 'Marca', value: brandName },
+        { label: 'Categoría', value: categoryName },
+        { label: 'Stock', value: `${Number(producto.stock || 0)} unidades` },
+        ...(Array.isArray(producto.caracteristicas) ? producto.caracteristicas.map((item: any) => ({ label: item.nombre, value: item.valor })) : []),
+        ...(fichaTecnica && Array.isArray(fichaTecnica.destacados) ? fichaTecnica.destacados.map((it: any) => ({ label: it.label, value: it.value })) : []),
+        ...(fichaTecnica && Array.isArray(fichaTecnica.grupos)
+          ? fichaTecnica.grupos.flatMap((g: any) => Array.isArray(g.items) ? g.items.map((it: any) => ({ label: it.label, value: it.value })) : [])
+          : []),
+      ];
   const seenSpecs = new Set<string>();
   const specs = rawSpecs.filter(s => {
     if (s.value == null || s.value === '') return false;
     const key = String(s.label || '').trim().toLowerCase();
-    if (!key || seenSpecs.has(key)) return false;
-    seenSpecs.add(key);
+    if (key) {
+      if (seenSpecs.has(key)) return false;
+      seenSpecs.add(key);
+    }
     return true;
   });
   const specPairs: { label: string; value: any; pill?: boolean }[][] = [];
   for (let i = 0; i < specs.length; i += 2) specPairs.push(specs.slice(i, i + 2));
+  // Destacados: prioriza el texto pegado; si no, los primeros 6 specs.
+  const destacados = pastedDest.length
+    ? pastedDest.map((p) => ({ label: p.label, value: p.value }))
+    : specs.slice(0, 6);
   const whatsappText = `Hola, quiero asesoría sobre ${producto.descripcion}`;
   const whatsappUrl = buildStorePurchaseWhatsappUrl(
     tienda?.whatsappTienda ?? tienda?.diseno?.whatsappTienda ?? diseno?.whatsappTienda,
@@ -351,6 +364,18 @@ export default function MayeProductoDetalle() {
                 {hasDiscount && <span className="mb-2 rounded-md px-2 py-0.5 text-xs font-bold text-white" style={{ backgroundColor: cp }}>-{discount}%</span>}
               </div>
 
+              {!isOutOfStock && (
+                <div className="mt-4 inline-flex items-center gap-2.5 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-2.5">
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${cp}14` }}>
+                    <Icon icon="solar:card-bold" width={18} style={{ color: cp }} />
+                  </span>
+                  <p className="text-[13px] leading-tight text-gray-600">
+                    Págalo en <span className="font-black text-gray-950">3 cuotas</span> de{' '}
+                    <span className="font-black" style={{ color: cp }}>S/ {(priceValue / 3).toFixed(2)}</span> al mes
+                  </p>
+                </div>
+              )}
+
               {shortDesc && (
                 <p className="mt-5 border-t border-gray-100 pt-5 text-[15px] leading-relaxed text-gray-500">{shortDesc}</p>
               )}
@@ -359,9 +384,9 @@ export default function MayeProductoDetalle() {
                 <p className="mb-3 text-xs font-black uppercase tracking-wider text-gray-400">Cantidad</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[156px_minmax(0,1fr)]">
                   <div className="flex min-h-[56px] w-full items-center justify-between rounded-2xl border border-gray-200 bg-white px-1">
-                    <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-12 w-12 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-950"><Icon icon="solar:minus-linear" /></button>
+                    <button type="button" aria-label="Disminuir cantidad" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl font-bold leading-none text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-950">&minus;</button>
                     <span className="min-w-12 text-center text-lg font-black text-gray-950">{qty}</span>
-                    <button type="button" onClick={() => setQty(qty + 1)} className="flex h-12 w-12 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-950"><Icon icon="solar:add-linear" /></button>
+                    <button type="button" aria-label="Aumentar cantidad" onClick={() => setQty(qty + 1)} className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl font-bold leading-none text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-950">+</button>
                   </div>
                   <button
                     type="button"
@@ -441,12 +466,12 @@ export default function MayeProductoDetalle() {
                     </div>
                   )}
                 </div>
-                {specs.length > 0 && (
-                  <aside className="h-fit rounded-3xl bg-gray-50 p-6">
+                {destacados.length > 0 && (
+                  <aside className="h-fit rounded-3xl bg-gray-50 p-6 lg:sticky lg:top-24 lg:self-start">
                     <h3 className="mb-4 text-lg font-black text-gray-950">Destacados</h3>
                     <div className="divide-y divide-gray-200">
-                      {specs.slice(0, 6).map((spec: any) => (
-                        <div key={`${spec.label}-${spec.value}`} className="flex items-center justify-between gap-4 py-3">
+                      {destacados.map((spec: any, i: number) => (
+                        <div key={`${spec.label}-${spec.value}-${i}`} className="flex items-center justify-between gap-4 py-3">
                           <span className="text-sm text-gray-500">{spec.label}</span>
                           <span className="text-right text-sm font-black text-gray-950">{spec.value}</span>
                         </div>
@@ -575,6 +600,12 @@ export default function MayeProductoDetalle() {
           </motion.section>
         )}
       </motion.main>
+
+      <MayeCompareWidget
+        slug={slug || ''}
+        cp={cp}
+        onGoProduct={(item: any) => navigate(`/tienda/${slug}/producto/${item.id}`)}
+      />
 
       <MayeFooter tienda={tienda} slug={slug || ''} diseno={diseno} />
       <TiendaFloatingButtons tienda={tienda} diseno={diseno} />

@@ -54,15 +54,14 @@ export const useProductsViewModel = () => {
         return id !== null && id !== undefined ? Number(id) : null;
     }, [esPrincipal, selectedSedeId, sedeActiva?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Para importar/exportar stock necesitamos un almacén ELEGIDO EXPLÍCITAMENTE
-    // (a diferencia de effectiveSedeId, que por defecto cae en la sede principal).
-    // Un admin de sede principal debe seleccionar un almacén concreto en el dropdown;
-    // un usuario de sede fija usa su propia sede.
+    // Para importar/exportar stock necesitamos un almacén concreto (no "Todas las sedes").
+    // Un admin de sede principal puede elegir un almacén en el dropdown; si no eligió
+    // ninguno (o está en "Todas las sedes"), usamos su sede activa como destino.
+    // Un usuario de sede fija usa siempre su propia sede.
     const sedeParaImportar = useMemo(() => {
         if (esPrincipal) {
-            return userChoseSede.current && selectedSedeId != null
-                ? Number(selectedSedeId)
-                : null;
+            if (userChoseSede.current && selectedSedeId != null) return Number(selectedSedeId);
+            return sedeActiva?.id != null ? Number(sedeActiva.id) : null;
         }
         return sedeActiva?.id != null ? Number(sedeActiva.id) : null;
     }, [esPrincipal, selectedSedeId, sedeActiva?.id]); // eslint-disable-line react-hooks/exhaustive-deps

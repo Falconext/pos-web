@@ -40,7 +40,7 @@ export function MayeProductoPreviewPage({
   const [search, setSearch] = useState('');
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews'>('specifications');
+  const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews'>('description');
 
   const tienda = useMemo(() => ({
     nombre: demo.storeName,
@@ -203,13 +203,25 @@ export function MayeProductoPreviewPage({
               {hasDiscount && <span className="mb-2 rounded-md px-2 py-0.5 text-xs font-bold text-white" style={{ backgroundColor: cp }}>-{discount}%</span>}
             </div>
 
+            {!isOutOfStock && (
+              <div className="mt-4 inline-flex items-center gap-2.5 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-2.5">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${cp}14` }}>
+                  <Icon icon="solar:card-bold" width={18} style={{ color: cp }} />
+                </span>
+                <p className="text-[13px] leading-tight text-gray-600">
+                  Págalo en <span className="font-black text-gray-950">3 cuotas</span> de{' '}
+                  <span className="font-black" style={{ color: cp }}>S/ {(priceValue / 3).toFixed(2)}</span> al mes
+                </p>
+              </div>
+            )}
+
             <div className="mt-6">
               <p className="mb-3 text-xs font-black uppercase tracking-wider text-gray-400">Cantidad</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[156px_minmax(0,1fr)]">
                 <div className="flex min-h-[56px] w-full items-center justify-between rounded-2xl border border-gray-200 bg-white px-1">
-                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-12 w-12 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-50"><Icon icon="solar:minus-linear" /></button>
+                  <button type="button" aria-label="Disminuir cantidad" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl font-bold leading-none text-gray-500 hover:bg-gray-50">&minus;</button>
                   <span className="min-w-12 text-center text-lg font-black text-gray-950">{qty}</span>
-                  <button type="button" onClick={() => setQty(qty + 1)} className="flex h-12 w-12 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-50"><Icon icon="solar:add-linear" /></button>
+                  <button type="button" aria-label="Aumentar cantidad" onClick={() => setQty(qty + 1)} className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl font-bold leading-none text-gray-500 hover:bg-gray-50">+</button>
                 </div>
                 <button
                   type="button"

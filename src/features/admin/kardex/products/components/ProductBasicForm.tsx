@@ -3,6 +3,8 @@ import { BarcodeScannerInput } from '@/components/BarcodeScannerInput';
 import { Icon } from '@iconify/react';
 import Select from '@/components/Select';
 import InputPro from '@/components/InputPro';
+import { Calendar } from '@/components/Date';
+import moment from 'moment';
 import { ICategory } from '@/interfaces/categories';
 import { IBrand } from '@/zustand/brands';
 import { GrupoModificador } from '@/zustand/modificadores';
@@ -658,8 +660,22 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <InputPro autocomplete="off" type="number" step="0.01" value={(formValues as any)?.precioOferta || ''} name="precioOferta" onChange={handleChange} isLabel label="Precio Oferta (S/)" placeholder="0.00" />
-                        <InputPro autocomplete="off" type="date" value={(formValues as any)?.fechaInicioOferta ? String((formValues as any).fechaInicioOferta).split('T')[0] : ''} name="fechaInicioOferta" onChange={handleChange} isLabel label="Inicio Oferta" />
-                        <InputPro autocomplete="off" type="date" value={(formValues as any)?.fechaFinOferta ? String((formValues as any).fechaFinOferta).split('T')[0] : ''} name="fechaFinOferta" onChange={handleChange} isLabel label="Fin Oferta" />
+                        <Calendar
+                            text="Inicio Oferta"
+                            name="fechaInicioOferta"
+                            portal
+                            withOutFormat
+                            value={(formValues as any)?.fechaInicioOferta ? moment(String((formValues as any).fechaInicioOferta).split('T')[0], 'YYYY-MM-DD').format('DD/MM/YYYY') : ''}
+                            onChange={(date, name) => handleChange({ target: { name, value: date, type: 'text' } } as any)}
+                        />
+                        <Calendar
+                            text="Fin Oferta"
+                            name="fechaFinOferta"
+                            portal
+                            withOutFormat
+                            value={(formValues as any)?.fechaFinOferta ? moment(String((formValues as any).fechaFinOferta).split('T')[0], 'YYYY-MM-DD').format('DD/MM/YYYY') : ''}
+                            onChange={(date, name) => handleChange({ target: { name, value: date, type: 'text' } } as any)}
+                        />
                     </div>
                 </div>
             )}
