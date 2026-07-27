@@ -11,7 +11,7 @@ import MayeCompareWidget from '@/components/tienda/MayeCompareWidget';
 import ProductCardMaye from '@/components/tienda/ProductCardMaye';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
-import { mayeCard, mayeModal, mayeOverlay, mayePage, mayeSection, mayeStagger, mayeTap, mayeViewport } from '@/lib/motion/maye';
+import { mayeCard, mayeModal, mayeOverlay, mayePage, mayeSection, mayeStagger, mayeTap } from '@/lib/motion/maye';
 
 export default function MayeCatalogoPage({
   tienda, slug, diseno, cp, navigate,
@@ -243,7 +243,7 @@ export default function MayeCatalogoPage({
           </div>
         </motion.div>
 
-        <motion.div className="flex items-start gap-6" variants={mayeSection} initial="initial" whileInView="animate" viewport={mayeViewport}>
+        <motion.div className="flex items-start gap-6" variants={mayeSection} initial="initial" animate="animate">
           <FilterSidebar />
 
           <div className="min-w-0 flex-1">
