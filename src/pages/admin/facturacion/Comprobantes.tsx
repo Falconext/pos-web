@@ -30,6 +30,7 @@ import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
 import { useSedesStore } from "@/zustand/sedes";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
+import ModalImportarComprobante from "./ModalImportarComprobante";
 import { useUsersStore } from "@/zustand/users";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
@@ -113,6 +114,7 @@ const Comprobantes = () => {
     const [isOpenModalConfirmDescartar, setIsOpenModalConfirmDescartar] = useState(false);
     const [detalleComprobanteId, setDetalleComprobanteId] = useState<number | null>(null);
     const [errorSunatModal, setErrorSunatModal] = useState<{ titulo: string; mensaje: string } | null>(null);
+    const [isOpenModalImportar, setIsOpenModalImportar] = useState(false);
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, row: any) => {
         setMenuAnchor(event.currentTarget);
@@ -678,14 +680,24 @@ const Comprobantes = () => {
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de boletas, facturas y notas de crédito</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA' } })}
-                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
-                >
-                    <Icon icon="solar:add-circle-bold" className="text-lg" />
-                    Nuevo comprobante
-                </button>
+                <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setIsOpenModalImportar(true)}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95"
+                    >
+                        <Icon icon="solar:import-bold-duotone" className="text-lg" />
+                        Importar emitido
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA' } })}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                    >
+                        <Icon icon="solar:add-circle-bold" className="text-lg" />
+                        Nuevo comprobante
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
@@ -983,6 +995,12 @@ const Comprobantes = () => {
                 comprobanteId={detalleComprobanteId}
                 isOpen={detalleComprobanteId !== null}
                 onClose={() => setDetalleComprobanteId(null)}
+            />
+
+            <ModalImportarComprobante
+                isOpen={isOpenModalImportar}
+                onClose={() => setIsOpenModalImportar(false)}
+                onSuccess={() => fetchFormalInvoices()}
             />
 
             {/* Modal error SUNAT */}
