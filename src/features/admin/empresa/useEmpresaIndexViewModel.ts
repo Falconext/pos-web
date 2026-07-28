@@ -42,6 +42,27 @@ const formatDaysUntil = (days: number | null): string => {
     return `${days} día${days === 1 ? '' : 's'}`;
 };
 
+export type GrupoCliente = 'DEMO' | 'MENSUAL' | 'ANUAL';
+export type Severidad = 'vencido' | 'critico' | 'alerta' | 'ok' | 'sinfecha';
+
+const resolveGrupo = (empresa: any): GrupoCliente => {
+    const plan = empresa?.plan ?? {};
+    const nombre = String(plan.nombre ?? '');
+    if (plan.esPrueba === true || empresa?.usaDemo === true || /\b(demo|prueba)\b/i.test(nombre)) return 'DEMO';
+    const tipo = String(plan.tipoFacturacion ?? '').toUpperCase();
+    const dias = Number(plan.duracionDias ?? 0);
+    if (tipo === 'ANUAL' || dias >= 300 || /\banual\b/i.test(nombre)) return 'ANUAL';
+    return 'MENSUAL';
+};
+
+const resolveSeveridad = (dias: number | null): Severidad => {
+    if (dias === null) return 'sinfecha';
+    if (dias < 0) return 'vencido';
+    if (dias <= 7) return 'critico';
+    if (dias <= 30) return 'alerta';
+    return 'ok';
+};
+
 const normalizeWhatsappPhone = (value?: string | null): string => {
     const digits = String(value ?? '').replace(/\D/g, '');
     if (!digits) return '';
@@ -57,7 +78,9 @@ export const useEmpresaIndexViewModel = (): any => {
     const [searchTerm, setSearchTerm] = useState('');
     const [tipoFiltro, setTipoFiltro] = useState<'FORMAL' | 'INFORMAL' | ''>('');
     const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'INACTIVO' | 'TODOS'>('TODOS');
-    const [itemsPerPage, setItemsPerPage] = useState(50);
+    const [grupoFiltro, setGrupoFiltro] = useState<GrupoCliente | ''>('');
+    const [vencimientoFiltro, setVencimientoFiltro] = useState<'' | 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30'>('');
+    const [itemsPerPage, setItemsPerPage] = useState(300);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
     const [currentPageState, setCurrentPageState] = useState(1);
@@ -104,10 +127,14 @@ export const useEmpresaIndexViewModel = (): any => {
             'Ambiente': ambienteDisplay,
             'Rubro': empresa?.rubro?.nombre || '-',
             'Plan': empresa.plan?.nombre || '-',
+            planCosto: empresa.plan?.costo != null ? Number(empresa.plan.costo) : null,
             'Tienda Virtual': tiendaEstado,
             fechaExpiracion: formatDateOnly(empresa.fechaExpiracion),
             'Vence en': formatDaysUntil(diasRestantes),
             estado: empresa.estado,
+            grupo: resolveGrupo(empresa),
+            severidad: resolveSeveridad(diasRestantes),
+            diasRestantes,
         };
     }) || [];
 
@@ -166,14 +193,42 @@ export const useEmpresaIndexViewModel = (): any => {
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
     };
 
-    const empresasTableFiltradas = filtroPorVencer
-        ? empresasTable.filter((e: any) => {
-            const full = empresas?.find((emp: any) => emp.id === e.id);
-            if (!full?.fechaExpiracion) return false;
-            const dias = getDiasRestantes(full.fechaExpiracion);
-            return dias >= 0 && dias <= 7;
-        })
-        : empresasTable;
+    // KPIs de vencimiento sobre el conjunto cargado (respeta búsqueda/estado del servidor)
+    const kpis = empresasTable.reduce(
+        (acc: { vencidos: number; porVencer7: number; porVencer30: number }, e: any) => {
+            const d = e.diasRestantes;
+            if (d === null) return acc;
+            if (d < 0) acc.vencidos += 1;
+            else if (d <= 7) acc.porVencer7 += 1;
+            else if (d <= 30) acc.porVencer30 += 1;
+            return acc;
+        },
+        { vencidos: 0, porVencer7: 0, porVencer30: 0 },
+    );
 
-    return { empresas, empresasTable: empresasTableFiltradas, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp };
+    const pasaVencimiento = (e: any) => {
+        const d = e.diasRestantes;
+        if (vencimientoFiltro === 'VENCIDOS') return d !== null && d < 0;
+        if (vencimientoFiltro === 'POR_VENCER_7') return d !== null && d >= 0 && d <= 7;
+        if (vencimientoFiltro === 'POR_VENCER_30') return d !== null && d >= 0 && d <= 30;
+        return true;
+    };
+
+    const ordenarPorVencimiento = (a: any, b: any) => {
+        const da = a.diasRestantes === null ? Number.POSITIVE_INFINITY : a.diasRestantes;
+        const db = b.diasRestantes === null ? Number.POSITIVE_INFINITY : b.diasRestantes;
+        return da - db;
+    };
+
+    const filasVisibles = empresasTable.filter(pasaVencimiento);
+
+    // Agrupa por tipo de cliente y ordena cada grupo por proximidad de vencimiento (lo que vence primero, arriba)
+    const grupos: Record<GrupoCliente, any[]> = { DEMO: [], MENSUAL: [], ANUAL: [] };
+    filasVisibles.forEach((e: any) => { grupos[e.grupo as GrupoCliente].push(e); });
+    (Object.keys(grupos) as GrupoCliente[]).forEach((k) => grupos[k].sort(ordenarPorVencimiento));
+
+    const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
+        setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
+
+    return { empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp };
 };
