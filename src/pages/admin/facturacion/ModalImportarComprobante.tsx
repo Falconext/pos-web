@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import moment from "moment";
 import useAlertStore from "@/zustand/alert";
 import { useProductsStore } from "@/zustand/products";
+import { useClientsStore } from "@/zustand/clients";
 import { post } from "@/utils/fetch";
 import apiClient from "@/utils/apiClient";
 import ModalImportarLote from "./ModalImportarLote";
@@ -52,6 +53,8 @@ const emptyItem = (): ImportItem => ({
 const ModalImportarComprobante = ({ isOpen, onClose, onSuccess }: ModalImportarComprobanteProps) => {
     const { alert } = useAlertStore();
     const { getAllProducts, products } = useProductsStore();
+    const { clients, getAllClients, getClientFromDoc, addClients } = useClientsStore();
+    const [buscandoCliente, setBuscandoCliente] = useState(false);
 
     const xmlInputRef = useRef<HTMLInputElement>(null);
     const [isParsingXml, setIsParsingXml] = useState(false);
@@ -197,11 +200,66 @@ const ModalImportarComprobante = ({ isOpen, onClose, onSuccess }: ModalImportarC
 
     const monedaSymbol = header.tipoMoneda === 'USD' ? '$' : 'S/';
 
+    const seleccionarCliente = (c: any) => {
+        if (!c) return;
+        setHeader(h => ({ ...h, clienteId: c.id ?? null, clienteName: c.nombre || '', clienteNumDoc: c.nroDoc || '' }));
+    };
+
+    const usarClientesVarios = () => {
+        setHeader(h => ({ ...h, clienteId: null, clienteName: 'CLIENTES VARIOS', clienteNumDoc: '' }));
+    };
+
+    // Busca el cliente por DNI/RUC: primero entre los registrados; si no existe,
+    // lo consulta en RENIEC/SUNAT y lo registra, dejándolo vinculado (con su id).
+    const buscarClientePorDoc = async () => {
+        const doc = header.clienteNumDoc.trim();
+        if (!doc) { alert('Ingresa el DNI (8 dígitos) o RUC (11 dígitos) del cliente.', 'error'); return; }
+        if (doc.length !== 8 && doc.length !== 11) {
+            alert('El documento debe tener 8 dígitos (DNI) u 11 dígitos (RUC).', 'error');
+            return;
+        }
+        setBuscandoCliente(true);
+        try {
+            // 1) ¿ya está registrado?
+            await getAllClients({ search: doc });
+            const yaRegistrado = useClientsStore.getState().clients.find((c: any) => String(c.nroDoc) === doc);
+            if (yaRegistrado) {
+                seleccionarCliente(yaRegistrado);
+                alert(`Cliente encontrado: ${yaRegistrado.nombre}`, 'success');
+                return;
+            }
+            // 2) no registrado -> consultar RENIEC/SUNAT y crear
+            const tipo = doc.length === 11 ? 'RUC' : 'DNI';
+            const info: any = await getClientFromDoc(doc, tipo);
+            if (!info) return; // getClientFromDoc ya mostró el error
+            const nombre = info.nombre_completo || info.nombre_o_razon_social || info.nombre || '';
+            await addClients({
+                nombre,
+                tipoDoc: tipo,
+                nroDoc: doc,
+                direccion: info.direccion || info.direccion_completa || '-',
+                departamento: info.departamento || '',
+                provincia: info.provincia || '',
+                distrito: info.distrito || '',
+                ubigeo: info.ubigeo_sunat || info.ubigeo || '',
+                persona: tipo === 'RUC' ? 'EMPRESA' : 'CLIENTE',
+                estado: 'ACTIVO',
+            } as any);
+            const creado = useClientsStore.getState().clients.find((c: any) => String(c.nroDoc) === doc);
+            if (creado) seleccionarCliente(creado);
+            else setHeader(h => ({ ...h, clienteName: nombre }));
+        } finally {
+            setBuscandoCliente(false);
+        }
+    };
+
     const validar = (): string | null => {
         if (!header.serie.trim()) return 'Ingresa la serie.';
         if (!header.correlativo.trim() || isNaN(Number(header.correlativo))) return 'Ingresa un correlativo válido.';
         if (!header.fechaEmision) return 'Ingresa la fecha de emisión.';
-        if (!header.clienteName.trim()) return 'Ingresa el nombre del cliente.';
+        if (!header.clienteId && header.clienteName.trim().toUpperCase() !== 'CLIENTES VARIOS') {
+            return 'Selecciona un cliente: búscalo por DNI/RUC o usa "Clientes varios".';
+        }
         const validItems = items.filter(it => Number(it.cantidad) > 0 && (it.productoId || it.descripcion.trim()));
         if (validItems.length === 0) return 'Agrega al menos una línea con descripción o producto.';
         for (const it of items) {
@@ -338,10 +396,66 @@ const ModalImportarComprobante = ({ isOpen, onClose, onSuccess }: ModalImportarC
                                 error={null}
                             />
                             <InputPro autocomplete="off" label="ID documento (opcional)" name="documentoId" value={header.documentoId} onChange={(e) => setHeader(h => ({ ...h, documentoId: e.target.value }))} isLabel />
-                            <div className="md:col-span-2">
-                                <InputPro autocomplete="off" label="Cliente (nombre / razón social)" name="clienteName" value={header.clienteName} onChange={(e) => setHeader(h => ({ ...h, clienteName: e.target.value }))} isLabel />
+
+                            {/* Cliente: búsqueda por DNI/RUC (registra vía RENIEC/SUNAT si no existe) o selección de un registrado */}
+                            <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                                <div className="md:col-span-4">
+                                    <InputPro
+                                        autocomplete="off"
+                                        label={header.tipoDoc === '01' ? 'RUC del cliente' : 'DNI / RUC del cliente'}
+                                        name="clienteNumDoc"
+                                        value={header.clienteNumDoc}
+                                        onChange={(e) => setHeader(h => ({ ...h, clienteNumDoc: e.target.value.replace(/\D/g, ''), clienteId: null }))}
+                                        onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); buscarClientePorDoc(); } }}
+                                        isLabel
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <button
+                                        type="button"
+                                        onClick={buscarClientePorDoc}
+                                        disabled={buscandoCliente}
+                                        className="w-full h-[42px] flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-60"
+                                    >
+                                        <Icon icon={buscandoCliente ? 'eos-icons:loading' : 'solar:magnifer-linear'} width={16} />
+                                        Buscar
+                                    </button>
+                                </div>
+                                <div className="md:col-span-6">
+                                    <Select
+                                        label="Cliente (o busca uno registrado)"
+                                        name="clienteName"
+                                        id="clienteId"
+                                        isSearch
+                                        handleGetData={(query: string, cb: any) => { if ((query || '').length > 2) getAllClients({ search: query }, cb, true); else cb && cb(); }}
+                                        options={clients?.map((c: any) => ({ id: c.id, value: `${c.nroDoc || 's/d'} - ${c.nombre}` }))}
+                                        value={header.clienteName}
+                                        onChange={(id: any) => {
+                                            const c = useClientsStore.getState().clients.find((x: any) => String(x.id) === String(id));
+                                            if (c) seleccionarCliente(c);
+                                        }}
+                                        withLabel
+                                        error={null}
+                                    />
+                                </div>
+                                <div className="md:col-span-12 flex flex-wrap items-center gap-3">
+                                    {header.clienteId ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
+                                            <Icon icon="solar:check-circle-bold" width={13} />
+                                            {header.clienteName}{header.clienteNumDoc ? ` (${header.clienteNumDoc})` : ''}
+                                        </span>
+                                    ) : header.clienteName.trim().toUpperCase() === 'CLIENTES VARIOS' ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                                            <Icon icon="solar:users-group-rounded-bold" width={13} /> Clientes varios
+                                        </span>
+                                    ) : (
+                                        <span className="text-[11px] text-amber-600 dark:text-amber-400">Sin cliente seleccionado — búscalo por DNI/RUC o usa “Clientes varios”.</span>
+                                    )}
+                                    <button type="button" onClick={usarClientesVarios} className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        Usar “Clientes varios”
+                                    </button>
+                                </div>
                             </div>
-                            <InputPro autocomplete="off" label="N° documento (opcional)" name="clienteNumDoc" value={header.clienteNumDoc} onChange={(e) => setHeader(h => ({ ...h, clienteNumDoc: e.target.value }))} isLabel />
                         </div>
                     </div>
 
