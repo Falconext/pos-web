@@ -34,6 +34,7 @@ import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
 import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
+import apiClient from "@/utils/apiClient";
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -325,6 +326,40 @@ const ComprobantesInformales = () => {
         getAllInvoices(params);
     }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, effectiveSedeId, selectedUsuarioId, canFilterByUsuario]);
 
+    // Exporta el listado filtrado (rango de fechas/estado/sede/vendedor) en PDF o Excel
+    const [exportando, setExportando] = useState<'pdf' | 'excel' | null>(null);
+    const handleExportarResumen = async (formato: 'pdf' | 'excel') => {
+        if (exportando) return;
+        setExportando(formato);
+        try {
+            const params = new URLSearchParams({
+                tipoComprobante: 'INFORMAL',
+                fechaInicio,
+                fechaFin,
+                formato,
+            });
+            if (stateInvoice !== 'TODOS') params.set('estadoPago', stateInvoice);
+            if (effectiveSedeId) params.set('sedeId', String(effectiveSedeId));
+            if (canFilterByUsuario && selectedUsuarioId) params.set('usuarioId', String(selectedUsuarioId));
+
+            const resp = await apiClient.get(`/comprobante/exportar-resumen?${params.toString()}`, {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([resp.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `notas_de_venta_${fechaInicio}_a_${fechaFin}.${formato === 'pdf' ? 'pdf' : 'xlsx'}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e: any) {
+            useAlertStore.getState().alert('No se pudo exportar: verifica que existan ventas en el rango seleccionado', 'error');
+        } finally {
+            setExportando(null);
+        }
+    };
+
     const ruc = "204812192919";
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
@@ -498,6 +533,24 @@ const ComprobantesInformales = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de notas de pedido</p>
                 </div>
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                    <button
+                        type="button"
+                        onClick={() => handleExportarResumen('pdf')}
+                        disabled={exportando !== null}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                    >
+                        <Icon icon={exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
+                        Exportar PDF
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleExportarResumen('excel')}
+                        disabled={exportando !== null}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                    >
+                        <Icon icon={exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
+                        Exportar Excel
+                    </button>
                     <button
                         type="button"
                         onClick={() => setIsOpenModalImportarNV(true)}

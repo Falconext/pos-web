@@ -632,13 +632,16 @@ export default function PanelVentasView() {
                 <div>
                     <h1 className="text-xl font-extrabold text-gray-900 dark:text-white">Panel de Ventas</h1>
                     <p className="text-sm text-gray-500 dark:text-slate-400">
-                        Resumen del día seleccionado y deuda pendiente acumulada.
+                        {vm.fechaFin && vm.fechaFin > vm.fecha
+                            ? 'Resumen del rango seleccionado y deuda pendiente acumulada.'
+                            : 'Resumen del día seleccionado y deuda pendiente acumulada.'}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => vm.setFecha(moment(vm.fecha).subtract(1, 'day').format('YYYY-MM-DD'))}
                         className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                        title="Día anterior"
                     >
                         <Icon icon="solar:arrow-left-linear" className="text-lg" />
                     </button>
@@ -648,9 +651,28 @@ export default function PanelVentasView() {
                         onChange={(e) => vm.setFecha(e.target.value)}
                         className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
+                    <span className="text-xs font-medium text-gray-400 dark:text-slate-500">hasta</span>
+                    <input
+                        type="date"
+                        value={vm.fechaFin}
+                        min={vm.fecha}
+                        onChange={(e) => vm.setFechaFin(e.target.value)}
+                        title="Fecha final del rango (opcional) — déjalo vacío para ver un solo día"
+                        className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    />
+                    {vm.fechaFin && (
+                        <button
+                            onClick={() => vm.setFechaFin('')}
+                            className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-rose-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                            title="Quitar rango (volver a un solo día)"
+                        >
+                            <Icon icon="solar:close-circle-linear" className="text-lg" />
+                        </button>
+                    )}
                     <button
                         onClick={() => vm.setFecha(moment(vm.fecha).add(1, 'day').format('YYYY-MM-DD'))}
                         className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                        title="Día siguiente"
                     >
                         <Icon icon="solar:arrow-right-linear" className="text-lg" />
                     </button>
@@ -660,6 +682,24 @@ export default function PanelVentasView() {
                         title="Recargar"
                     >
                         <Icon icon="solar:refresh-linear" className={`text-lg ${vm.loading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        onClick={() => vm.exportarResumen('pdf')}
+                        disabled={vm.exportando !== null}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-slate-700 text-rose-600 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                        title="Exportar el rango en PDF imprimible"
+                    >
+                        <Icon icon={vm.exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
+                        PDF
+                    </button>
+                    <button
+                        onClick={() => vm.exportarResumen('excel')}
+                        disabled={vm.exportando !== null}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                        title="Exportar el rango en Excel"
+                    >
+                        <Icon icon={vm.exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
+                        Excel
                     </button>
                 </div>
             </div>
