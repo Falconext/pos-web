@@ -7,8 +7,9 @@ import FinanceDashboardView from './FinanceDashboardView';
 import ComisionesView from './comisiones/ComisionesView';
 import CategoriasView from './categorias/CategoriasView';
 import MetodosPagoView from './metodos-pago/MetodosPagoView';
+import ConciliacionView from './conciliacion/ConciliacionView';
 
-type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'metodosPago';
+type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'metodosPago' | 'conciliacion';
 
 interface Tab {
     id: TabId;
@@ -47,6 +48,12 @@ const TABS: Tab[] = [
         label: 'Métodos de pago',
         icon: 'solar:card-2-bold-duotone',
         description: 'Cobros por método, voucher y cuenta',
+    },
+    {
+        id: 'conciliacion',
+        label: 'Conciliación bancaria',
+        icon: 'solar:bill-check-bold-duotone',
+        description: 'Cruza el Excel del banco con ventas y compras',
     },
 ];
 
@@ -151,6 +158,12 @@ export default function FinanzasTabs() {
             {activeTab === 'metodosPago' && (
                 <div className="px-3 pb-6 sm:px-6">
                     <MetodosPagoView />
+                </div>
+            )}
+
+            {activeTab === 'conciliacion' && (
+                <div className="px-3 pb-6 sm:px-6">
+                    <ConciliacionView />
                 </div>
             )}
         </div>

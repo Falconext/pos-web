@@ -13,7 +13,7 @@ import { AreaChart, DonutChart, ProgressCircle, SparkAreaChart } from '@tremor/r
 import { WelcomeModal, TourSpotlight, useWelcomeTour } from '@/components/WelcomeTour'
 
 export default function AdminIndex() {
-  const { overviewData, getOverview }: IDashboardState = useDashboardStore()
+  const { overviewData, getOverview, topPorCategoria, getTopPorCategoria }: IDashboardState = useDashboardStore()
   const navigate = useNavigate()
   const { auth, sedeActiva } = useAuthStore()
   const { showModal, tourStep, startTour, skipTour, nextStep, prevStep, endTour } = useWelcomeTour(auth)
@@ -31,6 +31,10 @@ export default function AdminIndex() {
   const [showTopModal, setShowTopModal] = useState(false)
   const [topDetalle, setTopDetalle] = useState<any[]>([])
   const [loadingTop, setLoadingTop] = useState(false)
+
+  // "Productos Más Vendidos por Categoría" — segmento moneda + selector de categoría
+  const [catMoneda, setCatMoneda] = useState<'PEN' | 'USD'>('PEN')
+  const [catSelId, setCatSelId] = useState<number | null>(null)
 
   const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null)
 
@@ -86,6 +90,17 @@ export default function AdminIndex() {
     }
   }, [fechaInicio, fechaFin, effectiveSedeId])
 
+  useEffect(() => {
+    if (fechaInicio && fechaFin) {
+      getTopPorCategoria(fechaInicio, fechaFin, {
+        sedeId: effectiveSedeId,
+        moneda: catMoneda,
+        categoriaId: catSelId,
+        limit: 5,
+      })
+    }
+  }, [fechaInicio, fechaFin, effectiveSedeId, catMoneda, catSelId])
+
   const sedesOptions = [
     { id: 0, value: 'Todas las sedes' },
     ...sedes.map(s => ({ id: s.id, value: s.esPrincipal ? `${s.nombre}` : s.nombre }))
@@ -109,6 +124,8 @@ export default function AdminIndex() {
   const { kpis, chartVentas, chartCanales, actividad, topProductos, financiero, alertas } = overviewData
 
   const formatMoney = (val: number) => `S/ ${val.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const formatMoneda = (val: number, moneda: 'PEN' | 'USD') =>
+    `${moneda === 'USD' ? 'US$' : 'S/'} ${val.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
   const renderTrend = (trend: number) => {
     const isPos = trend >= 0
@@ -527,6 +544,19 @@ export default function AdminIndex() {
               </div>
 
               <div className="flex items-center gap-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Icon icon="solar:cart-large-2-bold" className="text-xl" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">COMPRAS</p>
+                  <div className="flex items-baseline justify-between mt-0.5">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{formatMoney(financiero.compras?.value ?? 0)}</p>
+                    {renderTrend(-(financiero.compras?.trend ?? 0))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3">
                 <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-500/20 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
                   <Icon icon="solar:bill-bold" className="text-xl" />
                 </div>
@@ -564,6 +594,79 @@ export default function AdminIndex() {
             </div>
           </div>
 
+        </div>
+
+        {/* Productos Más Vendidos por Categoría */}
+        <div className="mt-5 bg-white dark:bg-[#131620] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <h3 className="text-gray-900 dark:text-white font-bold text-lg">Productos Más Vendidos por Categoría</h3>
+            <div className="flex items-center gap-3">
+              {/* Segmento moneda: General (S/) vs Exportación (US$) */}
+              <div className="inline-flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1">
+                <button
+                  onClick={() => setCatMoneda('PEN')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${catMoneda === 'PEN' ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                >
+                  General (S/)
+                </button>
+                <button
+                  onClick={() => setCatMoneda('USD')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${catMoneda === 'USD' ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                >
+                  Exportación (US$)
+                </button>
+              </div>
+              {/* Selector de categoría */}
+              <select
+                value={catSelId ?? 0}
+                onChange={(e) => setCatSelId(Number(e.target.value) || null)}
+                className="text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <option value={0}>Todas las categorías</option>
+                {(topPorCategoria?.categorias ?? []).map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {(!topPorCategoria || (topPorCategoria.grupos ?? []).length === 0) ? (
+            <div className="text-center text-gray-400 text-sm py-8">No hay productos vendidos en {catMoneda === 'USD' ? 'Exportación (US$)' : 'General (S/)'} para el rango seleccionado</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {(topPorCategoria.grupos ?? []).map((g: any) => {
+                const maxVal = g.productos[0]?.total || 1
+                const colorMap = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500']
+                return (
+                  <div key={g.categoriaId} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate pr-2">{g.categoriaNombre}</h4>
+                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 shrink-0">{formatMoneda(g.total, topPorCategoria.moneda)}</span>
+                    </div>
+                    <div className="space-y-3">
+                      {g.productos.map((p: any, i: number) => {
+                        const percent = (p.total / maxVal) * 100
+                        return (
+                          <div key={p.productoId || i}>
+                            <div className="flex justify-between items-baseline mb-1">
+                              <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-200 truncate pr-2">{p.producto?.descripcion || 'Producto sin nombre'}</span>
+                              <span className="text-[13px] font-bold text-gray-600 dark:text-gray-300 shrink-0">{formatMoneda(p.total, topPorCategoria.moneda)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs text-gray-400 mb-1">
+                              <span>{p.cantidad} unidades</span>
+                            </div>
+                            <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
+                              <div className={`h-1.5 rounded-full ${colorMap[i % colorMap.length]}`} style={{ width: `${percent}%` }}></div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
 

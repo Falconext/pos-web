@@ -8,7 +8,7 @@ import CuentasBancariasConfig from '@/pages/admin/empresa/CuentasBancariasConfig
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
-    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword } = vm;
+    const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingVentaSinStockConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword } = vm;
     const [showActual, setShowActual] = useState(false);
     const [showNueva, setShowNueva] = useState(false);
     const [directorInput, setDirectorInput] = useState<string | null>(null);
@@ -473,6 +473,20 @@ export default function PerfilIndex() {
                                             <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Disponible solo si la característica de lotes está activa en el plan.</p>
                                         )}
                                         {savingFefoPriceConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-900/10 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(perfil.empresa.permitirVentaSinStock)}
+                                        disabled={savingVentaSinStockConfig}
+                                        onChange={(e) => vm.handleVentaSinStockToggle(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-amber-600 dark:text-amber-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-amber-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Permitir vender sin stock (sobreventa)</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Cuando esté activo, podrás emitir comprobantes aunque el producto tenga stock 0 o insuficiente. La salida se registra igual y el inventario puede quedar en 0. Úsalo con cuidado.</p>
+                                        {savingVentaSinStockConfig && <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">

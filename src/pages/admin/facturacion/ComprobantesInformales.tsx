@@ -32,6 +32,7 @@ import { useUsersStore } from "@/zustand/users";
 import TableActionMenu from "@/components/TableActionMenu";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
+import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 
 const hasDespachoCompleto = (item: IInvoices) => {
@@ -76,6 +77,7 @@ const ComprobantesInformales = () => {
     const [comprobante, setComprobante] = useState<string>("");
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
+    const [isOpenModalImportarNV, setIsOpenModalImportarNV] = useState(false);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
@@ -495,14 +497,24 @@ const ComprobantesInformales = () => {
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">Notas de venta</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de notas de pedido</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', defaultClient: 'CLIENTES_VARIOS' } })}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:w-auto sm:py-2"
-                >
-                    <Icon icon="solar:add-circle-bold" className="text-lg" />
-                    Nueva venta
-                </button>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                    <button
+                        type="button"
+                        onClick={() => setIsOpenModalImportarNV(true)}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                    >
+                        <Icon icon="solar:import-bold-duotone" className="text-lg" />
+                        Importar histórico (Excel)
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', defaultClient: 'CLIENTES_VARIOS' } })}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:w-auto sm:py-2"
+                    >
+                        <Icon icon="solar:add-circle-bold" className="text-lg" />
+                        Nueva venta
+                    </button>
+                </div>
             </div>
 
             {/* Main Content Card */}
@@ -667,6 +679,25 @@ const ComprobantesInformales = () => {
                     )}
                 </div>
             </div>
+
+            <ModalImportarNotaVentaLote
+                isOpen={isOpenModalImportarNV}
+                onClose={() => setIsOpenModalImportarNV(false)}
+                onSuccess={() => {
+                    const params: any = {
+                        tipoComprobante: "INFORMAL",
+                        page: currentPage,
+                        limit: itemsPerPage,
+                        search: debounce,
+                        fechaInicio: fechaInicio,
+                        fechaFin: fechaFin,
+                        ...(canFilterByUsuario && selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
+                        ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {}),
+                    };
+                    if (stateInvoice !== "TODOS") params.estadoPago = stateInvoice;
+                    getAllInvoices(params);
+                }}
+            />
 
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}
             {isOpenModalDelete && <ModalConfirm confirmSubmit={confirmDeleteInvoice} confirmLoading={deletingInvoice} confirmText="Eliminar" information={`¿Eliminar la nota de venta ${formValues?.serie ?? ''}-${formValues?.correlativo ?? ''}? Se borrará de forma permanente y su correlativo quedará disponible para volver a usarse. Esta acción no se puede deshacer.`} isOpenModal setIsOpenModal={() => setIsOpenModalDelete(false)} title="Eliminar nota de venta" />}

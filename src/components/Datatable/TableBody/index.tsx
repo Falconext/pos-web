@@ -168,7 +168,7 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                             if (isNoteType08 || isNoteType09 || isNoteType10) isEditable = key === 'precioUnitario';
 
                             const cellValue = cell === null || cell === undefined ? '' : cell.toString();
-                            const isTruncatable = key === 'direccion' || key === 'nombre' || key === 'razonSocial';
+                            const isTruncatable = key === 'direccion' || key === 'nombre' || key === 'razonSocial' || key === 'client' || key === 'cliente';
                             const isConceptoColumn = keyLower === 'concepto';
                             const centered = CENTERED_KEYS.has(keyLower);
 

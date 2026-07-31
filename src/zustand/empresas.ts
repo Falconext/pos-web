@@ -19,6 +19,7 @@ interface Empresa {
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean | null;
   usarPrecioLoteFefo?: boolean | null;
+  permitirVentaSinStock?: boolean | null;
   brand?: string;
   producto?: string;
   providerId?: string;
@@ -45,6 +46,9 @@ interface Empresa {
     descripcion?: string;
     limiteUsuarios?: number;
     costo?: number;
+    esPrueba?: boolean;
+    tipoFacturacion?: string;
+    duracionDias?: number;
   };
   rubro?: {
     id: number;
@@ -109,6 +113,7 @@ interface CreateEmpresaDto {
   providerToken?: string;
   usaDemo?: boolean;
   usarPrecioLoteFefo?: boolean;
+  permitirVentaSinStock?: boolean;
   brand?: string;
   producto?: string;
   usuarioPse?: string;
@@ -158,6 +163,7 @@ interface UpdateEmpresaDto {
   esAgenteRetencion?: boolean;
   usaCodigoBarrasManual?: boolean;
   usarPrecioLoteFefo?: boolean;
+  permitirVentaSinStock?: boolean;
   ticketLogoSize?: number;
   directorTecnico?: string;
   brand?: string;
