@@ -526,7 +526,7 @@ export default function DisenoRubroPage() {
                 >
                   {saving === selected
                     ? <><Icon icon="svg-spinners:ring-resize" className="text-lg" /> Guardando...</>
-                    : <><Icon icon="solar:check-bold" className="text-lg" /> Guardar plantillas del rubro</>
+                    : <><Icon icon="mdi:check" className="text-lg" /> Guardar plantillas del rubro</>
                   }
                 </button>
               </div>
@@ -794,7 +794,7 @@ export default function DisenoRubroPage() {
                     >
                       {saving === selected
                         ? <><Icon icon="svg-spinners:ring-resize" className="text-lg" /> Guardando...</>
-                        : <><Icon icon="solar:check-bold" className="text-lg" /> Guardar diseño</>
+                        : <><Icon icon="mdi:check" className="text-lg" /> Guardar diseño</>
                       }
                     </button>
                   </div>
