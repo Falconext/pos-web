@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Icon } from "@iconify/react";
+import { useLocation } from "react-router-dom";
 import { useFacturacionViewModel } from "../useFacturacionViewModel";
 import { POSCatalogLayout } from "./POSCatalogLayout";
 import { POSCartLayout } from "./POSCartLayout";
 import { POSOptionsForm } from "./POSOptionsForm";
 import { POSCalculations } from "./POSCalculations";
 
-import ModalReponseInvoice from "@/pages/admin/facturacion/modalResponseInvoice";
 import ModalProduct from "@/pages/admin/inventario/modal-productos";
 import ModalClient from "@/features/admin/clients/shared/ModalClient";
 import ComprobantePrintPage from "@/pages/admin/facturacion/comprobanteImprimir";
@@ -21,10 +21,15 @@ import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 
 export const FacturacionNuevoView = () => {
     const vm = useFacturacionViewModel();
+    const location = useLocation();
     const componentRef = useRef(null);
 
     const [localPrintSize, setLocalPrintSize] = useState<string>(vm.printSize ?? 'TICKET');
     const [pendingPrint, setPendingPrint] = useState(false);
+    const routeState = location.state as any;
+    const shouldAskDocumentType = !vm.isQuotationRoute && !routeState?.fromCreditNote && !routeState?.fromNotaVenta && !routeState?.defaultType;
+    const [isComprobanteModalOpen, setIsComprobanteModalOpen] = useState(shouldAskDocumentType);
+    const [isSaleConfigOpen, setIsSaleConfigOpen] = useState(false);
     const printSizes = useMemo(() => new Set(['A4', 'A5', 'TICKET']), []);
 
     const localDimensions = useMemo(() => {
@@ -57,6 +62,15 @@ export const FacturacionNuevoView = () => {
         setLocalPrintSize(nextSize);
         setPendingPrint(true);
     };
+
+    const handleSelectComprobante = (option: any) => {
+        if (!option) return;
+        vm.handleChangeSelect(option.id, option.value, 'comprobante', 'tipoDoc');
+        setIsComprobanteModalOpen(false);
+    };
+
+    const documentLabel = vm.formValues?.comprobante || 'Seleccionar comprobante';
+    const selectedClientLabel = vm.selectedClient?.nombre || vm.formValues?.clienteNombre || 'Cliente por definir';
 
     const isCreditSale = String(vm.formValues?.medioPago || '')
         .normalize('NFD')
@@ -159,33 +173,123 @@ export const FacturacionNuevoView = () => {
             )}
 
             {/* RIGHT PANEL: CART / INVOICE */}
-            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full overflow-hidden bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 border border-white dark:border-slate-800 ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
-                <div className="flex-shrink-0 overflow-y-auto max-h-[30%] scrollbar-thin">
-                    <POSOptionsForm vm={vm} />
+            <div className={`w-full md:w-[35%] flex-col h-auto md:h-full overflow-hidden bg-white dark:bg-[#111827] rounded-[24px] shadow-[0_18px_55px_rgba(15,23,42,0.08)] border border-slate-100 dark:border-transparent ${vm.isMobile ? (vm.showMobileCart ? 'fixed inset-0 z-[60] flex' : 'hidden') : 'flex'} md:flex`}>
+                <div className="flex-shrink-0 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#111827] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                {vm.isMobile && (
+                                    <button
+                                        onClick={() => vm.setShowMobileCart(false)}
+                                        className="-ml-2 rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+                                    >
+                                        <Icon icon="solar:arrow-left-linear" className="text-xl" />
+                                    </button>
+                                )}
+                                <div className="grid h-9 w-9 place-items-center rounded-2xl bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-300">
+                                    <Icon icon="solar:cart-large-minimalistic-bold-duotone" className="text-lg" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="truncate text-base font-extrabold text-slate-900 dark:text-white">Detalle de venta</h2>
+                                    <p className="truncate text-xs font-medium text-slate-400">Revisa los ítems y emite el comprobante</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsSaleConfigOpen(true)}
+                            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 hover:text-violet-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                            <Icon icon="solar:settings-linear" className="text-sm" />
+                            Configurar
+                        </button>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 gap-2">
+                        {/* Cliente — campo primario, siempre visible */}
+                        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/50">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-300">
+                                    <Icon icon="solar:user-linear" className="text-base" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Cliente</p>
+                                    <p className="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">{selectedClientLabel}</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsSaleConfigOpen(true)}
+                                className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-violet-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-violet-50 dark:bg-slate-800 dark:ring-slate-700"
+                            >
+                                Cambiar
+                            </button>
+                        </div>
+                        {/* Comprobante */}
+                        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/50">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-300">
+                                    <Icon icon="solar:document-text-linear" className="text-base" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Comprobante</p>
+                                    <p className="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">{documentLabel}</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsComprobanteModalOpen(true)}
+                                className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-violet-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-violet-50 dark:bg-slate-800 dark:ring-slate-700"
+                            >
+                                Cambiar
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <POSCartLayout vm={vm} />
                 <POSCalculations vm={vm} printFn={printFn} handleOpenNewTab={handleOpenNewTab} />
             </div>
 
-            {/* Modals */}
-            {vm.IsOpenModalSuccessInvoice && (
-                <ModalReponseInvoice
-                    handleOpenNewTab={handleOpenNewTab}
-                    closeModal={vm.closeModalResponse}
-                    isLoading={vm.isLoading}
-                    comprobante={vm.formValues?.comprobante}
-                    auth={vm.auth} serie={vm.serie}
-                    correlative={vm.correlative}
-                    dataReceipt={vm.dataReceipt}
-                    client={vm.snapshotClient ?? vm.selectedClient}
-                    company={vm.authWithBranding}
-                    productsInvoice={vm.productsInvoice}
-                    formValues={printFormValues}
-                    observation={vm.formValues?.observaciones}
-                    isPendiente={vm.isComprobantePendiente}
-                    hasDespacho={vm.despachoCreado}
+            {isSaleConfigOpen && (
+                <div className="fixed inset-0 z-[180] flex items-end justify-center md:items-center">
+                    <div className="absolute inset-0 bg-slate-950/35 backdrop-blur-sm" onClick={() => setIsSaleConfigOpen(false)} />
+                    <div className="relative max-h-[90vh] w-full overflow-hidden rounded-t-[28px] bg-white shadow-2xl dark:bg-[#111827] md:w-[520px] md:rounded-[28px]">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                            <div>
+                                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Configurar venta</h3>
+                                <p className="text-xs font-medium text-slate-400">Cliente, pago, envío y datos fiscales.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsSaleConfigOpen(false)}
+                                className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+                            >
+                                <Icon icon="solar:close-circle-linear" className="text-xl" />
+                            </button>
+                        </div>
+                        <div className="max-h-[calc(90vh-76px)] overflow-y-auto">
+                            <POSOptionsForm
+                                vm={vm}
+                                onOpenComprobanteModal={() => setIsComprobanteModalOpen(true)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isComprobanteModalOpen && (
+                <ComprobanteTypeModal
+                    options={vm.comprobantesGenerar}
+                    selected={vm.formValues?.comprobante}
+                    onSelect={handleSelectComprobante}
+                    onClose={() => setIsComprobanteModalOpen(false)}
                 />
             )}
+
+            {/* Modals */}
+            {/* El modal de "comprobante emitido" ahora se muestra como transición
+                dentro del modal "Continuar pago" (ver POSCalculations / EmitidoContent). */}
 
             {vm.isOpenModalProduct && (
                 <ModalProduct
@@ -213,6 +317,7 @@ export const FacturacionNuevoView = () => {
                     isEdit={false}
                     setIsOpenModal={vm.setIsOpenModalClient}
                     closeModal={vm.closeModal}
+                    onCreated={vm.handleClienteCreado}
                 />
             )}
 
@@ -293,3 +398,76 @@ export const FacturacionNuevoView = () => {
     );
 };
 export default FacturacionNuevoView;
+
+function ComprobanteTypeModal({
+    options,
+    selected,
+    onSelect,
+    onClose,
+}: {
+    options: any[];
+    selected?: string;
+    onSelect: (option: any) => void;
+    onClose: () => void;
+}) {
+    const optionMeta = (label: string) => {
+        const key = String(label || '').toUpperCase();
+        if (key.includes('FACTURA')) return { icon: 'solar:document-add-bold-duotone', tone: 'bg-violet-50 text-violet-600', help: 'Venta formal con RUC.' };
+        if (key.includes('BOLETA')) return { icon: 'solar:bill-list-bold-duotone', tone: 'bg-blue-50 text-blue-600', help: 'Venta formal para consumidor.' };
+        if (key.includes('NOTA DE VENTA')) return { icon: 'solar:shop-bold-duotone', tone: 'bg-emerald-50 text-emerald-600', help: 'Venta interna rápida.' };
+        if (key.includes('PEDIDO')) return { icon: 'solar:clipboard-list-bold-duotone', tone: 'bg-amber-50 text-amber-600', help: 'Reserva o pedido pendiente.' };
+        if (key.includes('COT')) return { icon: 'solar:document-text-bold-duotone', tone: 'bg-sky-50 text-sky-600', help: 'Propuesta comercial.' };
+        return { icon: 'solar:file-text-bold-duotone', tone: 'bg-slate-100 text-slate-600', help: 'Documento de venta.' };
+    };
+
+    return (
+        <div className="fixed inset-0 z-[190] flex items-end justify-center md:items-center">
+            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full overflow-hidden rounded-t-[30px] bg-white shadow-2xl dark:bg-[#111827] md:w-[560px] md:rounded-[30px]">
+                <div className="border-b border-slate-100 px-6 py-5 dark:border-slate-800">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-500">Nuevo comprobante</p>
+                            <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">¿Qué comprobante crearás?</h3>
+                            <p className="mt-1 text-sm font-normal text-slate-400">Elige el tipo y luego agrega los productos de la venta.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+                        >
+                            <Icon icon="solar:close-circle-linear" className="text-2xl" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="grid max-h-[60vh] gap-2 overflow-y-auto p-4 sm:grid-cols-2">
+                    {(options || []).map((option) => {
+                        const meta = optionMeta(option.value);
+                        const active = selected === option.value;
+                        return (
+                            <button
+                                key={`${option.id}-${option.value}`}
+                                type="button"
+                                onClick={() => onSelect(option)}
+                                className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all ${
+                                    active
+                                        ? 'border-violet-300 bg-violet-50 shadow-[0_14px_35px_rgba(117,81,255,0.14)]'
+                                        : 'border-slate-100 bg-white hover:border-violet-200 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-900'
+                                }`}
+                            >
+                                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${meta.tone}`}>
+                                    <Icon icon={meta.icon} className="text-xl" />
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block text-sm font-extrabold text-slate-900 dark:text-white">{option.value}</span>
+                                    <span className="mt-0.5 block text-xs font-medium text-slate-400">{meta.help}</span>
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}

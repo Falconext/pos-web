@@ -166,7 +166,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
 };
 
 export const useFacturacionViewModel = () => {
-    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation }: IInvoicesState = useInvoiceStore();
+    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, deleteProductInvoiceByIndex, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation }: IInvoicesState = useInvoiceStore();
     const { zoomLevel } = useThemeStore();
     const { auth, sedeActiva } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
@@ -1629,6 +1629,24 @@ export const useFacturacionViewModel = () => {
         }
     };
 
+    // Al crear un cliente nuevo desde "Configurar venta", queda auto-seleccionado
+    // (sin tener que buscarlo). Funciona igual para DNI o RUC.
+    const handleClienteCreado = (client: any) => {
+        if (!client) return;
+        setSelectedClient(client);
+        setFormValuesClient(client as any);
+        setFormValues((prev: any) => ({
+            ...prev,
+            clienteId: Number(client.id) || 0,
+            clienteNombre: `${client.nroDoc}-${client.nombre}`,
+        }));
+    };
+
+    // Borra la línea exacta por índice (evita el bug de borrar por descripción).
+    const handleDeleteProductByIndex = (index: number) => {
+        deleteProductInvoiceByIndex(index);
+    };
+
     const handleDeleteProduct = (row: any) => {
         deleteProductInvoice(row);
     };
@@ -2332,6 +2350,8 @@ export const useFacturacionViewModel = () => {
         handleAddFreeQuoteItem,
         handleComboClick,
         handleDeleteProduct,
+        handleDeleteProductByIndex,
+        handleClienteCreado,
         handleSaveEdit,
         handleSelectWholesaleTier,
         getApplicablePrice,

@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
 import { useState } from "react";
+import useAlertStore from "@/zustand/alert";
 
 const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
     const [localValue, setLocalValue] = useState<string>(String(item.cantidad));
@@ -13,6 +14,7 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
         }
         if (!esServicio && item.stock !== undefined && item.stock < parsed) {
             setLocalValue(String(item.cantidad));
+            useAlertStore.getState().alert(`Solo hay ${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()}`, "warning");
             return;
         }
         const rounded = Math.round(parsed * 1000) / 1000;
@@ -78,7 +80,10 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
     const setQty = (item: any, index: number, value: number) => {
         const v = Math.round(value * 1000) / 1000;
         if (v <= 0) return;
-        if (!esServicio(item) && item.stock !== undefined && Number(item.stock) < v) return;
+        if (!esServicio(item) && item.stock !== undefined && Number(item.stock) < v) {
+            useAlertStore.getState().alert(`Solo hay ${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()}`, "warning");
+            return;
+        }
         vm.updateProductInvoice(index, vm.calculateLineItem(item, v));
     };
 
@@ -92,10 +97,10 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                 </div>
             ) : (
                 vm.productsInvoice.map((item: any, index: number) => (
-                    <div key={index} className="flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-white dark:bg-[#1E2435] p-3 md:p-2 rounded-xl border border-dashed border-gray-200 dark:border-slate-800 hover:border-gray-900/30 dark:hover:border-slate-600 transition-colors group relative">
-                        {/* Top Section: Image & Description */}
-                        <div className="flex items-start md:items-center gap-3 w-full md:w-auto md:flex-1">
-                            <div className="w-16 h-16 md:w-12 md:h-12 bg-gray-50 dark:bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div key={index} className="flex flex-col gap-2.5 bg-white dark:bg-[#111c44]/60 dark:backdrop-blur-sm p-3 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:border-gray-200 dark:hover:border-white/20 transition-all group relative">
+                        {/* Fila 1: imagen + descripción (ancho completo) + precio + acciones */}
+                        <div className="flex items-start gap-3">
+                            <div className="w-14 h-14 bg-gray-50 dark:bg-slate-800 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
                                 {item.imagenUrl && !brokenImages[`${item.productoId}-${index}`] ? (
                                     <img
                                         src={item.imagenUrl}
@@ -109,7 +114,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h5 className="font-bold text-gray-800 dark:text-gray-200 text-sm md:text-sm line-clamp-2 md:line-clamp-1 leading-tight md:leading-normal mb-0.5">{item.descripcion}</h5>
+                                <h5 className="font-bold text-gray-800 dark:text-gray-200 text-sm line-clamp-2 leading-tight mb-0.5">{item.descripcion}</h5>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                                     {Number(item.descuento) > 0 && (
                                         <span className="text-green-600 dark:text-green-400 font-bold">-{item.descuento}%</span>
@@ -175,66 +180,57 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                         className="mt-2 w-full min-h-[42px] rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/10 dark:border-emerald-900/50 px-3 py-2 text-xs font-semibold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-300"
                                     />
                                 )}
-                            </div>
-                            {/* Mobile Only Delete Button */}
-                            <button onClick={() => vm.handleDeleteProduct(item)} className="md:hidden text-gray-400 dark:text-gray-500 hover:text-red-500 p-1 -mt-1 -mr-1">
-                                <Icon icon="solar:trash-bin-trash-linear" width={20} />
-                            </button>
-                        </div>
-
-                        {/* Bottom Section: Controls & Total */}
-                        <div className="flex items-center justify-between gap-3 w-full md:w-auto">
-                            {/* Qty Controls */}
-                            <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
-                                <button
-                                    onClick={() => {
-                                        const cur = Number(item.cantidad);
-                                        const next = Math.round((cur - 1) * 1000) / 1000;
-                                        if (next <= 0) {
-                                            vm.handleDeleteProduct(item);
-                                        } else {
-                                            vm.updateProductInvoice(index, vm.calculateLineItem(item, next));
-                                        }
-                                    }}
-                                    className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"
-                                >
-                                    <Icon icon="solar:minus-circle-linear" width={18} />
-                                </button>
-                                <QtyInput item={item} index={index} vm={vm} />
-                                <button
-                                    onClick={() => {
-                                        const newQty = Math.round((Number(item.cantidad) + 1) * 1000) / 1000;
-                                        if (!esServicio(item) && item.stock !== undefined && item.stock < newQty) return;
-                                        vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
-                                    }}
-                                    className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"
-                                >
-                                    <Icon icon="solar:add-circle-linear" width={18} />
-                                </button>
-                            </div>
-
-                            {/* Price & Actions Wrapper */}
-                            <div className="flex items-center gap-3">
-                                <div className="text-right min-w-[70px]">
-                                    <p className="font-extrabold text-gray-900 dark:text-white text-base md:text-sm">{vm.monedaSimbolo} {Number(item.total).toFixed(2)}</p>
-                                    {item.monedaOriginal === 'USD' && Number(item.tipoCambio) > 1 && (
-                                        <p className="text-[10px] font-medium text-blue-500 dark:text-blue-400 leading-tight">
-                                            ${Number(item.precioOriginalUSD).toFixed(2)} × {Number(item.tipoCambio).toFixed(3)}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Desktop Actions */}
-                                <div className="flex items-center">
-                                    <button onClick={() => vm.setEditingIndex(index)} className="text-gray-900/50 dark:text-white/50 hover:text-gray-900 dark:hover:text-white p-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                        <Icon icon="solar:pen-new-square-linear" width={20} />
+                                {/* Cantidad — justo debajo de la descripción */}
+                                <div className="mt-2 flex w-fit items-center bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
+                                    <button
+                                        onClick={() => {
+                                            const cur = Number(item.cantidad);
+                                            const next = Math.round((cur - 1) * 1000) / 1000;
+                                            if (next <= 0) {
+                                                vm.handleDeleteProductByIndex(index);
+                                            } else {
+                                                vm.updateProductInvoice(index, vm.calculateLineItem(item, next));
+                                            }
+                                        }}
+                                        className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"
+                                    >
+                                        <Icon icon="solar:minus-circle-linear" width={18} />
                                     </button>
-                                    <button onClick={() => vm.handleDeleteProduct(item)} className="hidden md:block text-red-400 dark:text-red-500 hover:text-red-600 p-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                        <Icon icon="hugeicons:delete-02" width={20} />
+                                    <QtyInput item={item} index={index} vm={vm} />
+                                    <button
+                                        onClick={() => {
+                                            const newQty = Math.round((Number(item.cantidad) + 1) * 1000) / 1000;
+                                            if (!esServicio(item) && item.stock !== undefined && item.stock < newQty) {
+                                                useAlertStore.getState().alert(`Solo hay ${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()}`, "warning");
+                                                return;
+                                            }
+                                            vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
+                                        }}
+                                        className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white active:scale-95 transition-transform"
+                                    >
+                                        <Icon icon="solar:add-circle-linear" width={18} />
+                                    </button>
+                                </div>
+                            </div>{/* /descripción */}
+
+                            {/* Precio + acciones (derecha de la fila 1) */}
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                <p className="font-extrabold text-gray-900 dark:text-white text-sm whitespace-nowrap">{vm.monedaSimbolo} {Number(item.total).toFixed(2)}</p>
+                                {item.monedaOriginal === 'USD' && Number(item.tipoCambio) > 1 && (
+                                    <p className="text-[10px] font-medium text-blue-500 dark:text-blue-400 leading-tight text-right">
+                                        ${Number(item.precioOriginalUSD).toFixed(2)} × {Number(item.tipoCambio).toFixed(3)}
+                                    </p>
+                                )}
+                                <div className="flex items-center -mr-1">
+                                    <button onClick={() => vm.setEditingIndex(index)} title="Editar línea" aria-label="Editar línea" className="text-gray-500 dark:text-white/60 hover:text-violet-600 dark:hover:text-violet-400 p-1.5 transition-colors">
+                                        <Icon icon="solar:pen-new-square-linear" width={18} />
+                                    </button>
+                                    <button onClick={() => vm.handleDeleteProductByIndex(index)} title="Eliminar línea" aria-label="Eliminar línea" className="text-red-400 dark:text-red-500 hover:text-red-600 p-1.5 transition-colors">
+                                        <Icon icon="hugeicons:delete-02" width={18} />
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div>{/* /Fila 1 */}
                     </div>
                 ))
             )}

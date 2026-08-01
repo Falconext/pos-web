@@ -18,6 +18,8 @@ interface IProps {
     errors: any;
     setErrors: (errors: any) => void;
     grupoFarmacia?: 'pacientes' | 'empresas' | 'medicos';
+    /** Se invoca con el cliente recién creado (para auto-seleccionarlo en facturación). */
+    onCreated?: (client: any) => void;
 }
 
 const persons = [
@@ -55,6 +57,7 @@ export default function ModalClient({
     errors,
     setErrors,
     grupoFarmacia,
+    onCreated,
 }: IProps) {
     const { editClients, addClients, getClientFromDoc } = useClientsStore();
     const { ubigeos, getUbigeos } = useExtentionsStore();
@@ -145,8 +148,9 @@ export default function ModalClient({
             editClients(payload);
             closeModal();
         } else {
-            addClients({ ...payload, estado: 'ACTIVO' });
+            const created = await addClients({ ...payload, estado: 'ACTIVO' });
             closeModal();
+            if (created) onCreated?.({ ...payload, ...created });
         }
     };
 
