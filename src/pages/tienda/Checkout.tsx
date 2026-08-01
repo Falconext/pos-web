@@ -289,7 +289,13 @@ export default function Checkout() {
     };
 
     const calcularSubtotal = () => carritoState.reduce((sum: number, item: any) => sum + Number(item.precioUnitario) * item.cantidad, 0);
-    const calcularCostoEnvio = () => formData.tipoEntrega === 'ENVIO' && configEnvio ? Number(configEnvio.costoEnvio || 0) : 0;
+    const calcularCostoEnvio = () => {
+        if (formData.tipoEntrega !== 'ENVIO' || !configEnvio) return 0;
+        // Envío gratis si el subtotal alcanza el umbral configurado.
+        const umbral = Number(configEnvio.envioGratisDesdeSoles || 0);
+        if (umbral > 0 && calcularSubtotal() >= umbral) return 0;
+        return Number(configEnvio.costoEnvio || 0);
+    };
     const calcularTotal = () => calcularSubtotal() + calcularCostoEnvio();
 
     const freeDeliveryThreshold = configEnvio?.envioGratisDesdeSoles || 0;
@@ -666,7 +672,7 @@ export default function Checkout() {
                                 <div className="md:col-span-2">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Método de pago</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {(['YAPE', 'PLIN', 'EFECTIVO', 'TARJETA'] as MedioPagoCheckout[]).map(method => {
+                                        {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA'] as MedioPagoCheckout[]).map(method => {
                                             const labels: Record<MedioPagoCheckout, string> = { YAPE: 'Yape', PLIN: 'Plin', EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta' };
                                             const icons: Record<MedioPagoCheckout, string> = { YAPE: 'solar:smartphone-bold', PLIN: 'solar:wallet-money-bold', EFECTIVO: 'solar:banknote-2-bold', TRANSFERENCIA: 'solar:card-transfer-bold', TARJETA: 'solar:card-2-bold' };
                                             const show =
@@ -674,7 +680,13 @@ export default function Checkout() {
                                                     ? Boolean(configPago?.aceptaEfectivo)
                                                     : method === 'TARJETA'
                                                         ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                                                        : true;
+                                                        : method === 'YAPE'
+                                                            ? Boolean(configPago?.yapeQrUrl || configPago?.yapeQR || configPago?.yapeNumero)
+                                                            : method === 'PLIN'
+                                                                ? Boolean(configPago?.plinQrUrl || configPago?.plinQR || configPago?.plinNumero)
+                                                                : method === 'TRANSFERENCIA'
+                                                                    ? Boolean(configPago?.cuentasBancarias && configPago.cuentasBancarias.length > 0)
+                                                                    : false;
                                             if (!show) return null;
                                             return (
                                                 <label key={method} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full text-sm font-bold border-2 transition-colors ${formData.medioPago === method ? 'border-[#FF9500] bg-[#FFF3E0] text-[#FF9500]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>

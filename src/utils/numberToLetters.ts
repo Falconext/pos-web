@@ -27,7 +27,9 @@ export const numberToWords = (num: number): string => {
             if (num > 0) result += ' ';
         }
 
-        if (num > 20) {
+        // 21-29 se resuelven con la tabla `units` (VEINTIUN…VEINTINUEVE) como una
+        // sola palabra; solo a partir de 30 se arma "DECENA Y UNIDAD".
+        if (num > 29) {
             const ten = Math.floor(num / 10);
             result += tens[ten];
             num %= 10;
