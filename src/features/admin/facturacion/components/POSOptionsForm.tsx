@@ -223,35 +223,26 @@ function OperacionFiscalTrigger({ vm }: { vm: any }) {
     );
 }
 
-export const POSOptionsForm = ({ vm }: { vm: any }) => {
+export const POSOptionsForm = ({ vm, onOpenComprobanteModal }: { vm: any; onOpenComprobanteModal?: () => void }) => {
     return (
-        <div className="p-3 md:p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-[#111827]">
-            <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                    {vm.isMobile && (
+        <div className="p-4 md:p-5 bg-white dark:bg-[#111827]">
+            <div className="mb-4 rounded-2xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Comprobante</p>
+                        <p className="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">{vm.formValues?.comprobante || 'Seleccionar comprobante'}</p>
+                    </div>
+                    {onOpenComprobanteModal && (
                         <button
-                            onClick={() => vm.setShowMobileCart(false)}
-                            className="mr-2 p-2 -ml-2 text-gray-500 hover:text-gray-700 active:bg-gray-200 rounded-full"
+                            type="button"
+                            onClick={onOpenComprobanteModal}
+                            className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-violet-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-violet-50 dark:bg-slate-800 dark:ring-slate-700"
                         >
-                            <Icon icon="solar:arrow-left-linear" className="text-2xl" />
+                            Cambiar
                         </button>
                     )}
-                    <div className="p-1.5 bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-lg">
-                        <Icon icon="solar:bill-list-bold-duotone" className="text-base" />
-                    </div>
-                    <h2 className="font-bold text-gray-800 dark:text-white text-base">Detalle de Venta</h2>
                 </div>
             </div>
-
-            {/* Tipo Comprobante */}
-            <Select
-                value={vm.formValues?.comprobante}
-                isSearch options={vm.comprobantesGenerar}
-                id="tipoDoc" name="comprobante"
-                error=""
-                onChange={vm.handleChangeSelect}
-                label="Tipo Comprobante" isIcon icon="solar:file-text-linear"
-            />
 
             {/* Cotización: incluir imágenes */}
             {vm.isQuotationRoute && (
@@ -340,7 +331,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
             )}
 
-            {/* Moneda del documento (comprobante o cotización) — convierte precios con el TC del día */}
+            {/* Moneda del documento (cotización o comprobante) — S/ o US$ (facturas de exportación en USD) */}
             {(vm.isQuotationRoute || vm.esFacturaOBoleta) && (
                 <div className="mt-3">
                     <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Moneda{vm.isQuotationRoute ? '' : ' del comprobante'}</label>
@@ -363,8 +354,8 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
                 </div>
             )}
 
-            {/* Descuento global — informales y Factura/Boleta (en formales se prorratea a las líneas) */}
-            {(vm.esInformal || vm.esFacturaOBoleta) && vm.formValues?.tipoDoc !== 'NP' && (
+            {/* Descuento global — % / S/ / $ para todos los comprobantes (boleta, factura e informales) */}
+            {!vm.isQuotationRoute && !['NP', '07', '08'].includes(vm.formValues?.tipoDoc) && (
                 <div className="mt-2 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -477,7 +468,7 @@ export const POSOptionsForm = ({ vm }: { vm: any }) => {
 
             {/* Nota de Crédito / Débito */}
             {(vm.formValues?.comprobante === "NOTA DE CREDITO" || vm.formValues?.comprobante === "NOTA DE DEBITO") && (
-                <div className="mt-4 p-4 bg-white dark:bg-[#1E2435] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+                <div className="mt-4 p-4 bg-white dark:bg-[#1E2435] rounded-2xl border border-gray-100 dark:border-transparent shadow-sm space-y-4">
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-50 dark:border-slate-800">
                         <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                             <Icon icon="solar:file-check-bold-duotone" className="text-amber-600 dark:text-amber-400" width={18} />

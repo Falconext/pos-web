@@ -10,7 +10,8 @@ export interface IClientsState {
     totalClients: number;
     resetClients: () => void;
     // getDocument: (data: IDocument) => void
-    addClients: (data: IFormClient) => void
+    addClients: (data: IFormClient) => Promise<any>
+
     editClients: (data: IFormClient) => void
     getAllClients: (params: any, callback?: Function,
         allProperties?: boolean) => void
@@ -78,22 +79,23 @@ export const useClientsStore = create<IClientsState>()(devtools((set, _get) => (
             const resp: any = await post(`clientes`, sanitizeClientePayload(data));
             if (resp.code === 1 || resp.success === true) {
                 useAlertStore.setState({ success: true, loading: false });
+                const created = { ...data, id: resp.data?.id || resp.id };
                 set((state) => ({
-                    clients: [{
-                        ...data,
-                        id: resp.data?.id || resp.id,
-                    }, ...state.clients]
+                    clients: [created, ...state.clients]
                 }), false, "ADD_CLIENTS");
                 useAlertStore.getState().alert("Se agregó el cliente correctamente", "success");
+                return created;
             } else {
                 useAlertStore.setState({ success: false, loading: false });
                 const msg = Array.isArray(resp.message) ? resp.message.join('. ') : (resp.message || resp.error);
                 useAlertStore.getState().alert(msg || `No se pudo guardar el cliente`, "error");
+                return null;
             }
         } catch (error: any) {
             useAlertStore.setState({ success: false, loading: false });
             const errMsg = error?.response?.data?.message || error?.message || "Error al guardar el cliente";
             useAlertStore.getState().alert(errMsg, "error");
+            return null;
         }
     },
     editClients: async (data: any) => {

@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Pagination from "@/components/Pagination";
 import { BarcodeScannerInput } from "@/components/BarcodeScannerInput";
 import apiClient from "@/utils/apiClient";
@@ -8,23 +8,10 @@ import ModalAnticipos from "./ModalAnticipos";
 export const POSCatalogLayout = ({ vm }: { vm: any }) => {
     const [infoProduct, setInfoProduct] = useState<any | null>(null);
     const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+    // Subir/cambiar imagen del producto directo desde la card del POS
     const [uploadingId, setUploadingId] = useState<number | null>(null);
     const [uploadedImages, setUploadedImages] = useState<Record<number, string>>({});
     const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
-
-    // Captura de anticipos previos a descontar (solo facturas)
-    const [showAnticipos, setShowAnticipos] = useState(false);
-    const [anticipoForm, setAnticipoForm] = useState({ tipoDoc: '01', serie: '', numero: '', monto: '', fecha: '' });
-    const handleAddAnticipo = () => {
-        vm.agregarAnticipo({
-            tipoDoc: anticipoForm.tipoDoc,
-            serie: anticipoForm.serie,
-            numero: anticipoForm.numero,
-            monto: Number(anticipoForm.monto),
-            fecha: anticipoForm.fecha || undefined,
-        });
-        setAnticipoForm({ tipoDoc: '01', serie: '', numero: '', monto: '', fecha: '' });
-    };
 
     const handleImageUpload = async (productoId: number, file: File) => {
         setUploadingId(productoId);
@@ -40,11 +27,40 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                 setBrokenImages(prev => { const n = { ...prev }; delete n[`PRODUCTO-${productoId}`]; return n; });
             }
         } catch {
-    
+
         } finally {
             setUploadingId(null);
         }
     };
+    const searchRef = useRef<HTMLInputElement | null>(null);
+
+    // Captura de anticipos previos a descontar (solo facturas)
+    const [showAnticipos, setShowAnticipos] = useState(false);
+    const [anticipoForm, setAnticipoForm] = useState({ tipoDoc: '01', serie: '', numero: '', monto: '', fecha: '' });
+    const handleAddAnticipo = () => {
+        vm.agregarAnticipo({
+            tipoDoc: anticipoForm.tipoDoc,
+            serie: anticipoForm.serie,
+            numero: anticipoForm.numero,
+            monto: Number(anticipoForm.monto),
+            fecha: anticipoForm.fecha || undefined,
+        });
+        setAnticipoForm({ tipoDoc: '01', serie: '', numero: '', monto: '', fecha: '' });
+    };
+
+    // Atajo "/" para enfocar la búsqueda (estilo POS), salvo si ya se escribe en un campo.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== '/') return;
+            const el = document.activeElement as HTMLElement | null;
+            const tag = el?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+            e.preventDefault();
+            searchRef.current?.focus();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     const getProvisionInfo = (item: any) => {
         const stockBase = Number(item?.stockBase ?? item?.stock ?? 0);
@@ -94,15 +110,16 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
     return (
         <>
-        <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white dark:border-slate-800">
+        <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white dark:border-transparent">
             {/* Header: Search & Categories */}
             <div className="p-4 md:p-5 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
                 <div className="flex gap-2 mb-3">
                     <div className="relative flex-1">
                         <input
+                            ref={searchRef}
                             type="text"
-                            placeholder="Buscar productos..."
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-gray-700 dark:text-gray-200 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 font-medium"
+                            placeholder="Buscar productos...  ( / )"
+                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-violet-500/20 text-gray-700 dark:text-gray-200 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 font-medium"
                             value={vm.searchTerm}
                             onChange={(e) => vm.setSearchTerm(e.target.value)}
                         />
@@ -141,7 +158,19 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
                 {vm.showFreeQuoteItemForm && (
                     <div className="mb-4 rounded-2xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/70 dark:bg-violet-950/10 p-3">
-                        <div className="flex flex-col lg:flex-row gap-2">
+                        <div className="flex flex-col gap-2">
+                            {/* El nombre del ítem es el dato principal: fila propia a todo el ancho */}
+                            <input
+                                value={vm.freeQuoteItem.descripcion}
+                                onChange={(e) => vm.setFreeQuoteItem((prev: any) => ({ ...prev, descripcion: e.target.value }))}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') vm.handleAddFreeQuoteItem();
+                                }}
+                                autoFocus
+                                placeholder="Nombre del producto o servicio — Ej: Instalación de Windows, mantenimiento, producto a pedido..."
+                                className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-300"
+                            />
+                            <div className="flex flex-col lg:flex-row gap-2">
                             <div className="flex rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-1">
                                 {(['SERVICIO', 'PRODUCTO'] as const).map((tipo) => (
                                     <button
@@ -182,15 +211,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                             >
                                 Anticipo
                             </button>
-                            <input
-                                value={vm.freeQuoteItem.descripcion}
-                                onChange={(e) => vm.setFreeQuoteItem((prev: any) => ({ ...prev, descripcion: e.target.value }))}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') vm.handleAddFreeQuoteItem();
-                                }}
-                                placeholder="Ej: Instalación de Windows, mantenimiento, producto a pedido..."
-                                className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-300"
-                            />
+                            <div className="flex-1" />
                             <input
                                 type="number"
                                 min="0.001"
@@ -229,6 +250,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                 >
                                     <Icon icon="solar:close-circle-bold-duotone" className="text-lg" />
                                 </button>
+                            </div>
                             </div>
                         </div>
                         <p className="mt-2 text-xs text-violet-700/80 dark:text-violet-300/80 font-semibold">
@@ -269,29 +291,6 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                     </div>
                 )}
 
-                <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
-                    <button
-                        onClick={() => vm.setSelectedCategoryId(0)}
-                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === 0 ? '!bg-blue-500 text-white shadow-md shadow-blue-200/50 border-none' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}`}
-                    >
-                        <span>TODOS</span>
-                        <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === 0 ? 'bg-white text-blue-600' : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-slate-950'}`}>
-                            {(vm.totalProducts || 0) + (vm.filteredCombos?.length || 0)}
-                        </span>
-                    </button>
-                    {vm.categories?.map((cat: any) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => vm.setSelectedCategoryId(cat.id)}
-                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === cat.id ? '!bg-blue-500 text-white shadow-md shadow-blue-200/50 border-none' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}`}
-                        >
-                            <span>{cat.nombre.toUpperCase()}</span>
-                            <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === cat.id ? 'bg-white text-blue-600' : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-slate-950'}`}>
-                                {cat._count?.productos || 0}
-                            </span>
-                        </button>
-                    ))}
-                </div>
 
                 {/* Toggle rápido de precio por lote FEFO — solo rubros con lotes */}
                 {vm.usaLotesFarmacia && (
@@ -320,11 +319,36 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
             {/* Product Grid */}
             <div className="flex-1 overflow-y-auto p-3 md:p-4 scrollbar-thin">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-3 md:gap-4">
+                {/* Categorías */}
+                <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
+                    <button
+                        onClick={() => vm.setSelectedCategoryId(0)}
+                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === 0 ? '!bg-violet-600 text-white shadow-md shadow-violet-200/50 border-none' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}`}
+                    >
+                        <span>TODOS</span>
+                        <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === 0 ? 'bg-white text-violet-600' : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-slate-950'}`}>
+                            {(vm.totalProducts || 0) + (vm.filteredCombos?.length || 0)}
+                        </span>
+                    </button>
+                    {vm.categories?.map((cat: any) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => vm.setSelectedCategoryId(cat.id)}
+                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === cat.id ? '!bg-violet-600 text-white shadow-md shadow-violet-200/50 border-none' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}`}
+                        >
+                            <span>{cat.nombre.toUpperCase()}</span>
+                            <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === cat.id ? 'bg-white text-violet-600' : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-slate-950'}`}>
+                                {cat._count?.productos || 0}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
                     {vm.catalogItems?.map((item: any, itemIndex: number) => (
                         <div
                             key={`${item.__catalogType}-${item.id}-${itemIndex}`}
-                            className="group bg-white dark:bg-[#1E2435] rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300 dark:border-slate-700 shadow-sm flex flex-col"
+                            className="group bg-white dark:bg-[#1E2435] rounded-[20px] p-2 hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-violet-300 dark:border-transparent shadow-sm flex flex-col"
                             style={{ contentVisibility: 'auto', containIntrinsicSize: '0 280px' } as React.CSSProperties}
                         >
                             <div
@@ -347,6 +371,13 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                 ) : (
                                     <Icon icon="solar:box-minimalistic-linear" className="text-3xl text-gray-300 dark:text-slate-600" />
                                 )}
+                                {/* Overlay "Agregar" al hover — refuerza que la card es accionable */}
+                                <div className="pointer-events-none absolute inset-0 hidden md:flex items-center justify-center bg-violet-600/0 opacity-0 group-hover:bg-violet-600/15 group-hover:opacity-100 transition-all duration-200">
+                                    <span className="flex items-center gap-1 rounded-full bg-white/95 dark:bg-slate-900/90 px-3 py-1.5 text-xs font-black text-violet-700 dark:text-violet-300 shadow-lg">
+                                        <Icon icon="solar:add-circle-bold" className="text-base" />
+                                        Agregar
+                                    </span>
+                                </div>
                                 {item.__catalogType === 'COMBO' && (
                                     <span className="absolute left-2 top-2 text-[10px] px-2 py-0.5 rounded-full bg-violet-600 text-white font-bold tracking-wide">
                                         KIT
@@ -399,45 +430,46 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                     </div>
                                 )}
 
-                                <div className="flex items-end justify-between gap-2">
-                                    <div>
-                                        <p className="text-base font-black text-gray-900 dark:text-white leading-none mb-0.5">
-                                            {(() => {
-                                                if (item.__catalogType === 'COMBO') return `S/${Number(item.precioCombo).toFixed(2)}`;
-                                                const factor = Number(item.factorConversion ?? 1);
-                                                const modo = vm.modoFraccionPorProducto?.[item.id] ?? 'CAJA';
-                                                const precio = Number(item.precioUnitario);
-                                                const simbolo = String(item.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/';
-                                                return `${simbolo}${(vm.isFarmaciaRetail && factor > 1 && modo === 'UNIDAD' ? precio / factor : precio).toFixed(2)}`;
-                                            })()}
-                                        </p>
-                                        <div className="text-[10px] leading-tight font-medium space-y-0.5">
-                                            {(() => {
-                                                const variantesActivas = Array.isArray(item?.variantes)
-                                                    ? item.variantes.filter((v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO')
-                                                    : [];
-                                                if (!esServicio(item) && variantesActivas.length > 0) {
-                                                    const stockVariantes = variantesActivas.reduce((s: number, v: any) => s + Number(v?.stock ?? 0), 0);
-                                                    return (
-                                                        <p className="text-indigo-600 dark:text-indigo-400">
-                                                            {variantesActivas.length} variantes · Stock: {stockVariantes}
-                                                        </p>
-                                                    );
-                                                }
+                                <div>
+                                    <p className="text-base font-black text-gray-900 dark:text-white leading-none mb-0.5">
+                                        {(() => {
+                                            if (item.__catalogType === 'COMBO') return `S/${Number(item.precioCombo).toFixed(2)}`;
+                                            const factor = Number(item.factorConversion ?? 1);
+                                            const modo = vm.modoFraccionPorProducto?.[item.id] ?? 'CAJA';
+                                            const precio = Number(item.precioUnitario);
+                                            const simbolo = String(item.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/';
+                                            return `${simbolo}${(vm.isFarmaciaRetail && factor > 1 && modo === 'UNIDAD' ? precio / factor : precio).toFixed(2)}`;
+                                        })()}
+                                    </p>
+                                    <div className="text-[10px] leading-tight font-medium space-y-0.5">
+                                        {(() => {
+                                            const variantesActivas = Array.isArray(item?.variantes)
+                                                ? item.variantes.filter((v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO')
+                                                : [];
+                                            if (!esServicio(item) && variantesActivas.length > 0) {
+                                                const stockVariantes = variantesActivas.reduce((s: number, v: any) => s + Number(v?.stock ?? 0), 0);
                                                 return (
-                                                    <p className={esServicio(item) ? "text-violet-600 dark:text-violet-400" : "text-emerald-600 dark:text-emerald-400"}>
-                                                        {esServicio(item) ? "Servicio técnico" : `Disponible: ${item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}`}
+                                                    <p className="text-indigo-600 dark:text-indigo-400">
+                                                        {variantesActivas.length} variantes · Stock: {stockVariantes}
                                                     </p>
                                                 );
-                                            })()}
-                                        </div>
+                                            }
+                                            return (
+                                                <p className={esServicio(item) ? "text-violet-600 dark:text-violet-400" : "text-emerald-600 dark:text-emerald-400"}>
+                                                    {esServicio(item) ? "Servicio técnico" : `Disponible: ${item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}`}
+                                                </p>
+                                            );
+                                        })()}
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+
+                                    {/* Acciones — fila a todo el ancho para que "Agregar" nunca se corte */}
+                                    <div className="mt-2 flex items-center gap-1.5">
                                         {/* Ver detalle */}
                                         <button
-                                            onClick={() => setInfoProduct(item)}
-                                            className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-100 rounded-lg transition-all active:scale-95 flex items-center justify-center"
+                                            onClick={(e) => { e.stopPropagation(); setInfoProduct(item); }}
+                                            className="shrink-0 p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-300 rounded-lg transition-all active:scale-95 flex items-center justify-center"
                                             title="Ver detalle"
+                                            aria-label="Ver detalle"
                                         >
                                             <Icon icon="solar:info-circle-linear" className="text-lg" />
                                         </button>
@@ -457,9 +489,9 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                                     }}
                                                 />
                                                 <button
-                                                    onClick={() => fileInputRefs.current[item.id]?.click()}
+                                                    onClick={(e) => { e.stopPropagation(); fileInputRefs.current[item.id]?.click(); }}
                                                     disabled={uploadingId === item.id}
-                                                    className="p-2 bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/30 dark:hover:bg-sky-800/50 text-sky-600 dark:text-sky-400 rounded-lg transition-all active:scale-95 flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed border border-sky-200 dark:border-sky-800/50"
+                                                    className="shrink-0 p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-300 rounded-lg transition-all active:scale-95 flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
                                                     title={(uploadedImages[item.id] || item.imagenUrl) ? "Cambiar imagen" : "Subir imagen"}
                                                 >
                                                     {uploadingId === item.id
@@ -470,6 +502,26 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                                             </>
                                         )}
 
+                                        {/* Agregar al comprobante — acción principal, siempre visible */}
+                                        {(() => {
+                                            const isExpired = vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && item?.loteFefo?.diasAlVencimiento !== undefined && item?.loteFefo?.diasAlVencimiento < 0;
+                                            return (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (isExpired) return;
+                                                        item.__catalogType === 'COMBO' ? vm.handleComboClick(item) : vm.handleProductClick(item);
+                                                    }}
+                                                    disabled={isExpired}
+                                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-sm shadow-violet-500/20 transition-all active:scale-95 disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
+                                                    title={isExpired ? "Producto vencido" : "Agregar"}
+                                                    aria-label="Agregar al comprobante"
+                                                >
+                                                    <Icon icon="solar:add-circle-bold" className="text-base" />
+                                                    Agregar
+                                                </button>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>
@@ -500,7 +552,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
         </div>
         {infoProduct && (
             <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
-                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-700 shadow-2xl">
+                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-transparent shadow-2xl">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">
                             {String(infoProduct.__catalogType === 'COMBO' ? infoProduct.nombre : infoProduct.descripcion || "").toUpperCase()}

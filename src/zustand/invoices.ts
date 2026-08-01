@@ -70,6 +70,7 @@ export interface IInvoicesState {
     addInformalInvoice: (data: IFormInvoice) => Promise<any>;
     getAllInvoices: (params: any, callback?: Function, allProperties?: boolean) => Promise<{ success: boolean, error?: string }>;
     deleteProductInvoice: (data: any) => void;
+    deleteProductInvoiceByIndex: (index: number) => void;
     resetInvoice: () => void;
     resetProductInvoice: () => void;
     getInvoice: (id: number) => Promise<{ success: boolean, error?: string }>;
@@ -188,6 +189,23 @@ export const useInvoiceStore = create<IInvoicesState>()(devtools((set, _get) => 
                 }),
                 false,
                 'DELETE_PRODUCT_INVOICE'
+            );
+        } catch (error) {
+            console.log(error);
+            useAlertStore.getState().alert("Error al eliminar el producto", "error");
+        }
+    },
+
+    // Elimina por posición exacta: evita borrar en lote cuando dos líneas
+    // comparten la misma descripción (ítems libres o el mismo producto repetido).
+    deleteProductInvoiceByIndex: async (index: number) => {
+        try {
+            set(
+                (state) => ({
+                    productsInvoice: state.productsInvoice.filter((_: any, i: number) => i !== index),
+                }),
+                false,
+                'DELETE_PRODUCT_INVOICE_BY_INDEX'
             );
         } catch (error) {
             console.log(error);

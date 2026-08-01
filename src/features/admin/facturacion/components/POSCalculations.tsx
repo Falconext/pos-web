@@ -1,14 +1,27 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCuentasBancariasStore } from "@/zustand/cuentasBancarias";
+import EmitidoContent from "@/pages/admin/facturacion/modalResponseInvoice/EmitidoContent";
 import type { PaymentLine } from "../useFacturacionViewModel";
 
 const METODOS = ['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'];
+
+const METODO_LOGOS: Record<string, string> = {
+    Efectivo: '/assets/pagos/efectivo.png',
+    Yape: '/assets/pagos/yape.png',
+    Plin: '/assets/pagos/plin.png',
+    Transferencia: '/assets/pagos/transferencia.png',
+    Tarjeta: '/assets/pagos/tarjeta.png',
+};
 
 export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, printFn: any, handleOpenNewTab: any }) => {
     const total: number = vm.totalAdjusted ?? 0;
     const { cuentas, listar } = useCuentasBancariasStore();
     const cuentasActivas = cuentas.filter((cuenta) => cuenta.activo !== false);
+    // Modal "Continuar pago": tipos de pago (izq) + preview del comprobante (der)
+    const [showPago, setShowPago] = useState(false);
 
     useEffect(() => {
         listar();
@@ -151,6 +164,57 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
         );
     };
 
+    // ── Valores para la vista previa (mismo formato que el ticket impreso) ──
+    const empresaPreview = vm.auth?.empresa;
+    const clientePreview = vm.selectedClient;
+    const isCreditoPreview = vm.formValues?.medioPago === 'Crédito';
+    const comprobanteRawPreview = String(vm.formValues?.comprobante || '').toUpperCase()
+        || (vm.formValues?.tipoComprobante === '01' ? 'FACTURA' : 'BOLETA');
+    const tipoComprobantePreview =
+        comprobanteRawPreview === 'COTIZACIÓN' || comprobanteRawPreview === 'COTIZACION'
+            ? 'COTIZACIÓN'
+            : comprobanteRawPreview === 'ORDEN DE PAGO'
+                ? 'ORDEN DE PAGO'
+                : comprobanteRawPreview.includes('VENTA') || comprobanteRawPreview.includes('NOTA') || comprobanteRawPreview.includes('ORDEN') || comprobanteRawPreview.includes('RECIBO')
+                    ? comprobanteRawPreview
+                    : `${comprobanteRawPreview} DE VENTA ELECTRÓNICA`;
+    const clientePreviewNombre = clientePreview?.nombre || vm.formValuesClient?.nombre || 'CLIENTE VARIOS';
+    const clientePreviewDoc = clientePreview?.nroDoc || vm.formValuesClient?.nroDoc || '';
+    const clientePreviewDireccion = (clientePreview?.direccion || vm.formValuesClient?.direccion || '').toString().trim();
+    const seriePreview = vm.serie || vm.formValues?.serie || '';
+    const correlativoPreview = vm.correlative || vm.formValues?.correlativo || '';
+    const fechaPreview = vm.formValues?.fechaEmision || '';
+    const metodoPreviewLabel = vm.isMixedPayment ? 'MIXTO' : (isCreditoPreview ? 'CRÉDITO' : String(vm.paymentMethod || 'EFECTIVO').toUpperCase());
+    const condicionPreview = isCreditoPreview ? 'CRÉDITO' : 'CONTADO';
+    const vueltoPreview = isCreditoPreview ? 0 : (vm.isMixedPayment ? splitChange : (vm.isCashPayment ? (vm.vueltoCalculado || 0) : 0));
+    const montoMedioPreview = isCreditoPreview ? 0 : total;
+    const pagadoPreview = isCreditoPreview ? 0 : total + vueltoPreview;
+    const vendedorPreview = (vm.auth?.nombre || vm.auth?.usuario?.nombre || vm.formValues?.vendedor || 'ADMIN').toString().toUpperCase();
+    const empresaCelularPreview = (empresaPreview?.celular || empresaPreview?.telefono || '').toString().trim();
+    const empresaEmailPreview = (empresaPreview?.email || empresaPreview?.correo || '').toString().trim();
+    const empresaWebPreview = (empresaPreview?.paginaWeb || '').toString().trim();
+    const previewLogo = (() => {
+        const raw = empresaPreview?.logo;
+        if (!raw) return undefined;
+        const t = String(raw).trim();
+        if (t.startsWith('data:')) return t;
+        if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
+        return `data:${t.startsWith('/9j/') ? 'image/jpeg' : 'image/png'};base64,${t}`;
+    })();
+    const simboloPreview = vm.monedaSimbolo || 'S/';
+
+    // ── Transición del modal: pago → procesando → emitido (dentro del mismo modal) ──
+    const emitStep: 'pago' | 'procesando' | 'emitido' = vm.IsOpenModalSuccessInvoice
+        ? (vm.isLoading ? 'procesando' : 'emitido')
+        : 'pago';
+    const isEmitPhase = vm.IsOpenModalSuccessInvoice;
+    const closeEmitido = () => { vm.closeModalResponse?.(); setShowPago(false); };
+    const handleModalOverlay = () => {
+        if (emitStep === 'pago') setShowPago(false);
+        else if (emitStep === 'emitido') closeEmitido();
+        // en 'procesando' no se cierra
+    };
+
     return (
         <div className="p-3 pt-2 md:p-5 md:pb-8 bg-white dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
             <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
@@ -174,7 +238,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         <span>{vm.monedaSimbolo} {vm.opInafectaAdjusted.toFixed(2)}</span>
                     </div>
                 )}
-                {(vm.hasDiscount || (vm.formValues.motivoId === 6 && vm.descountGlobal > 0)) && (
+                {vm.finalDiscount > 0 && (
                     <div className="flex justify-between text-sm text-green-600 font-medium">
                         <span>Descuento</span>
                         <span>- {vm.monedaSimbolo} {vm.finalDiscount.toFixed(2)}</span>
@@ -250,14 +314,93 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 </div>
             )}
 
-            {/* Payment Methods */}
-            {!vm.isQuotationRoute && vm.formValues?.medioPago !== 'Crédito' && (
-                <div className="mb-3 md:mb-4">
+            {/* Farmacia: indicador de recetas pendientes */}
+            {hayRecetasPendientes && (
+                <div className="w-full mb-2 px-1">
+                    <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-1.5 text-xs">
+                        <span className="text-red-700 dark:text-red-300 font-semibold">
+                            📋 {recetasPendientes} producto(s) requieren receta
+                        </span>
+                    </div>
+                </div>
+            )}
+            <div className="flex gap-3">
+                {vm.isQuotationRoute && (
+                    <button
+                        onClick={() => printFn()}
+                        className="flex-1 py-3.5 px-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Icon icon="solar:download-bold" className="text-xl" />
+                        Exportar PDF
+                    </button>
+                )}
+                <button
+                    onClick={() => { if (vm.isQuotationRoute) { vm.addInvoiceReceipt(); } else { setShowPago(true); } }}
+                    disabled={hayRecetasPendientes}
+                    className={`flex-1 py-3 md:py-3.5 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm ${hayRecetasPendientes
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-violet-600 shadow-sm border border-violet-700'
+                        }`}
+                >
+                    <Icon icon={vm.isQuotationRoute ? (vm.isEditMode ? "solar:pen-bold" : "solar:diskette-bold") : "solar:card-send-bold"} className="text-lg text-white" />
+                    <span className="text-white">{vm.isQuotationRoute ? (vm.isEditMode ? "ACTUALIZAR" : "GUARDAR") : "CONTINUAR PAGO"}</span>
+                </button>
+            </div>
+
+            {/* ── MODAL CONTINUAR PAGO → transición a EMITIDO dentro del mismo modal ── */}
+            {(showPago || vm.IsOpenModalSuccessInvoice) && createPortal(
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-6 font-jakarta"
+                    onClick={handleModalOverlay}
+                >
+                    <motion.div
+                        layout
+                        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+                        className={`w-full ${isEmitPhase ? 'max-w-md' : 'max-w-4xl'} max-h-[92vh] overflow-hidden rounded-2xl bg-white dark:bg-[#0f1535] shadow-2xl flex flex-col`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                    <AnimatePresence mode="wait" initial={false}>
+                    {emitStep === 'pago' ? (
+                    <motion.div
+                        key="pago"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -32, scale: 0.985 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="flex flex-col"
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-white/10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-violet-500/30">
+                                    <Icon icon="solar:card-send-bold" width={18} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-extrabold text-gray-900 dark:text-white leading-none">Continuar pago</h3>
+                                    <p className="text-xs text-gray-400">Elige el método de pago y confirma</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowPago(false)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                                <Icon icon="solar:close-circle-bold" width={22} />
+                            </button>
+                        </div>
+
+                        {/* Body: split */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 overflow-y-auto">
+                            {/* IZQUIERDA: métodos de pago */}
+                            <div className="p-5 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
+                                <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Método de pago</h4>
+                                {vm.formValues?.medioPago === 'Crédito' ? (
+                                    <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-700 dark:text-amber-300">
+                                        Venta a crédito — no requiere método de pago.
+                                    </div>
+                                ) : (
+                <div className="mb-1">
                     {/* Toggle simple / mixto */}
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="text-[10px] md:text-xs font-bold text-gray-500 dark:text-white uppercase tracking-wider">
-                            Método de Pago
-                        </label>
+                    <div className="flex items-center justify-end mb-2">
                         <button
                             type="button"
                             onClick={() => vm.setIsMixedPayment(!vm.isMixedPayment)}
@@ -274,7 +417,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                     {!vm.isMixedPayment ? (
                         /* Modo simple — un solo método */
                         <div className="space-y-2">
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-3 gap-2.5">
                                 {METODOS.map((m) => (
                                     <button
                                         key={m}
@@ -290,12 +433,13 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                                 tarjetaUltimos4: '',
                                             }));
                                         }}
-                                        className={`p-1.5 md:p-2 rounded-xl text-[10px] md:text-xs font-bold transition-all border ${vm.paymentMethod === m
-                                            ? '!bg-emerald-500 text-white border-none shadow-sm shadow-emerald-200/50'
+                                        className={`flex flex-col items-center justify-center gap-2 p-4 aspect-square rounded-2xl text-xs md:text-sm font-bold transition-all border ${vm.paymentMethod === m
+                                            ? '!bg-emerald-500 text-white border-none shadow-md shadow-emerald-200/50'
                                             : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
                                             }`}
                                     >
-                                        {m}
+                                        <img src={METODO_LOGOS[m]} alt={m} className="h-11 w-11 object-contain" />
+                                        <span>{m}</span>
                                     </button>
                                 ))}
                             </div>
@@ -404,47 +548,148 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         </div>
                     )}
                 </div>
-            )}
+                                )}
+                            </div>{/* /IZQUIERDA métodos de pago */}
 
-            <div className="flex gap-3">
-                {vm.isQuotationRoute && (
-                    <button
-                        onClick={() => printFn()}
-                        className="col-span-2 py-3.5 px-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2"
-                    >
-                        <Icon icon="solar:download-bold" className="text-xl" />
-                        Exportar PDF Directo
-                    </button>
-                )}
-                <button
-                    onClick={() => handleOpenNewTab("vista previa")}
-                    className="flex-1 py-2.5 md:py-3 bg-blue-500 text-white border border-blue-600 rounded-xl font-bold hover:bg-blue-600 transition-all flex items-center justify-center gap-2 text-xs md:text-sm shadow-sm"
-                >
-                    <Icon icon="solar:eye-linear" className="text-lg text-white" />
-                    <span className="text-white">PREVIA</span>
-                </button>
-                {/* Farmacia: indicador de recetas pendientes */}
-                {hayRecetasPendientes && (
-                    <div className="w-full mb-2 px-1">
-                        <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-1.5 text-xs">
-                            <span className="text-red-700 dark:text-red-300 font-semibold">
-                                📋 {recetasPendientes} producto(s) requieren receta
-                            </span>
+                            {/* DERECHA: preview del comprobante — mismo formato que el ticket impreso */}
+                            <div className="p-5 bg-gray-50 dark:bg-[#0b1030]">
+                                <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Vista previa del comprobante</h4>
+                                <div className="mx-auto w-full max-w-[300px] rounded-xl bg-white text-gray-900 border border-gray-200 shadow-inner p-4 font-mono text-[10px] leading-relaxed">
+                                    {/* Encabezado empresa */}
+                                    <div className="text-center">
+                                        {previewLogo && <img src={previewLogo} alt="logo" className="mx-auto mb-2 h-14 w-14 object-contain" />}
+                                        <p className="font-bold text-sm uppercase">{empresaPreview?.nombreComercial || empresaPreview?.razonSocial || 'MI EMPRESA'}</p>
+                                        {empresaPreview?.razonSocial && <p className="text-[9px] text-gray-600 uppercase">RAZON SOCIAL: {empresaPreview.razonSocial}</p>}
+                                        {empresaPreview?.direccion && <p className="text-[9px] text-gray-600 uppercase">DIRECCION: {empresaPreview.direccion}</p>}
+                                        {empresaCelularPreview && <p className="text-[9px] text-gray-600">CELULAR: {empresaCelularPreview}</p>}
+                                        {empresaEmailPreview && <p className="text-[9px] text-gray-600 lowercase">CORREO: {empresaEmailPreview}</p>}
+                                        {empresaWebPreview && <p className="text-[9px] text-gray-600">WEB: {empresaWebPreview}</p>}
+                                        <p className="text-[9px] text-gray-600">RUC: {empresaPreview?.ruc || empresaPreview?.nroDoc || '—'}</p>
+                                    </div>
+                                    <div className="my-2 border-t border-dashed border-gray-300" />
+                                    {/* Tipo de comprobante + serie */}
+                                    <div className="text-center font-bold">
+                                        <p>{tipoComprobantePreview}</p>
+                                        <p>{seriePreview}{correlativoPreview ? `-${correlativoPreview}` : ''}</p>
+                                    </div>
+                                    <div className="my-2 border-t border-dashed border-gray-300" />
+                                    {/* Datos generales */}
+                                    <div className="space-y-0.5">
+                                        {fechaPreview && (
+                                            <div className="flex justify-between gap-2"><span className="text-gray-500">FECHA Y HORA:</span><span className="text-right">{fechaPreview}</span></div>
+                                        )}
+                                        <div className="flex justify-between gap-2"><span className="text-gray-500">RAZON SOCIAL:</span><span className="text-right uppercase">{clientePreviewNombre}</span></div>
+                                        {clientePreviewDoc && (
+                                            <div className="flex justify-between gap-2"><span className="text-gray-500">N° DOCUMENTO:</span><span className="text-right">{clientePreviewDoc}</span></div>
+                                        )}
+                                        {clientePreviewDireccion && (
+                                            <div className="flex justify-between gap-2"><span className="text-gray-500">DIRECCION:</span><span className="text-right uppercase">{clientePreviewDireccion}</span></div>
+                                        )}
+                                    </div>
+                                    <div className="my-2 border-t border-dashed border-gray-300" />
+                                    {/* Tabla de items */}
+                                    <div className="flex font-bold text-[9px] text-gray-500">
+                                        <span className="w-6 text-center">CANT.</span>
+                                        <span className="w-7 text-center">U.M.</span>
+                                        <span className="flex-1 px-1 text-left">DESCRIPCION</span>
+                                        <span className="w-10 text-right">P.U.</span>
+                                        <span className="w-12 text-right">IMP.</span>
+                                    </div>
+                                    <div className="my-1 border-t border-dashed border-gray-200" />
+                                    <div className="space-y-1 max-h-52 overflow-y-auto">
+                                        {(vm.productsInvoice || []).length === 0 && <p className="text-center text-gray-400 py-2">Sin productos</p>}
+                                        {(vm.productsInvoice || []).map((p: any, i: number) => (
+                                            <div key={i} className="flex">
+                                                <span className="w-6 text-center">{p.cantidad}</span>
+                                                <span className="w-7 text-center uppercase">{(p.unidad || p.unidadMedida || 'NIU').toString().toUpperCase().slice(0, 3)}</span>
+                                                <span className="flex-1 px-1 uppercase break-words">{p.descripcion || p.nombre || 'Producto'}</span>
+                                                <span className="w-10 text-right">{Number(p.precioUnitario ?? p.mtoPrecioUnitario ?? 0).toFixed(2)}</span>
+                                                <span className="w-12 text-right">{Number(p.total ?? 0).toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="my-2 border-t border-dashed border-gray-300" />
+                                    {/* Forma / medio de pago */}
+                                    <div className="space-y-0.5">
+                                        <div className="flex justify-between"><span className="text-gray-500">FORMA PAGO:</span><span>{condicionPreview}</span></div>
+                                        <div className="flex justify-between gap-2"><span className="text-gray-500">MEDIO PAGO:</span><span className="text-right">{metodoPreviewLabel} {simboloPreview} {montoMedioPreview.toFixed(2)}</span></div>
+                                        {!isCreditoPreview && (
+                                            <>
+                                                <div className="flex justify-between"><span className="text-gray-500">VUELTO:</span><span>{simboloPreview} {vueltoPreview.toFixed(2)}</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-500">PAGADO:</span><span>{simboloPreview} {pagadoPreview.toFixed(2)}</span></div>
+                                            </>
+                                        )}
+                                        <div className="flex justify-between"><span className="text-gray-500">VENDEDOR:</span><span className="uppercase">{vendedorPreview}</span></div>
+                                    </div>
+                                    <div className="my-2 border-t border-dashed border-gray-300" />
+                                    {/* Totales */}
+                                    <div className="space-y-0.5">
+                                        <div className="flex justify-between"><span>OP. GRAVADA</span><span>{simboloPreview} {Number(vm.opGravadaAdjusted ?? 0).toFixed(2)}</span></div>
+                                        {vm.opExoneradaAdjusted > 0 && (
+                                            <div className="flex justify-between"><span>OP. EXONERADA</span><span>{simboloPreview} {Number(vm.opExoneradaAdjusted).toFixed(2)}</span></div>
+                                        )}
+                                        {vm.opInafectaAdjusted > 0 && (
+                                            <div className="flex justify-between"><span>OP. INAFECTA</span><span>{simboloPreview} {Number(vm.opInafectaAdjusted).toFixed(2)}</span></div>
+                                        )}
+                                        <div className="flex justify-between"><span>IGV (18%)</span><span>{simboloPreview} {Number(vm.igvAdjusted ?? 0).toFixed(2)}</span></div>
+                                        {vm.finalDiscount > 0 && (
+                                            <div className="flex justify-between text-green-600"><span>DESCUENTO</span><span>- {simboloPreview} {Number(vm.finalDiscount).toFixed(2)}</span></div>
+                                        )}
+                                        <div className="mt-1 flex justify-between font-bold text-sm"><span>IMPORTE TOTAL</span><span>{simboloPreview} {Number(total).toFixed(2)}</span></div>
+                                    </div>
+                                    <div className="my-2 border-t border-dashed border-gray-300" />
+                                    <p className="text-center text-[8px] text-gray-500 leading-snug">Representación impresa del Comprobante de Pago Electrónico.</p>
+                                </div>
+                            </div>
+                        </div>{/* /body split */}
+
+                        {/* Footer: emitir */}
+                        <div className="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-gray-100 dark:border-white/10">
+                            <button onClick={() => setShowPago(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => vm.addInvoiceReceipt()}
+                                disabled={vm.isMixedPayment && !splitValid}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all ${vm.isMixedPayment && !splitValid ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-500/30'}`}
+                            >
+                                <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} width={18} />
+                                {vm.isEditMode ? 'ACTUALIZAR' : 'EMITIR'}
+                            </button>
                         </div>
-                    </div>
-                )}
-                <button
-                    onClick={vm.addInvoiceReceipt}
-                    disabled={(vm.isMixedPayment && !splitValid) || hayRecetasPendientes}
-                    className={`flex-1 py-2.5 md:py-3 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-xs md:text-sm ${(vm.isMixedPayment && !splitValid) || hayRecetasPendientes
-                        ? 'bg-gray-400 cursor-not-allowed text-white'
-                        : 'bg-violet-600 shadow-sm border border-violet-700 text-white'
-                        }`}
-                >
-                    <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} className="text-lg text-white" />
-                    <span className="text-white">{vm.isEditMode ? "ACTUALIZAR" : "EMITIR"}</span>
-                </button>
-            </div>
+                    </motion.div>
+                    ) : (
+                    <motion.div
+                        key="emitido"
+                        initial={{ opacity: 0, x: 28, scale: 0.98 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                        <EmitidoContent
+                            isLoading={vm.isLoading}
+                            comprobante={vm.formValues?.comprobante}
+                            auth={vm.auth}
+                            serie={vm.serie}
+                            correlative={vm.correlative}
+                            dataReceipt={vm.dataReceipt}
+                            client={vm.snapshotClient ?? vm.selectedClient}
+                            company={vm.authWithBranding}
+                            productsInvoice={vm.productsInvoice}
+                            formValues={{ ...vm.formValues, mtoImpVenta: vm.totalAdjusted }}
+                            observation={vm.formValues?.observaciones}
+                            isPendiente={vm.isComprobantePendiente}
+                            hasDespacho={vm.despachoCreado}
+                            handleOpenNewTab={handleOpenNewTab}
+                            closeModal={closeEmitido}
+                        />
+                    </motion.div>
+                    )}
+                    </AnimatePresence>
+                    </motion.div>
+                </motion.div>,
+                document.body,
+            )}
         </div>
     );
 };
