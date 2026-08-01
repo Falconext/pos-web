@@ -141,13 +141,33 @@ const EmpresasIndex = () => {
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Control de suscripciones por tipo de cliente y vencimiento</p>
         </div>
-        <button
-          onClick={() => { vm.setEmpresaEditingId(undefined); vm.setEmpresaModalMode('create'); vm.setOpenEmpresaModal(true); }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
-        >
-          <Icon icon="solar:add-circle-bold" className="text-lg" />
-          Nueva Empresa
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => vm.exportarEmpresas('pdf')}
+            disabled={vm.exportando !== null}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-white text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700"
+            title="Exportar el listado filtrado en PDF"
+          >
+            <Icon icon={vm.exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
+            PDF
+          </button>
+          <button
+            onClick={() => vm.exportarEmpresas('excel')}
+            disabled={vm.exportando !== null}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition-all disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700"
+            title="Exportar el listado filtrado en Excel"
+          >
+            <Icon icon={vm.exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
+            Excel
+          </button>
+          <button
+            onClick={() => { vm.setEmpresaEditingId(undefined); vm.setEmpresaModalMode('create'); vm.setOpenEmpresaModal(true); }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+          >
+            <Icon icon="solar:add-circle-bold" className="text-lg" />
+            Nueva Empresa
+          </button>
+        </div>
       </div>
 
       {/* KPIs de vencimiento — clic para filtrar */}
