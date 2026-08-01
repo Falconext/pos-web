@@ -1031,6 +1031,9 @@ export default function PanelVentasView() {
                         comprobante: TIPO_CONFIG[waItem.tipo]?.label ?? waItem.tipo,
                         total: waItem.total,
                         clienteNombre: waItem.cliente,
+                        // Prefill del número: teléfono del cliente; si no tiene, el celular del despacho
+                        clienteCelular: waItem.clienteTelefono || (waItem.celularDest && waItem.celularDest !== '—' ? waItem.celularDest : ''),
+                        clienteEmail: waItem.clienteEmail || '',
                     }}
                 />
             )}
