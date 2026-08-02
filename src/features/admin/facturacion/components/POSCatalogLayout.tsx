@@ -5,7 +5,8 @@ import { BarcodeScannerInput } from "@/components/BarcodeScannerInput";
 import apiClient from "@/utils/apiClient";
 import ModalAnticipos from "./ModalAnticipos";
 
-export const POSCatalogLayout = ({ vm }: { vm: any }) => {
+export const POSCatalogLayout = ({ vm, layout = 'CATALOGO' }: { vm: any; layout?: 'CATALOGO' | 'CAJA' }) => {
+    const compacto = layout === 'CAJA';
     const [infoProduct, setInfoProduct] = useState<any | null>(null);
     const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
     // Subir/cambiar imagen del producto directo desde la card del POS
@@ -110,7 +111,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
     return (
         <>
-        <div className="w-full md:w-[65%] flex flex-col gap-4 bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white dark:border-transparent">
+        <div className={`w-full ${compacto ? 'md:w-[45%]' : 'md:w-[65%]'} flex flex-col gap-4 bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white dark:border-transparent`}>
             {/* Header: Search & Categories */}
             <div className="p-4 md:p-5 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
                 <div className="flex gap-2 mb-3">
@@ -319,31 +320,43 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
 
             {/* Product Grid */}
             <div className="flex-1 overflow-y-auto p-3 md:p-4 scrollbar-thin">
-                {/* Categorías */}
-                <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide px-1">
-                    <button
-                        onClick={() => vm.setSelectedCategoryId(0)}
-                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === 0 ? '!bg-violet-600 text-white shadow-md shadow-violet-200/50 border-none' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}`}
-                    >
-                        <span>TODOS</span>
-                        <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === 0 ? 'bg-white text-violet-600' : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-slate-950'}`}>
-                            {(vm.totalProducts || 0) + (vm.filteredCombos?.length || 0)}
-                        </span>
-                    </button>
-                    {vm.categories?.map((cat: any) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => vm.setSelectedCategoryId(cat.id)}
-                            className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl whitespace-nowrap text-sm font-bold transition-all ${vm.selectedCategoryId === cat.id ? '!bg-violet-600 text-white shadow-md shadow-violet-200/50 border-none' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}`}
-                        >
-                            <span>{cat.nombre.toUpperCase()}</span>
-                            <span className={`min-w-[24px] h-5 px-2 flex items-center justify-center rounded-full text-xs font-bold ${vm.selectedCategoryId === cat.id ? 'bg-white text-violet-600' : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-slate-950'}`}>
-                                {cat._count?.productos || 0}
-                            </span>
-                        </button>
-                    ))}
+                {compacto ? (
+                <div className="flex flex-col gap-1.5">
+                    {vm.catalogItems?.map((item: any, itemIndex: number) => {
+                        const isExpired = vm.usaLotesFarmacia && item.__catalogType === 'PRODUCTO' && item?.loteFefo?.diasAlVencimiento !== undefined && item?.loteFefo?.diasAlVencimiento < 0;
+                        const precio = item.__catalogType === 'COMBO'
+                            ? Number(item.precioCombo)
+                            : Number(item.precioUnitario);
+                        const simbolo = String(item.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/';
+                        const stockTxt = esServicio(item) ? 'Servicio' : `Stock: ${item.__catalogType === 'COMBO' ? getComboStock(item) : (item.stock ?? 0)}`;
+                        return (
+                            <button
+                                key={`c-${item.__catalogType}-${item.id}-${itemIndex}`}
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => { if (isExpired) return; item.__catalogType === 'COMBO' ? vm.handleComboClick(item) : vm.handleProductClick(item); }}
+                                className="group flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white px-3 py-2 text-left transition-all hover:border-violet-300 hover:bg-violet-50/40 active:scale-[0.99] disabled:opacity-50 dark:border-slate-800 dark:bg-[#1E2435] dark:hover:bg-slate-800"
+                            >
+                                <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-gray-50 dark:bg-slate-800">
+                                    {(uploadedImages[item.id] || item.imagenUrl) && !brokenImages[`${item.__catalogType}-${item.id}`] ? (
+                                        <img src={uploadedImages[item.id] ?? item.imagenUrl} alt="" className="h-full w-full object-contain" loading="lazy" onError={() => setBrokenImages((prev) => ({ ...prev, [`${item.__catalogType}-${item.id}`]: true }))} />
+                                    ) : (
+                                        <Icon icon="solar:box-minimalistic-linear" className="text-lg text-gray-300 dark:text-slate-600" />
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[13px] font-bold uppercase text-gray-800 dark:text-gray-200">{item.__catalogType === 'COMBO' ? item.nombre : item.descripcion}</p>
+                                    <p className="text-[11px] font-semibold text-gray-400">{stockTxt}{item.__catalogType === 'COMBO' ? ' · KIT' : ''}</p>
+                                </div>
+                                <span className="shrink-0 text-sm font-black text-gray-900 dark:text-white">{simbolo}{precio.toFixed(2)}</span>
+                                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-violet-600 text-white shadow-sm transition group-hover:bg-violet-700">
+                                    <Icon icon="solar:add-circle-bold" className="text-lg" />
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
-
+                ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
                     {vm.catalogItems?.map((item: any, itemIndex: number) => (
                         <div
@@ -528,6 +541,7 @@ export const POSCatalogLayout = ({ vm }: { vm: any }) => {
                         </div>
                     ))}
                 </div>
+                )}
                 {!vm.catalogItems?.length && (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400">
                         <Icon icon="solar:sad-square-linear" className="text-6xl mb-2 opacity-50" />
