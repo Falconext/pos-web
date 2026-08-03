@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useProductsStore } from '@/zustand/products';
 import { useBrandsStore } from '@/zustand/brands';
@@ -26,6 +27,7 @@ const FALLBACK_VISIBLE_COLUMNS = [
 ];
 
 export const useProductsViewModel = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     // Stores
     const {
         products: storeProducts,
@@ -167,7 +169,8 @@ export const useProductsViewModel = () => {
         visibleColumns: initialVisibleColumns,
         showColumnFilter: false,
         vistaActual: isRestaurante ? 'cards' : 'tabla',
-        marcaIdFilter: undefined
+        marcaIdFilter: undefined,
+        soloStockBajo: searchParams.get('stockBajo') === 'true',
     });
 
     const debounce = useDebounce(state.searchClient, 600);
@@ -282,6 +285,7 @@ export const useProductsViewModel = () => {
             };
             if (state.marcaIdFilter) params.marcaId = String(state.marcaIdFilter);
             if (effectiveSedeId) params.sedeId = String(effectiveSedeId);
+            if (state.soloStockBajo) params.soloStockBajo = 'true';
             const query = new URLSearchParams(params).toString();
             const resp: any = await get(`productos?${query}`);
             if (resp?.code === 1) {
@@ -300,7 +304,7 @@ export const useProductsViewModel = () => {
             setProductsLoaded(true);
             setProductsLoading(false);
         }
-    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, debounce, effectiveSedeId]);
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, debounce, effectiveSedeId]);
 
     // Siempre mantiene la ref actualizada sin recrear efectos dependientes
     const fetchProductsListRef = useRef(fetchProductsList);
@@ -310,7 +314,7 @@ export const useProductsViewModel = () => {
     useEffect(() => {
         if (!auth?.empresaId) return;
         fetchProductsListRef.current();
-    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Sincroniza actualizaciones optimistas desde Zustand (editar/crear sin recargar página).
     useEffect(() => {
@@ -761,7 +765,17 @@ export const useProductsViewModel = () => {
         isCodigoBarrasEnabled,
         safeVisibleColumns,
         stockSort,
-        actions,
+        actions: {
+            ...actions,
+            setSoloStockBajo: (value: boolean) => {
+                setState(prev => ({ ...prev, soloStockBajo: value, currentPage: 1 }));
+                // Sync URL param for shareability
+                const next = new URLSearchParams(searchParams);
+                if (value) next.set('stockBajo', 'true');
+                else next.delete('stockBajo');
+                setSearchParams(next, { replace: true });
+            },
+        },
         // Sede filtering
         isAdmin,
         esPrincipal,

@@ -605,107 +605,126 @@ export default function ProductsView() {
                                     <Icon icon="solar:shop-bold" className="mr-1.5 !text-white" /> Catálogo PDF
                                 </Button>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-3 sm:p-4">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        ref={vm.uploadImageRef}
-                        onChange={actions.handleUploadImage}
-                        className="hidden"
-                        disabled={vm.uploading}
-                    />
-
-                    <div className="hidden md:block overflow-x-auto">
-                        {renderContent()}
-                    </div>
-                    <div className="md:hidden">
-                        {renderMobileProducts()}
-                    </div>
-
-                    {/* Modals */}
-                    <ModalCategories isOpenModal={vm.isOpenModalCategory} closeModal={() => actions.setIsOpenModalCategory(false)} setIsOpenModal={actions.setIsOpenModalCategory} />
-                    <ModalMarcas isOpenModal={vm.isOpenModalBrands} closeModal={() => actions.setIsOpenModalBrands(false)} setIsOpenModal={actions.setIsOpenModalBrands} />
-                    {vm.isOpenModalCatalog && <ModalCatalog
-                        isOpen={vm.isOpenModalCatalog}
-                        onClose={() => actions.setIsOpenModalCatalog(false)}
-                        onSuccess={() => {
-                            actions.setIsOpenModalCatalog(false);
-                            actions.refreshProducts();
-                        }}
-                    />}
-
-                    <TableActionMenu
-                        isOpen={!!vm.openAccionesId && !!vm.anchorEl}
-                        anchorEl={vm.anchorEl}
-                        onClose={() => { actions.setOpenAccionesId(null); actions.setAnchorEl(null); }}
-                    >
-                        {vm.openAccionesId && (() => {
-                            const rowBase = productsSource.find((r) => r.id === vm.openAccionesId);
-                            if (!rowBase) return null;
-                            return (
-                                <>
-                                    <button type="button" onClick={() => { actions.handleGetProduct({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-                                        <Icon icon="material-symbols:edit" width={16} height={16} /> <span>Editar</span>
-                                    </button>
-                                    <button type="button" onClick={() => { actions.setUploadTarget({ id: rowBase.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-                                        <Icon icon="solar:upload-minimalistic-bold" width={16} height={16} /> <span>Subir imagen</span>
-                                    </button>
-                                    <button type="button" onClick={() => { actions.handleToggleClientState({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-                                        <Icon icon="mdi:power" width={16} height={16} /> <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
-                                    </button>
-                                    {vm.tieneTienda && (
-                                        <button type="button" onClick={() => { actions.togglePublicarTienda(rowBase); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-                                            <Icon icon={(rowBase as any).publicarEnTienda ? 'mdi:store-off' : 'mdi:store'} width={16} height={16} className={(rowBase as any).publicarEnTienda ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-500 dark:text-emerald-400'} />
-                                            <span>{(rowBase as any).publicarEnTienda ? 'Quitar de tienda' : 'Publicar en tienda'}</span>
-                                        </button>
-                                    )}
-                                    <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
-                                        <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
-                                    </button>
-                                </>
-                            );
-                        })()}
-                    </TableActionMenu>
+                             </div>
                 </div>
             </div>
 
-            {vm.isOpenModal && <ModalProduct
-                isOpenModal={vm.isOpenModal}
-                setIsOpenModal={actions.setIsOpenModal}
-                closeModal={actions.closeProductModal}
-                errors={vm.errors}
-                initialForm={vm.emptyProductForm}
-                formValues={vm.formValues}
-                setErrors={actions.setErrors}
-                setFormValues={actions.setFormValues}
-                isEdit={vm.isEdit}
-            />}
+            {/* Stock Bajo active filter badge */}
+            {vm.soloStockBajo && (
+                <div className="px-4 sm:px-5 pb-3 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                        <Icon icon="solar:danger-triangle-bold" className="text-sm" />
+                        Filtrando: Stock Bajo
+                        <button
+                            type="button"
+                            onClick={() => actions.setSoloStockBajo(false)}
+                            className="ml-1 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
+                            aria-label="Quitar filtro stock bajo"
+                        >
+                            <Icon icon="solar:close-circle-bold" className="text-sm" />
+                        </button>
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{vm.totalProducts} producto{vm.totalProducts !== 1 ? 's' : ''} con stock bajo</span>
+                </div>
+            )}
 
-            <ModalConfirm
-                isOpenModal={vm.isOpenModalConfirm}
-                setIsOpenModal={actions.setIsOpenModalConfirm}
-                confirmSubmit={actions.confirmToggleroduct}
-                title={vm.labels.confirmarEstado}
-                information={`¿Estás seguro que deseas cambiar el estado de este ${vm.isRestaurante ? 'plato' : 'producto'}?`}
-            />
+            <div className="p-3 sm:p-4">
+                <input
+                    type="file"
+                    accept="image/*"
+                    ref={vm.uploadImageRef}
+                    onChange={actions.handleUploadImage}
+                    className="hidden"
+                    disabled={vm.uploading}
+                />
 
-            <ModalConfirm
-                isOpenModal={vm.isOpenModalDelete}
-                setIsOpenModal={actions.setIsOpenModalDelete}
-                confirmSubmit={actions.confirmDeleteProduct}
-                title={vm.labels.eliminar}
-                information={vm.labels.eliminarInfo}
-            />
+                <div className="hidden md:block overflow-x-auto">
+                    {renderContent()}
+                </div>
+                <div className="md:hidden">
+                    {renderMobileProducts()}
+                </div>
 
-            <ModalPreviewCatalogo 
-                isOpen={isOpenModalPreviewCatalogo} 
-                onClose={() => setIsOpenModalPreviewCatalogo(false)} 
-            />
+                {/* Modals */}
+                <ModalCategories isOpenModal={vm.isOpenModalCategory} closeModal={() => actions.setIsOpenModalCategory(false)} setIsOpenModal={actions.setIsOpenModalCategory} />
+                <ModalMarcas isOpenModal={vm.isOpenModalBrands} closeModal={() => actions.setIsOpenModalBrands(false)} setIsOpenModal={actions.setIsOpenModalBrands} />
+                {vm.isOpenModalCatalog && <ModalCatalog
+                    isOpen={vm.isOpenModalCatalog}
+                    onClose={() => actions.setIsOpenModalCatalog(false)}
+                    onSuccess={() => {
+                        actions.setIsOpenModalCatalog(false);
+                        actions.refreshProducts();
+                    }}
+                />}
 
+                <TableActionMenu
+                    isOpen={!!vm.openAccionesId && !!vm.anchorEl}
+                    anchorEl={vm.anchorEl}
+                    onClose={() => { actions.setOpenAccionesId(null); actions.setAnchorEl(null); }}
+                >
+                    {vm.openAccionesId && (() => {
+                        const rowBase = productsSource.find((r) => r.id === vm.openAccionesId);
+                        if (!rowBase) return null;
+                        return (
+                            <>
+                                <button type="button" onClick={() => { actions.handleGetProduct({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                    <Icon icon="material-symbols:edit" width={16} height={16} /> <span>Editar</span>
+                                </button>
+                                <button type="button" onClick={() => { actions.setUploadTarget({ id: rowBase.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                    <Icon icon="solar:upload-minimalistic-bold" width={16} height={16} /> <span>Subir imagen</span>
+                                </button>
+                                <button type="button" onClick={() => { actions.handleToggleClientState({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                    <Icon icon="mdi:power" width={16} height={16} /> <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
+                                </button>
+                                {vm.tieneTienda && (
+                                    <button type="button" onClick={() => { actions.togglePublicarTienda(rowBase); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                        <Icon icon={(rowBase as any).publicarEnTienda ? 'mdi:store-off' : 'mdi:store'} width={16} height={16} className={(rowBase as any).publicarEnTienda ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-500 dark:text-emerald-400'} />
+                                        <span>{(rowBase as any).publicarEnTienda ? 'Quitar de tienda' : 'Publicar en tienda'}</span>
+                                    </button>
+                                )}
+                                <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
+                                    <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
+                                </button>
+                            </>
+                        );
+                    })()}
+                </TableActionMenu>
+            </div>
         </div>
+
+        {vm.isOpenModal && <ModalProduct
+            isOpenModal={vm.isOpenModal}
+            setIsOpenModal={actions.setIsOpenModal}
+            closeModal={actions.closeProductModal}
+            errors={vm.errors}
+            initialForm={vm.emptyProductForm}
+            formValues={vm.formValues}
+            setErrors={actions.setErrors}
+            setFormValues={actions.setFormValues}
+            isEdit={vm.isEdit}
+        />}
+
+        <ModalConfirm
+            isOpenModal={vm.isOpenModalConfirm}
+            setIsOpenModal={actions.setIsOpenModalConfirm}
+            confirmSubmit={actions.confirmToggleroduct}
+            title={vm.labels.confirmarEstado}
+            information={`¿Estás seguro que deseas cambiar el estado de este ${vm.isRestaurante ? 'plato' : 'producto'}?`}
+        />
+
+        <ModalConfirm
+            isOpenModal={vm.isOpenModalDelete}
+            setIsOpenModal={actions.setIsOpenModalDelete}
+            confirmSubmit={actions.confirmDeleteProduct}
+            title={vm.labels.eliminar}
+            information={vm.labels.eliminarInfo}
+        />
+
+        <ModalPreviewCatalogo
+            isOpen={isOpenModalPreviewCatalogo}
+            onClose={() => setIsOpenModalPreviewCatalogo(false)}
+        />
+
+    </div>
     );
 }
