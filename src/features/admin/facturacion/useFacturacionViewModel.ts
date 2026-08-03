@@ -1642,7 +1642,6 @@ export const useFacturacionViewModel = () => {
         const tipo = doc.length === 11 ? 'RUC' : 'DNI';
         setClienteDocLookupLoading(true);
         try {
-            // 1) ¿Ya está registrado en la empresa?
             const resp: any = await get(`clientes?search=${doc}&limit=5`);
             const lista = (resp as any)?.data?.clientes ?? (resp as any)?.data?.data ?? [];
             const existente = Array.isArray(lista) ? lista.find((c: any) => String(c.nroDoc) === doc) : null;
@@ -1651,7 +1650,7 @@ export const useFacturacionViewModel = () => {
                 useAlertStore.getState().alert(`Cliente: ${existente.nombre}`, 'success');
                 return true;
             }
-            // 2) Consultar padrón y crear automáticamente
+
             const info: any = await getClientFromDoc(doc, tipo);
             if (!info) return false;
             const nombre = info.nombre_completo || info.nombre_o_razon_social || '';
@@ -1659,6 +1658,7 @@ export const useFacturacionViewModel = () => {
                 useAlertStore.getState().alert('El padrón no devolvió el nombre; regístralo manualmente', 'warning');
                 return false;
             }
+
             const creado: any = await addClients({
                 tipoDoc: tipo,
                 nroDoc: doc,
@@ -1671,6 +1671,7 @@ export const useFacturacionViewModel = () => {
                 persona: 'CLIENTE',
                 estado: 'ACTIVO',
             } as any);
+
             if (creado) {
                 handleClienteCreado({ ...creado, nroDoc: doc, nombre });
                 return true;
@@ -2404,8 +2405,6 @@ export const useFacturacionViewModel = () => {
         handleDeleteProduct,
         handleDeleteProductByIndex,
         handleClienteCreado,
-        handleClienteDocLookup,
-        clienteDocLookupLoading,
         handleSaveEdit,
         handleSelectWholesaleTier,
         getApplicablePrice,
@@ -2425,6 +2424,8 @@ export const useFacturacionViewModel = () => {
         // Search & Pagination
         searchTerm, setSearchTerm,
         selectedCategoryId, setSelectedCategoryId,
+        handleClienteDocLookup,
+        clienteDocLookupLoading,
         page, setPage,
         limit, setLimit,
         pages, indexOfFirstItem, indexOfLastItem,
