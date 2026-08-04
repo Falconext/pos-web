@@ -306,6 +306,24 @@ const EmpresasIndex = () => {
               <Icon icon="material-symbols:edit" width={16} height={16} />
               <span>Editar</span>
             </button>
+            {/* Contrato de servicios — solo clientes reales (mensuales/anuales), no demo */}
+            {selectedMenuRow.grupo !== 'DEMO' && (
+              <>
+                <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                <button type="button" onClick={() => runMenuAction(vm.handleDescargarContrato)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                  <Icon icon="solar:file-download-bold-duotone" width={16} height={16} />
+                  <span>Descargar contrato</span>
+                </button>
+                <button type="button" onClick={() => runMenuAction((row) => vm.handleEnviarContrato(row, 'email'))} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30">
+                  <Icon icon="solar:letter-bold-duotone" width={16} height={16} />
+                  <span>Enviar contrato por correo</span>
+                </button>
+                <button type="button" onClick={() => runMenuAction((row) => vm.handleEnviarContrato(row, 'whatsapp'))} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30">
+                  <Icon icon="ic:baseline-whatsapp" width={16} height={16} />
+                  <span>Enviar contrato por WhatsApp</span>
+                </button>
+              </>
+            )}
             {selectedMenuRow.estado === 'ACTIVO' && (
               <>
                 <div className="border-t border-gray-100 dark:border-slate-700 my-1" />

@@ -237,6 +237,37 @@ export const useEmpresaIndexViewModel = (): any => {
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
     };
 
+    // ── Contrato de servicios (PDF autollenado) ──
+    const handleDescargarContrato = async (row: any) => {
+        try {
+            const resp = await apiClient.get(`/empresa/${row.id}/contrato`, { responseType: 'blob', timeout: 60000 });
+            const url = URL.createObjectURL(new Blob([resp.data], { type: 'application/pdf' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Contrato_${String(row['Razon Social'] || 'cliente').replace(/[^a-z0-9]+/gi, '_')}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e: any) {
+            useAlertStore.getState().alert(e?.response?.data?.message || e?.message || 'No se pudo generar el contrato', 'error');
+        }
+    };
+
+    const handleEnviarContrato = async (row: any, canal: 'email' | 'whatsapp') => {
+        try {
+            const resp: any = await post(`empresa/${row.id}/contrato/enviar`, { canal });
+            if (resp?.success === false || resp?.error) {
+                useAlertStore.getState().alert(resp?.error || resp?.message || 'No se pudo enviar el contrato', 'error');
+                return;
+            }
+            useAlertStore.getState().alert(
+                resp?.message || (canal === 'email' ? 'Contrato enviado por correo' : 'Contrato enviado por WhatsApp'),
+                'success',
+            );
+        } catch (e: any) {
+            useAlertStore.getState().alert(e?.response?.data?.message || e?.message || 'No se pudo enviar el contrato', 'error');
+        }
+    };
+
     // KPIs de vencimiento sobre el conjunto cargado (respeta búsqueda/estado del servidor)
     const kpis = empresasTable.reduce(
         (acc: { vencidos: number; porVencer7: number; porVencer30: number }, e: any) => {
@@ -274,5 +305,5 @@ export const useEmpresaIndexViewModel = (): any => {
     const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
 
-    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp };
+    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleDescargarContrato, handleEnviarContrato };
 };
