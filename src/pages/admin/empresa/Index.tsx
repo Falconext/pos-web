@@ -70,10 +70,23 @@ const EmpresasIndex = () => {
     handleCloseMenu();
   };
 
+  const checkCell = (ok: boolean) => (
+    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${ok ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-500 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+      <Icon icon={ok ? 'solar:check-circle-bold' : 'solar:close-circle-bold'} width={16} height={16} />
+    </span>
+  );
+
   const buildRows = (rows: any[]) => rows.map((row: any) => {
     const sev = VENCE_STYLES[row.severidad as Severidad] ?? VENCE_STYLES.sinfecha;
     return {
       ...row,
+      'Mes Activacion': (
+        <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">{row['Mes Activacion'] ?? '—'}</span>
+      ),
+      capacitacion: checkCell(Boolean(row.capacitacion)),
+      altaSunat: checkCell(Boolean(row.altaSunat)),
+      contrato: checkCell(Boolean(row.contrato)),
+      bienvenidaRedes: checkCell(Boolean(row.bienvenidaRedes)),
       'Plan': (
         <div className="flex flex-col leading-tight">
           <span className="font-semibold text-gray-800 dark:text-gray-100">{row['Plan']}</span>
@@ -117,7 +130,17 @@ const EmpresasIndex = () => {
     (g) => vm.grupoFiltro === '' || vm.grupoFiltro === g,
   );
 
-  const headerColumns: any[] = ['RUC', 'Razon Social', 'Ambiente', 'Rubro', 'Plan', { label: 'Expiración', key: 'fechaExpiracion' }, 'Vence en', 'Estado', 'Acciones'];
+  const baseColumns: any[] = ['RUC', 'Razon Social', 'Ambiente', 'Rubro', 'Plan', { label: 'Expiración', key: 'fechaExpiracion' }, 'Vence en', 'Estado'];
+  const onboardingColumns: any[] = [
+    { label: 'Mes Activación', key: 'Mes Activacion' },
+    { label: 'Capacitación', key: 'capacitacion' },
+    { label: 'Alta SUNAT', key: 'altaSunat' },
+    { label: 'Contrato', key: 'contrato' },
+    { label: 'Bienvenida Redes', key: 'bienvenidaRedes' },
+  ];
+  // Las columnas de onboarding solo aplican a clientes reales (mensuales/anuales), no demo.
+  const headerColumnsFor = (g: GrupoCliente): any[] =>
+    g === 'DEMO' ? [...baseColumns, 'Acciones'] : [...baseColumns, ...onboardingColumns, 'Acciones'];
 
   const kpiCards: { key: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30'; label: string; value: number; icon: string; active: string; idle: string }[] = [
     { key: 'VENCIDOS', label: 'Vencidos', value: vm.kpis.vencidos, icon: 'solar:danger-triangle-bold-duotone', active: 'border-rose-400 bg-rose-50 dark:bg-rose-950/30 ring-2 ring-rose-300/50', idle: 'border-rose-100 dark:border-rose-900/30 hover:border-rose-300' },
@@ -227,7 +250,7 @@ const EmpresasIndex = () => {
                 {rows.length > 0 ? (
                   <div className="bg-white dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
                     <div className="overflow-hidden overflow-x-auto">
-                      <DataTable actions={[]} bodyData={expanded[g] ? rows : rows.slice(0, PREVIEW)} headerColumns={headerColumns} />
+                      <DataTable actions={[]} bodyData={expanded[g] ? rows : rows.slice(0, PREVIEW)} headerColumns={headerColumnsFor(g)} />
                     </div>
                     {rows.length > PREVIEW && (
                       <button

@@ -93,6 +93,10 @@ interface EditFormData {
   cotizMostrarCuentas?: boolean;
   cotizMostrarRazonSocial?: boolean;
   cotizMostrarDetraccion?: boolean;
+  capacitacion?: boolean;
+  altaSunat?: boolean;
+  contrato?: boolean;
+  bienvenidaRedes?: boolean;
   brand?: string;
   producto?: 'facturacion' | 'hotel' | 'logistica';
   usuario?: {
@@ -231,6 +235,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     cotizMostrarCuentas: true,
     cotizMostrarRazonSocial: true,
     cotizMostrarDetraccion: true,
+    capacitacion: false,
+    altaSunat: false,
+    contrato: false,
+    bienvenidaRedes: false,
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -309,6 +317,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         cotizMostrarCuentas: (empresa as any).cotizMostrarCuentas ?? true,
         cotizMostrarRazonSocial: (empresa as any).cotizMostrarRazonSocial ?? true,
         cotizMostrarDetraccion: (empresa as any).cotizMostrarDetraccion ?? true,
+        capacitacion: Boolean((empresa as any).capacitacion),
+        altaSunat: Boolean((empresa as any).altaSunat),
+        contrato: Boolean((empresa as any).contrato),
+        bienvenidaRedes: Boolean((empresa as any).bienvenidaRedes),
       });
       setInitialEditPlanId(empresa.plan?.id || 0);
       setLogoPreview(empresa.logo ? empresa.logo : '');
@@ -851,6 +863,32 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                     <InputPro name="fechaActivacion" label="Fecha de Activación" type="date" isLabel value={isEdit ? editData.fechaActivacion : createData.fechaActivacion} onChange={handleChange} />
                     <InputPro name="fechaExpiracion" label="Fecha de Expiración" type="date" isLabel value={isEdit ? editData.fechaExpiracion : (createData.fechaExpiracion || '')} onChange={handleChange} />
                   </div>
+
+                  {/* Onboarding — solo clientes reales (mensuales/anuales), no demo */}
+                  {isEdit && !editData.usaDemo && (
+                    <div className="pt-1">
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Onboarding del cliente</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">Marca los hitos completados. Se muestran en la tabla de empresas.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {[
+                          { key: 'capacitacion', label: 'Capacitación' },
+                          { key: 'altaSunat', label: 'Alta SUNAT' },
+                          { key: 'contrato', label: 'Contrato' },
+                          { key: 'bienvenidaRedes', label: 'Bienvenida en redes' },
+                        ].map(({ key, label }) => (
+                          <label key={key} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={Boolean((editData as any)[key])}
+                              onChange={(e) => setEditData((prev) => ({ ...prev, [key]: e.target.checked }))}
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="rounded-xl border border-blue-100 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>

@@ -46,6 +46,15 @@ const formatDaysUntil = (days: number | null): string => {
 export type GrupoCliente = 'DEMO' | 'MENSUAL' | 'ANUAL';
 export type Severidad = 'vencido' | 'critico' | 'alerta' | 'ok' | 'sinfecha';
 
+// Mes de activación en español (abreviado, "Set" para septiembre).
+const MESES_ABREV = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+const mesAbrev = (fecha?: string | Date | null): string => {
+    if (!fecha) return '—';
+    const d = new Date(fecha);
+    if (isNaN(d.getTime())) return '—';
+    return MESES_ABREV[d.getMonth()] ?? '—';
+};
+
 const resolveGrupo = (empresa: any): GrupoCliente => {
     const plan = empresa?.plan ?? {};
     const nombre = String(plan.nombre ?? '');
@@ -161,6 +170,11 @@ export const useEmpresaIndexViewModel = (): any => {
             'Tienda Virtual': tiendaEstado,
             fechaExpiracion: formatDateOnly(empresa.fechaExpiracion),
             'Vence en': formatDaysUntil(diasRestantes),
+            'Mes Activacion': mesAbrev(empresa.fechaActivacion),
+            capacitacion: Boolean(empresa.capacitacion),
+            altaSunat: Boolean(empresa.altaSunat),
+            contrato: Boolean(empresa.contrato),
+            bienvenidaRedes: Boolean(empresa.bienvenidaRedes),
             estado: empresa.estado,
             grupo: resolveGrupo(empresa),
             severidad: resolveSeveridad(diasRestantes),
