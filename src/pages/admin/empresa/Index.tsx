@@ -130,7 +130,7 @@ const EmpresasIndex = () => {
     (g) => vm.grupoFiltro === '' || vm.grupoFiltro === g,
   );
 
-  const baseColumns: any[] = ['RUC', 'Razon Social', 'Ambiente', 'Rubro', 'Plan', { label: 'Expiración', key: 'fechaExpiracion' }, 'Vence en', 'Estado'];
+  const baseColumns: any[] = ['RUC', 'Razon Social', 'Rubro', 'Plan', 'Vence en', 'Estado'];
   const onboardingColumns: any[] = [
     { label: 'Mes Activación', key: 'Mes Activacion' },
     { label: 'Capacitación', key: 'capacitacion' },
