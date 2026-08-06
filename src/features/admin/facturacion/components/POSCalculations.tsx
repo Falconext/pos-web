@@ -655,7 +655,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         </div>{/* /body split */}
 
                         {/* Footer: emitir */}
-                        <div className="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-gray-100 dark:border-white/10">
+                        <div className="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-gray-100 dark:border-white/10 shrink-0">
                             <button onClick={() => setShowPago(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                                 Cancelar
                             </button>

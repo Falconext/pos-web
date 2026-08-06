@@ -1,8 +1,8 @@
 import React from 'react';
-import { BarChart as TremorBarChart, DonutChart } from '@tremor/react';
 import { Icon } from '@iconify/react';
 import DataTable from '@/components/Datatable';
 import { useDashboardViewModel } from './useDashboardViewModel';
+import KardexPremiumCharts from './KardexPremiumCharts';
 
 export default function DashboardView() {
     const vm = useDashboardViewModel();
@@ -51,61 +51,61 @@ export default function DashboardView() {
             ) : (
                 <>
                 {/* Métricas principales */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-5 sm:mb-6">
+                    <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+                        <div className="flex justify-between items-start gap-2 mb-4">
                             <h3 className="text-blue-500 text-[13px] font-bold tracking-wide">Total Productos</h3>
-                            <div className="w-10 h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:-translate-y-1 transition-transform">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-blue-500 flex items-center justify-center text-white shadow-blue-200 group-hover:-translate-y-1 transition-transform shrink-0">
                                 <Icon icon="solar:box-bold" className="text-xl" />
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
+                            <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2 truncate">
                                 {dashboardData.resumenGeneral.totalProductos.toLocaleString()}
                             </h2>
                             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">productos registrados</span>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
+                    <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+                        <div className="flex justify-between items-start gap-2 mb-4">
                             <h3 className="text-emerald-500 text-[13px] font-bold tracking-wide">Valor Inventario</h3>
-                            <div className="w-10 h-10 rounded-[14px] bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-200 group-hover:-translate-y-1 transition-transform">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-emerald-500 flex items-center justify-center text-white shadow-emerald-200 group-hover:-translate-y-1 transition-transform shrink-0">
                                 <Icon icon="solar:wallet-money-bold" className="text-xl" />
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
+                            <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2 truncate">
                                 {helpers.formatCurrency(dashboardData.resumenGeneral.valorTotalInventario)}
                             </h2>
                             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">valor total en stock</span>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
+                    <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+                        <div className="flex justify-between items-start gap-2 mb-4">
                             <h3 className="text-amber-500 text-[13px] font-bold tracking-wide">Stock Crítico</h3>
-                            <div className="w-10 h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 group-hover:-translate-y-1 transition-transform">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-amber-500 flex items-center justify-center text-white shadow-amber-200 group-hover:-translate-y-1 transition-transform shrink-0">
                                 <Icon icon="solar:danger-triangle-bold" className="text-xl" />
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
+                            <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2 truncate">
                                 {dashboardData.resumenGeneral.productosStockCritico}
                             </h2>
                             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">productos bajo mínimo</span>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
+                    <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+                        <div className="flex justify-between items-start gap-2 mb-4">
                             <h3 className="text-rose-500 text-[13px] font-bold tracking-wide">Sin Stock</h3>
-                            <div className="w-10 h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 group-hover:-translate-y-1 transition-transform">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-rose-500 flex items-center justify-center text-white shadow-rose-200 group-hover:-translate-y-1 transition-transform shrink-0">
                                 <Icon icon="solar:close-circle-bold" className="text-xl" />
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">
+                            <h2 className="text-xl sm:text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2 truncate">
                                 {dashboardData.resumenGeneral.productosStockCero}
                             </h2>
                             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">productos agotados</span>
@@ -113,40 +113,12 @@ export default function DashboardView() {
                     </div>
                 </div>
 
-                {/* Gráficos con Tremor */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
-                        <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1">Estado del stock</h3>
-                        <TremorBarChart
-                            className="mt-4 h-64"
-                            data={charts.stockChartData ?? []}
-                            index="estado"
-                            categories={["Stock normal", "Stock crítico", "Sin stock"]}
-                            colors={["emerald", "amber", "rose"]}
-                            showLegend
-                            showGridLines={false}
-                            showAnimation
-                            yAxisWidth={56}
-                            valueFormatter={(value: number) =>
-                                Number(value || 0).toLocaleString("es-PE")
-                            }
-                        />
-                    </div>
-
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800">
-                        <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1">Distribución del inventario</h3>
-                        <DonutChart
-                            className="mt-4 h-64"
-                            data={charts.pieData}
-                            index="name"
-                            category="value"
-                            colors={["emerald", "amber", "rose", "cyan"]}
-                            valueFormatter={(value: number) =>
-                                Number(value || 0).toLocaleString("es-PE")
-                            }
-                        />
-                    </div>
-                </div>
+                {/* Gráficos premium: estado de stock, top 10 vendidos, top 5 rentables */}
+                <KardexPremiumCharts
+                    pieData={charts.pieData}
+                    topVendidos={charts.topVendidos}
+                    topRentables={charts.topRentables}
+                />
 
                 {/* Alertas y productos críticos */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">

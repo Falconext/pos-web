@@ -180,14 +180,14 @@ const saludDemo: RubroDemo = {
   plantillaDefault: 'elegante',
   colorDefault: '#DB2777',
   products: [
-    { id: 1, descripcion: 'Sérum Vitamina C 30ml Neutrogena', precioUnitario: 89.90, precioOriginal: 110.00, imagenUrl: img(400,500,'FFFBEB','D97706','Serum Vit C'), stock: 20, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Neutrogena' } },
-    { id: 2, descripcion: 'Labial Matte Maybelline Rojo', precioUnitario: 29.90, precioOriginal: 0, imagenUrl: img(400,500,'FEF2F2','DC2626','Labial'), stock: 35, categoria: { nombre: 'Maquillaje' }, marca: { nombre: 'Maybelline' } },
-    { id: 3, descripcion: 'Shampoo Kerastase Nutritive 250ml', precioUnitario: 69.00, precioOriginal: 85.00, imagenUrl: img(400,500,'FDF2F8','BE185D','Kerastase'), stock: 15, categoria: { nombre: 'Cabello' }, marca: { nombre: 'Kérastase' } },
-    { id: 4, descripcion: 'Perfume BOSS Bottled 100ml', precioUnitario: 189.00, precioOriginal: 230.00, imagenUrl: img(400,500,'F3F4F6','374151','Perfume Boss'), stock: 8, categoria: { nombre: 'Perfumes' }, marca: { nombre: 'Hugo Boss' } },
-    { id: 5, descripcion: 'Set Maquillaje Completo L\'Oreal', precioUnitario: 149.00, precioOriginal: 0, imagenUrl: img(400,500,'FDF4FF','7E22CE','Loreal Set'), stock: 10, categoria: { nombre: 'Maquillaje' }, marca: { nombre: "L'Oreal" } },
-    { id: 6, descripcion: 'Crema Hidratante Cetaphil 250ml', precioUnitario: 45.00, precioOriginal: 55.00, imagenUrl: img(400,500,'EFF6FF','1D4ED8','Cetaphil'), stock: 25, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Cetaphil' } },
-    { id: 7, descripcion: 'Mascarilla Capilar Elvive 300ml', precioUnitario: 22.90, precioOriginal: 0, imagenUrl: img(400,500,'F0FDF4','15803D','Elvive'), stock: 30, categoria: { nombre: 'Cabello' }, marca: { nombre: 'Elvive' } },
-    { id: 8, descripcion: 'Kit Spa Facial Completo', precioUnitario: 89.00, precioOriginal: 120.00, imagenUrl: img(400,500,'FFF1F2','9F1239','Kit Spa'), stock: 12, categoria: { nombre: 'Spa' }, marca: { nombre: 'Varios' } },
+    { id: 1, descripcion: 'Sérum Vitamina C 30ml Neutrogena', precioUnitario: 89.90, precioOriginal: 110.00, imagenUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80', stock: 20, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Neutrogena' } },
+    { id: 2, descripcion: 'Labial Matte Maybelline Rojo', precioUnitario: 29.90, imagenUrl: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=500&q=80', stock: 35, categoria: { nombre: 'Maquillaje' }, marca: { nombre: 'Maybelline' } },
+    { id: 3, descripcion: 'Shampoo Kerastase Nutritive 250ml', precioUnitario: 69.00, precioOriginal: 85.00, imagenUrl: 'https://images.unsplash.com/photo-1631730359585-38a4935cbec4?auto=format&fit=crop&w=500&q=80', stock: 15, categoria: { nombre: 'Cabello' }, marca: { nombre: 'Kérastase' } },
+    { id: 4, descripcion: 'Perfume BOSS Bottled 100ml', precioUnitario: 189.00, precioOriginal: 230.00, imagenUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=500&q=80', stock: 8, categoria: { nombre: 'Perfumes' }, marca: { nombre: 'Hugo Boss' } },
+    { id: 5, descripcion: 'Set Maquillaje Completo L\'Oreal', precioUnitario: 149.00, imagenUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=500&q=80', stock: 10, categoria: { nombre: 'Maquillaje' }, marca: { nombre: "L'Oreal" } },
+    { id: 6, descripcion: 'Crema Hidratante Cetaphil 250ml', precioUnitario: 45.00, precioOriginal: 55.00, imagenUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=500&q=80', stock: 25, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Cetaphil' } },
+    { id: 7, descripcion: 'Mascarilla Capilar Elvive 300ml', precioUnitario: 22.90, imagenUrl: 'https://images.unsplash.com/photo-1626766632648-c11c1a1c1b0f?auto=format&fit=crop&w=500&q=80', stock: 30, categoria: { nombre: 'Cabello' }, marca: { nombre: 'Elvive' } },
+    { id: 8, descripcion: 'Kit Spa Facial Completo', precioUnitario: 89.00, precioOriginal: 120.00, imagenUrl: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=500&q=80', stock: 12, categoria: { nombre: 'Spa' }, marca: { nombre: 'Varios' } },
   ],
 };
 

@@ -33,6 +33,7 @@ import TableActionMenu from "@/components/TableActionMenu";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
 import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
+import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCotizacion";
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 import apiClient from "@/utils/apiClient";
 
@@ -79,6 +80,7 @@ const ComprobantesInformales = () => {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
     const [isOpenModalImportarNV, setIsOpenModalImportarNV] = useState(false);
+    const [isOpenConfigFormato, setIsOpenConfigFormato] = useState(false);
     const [isOpenModalPdf, setIsOpenModalPdf] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfName, setPdfName] = useState<string>("comprobante.pdf");
@@ -563,6 +565,14 @@ const ComprobantesInformales = () => {
                     </button>
                     <button
                         type="button"
+                        onClick={() => setIsOpenConfigFormato(true)}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                    >
+                        <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
+                        Configurar formato
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', defaultClient: 'CLIENTES_VARIOS' } })}
                         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:w-auto sm:py-2"
                     >
@@ -752,6 +762,16 @@ const ComprobantesInformales = () => {
                     if (stateInvoice !== "TODOS") params.estadoPago = stateInvoice;
                     getAllInvoices(params);
                 }}
+            />
+
+            <ModalConfigCotizacion
+                isOpen={isOpenConfigFormato}
+                onClose={() => setIsOpenConfigFormato(false)}
+                auth={auth}
+                configKey="notaVentaFormatoConfig"
+                previewReceipt="NOTA DE VENTA"
+                title="Configurar formato de nota de venta"
+                savedMsg="Formato de nota de venta guardado"
             />
 
             {isOpenModalConfirm && <ModalConfirm confirmSubmit={confirmCancelInvoice} information="¿Estás seguro que deseas anular este comprobante?" isOpenModal setIsOpenModal={() => setIsOpenModalConfirm(false)} title="Anular comprobante" />}

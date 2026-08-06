@@ -53,6 +53,21 @@ import FalconHomePage from './falcon/FalconHomePage';
 import FalconCatalogoPage from './falcon/FalconCatalogoPage';
 import FalconCheckoutPage from './falcon/FalconCheckoutPage';
 
+// Antojo (pizzería + frappes + cremoladas)
+import AntojoHomePage from './antojo/AntojoHomePage';
+import AntojoCatalogoPage from './antojo/AntojoCatalogoPage';
+import AntojoCheckoutPage from './antojo/AntojoCheckoutPage';
+
+// Luxury (perfumería de lujo)
+import LuxuryHomePage from './luxury/LuxuryHomePage';
+import LuxuryCatalogoPage from './luxury/LuxuryCatalogoPage';
+import LuxuryCheckoutPage from './luxury/LuxuryCheckoutPage';
+
+// Spa (salón de belleza & spa)
+import SpaHomePage from './spa/SpaHomePage';
+import SpaCatalogoPage from './spa/SpaCatalogoPage';
+import SpaCheckoutPage from './spa/SpaCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -118,5 +133,23 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: FalconHomePage,
     CatalogoPage: FalconCatalogoPage,
     CheckoutPage: FalconCheckoutPage,
+  },
+  antojo: {
+    id: 'antojo',
+    HomePage: AntojoHomePage,
+    CatalogoPage: AntojoCatalogoPage,
+    CheckoutPage: AntojoCheckoutPage,
+  },
+  luxury: {
+    id: 'luxury',
+    HomePage: LuxuryHomePage,
+    CatalogoPage: LuxuryCatalogoPage,
+    CheckoutPage: LuxuryCheckoutPage,
+  },
+  spa: {
+    id: 'spa',
+    HomePage: SpaHomePage,
+    CatalogoPage: SpaCatalogoPage,
+    CheckoutPage: SpaCheckoutPage,
   },
 };

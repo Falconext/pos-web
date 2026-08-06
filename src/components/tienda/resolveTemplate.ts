@@ -15,7 +15,10 @@ export type PlantillaId =
   | 'moda'
   | 'urbano'
   | 'apicultura'
-  | 'falcon';
+  | 'antojo'
+  | 'falcon'
+  | 'luxury'
+  | 'spa';
 
 export interface BannerSlotDef {
   orden: number;
@@ -364,6 +367,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     icon: 'solar:jar-of-pills-bold',
     rubrosPermitidos: ['Apicultura', 'Miel', 'Productos naturales', 'Agricultura', 'Alimentos naturales', 'Panadería y Pastelería', 'Restaurante y alimentos'],
   },
+  antojo: {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: true,
+    showSidebar: false,
+    imageAspect: 'aspect-[4/3]',
+    label: 'Antojo',
+    description: 'Carta apetitosa y divertida para pizzería, frappes y cremoladas. Badges caliente/helado, hero cálido y categorías circulares.',
+    accentColor: '#E23744',
+    icon: 'solar:pizza-bold',
+    rubrosPermitidos: ['Restaurante y alimentos', 'Restaurantes y comida', 'Pizzería', 'Pizzeria', 'Heladería', 'Heladeria', 'Cremoladas', 'Frappes', 'Postres y dulces', 'Cafetería', 'Cafeteria', 'Panadería y Pastelería', 'Comida rápida'],
+  },
   falcon: {
     cardComponent: 'ProductCardPio',
     gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
@@ -380,6 +400,40 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#1a8d4e',
     icon: 'solar:bolt-bold',
     rubrosPermitidos: ['Tecnología y software', 'Ventas de accesorios y repuestos de cómputo', 'Tecnologías de la información'],
+  },
+  luxury: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Luxury Essence',
+    description: 'Boutique de lujo para perfumería: hero editorial, colecciones por género, familias olfativas, marcas premium y ambiente claro con secciones oscuras. Color primario personalizable (púrpura + oro/negro).',
+    accentColor: '#6D28D9',
+    icon: 'mdi:bottle-tonic-plus-outline',
+    rubrosPermitidos: ['Perfumería', 'Perfumeria', 'Perfumes y fragancias', 'Belleza y cuidado personal', 'Cosmética', 'Cosmetica', 'Cosméticos', 'Retail y comercio', 'Comercio minorista'],
+  },
+  spa: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Aura Spa',
+    description: 'Web de lujo para salón de belleza y spa: hero editorial, servicios (faciales, masajes, uñas, cabello), membresías, galería, testimonios, equipo y reservas por WhatsApp. Paleta nude & rosa empolvado, color primario personalizable.',
+    accentColor: '#BE837C',
+    icon: 'mdi:spa-outline',
+    rubrosPermitidos: ['Belleza y cuidado personal', 'Spa', 'Salón de belleza', 'Salon de belleza', 'Peluquería', 'Peluqueria', 'Estética', 'Estetica', 'Barbería', 'Barberia', 'Cosmética', 'Cosmetica', 'Cosméticos', 'Bienestar', 'Servicios de belleza'],
   },
 };
 

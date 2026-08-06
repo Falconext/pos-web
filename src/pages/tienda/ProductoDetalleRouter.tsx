@@ -12,6 +12,7 @@ import ConstruccionProductoDetalle from './ConstruccionProductoDetalle';
 import FalconProductoDetalle from './FalconProductoDetalle';
 import MayeProductoDetalle from './MayeProductoDetalle';
 import ApiculturaProductoDetalle from './ApiculturaProductoDetalle';
+import LuxuryProductoDetalle from './LuxuryProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -29,6 +30,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   moda: ModaProductoDetalle,
   urbano: UrbanoProductoDetalle,
   apicultura: ApiculturaProductoDetalle,
+  luxury: LuxuryProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {
