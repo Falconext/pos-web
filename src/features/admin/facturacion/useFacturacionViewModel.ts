@@ -1297,9 +1297,7 @@ export const useFacturacionViewModel = () => {
             if (!permitirVentaSinStock && !esServicio && stockDisponible < newQty) {
                 return useAlertStore.getState().alert("Stock insuficiente", "warning");
             }
-            if (permitirVentaSinStock && !esServicio && stockDisponible < newQty) {
-                useAlertStore.getState().alert("Vendiendo sin stock disponible", "warning");
-            }
+            // Sobreventa activa: se agrega sin advertencia (el empresario ya la habilitó a propósito).
             updateProductInvoice(existingIndex, calculateLineItem(currentItem, newQty));
         } else {
             const stockDisponible = usaLotesFarmacia
@@ -1308,9 +1306,7 @@ export const useFacturacionViewModel = () => {
             if (!permitirVentaSinStock && !esServicio && stockDisponible < 1) {
                 return useAlertStore.getState().alert("Sin stock", "warning");
             }
-            if (permitirVentaSinStock && !esServicio && stockDisponible < 1) {
-                useAlertStore.getState().alert("Vendiendo sin stock disponible", "warning");
-            }
+            // Sobreventa activa: se agrega sin advertencia (el empresario ya la habilitó a propósito).
             const base = precioBaseSeleccionado;
             addProductsInvoice({
                 ...product,
