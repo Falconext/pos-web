@@ -13,6 +13,7 @@ import ModalDetalleCompra from '@/pages/admin/compras/ModalDetalleCompra';
 import ModalRegistrarPagoCompra from '@/pages/admin/compras/ModalRegistrarPagoCompra';
 import ModalHistorialPagosCompra from '@/pages/admin/compras/ModalHistorialPagosCompra';
 import ModalNuevaCompra from '@/pages/admin/compras/ModalNuevaCompra';
+import ModalConfirm from '@/components/ModalConfirm';
 import { motion } from 'framer-motion';
 import { fadeUp, interactiveHover, listItemFadeUp, listItemHidden, listStagger } from '@/lib/motion/presets';
 
@@ -58,6 +59,18 @@ export default function ComprasView() {
             tooltip: 'Ver detalle',
             className: 'edit',
             onClick: (row: any) => actions.openDetalle(row.id),
+        },
+        {
+            icon: <Icon icon="solar:pen-2-bold-duotone" width="20" height="20" color="#0ea5e9" />,
+            tooltip: 'Editar compra',
+            className: 'edit',
+            onClick: (row: any) => actions.openEditar(row._raw),
+        },
+        {
+            icon: <Icon icon="solar:trash-bin-trash-bold-duotone" width="20" height="20" color="#ef4444" />,
+            tooltip: 'Anular compra',
+            className: 'delete',
+            onClick: (row: any) => actions.openAnular(row._raw),
         },
     ];
 
@@ -257,6 +270,22 @@ export default function ComprasView() {
                                                     <Icon icon="solar:history-bold-duotone" className="text-base" />
                                                     Historial
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => actions.openEditar(compra)}
+                                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-50 text-xs font-black text-sky-700 transition hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-300"
+                                                >
+                                                    <Icon icon="solar:pen-2-bold-duotone" className="text-base" />
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => actions.openAnular(compra)}
+                                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-50 text-xs font-black text-rose-700 transition hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300"
+                                                >
+                                                    <Icon icon="solar:trash-bin-trash-bold-duotone" className="text-base" />
+                                                    Anular
+                                                </button>
                                                 {puedePagar && (
                                                     <button
                                                         type="button"
@@ -326,6 +355,22 @@ export default function ComprasView() {
                 isOpen={vm.showNuevaCompraModal}
                 onClose={actions.closeNuevaCompra}
                 onSuccess={actions.handleNuevaCompraSuccess}
+            />
+
+            <ModalNuevaCompra
+                isOpen={vm.showEditarModal}
+                compra={vm.compraEditar}
+                onClose={actions.closeEditar}
+                onSuccess={actions.handleEditarSuccess}
+            />
+
+            <ModalConfirm
+                isOpenModal={vm.showAnularConfirm}
+                setIsOpenModal={(v: boolean) => { if (!v) actions.closeAnular(); }}
+                confirmSubmit={actions.confirmAnular}
+                title="Anular compra"
+                information={`¿Seguro que deseas anular la compra ${vm.compraAnular?.serie || ''}-${vm.compraAnular?.numero || ''}? Se revertirá el stock ingresado. Esta acción no se puede deshacer.`}
+                confirmText="Anular"
             />
         </motion.div>
     );
