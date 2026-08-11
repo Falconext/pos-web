@@ -1044,11 +1044,13 @@ const Comprobantes = () => {
             )}
 
             {/* Menu de Acciones Flotante con Portal */}
+            {/* w-60: ancho suficiente para que TODAS las acciones (incl. "Generar Guía
+                de Remisión") quepan en una sola línea, alineadas a la izquierda. */}
             <TableActionMenu
                 isOpen={Boolean(menuAnchor)}
                 anchorEl={menuAnchor}
                 onClose={handleCloseMenu}
-                className="w-44"
+                className="w-60"
             >
                 {selectedMenuRow && (() => {
                     const rowBase = selectedMenuRow;
@@ -1128,9 +1130,17 @@ const Comprobantes = () => {
                                         type="button"
                                         onClick={async () => {
                                             handleCloseMenu();
-                                            await conciliarInvoice(rowBase.id);
+                                            const res = await conciliarInvoice(rowBase.id);
+                                            if (res?.success) {
+                                                // Refleja EMITIDO/Aceptado al instante (invoicesList es estado local).
+                                                setInvoicesList((prev) => prev.map((inv: any) =>
+                                                    inv.id === rowBase.id
+                                                        ? { ...inv, estadoEnvioSunat: 'ACEPTADO', estadoSunatRaw: 'EMITIDO' }
+                                                        : inv
+                                                ));
+                                            }
                                         }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                                     >
                                         <Icon icon="solar:check-circle-bold-duotone" width={16} height={16} />
                                         <span>Marcar como conciliado</span>
@@ -1150,7 +1160,7 @@ const Comprobantes = () => {
                                             });
                                             handleCloseMenu();
                                         }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/30"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/30"
                                     >
                                         <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
                                         <span>Generar Guía de Remisión</span>
@@ -1201,7 +1211,7 @@ const Comprobantes = () => {
                                         }
                                         handleCloseMenu();
                                     }}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${canNC ? 'text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30' : 'text-gray-400 cursor-not-allowed'}`}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap ${canNC ? 'text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30' : 'text-gray-400 cursor-not-allowed'}`}
                                 >
                                     <Icon icon="solar:document-medicine-bold-duotone" width={16} height={16} />
                                     <span>Generar NC (Anular)</span>
@@ -1214,7 +1224,7 @@ const Comprobantes = () => {
                                     <button
                                         type="button"
                                         onClick={() => { setErrorSunatModal({ titulo: `Error SUNAT — ${rowBase.serie}-${String(rowBase.correlativo).padStart(8, '0')}`, mensaje: rowBase.sunatErrorMsg }); handleCloseMenu(); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/30"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/30"
                                     >
                                         <Icon icon="solar:danger-triangle-bold-duotone" width={16} height={16} />
                                         <span>Ver error SUNAT</span>
@@ -1228,7 +1238,7 @@ const Comprobantes = () => {
                                     <button
                                         type="button"
                                         onClick={() => { setFormValues(rowBase); setIsOpenModalConfirmDescartar(true); handleCloseMenu(); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
                                     >
                                         <Icon icon="solar:trash-bin-trash-bold-duotone" width={16} height={16} />
                                         <span>Eliminar comprobante</span>
