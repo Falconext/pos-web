@@ -13,6 +13,7 @@ import FalconProductoDetalle from './FalconProductoDetalle';
 import MayeProductoDetalle from './MayeProductoDetalle';
 import ApiculturaProductoDetalle from './ApiculturaProductoDetalle';
 import LuxuryProductoDetalle from './LuxuryProductoDetalle';
+import SpaProductoDetalle from './SpaProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -31,6 +32,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   urbano: UrbanoProductoDetalle,
   apicultura: ApiculturaProductoDetalle,
   luxury: LuxuryProductoDetalle,
+  spa: SpaProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

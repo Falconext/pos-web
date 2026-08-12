@@ -242,7 +242,10 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
             const oseId = trackData?.ose_id ?? trackData?.order?.ose_id;
             const qs = oseId ? `?oseId=${encodeURIComponent(oseId)}` : '';
             const res = await apiClient.get(`/shalom/ticket/${orderNumber}/${orderCode}${qs}`, { responseType: 'blob' });
-            openBlob(res.data, `voucher-${orderNumber}.pdf`, 'application/pdf');
+            // El comprobante llega como PDF (proveedor antiguo) o PNG (nuevo); se abre según su tipo real.
+            const ct = (res.headers?.['content-type'] as string) || (res.data as Blob)?.type || 'application/pdf';
+            const ext = ct.includes('png') ? 'png' : 'pdf';
+            openBlob(res.data, `voucher-${orderNumber}.${ext}`, ct);
         } catch (e) { useAlertStore.getState().alert(await blobErrorMsg(e, 'No se pudo obtener el ticket'), 'error'); }
         finally { setBlobLoading(null); }
     };
@@ -253,7 +256,9 @@ function ShalomTrackingModal({ orderNumber, orderCode, onClose, onEntregado }: {
             const oseId = trackData?.ose_id ?? trackData?.order?.ose_id;
             const qs = oseId ? `?oseId=${encodeURIComponent(oseId)}` : '';
             const res = await apiClient.get(`/shalom/label/${orderNumber}/${orderCode}${qs}`, { responseType: 'blob' });
-            openBlob(res.data, `etiqueta-${orderNumber}.pdf`, 'application/pdf');
+            const ct = (res.headers?.['content-type'] as string) || (res.data as Blob)?.type || 'application/pdf';
+            const ext = ct.includes('png') ? 'png' : 'pdf';
+            openBlob(res.data, `etiqueta-${orderNumber}.${ext}`, ct);
         } catch (e) { useAlertStore.getState().alert(await blobErrorMsg(e, 'No se pudo obtener la etiqueta'), 'error'); }
         finally { setBlobLoading(null); }
     };
@@ -461,6 +466,9 @@ export default function PanelVentasView() {
         observaciones: item.observaciones,
         cliente: { nombre: item.cliente, nroDoc: null },
         comprobante: TIPO_CONFIG[item.tipo]?.label ?? item.tipo,
+        // Cobranza en campo: para preseleccionar el vendedor de campo al registrar el cobro.
+        vendedorCampoId: item.vendedorCampoId ?? null,
+        vendedorCampoNombre: item.vendedor,
     });
 
     const puedeRegistrarCobro = (item: VentaPanelItem) =>
@@ -990,6 +998,7 @@ export default function PanelVentasView() {
                     comprobanteId={detalleId}
                     isOpen={true}
                     onClose={() => setDetalleId(null)}
+                    onUpdated={vm.cargar}
                 />
             )}
             {editDespachoId && (

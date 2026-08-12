@@ -8,6 +8,7 @@ import ApiculturaContactPage from '@/templates/apicultura/ApiculturaContactPage'
 import ConstruccionContactPage from '@/templates/construccion/ConstruccionContactPage';
 import FalconContactPage from '@/templates/falcon/FalconContactPage';
 import LuxuryContactPage from '@/templates/luxury/LuxuryContactPage';
+import SpaContactPage from '@/templates/spa/SpaContactPage';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -66,6 +67,19 @@ export default function ContactoRouter() {
     <>
       {templateId === 'luxury' ? (
         <LuxuryContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'spa' ? (
+        <SpaContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}

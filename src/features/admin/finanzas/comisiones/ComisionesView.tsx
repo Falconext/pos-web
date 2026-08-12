@@ -5,8 +5,9 @@ import useAlertStore from '@/zustand/alert';
 
 interface ComisionDetalle {
     id: number;
-    comprobante: { tipoDoc: string; serie: string; correlativo: number; fechaEmision: string };
+    comprobante: { tipoDoc: string; serie: string; correlativo: number; fechaEmision: string; mtoImpVenta: number };
     descripcion: string | null;
+    motivo: string | null;
     cantidad: number;
     montoComision: number;
     estado: 'PENDIENTE' | 'PAGADO';
@@ -434,7 +435,9 @@ export default function ComisionesView() {
                                                     <tr className="bg-gray-50 dark:bg-slate-800/50">
                                                         <th className="px-4 py-2.5 text-left font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Comprobante</th>
                                                         <th className="px-4 py-2.5 text-left font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Producto</th>
+                                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Motivo</th>
                                                         <th className="px-4 py-2.5 text-right font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cant.</th>
+                                                        <th className="px-4 py-2.5 text-right font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total comprobante</th>
                                                         <th className="px-4 py-2.5 text-right font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Comisión</th>
                                                         <th className="px-4 py-2.5 text-center font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Estado</th>
                                                     </tr>
@@ -451,7 +454,13 @@ export default function ComisionesView() {
                                                             <td className="px-4 py-2.5 text-gray-700 dark:text-gray-200 max-w-[200px] truncate">
                                                                 {c.descripcion ?? '—'}
                                                             </td>
+                                                            <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400 max-w-[280px]">
+                                                                {c.motivo ?? '—'}
+                                                            </td>
                                                             <td className="px-4 py-2.5 text-right text-gray-600 dark:text-gray-300">{c.cantidad}</td>
+                                                            <td className="px-4 py-2.5 text-right text-gray-600 dark:text-gray-300">
+                                                                {formatCurrency(c.comprobante.mtoImpVenta)}
+                                                            </td>
                                                             <td className="px-4 py-2.5 text-right font-semibold text-gray-900 dark:text-white">
                                                                 {formatCurrency(c.montoComision)}
                                                             </td>

@@ -721,7 +721,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     {isEdit && (
                         <div className="mt-5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                             <Icon icon="solar:info-circle-bold-duotone" className="mt-0.5 text-base shrink-0" />
-                            <span>Estás editando una compra. Se ajustará el stock según los cambios. Los pagos ya registrados no se modifican aquí.</span>
+                            <span>Estás editando una compra. Se ajustará el stock según los cambios. Puedes corregir el N° de operación del pago inicial (transferencia); los abonos adicionales se gestionan desde el historial de pagos.</span>
                         </div>
                     )}
                     {/* Datos del Documento */}
@@ -1243,8 +1243,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                     />
                                 )}
 
-                                {/* Pago por banco: cuenta + N° de operación */}
-                                {payment.condicionPago === 'CONTADO' && payment.metodoPagoInicial === 'TRANSFERENCIA' && (
+                                {/* Pago por banco: cuenta + N° de operación.
+                                    Al editar una compra ya inscrita también se muestra
+                                    (aunque sea a crédito) para poder corregir el N° de
+                                    operación del pago inicial con el del estado de cuenta. */}
+                                {(payment.condicionPago === 'CONTADO' || isEdit) && payment.metodoPagoInicial === 'TRANSFERENCIA' && (
                                     <div className="space-y-3 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-3">
                                         {(cuentas || []).filter((c) => c.activo).length === 0 ? (
                                             <p className="text-[11px] text-amber-600 dark:text-amber-400">

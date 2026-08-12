@@ -21,11 +21,12 @@ export default function AdminIndex() {
   const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA'
   const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true
 
-  const [fechaInicio, setFechaInicio] = useState<string>(moment().subtract(6, 'days').format('YYYY-MM-DD'))
-  const [fechaFin, setFechaFin] = useState<string>(moment().format('YYYY-MM-DD'))
+  // Por defecto el dashboard muestra el mes en curso completo (del 1 al último día).
+  const [fechaInicio, setFechaInicio] = useState<string>(moment().startOf('month').format('YYYY-MM-DD'))
+  const [fechaFin, setFechaFin] = useState<string>(moment().endOf('month').format('YYYY-MM-DD'))
   const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null)
 
-  const [period, setPeriod] = useState<string>('Esta semana')
+  const [period, setPeriod] = useState<string>('Este mes')
 
   // "Productos Más Vendidos" — modal de detalle + exportable
   const [showTopModal, setShowTopModal] = useState(false)

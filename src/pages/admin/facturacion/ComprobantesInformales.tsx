@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import Input from "@/components/Input";
 import DataTable from "@/components/Datatable";
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -147,7 +147,8 @@ const ComprobantesInformales = () => {
             documentoAfiliado: item?.numDocAfectado || item.numeroOrdenTrabajo,
             document: item?.cliente?.nroDoc,
             client: item?.cliente?.nombre,
-            vendedor: item?.usuario?.nombre || '-',
+            // Cobranza en campo: prioriza el vendedor de campo atribuido.
+            vendedor: item?.vendedorCampoNombre || item?.usuario?.nombre || '-',
             s3PdfUrl: item?.s3PdfUrl,
             total: `S/ ${item.mtoImpVenta.toFixed(2)}`,
             saldo: `S/ ${item?.saldo?.toFixed(2) || (0).toFixed(2)}`,
@@ -311,7 +312,9 @@ const ComprobantesInformales = () => {
         }, 300);
     }
 
-    useEffect(() => {
+    // Recarga la tabla con los filtros actuales. Reutilizable desde el efecto de
+    // filtros y desde callbacks (p. ej. tras editar el vendedor de campo en el detalle).
+    const recargarLista = useCallback(() => {
         const params: any = {
             tipoComprobante: "INFORMAL",
             page: currentPage,
@@ -326,7 +329,11 @@ const ComprobantesInformales = () => {
             params.estadoPago = stateInvoice;
         }
         getAllInvoices(params);
-    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, effectiveSedeId, selectedUsuarioId, canFilterByUsuario]);
+    }, [debounce, currentPage, itemsPerPage, fechaInicio, fechaFin, stateInvoice, effectiveSedeId, selectedUsuarioId, canFilterByUsuario, getAllInvoices]);
+
+    useEffect(() => {
+        recargarLista();
+    }, [recargarLista]);
 
     // Exporta el listado filtrado (rango de fechas/estado/sede/vendedor) en PDF o Excel
     const [exportando, setExportando] = useState<'pdf' | 'excel' | null>(null);
@@ -856,6 +863,7 @@ const ComprobantesInformales = () => {
                 comprobanteId={detalleComprobanteId}
                 isOpen={detalleComprobanteId !== null}
                 onClose={() => setDetalleComprobanteId(null)}
+                onUpdated={recargarLista}
             />
 
             {/* ── Dropdown de acciones (TableActionMenu) ── */}

@@ -42,6 +42,8 @@ export interface IPagosState {
   registrarPagoComprobante: (comprobanteId: number, data: { monto: number; medioPago: string; observacion?: string; referencia?: string; cuentaBancariaId?: number; dirigidoA?: string; vendedorId?: number; vendedorNombre?: string }) => Promise<{ success: boolean; pago?: any; nuevoSaldo?: number; nuevoEstado?: string; error?: string }>;
   subirComprobantePago: (pagoId: number, file: File) => Promise<{ success: boolean; comprobanteUrl?: string; error?: string }>;
   getHistorialPagos: (comprobanteId: number) => Promise<{ success: boolean; pagos?: any[]; totalPagado?: number; error?: string }>;
+  // Editar el N° de operación (referencia) / método / observación de un pago ya registrado.
+  editarReferenciaPago: (pagoId: number, data: { referencia?: string | null; medioPago?: string; observacion?: string | null }) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const usePagosStore = create<IPagosState>()(
@@ -249,7 +251,7 @@ export const usePagosStore = create<IPagosState>()(
         try {
           const resp: any = await get(`pago/comprobante/${comprobanteId}/historial`);
           
-          let pagos = [];
+          let pagos: any[] = [];
           let totalPagado = 0;
           
           if (resp?.data?.pagos) {
@@ -276,6 +278,15 @@ export const usePagosStore = create<IPagosState>()(
           };
         } catch (error: any) {
           return { success: false, error: error.message };
+        }
+      },
+
+      editarReferenciaPago: async (pagoId, data) => {
+        try {
+          await apiClient.patch(`pago/${pagoId}/referencia`, data);
+          return { success: true };
+        } catch (error: any) {
+          return { success: false, error: error?.response?.data?.message || error.message };
         }
       },
 

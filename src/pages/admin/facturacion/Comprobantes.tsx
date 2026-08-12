@@ -309,7 +309,9 @@ const Comprobantes = () => {
             document: item?.cliente?.nroDoc,
             s3PdfUrl: item?.s3PdfUrl,
             client: item?.cliente?.nombre,
-            vendedor: item?.usuario?.nombre || '-',
+            // Cobranza en campo: si hay vendedor de campo atribuido, se muestra ese
+            // en vez del usuario que registró la venta.
+            vendedor: item?.vendedorCampoNombre || item?.usuario?.nombre || '-',
             // El importe se muestra en la moneda del comprobante: US$ para dólares, S/ para soles.
             total: `${String((item as any).tipoMoneda).toUpperCase() === 'USD' ? '$' : 'S/'} ${item.mtoImpVenta.toFixed(2)}`,
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
@@ -997,6 +999,7 @@ const Comprobantes = () => {
                 comprobanteId={detalleComprobanteId}
                 isOpen={detalleComprobanteId !== null}
                 onClose={() => setDetalleComprobanteId(null)}
+                onUpdated={fetchFormalInvoices}
             />
 
             <ModalImportarComprobante

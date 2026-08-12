@@ -62,6 +62,8 @@ import { LuxuryProductoDetalleView } from '@/pages/tienda/LuxuryProductoDetalle'
 import SpaHomePage from '@/templates/spa/SpaHomePage';
 import SpaCatalogoPage from '@/templates/spa/SpaCatalogoPage';
 import SpaCheckoutPage from '@/templates/spa/SpaCheckoutPage';
+import SpaContactPage from '@/templates/spa/SpaContactPage';
+import { SpaProductoDetalleView } from '@/pages/tienda/SpaProductoDetalle';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
 import ProductCardEmox from '@/components/tienda/ProductCardEmox';
@@ -2344,6 +2346,20 @@ export default function StorePreviewPage() {
               actualizarCantidad={actualizarCantidad}
               onNavigate={goToPage}
             />
+          ) : config.plantillaId === 'spa' ? (
+            <SpaContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
           ) : config.plantillaId === 'apicultura' ? (
             <ApiculturaContactPage
               tienda={previewStore}
@@ -2415,6 +2431,22 @@ export default function StorePreviewPage() {
             />
           ) : config.plantillaId === 'luxury' ? (
             <LuxuryProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 4)}
+              allCategories={previewCategories}
+              cp={cp}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'spa' ? (
+            <SpaProductoDetalleView
               tienda={previewStore}
               slug="preview"
               producto={selectedProduct}
