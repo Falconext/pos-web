@@ -167,7 +167,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
 };
 
 export const useFacturacionViewModel = () => {
-    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, deleteProductInvoiceByIndex, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation }: IInvoicesState = useInvoiceStore();
+    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, deleteProductInvoiceByIndex, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation, updateNotaVenta }: IInvoicesState = useInvoiceStore();
     const { zoomLevel } = useThemeStore();
     const { auth, sedeActiva } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
@@ -450,6 +450,7 @@ export const useFacturacionViewModel = () => {
     const [hasOpenedConfigModal, setHasOpenedConfigModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editQuotationId, setEditQuotationId] = useState<number | null>(null);
+    const [editNotaVentaId, setEditNotaVentaId] = useState<number | null>(null);
     const [showFreeQuoteItemForm, setShowFreeQuoteItemForm] = useState(false);
     const [freeQuoteItem, setFreeQuoteItem] = useState(crearEstadoItemLibre);
     // Anticipos previos a regularizar/descontar en esta factura (referencia a
@@ -864,6 +865,16 @@ export const useFacturacionViewModel = () => {
         } else if (state?.fromNotaDeVenta && state?.notaDeVentaData) {
             const { cliente, clienteId, productos, observaciones, origenComprobanteId } = state.notaDeVentaData;
             if (origenComprobanteId) setOrigenComprobanteId(Number(origenComprobanteId));
+
+            // Modo EDICIÓN de una NV existente (in-place): guardamos el id a editar
+            // y precargamos el vendedor de campo para que no se pierda al editar
+            // (se muestra seleccionado si la empresa usa "cobranza en campo").
+            if (state.isEditNV && state.notaVentaId) {
+                setIsEditMode(true);
+                setEditNotaVentaId(Number(state.notaVentaId));
+                const vcId = state.notaDeVentaData?.vendedorCampoId;
+                if (vcId != null) setVendedorCampoId(Number(vcId));
+            }
 
             if (cliente) {
                 fromNVComprobanteRef.current = formValues.comprobante;
@@ -2166,7 +2177,9 @@ export const useFacturacionViewModel = () => {
         setIsLoading(true);
 
         let result: { success: boolean; error?: string };
-        if (isEditMode && editQuotationId) {
+        if (isEditMode && editNotaVentaId) {
+            result = await updateNotaVenta(editNotaVentaId, finalData);
+        } else if (isEditMode && editQuotationId) {
             result = await updateQuotation(editQuotationId, finalData);
         } else if (tiposInformales.includes(formValues.tipoDoc)) {
             result = await addInformalInvoice(finalData);
@@ -2528,5 +2541,6 @@ export const useFacturacionViewModel = () => {
         initialFormProduct, initialFormClient,
         isLoading,
         isEditMode,
+        isEditNotaVenta: editNotaVentaId != null,
     };
 };
