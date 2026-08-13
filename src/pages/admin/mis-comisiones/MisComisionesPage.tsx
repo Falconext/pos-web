@@ -9,6 +9,7 @@ interface Comision {
     id: number;
     comprobante: { tipoDoc: string; serie: string; correlativo: number; fechaEmision: string };
     descripcion: string | null;
+    motivo: string | null;
     cantidad: number;
     montoComision: number;
     estado: 'PENDIENTE' | 'PAGADO';
@@ -39,6 +40,7 @@ const COLUMNS = [
     { key: 'Comprobante', label: 'Comprobante' },
     { key: 'Fecha',       label: 'Fecha' },
     { key: 'Producto',    label: 'Producto' },
+    { key: 'Motivo',      label: 'Motivo' },
     { key: 'Cantidad',    label: 'Cant.' },
     { key: 'Comision',    label: 'Comisión' },
     { key: 'EstadoBadge', label: 'Estado' },
@@ -86,6 +88,7 @@ function buildTableData(comisiones: Comision[]) {
         'Comprobante': `${c.comprobante.serie}-${String(c.comprobante.correlativo).padStart(8, '0')}`,
         'Fecha': new Date(c.comprobante.fechaEmision).toLocaleDateString('es-PE'),
         'Producto': c.descripcion ?? '—',
+        'Motivo': c.motivo ?? '—',
         'Cantidad': c.cantidad,
         'Comision': fmt(c.montoComision),
         'EstadoBadge': <EstadoBadge estado={c.estado} />,
@@ -334,6 +337,7 @@ export default function MisComisionesPage() {
                             <DataTable
                                 bodyData={tableData}
                                 headerColumns={COLUMNS}
+                                pageSize={15}
                             />
                         </div>
                     ) : (

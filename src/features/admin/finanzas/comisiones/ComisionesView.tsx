@@ -55,6 +55,8 @@ export default function ComisionesView() {
     const [data, setData] = useState<ResumenMensual | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedId, setExpandedId] = useState<number | null>(null);
+    const [detallePage, setDetallePage] = useState(1);
+    const DETALLE_PAGE_SIZE = 15;
     const [pagandoId, setPagandoId] = useState<number | null>(null);
     const alertFn = useAlertStore(s => s.alert);
 
@@ -415,7 +417,7 @@ export default function ComisionesView() {
                                             </span>
                                         )}
                                         <button
-                                            onClick={() => setExpandedId(isExpanded ? null : v.vendedor.id)}
+                                            onClick={() => { setExpandedId(isExpanded ? null : v.vendedor.id); setDetallePage(1); }}
                                             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                                         >
                                             <Icon
@@ -443,7 +445,7 @@ export default function ComisionesView() {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
-                                                    {v.comisiones.map((c) => (
+                                                    {v.comisiones.slice((detallePage - 1) * DETALLE_PAGE_SIZE, detallePage * DETALLE_PAGE_SIZE).map((c) => (
                                                         <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                                             <td className="px-4 py-2.5 text-gray-600 dark:text-gray-300 font-mono">
                                                                 {c.comprobante.serie}-{String(c.comprobante.correlativo).padStart(8, '0')}
@@ -478,6 +480,21 @@ export default function ComisionesView() {
                                                 </tbody>
                                             </table>
                                         </div>
+                                        {v.comisiones.length > DETALLE_PAGE_SIZE && (() => {
+                                            const totalPag = Math.ceil(v.comisiones.length / DETALLE_PAGE_SIZE);
+                                            const ini = (detallePage - 1) * DETALLE_PAGE_SIZE + 1;
+                                            const fin = Math.min(detallePage * DETALLE_PAGE_SIZE, v.comisiones.length);
+                                            return (
+                                                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-slate-800 text-xs">
+                                                    <span className="text-gray-500 dark:text-gray-400">{ini}–{fin} de {v.comisiones.length}</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <button onClick={() => setDetallePage(p => Math.max(1, p - 1))} disabled={detallePage === 1} className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-slate-700 font-semibold text-gray-600 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">Anterior</button>
+                                                        <span className="px-2 text-gray-500 dark:text-gray-400">{detallePage} / {totalPag}</span>
+                                                        <button onClick={() => setDetallePage(p => Math.min(totalPag, p + 1))} disabled={detallePage === totalPag} className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-slate-700 font-semibold text-gray-600 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">Siguiente</button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             </div>
