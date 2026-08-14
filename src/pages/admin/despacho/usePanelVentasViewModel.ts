@@ -38,6 +38,10 @@ export interface VentaPanelItem {
     vendedor: string;
     // Cobranza en campo: id del vendedor de campo atribuido (para preseleccionar al cobrar).
     vendedorCampoId?: number | null;
+    // Cobros: a quién se dirigió el pago + comprobantes de pago subidos (registrar cobro).
+    dirigidoA?: string;
+    cobros?: { monto: number; medioPago: string; fecha: string | null; dirigidoA: string; comprobanteUrl: string | null }[];
+    comprobantesPago?: string[];
     sede: string;
     comprobanteId: number | null;
     pedidoId: number | null;
@@ -219,7 +223,7 @@ export function usePanelVentasViewModel() {
 
     // Exporta el rango visible del panel en PDF o Excel (resumen para cierre de mes)
     const [exportando, setExportando] = useState<'pdf' | 'excel' | null>(null);
-    const exportarResumen = useCallback(async (formato: 'pdf' | 'excel') => {
+    const exportarResumen = useCallback(async (formato: 'pdf' | 'excel', columnas?: string) => {
         setExportando(formato);
         try {
             const hasta = fechaFin && fechaFin > fecha ? fechaFin : fecha;
@@ -231,6 +235,8 @@ export function usePanelVentasViewModel() {
             });
             if (sedeActiva?.id && !esPrincipalAdmin) params.set('sedeId', String(sedeActiva.id));
             if (canFilterByUsuario && filtroUsuarioId) params.set('usuarioId', String(filtroUsuarioId));
+            // Columnas visibles elegidas por el usuario (para que el Excel coincida con la tabla).
+            if (columnas) params.set('columnas', columnas);
             const resp = await apiClient.get(`/comprobante/exportar-resumen?${params.toString()}`, {
                 responseType: 'blob',
                 timeout: 60_000,

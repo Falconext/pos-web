@@ -470,8 +470,9 @@ const ComprobantesInformales = () => {
         }
     };
 
-    const handleSelectState = (_id: string, value: string) => {
-        setStateInvoice(value)
+    const handleSelectState = (id: string) => {
+        // `id` es el valor real del backend (TODOS, COMPLETADO, PAGO_PARCIAL, ...).
+        setStateInvoice(id || "TODOS")
     }
 
     const handleSelectSede = (idValue: any) => {
@@ -488,7 +489,15 @@ const ComprobantesInformales = () => {
         setSelectedUsuarioId(value ? Number(value) : null);
     }
 
-    const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "COMPLETADO" }, { id: 3, value: "PENDIENTE_PAGO" }, { id: 4, value: "ANULADO" }]
+    // El `id` es el valor real que espera el backend (estadoPago); el `value` es la
+    // etiqueta amigable que ve el usuario (nada de códigos crudos tipo PENDIENTE_PAGO).
+    const estadosInvoice = [
+        { id: "TODOS", value: "Todos" },
+        { id: "COMPLETADO", value: "Pagado" },
+        { id: "PAGO_PARCIAL", value: "Pago parcial" },
+        { id: "PENDIENTE_PAGO", value: "Pendiente de pago" },
+        { id: "ANULADO", value: "Anulado" },
+    ]
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))

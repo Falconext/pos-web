@@ -40,10 +40,31 @@ const TIPO_CONFIG: Record<TipoVenta, { label: string; cls: string }> = {
     PEDIDO_TIENDA:     { label: 'Tienda',    cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
 };
 
+// Columnas configurables de la tabla de ventas (el usuario elige cuáles ver).
+// Las columnas fijas (Fecha, Referencia, Tipo, Cliente, Total, Pago, Vendedor,
+// Acciones) siempre se muestran. `sede` solo aplica al admin principal.
+const COLUMNAS_CONFIG: { key: string; label: string; soloAdminPrincipal?: boolean }[] = [
+    { key: 'sede', label: 'Sede', soloAdminPrincipal: true },
+    { key: 'saldo', label: 'Saldo' },
+    { key: 'mpago', label: 'Medio de pago' },
+    { key: 'productos', label: 'Productos' },
+    { key: 'sunat', label: 'SUNAT' },
+    { key: 'despacho', label: 'Despacho' },
+    { key: 'turno', label: 'Turno' },
+    { key: 'celular', label: 'Celular' },
+    { key: 'agencia', label: 'Agencia' },
+    { key: 'paq', label: 'Paquetes' },
+    { key: 'repartidor', label: 'Repartidor' },
+    { key: 'dirigidoA', label: 'Cobro dirigido a' },
+];
+const COLUMNAS_OPCIONALES = COLUMNAS_CONFIG.map((c) => c.key);
+
+// Etiquetas de estado de pago — alineadas con Comprobantes/Notas de venta
+// ("Pagado" / "Pago parcial" / "Pendiente de pago") para que el usuario vea lo mismo.
 const PAGO_CONFIG: Record<string, { label: string; cls: string }> = {
-    PAGADO:   { label: 'Pagado',    cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-    PARCIAL:  { label: 'Parcial',   cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
-    PENDIENTE:{ label: 'Pendiente', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+    PAGADO:   { label: 'Pagado',            cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+    PARCIAL:  { label: 'Pago parcial',      cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+    PENDIENTE:{ label: 'Pendiente de pago', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
 };
 
 const SUNAT_CONFIG: Record<string, { label: string; cls: string }> = {
@@ -395,15 +416,43 @@ export default function PanelVentasView() {
     const queryFecha = searchParams.get('fecha');
     const queryComprobanteId = Number(searchParams.get('comprobanteId') || 0) || null;
 
-    const [mostrarProductos, setMostrarProductos] = useState<boolean>(
-        () => localStorage.getItem('panel_mostrar_productos') !== 'false',
-    );
-    const toggleProductos = () => {
-        setMostrarProductos((prev) => {
-            localStorage.setItem('panel_mostrar_productos', String(!prev));
-            return !prev;
+    // ── Configuración de columnas visibles (persistida por usuario) ──────────────
+    const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(() => {
+        const defaults: Record<string, boolean> = {};
+        COLUMNAS_CONFIG.forEach((c) => { defaults[c.key] = true; });
+        try {
+            // Migra la preferencia antigua de productos si existía.
+            const legacy = localStorage.getItem('panel_mostrar_productos');
+            if (legacy === 'false') defaults.productos = false;
+            const saved = localStorage.getItem('panel_columnas');
+            if (saved) return { ...defaults, ...JSON.parse(saved) };
+        } catch { /* usa defaults */ }
+        return defaults;
+    });
+    const [showColsMenu, setShowColsMenu] = useState(false);
+    const col = (key: string) => visibleCols[key] !== false;
+    const toggleCol = (key: string) => {
+        setVisibleCols((prev) => {
+            const next = { ...prev, [key]: prev[key] === false };
+            localStorage.setItem('panel_columnas', JSON.stringify(next));
+            return next;
         });
     };
+    const resetCols = () => {
+        const all: Record<string, boolean> = {};
+        COLUMNAS_CONFIG.forEach((c) => { all[c.key] = true; });
+        localStorage.setItem('panel_columnas', JSON.stringify(all));
+        setVisibleCols(all);
+    };
+    // Alias para no tocar todas las referencias existentes a "mostrarProductos".
+    const mostrarProductos = col('productos');
+    // CSV de columnas opcionales visibles, para que el export coincida con la tabla.
+    const columnasVisiblesCSV = COLUMNAS_OPCIONALES.filter((k) => col(k)).join(',');
+    // Total de columnas visibles (para colSpan de estados vacíos/carga).
+    const totalCols =
+        8 + // fijas: fecha, referencia, tipo, cliente, total, pago, vendedor, acciones
+        (vm.esPrincipalAdmin && col('sede') ? 1 : 0) +
+        COLUMNAS_OPCIONALES.filter((k) => k !== 'sede' && col(k)).length;
 
     const [detalleId, setDetalleId] = useState<number | null>(null);
     const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
@@ -699,7 +748,7 @@ export default function PanelVentasView() {
                         <Icon icon="solar:refresh-linear" className={`text-lg ${vm.loading ? 'animate-spin' : ''}`} />
                     </button>
                     <button
-                        onClick={() => vm.exportarResumen('pdf')}
+                        onClick={() => vm.exportarResumen('pdf', columnasVisiblesCSV)}
                         disabled={vm.exportando !== null}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-slate-700 text-rose-600 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
                         title="Exportar el rango en PDF imprimible"
@@ -708,7 +757,7 @@ export default function PanelVentasView() {
                         PDF
                     </button>
                     <button
-                        onClick={() => vm.exportarResumen('excel')}
+                        onClick={() => vm.exportarResumen('excel', columnasVisiblesCSV)}
                         disabled={vm.exportando !== null}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
                         title="Exportar el rango en Excel"
@@ -766,19 +815,50 @@ export default function PanelVentasView() {
                             ))}
                         </select>
                     )}
-                    {/* Toggle productos */}
-                    <button
-                        onClick={toggleProductos}
-                        title={mostrarProductos ? 'Ocultar columna productos' : 'Mostrar columna productos'}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${
-                            mostrarProductos
-                                ? 'bg-violet-100 border-violet-200 text-violet-700 dark:bg-violet-900/30 dark:border-violet-800 dark:text-violet-300'
-                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                        }`}
-                    >
-                        <Icon icon={mostrarProductos ? 'solar:box-bold-duotone' : 'solar:box-linear'} className="text-base" />
-                        Productos
-                    </button>
+                    {/* Configurar columnas visibles (reemplaza el toggle de productos) */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowColsMenu((s) => !s)}
+                            title="Elegir qué columnas ver"
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${
+                                showColsMenu
+                                    ? 'bg-blue-100 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
+                                    : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                            }`}
+                        >
+                            <Icon icon="solar:tuning-square-bold-duotone" className="text-base" />
+                            Columnas
+                        </button>
+                        {showColsMenu && (
+                            <>
+                                <div className="fixed inset-0 z-20" onClick={() => setShowColsMenu(false)} />
+                                <div className="absolute right-0 mt-2 z-30 w-60 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-2">
+                                    <div className="flex items-center justify-between px-2 py-1.5">
+                                        <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Columnas visibles</span>
+                                        <button onClick={resetCols} className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Restablecer</button>
+                                    </div>
+                                    <div className="max-h-72 overflow-y-auto">
+                                        {COLUMNAS_CONFIG
+                                            .filter((c) => !c.soloAdminPrincipal || vm.esPrincipalAdmin)
+                                            .map((c) => (
+                                                <label key={c.key} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={col(c.key)}
+                                                        onChange={() => toggleCol(c.key)}
+                                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700 dark:text-gray-200">{c.label}</span>
+                                                </label>
+                                            ))}
+                                    </div>
+                                    <p className="px-2 pt-2 mt-1 border-t border-gray-100 dark:border-slate-700 text-[10px] text-gray-400">
+                                        Se guarda para tus próximas sesiones.
+                                    </p>
+                                </div>
+                            </>
+                        )}
+                    </div>
                     {/* Filtro Serie Garantía */}
                     <div className="relative">
                         <Icon icon="solar:shield-check-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
@@ -824,13 +904,13 @@ export default function PanelVentasView() {
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Fecha</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Referencia</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Tipo</th>
-                                {vm.esPrincipalAdmin && (
+                                {vm.esPrincipalAdmin && col('sede') && (
                                     <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Sede</th>
                                 )}
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Cliente</th>
                                 <th className="px-3 py-3 text-right text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Total</th>
-                                <th className="px-3 py-3 text-right text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Saldo</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">M.Pago</th>
+                                {col('saldo') && <th className="px-3 py-3 text-right text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Saldo</th>}
+                                {col('mpago') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">M.Pago</th>}
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Pago</th>
                                 {mostrarProductos && (
                                     <th className="px-3 py-3 text-left text-[11px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wide whitespace-nowrap">
@@ -840,28 +920,29 @@ export default function PanelVentasView() {
                                         </span>
                                     </th>
                                 )}
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">SUNAT</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Despacho</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Turno</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Celular</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Agencia</th>
-                                <th className="px-3 py-3 text-center text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Paq.</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Repartidor</th>
+                                {col('sunat') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">SUNAT</th>}
+                                {col('despacho') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Despacho</th>}
+                                {col('turno') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Turno</th>}
+                                {col('celular') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Celular</th>}
+                                {col('agencia') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Agencia</th>}
+                                {col('paq') && <th className="px-3 py-3 text-center text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Paq.</th>}
+                                {col('repartidor') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Repartidor</th>}
                                 <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Vendedor</th>
+                                {col('dirigidoA') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Cobro dirigido a</th>}
                                 <th className="px-3 py-3 text-center text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Acc.</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
                             {vm.loading ? (
                                 <tr>
-                                    <td colSpan={mostrarProductos ? 18 + (vm.esPrincipalAdmin ? 1 : 0) : 17 + (vm.esPrincipalAdmin ? 1 : 0)} className="py-16 text-center text-gray-400 dark:text-slate-500">
+                                    <td colSpan={totalCols} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="eos-icons:loading" className="text-3xl animate-spin mx-auto mb-2" />
                                         <p className="text-sm">Cargando ventas...</p>
                                     </td>
                                 </tr>
                             ) : filasVisibles.length === 0 ? (
                                 <tr>
-                                    <td colSpan={mostrarProductos ? 18 + (vm.esPrincipalAdmin ? 1 : 0) : 17 + (vm.esPrincipalAdmin ? 1 : 0)} className="py-16 text-center text-gray-400 dark:text-slate-500">
+                                    <td colSpan={totalCols} className="py-16 text-center text-gray-400 dark:text-slate-500">
                                         <Icon icon="solar:sad-square-linear" className="text-4xl mx-auto mb-2 opacity-40" />
                                         <p className="text-sm">No hay ventas para este día</p>
                                     </td>
@@ -904,7 +985,7 @@ export default function PanelVentasView() {
                                                     )}
                                                 </div>
                                             </td>
-                                            {vm.esPrincipalAdmin && (
+                                            {vm.esPrincipalAdmin && col('sede') && (
                                                 <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap max-w-[100px] truncate" title={item.sede}>
                                                     {item.sede}
                                                 </td>
@@ -917,18 +998,22 @@ export default function PanelVentasView() {
                                                     S/ {Number(item.total ?? 0).toFixed(2)}
                                                 </span>
                                             </td>
-                                            <td className="px-3 py-2.5 text-xs font-bold text-right whitespace-nowrap">
-                                                {(item.saldo ?? 0) > 0 ? (
-                                                    <span className="text-red-500 dark:text-red-400">
-                                                        S/ {Number(item.saldo ?? 0).toFixed(2)}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-slate-300 dark:text-slate-600">—</span>
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                                {item.metodoPago}
-                                            </td>
+                                            {col('saldo') && (
+                                                <td className="px-3 py-2.5 text-xs font-bold text-right whitespace-nowrap">
+                                                    {(item.saldo ?? 0) > 0 ? (
+                                                        <span className="text-red-500 dark:text-red-400">
+                                                            S/ {Number(item.saldo ?? 0).toFixed(2)}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-300 dark:text-slate-600">—</span>
+                                                    )}
+                                                </td>
+                                            )}
+                                            {col('mpago') && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                    {item.metodoPago}
+                                                </td>
+                                            )}
                                             <td className="px-3 py-2.5">
                                                 <Badge label={pagoConf.label} cls={pagoConf.cls} />
                                             </td>
@@ -957,30 +1042,67 @@ export default function PanelVentasView() {
                                                     )}
                                                 </td>
                                             )}
-                                            <td className="px-3 py-2.5">
-                                                <Badge label={sunatConf.label} cls={sunatConf.cls} />
-                                            </td>
-                                            <td className="px-3 py-2.5">
-                                                <EstadoDespachoSelector item={item} onChange={vm.actualizarEstado} />
-                                            </td>
-                                            <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                                {item.estadoDespacho !== 'NO_APLICA' ? (item.turnoEnvio ?? '—') : '—'}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                                {item.estadoDespacho !== 'NO_APLICA' ? (item.celularDest ?? '—') : '—'}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[120px] truncate" title={item.agenciaDestino}>
-                                                {item.estadoDespacho !== 'NO_APLICA' ? (item.agenciaDestino ?? '—') : '—'}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-xs text-center text-gray-600 dark:text-gray-400">
-                                                {item.estadoDespacho !== 'NO_APLICA' ? (item.nroPaquetes ?? '—') : '—'}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap max-w-[100px] truncate" title={item.repartidor}>
-                                                {item.estadoDespacho !== 'NO_APLICA' ? item.repartidor : '—'}
-                                            </td>
+                                            {col('sunat') && (
+                                                <td className="px-3 py-2.5">
+                                                    <Badge label={sunatConf.label} cls={sunatConf.cls} />
+                                                </td>
+                                            )}
+                                            {col('despacho') && (
+                                                <td className="px-3 py-2.5">
+                                                    <EstadoDespachoSelector item={item} onChange={vm.actualizarEstado} />
+                                                </td>
+                                            )}
+                                            {col('turno') && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                    {item.estadoDespacho !== 'NO_APLICA' ? (item.turnoEnvio ?? '—') : '—'}
+                                                </td>
+                                            )}
+                                            {col('celular') && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                    {item.estadoDespacho !== 'NO_APLICA' ? (item.celularDest ?? '—') : '—'}
+                                                </td>
+                                            )}
+                                            {col('agencia') && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[120px] truncate" title={item.agenciaDestino}>
+                                                    {item.estadoDespacho !== 'NO_APLICA' ? (item.agenciaDestino ?? '—') : '—'}
+                                                </td>
+                                            )}
+                                            {col('paq') && (
+                                                <td className="px-3 py-2.5 text-xs text-center text-gray-600 dark:text-gray-400">
+                                                    {item.estadoDespacho !== 'NO_APLICA' ? (item.nroPaquetes ?? '—') : '—'}
+                                                </td>
+                                            )}
+                                            {col('repartidor') && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap max-w-[100px] truncate" title={item.repartidor}>
+                                                    {item.estadoDespacho !== 'NO_APLICA' ? item.repartidor : '—'}
+                                                </td>
+                                            )}
                                             <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[100px] truncate" title={item.vendedor}>
                                                 {item.vendedor}
                                             </td>
+                                            {col('dirigidoA') && (
+                                            <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                {item.dirigidoA ? (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="truncate max-w-[150px]" title={item.dirigidoA}>{item.dirigidoA}</span>
+                                                        {(item.comprobantesPago?.length ?? 0) > 0 && (
+                                                            <a
+                                                                href={item.comprobantesPago![0]}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title="Ver comprobante de pago subido"
+                                                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                                                            >
+                                                                <Icon icon="mdi:paperclip" width={12} height={12} />
+                                                                {item.comprobantesPago!.length > 1 ? item.comprobantesPago!.length : ''}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-gray-300 dark:text-slate-600">—</span>
+                                                )}
+                                            </td>
+                                            )}
                                             <td className="px-3 py-2.5 text-center">
                                                 <button
                                                     type="button"
@@ -1114,6 +1236,19 @@ export default function PanelVentasView() {
                                     <span>Ver detalle</span>
                                 </button>
                             )}
+                            {/* Comprobante(s) de pago subido(s) en registrar cobro */}
+                            {(it.comprobantesPago?.length ?? 0) > 0 && it.comprobantesPago!.map((url, idx) => (
+                                <a key={idx}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={handleCloseMenu}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 font-medium"
+                                >
+                                    <Icon icon="mdi:receipt-text-check-outline" width={15} />
+                                    <span>Ver comprobante de pago{it.comprobantesPago!.length > 1 ? ` ${idx + 1}` : ''}</span>
+                                </a>
+                            ))}
                             {canWa && (
                                 <button type="button"
                                     onClick={() => { setWaItem(it); handleCloseMenu(); }}
