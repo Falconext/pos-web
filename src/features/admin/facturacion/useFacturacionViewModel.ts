@@ -1606,6 +1606,25 @@ export const useFacturacionViewModel = () => {
         }
     };
 
+    // Autocompleta Términos/Observaciones con los predeterminados de la empresa al
+    // iniciar una cotización NUEVA (no en edición y solo si el campo está vacío).
+    const quotationDefaultsPrefilledRef = useRef(false);
+    useEffect(() => {
+        if (quotationDefaultsPrefilledRef.current) return;
+        if (!isQuotationRoute) return;
+        const emp: any = auth?.empresa;
+        if (!emp) return;
+        if (isEditMode) { quotationDefaultsPrefilledRef.current = true; return; }
+        if (emp.cotizTerminosDefault && !quotationTerms) {
+            setQuotationTerms(emp.cotizTerminosDefault);
+        }
+        if (emp.cotizObservacionesDefault && !formValues.observaciones) {
+            setFormValues(prev => ({ ...prev, observaciones: emp.cotizObservacionesDefault }));
+        }
+        quotationDefaultsPrefilledRef.current = true;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [auth?.empresa, isQuotationRoute, isEditMode]);
+
     const handleSaveQuotationConfig = (config: QuotationConfig) => {
         setIncludeProductImages(config.includeProductImages);
         setQuotationDiscount(config.quotationDiscount);
@@ -1619,6 +1638,24 @@ export const useFacturacionViewModel = () => {
             ...prev,
             observaciones: config.observaciones
         }));
+
+        // Guardar como predeterminado de la empresa si el usuario marcó el check.
+        // Se persiste a nivel empresa para autocompletar próximas cotizaciones.
+        const defaultsPayload: Record<string, string> = {};
+        if (config.saveTermsAsDefault) defaultsPayload.cotizTerminosDefault = config.quotationTerms || '';
+        if (config.saveObsAsDefault) defaultsPayload.cotizObservacionesDefault = config.observaciones || '';
+        if (Object.keys(defaultsPayload).length > 0) {
+            useEmpresasStore.getState().actualizarMiEmpresa(defaultsPayload as any)
+                .then(() => {
+                    // Refresca auth.empresa para que el default aplique de inmediato
+                    // en la siguiente cotización de esta misma sesión.
+                    useAuthStore.getState().me();
+                    useAlertStore.getState().alert('Guardado como predeterminado para próximas cotizaciones', 'success');
+                })
+                .catch(() => {
+                    useAlertStore.getState().alert('No se pudo guardar el predeterminado de la cotización', 'error');
+                });
+        }
     };
 
     // Reconvierte TODOS los ítems del carrito al cambiar la moneda del documento (PEN⇄USD),
