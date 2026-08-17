@@ -935,18 +935,23 @@ const ComprobantesInformales = () => {
                                     <span>Eliminar</span>
                                 </button>
                             </>
+                            {/* Editar cualquier comprobante informal editable (NV, TICKET, NP, OT, RH, CP).
+                                Reutiliza el mismo flujo de edición in-place de la Nota de Venta. */}
+                            {['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP'].includes(String(item?.tipoDoc)) && row.estadoEnvioSunat !== 'ANULADO' && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button type="button" onClick={() => {
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: String(item.tipoDoc), fromNotaDeVenta: true, isEditNV: true, notaVentaId: item.id, notaDeVentaData: { cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, vendedorCampoId: item.vendedorCampoId, vendedorCampoNombre: item.vendedorCampoNombre, medioPago: (item as any).medioPago, paymentDetails: (item as any).paymentDetails, saldo: (item as any).saldo, mtoImpVenta: (item as any).mtoImpVenta, estadoPago: (item as any).estadoPago, mtoDescuentoGlobal: (item as any).mtoDescuentoGlobal, formaPagoTipo: (item as any).formaPagoTipo, fechaVencimientoCredito: (item as any).fechaVencimientoCredito, cuotas: (item as any).cuotas, productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
+                                        handleCloseMenu();
+                                    }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30">
+                                        <Icon icon="mdi:pencil-outline" width={16} height={16} />
+                                        <span>Editar comprobante</span>
+                                    </button>
+                                </>
+                            )}
                             {item?.comprobante === 'NOTA DE VENTA' && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
-                                    {row.estadoEnvioSunat !== 'ANULADO' && (
-                                        <button type="button" onClick={() => {
-                                            navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', fromNotaDeVenta: true, isEditNV: true, notaVentaId: item.id, notaDeVentaData: { cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, vendedorCampoId: item.vendedorCampoId, vendedorCampoNombre: item.vendedorCampoNombre, medioPago: (item as any).medioPago, paymentDetails: (item as any).paymentDetails, saldo: (item as any).saldo, mtoImpVenta: (item as any).mtoImpVenta, estadoPago: (item as any).estadoPago, mtoDescuentoGlobal: (item as any).mtoDescuentoGlobal, formaPagoTipo: (item as any).formaPagoTipo, fechaVencimientoCredito: (item as any).fechaVencimientoCredito, cuotas: (item as any).cuotas, productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
-                                            handleCloseMenu();
-                                        }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30">
-                                            <Icon icon="mdi:pencil-outline" width={16} height={16} />
-                                            <span>Editar nota de venta</span>
-                                        </button>
-                                    )}
                                     <button type="button" onClick={() => {
                                         const esRuc = item.cliente?.nroDoc?.length === 11;
                                         navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, cliente: esRuc ? item.cliente : null, clienteId: esRuc ? item.clienteId : null, observaciones: item.observaciones, productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });

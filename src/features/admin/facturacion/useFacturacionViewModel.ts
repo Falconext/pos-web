@@ -602,6 +602,10 @@ export const useFacturacionViewModel = () => {
             const comprobanteLabelMap: Record<string, string> = {
                 NP: 'NOTA DE PEDIDO',
                 NV: 'NOTA DE VENTA',
+                TICKET: 'TICKET',
+                OT: 'ORDEN DE TRABAJO',
+                RH: 'RECIBO POR HONORARIO',
+                CP: 'COMPROBANTE DE PAGO',
             };
 
             const resolvedComprobante = comprobanteLabelMap[defaultType] ?? defaultType;
