@@ -352,7 +352,7 @@ export const useFacturacionViewModel = () => {
     }
 
     const initialFormProduct: IFormProduct = {
-        productoId: 0, descripcion: "", categoriaId: 0, precioUnitario: 0, categoriaNombre: "", afectacionNombre: "Gravado – Operación Onerosa", tipoAfectacionIGV: "10", stock: 50, codigo: "", unidadMedidaId: 1, unidadMedidaNombre: "UNIDAD", estado: "", codigoBarras: ""
+        productoId: 0, descripcion: "", categoriaId: 0, precioUnitario: 0, categoriaNombre: "", afectacionNombre: "Gravado – Operación Onerosa", tipoAfectacionIGV: "10", stock: 50, codigo: "", unidadMedidaId: 1, unidadMedidaNombre: "UNIDAD", estado: "", codigoBarras: "", disponibleParaVenta: true
     }
 
     const [formValuesProduct, setFormValuesProduct] = useState<IFormProduct>(initialFormProduct);
@@ -670,6 +670,18 @@ export const useFacturacionViewModel = () => {
             const { cliente, productos, observaciones, ...cotizConfig } = state.quotationData;
 
             if (cliente) {
+                // Preservar el cliente de la cotización (con su RUC/DNI). Sin esto, el
+                // reset automático a CLIENTES VARIOS (para NV/Boleta/Ticket...) lo pisaba
+                // y la conversión tomaba "CLIENTES VARIOS". Se usa el mismo blindaje que
+                // la edición de Nota de Venta (fromNVComprobanteRef), con el label del
+                // comprobante destino derivado del defaultType (determinista, evita races).
+                const _labelDestino: Record<string, string> = {
+                    NV: 'NOTA DE VENTA', TICKET: 'TICKET', NP: 'NOTA DE PEDIDO',
+                    OT: 'ORDEN DE TRABAJO', RH: 'RECIBO POR HONORARIO', CP: 'COMPROBANTE DE PAGO',
+                    BOLETA: 'BOLETA', FACTURA: 'FACTURA',
+                };
+                const _dt = state?.defaultType as string | undefined;
+                fromNVComprobanteRef.current = (_dt && _labelDestino[_dt]) ? _labelDestino[_dt] : formValues.comprobante;
                 setSelectedClient(cliente);
                 setFormValues(prev => ({
                     ...prev,
