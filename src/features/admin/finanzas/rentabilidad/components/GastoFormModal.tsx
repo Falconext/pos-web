@@ -173,7 +173,7 @@ export default function GastoFormModal({
     const selectedCategoria = CATEGORIAS_FIJAS.find(c => c.key === form.categoria);
 
     return (
-        <div className="fixed top-[-30px] inset-0 z-[999999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 top-[-30px] z-[999999] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50  "
@@ -181,9 +181,9 @@ export default function GastoFormModal({
             />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-md bg-white dark:bg-[#111827] rounded-3xl shadow-2xl border border-gray-100/50 dark:border-slate-800 overflow-hidden">
+            <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-5rem)] flex flex-col bg-white dark:bg-[#111827] rounded-3xl shadow-2xl border border-gray-100/50 dark:border-slate-800 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
+                <div className="shrink-0 flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
                             <Icon
@@ -209,7 +209,7 @@ export default function GastoFormModal({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
                     {/* Categoría */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
