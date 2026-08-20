@@ -5,6 +5,7 @@ import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
 import { hasPlanFeature } from '@/utils/permissions';
 import { useState } from 'react';
 import CuentasBancariasConfig from '@/pages/admin/empresa/CuentasBancariasConfig';
+import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
@@ -233,7 +234,10 @@ export default function PerfilIndex() {
                                 </button>
                             </div>
                         </div>
+                        {/* ── Medios de Pago (Yape / Plin) — dentro de Información Personal ── */}
+                        <MediosDePagoConfig />
                     </div>
+
                     {/* ── Envío automático por WhatsApp — DESACTIVADO temporalmente (a pedido) ── */}
                     {SHOW_WHATSAPP && (
                     <div className="lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827]">
