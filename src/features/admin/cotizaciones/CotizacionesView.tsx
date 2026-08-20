@@ -175,10 +175,10 @@ export default function CotizacionesView() {
                             <InputPro name="searchClient" onChange={vm.handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
                         <div>
-                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={vm.handleDate} className="admin-date-filter" portal />
+                            <Calendar text="Fecha inicio" name="fechaInicio" value={vm.fechaInicio ? moment(vm.fechaInicio, 'YYYY-MM-DD').format('DD/MM/YYYY') : ''} onChange={vm.handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
-                            <Calendar text="Fecha Fin" name="fechaFin" onChange={vm.handleDate} className="admin-date-filter" portal />
+                            <Calendar text="Fecha Fin" name="fechaFin" value={vm.fechaFin ? moment(vm.fechaFin, 'YYYY-MM-DD').format('DD/MM/YYYY') : ''} onChange={vm.handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
                             <Select onChange={vm.handleSelectPrint} label="Formato impresión" name="printSize" defaultValue={vm.printSize} options={vm.printOptions} error="" />

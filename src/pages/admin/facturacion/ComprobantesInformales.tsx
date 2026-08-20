@@ -626,10 +626,10 @@ const ComprobantesInformales = () => {
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
                         <div>
-                            <Calendar text="Fecha inicio" name="fechaInicio" onChange={handleDate} className="admin-date-filter" portal />
+                            <Calendar text="Fecha inicio" name="fechaInicio" value={fechaInicio ? moment(fechaInicio, 'YYYY-MM-DD').format('DD/MM/YYYY') : ''} onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
-                            <Calendar text="Fecha Fin" name="fechaFin" onChange={handleDate} className="admin-date-filter" portal />
+                            <Calendar text="Fecha Fin" name="fechaFin" value={fechaFin ? moment(fechaFin, 'YYYY-MM-DD').format('DD/MM/YYYY') : ''} onChange={handleDate} className="admin-date-filter" portal />
                         </div>
                         <div>
                             <Select onChange={handleSelectState} label="Estado" name="" options={estadosInvoice} error="" />
