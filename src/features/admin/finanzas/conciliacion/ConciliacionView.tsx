@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Icon } from '@iconify/react';
 import { useConciliacionViewModel, type FiltroEstado } from './useConciliacionViewModel';
-import { COLUMNAS_BANCO } from './ConciliacionModel';
+import { COLUMNAS_BANCO, origenLabel } from './ConciliacionModel';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -227,7 +227,7 @@ export default function ConciliacionView() {
                         <div className="flex flex-col">
                           <span className="font-medium text-gray-800 dark:text-gray-200">{m.match.documento}</span>
                           <span className="text-xs text-gray-400">
-                            {m.match.origen === 'VENTA' ? 'Venta' : 'Compra'} · {m.match.contraparte}
+                            {origenLabel(m.match.origen)} · {m.match.contraparte}
                           </span>
                         </div>
                       ) : (
@@ -299,10 +299,12 @@ export default function ConciliacionView() {
                         className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                           p.origen === 'VENTA'
                             ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                            : 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
+                            : p.origen === 'GASTO'
+                              ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                              : 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
                         }`}
                       >
-                        {p.origen === 'VENTA' ? 'Venta' : 'Compra'}
+                        {origenLabel(p.origen)}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">{p.documento}</td>
