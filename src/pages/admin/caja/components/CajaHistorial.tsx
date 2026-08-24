@@ -134,7 +134,12 @@ const CajaHistorial: React.FC = () => {
     // Redefine columns for Movement view
     const movementColumns = ['Tipo', 'Fecha', 'Usuario', 'Monto', 'Categoría', 'Detalle', 'Acciones'];
     const movementData = historialCaja?.map((mov: any) => ({
-        'Tipo': (
+        'Tipo': mov.esTransferencia ? (
+            <span className="px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400">
+                <Icon icon={mov.tipoMovimiento === 'EGRESO' ? 'solar:round-arrow-right-bold' : 'solar:round-arrow-left-bold'} />
+                {mov.tipoMovimiento === 'EGRESO' ? 'Transferencia enviada' : 'Transferencia recibida'}
+            </span>
+        ) : (
             <span className={`px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 ${mov.tipoMovimiento === 'APERTURA' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
                 mov.tipoMovimiento === 'CIERRE' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
                     mov.tipoMovimiento === 'INGRESO' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
@@ -164,7 +169,7 @@ const CajaHistorial: React.FC = () => {
                 {mov.descripcionGasto || mov.observaciones || '—'}
             </span>
         ),
-        'Acciones': mov.tipoMovimiento === 'EGRESO' ? (
+        'Acciones': (mov.tipoMovimiento === 'EGRESO' && !mov.esTransferencia) ? (
             <div className="flex gap-2">
                 <button
                     onClick={() => setEgresoEditar(mov)}

@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCajaStore } from '../../../../zustand/caja';
+import { useSedesStore } from '@/zustand/sedes';
+import { useAuthStore } from '@/zustand/auth';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import useEscapeKey from '@/hooks/useEscapeKey';
 import ModalRegistrarGasto from './ModalRegistrarGasto';
+import ModalTransferirCaja from './ModalTransferirCaja';
 
 const CajaControl: React.FC = () => {
     const {
@@ -16,10 +19,13 @@ const CajaControl: React.FC = () => {
         cerrarCaja,
         clearError,
     } = useCajaStore();
+    const { sedes, listarSedes } = useSedesStore();
+    const { sedeActiva } = useAuthStore();
 
     const [showApertura, setShowApertura] = useState(false);
     const [showCierre, setShowCierre] = useState(false);
     const [showGasto, setShowGasto] = useState(false);
+    const [showTransferencia, setShowTransferencia] = useState(false);
     const [confirmCierre, setConfirmCierre] = useState(false);
     const [formApertura, setFormApertura] = useState({
         montoInicial: '' as string | number,
@@ -37,7 +43,13 @@ const CajaControl: React.FC = () => {
 
     useEffect(() => {
         obtenerEstadoCaja();
-    }, [obtenerEstadoCaja]);
+        listarSedes();
+    }, [obtenerEstadoCaja, listarSedes]);
+
+    const hayOtrasSedes = useMemo(
+        () => sedes.some((s) => s.activo && s.id !== sedeActiva?.id),
+        [sedes, sedeActiva?.id]
+    );
 
     const totalDeclarado = useMemo(() => {
         return (
@@ -116,6 +128,7 @@ const CajaControl: React.FC = () => {
     useEscapeKey(() => setShowApertura(false), showApertura);
     useEscapeKey(() => setShowCierre(false), showCierre);
     useEscapeKey(() => setShowGasto(false), showGasto);
+    useEscapeKey(() => setShowTransferencia(false), showTransferencia);
 
     if (loading && !estadoCaja) {
         return <div className="p-8 flex justify-center"><Icon icon="eos-icons:loading" className="text-3xl text-blue-600" /></div>;
@@ -125,11 +138,15 @@ const CajaControl: React.FC = () => {
         if (estadoCaja && estadoCaja.ventasDelDia) {
             const { mediosPago } = estadoCaja.ventasDelDia;
             const montoInicial = Number(estadoCaja.movimiento?.montoInicial || 0);
-            // Efectivo esperado = monto inicial + ventas en efectivo − egresos (gastos/pagos en efectivo del turno).
+            // Efectivo esperado = monto inicial + ventas en efectivo − egresos
+            // (gastos del turno) + transferencias recibidas de otra sede −
+            // transferencias enviadas a otra sede.
             const egresos = Number(estadoCaja.totalEgresos || 0);
+            const transferenciasRecibidas = Number(estadoCaja.totalTransferenciasRecibidas || 0);
+            const transferenciasEnviadas = Number(estadoCaja.totalTransferenciasEnviadas || 0);
 
             setFormCierre({
-                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos).toFixed(2),
+                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas).toFixed(2),
                 montoYape: Number(mediosPago.YAPE || 0).toFixed(2),
                 montoPlin: Number(mediosPago.PLIN || 0).toFixed(2),
                 montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0).toFixed(2),
@@ -192,6 +209,15 @@ const CajaControl: React.FC = () => {
                                     <Icon icon="solar:wallet-money-bold-duotone" className="text-xl" />
                                     Registrar Gasto
                                 </button>
+                                {hayOtrasSedes && (
+                                    <button
+                                        onClick={() => setShowTransferencia(true)}
+                                        className="bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 border border-violet-200 dark:border-violet-800/50 px-5 py-3 rounded-xl font-bold shadow-sm transition-all transform hover:scale-105 flex items-center gap-2"
+                                    >
+                                        <Icon icon="solar:transfer-horizontal-bold-duotone" className="text-xl" />
+                                        Transferir a otra Sede
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleOpenCierre}
                                     className="bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/50 px-6 py-3 rounded-xl font-bold shadow-sm transition-all transform hover:scale-105 flex items-center gap-2"
@@ -250,6 +276,35 @@ const CajaControl: React.FC = () => {
                             <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Gastos del Turno</p>
                             <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
                                 {formatCurrency(Number(estadoCaja?.totalEgresos || 0))}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Transferencias del turno — solo visible si hubo movimiento, para no
+                mezclar con "Gastos del Turno" (no son gastos reales del negocio). */}
+            {isAbierta && (Number(estadoCaja?.totalTransferenciasEnviadas || 0) > 0 || Number(estadoCaja?.totalTransferenciasRecibidas || 0) > 0) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4">
+                        <div className="p-3 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-2xl">
+                            <Icon icon="solar:round-arrow-right-bold-duotone" className="text-3xl" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Transferido a otra Sede</p>
+                            <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
+                                {formatCurrency(Number(estadoCaja?.totalTransferenciasEnviadas || 0))}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4">
+                        <div className="p-3 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-2xl">
+                            <Icon icon="solar:round-arrow-left-bold-duotone" className="text-3xl" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Recibido de otra Sede</p>
+                            <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
+                                {formatCurrency(Number(estadoCaja?.totalTransferenciasRecibidas || 0))}
                             </p>
                         </div>
                     </div>
@@ -419,6 +474,12 @@ const CajaControl: React.FC = () => {
             <ModalRegistrarGasto
                 isOpen={showGasto}
                 onClose={() => setShowGasto(false)}
+                onSuccess={() => obtenerEstadoCaja()}
+            />
+
+            <ModalTransferirCaja
+                isOpen={showTransferencia}
+                onClose={() => setShowTransferencia(false)}
                 onSuccess={() => obtenerEstadoCaja()}
             />
         </div>
