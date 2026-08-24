@@ -43,6 +43,46 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Portada visual con enfoque natural', 'Secciones de beneficios y confianza', 'Checkout limpio', 'Página de contacto', 'Personalización visual avanzada'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto'],
   },
+  carteras: {
+    headline: 'Boutique editorial de lujo (estilo Luxora) para carteras, bolsos y accesorios: estética beige/crema/negro con tipografía serif y acabados premium.',
+    features: ['Home editorial con hero, garantías, categorías y más vendidos', 'Banners promocionales y bloque Club/Newsletter', 'Detalle de producto con galería y swatches', 'Checkout y contacto premium', 'Personalización en vivo de textos e imágenes'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  joyeria: {
+    headline: 'Marketplace cálido de joyería (estilo Aurum/Arcade): fondo crema, tipografía grotesque en minúsculas (Space Grotesk) y acento dorado configurable, pensado para joyería, oro, plata y piedras preciosas.',
+    features: ['Hero slider de 3 slides con barra tipo "Dream" (solo-imagen o con textos y botón, cada uno enlazable)', 'Home tipo feed: "lo más querido", tiles de materiales, dreamboards/colecciones y sección "próximamente"', 'Detalle de joya con selector de variantes de color (swatches oro/plata/oro rosa/gemas) y tallas, con precio/stock por variante', 'Banner de grabado personalizado, favoritos + carrito lateral y newsletter', 'Checkout y contacto premium con personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  'ropa-hombre': {
+    headline: 'Tienda editorial de ropa de hombre (estilo Urbanic): estética beige/crema/negro con tipografía serif, pensada para moda masculina moderna.',
+    features: ['Hero slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', 'Home con garantías, categorías y más buscados con swatches de color', 'Banners promocionales y bloque Club/Newsletter', 'Detalle de producto con galería + checkout y contacto premium', 'Personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  bicicletas: {
+    headline: 'Tienda racing para bicicletas, ciclismo y deportes (estilo Vonica): estética blanco/negro con acento rojo de alta energía y titulares condensados en mayúsculas.',
+    features: ['Hero slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', 'Banda de colecciones destacadas + tira de garantías y categorías', 'Más vendidos con rating de estrellas, badges NEW/descuento y swatches de color', 'Banners promocionales y bloque Club/Newsletter', 'Detalle con ficha técnica + checkout y contacto premium', 'Personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  motos: {
+    headline: 'Concesionario y taller premium para venta de motos + servicio mecánico (estilo Voltia Motos): home claro tipo bento con acento azul eléctrico, footer oscuro y titulares condensados en mayúsculas (Archivo/Oswald).',
+    features: ['Hero bento: banner slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable) + tarjeta de equipamiento', 'Tira de categorías (ofertas/preventa + categorías reales), buscador ancho y tarjetas de servicios', 'Carrusel de marcas y más vendidos con botones Comprar/Añadir', 'Banners oscuros de agenda de service (taller, vía WhatsApp) y financiamiento + newsletter', 'Redes sociales editables que aparecen solas según los enlaces configurados', 'Detalle con ficha técnica, favoritos + carrito lateral, checkout y contacto premium'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  hoodie: {
+    headline: 'Tienda editorial de ropa urbana / streetwear (estilo magazine "Hoodie"): estética beige/greige cálida con negro carbón y logotipo grotesco gigante (Archivo), pensada para hoodies, polos, moda urbana y boutiques.',
+    features: ['Hero magazine: logotipo gigante + slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', 'Sidebar editorial: nueva colección, garantías, oferta destacada, testimonio y newsletter', 'Compra por colección, más vendidos con rating de estrellas y marquee animado', 'Detalle con galería, selector de tallas, favoritos + carrito lateral', 'Checkout y contacto premium con personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  tones: {
+    headline: 'Tienda editorial cálida para ropa infantil y de bebé (estilo "tones"): estética crema/greige con marrón cacao, tarjetas redondeadas y títulos en minúsculas amables (Quicksand), pensada para ropa de niños, bebés y moda infantil.',
+    features: ['Hero con tarjeta translúcida + slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', '"Nuestros favoritos", dos tarjetas split (niñas/niños) y tiles por categoría', 'Bloque destacado + productos y banner ancho "básicos para su día a día"', 'Catálogo limpio de 3 columnas con título grande, chips por categoría y tarjetas con swatches de color', 'Detalle con galería, selector de tallas, favoritos + carrito lateral', 'Checkout, contacto y footer con newsletter; personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  'moda-minimal': {
+    headline: 'Tienda minimalista de ropa y calzado (estética estilo Everlane): monocroma blanco/negro, tipografía sans limpia, mucho espacio en blanco y enlaces subrayados.',
+    features: ['Hero slider de 3 slides a pantalla completa (solo-imagen o con textos y botón, cada uno enlazable)', 'Tiles por categoría y grillas de producto sobrias con hover de segunda imagen', 'Banner editorial + sección de valores y "los favoritos"', 'Detalle limpio con galería, checkout y contacto minimalistas', 'Personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
 };
 
 const mergePlantillaConfig = (plantilla: any, config?: PlantillaVentaConfig) => ({

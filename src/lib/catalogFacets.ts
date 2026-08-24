@@ -43,6 +43,14 @@ const ALLOWED_FACET_KEYS = new Set([
   'sistemaOperativo',
   'color',
   'material',
+  // Bicicletas / deportes
+  'talla',
+  'tamanoRueda',
+  'ruedaPulgadas',
+  'tipoFreno',
+  'velocidades',
+  'suspension',
+  'genero',
 ]);
 
 /** Etiquetas amigables para claves conocidas. */
@@ -58,6 +66,13 @@ const ATTR_LABELS: Record<string, string> = {
   sistemaOperativo: 'Sistema operativo',
   color: 'Color',
   material: 'Material',
+  talla: 'Talla',
+  tamanoRueda: 'Tamaño de rueda',
+  ruedaPulgadas: 'Tamaño de rueda',
+  tipoFreno: 'Tipo de freno',
+  velocidades: 'Velocidades',
+  suspension: 'Suspensión',
+  genero: 'Género',
 };
 
 /** Orden preferente de las facetas (las no listadas van después, alfabéticas). */
@@ -71,8 +86,15 @@ const ATTR_ORDER = [
   'pantalla',
   'resolucionPantalla',
   'sistemaOperativo',
+  'talla',
+  'tamanoRueda',
+  'ruedaPulgadas',
   'color',
   'material',
+  'tipoFreno',
+  'velocidades',
+  'suspension',
+  'genero',
 ];
 
 const MAX_OPTIONS_PER_FACET = 12;

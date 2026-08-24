@@ -14,6 +14,14 @@ import MayeProductoDetalle from './MayeProductoDetalle';
 import ApiculturaProductoDetalle from './ApiculturaProductoDetalle';
 import LuxuryProductoDetalle from './LuxuryProductoDetalle';
 import SpaProductoDetalle from './SpaProductoDetalle';
+import CarterasProductoDetalle from './CarterasProductoDetalle';
+import AurumProductoDetalle from './AurumProductoDetalle';
+import RopaHombreProductoDetalle from './RopaHombreProductoDetalle';
+import BicicletasProductoDetalle from './BicicletasProductoDetalle';
+import MotosProductoDetalle from './MotosProductoDetalle';
+import HoodieProductoDetalle from './HoodieProductoDetalle';
+import TonesProductoDetalle from './TonesProductoDetalle';
+import ModaMinimalProductoDetalle from './ModaMinimalProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -33,6 +41,14 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   apicultura: ApiculturaProductoDetalle,
   luxury: LuxuryProductoDetalle,
   spa: SpaProductoDetalle,
+  carteras: CarterasProductoDetalle,
+  joyeria: AurumProductoDetalle,
+  'ropa-hombre': RopaHombreProductoDetalle,
+  bicicletas: BicicletasProductoDetalle,
+  motos: MotosProductoDetalle,
+  hoodie: HoodieProductoDetalle,
+  tones: TonesProductoDetalle,
+  'moda-minimal': ModaMinimalProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

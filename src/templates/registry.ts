@@ -68,6 +68,46 @@ import SpaHomePage from './spa/SpaHomePage';
 import SpaCatalogoPage from './spa/SpaCatalogoPage';
 import SpaCheckoutPage from './spa/SpaCheckoutPage';
 
+// Carteras (Luxora — carteras, bolsos y accesorios de lujo)
+import CarterasHomePage from './carteras/CarterasHomePage';
+import CarterasCatalogoPage from './carteras/CarterasCatalogoPage';
+import CarterasCheckoutPage from './carteras/CarterasCheckoutPage';
+
+// Joyería (Aurum — joyería fina de alta gama)
+import AurumHomePage from './joyeria/AurumHomePage';
+import AurumCatalogoPage from './joyeria/AurumCatalogoPage';
+import AurumCheckoutPage from './joyeria/AurumCheckoutPage';
+
+// Ropa Hombre (Urbanic — moda masculina editorial)
+import RopaHombreHomePage from './ropa-hombre/RopaHombreHomePage';
+import RopaHombreCatalogoPage from './ropa-hombre/RopaHombreCatalogoPage';
+import RopaHombreCheckoutPage from './ropa-hombre/RopaHombreCheckoutPage';
+
+// Bicicletas (Vonica — bicicletas, ciclismo & deportes)
+import BicicletasHomePage from './bicicletas/BicicletasHomePage';
+import BicicletasCatalogoPage from './bicicletas/BicicletasCatalogoPage';
+import BicicletasCheckoutPage from './bicicletas/BicicletasCheckoutPage';
+
+// Moda minimal (Norda — ropa & calzado minimalista estilo Everlane)
+import ModaMinimalHomePage from './moda-minimal/ModaMinimalHomePage';
+import ModaMinimalCatalogoPage from './moda-minimal/ModaMinimalCatalogoPage';
+import ModaMinimalCheckoutPage from './moda-minimal/ModaMinimalCheckoutPage';
+
+// Motos (Voltia Motos — venta de motos + servicio/taller mecánico)
+import MotosHomePage from './motos/MotosHomePage';
+import MotosCatalogoPage from './motos/MotosCatalogoPage';
+import MotosCheckoutPage from './motos/MotosCheckoutPage';
+
+// Hoodie (Hoodie — ropa urbana / streetwear editorial)
+import HoodieHomePage from './hoodie/HoodieHomePage';
+import HoodieCatalogoPage from './hoodie/HoodieCatalogoPage';
+import HoodieCheckoutPage from './hoodie/HoodieCheckoutPage';
+
+// Tones (Tones — ropa infantil / bebé cálida y premium)
+import TonesHomePage from './tones/TonesHomePage';
+import TonesCatalogoPage from './tones/TonesCatalogoPage';
+import TonesCheckoutPage from './tones/TonesCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -151,5 +191,53 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: SpaHomePage,
     CatalogoPage: SpaCatalogoPage,
     CheckoutPage: SpaCheckoutPage,
+  },
+  carteras: {
+    id: 'carteras',
+    HomePage: CarterasHomePage,
+    CatalogoPage: CarterasCatalogoPage,
+    CheckoutPage: CarterasCheckoutPage,
+  },
+  joyeria: {
+    id: 'joyeria',
+    HomePage: AurumHomePage,
+    CatalogoPage: AurumCatalogoPage,
+    CheckoutPage: AurumCheckoutPage,
+  },
+  'ropa-hombre': {
+    id: 'ropa-hombre',
+    HomePage: RopaHombreHomePage,
+    CatalogoPage: RopaHombreCatalogoPage,
+    CheckoutPage: RopaHombreCheckoutPage,
+  },
+  bicicletas: {
+    id: 'bicicletas',
+    HomePage: BicicletasHomePage,
+    CatalogoPage: BicicletasCatalogoPage,
+    CheckoutPage: BicicletasCheckoutPage,
+  },
+  motos: {
+    id: 'motos',
+    HomePage: MotosHomePage,
+    CatalogoPage: MotosCatalogoPage,
+    CheckoutPage: MotosCheckoutPage,
+  },
+  hoodie: {
+    id: 'hoodie',
+    HomePage: HoodieHomePage,
+    CatalogoPage: HoodieCatalogoPage,
+    CheckoutPage: HoodieCheckoutPage,
+  },
+  tones: {
+    id: 'tones',
+    HomePage: TonesHomePage,
+    CatalogoPage: TonesCatalogoPage,
+    CheckoutPage: TonesCheckoutPage,
+  },
+  'moda-minimal': {
+    id: 'moda-minimal',
+    HomePage: ModaMinimalHomePage,
+    CatalogoPage: ModaMinimalCatalogoPage,
+    CheckoutPage: ModaMinimalCheckoutPage,
   },
 };

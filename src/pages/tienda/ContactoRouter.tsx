@@ -9,6 +9,14 @@ import ConstruccionContactPage from '@/templates/construccion/ConstruccionContac
 import FalconContactPage from '@/templates/falcon/FalconContactPage';
 import LuxuryContactPage from '@/templates/luxury/LuxuryContactPage';
 import SpaContactPage from '@/templates/spa/SpaContactPage';
+import CarterasContactPage from '@/templates/carteras/CarterasContactPage';
+import AurumContactPage from '@/templates/joyeria/AurumContactPage';
+import RopaHombreContactPage from '@/templates/ropa-hombre/RopaHombreContactPage';
+import BicicletasContactPage from '@/templates/bicicletas/BicicletasContactPage';
+import MotosContactPage from '@/templates/motos/MotosContactPage';
+import HoodieContactPage from '@/templates/hoodie/HoodieContactPage';
+import TonesContactPage from '@/templates/tones/TonesContactPage';
+import ModaMinimalContactPage from '@/templates/moda-minimal/ModaMinimalContactPage';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -80,6 +88,110 @@ export default function ContactoRouter() {
         />
       ) : templateId === 'spa' ? (
         <SpaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'carteras' ? (
+        <CarterasContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'joyeria' ? (
+        <AurumContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'ropa-hombre' ? (
+        <RopaHombreContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'bicicletas' ? (
+        <BicicletasContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'motos' ? (
+        <MotosContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'hoodie' ? (
+        <HoodieContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'tones' ? (
+        <TonesContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'moda-minimal' ? (
+        <ModaMinimalContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}
