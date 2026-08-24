@@ -20,6 +20,24 @@ import { get } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import ModalPreviewCatalogo from '../shared/ModalPreviewCatalogo';
 
+function InventarioKpiCard({ icon, iconBg, iconColor, label, value, sub }: {
+    icon: string; iconBg: string; iconColor: string;
+    label: string; value: string; sub?: string;
+}) {
+    return (
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4">
+            <div className={`w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center ${iconBg}`}>
+                <Icon icon={icon} className={`text-xl ${iconColor}`} />
+            </div>
+            <div className="min-w-0">
+                <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium truncate">{label}</p>
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight truncate">{value}</h3>
+                {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+            </div>
+        </div>
+    );
+}
+
 export default function ProductsView() {
     const vm = useProductsViewModel();
     const { actions } = vm;
@@ -486,6 +504,32 @@ export default function ProductsView() {
                         {vm.labels.nuevoBtn}
                     </Button>
                 </div>
+            </div>
+
+            {/* Resumen de Inventario */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
+                <InventarioKpiCard
+                    icon="solar:box-bold"
+                    iconBg="bg-violet-50 dark:bg-violet-500/10"
+                    iconColor="text-violet-600 dark:text-violet-400"
+                    label={`Total de ${vm.labels.titulo.toLowerCase()}`}
+                    value={vm.resumenLoading ? '...' : vm.resumenInventario.totalProductos.toLocaleString('es-PE')}
+                />
+                <InventarioKpiCard
+                    icon="solar:layers-minimalistic-bold-duotone"
+                    iconBg="bg-blue-50 dark:bg-blue-500/10"
+                    iconColor="text-blue-600 dark:text-blue-400"
+                    label="Cantidad total en stock"
+                    value={vm.resumenLoading ? '...' : vm.resumenInventario.totalCantidad.toLocaleString('es-PE')}
+                    sub="Unidades"
+                />
+                <InventarioKpiCard
+                    icon="solar:wallet-money-bold"
+                    iconBg="bg-emerald-50 dark:bg-emerald-500/10"
+                    iconColor="text-emerald-600 dark:text-emerald-400"
+                    label="Valor total del inventario"
+                    value={vm.resumenLoading ? '...' : `S/ ${vm.resumenInventario.totalValorInventario.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                />
             </div>
 
             {/* Main Content */}

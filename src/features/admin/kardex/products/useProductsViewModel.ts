@@ -177,6 +177,8 @@ export const useProductsViewModel = () => {
     const [totalProducts, setTotalProducts] = useState(0);
     const [productsLoaded, setProductsLoaded] = useState(false);
     const [productsLoading, setProductsLoading] = useState(false);
+    const [resumenInventario, setResumenInventario] = useState({ totalProductos: 0, totalCantidad: 0, totalValorInventario: 0 });
+    const [resumenLoading, setResumenLoading] = useState(false);
     // Ordenamiento por stock (client-side sobre la lista mostrada).
     // Ciclo al hacer click en el header "Stock": null → desc → asc → null.
     const [stockSort, setStockSort] = useState<'asc' | 'desc' | null>(null);
@@ -315,6 +317,40 @@ export const useProductsViewModel = () => {
         fetchProductsListRef.current();
     }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const fetchResumenInventario = useCallback(async () => {
+        if (!auth?.empresaId) {
+            setResumenInventario({ totalProductos: 0, totalCantidad: 0, totalValorInventario: 0 });
+            return;
+        }
+        setResumenLoading(true);
+        try {
+            const params: Record<string, string> = { search: debounce || '' };
+            if (state.marcaIdFilter) params.marcaId = String(state.marcaIdFilter);
+            if (effectiveSedeId) params.sedeId = String(effectiveSedeId);
+            const query = new URLSearchParams(params).toString();
+            const resp: any = await get(`productos/resumen?${query}`);
+            if (resp?.code === 1 && resp.data) {
+                setResumenInventario({
+                    totalProductos: Number(resp.data.totalProductos) || 0,
+                    totalCantidad: Number(resp.data.totalCantidad) || 0,
+                    totalValorInventario: Number(resp.data.totalValorInventario) || 0,
+                });
+            }
+        } catch (_error) {
+            // Silencioso: el resumen es un complemento visual, no bloquea la lista principal
+        } finally {
+            setResumenLoading(false);
+        }
+    }, [auth?.empresaId, state.marcaIdFilter, debounce, effectiveSedeId]);
+
+    const fetchResumenInventarioRef = useRef(fetchResumenInventario);
+    fetchResumenInventarioRef.current = fetchResumenInventario;
+
+    useEffect(() => {
+        if (!auth?.empresaId) return;
+        fetchResumenInventarioRef.current();
+    }, [auth?.empresaId, state.marcaIdFilter, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Sincroniza actualizaciones optimistas desde Zustand (editar/crear sin recargar página).
     useEffect(() => {
         if (!Array.isArray(storeProducts) || storeProducts.length === 0) return;
@@ -419,6 +455,7 @@ export const useProductsViewModel = () => {
             // incluyendo la nueva imagen subida a S3. Re-fetchear pisaría esa actualización.
             if (!wasEdit) {
                 void fetchProductsListRef.current();
+                void fetchResumenInventarioRef.current();
             }
         }
     }, [success]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -624,6 +661,7 @@ export const useProductsViewModel = () => {
         await importProductsAction(file, sedeParaImportar);
         if (fileInputRef.current) fileInputRef.current.value = "";
         await fetchProductsList();
+        await fetchResumenInventario();
     };
 
     const toggleColumn = (column: string) => {
@@ -646,12 +684,14 @@ export const useProductsViewModel = () => {
         await deleteProduct(state.selectedDeleteId);
         setState(prev => ({ ...prev, isOpenModalDelete: false, selectedDeleteId: null }));
         await fetchProductsList();
+        await fetchResumenInventario();
     };
 
     const confirmDeleteAllProducts = async () => {
         await deleteAllProducts(effectiveSedeId ?? undefined);
         setState(prev => ({ ...prev, isOpenModalDeleteAll: false }));
         await fetchProductsList();
+        await fetchResumenInventario();
     };
 
     const handleToggleClientState = async (data: any) => {
@@ -755,6 +795,8 @@ export const useProductsViewModel = () => {
         products,
         productsLoaded,
         totalProducts,
+        resumenInventario,
+        resumenLoading,
         loading: productsLoading || loading,
         productsLoading,
         emptyProductForm: createEmptyProductForm(),
