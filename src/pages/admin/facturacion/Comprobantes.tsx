@@ -30,6 +30,7 @@ import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
 import { useSedesStore } from "@/zustand/sedes";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
+import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCotizacion";
 import ModalImportarComprobante from "./ModalImportarComprobante";
 import { useUsersStore } from "@/zustand/users";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
@@ -86,6 +87,7 @@ const Comprobantes = () => {
     const { usuarios, getAllUsers } = useUsersStore();
     const { getInvoice, invoice, resetInvoice, cancelInvoice, completePay, discardInvoice, conciliarInvoice, verificarSunat, reemitirInvoice }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
+    const [configFormato, setConfigFormato] = useState<null | 'FACTURA' | 'BOLETA'>(null);
     const [invoicesList, setInvoicesList] = useState<IInvoices[]>([]);
     const [totalInvoicesList, setTotalInvoicesList] = useState(0);
     const [invoicesLoading, setInvoicesLoading] = useState(false);
@@ -104,6 +106,10 @@ const Comprobantes = () => {
     const [stateInvoice, setStateInvoice] = useState<string>("TODOS");
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [selectedUsuarioId, setSelectedUsuarioId] = useState<number | null>(null);
+    const [soloPendientesSunat, setSoloPendientesSunat] = useState(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        return searchParams.get('soloPendientesSunat') === 'true';
+    });
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
     const [isOpenModalWhatsApp, setIsOpenModalWhatsApp] = useState(false);
@@ -254,9 +260,12 @@ const Comprobantes = () => {
                 page: currentPage,
                 limit: itemsPerPage,
                 search: debounce,
-                fechaInicio,
-                fechaFin,
+                // Con el filtro de pendientes en SUNAT se ignora el rango de fechas
+                // (el conteo del dashboard no está acotado por mes): así aparecen
+                // los pendientes de cualquier mes, no solo el actual.
+                ...(soloPendientesSunat ? {} : { fechaInicio, fechaFin }),
                 estado: stateInvoice === "TODOS" ? "" : stateInvoice,
+                ...(soloPendientesSunat ? { soloPendientesSunat: 'true' } : {}),
                 ...(canFilterByUsuario && selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
                 ...(effectiveSedeId ? { sedeId: effectiveSedeId } : {})
             })
@@ -287,7 +296,7 @@ const Comprobantes = () => {
                 setInvoicesLoading(false);
             }
         }
-    }, [currentPage, itemsPerPage, debounce, fechaInicio, fechaFin, stateInvoice, effectiveSedeId, selectedUsuarioId, canFilterByUsuario]);
+    }, [currentPage, itemsPerPage, debounce, fechaInicio, fechaFin, stateInvoice, soloPendientesSunat, effectiveSedeId, selectedUsuarioId, canFilterByUsuario]);
 
     useEffect(() => {
         fetchFormalInvoices();
@@ -695,6 +704,24 @@ const Comprobantes = () => {
                     </button>
                     <button
                         type="button"
+                        onClick={() => setConfigFormato('FACTURA')}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                        title="Configurar el formato de impresión de las facturas"
+                    >
+                        <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
+                        Formato factura
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setConfigFormato('BOLETA')}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                        title="Configurar el formato de impresión de las boletas"
+                    >
+                        <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
+                        Formato boleta
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA' } })}
                         className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                     >
@@ -703,6 +730,22 @@ const Comprobantes = () => {
                     </button>
                 </div>
             </div>
+
+            {soloPendientesSunat && (
+                <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/40 rounded-xl max-w-fit">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                        <Icon icon="solar:document-add-bold-duotone" width={18} />
+                    </div>
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Mostrando comprobantes pendientes en SUNAT de cualquier fecha</p>
+                    <button
+                        type="button"
+                        onClick={() => { setSoloPendientesSunat(false); setcurrentPage(1); navigate('/administrador/facturacion/comprobantes', { replace: true }); }}
+                        className="ml-1 inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300"
+                    >
+                        <Icon icon="solar:close-circle-bold" width={16} /> Quitar filtro
+                    </button>
+                </div>
+            )}
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
@@ -1300,6 +1343,16 @@ const Comprobantes = () => {
                 })()}
             </TableActionMenu>
             </div>
+
+            <ModalConfigCotizacion
+                isOpen={configFormato !== null}
+                onClose={() => setConfigFormato(null)}
+                auth={auth}
+                configKey={configFormato === 'BOLETA' ? 'boletaFormatoConfig' : 'facturaFormatoConfig'}
+                previewReceipt={configFormato === 'BOLETA' ? 'BOLETA' : 'FACTURA'}
+                title={configFormato === 'BOLETA' ? 'Configurar formato de boleta' : 'Configurar formato de factura'}
+                savedMsg={configFormato === 'BOLETA' ? 'Formato de boleta guardado' : 'Formato de factura guardado'}
+            />
         </>
     );
 

@@ -63,7 +63,12 @@ const ComprobantePrintPage = ({
 
     // Configuración del formato (visibilidad + tamaño por elemento).
     // Las notas de venta tienen su propio formato independiente del de cotización.
-    const formatoConfig = receipt === 'NOTA DE VENTA'
+    const _rc = String(receipt || '').toUpperCase();
+    const formatoConfig = _rc === 'FACTURA'
+        ? (company?.empresa as any)?.facturaFormatoConfig
+        : _rc === 'BOLETA'
+        ? (company?.empresa as any)?.boletaFormatoConfig
+        : _rc === 'NOTA DE VENTA'
         ? (company?.empresa as any)?.notaVentaFormatoConfig
         : (company?.empresa as any)?.cotizFormatoConfig;
     const fc = (key: string) => elemCfg(formatoConfig, key);
@@ -335,6 +340,8 @@ console.log(formValues)
                             </label>
                         )}
                         {fc('opGravadas').visible && <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">TOTAL GRAVADAS:</div> <div>{round2(mtoOperGravadas).toFixed(2)}</div></label>}
+                        {fc('opExoneradas').visible && round2(mtoOperExoneradas) > 0 && <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">OP. EXONERADAS:</div> <div>{round2(mtoOperExoneradas).toFixed(2)}</div></label>}
+                        {fc('opInafectas').visible && round2(mtoOperInafectas) > 0 && <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">OP. INAFECTAS:</div> <div>{round2(mtoOperInafectas).toFixed(2)}</div></label>}
                         {fc('igv').visible && <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">I.G.V 18.00 %:</div> <div>{round2(mtoIgv).toFixed(2)}</div></label>}
                         {fc('montoTotal').visible && <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}><div className="">IMPORTE TOTAL:</div> <div>{round2(mtoImpVenta).toFixed(2)}</div></label>}
                         {
@@ -759,86 +766,80 @@ console.log(formValues)
                                     </div>
                                 </div>
                                 <div className="mt-4 mb-4">
-                                    <div className="flex gap-4 mb-2 items-stretch">
-                                        <div className="w-1/2 flex flex-col">
-                                            <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DEL CLIENTE</div>
-                                            <div className="border border-black rounded-lg p-3 flex-1">
-                                                <div className="grid grid-cols-[80px_1fr] gap-y-1">
-                                                    <span className="font-bold text-xs">CLIENTE:</span>
-                                                    <span className="text-xs break-words">{selectedClient?.nombre?.toUpperCase() || '-'}</span>
+                                    {/* Datos de Cliente + Comprobante en un solo cuadro (mismo estilo que cotización) */}
+                                    <div className="flex gap-6 mb-2 border border-black rounded-lg p-3">
+                                        <div className="flex-1 text-xs">
+                                            <div className="grid grid-cols-[80px_1fr] gap-y-1">
+                                                <span className="font-bold">CLIENTE:</span>
+                                                <span className="break-words">{selectedClient?.nombre?.toUpperCase() || '-'}</span>
 
-                                                    <span className="font-bold text-xs">RUC:</span>
-                                                    <span className="text-xs">{selectedClient?.nroDoc || '-'}</span>
+                                                <span className="font-bold">RUC:</span>
+                                                <span>{selectedClient?.nroDoc || '-'}</span>
 
-                                                    <span className="font-bold text-xs">EMAIL:</span>
-                                                    <span className="text-xs break-all">{selectedClient?.email || '-'}</span>
+                                                <span className="font-bold">EMAIL:</span>
+                                                <span className="break-all">{selectedClient?.email || '-'}</span>
 
-                                                    <span className="font-bold text-xs">TELF:</span>
-                                                    <span className="text-xs">{selectedClient?.telefono || '-'}</span>
+                                                <span className="font-bold">TELF:</span>
+                                                <span>{selectedClient?.telefono || '-'}</span>
 
-                                                    <span className="font-bold text-xs">DIR:</span>
-                                                    <span className="text-xs break-words">{selectedClient?.direccion?.toUpperCase() || '-'}</span>
-                                                </div>
+                                                <span className="font-bold">DIR:</span>
+                                                <span className="break-words leading-tight">{selectedClient?.direccion?.toUpperCase() || '-'}</span>
                                             </div>
                                         </div>
+                                        <div className="flex-1 border-l border-gray-300 pl-6 text-xs">
+                                            <div className="grid grid-cols-[115px_1fr] gap-y-1">
+                                                <span className="font-bold">FECHA:</span>
+                                                <span>{moment(formValues?.fechaEmision || new Date()).format('DD/MM/YYYY')}</span>
 
-                                        <div className="w-1/2 flex flex-col">
-                                            <div className="font-bold text-gray-500 mb-1 border-b border-gray-300 pb-1">DATOS DEL COMPROBANTE</div>
-                                            <div className="border border-black rounded-lg p-3 flex-1">
-                                                <div className="grid grid-cols-[115px_1fr] gap-y-1">
-                                                    <span className="font-bold text-xs">FECHA:</span>
-                                                    <span className="text-xs">{moment(formValues?.fechaEmision || new Date()).format('DD/MM/YYYY')}</span>
+                                                <span className="font-bold">HORA:</span>
+                                                <span>{moment(formValues?.fechaEmision || new Date()).format('h:mm:ss a')}</span>
 
-                                                    <span className="font-bold text-xs">HORA:</span>
-                                                    <span className="text-xs">{moment(formValues?.fechaEmision || new Date()).format('h:mm:ss a')}</span>
+                                                <span className="font-bold">MONEDA:</span>
+                                                <span>{monedaNombre}</span>
 
-                                                    <span className="font-bold text-xs">MONEDA:</span>
-                                                    <span className="text-xs">{monedaNombre}</span>
+                                                <span className="font-bold">FORMA PAGO:</span>
+                                                <span>{paymentConditionLabel}</span>
 
-                                                    <span className="font-bold text-xs">FORMA PAGO:</span>
-                                                    <span className="text-xs">{paymentConditionLabel}</span>
-
-                                                    {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
-                                                        <>
-                                                            <span className="font-bold text-xs">MEDIOS PAGO:</span>
-                                                            <span className="text-xs">
-                                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
-                                                                    const detail = splitPaymentDetails[idx] || sp;
-                                                                    return (
-                                                                        <span key={idx} className="block">
-                                                                            <span className="flex justify-between">
-                                                                                <span>{sp.method?.toUpperCase()}:</span>
-                                                                                <span>{monedaSimbolo} {Number(sp.amount).toFixed(2)}</span>
-                                                                            </span>
-                                                                            {formatPaymentExtra(detail).map((line) => (
-                                                                                <span key={line} className="block text-[10px] text-gray-700">{line}</span>
-                                                                            ))}
+                                                {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                    <>
+                                                        <span className="font-bold">MEDIOS PAGO:</span>
+                                                        <span>
+                                                            {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                                const detail = splitPaymentDetails[idx] || sp;
+                                                                return (
+                                                                    <span key={idx} className="block">
+                                                                        <span className="flex justify-between">
+                                                                            <span>{sp.method?.toUpperCase()}:</span>
+                                                                            <span>{monedaSimbolo} {Number(sp.amount).toFixed(2)}</span>
                                                                         </span>
-                                                                    );
-                                                                })}
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <span className="font-bold text-xs">MEDIO PAGO:</span>
-                                                            <span className="text-xs">
-                                                                {paymentMethodLabel} {monedaSimbolo} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}
-                                                                {formatPaymentExtra(singlePaymentDetail).map((line) => (
-                                                                    <span key={line} className="block text-[10px] text-gray-700">{line}</span>
-                                                                ))}
-                                                            </span>
-                                                        </>
-                                                    )}
+                                                                        {formatPaymentExtra(detail).map((line) => (
+                                                                            <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                                        ))}
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="font-bold">MEDIO PAGO:</span>
+                                                        <span>
+                                                            {paymentMethodLabel} {monedaSimbolo} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}
+                                                            {formatPaymentExtra(singlePaymentDetail).map((line) => (
+                                                                <span key={line} className="block text-[10px] text-gray-700">{line}</span>
+                                                            ))}
+                                                        </span>
+                                                    </>
+                                                )}
 
-                                                    <span className="font-bold text-xs">VUELTO:</span>
-                                                    <span className="text-xs">{monedaSimbolo} {displayVuelto.toFixed(2)}</span>
+                                                <span className="font-bold">VUELTO:</span>
+                                                <span>{monedaSimbolo} {displayVuelto.toFixed(2)}</span>
 
-                                                    <span className="font-bold text-xs">PAGADO:</span>
-                                                    <span className="text-xs">{monedaSimbolo} {displayPagado.toFixed(2)}</span>
+                                                <span className="font-bold">PAGADO:</span>
+                                                <span>{monedaSimbolo} {displayPagado.toFixed(2)}</span>
 
-                                                    <span className="font-bold text-xs">VENDEDOR:</span>
-                                                    <span className="text-xs">{vendedorNombre}</span>
-                                                </div>
+                                                <span className="font-bold">VENDEDOR:</span>
+                                                <span>{vendedorNombre}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -893,6 +894,7 @@ console.log(formValues)
                                         <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
                                         {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
                                         <div className="flex-1 text-center border-r border-gray-400 px-2">DESCRIPCIÓN</div>
+                                        <div className="w-[9%] text-center border-r border-gray-400">MONEDA</div>
                                         <div className="w-[10%] text-center border-r border-gray-400">P.UNIT.</div>
                                         <div className="w-[10%] text-center">TOTAL</div>
                                     </div>
@@ -941,6 +943,7 @@ console.log(formValues)
                                                         </div>
                                                     )}
                                                 </div>
+                                                <div className="w-[9%] text-center border-r border-gray-300 py-1">{monedaSimbolo}</div>
                                                 <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
                                                 <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
                                             </div>
@@ -969,14 +972,14 @@ console.log(formValues)
                                         <div className="w-1/3 text-right space-y-0.5">
                                             {isDocumentoFiscal && (
                                                 <>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. GRAVADAS:</span><span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. EXONERADAS:</span><span>{monedaSimbolo} {round2(mtoOperExoneradas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. INAFECTAS:</span><span>{monedaSimbolo} {round2(mtoOperInafectas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">OP. GRATUITAS:</span><span>{monedaSimbolo} {round2(mtoOperGratuitas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">ICBPER:</span><span>{monedaSimbolo} {round2(mtoIcbper).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">SUB TOTAL:</span><span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span>DESCUENTOS TOTAL:</span><span>{monedaSimbolo} {round2(totalDescuentos).toFixed(2)}</span></div>
-                                                    <div className="flex justify-between"><span className="font-bold">IGV 18%:</span><span>{monedaSimbolo} {round2(mtoIgv).toFixed(2)}</span></div>
+                                                    {fc('opGravadas').visible && <div className="flex justify-between"><span className="font-bold">OP. GRAVADAS:</span><span>{monedaSimbolo} {round2(mtoOperGravadas).toFixed(2)}</span></div>}
+                                                    {fc('opExoneradas').visible && <div className="flex justify-between"><span className="font-bold">OP. EXONERADAS:</span><span>{monedaSimbolo} {round2(mtoOperExoneradas).toFixed(2)}</span></div>}
+                                                    {fc('opInafectas').visible && <div className="flex justify-between"><span className="font-bold">OP. INAFECTAS:</span><span>{monedaSimbolo} {round2(mtoOperInafectas).toFixed(2)}</span></div>}
+                                                    {fc('opGratuitas').visible && <div className="flex justify-between"><span className="font-bold">OP. GRATUITAS:</span><span>{monedaSimbolo} {round2(mtoOperGratuitas).toFixed(2)}</span></div>}
+                                                    {fc('icbper').visible && <div className="flex justify-between"><span className="font-bold">ICBPER:</span><span>{monedaSimbolo} {round2(mtoIcbper).toFixed(2)}</span></div>}
+                                                    {fc('subTotal').visible && <div className="flex justify-between"><span className="font-bold">SUB TOTAL:</span><span>{monedaSimbolo} {round2(mtoOperGravadas + mtoOperExoneradas + mtoOperInafectas).toFixed(2)}</span></div>}
+                                                    {fc('descuentos').visible && <div className="flex justify-between"><span>DESCUENTOS TOTAL:</span><span>{monedaSimbolo} {round2(totalDescuentos).toFixed(2)}</span></div>}
+                                                    {fc('igv').visible && <div className="flex justify-between"><span className="font-bold">IGV 18%:</span><span>{monedaSimbolo} {round2(mtoIgv).toFixed(2)}</span></div>}
                                                 </>
                                             )}
                                             {!isDocumentoFiscal && totalDescuentos > 0 && (
@@ -985,7 +988,7 @@ console.log(formValues)
                                                     <span>- {monedaSimbolo} {round2(totalDescuentos).toFixed(2)}</span>
                                                 </div>
                                             )}
-                                            <div className="flex justify-between text-md font-bold border-t border-black pt-1 mt-1">
+                                            <div className="flex justify-between items-center text-lg font-bold border-t border-black pt-1 mt-1">
                                                 <span>MONTO TOTAL:</span>
                                                 <span>{monedaSimbolo} {round2(mtoImpVenta).toFixed(2)}</span>
                                             </div>
