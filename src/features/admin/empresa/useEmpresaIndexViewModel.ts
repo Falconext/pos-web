@@ -65,6 +65,16 @@ const resolveGrupo = (empresa: any): GrupoCliente => {
     return 'MENSUAL';
 };
 
+// Texto humano de la actividad de facturación ("Facturó hoy", "Hace 12 días", "Nunca facturó").
+const describirUltimaVenta = (salud?: { ultimaVenta?: string | null; diasSinVender?: number } | null): string => {
+    if (!salud) return '—';
+    if (!salud.ultimaVenta) return 'Nunca facturó';
+    const dias = salud.diasSinVender ?? 0;
+    if (dias <= 0) return 'Facturó hoy';
+    if (dias === 1) return 'Ayer';
+    return `Hace ${dias} días`;
+};
+
 const resolveSeveridad = (dias: number | null): Severidad => {
     if (dias === null) return 'sinfecha';
     if (dias < 0) return 'vencido';
@@ -90,6 +100,7 @@ export const useEmpresaIndexViewModel = (): any => {
     const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'INACTIVO' | 'TODOS'>('TODOS');
     const [grupoFiltro, setGrupoFiltro] = useState<GrupoCliente | ''>('');
     const [vencimientoFiltro, setVencimientoFiltro] = useState<'' | 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30'>('');
+    const [saludFiltro, setSaludFiltro] = useState<'' | 'EN_RIESGO'>('');
     const [itemsPerPage, setItemsPerPage] = useState(300);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
@@ -179,6 +190,11 @@ export const useEmpresaIndexViewModel = (): any => {
             grupo: resolveGrupo(empresa),
             severidad: resolveSeveridad(diasRestantes),
             diasRestantes,
+            salud: empresa.salud ?? null,
+            saludEstado: empresa.salud?.estado ?? 'sana',
+            diasSinVender: empresa.salud?.diasSinVender ?? null,
+            ultimaVentaTexto: describirUltimaVenta(empresa.salud),
+            estadoGestion: empresa.estadoGestion ?? null,
         };
     }) || [];
 
@@ -237,6 +253,32 @@ export const useEmpresaIndexViewModel = (): any => {
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
     };
 
+    // ── Postventa: bitácora de seguimiento + estado de gestión ──
+    const [seguimientoEmpresa, setSeguimientoEmpresa] = useState<any>(null); // empresa/row abierto en el modal
+    const openSeguimiento = (row: any) => {
+        const full = empresas?.find((e: any) => e.id === row.id);
+        setSeguimientoEmpresa({ ...(full ?? {}), ...row });
+    };
+    const closeSeguimiento = () => setSeguimientoEmpresa(null);
+    const onGestionActualizada = (id: number, estadoGestion: string | null) => {
+        // refresca la fila en memoria para reflejar el nuevo estado sin recargar todo
+        useEmpresasStore.setState((s: any) => ({
+            empresas: (s.empresas || []).map((e: any) => (e.id === id ? { ...e, estadoGestion } : e)),
+        }));
+        setSeguimientoEmpresa((prev: any) => (prev && prev.id === id ? { ...prev, estadoGestion } : prev));
+    };
+
+    // Abre el chat de WhatsApp del admin de la empresa, EN BLANCO, para escribir libremente.
+    // (Distinto del recordatorio: no lleva mensaje predefinido.)
+    const handleAbrirWhatsapp = (row: any) => {
+        const phone = normalizeWhatsappPhone(row.adminCelular);
+        if (!phone) {
+            useAlertStore.getState().alert('La empresa no tiene celular de administrador activo', 'warning');
+            return;
+        }
+        window.open(`https://wa.me/${phone}`, '_blank', 'noopener,noreferrer');
+    };
+
     // ── Contrato de servicios (PDF autollenado) ──
     const handleDescargarContrato = async (row: any) => {
         try {
@@ -269,16 +311,19 @@ export const useEmpresaIndexViewModel = (): any => {
     };
 
     // KPIs de vencimiento sobre el conjunto cargado (respeta búsqueda/estado del servidor)
+    // enRiesgoFuga: empresas activas que dejaron de facturar (amarillo + rojo) — máxima prioridad de retención.
     const kpis = empresasTable.reduce(
-        (acc: { vencidos: number; porVencer7: number; porVencer30: number }, e: any) => {
+        (acc: { vencidos: number; porVencer7: number; porVencer30: number; enRiesgoFuga: number }, e: any) => {
             const d = e.diasRestantes;
+            // Los clientes DEMO no cuentan como riesgo de fuga (aún no son clientes de pago).
+            if (e.grupo !== 'DEMO' && e.estado === 'ACTIVO' && (e.saludEstado === 'riesgo' || e.saludEstado === 'critico')) acc.enRiesgoFuga += 1;
             if (d === null) return acc;
             if (d < 0) acc.vencidos += 1;
             else if (d <= 7) acc.porVencer7 += 1;
             else if (d <= 30) acc.porVencer30 += 1;
             return acc;
         },
-        { vencidos: 0, porVencer7: 0, porVencer30: 0 },
+        { vencidos: 0, porVencer7: 0, porVencer30: 0, enRiesgoFuga: 0 },
     );
 
     const pasaVencimiento = (e: any) => {
@@ -289,13 +334,20 @@ export const useEmpresaIndexViewModel = (): any => {
         return true;
     };
 
+    const pasaSalud = (e: any) => {
+        if (saludFiltro === 'EN_RIESGO') return e.grupo !== 'DEMO' && e.estado === 'ACTIVO' && (e.saludEstado === 'riesgo' || e.saludEstado === 'critico');
+        return true;
+    };
+
+    const toggleSalud = () => setSaludFiltro((prev) => (prev === 'EN_RIESGO' ? '' : 'EN_RIESGO'));
+
     const ordenarPorVencimiento = (a: any, b: any) => {
         const da = a.diasRestantes === null ? Number.POSITIVE_INFINITY : a.diasRestantes;
         const db = b.diasRestantes === null ? Number.POSITIVE_INFINITY : b.diasRestantes;
         return da - db;
     };
 
-    const filasVisibles = empresasTable.filter(pasaVencimiento);
+    const filasVisibles = empresasTable.filter((e: any) => pasaVencimiento(e) && pasaSalud(e));
 
     // Agrupa por tipo de cliente y ordena cada grupo por proximidad de vencimiento (lo que vence primero, arriba)
     const grupos: Record<GrupoCliente, any[]> = { DEMO: [], MENSUAL: [], ANUAL: [] };
@@ -305,5 +357,5 @@ export const useEmpresaIndexViewModel = (): any => {
     const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
 
-    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleDescargarContrato, handleEnviarContrato };
+    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
 };
