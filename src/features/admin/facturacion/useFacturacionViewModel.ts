@@ -1384,6 +1384,32 @@ export const useFacturacionViewModel = () => {
             }))
             : product?.preciosMayorista;
 
+        // Código de PAQUETE escaneado (ej. six-pack): vende/descuenta N unidades del
+        // mismo producto de una sola pasada, en vez de 1 (ver ProductoCodigoBarras.unidadesPorPaquete).
+        const unidadesPorPaquete = Math.max(1, Number(product?.unidadesPorPaquete ?? 1) || 1);
+        // Precio TOTAL propio del paquete (los packs suelen ser más baratos que
+        // unidades × precio unitario). Se reparte como precio unitario de la línea
+        // para que cantidad × precio = precio del paquete. Las líneas de paquete
+        // van SEPARADAS de las unidades sueltas (precios distintos).
+        const esPaqueteConPrecio =
+            unidadesPorPaquete > 1 && Number(product?.precioPaquete) > 0;
+        const precioUnitarioPaquete = esPaqueteConPrecio
+            ? (Number(product.precioPaquete) / unidadesPorPaquete) * factorNative
+            : null;
+        // Nombre propio del paquete (si se configuró): reemplaza la descripción
+        // de la línea para que el comprobante diga "SIX PACK ..." en vez del
+        // nombre del producto suelto.
+        const aliasPaquete =
+            unidadesPorPaquete > 1 && String(product?.aliasPaquete || '').trim()
+                ? String(product.aliasPaquete).trim()
+                : null;
+        // Imagen propia del paquete: la línea del carrito muestra la foto del
+        // pack (ej. six-pack) en vez de la del producto suelto.
+        const imagenPaquete =
+            unidadesPorPaquete > 1 && String(product?.imagenPaquete || '').trim()
+                ? String(product.imagenPaquete).trim()
+                : null;
+
         const precioDesdeLoteFefo = Number(product?.loteFefoCostoUnitario ?? 0) * factorPEN;
         const precioBaseProducto = Number(product?.precioUnitario ?? 0) * factorNative;
         const precioBaseCaja = usarPrecioLoteFefo && precioDesdeLoteFefo > 0
@@ -1391,7 +1417,12 @@ export const useFacturacionViewModel = () => {
             : precioBaseProducto;
         const precioBaseSeleccionado = vendePorUnidad ? precioBaseCaja / factorConversion : precioBaseCaja;
         const origenPrecio = vendePorUnidad ? "UNIDAD" : usarPrecioLoteFefo && precioDesdeLoteFefo > 0 ? "FEFO" : "LISTA";
-        const existingIndex = productsInvoice.findIndex((p: any) => p.id === product.id);
+        // Paquete con precio propio y unidades sueltas del mismo producto se
+        // manejan como líneas distintas (precios distintos): cada escaneo se
+        // fusiona solo con líneas de su mismo tipo.
+        const existingIndex = productsInvoice.findIndex(
+            (p: any) => p.id === product.id && Boolean(p.esPaquete) === esPaqueteConPrecio,
+        );
 
         const farmaciaExtra = usaLotesFarmacia && product?.loteFefo
             ? {
@@ -1406,7 +1437,7 @@ export const useFacturacionViewModel = () => {
 
         if (existingIndex >= 0) {
             const currentItem = productsInvoice[existingIndex];
-            const newQty = Number(currentItem.cantidad) + 1;
+            const newQty = Number(currentItem.cantidad) + unidadesPorPaquete;
             const stockDisponible = usaLotesFarmacia
                 ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
                 : product.stock;
@@ -1419,19 +1450,24 @@ export const useFacturacionViewModel = () => {
             const stockDisponible = usaLotesFarmacia
                 ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
                 : product.stock;
-            if (!permitirVentaSinStock && !esServicio && stockDisponible < 1) {
+            if (!permitirVentaSinStock && !esServicio && stockDisponible < unidadesPorPaquete) {
                 return useAlertStore.getState().alert("Sin stock", "warning");
             }
             // Sobreventa activa: se agrega sin advertencia (el empresario ya la habilitó a propósito).
-            const base = precioBaseSeleccionado;
+            // Paquete con precio propio: el precio unitario de la línea es
+            // precioPaquete / unidades (cantidad × precio = precio del paquete),
+            // sin pasar por precios mayoristas.
+            const base = precioUnitarioPaquete ?? precioBaseSeleccionado;
             addProductsInvoice({
                 ...product,
                 // Precio ya expresado en la moneda del documento (PEN o USD).
                 moneda: docUSD ? 'USD' : 'PEN',
                 preciosMayorista: preciosMayoristaConv,
                 precioBase: base,
-                precioUnitario: getApplicablePrice({ precioBase: base, preciosMayorista: preciosMayoristaConv }, 1),
-                precioOrigen: origenPrecio,
+                precioUnitario:
+                    precioUnitarioPaquete ??
+                    getApplicablePrice({ precioBase: base, preciosMayorista: preciosMayoristaConv }, 1),
+                precioOrigen: esPaqueteConPrecio ? 'PAQUETE' : origenPrecio,
                 unidadMedida: unidadMedidaNombre,
                 // Trazabilidad de moneda para reconvertir al cambiar la moneda del documento.
                 // `tipoCambio` = factor aplicado al precio nativo (1, TC, o 1/TC).
@@ -1440,6 +1476,12 @@ export const useFacturacionViewModel = () => {
                 ...(nativeUSD ? { precioOriginalUSD: Number(product?.precioUnitario ?? 0) } : {}),
                 ...farmaciaExtra,
                 ...fraccionExtra,
+                // Código de paquete escaneado (ej. six-pack): agrega directo con la cantidad
+                // de unidades que representa (ver unidadesPorPaquete arriba).
+                cantidadInicial: unidadesPorPaquete,
+                ...(esPaqueteConPrecio ? { esPaquete: true } : {}),
+                ...(aliasPaquete ? { descripcion: aliasPaquete } : {}),
+                ...(imagenPaquete ? { imagenUrl: imagenPaquete } : {}),
             });
         }
     }

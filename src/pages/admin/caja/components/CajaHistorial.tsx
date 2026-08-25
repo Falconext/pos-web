@@ -21,6 +21,8 @@ const CajaHistorial: React.FC = () => {
         obtenerHistorialCaja,
         exportarArqueo,
         eliminarEgreso,
+        aprobarEgreso,
+        rechazarEgreso,
         setFilters,
         clearFilters,
     } = useCajaStore();
@@ -28,6 +30,15 @@ const CajaHistorial: React.FC = () => {
     const [egresoEditar, setEgresoEditar] = useState<MovimientoCaja | null>(null);
     const [egresoEliminarId, setEgresoEliminarId] = useState<number | null>(null);
     const [loadingEliminar, setLoadingEliminar] = useState(false);
+    const [aprobandoId, setAprobandoId] = useState<number | null>(null);
+
+    const handleAprobacion = async (id: number, accion: 'aprobar' | 'rechazar') => {
+        if (aprobandoId) return;
+        setAprobandoId(id);
+        const result = accion === 'aprobar' ? await aprobarEgreso(id) : await rechazarEgreso(id);
+        setAprobandoId(null);
+        if (result.success) obtenerHistorialCaja(page, limit);
+    };
 
     const { auth, sedeActiva } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
@@ -159,8 +170,20 @@ const CajaHistorial: React.FC = () => {
         'Monto': <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(mov.monto ?? mov.montoInicial ?? mov.montoFinal ?? 0)}</span>,
         'Categoría': mov.categoriaGasto
             ? (
-                <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-100 dark:border-orange-800/30 whitespace-nowrap">
-                    {mov.categoriaGasto}
+                <span className="inline-flex items-center gap-1.5">
+                    <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-100 dark:border-orange-800/30 whitespace-nowrap">
+                        {mov.categoriaGasto}
+                    </span>
+                    {mov.estadoAprobacion === 'PENDIENTE' && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 whitespace-nowrap">
+                            Pendiente
+                        </span>
+                    )}
+                    {mov.estadoAprobacion === 'RECHAZADO' && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 whitespace-nowrap">
+                            Rechazado
+                        </span>
+                    )}
                 </span>
             )
             : <span className="text-gray-400 dark:text-gray-600">—</span>,
@@ -171,6 +194,26 @@ const CajaHistorial: React.FC = () => {
         ),
         'Acciones': (mov.tipoMovimiento === 'EGRESO' && !mov.esTransferencia) ? (
             <div className="flex gap-2">
+                {isAdmin && mov.estadoAprobacion === 'PENDIENTE' && (
+                    <>
+                        <button
+                            onClick={() => handleAprobacion(mov.id, 'aprobar')}
+                            disabled={aprobandoId === mov.id}
+                            className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
+                            title="Aprobar gasto"
+                        >
+                            <Icon icon="solar:check-circle-bold" className="text-base" />
+                        </button>
+                        <button
+                            onClick={() => handleAprobacion(mov.id, 'rechazar')}
+                            disabled={aprobandoId === mov.id}
+                            className="p-1.5 rounded-lg text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50"
+                            title="Rechazar gasto"
+                        >
+                            <Icon icon="solar:close-circle-bold" className="text-base" />
+                        </button>
+                    </>
+                )}
                 <button
                     onClick={() => setEgresoEditar(mov)}
                     className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"

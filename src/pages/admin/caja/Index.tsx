@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import CajaControl from './components/CajaControl';
 import CajaHistorial from './components/CajaHistorial';
+import CajaDepositos from './components/CajaDepositos';
+import { useAuthStore } from '@/zustand/auth';
 
 const CajaIndex: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'CONTROL' | 'HISTORIAL'>('CONTROL');
+    const [activeTab, setActiveTab] = useState<'CONTROL' | 'HISTORIAL' | 'DEPOSITOS'>('CONTROL');
+    const { auth } = useAuthStore();
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA';
 
     return (
         <div className="space-y-6 max-w-8xl px-2 mx-auto bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
@@ -39,12 +43,25 @@ const CajaIndex: React.FC = () => {
                     <Icon icon="solar:history-bold-duotone" className="text-lg" />
                     Historial de Turnos
                 </button>
+                {isAdmin && (
+                    <button
+                        onClick={() => setActiveTab('DEPOSITOS')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'DEPOSITOS'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
+                            }`}
+                    >
+                        <Icon icon="solar:card-transfer-bold-duotone" className="text-lg" />
+                        Depósitos
+                    </button>
+                )}
             </div>
 
             {/* Content */}
             <div className="mt-6">
                 {activeTab === 'CONTROL' && <CajaControl />}
                 {activeTab === 'HISTORIAL' && <CajaHistorial />}
+                {activeTab === 'DEPOSITOS' && isAdmin && <CajaDepositos />}
             </div>
         </div>
     );

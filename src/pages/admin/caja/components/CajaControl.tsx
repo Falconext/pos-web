@@ -5,6 +5,7 @@ import { useAuthStore } from '@/zustand/auth';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
+import ModalConfirm from '@/components/ModalConfirm';
 import useEscapeKey from '@/hooks/useEscapeKey';
 import ModalRegistrarGasto from './ModalRegistrarGasto';
 import ModalTransferirCaja from './ModalTransferirCaja';
@@ -46,10 +47,13 @@ const CajaControl: React.FC = () => {
         listarSedes();
     }, [obtenerEstadoCaja, listarSedes]);
 
-    const hayOtrasSedes = useMemo(
-        () => sedes.some((s) => s.activo && s.id !== sedeActiva?.id),
-        [sedes, sedeActiva?.id]
-    );
+    // Transferir solo tiene sentido con OTRA sede activa a la cual enviar.
+    // Sin sede activa en sesión (caso raro), se exige que existan ≥2 activas.
+    const hayOtrasSedes = useMemo(() => {
+        const activas = sedes.filter((s) => s.activo);
+        if (sedeActiva?.id) return activas.some((s) => s.id !== sedeActiva.id);
+        return activas.length > 1;
+    }, [sedes, sedeActiva?.id]);
 
     const totalDeclarado = useMemo(() => {
         return (
@@ -361,7 +365,7 @@ const CajaControl: React.FC = () => {
 
             {/* Modal Cierre */}
             {showCierre && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 top-[-30px] bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-[#111827] rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border dark:border-slate-800">
                         <div className="bg-slate-50 dark:bg-slate-900 p-6 border-b border-gray-100 dark:border-slate-800">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -443,33 +447,27 @@ const CajaControl: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Confirmación antes de cerrar */}
-                        {!confirmCierre ? (
-                            <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t dark:border-slate-800 flex justify-end gap-3">
-                                <button onClick={() => setShowCierre(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Cancelar</button>
-                                <Button onClick={() => setConfirmCierre(true)} className="bg-amber-500 text-white hover:bg-amber-600 border-none">
-                                    <Icon icon="solar:shield-warning-bold" className="mr-1" />
-                                    Revisar y Cerrar
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="p-4 bg-red-50 dark:bg-red-900/20 border-t border-red-100 dark:border-red-900/30 space-y-3">
-                                <p className="text-sm text-red-700 dark:text-red-400 font-medium text-center flex items-center justify-center gap-2">
-                                    <Icon icon="solar:danger-triangle-bold" className="text-lg" />
-                                    ¿Confirmas el cierre de caja? Esta acción no se puede deshacer.
-                                </p>
-                                <div className="flex justify-center gap-3">
-                                    <button onClick={() => setConfirmCierre(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Volver</button>
-                                    <Button onClick={handleCerrarCaja} disabled={loading} className="bg-red-500 text-white hover:bg-red-600 border-none">
-                                        {loading ? <Icon icon="eos-icons:loading" className="mr-2" /> : <Icon icon="solar:stop-circle-bold" className="mr-1" />}
-                                        Confirmar Cierre
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t dark:border-slate-800 flex justify-end gap-3">
+                            <button onClick={() => setShowCierre(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Cancelar</button>
+                            <Button onClick={() => setConfirmCierre(true)} className="bg-amber-500 text-white hover:bg-amber-600 border-none">
+                                <Icon icon="solar:shield-warning-bold" className="mr-1" />
+                                Revisar y Cerrar
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
+
+            {/* Confirmación de cierre — modal aparte, no reemplaza el pie del modal anterior */}
+            <ModalConfirm
+                isOpenModal={confirmCierre}
+                setIsOpenModal={setConfirmCierre}
+                title="Confirmar Cierre de Turno"
+                information="¿Confirmas el cierre de caja? Esta acción no se puede deshacer."
+                confirmText="Confirmar Cierre"
+                confirmLoading={loading}
+                confirmSubmit={handleCerrarCaja}
+            />
 
             <ModalRegistrarGasto
                 isOpen={showGasto}
