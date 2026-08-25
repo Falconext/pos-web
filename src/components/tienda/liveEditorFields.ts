@@ -213,6 +213,13 @@ export const MODA_MINIMAL_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'modaMinimalCatalogBannerImage', label: 'Catálogo: banner superior', hint: 'Imagen de portada de la página de catálogo (rec. 1900×600px).', fallback: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=1900&q=80' },
 ];
 
+export const COMIDA_APP_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'comidaAppHeroImage', label: 'Hero · Slide 1: imagen', hint: 'Foto del plato para el primer banner. Reemplaza el ejemplo por tu producto (rec. 900×700px).', fallback: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=900&q=80' },
+  { key: 'comidaAppSlide2Image', label: 'Hero · Slide 2: imagen', hint: 'Foto del segundo banner del hero (rec. 900×700px).', fallback: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80' },
+  { key: 'comidaAppSlide3Image', label: 'Hero · Slide 3: imagen', hint: 'Foto del tercer banner del hero (rec. 900×700px).', fallback: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80' },
+  { key: 'comidaAppPromoImage', label: 'Banner de ofertas: imagen', hint: 'Foto del banner "Hasta 30% OFF" (rec. 800×600px).', fallback: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80' },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TEXTOS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -803,6 +810,44 @@ const MODA_MINIMAL_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'modaMinimalPdpTraditionalFactor', label: 'PDP: factor precio tradicional (ej. 2 = doble)', placeholder: '2', group: 'Detalle de producto' },
 ];
 
+const COMIDA_APP_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'comidaAppLogoText', label: 'Nombre de la tienda', placeholder: 'Mi Restaurante', group: 'Marca' },
+  { key: 'comidaAppGreeting', label: 'Saludo (arriba)', placeholder: '¡Hola! 👋', group: 'Encabezado' },
+  { key: 'comidaAppTagline', label: 'Titular (arriba)', placeholder: 'Tu comida favorita, a un clic', group: 'Encabezado' },
+  { key: 'comidaAppSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Busca tu plato favorito...', group: 'Encabezado' },
+  { key: 'comidaAppHeroOnlyImage', label: 'Slide 1: solo imagen (sin textos ni botón)', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen, clickeable al destino del Slide 1.' },
+  { key: 'comidaAppHeroBadge', label: 'Slide 1: etiqueta', placeholder: 'Recién hecho', group: 'Hero · Slide 1' },
+  { key: 'comidaAppHeroTitle', label: 'Slide 1: título', placeholder: 'El sabor que te encanta', group: 'Hero · Slide 1' },
+  { key: 'comidaAppHeroSubtitle', label: 'Slide 1: subtítulo', placeholder: 'Preparado al momento y con los mejores ingredientes.', group: 'Hero · Slide 1' },
+  { key: 'comidaAppHeroButton', label: 'Slide 1: botón', placeholder: 'Pedir ahora', group: 'Hero · Slide 1' },
+  { key: 'comidaAppSlide2OnlyImage', label: 'Slide 2: solo imagen', placeholder: '', group: 'Hero · Slide 2', type: 'toggle', hint: 'Banner de solo imagen para el Slide 2.' },
+  { key: 'comidaAppSlide2Badge', label: 'Slide 2: etiqueta', placeholder: 'Combos', group: 'Hero · Slide 2' },
+  { key: 'comidaAppSlide2Title', label: 'Slide 2: título', placeholder: 'Combos para compartir', group: 'Hero · Slide 2' },
+  { key: 'comidaAppSlide2Subtitle', label: 'Slide 2: subtítulo', placeholder: 'Más sabor, mejor precio.', group: 'Hero · Slide 2' },
+  { key: 'comidaAppSlide2Button', label: 'Slide 2: botón', placeholder: 'Ver combos', group: 'Hero · Slide 2' },
+  { key: 'comidaAppSlide3OnlyImage', label: 'Slide 3: solo imagen', placeholder: '', group: 'Hero · Slide 3', type: 'toggle', hint: 'Banner de solo imagen para el Slide 3.' },
+  { key: 'comidaAppSlide3Badge', label: 'Slide 3: etiqueta', placeholder: 'Oferta', group: 'Hero · Slide 3' },
+  { key: 'comidaAppSlide3Title', label: 'Slide 3: título', placeholder: 'Hasta 30% de descuento', group: 'Hero · Slide 3' },
+  { key: 'comidaAppSlide3Subtitle', label: 'Slide 3: subtítulo', placeholder: 'En productos seleccionados.', group: 'Hero · Slide 3' },
+  { key: 'comidaAppSlide3Button', label: 'Slide 3: botón', placeholder: 'Aprovechar', group: 'Hero · Slide 3' },
+  { key: 'comidaAppCombosTitle', label: 'Título "Combos populares"', placeholder: 'Combos populares', group: 'Secciones' },
+  { key: 'comidaAppMenuTitle', label: 'Título del menú (catálogo)', placeholder: 'Menú', group: 'Secciones' },
+  { key: 'comidaAppPromoEyebrow', label: 'Banner ofertas: etiqueta', placeholder: 'Ofertas 🔥', group: 'Banner ofertas' },
+  { key: 'comidaAppPromoTitle', label: 'Banner ofertas: título', placeholder: 'Hasta 30% OFF', group: 'Banner ofertas' },
+  { key: 'comidaAppPromoSubtitle', label: 'Banner ofertas: subtítulo', placeholder: 'En combos seleccionados', group: 'Banner ofertas' },
+  { key: 'comidaAppPromoButton', label: 'Banner ofertas: botón', placeholder: 'Pedir ahora', group: 'Banner ofertas' },
+  { key: 'comidaAppOcultarEnvio', label: 'Ocultar costo de envío', placeholder: '', group: 'Checkout', type: 'toggle', hint: 'Oculta la línea "Envío" y el aviso de delivery gratis en el checkout.' },
+  { key: 'comidaAppContactHeading', label: 'Contacto: título', placeholder: 'Contáctanos', group: 'Contacto' },
+  { key: 'comidaAppContactSubheading', label: 'Contacto: subtítulo', placeholder: 'Estamos para atenderte 🍽️', group: 'Contacto' },
+  { key: 'comidaAppContactTitle', label: 'Contacto: título del formulario', placeholder: 'Escríbenos', group: 'Contacto' },
+  { key: 'comidaAppContactSubmitLabel', label: 'Contacto: botón enviar', placeholder: 'Enviar', group: 'Contacto' },
+  { key: 'comidaAppContactAddress', label: 'Contacto: dirección', placeholder: 'Av. Principal 123, Lima', group: 'Contacto' },
+  { key: 'comidaAppContactPhone', label: 'Contacto: teléfono', placeholder: '+51 999 999 999', group: 'Contacto' },
+  { key: 'comidaAppContactEmail', label: 'Contacto: correo', placeholder: 'hola@mirestaurante.pe', group: 'Contacto' },
+  { key: 'comidaAppContactHours', label: 'Contacto: horario', placeholder: 'Lun a Dom · 11:00 – 23:00', group: 'Contacto' },
+  { key: 'comidaAppFooterText', label: 'Footer: descripción', placeholder: 'Comida recién hecha, con ingredientes frescos...', group: 'Footer' },
+];
+
 const JOYERIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'joyeriaLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Aurum Joyería', group: 'Marca' },
   { key: 'joyeriaLogoTagline', label: 'Bajada del logo', placeholder: 'Fine Jewelry', group: 'Marca' },
@@ -1201,6 +1246,12 @@ const MODA_MINIMAL_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'modaMinimalSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
 ];
 
+const COMIDA_APP_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'comidaAppHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Hero · Slide 1', defaultType: 'catalog' },
+  { key: 'comidaAppSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Hero · Slide 2', defaultType: 'catalog' },
+  { key: 'comidaAppSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTRO POR PLANTILLA
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1230,6 +1281,7 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   hoodie: { textFields: HOODIE_TEXT_FIELDS, imageFields: HOODIE_IMAGE_FIELDS, productFields: [], linkFields: HOODIE_LINK_FIELDS },
   tones: { textFields: TONES_TEXT_FIELDS, imageFields: TONES_IMAGE_FIELDS, productFields: [], linkFields: TONES_LINK_FIELDS },
   'moda-minimal': { textFields: MODA_MINIMAL_TEXT_FIELDS, imageFields: MODA_MINIMAL_IMAGE_FIELDS, productFields: [], linkFields: MODA_MINIMAL_LINK_FIELDS },
+  'comida-app': { textFields: COMIDA_APP_TEXT_FIELDS, imageFields: COMIDA_APP_IMAGE_FIELDS, productFields: [], linkFields: COMIDA_APP_LINK_FIELDS },
 };
 
 export function getLiveEditorConfig(plantillaId?: string | null): LiveEditorPlantillaConfig {

@@ -26,7 +26,8 @@ export type PlantillaId =
   | 'motos'
   | 'hoodie'
   | 'tones'
-  | 'moda-minimal';
+  | 'moda-minimal'
+  | 'comida-app';
 
 export interface BannerSlotDef {
   orden: number;
@@ -581,6 +582,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#171614',
     icon: 'solar:hanger-2-bold',
     rubrosPermitidos: ['Moda', 'Ropa', 'Calzado', 'Moda, Ropa Y Calzado', 'Textil y confección', 'Textil y confecciones', 'Boutique', 'Moda Urbana'],
+  },
+  'comida-app': {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: true,
+    showSidebar: false,
+    imageAspect: 'aspect-[4/3]',
+    label: 'Comida (App)',
+    description: 'Experiencia tipo app de delivery para cualquier comida (pollería, cevichería, anticuchos, pizzería, hamburguesería, etc.): responsive real — app mobile-first en celular y layout web con navbar y buscador en escritorio. Fondo crema con acentos rojo/naranja, hero slider de 3 slides, círculos de categoría, combos con badges/rating/precio, banner de ofertas y barra inferior de pestañas. Detalle con acción fija/inline y carrito bottom-sheet. Color de acento personalizable; todo editable en vivo.',
+    accentColor: '#E8542A',
+    icon: 'mdi:silverware-fork-knife',
+    rubrosPermitidos: ['Restaurante y alimentos', 'Restaurantes y comida', 'Comida rápida', 'Pollería', 'Polleria', 'Pizzería', 'Pizzeria', 'Hamburguesería', 'Cafetería', 'Cafeteria', 'Panadería y Pastelería', 'Heladería', 'Heladeria', 'Fast food', 'Delivery'],
   },
 };
 

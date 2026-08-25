@@ -93,6 +93,11 @@ import ModaMinimalHomePage from './moda-minimal/ModaMinimalHomePage';
 import ModaMinimalCatalogoPage from './moda-minimal/ModaMinimalCatalogoPage';
 import ModaMinimalCheckoutPage from './moda-minimal/ModaMinimalCheckoutPage';
 
+// Comida app (Crispy — app de comida / delivery)
+import CrispyHomePage from './comida-app/CrispyHomePage';
+import CrispyCatalogoPage from './comida-app/CrispyCatalogoPage';
+import CrispyCheckoutPage from './comida-app/CrispyCheckoutPage';
+
 // Motos (Voltia Motos — venta de motos + servicio/taller mecánico)
 import MotosHomePage from './motos/MotosHomePage';
 import MotosCatalogoPage from './motos/MotosCatalogoPage';
@@ -239,5 +244,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: ModaMinimalHomePage,
     CatalogoPage: ModaMinimalCatalogoPage,
     CheckoutPage: ModaMinimalCheckoutPage,
+  },
+  'comida-app': {
+    id: 'comida-app',
+    HomePage: CrispyHomePage,
+    CatalogoPage: CrispyCatalogoPage,
+    CheckoutPage: CrispyCheckoutPage,
   },
 };
