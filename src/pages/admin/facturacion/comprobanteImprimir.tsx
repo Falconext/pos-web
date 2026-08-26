@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { BRAND } from '@/lib/branding';
 import { elemCfg } from '@/features/admin/cotizaciones/cotizFormatoElementos';
+import { useAuthStore } from '@/zustand/auth';
 
 const ComprobantePrintPage = ({
     productsInvoice,
@@ -41,6 +42,14 @@ const ComprobantePrintPage = ({
     const sonEnMoneda = esUSD
         ? String(totalInWords || '').replace(/SOLES/gi, 'DÓLARES AMERICANOS').replace(/SOL\b/gi, 'DÓLAR AMERICANO')
         : totalInWords;
+
+    // Dirección de la sede emisora: en reimpresión viene en formValues.sede
+    // (backend listar); en emisión se toma la sede activa de la sesión.
+    // Solo se muestra si difiere de la dirección fiscal del RUC.
+    const sedeActiva = useAuthStore((s) => s.sedeActiva);
+    const fiscalDireccion = String(company?.empresa?.direccion || '').trim().toUpperCase();
+    const sedeDireccionRaw = String(formValues?.sede?.direccion || sedeActiva?.direccion || '').trim().toUpperCase();
+    const sedeDireccion = sedeDireccionRaw && sedeDireccionRaw !== fiscalDireccion ? sedeDireccionRaw : '';
 
 
     const localComponentRef = useRef(null);
@@ -258,6 +267,7 @@ console.log(formValues)
                         <p className={`text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial?.toUpperCase()}<br /></>}
                             {fc('direccion').visible && <>DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br /></>}
+                            {fc('direccion').visible && sedeDireccion && <>SEDE: {sedeDireccion}<br /></>}
                             {fc('rubro').visible && company?.empresa?.rubro?.nombre && <>RUBRO: {company?.empresa?.rubro?.nombre?.toUpperCase()}<br /></>}
                             {fc('celular').visible && empresaNumero && <>CELULAR: {empresaNumero}<br /></>}
                             {fc('email').visible && company?.email && <>EMAIL: {company?.email}<br /></>}
@@ -499,6 +509,7 @@ console.log(formValues)
                                         {fc('razonSocial').visible && <h6 className="font-bold leading-tight" style={{ fontSize: px('razonSocial') }}>{company?.empresa?.razonSocial?.toUpperCase()}</h6>}
                                         <div className="leading-snug">
                                             {fc('direccion').visible && <div style={{ fontSize: px('direccion') }}>{company?.empresa?.direccion}</div>}
+                                            {fc('direccion').visible && sedeDireccion && <div style={{ fontSize: px('direccion') }}>SEDE: {sedeDireccion}</div>}
                                             {fc('rubro').visible && <div style={{ fontSize: px('rubro') }}>{company?.empresa?.rubro?.nombre?.toUpperCase()}</div>}
                                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <div style={{ fontSize: px('nombreComercial') }}>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}</div>}
                                             {fc('celular').visible && empresaNumero && <div style={{ fontSize: px('celular') }}>CELULAR: {empresaNumero}</div>}
@@ -838,7 +849,7 @@ console.log(formValues)
                                     {logoDataUrl && <img src={logoDataUrl} alt="logo" className="object-contain object-left" style={{ width: company?.empresa?.ticketLogoSize ?? 150, height: company?.empresa?.ticketLogoSize ?? 150, objectFit: 'contain', objectPosition: 'left' }} />}
                                     <div className="flex-1 ml-4">
                                         <h6 className="text-xl font-bold">{company?.empresa?.razonSocial?.toUpperCase()}</h6>
-                                        <p className="text-xs">{company?.empresa?.direccion}<br />{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />{company?.empresa?.nombreComercial && <>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}<br /></>}{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}{(company?.empresa as any)?.paginaWeb && <><br />WEB: {(company?.empresa as any).paginaWeb}</>}</p>
+                                        <p className="text-xs">{company?.empresa?.direccion}<br />{sedeDireccion && <>SEDE: {sedeDireccion}<br /></>}{company?.empresa?.rubro?.nombre?.toUpperCase()}<br />{company?.empresa?.nombreComercial && <>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}<br /></>}{empresaNumero && <>CELULAR: {empresaNumero}<br /></>}EMAIL: {company?.email}{(company?.empresa as any)?.paginaWeb && <><br />WEB: {(company?.empresa as any).paginaWeb}</>}</p>
                                     </div>
                                     <div className="border border-black px-4 pt-4 pb-2 text-center ml-4">
                                         <div className="text-xs">RUC: {company?.empresa?.ruc}</div>
