@@ -560,6 +560,7 @@ export const FacturacionNuevoView = () => {
                     onClose={() => vm.setEditingIndex(-1)}
                     item={vm.productsInvoice[vm.editingIndex]}
                     onSave={vm.handleSaveEdit}
+                    monedaSimbolo={vm.monedaSimbolo}
                 />
             )}
 

@@ -150,8 +150,11 @@ const ComprobantesInformales = () => {
             // Cobranza en campo: prioriza el vendedor de campo atribuido.
             vendedor: item?.vendedorCampoNombre || item?.usuario?.nombre || '-',
             s3PdfUrl: item?.s3PdfUrl,
-            total: `S/ ${item.mtoImpVenta.toFixed(2)}`,
-            saldo: `S/ ${item?.saldo?.toFixed(2) || (0).toFixed(2)}`,
+            // mtoImpVenta/saldo se guardan en la moneda nativa del comprobante (p.ej.
+            // USD en una Nota de Venta en dólares); el símbolo debe reflejar esa moneda,
+            // no quedar fijo en Soles.
+            total: `${String(item.tipoMoneda).toUpperCase() === 'USD' ? 'US$' : 'S/'} ${item.mtoImpVenta.toFixed(2)}`,
+            saldo: `${String(item.tipoMoneda).toUpperCase() === 'USD' ? 'US$' : 'S/'} ${item?.saldo?.toFixed(2) || (0).toFixed(2)}`,
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
                 : item.estadoPago,
