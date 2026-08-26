@@ -148,7 +148,11 @@ export default function ProductsView() {
                 (typeof item?.unidadMedidaId !== 'undefined' ? 'Unidad' : '-') ||
                 '-';
             const formatMoney = (value: number) => value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const costo = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
+            // Costo "de bolsillo" (CON IGV), igual que en el modal de edición: el
+            // empresario ve lo que pagó (ej. 6.00), no el neto contable (5.08).
+            const costoNeto = Number(item?.costoUnitario > 0 ? item?.costoUnitario : item?.costoPromedio || 0);
+            const esGravadoItem = String(itemAny?.tipoAfectacionIGV ?? '10') === '10';
+            const costo = esGravadoItem ? parseFloat((costoNeto * 1.18).toFixed(2)) : costoNeto;
             const precio = Number(item?.precioUnitario || 0);
             const simbolo = String(itemAny?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/';
             const stock = Number(item?.stock || 0);
@@ -456,7 +460,8 @@ export default function ProductsView() {
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Costo</p>
-                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{String((item as any)?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} {Number(item?.costoUnitario || item?.costoPromedio || 0).toFixed(2)}</p>
+                                    {/* Costo CON IGV (de bolsillo), consistente con la tabla y el modal */}
+                                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{String((item as any)?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} {(Number(item?.costoUnitario || item?.costoPromedio || 0) * (String((item as any)?.tipoAfectacionIGV ?? '10') === '10' ? 1.18 : 1)).toFixed(2)}</p>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Marca</p>

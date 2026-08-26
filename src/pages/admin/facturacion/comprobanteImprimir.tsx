@@ -161,8 +161,37 @@ console.log(formValues)
     const splitPaidTotal = isMixedPayment && Array.isArray(formValues?.splitPayments)
         ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + parseAmount(sp.amount, 0), 0)
         : 0;
-    const displayPagado = isCreditPayment ? 0 : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
-    const paymentDetails = formValues?.paymentDetails || {};
+    const paymentDetails = (() => {
+        let pd = formValues?.paymentDetails;
+        if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
+        return pd || {};
+    })();
+    // Pago inicial (adelanto) de una venta a crédito. En emisión llega explícito en
+    // formValues.pagoInicialMonto/pagoInicialMetodo; en reimpresión se deduce del saldo
+    // pendiente del comprobante y, en su defecto, del detalle de pago guardado (que en
+    // créditos con inicial registra solo el adelanto con su método real).
+    const pdMetodo = normalizePaymentLabel(paymentDetails?.method);
+    const pdInicial = paymentDetails?.mode === 'MIXTO' && Array.isArray(paymentDetails?.splitPayments)
+        ? paymentDetails.splitPayments.reduce((s: number, l: any) => s + parseAmount(l?.amount, 0), 0)
+        : (pdMetodo && pdMetodo !== 'CREDITO' ? parseAmount(paymentDetails?.amount, 0) : 0);
+    const saldoRaw = formValues?.saldo;
+    const hasSaldo = saldoRaw !== null && saldoRaw !== undefined && saldoRaw !== '';
+    const pagoInicialCredito = !isCreditPayment
+        ? 0
+        : formValues?.pagoInicialMonto != null
+            ? Math.min(parseAmount(formValues.pagoInicialMonto, 0), mtoImpVenta)
+            : hasSaldo
+                ? Math.max(0, round2(mtoImpVenta - parseAmount(saldoRaw, 0)))
+                : (pdInicial < mtoImpVenta ? pdInicial : 0);
+    const pagoInicialMetodo = String(
+        formValues?.pagoInicialMetodo
+        || (paymentDetails?.mode === 'MIXTO' ? 'MIXTO' : '')
+        || (pdMetodo && pdMetodo !== 'CREDITO' ? paymentDetails.method : '')
+        || (medioPagoCode && medioPagoCode !== 'CREDITO' ? formValues?.medioPago : '')
+        || 'EFECTIVO'
+    ).toUpperCase();
+    const saldoCredito = Math.max(0, round2(mtoImpVenta - pagoInicialCredito));
+    const displayPagado = isCreditPayment ? pagoInicialCredito : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
     const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
         ? paymentDetails.splitPayments
         : (Array.isArray(formValues?.splitPayments) ? formValues.splitPayments : []);
@@ -363,6 +392,18 @@ console.log(formValues)
                             <span>CONDICIÓN DE PAGO:</span>
                             <span className="text-right">{paymentConditionLabel}</span>
                         </p>
+                        {isCreditPayment && pagoInicialCredito > 0 && (
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between gap-3`}>
+                                <span>PAGO INICIAL:</span>
+                                <span className="text-right">{pagoInicialMetodo} {monedaSimbolo} {pagoInicialCredito.toFixed(2)}</span>
+                            </p>
+                        )}
+                        {isCreditPayment && (
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between gap-3`}>
+                                <span>SALDO CRÉDITO:</span>
+                                <span className="text-right">{monedaSimbolo} {saldoCredito.toFixed(2)}</span>
+                            </p>
+                        )}
                         {hasCreditInstallments && (
                             <div className="mt-1 mb-1">
                                 <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'}`}>CUOTAS:</p>
@@ -401,7 +442,11 @@ console.log(formValues)
                             <>
                                 <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between gap-3`}>
                                     <span>MEDIO DE PAGO:</span>
-                                    <span className="text-right">{paymentMethodLabel}</span>
+                                    <span className="text-right">
+                                        {isCreditPayment && pagoInicialCredito > 0
+                                            ? `${pagoInicialMetodo} ${monedaSimbolo} ${pagoInicialCredito.toFixed(2)}`
+                                            : paymentMethodLabel}
+                                    </span>
                                 </p>
                                 {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                     <p key={line} className={`${size === 'TICKET' ? 'text-[14px]' : 'text-[10px]'}`}>{line}</p>
@@ -520,10 +565,47 @@ console.log(formValues)
 
                                             <span className="font-bold">MONEDA:</span>
                                             <span>{monedaNombre}</span>
+
+                                            {receipt === "NOTA DE VENTA" && (<>
+                                                <span className="font-bold">FORMA PAGO:</span>
+                                                <span>{paymentConditionLabel}</span>
+
+                                                {isCreditPayment ? (<>
+                                                    {pagoInicialCredito > 0 && (<>
+                                                        <span className="font-bold">PAGO INICIAL:</span>
+                                                        <span>{pagoInicialMetodo} {monedaSimbolo} {pagoInicialCredito.toFixed(2)}</span>
+                                                    </>)}
+                                                    <span className="font-bold">SALDO CRÉDITO:</span>
+                                                    <span>{monedaSimbolo} {saldoCredito.toFixed(2)}</span>
+                                                    {formValues?.fechaVencimientoCredito && (<>
+                                                        <span className="font-bold">VENCIMIENTO:</span>
+                                                        <span>{moment(formValues.fechaVencimientoCredito).format('DD/MM/YYYY')}</span>
+                                                    </>)}
+                                                </>) : (<>
+                                                    <span className="font-bold">MEDIO PAGO:</span>
+                                                    <span>{isMixedPayment ? 'MIXTO' : paymentMethodLabel}</span>
+                                                </>)}
+                                            </>)}
                                         </div>
                                     </div>
                                     )}
                                 </div>
+                                )}
+                                {receipt === "NOTA DE VENTA" && hasCreditInstallments && cuotasCredito.length > 1 && (
+                                    <div className="mb-4 border border-gray-300 rounded-md p-2">
+                                        <div className="text-xs font-bold mb-1">CUOTAS:</div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {cuotasCredito.map((cuota: any, idx: number) => (
+                                                <div key={idx} className="text-[10px] px-1">
+                                                    <div className="uppercase">CUOTA {idx + 1}</div>
+                                                    <div className="flex justify-between gap-3">
+                                                        <span>{moment(cuota.fechaVencimiento).format('DD/MM/YYYY')}</span>
+                                                        <span>{monedaSimbolo} {Number(cuota.monto).toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
 
                                 {/* Product Table */}
@@ -824,7 +906,9 @@ console.log(formValues)
                                                     <>
                                                         <span className="font-bold">MEDIO PAGO:</span>
                                                         <span>
-                                                            {paymentMethodLabel} {monedaSimbolo} {isCreditPayment ? '0.00' : round2(mtoImpVenta).toFixed(2)}
+                                                            {isCreditPayment
+                                                                ? (pagoInicialCredito > 0 ? `${pagoInicialMetodo} ${monedaSimbolo} ${pagoInicialCredito.toFixed(2)}` : `CRÉDITO ${monedaSimbolo} 0.00`)
+                                                                : `${paymentMethodLabel} ${monedaSimbolo} ${round2(mtoImpVenta).toFixed(2)}`}
                                                             {formatPaymentExtra(singlePaymentDetail).map((line) => (
                                                                 <span key={line} className="block text-[10px] text-gray-700">{line}</span>
                                                             ))}
@@ -837,6 +921,11 @@ console.log(formValues)
 
                                                 <span className="font-bold">PAGADO:</span>
                                                 <span>{monedaSimbolo} {displayPagado.toFixed(2)}</span>
+
+                                                {isCreditPayment && pagoInicialCredito > 0 && (<>
+                                                    <span className="font-bold">SALDO CRÉDITO:</span>
+                                                    <span>{monedaSimbolo} {saldoCredito.toFixed(2)}</span>
+                                                </>)}
 
                                                 <span className="font-bold">VENDEDOR:</span>
                                                 <span>{vendedorNombre}</span>

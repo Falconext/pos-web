@@ -15,13 +15,16 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
     const costoUnitario = Number(formValues?.costoUnitario || 0);
     // Símbolo según la moneda del producto (soles o dólares).
     const simbolo = (formValues as any)?.moneda === 'USD' ? '$' : 'S/';
-    // El precio de venta se digita CON IGV, pero el IGV no es ganancia (va a
-    // SUNAT): la rentabilidad se calcula sobre el valor de venta SIN IGV.
-    // Solo los productos gravados (afectación 10) llevan 18%.
+    // La rentabilidad se muestra "de bolsillo", como la piensa el empresario:
+    // precio que cobra (con IGV) − costo que paga (con IGV) = ganancia.
+    // Ej: vende a 10, le costó 6 → gana 4. El precio sin IGV queda solo como
+    // dato informativo (contable). costoUnitario se almacena NETO, se re-agrega
+    // el IGV para mostrarlo como lo tecleó el usuario.
     const esGravado = String(formValues?.tipoAfectacionIGV ?? '10') === '10';
     const precioSinIgv = esGravado ? precioUnitario / 1.18 : precioUnitario;
-    const ganancia = precioSinIgv - costoUnitario;
-    const margen = precioSinIgv > 0 && costoUnitario > 0 ? (ganancia / precioSinIgv) * 100 : 0;
+    const costoConIgv = esGravado ? costoUnitario * 1.18 : costoUnitario;
+    const ganancia = precioUnitario - costoConIgv;
+    const margen = precioUnitario > 0 && costoConIgv > 0 ? (ganancia / precioUnitario) * 100 : 0;
 
     const stockParaProyeccion = isEdit && tipoAjusteStock !== 'ninguno'
         ? (tipoAjusteStock === 'reemplazar' ? cantidadAjuste
@@ -85,7 +88,7 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
                         <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-1">
                             <Icon icon="solar:box-bold" className="text-slate-500 dark:text-slate-400" width={12} />
                         </div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white leading-none">{simbolo} {costoUnitario.toFixed(2)}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white leading-none">{simbolo} {costoConIgv.toFixed(2)}</p>
                         <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mt-1">Costo</p>
                     </div>
 
@@ -111,8 +114,8 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
                 </div>
             </div>
 
-            {/* Proyección con stock */}
-            {stockParaProyeccion > 0 && precioSinIgv > 0 && costoUnitario > 0 && (
+            {/* Proyección con stock — en montos "de bolsillo" (con IGV), como los piensa el empresario */}
+            {stockParaProyeccion > 0 && precioUnitario > 0 && costoConIgv > 0 && (
                 <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3 mt-auto">
                     <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <Icon icon="solar:layers-bold" width={10} />
@@ -120,11 +123,11 @@ export const ProductFinancialAnalysis: React.FC<{ vm: ViewProps }> = ({ vm }) =>
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div className="text-center">
-                            <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{simbolo} {(precioSinIgv * stockParaProyeccion).toFixed(2)}</p>
-                            <p className="text-[8px] text-gray-400 mt-0.5">Venta (sin IGV)</p>
+                            <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{simbolo} {(precioUnitario * stockParaProyeccion).toFixed(2)}</p>
+                            <p className="text-[8px] text-gray-400 mt-0.5">Venta total</p>
                         </div>
                         <div className="text-center border-x border-blue-100/50 dark:border-blue-900/30">
-                            <p className="text-xs font-bold text-red-500 dark:text-red-400">{simbolo} {(costoUnitario * stockParaProyeccion).toFixed(2)}</p>
+                            <p className="text-xs font-bold text-red-500 dark:text-red-400">{simbolo} {(costoConIgv * stockParaProyeccion).toFixed(2)}</p>
                             <p className="text-[8px] text-gray-400 mt-0.5">Inversión</p>
                         </div>
                         <div className="text-center">
