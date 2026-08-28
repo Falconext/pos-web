@@ -375,7 +375,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     };
 
     const handleProductSearch = (query: string, cb: () => void) => {
-        getAllProducts({ search: query, limit: 20 }, cb);
+        // El stock mostrado debe ser el de la sede destino de la compra (no el
+        // global sumado de todas las sedes). Si no hay sede, el backend cae al global.
+        getAllProducts({ search: query, limit: 20, sedeId: sedeDestinoId || undefined }, cb);
     };
 
     const onSupplierChange = (id: any) => {
