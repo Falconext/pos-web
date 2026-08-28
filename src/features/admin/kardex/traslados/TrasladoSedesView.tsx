@@ -223,7 +223,14 @@ export default function TrasladoSedesView() {
         }
     };
 
-    const sedesDestino = sedes.filter(s => s.activo && s.id !== sedeActiva?.id);
+    // Restricción por usuario: si está activa, solo puede transferir hacia sus
+    // sedes asignadas (no a cualquier sede de la empresa).
+    const sedesAsignadasIds = new Set((auth?.sedes || []).map((s: any) => s.id));
+    const sedesDestino = sedes.filter(s =>
+        s.activo &&
+        s.id !== sedeActiva?.id &&
+        (!(auth as any)?.restringirTransferenciasASuSede || sedesAsignadasIds.has(s.id))
+    );
     const sedeDestino = sedes.find(s => s.id === destinationSedeId);
     const totalUnidades = selectedProducts.reduce((sum, p) => sum + p.cantidad, 0);
     const hasStockIssues = selectedProducts.some(p => p.cantidad > p.stockActual);

@@ -16,6 +16,8 @@ import LuxuryProductoDetalle from './LuxuryProductoDetalle';
 import SpaProductoDetalle from './SpaProductoDetalle';
 import CarterasProductoDetalle from './CarterasProductoDetalle';
 import AurumProductoDetalle from './AurumProductoDetalle';
+import GroginProductoDetalle from './GroginProductoDetalle';
+import FreshMartProductoDetalle from './FreshMartProductoDetalle';
 import RopaHombreProductoDetalle from './RopaHombreProductoDetalle';
 import BicicletasProductoDetalle from './BicicletasProductoDetalle';
 import MotosProductoDetalle from './MotosProductoDetalle';
@@ -44,6 +46,8 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   spa: SpaProductoDetalle,
   carteras: CarterasProductoDetalle,
   joyeria: AurumProductoDetalle,
+  abarrotes: GroginProductoDetalle,
+  supermercado: FreshMartProductoDetalle,
   'ropa-hombre': RopaHombreProductoDetalle,
   bicicletas: BicicletasProductoDetalle,
   motos: MotosProductoDetalle,

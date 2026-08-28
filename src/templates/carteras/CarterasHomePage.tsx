@@ -355,13 +355,13 @@ export default function CarterasHomePage({
           <div className="grid gap-6 md:grid-cols-2">
             {/* Promo oscura */}
             <div className="relative flex min-h-[280px] items-center overflow-hidden rounded-3xl" style={{ backgroundColor: LUX.charcoal }}>
-              <img src={diseno?.carterasPromoImage || PROMO_FALLBACK} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(26,22,19,0.9) 30%, rgba(26,22,19,0.35) 100%)' }} />
-              <div className="relative z-10 max-w-xs p-8 text-white">
+              <img src={diseno?.carterasPromoImage || PROMO_FALLBACK} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '78% center' }} />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(26,22,19,0.92) 0%, rgba(26,22,19,0.6) 34%, rgba(26,22,19,0.18) 58%, rgba(26,22,19,0) 80%)' }} />
+              <div className="relative z-10 max-w-xs p-8 text-white" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.4)' }}>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: LUX.goldSoft }}>{diseno?.carterasPromoLabel || 'Oferta por tiempo limitado'}</p>
                 <h3 className="mt-3 text-3xl leading-tight" style={{ fontFamily: LUX.serif }}>{diseno?.carterasPromoTitle || 'Minimal look. Máximo impacto.'}</h3>
                 <p className="mt-3 text-sm text-white/70">{diseno?.carterasPromoSubtitle || 'Hasta 20% de descuento en estilos seleccionados.'}</p>
-                <a href={`/tienda/${slug}/catalogo`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 transition-transform hover:-translate-y-0.5">
+                <a href={`/tienda/${slug}/catalogo`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
                   {diseno?.carterasPromoButton || 'Ver la oferta'}
                 </a>
               </div>

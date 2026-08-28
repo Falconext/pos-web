@@ -321,6 +321,7 @@ function ImagenesSection({
       {fields.map(f => {
         const value = diseno?.[f.key] || '';
         const preview = value || f.fallback;
+        const isUploading = uploadingKey === f.key;
         return (
           <div key={f.key} className="rounded-xl border border-gray-100 dark:border-slate-800 overflow-hidden bg-gray-50 dark:bg-slate-900">
             <div className="relative aspect-video bg-slate-200 dark:bg-slate-800">
@@ -341,15 +342,27 @@ function ImagenesSection({
                   />
                 )
                 : <div className="absolute inset-0 flex items-center justify-center text-gray-300"><Icon icon="solar:gallery-bold" className="text-2xl" /></div>}
-              <label className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 transition-all cursor-pointer">
-                {uploadingKey === f.key
-                  ? <Icon icon="svg-spinners:ring-resize" className="text-white text-xl" />
+              {/* Barra de progreso indeterminada, siempre visible mientras sube */}
+              {isUploading && (
+                <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-white/30">
+                  <div className="h-full w-1/3 animate-[storeUploadBar_1s_ease-in-out_infinite] rounded-full bg-indigo-500" />
+                </div>
+              )}
+              <label
+                className={`absolute inset-0 flex items-center justify-center transition-all ${
+                  isUploading
+                    ? 'bg-black/60 opacity-100 cursor-wait'
+                    : 'bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 cursor-pointer'
+                }`}
+              >
+                {isUploading
+                  ? <span className="flex flex-col items-center gap-1.5 text-white"><Icon icon="svg-spinners:ring-resize" className="text-2xl" /><span className="text-[11px] font-bold">Subiendo…</span></span>
                   : <span className="text-white text-[11px] font-bold flex items-center gap-1"><Icon icon="solar:cloud-upload-bold" /> Subir</span>}
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   className="hidden"
-                  disabled={uploadingKey === f.key}
+                  disabled={isUploading}
                   onChange={e => { const file = e.currentTarget.files?.[0]; if (file) onUpload(f.key, file); e.currentTarget.value = ''; }}
                 />
               </label>

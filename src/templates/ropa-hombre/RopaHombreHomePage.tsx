@@ -5,7 +5,7 @@ import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
-import { URB, UrbCartModal, UrbFooter, UrbHeader, UrbProductCard, UrbWhatsAppFab, urbFont, urbPrimary } from './RopaHombreParts';
+import { URB, UrbCartModal, UrbFooter, UrbHeader, UrbProductCard, UrbWhatsAppFab, urbFont, urbPrimary, withAlpha } from './RopaHombreParts';
 import { urbCard, urbEase, urbPage, urbSection, urbStagger, urbTap, urbViewport } from './motion';
 
 const navigate = (to: string) => { window.location.href = to; };
@@ -359,13 +359,13 @@ export default function RopaHombreHomePage({
         {/* ── Summer sale banner ───────────────────────────────────────────── */}
         <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
           <div className="relative flex min-h-[220px] items-center overflow-hidden rounded-[28px]" style={{ backgroundColor: URB.charcoal }}>
-            <img src={diseno?.ropaHombreSaleImage || SALE_FALLBACK} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-70" />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${URB.ink} 42%, rgba(38,34,32,0.2) 100%)` }} />
-            <div className="relative z-10 max-w-md p-9 text-white md:p-12">
+            <img src={diseno?.ropaHombreSaleImage || SALE_FALLBACK} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '78% center' }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${URB.ink} 0%, ${withAlpha(URB.ink, 'e6')} 30%, ${withAlpha(URB.ink, '80')} 52%, ${withAlpha(URB.ink, '00')} 74%)` }} />
+            <div className="relative z-10 max-w-md p-9 text-white md:p-12" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.4)' }}>
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: URB.goldSoft }}>{diseno?.ropaHombreSaleEyebrow || 'Summer Sale'}</p>
               <h2 className="mt-3 text-4xl md:text-5xl" style={{ fontFamily: URB.serif }}>{diseno?.ropaHombreSaleTitle || 'Up to 40% Off'}</h2>
               <p className="mt-2 text-sm text-white/70">{diseno?.ropaHombreSaleSubtitle || 'On Selected Items Only'}</p>
-              <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[13px] font-semibold text-neutral-900 transition-transform hover:-translate-y-0.5">
+              <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[13px] font-semibold text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
                 {diseno?.ropaHombreSaleButton || 'Shop Now'} <Icon icon="solar:arrow-right-linear" width={15} />
               </button>
             </div>

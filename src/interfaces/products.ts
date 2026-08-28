@@ -85,6 +85,9 @@ export type IProduct = {
   // Campos Bodega/Supermercado
   codigoBarras?: string
   codigosBarrasExtra?: ICodigoBarraExtra[]
+  // Presentaciones de paquete (six-pack, caja, etc.) que devuelve el listado
+  // del backend — mismo shape que codigosBarrasExtra, de solo lectura aquí.
+  paquetes?: ICodigoBarraExtra[]
   codProdSunat?: string
   unidadCompra?: string
   unidadVenta?: string

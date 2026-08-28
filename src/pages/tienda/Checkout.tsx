@@ -18,7 +18,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const CLIENTE_STORAGE_KEY = (slug: string) => `tienda:${slug}:cliente`;
 
-type MedioPagoCheckout = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+type MedioPagoCheckout = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
 
 interface PaymentConfig {
     yapeQrUrl?: string | null;
@@ -31,6 +31,8 @@ interface PaymentConfig {
     aceptaTarjeta?: boolean;
     culqiPublicKey?: string | null;
     culqiBackendReady?: boolean;
+    aceptaMercadoPago?: boolean;
+    mercadoPagoPublicKey?: string | null;
     whatsappTienda?: string | null;
     whatsapp?: string | null;
     telefono?: string | null;
@@ -339,6 +341,18 @@ export default function Checkout() {
             } catch { }
 
             setShowConfirmModal(false);
+            // Mercado Pago (Checkout Pro): redirigir al init_point que devuelve el backend.
+            if (formData.medioPago === 'MERCADO_PAGO') {
+                setCarritoState([]);
+                clearTiendaCart(slug || '');
+                if (orderData.mpInitPoint) {
+                    window.location.href = orderData.mpInitPoint;
+                    return;
+                }
+                // Sin init_point: caer al seguimiento para no dejar al cliente varado.
+                window.location.href = `/tienda/${slug}/seguimiento?codigo=${orderData.codigoSeguimiento}`;
+                return;
+            }
             if (formData.medioPago === 'TARJETA') {
                 window.location.href = `/tienda/${slug}/seguimiento?codigo=${orderData.codigoSeguimiento}`;
             } else {
@@ -672,21 +686,23 @@ export default function Checkout() {
                                 <div className="md:col-span-2">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Método de pago</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA'] as MedioPagoCheckout[]).map(method => {
-                                            const labels: Record<MedioPagoCheckout, string> = { YAPE: 'Yape', PLIN: 'Plin', EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta' };
-                                            const icons: Record<MedioPagoCheckout, string> = { YAPE: 'solar:smartphone-bold', PLIN: 'solar:wallet-money-bold', EFECTIVO: 'solar:banknote-2-bold', TRANSFERENCIA: 'solar:card-transfer-bold', TARJETA: 'solar:card-2-bold' };
+                                        {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPagoCheckout[]).map(method => {
+                                            const labels: Record<MedioPagoCheckout, string> = { YAPE: 'Yape', PLIN: 'Plin', EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', MERCADO_PAGO: 'Mercado Pago' };
+                                            const icons: Record<MedioPagoCheckout, string> = { YAPE: 'solar:smartphone-bold', PLIN: 'solar:wallet-money-bold', EFECTIVO: 'solar:banknote-2-bold', TRANSFERENCIA: 'solar:card-transfer-bold', TARJETA: 'solar:card-2-bold', MERCADO_PAGO: 'simple-icons:mercadopago' };
                                             const show =
                                                 method === 'EFECTIVO'
                                                     ? Boolean(configPago?.aceptaEfectivo)
                                                     : method === 'TARJETA'
                                                         ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                                                        : method === 'YAPE'
-                                                            ? Boolean(configPago?.yapeQrUrl || configPago?.yapeQR || configPago?.yapeNumero)
-                                                            : method === 'PLIN'
-                                                                ? Boolean(configPago?.plinQrUrl || configPago?.plinQR || configPago?.plinNumero)
-                                                                : method === 'TRANSFERENCIA'
-                                                                    ? Boolean(configPago?.cuentasBancarias && configPago.cuentasBancarias.length > 0)
-                                                                    : false;
+                                                        : method === 'MERCADO_PAGO'
+                                                            ? Boolean(configPago?.aceptaMercadoPago)
+                                                            : method === 'YAPE'
+                                                                ? Boolean(configPago?.yapeQrUrl || configPago?.yapeQR || configPago?.yapeNumero)
+                                                                : method === 'PLIN'
+                                                                    ? Boolean(configPago?.plinQrUrl || configPago?.plinQR || configPago?.plinNumero)
+                                                                    : method === 'TRANSFERENCIA'
+                                                                        ? Boolean(configPago?.cuentasBancarias && configPago.cuentasBancarias.length > 0)
+                                                                        : false;
                                             if (!show) return null;
                                             return (
                                                 <label key={method} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full text-sm font-bold border-2 transition-colors ${formData.medioPago === method ? 'border-[#FF9500] bg-[#FFF3E0] text-[#FF9500]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>

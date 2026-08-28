@@ -138,6 +138,17 @@ body {
   }
 }
 
+/* Barra de progreso indeterminada para subidas de imágenes (editor en vivo). */
+@keyframes storeUploadBar {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(420%);
+  }
+}
+
 .animate-slide-in-right {
   animation: slideInRight 0.3s ease-out forwards;
 }

@@ -6,7 +6,7 @@ import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationMod
 import { BancoLogo } from '@/components/shared/BancoLogo';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
 
 const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   YAPE: { label: 'Yape', icon: 'solar:smartphone-bold' },
@@ -14,6 +14,7 @@ const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   EFECTIVO: { label: 'Efectivo', icon: 'solar:banknote-2-bold' },
   TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-bold' },
   TARJETA: { label: 'Tarjeta', icon: 'solar:card-2-bold' },
+  MERCADO_PAGO: { label: 'Mercado Pago', icon: 'simple-icons:mercadopago' },
 };
 
 const money = (value: number) => `S/ ${Number(value || 0).toFixed(2)}`;
@@ -97,6 +98,7 @@ export default function ConstruccionCheckoutPage(props: TemplateCheckoutPageProp
     configPago?.aceptaEfectivo ? 'EFECTIVO' : null,
     hasBankAccounts ? 'TRANSFERENCIA' : null,
     configPago?.aceptaTarjeta && configPago?.culqiPublicKey ? 'TARJETA' : null,
+    configPago?.aceptaMercadoPago ? 'MERCADO_PAGO' : null,
   ].filter(Boolean) as MedioPago[]);
 
   return (
@@ -233,11 +235,12 @@ export default function ConstruccionCheckoutPage(props: TemplateCheckoutPageProp
               <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.25 }} className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
                 <SectionTitle icon="solar:wallet-money-bold" cp={accent}>{editable(diseno?.construccionCheckoutPaymentTitle, 'Método de pago')}</SectionTitle>
                 <div className="grid gap-3 sm:grid-cols-3">
-                  {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA'] as MedioPago[]).map((method) => {
+                  {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPago[]).map((method) => {
                     const show =
                       method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
                       : method === 'TRANSFERENCIA' ? Boolean(configPago?.cuentasBancarias?.length > 0)
                       : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
+                      : method === 'MERCADO_PAGO' ? Boolean(configPago?.aceptaMercadoPago)
                       : true;
                     if (!show) return null;
                     const meta = PAYMENT_META[method];

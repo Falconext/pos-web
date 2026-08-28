@@ -33,6 +33,13 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     permisos: [],
     sedeIds: [],
     subModuloIds: [],
+    // Todas son restricciones opt-in: false = comportamiento normal.
+    bloquearEdicionPrecioVenta: false,
+    ocultarPrecioCosto: false,
+    ocultarPedidosEcommerce: false,
+    convertirEnSupervisor: false,
+    noPermitirVentaProductosGratuitos: false,
+    restringirTransferenciasASuSede: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -58,10 +65,17 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         password: '',
         permisos: user.rol === 'ADMIN_EMPRESA' ? ['*'] : (user.permisos || []),
         sedeIds: (user.sedes || []).map(s => s.id),
+        sedeDefaultId: user.sedeId ?? undefined,
         subModuloIds: (user.subModulos || []).map(s => s.id),
         comisionGlobal: user.comisionGlobal || undefined,
         comisionGlobalFija: user.comisionGlobalFija || undefined,
         comisionGlobalVenta: user.comisionGlobalVenta || undefined,
+        bloquearEdicionPrecioVenta: user.bloquearEdicionPrecioVenta ?? false,
+        ocultarPrecioCosto: user.ocultarPrecioCosto ?? false,
+        ocultarPedidosEcommerce: user.ocultarPedidosEcommerce ?? false,
+        convertirEnSupervisor: user.convertirEnSupervisor ?? false,
+        noPermitirVentaProductosGratuitos: user.noPermitirVentaProductosGratuitos ?? false,
+        restringirTransferenciasASuSede: user.restringirTransferenciasASuSede ?? false,
       });
     } else {
       setFormData({
@@ -72,10 +86,17 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         password: '',
         permisos: [],
         sedeIds: [],
+        sedeDefaultId: undefined,
         subModuloIds: [],
         comisionGlobal: undefined,
         comisionGlobalFija: undefined,
         comisionGlobalVenta: undefined,
+        bloquearEdicionPrecioVenta: false,
+        ocultarPrecioCosto: false,
+        ocultarPedidosEcommerce: false,
+        convertirEnSupervisor: false,
+        noPermitirVentaProductosGratuitos: false,
+        restringirTransferenciasASuSede: false,
       });
     }
     setErrors({});
@@ -152,12 +173,37 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   const handleSedeToggle = (sedeId: number) => {
     setFormData(prev => {
       const sedeIds = prev.sedeIds || [];
-      const nuevos = sedeIds.includes(sedeId)
+      const desmarcando = sedeIds.includes(sedeId);
+      const nuevos = desmarcando
         ? sedeIds.filter(id => id !== sedeId)
         : [...sedeIds, sedeId];
-      return { ...prev, sedeIds: nuevos };
+      return {
+        ...prev,
+        sedeIds: nuevos,
+        // Si se desmarca la sede que era la predeterminada, se limpia.
+        sedeDefaultId: desmarcando && prev.sedeDefaultId === sedeId ? undefined : prev.sedeDefaultId,
+      };
     });
     if (errors.sedeIds) setErrors(prev => ({ ...prev, sedeIds: '' }));
+  };
+
+  const handleSedeDefaultChange = (sedeId: number) => {
+    setFormData(prev => ({ ...prev, sedeDefaultId: sedeId }));
+  };
+
+  // Todas son restricciones que el admin ACTIVA (por defecto apagadas = el
+  // usuario opera normal). Redactadas como "lo que se le restringe".
+  const PERMISOS_AVANZADOS: { key: keyof IFormUsuario; icon: string; label: string; descripcion: string }[] = [
+    { key: 'bloquearEdicionPrecioVenta', icon: 'solar:pen-2-bold-duotone', label: 'Bloquear edición de precio de venta', descripcion: 'No podrá modificar el precio al vender; usará siempre el precio de lista.' },
+    { key: 'ocultarPrecioCosto', icon: 'solar:eye-closed-bold-duotone', label: 'Ocultar precio de costo', descripcion: 'No verá el costo del producto en kardex ni en la ficha de producto.' },
+    { key: 'ocultarPedidosEcommerce', icon: 'solar:cart-large-2-bold-duotone', label: 'Ocultar pedidos de Ecommerce', descripcion: 'No verá la sección de pedidos de la tienda online.' },
+    { key: 'convertirEnSupervisor', icon: 'solar:eye-scan-bold-duotone', label: 'Convertir en Supervisor', descripcion: 'Ve el Dashboard y Reportes de TODAS sus sedes asignadas, no solo la activa.' },
+    { key: 'noPermitirVentaProductosGratuitos', icon: 'solar:forbidden-circle-bold-duotone', label: 'No permitir venta de productos gratuitos', descripcion: 'Bloquea agregar al carrito una línea con precio S/ 0.' },
+    { key: 'restringirTransferenciasASuSede', icon: 'solar:transfer-horizontal-bold-duotone', label: 'Restringir transferencias solo a sus sedes', descripcion: 'Solo podrá transferir stock hacia las sedes que tiene asignadas.' },
+  ];
+
+  const handlePermisoAvanzadoToggle = (key: keyof IFormUsuario) => {
+    setFormData(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleModuloExpanded = (codigo: string) => {
@@ -371,11 +417,64 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
                       </div>
                       {(sede as any).codigo && <p className="text-xs text-gray-400 ml-6">Código: {(sede as any).codigo}</p>}
                     </div>
+                    {isSelected && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleSedeDefaultChange(sede.id); }}
+                        title="Usar como sede predeterminada al loguear"
+                        className={`flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
+                          formData.sedeDefaultId === sede.id
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                            : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'
+                        }`}
+                      >
+                        <Icon icon={formData.sedeDefaultId === sede.id ? "solar:star-bold" : "solar:star-linear"} width={14} />
+                        Predeterminada
+                      </button>
+                    )}
                   </label>
                 );
               })}
             </div>
           )}
+          {(formData.sedeIds || []).length > 1 && !formData.sedeDefaultId && (
+            <p className="text-xs text-gray-400 mt-2">Sin sede predeterminada, el usuario elegirá su sede al iniciar sesión.</p>
+          )}
+        </div>
+
+        {/* Permisos Avanzados */}
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Icon icon="solar:shield-star-bold-duotone" width={20} height={20} className="text-amber-500" />
+            Permisos Avanzados
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {PERMISOS_AVANZADOS.map(({ key, icon, label, descripcion }) => {
+              const activo = !!formData[key];
+              return (
+                <label
+                  key={key}
+                  onClick={() => handlePermisoAvanzadoToggle(key)}
+                  className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    activo
+                      ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
+                      : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0A0D14] hover:border-amber-200 dark:hover:border-amber-800'
+                  }`}
+                >
+                  <div className={`w-5 h-5 mt-0.5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${activo ? 'border-amber-500 bg-amber-500' : 'border-gray-300'}`}>
+                    {activo && <Icon icon="mdi:check" className="text-white" width={14} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Icon icon={icon} className={activo ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-600'} width={16} />
+                      <span className="font-medium text-sm text-gray-900 dark:text-white">{label}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{descripcion}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         {/* Permisos de Módulos */}

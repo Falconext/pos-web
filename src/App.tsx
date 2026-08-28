@@ -33,6 +33,7 @@ import SeriesGarantias from './pages/admin/kardex/SeriesGarantias'
 import UsuariosIndex from './pages/admin/usuarios/Index'
 import VendedoresView from './features/admin/users/VendedoresView'
 import SedesIndex from './pages/admin/sedes/Index'
+import ListasPrecioIndex from './pages/admin/listas-precio/Index'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import TemplateTienda from './pages/admin/tienda/Template'
@@ -207,6 +208,7 @@ function App() {
           <Route path="usuarios/clientes" element={<ClientesPage />} />
           <Route path="usuarios/proveedores" element={<ProveedoresPage />} />
           <Route path="sedes" element={<SedesIndex />} />
+          <Route path="listas-precio" element={<ListasPrecioIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/template" element={<TemplateTienda />} />

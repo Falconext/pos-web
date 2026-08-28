@@ -7,7 +7,7 @@ import { BancoLogo } from '@/components/shared/BancoLogo';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import { GREEN, resolveFalconGreen, money, getImg, editable, withPreviewQuery, FalconHeader, FalconFooter, falconFadeUp, falconScaleIn, falconStagger, falconTap } from './FalconShared';
 
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
 
 const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   YAPE: { label: 'Yape', icon: 'solar:smartphone-bold' },
@@ -15,6 +15,7 @@ const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   EFECTIVO: { label: 'Efectivo', icon: 'solar:banknote-2-bold' },
   TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-bold' },
   TARJETA: { label: 'Tarjeta', icon: 'solar:card-2-bold' },
+  MERCADO_PAGO: { label: 'Mercado Pago', icon: 'simple-icons:mercadopago' },
 };
 
 const inputCls = (field: string, errors: Record<string, string>) => {
@@ -48,6 +49,7 @@ export default function FalconCheckoutPage(props: TemplateCheckoutPageProps) {
     configPago?.aceptaEfectivo ? 'EFECTIVO' : null,
     hasBankAccounts ? 'TRANSFERENCIA' : null,
     configPago?.aceptaTarjeta && configPago?.culqiPublicKey ? 'TARJETA' : null,
+    configPago?.aceptaMercadoPago ? 'MERCADO_PAGO' : null,
   ].filter(Boolean) as MedioPago[]);
   const paymentMethods = acceptedPaymentMethods.length ? acceptedPaymentMethods : (['YAPE', 'EFECTIVO'] as MedioPago[]);
 

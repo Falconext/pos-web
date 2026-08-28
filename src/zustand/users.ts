@@ -49,6 +49,15 @@ export interface IUsuario {
   comisionGlobal?: number;
   comisionGlobalFija?: number;
   comisionGlobalVenta?: number;
+  // Sede por defecto al loguear (Usuario.sedeId reutilizado).
+  sedeId?: number | null;
+  // Permisos finos (multi-local/minimarket).
+  bloquearEdicionPrecioVenta?: boolean;
+  ocultarPrecioCosto?: boolean;
+  ocultarPedidosEcommerce?: boolean;
+  convertirEnSupervisor?: boolean;
+  noPermitirVentaProductosGratuitos?: boolean;
+  restringirTransferenciasASuSede?: boolean;
 }
 
 export interface IFormUsuario {
@@ -60,10 +69,17 @@ export interface IFormUsuario {
   password?: string;
   permisos: string[];
   sedeIds?: number[];
+  sedeDefaultId?: number;
   subModuloIds?: number[];
   comisionGlobal?: number;
   comisionGlobalFija?: number;
   comisionGlobalVenta?: number;
+  bloquearEdicionPrecioVenta?: boolean;
+  ocultarPrecioCosto?: boolean;
+  ocultarPedidosEcommerce?: boolean;
+  convertirEnSupervisor?: boolean;
+  noPermitirVentaProductosGratuitos?: boolean;
+  restringirTransferenciasASuSede?: boolean;
 }
 
 export interface IUsersState {

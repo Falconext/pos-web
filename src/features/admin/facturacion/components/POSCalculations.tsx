@@ -56,7 +56,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     const updateSplitMethod = (idx: number, method: string) => {
         vm.setSplitPayments((curr: PaymentLine[]) => {
             const next = [...curr];
-            const cuentaId = method === 'Transferencia' ? (cuentasActivas[0]?.id || null) : null;
+            const cuentaId = needsBankAccount(method) ? (defaultAccountFor(method) || null) : null;
             next[idx] = { ...next[idx], method, referencia: '', cuentaBancariaId: cuentaId, cuentaBancariaLabel: accountLabel(cuentaId), tarjetaMarca: '', tarjetaTipo: method === 'Tarjeta' ? 'Débito' : '', tarjetaUltimos4: '' };
             return next;
         });
@@ -96,70 +96,136 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
         });
     };
 
-    const needsReference = (method?: string) => ['TRANSFERENCIA', 'TARJETA'].includes(String(method || '').toUpperCase());
-    const needsBankAccount = (method?: string) => String(method || '').toUpperCase() === 'TRANSFERENCIA';
+    const upper = (s?: string | null) => String(s || '').toUpperCase();
+    const needsReference = (method?: string) => ['TRANSFERENCIA', 'TARJETA'].includes(upper(method));
+    // Yape, Plin y Transferencia van a una cuenta bancaria destino (elegible).
+    const needsBankAccount = (method?: string) => ['YAPE', 'PLIN', 'TRANSFERENCIA'].includes(upper(method));
     const accountLabel = (id?: number | null) => {
         const cuenta = cuentasActivas.find((item) => item.id === Number(id));
         if (!cuenta) return '';
         return `${cuenta.alias || cuenta.banco} ${cuenta.numeroCuenta?.slice(-4) || ''}`.trim();
     };
-    const selectedCuentaId = vm.paymentDetail?.cuentaBancariaId || (needsBankAccount(vm.paymentMethod) ? cuentasActivas[0]?.id : null);
+    // Cuenta por defecto según el medio: para Yape/Plin, la cuenta vinculada a
+    // ese medio; si no hay, la primera activa.
+    const defaultAccountFor = (method?: string): number | null => {
+        const mu = upper(method);
+        if (mu === 'YAPE' || mu === 'PLIN') {
+            const vinc = cuentasActivas.find((c) => upper(c.medioPagoVinculado) === mu);
+            if (vinc) return vinc.id;
+        }
+        return cuentasActivas[0]?.id ?? null;
+    };
+    const selectedCuentaId = vm.paymentDetail?.cuentaBancariaId || (needsBankAccount(vm.paymentMethod) ? defaultAccountFor(vm.paymentMethod) : null);
 
     useEffect(() => {
-        if (needsBankAccount(vm.paymentMethod) && !vm.paymentDetail?.cuentaBancariaId && cuentasActivas[0]?.id) {
-            vm.setPaymentDetail((curr: PaymentLine) => ({ ...curr, cuentaBancariaId: cuentasActivas[0].id, cuentaBancariaLabel: accountLabel(cuentasActivas[0].id) }));
+        if (needsBankAccount(vm.paymentMethod) && !vm.paymentDetail?.cuentaBancariaId) {
+            const def = defaultAccountFor(vm.paymentMethod);
+            if (def) vm.setPaymentDetail((curr: PaymentLine) => ({ ...curr, cuentaBancariaId: def, cuentaBancariaLabel: accountLabel(def) }));
         }
-    }, [vm.paymentMethod, cuentasActivas[0]?.id]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [vm.paymentMethod, cuentasActivas.length]);
 
     const renderPaymentTraceFields = (
         line: PaymentLine,
         onChange: (patch: Partial<PaymentLine>) => void,
         dense = false,
     ) => {
-        if (!needsReference(line.method)) return null;
+        const showAccount = needsBankAccount(line.method) && cuentasActivas.length > 0;
+        const showReference = needsReference(line.method);
+        const isTarjeta = upper(line.method) === 'TARJETA';
+        if (!showAccount && !showReference) return null;
+
         const inputClass = `${dense ? 'py-1.5 text-[11px]' : 'py-2 text-xs'} w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 font-semibold text-gray-800 dark:text-white outline-none focus:ring-1 focus:ring-emerald-400`;
+        const currentId = Number(line.cuentaBancariaId || defaultAccountFor(line.method) || 0);
+
         return (
-            <div className={`${dense ? 'grid grid-cols-2 gap-1.5' : 'grid grid-cols-2 gap-2'} ${dense ? 'mt-1' : ''}`}>
-                {needsBankAccount(line.method) && (
-                    <select
-                        value={line.cuentaBancariaId || selectedCuentaId || ''}
-                        onChange={(e) => {
-                            const id = Number(e.target.value) || null;
-                            onChange({ cuentaBancariaId: id, cuentaBancariaLabel: accountLabel(id) });
-                        }}
-                        className={inputClass}
-                    >
-                        <option value="">Cuenta destino</option>
-                        {cuentasActivas.map((cuenta) => (
-                            <option key={cuenta.id} value={cuenta.id}>
-                                {(cuenta.alias || cuenta.banco)} {cuenta.numeroCuenta?.slice(-4)}
-                            </option>
-                        ))}
-                    </select>
+            <div className={dense ? 'mt-1 space-y-1.5' : 'mt-2 space-y-2'}>
+                {showAccount && (
+                    dense ? (
+                        <select
+                            value={currentId || ''}
+                            onChange={(e) => {
+                                const id = Number(e.target.value) || null;
+                                onChange({ cuentaBancariaId: id, cuentaBancariaLabel: accountLabel(id) });
+                            }}
+                            className={inputClass}
+                        >
+                            {cuentasActivas.map((cuenta) => (
+                                <option key={cuenta.id} value={cuenta.id}>
+                                    {(cuenta.alias || cuenta.banco)} ··{cuenta.numeroCuenta?.slice(-4)}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1.5 flex items-center gap-1">
+                                <Icon icon="solar:wallet-money-bold-duotone" width={13} className="text-emerald-500" />
+                                ¿A qué cuenta entra?
+                            </p>
+                            <div className="flex gap-2 overflow-x-auto pb-1 px-0.5">
+                                {cuentasActivas.map((cuenta) => {
+                                    const sel = currentId === cuenta.id;
+                                    const isVinc = upper(cuenta.medioPagoVinculado) === upper(line.method);
+                                    return (
+                                        <button
+                                            key={cuenta.id}
+                                            type="button"
+                                            onClick={() => onChange({ cuentaBancariaId: cuenta.id, cuentaBancariaLabel: accountLabel(cuenta.id) })}
+                                            className={`shrink-0 flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all ${sel
+                                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 ring-1 ring-emerald-400'
+                                                : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-emerald-300'}`}
+                                        >
+                                            <div className={`grid place-items-center h-8 w-8 rounded-lg shrink-0 ${sel ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>
+                                                <Icon icon="solar:card-bold-duotone" width={16} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-bold text-gray-800 dark:text-white truncate max-w-[120px]">{cuenta.alias || cuenta.banco}</p>
+                                                <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                                    ···· {cuenta.numeroCuenta?.slice(-4)}
+                                                    {isVinc && <span className="text-fuchsia-500 font-bold">· {upper(line.method) === 'YAPE' ? 'Yape' : upper(line.method) === 'PLIN' ? 'Plin' : ''}</span>}
+                                                </p>
+                                            </div>
+                                            {sel && <Icon icon="solar:check-circle-bold" width={16} className="text-emerald-500 shrink-0" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )
                 )}
-                {String(line.method || '').toUpperCase() === 'TARJETA' && (
-                    <select
-                        value={line.tarjetaTipo || 'Débito'}
-                        onChange={(e) => onChange({ tarjetaTipo: e.target.value })}
-                        className={inputClass}
-                    >
-                        <option value="Débito">Débito</option>
-                        <option value="Crédito">Crédito</option>
-                    </select>
-                )}
-                <input
-                    value={line.referencia || ''}
-                    onChange={(e) => onChange({ referencia: e.target.value })}
-                    placeholder={line.method?.toUpperCase() === 'TARJETA' ? 'N° voucher / operación' : 'N° operación'}
-                    className={inputClass}
-                />
-                {String(line.method || '').toUpperCase() === 'TARJETA' && (
-                    <input
-                        value={line.tarjetaUltimos4 || ''}
-                        onChange={(e) => onChange({ tarjetaUltimos4: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                        placeholder="Últimos 4"
-                        className={inputClass}
-                    />
+
+                {showReference && (
+                    isTarjeta ? (
+                        <div className={dense ? 'grid grid-cols-2 gap-1.5' : 'grid grid-cols-2 gap-2'}>
+                            <select
+                                value={line.tarjetaTipo || 'Débito'}
+                                onChange={(e) => onChange({ tarjetaTipo: e.target.value })}
+                                className={inputClass}
+                            >
+                                <option value="Débito">Débito</option>
+                                <option value="Crédito">Crédito</option>
+                            </select>
+                            <input
+                                value={line.tarjetaUltimos4 || ''}
+                                onChange={(e) => onChange({ tarjetaUltimos4: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                                placeholder="Últimos 4"
+                                className={inputClass}
+                            />
+                            <input
+                                value={line.referencia || ''}
+                                onChange={(e) => onChange({ referencia: e.target.value })}
+                                placeholder="N° voucher / operación"
+                                className={`${inputClass} col-span-2`}
+                            />
+                        </div>
+                    ) : (
+                        <input
+                            value={line.referencia || ''}
+                            onChange={(e) => onChange({ referencia: e.target.value })}
+                            placeholder="N° operación (opcional)"
+                            className={inputClass}
+                        />
+                    )
                 )}
             </div>
         );
@@ -451,8 +517,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                             vm.setPaymentDetail((curr: PaymentLine) => ({
                                                 ...curr,
                                                 method: m,
-                                                cuentaBancariaId: m === 'Transferencia' ? (curr.cuentaBancariaId || cuentasActivas[0]?.id || null) : null,
-                                                cuentaBancariaLabel: m === 'Transferencia' ? accountLabel(curr.cuentaBancariaId || cuentasActivas[0]?.id) : '',
+                                                cuentaBancariaId: needsBankAccount(m) ? (curr.cuentaBancariaId || defaultAccountFor(m) || null) : null,
+                                                cuentaBancariaLabel: needsBankAccount(m) ? accountLabel(curr.cuentaBancariaId || defaultAccountFor(m)) : '',
                                                 referencia: '',
                                                 tarjetaTipo: m === 'Tarjeta' ? (curr.tarjetaTipo || 'Débito') : '',
                                                 tarjetaUltimos4: '',

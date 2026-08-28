@@ -171,6 +171,7 @@ export default function ApiculturaCheckoutPage(props: TemplateCheckoutPageProps)
                     {configPago?.aceptaYape !== false && <option value="yape">Yape</option>}
                     {configPago?.aceptaPlin !== false && <option value="plin">Plin</option>}
                     {configPago?.aceptaTarjeta && <option value="tarjeta">Tarjeta</option>}
+                    {configPago?.aceptaMercadoPago && <option value="MERCADO_PAGO">Mercado Pago</option>}
                   </select>
                   {erroresForm.medioPago && <p className="mt-2 text-xs font-bold text-red-500">{erroresForm.medioPago}</p>}
                 </label>

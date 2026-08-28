@@ -4,7 +4,7 @@ import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
 import { hasPlanFeature } from '@/utils/permissions';
 import { useState } from 'react';
-import CuentasBancariasConfig from '@/pages/admin/empresa/CuentasBancariasConfig';
+import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 
 export default function PerfilIndex() {
@@ -15,6 +15,10 @@ export default function PerfilIndex() {
     const [directorInput, setDirectorInput] = useState<string | null>(null);
     const [sunatClientIdInput, setSunatClientIdInput] = useState<string | null>(null);
     const [sunatClientSecretInput, setSunatClientSecretInput] = useState<string | null>(null);
+    // Pestañas Perfil / Configuración (sincronizadas con la URL para deep-link desde el menú)
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab: 'perfil' | 'configuracion' = searchParams.get('tab') === 'configuracion' ? 'configuracion' : 'perfil';
+    const goTab = (t: 'perfil' | 'configuracion') => setSearchParams(t === 'configuracion' ? { tab: 'configuracion' } : {}, { replace: true });
 
     if (loading) return <div className="flex justify-center items-center h-96"><Loading /></div>;
     if (!perfil) return <div className="text-center text-gray-500 py-8">No se pudo cargar la información del perfil</div>;
@@ -35,6 +39,9 @@ export default function PerfilIndex() {
     const puedeShalom = /negocio|corporativo/.test(planNombre);
     // Envío automático por WhatsApp: desactivado temporalmente (a pedido).
     const SHOW_WHATSAPP: boolean = false;
+    // Visibilidad por pestaña
+    const perfilTab = activeTab === 'perfil' ? '' : 'hidden';
+    const configTab = activeTab === 'configuracion' ? '' : 'hidden';
 
     if (perfil?.rol === 'ADMIN_SISTEMA') {
         return (
@@ -75,9 +82,22 @@ export default function PerfilIndex() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Mi Perfil</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Información de tu cuenta y empresa</p>
                 </div>
+                <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white dark:bg-[#111827] border border-gray-100 dark:border-slate-800 shadow-sm">
+                    {([{ key: 'perfil', label: 'Perfil', icon: 'solar:user-id-bold-duotone' }, { key: 'configuracion', label: 'Configuración', icon: 'solar:settings-bold-duotone' }] as const).map(t => (
+                        <button
+                            key={t.key}
+                            type="button"
+                            onClick={() => goTab(t.key)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === t.key ? `${theme.bg} ${theme.textDark}` : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'}`}
+                        >
+                            <Icon icon={t.icon} width={16} />
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
             </div>
             <div className="space-y-4">
-                <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5">
+                <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 ${perfilTab}`}>
                     <div className="flex items-center space-x-5">
                         <div className={`w-24 h-24 rounded-full p-1 border-2 ${theme.border} bg-white dark:bg-[#0A0D14]`}>
                             <div className="w-full h-full bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center overflow-hidden relative group cursor-pointer">
@@ -98,7 +118,7 @@ export default function PerfilIndex() {
                 </div>
 
                 {/* Cambiar contraseña — visible para todos los roles */}
-                <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5">
+                <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 ${perfilTab}`}>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
                         <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:lock-password-bold-duotone" width="20" /></div>
                         Cambiar Contraseña
@@ -161,7 +181,7 @@ export default function PerfilIndex() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-1">
+                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-1 ${perfilTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:user-id-bold-duotone" width="20" /></div>Información Personal</h2>
                         <div className="space-y-4">
                             <div>
@@ -240,7 +260,7 @@ export default function PerfilIndex() {
 
                     {/* ── Envío automático por WhatsApp — DESACTIVADO temporalmente (a pedido) ── */}
                     {SHOW_WHATSAPP && (
-                    <div className="lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827]">
+                    <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827] ${configTab}`}>
                         <div className="relative border-b border-emerald-100/70 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 dark:border-emerald-900/30 dark:from-emerald-950/30 dark:via-[#111827] dark:to-sky-950/20">
                             <div className="absolute right-5 top-5 hidden rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-slate-900/70 dark:text-emerald-300 sm:inline-flex">
                                 WhatsApp Cloud API
@@ -373,7 +393,7 @@ export default function PerfilIndex() {
 
                     {/* ── Conexión Shalom Pro (courier) — solo planes Negocio / Corporativo ── */}
                     {puedeShalom && (
-                    <div className="lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm dark:border-red-900/30 dark:bg-[#111827]">
+                    <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm dark:border-red-900/30 dark:bg-[#111827] ${configTab}`}>
                         <div className="relative border-b border-red-100/70 bg-gradient-to-br from-red-50 via-white to-orange-50 p-5 dark:border-red-900/30 dark:from-red-950/30 dark:via-[#111827] dark:to-orange-950/20">
                             <div className="flex items-start gap-3">
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-500 text-white shadow-lg shadow-red-500/20">
@@ -435,7 +455,7 @@ export default function PerfilIndex() {
                         </div>
                     </div>
                     )}
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2">
+                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2 ${perfilTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
                         <div className="space-y-4">
                             <Field label="Razón Social"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.empresa.razonSocial}</p></Field>
@@ -445,7 +465,11 @@ export default function PerfilIndex() {
                             <Field label="Tipo de Empresa"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.empresa.tipoEmpresa === 'FORMAL' ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-400'}`}>{perfil.empresa.tipoEmpresa === 'FORMAL' ? 'Formal' : 'Informal'}</span></Field>
                             <Field label="Rubro"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.empresa.rubro.nombre}</p></Field>
                             {perfil.empresa.ubicacion && <Field label="Ubicación"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.empresa.ubicacion.distrito}, {perfil.empresa.ubicacion.provincia}, {perfil.empresa.ubicacion.departamento}</p></Field>}
-                            <div className="pt-2 border-t border-gray-100 dark:border-slate-800">
+                        </div>
+                    </div>
+                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2 ${configTab}`}>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:settings-bold-duotone" width="20" /></div>Configuración del Negocio</h2>
+                        <div className="space-y-3">
                                 <label className="flex items-start gap-3 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-900/10 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                     <input
                                         type="checkbox"
@@ -654,9 +678,8 @@ export default function PerfilIndex() {
                                 )}
                             </div>
                         </div>
-                    </div>
                     {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
-                        <div className={`lg:order-4 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5`}>
+                        <div className={`lg:order-4 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5 ${configTab}`}>
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                     <div className={`p-2 rounded-lg ${usageStats.limiteAlcanzado ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : usageStats.alerta80 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
@@ -712,7 +735,7 @@ export default function PerfilIndex() {
                             )}
                         </div>
                     )}
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-5">
+                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-5 ${configTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:card-bold-duotone" width="20" /></div>Plan Actual</h2>
                         <div className="space-y-4">
                             <Field label="Nombre del Plan"><p className={`${theme.text} font-bold text-sm`}>{perfil.empresa.plan.nombre}</p></Field>
@@ -722,7 +745,7 @@ export default function PerfilIndex() {
                             <Field label="Tipo de Plan"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${perfil.empresa.plan.esPrueba ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'}`}>{perfil.empresa.plan.esPrueba ? 'Versión de Prueba' : 'Plan Premium'}</span></Field>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-6">
+                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-6 ${configTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:calendar-mark-bold-duotone" width="20" /></div>Suscripción Actual</h2>
                         <div className="space-y-4">
                             {perfil.empresa.fechaActivacion && <Field label="Fecha de Activación"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{vm.formatearFechaSolo(perfil.empresa.fechaActivacion)}</p></Field>}
@@ -730,9 +753,16 @@ export default function PerfilIndex() {
                             <Field label="Estado actual"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${vm.obtenerColorEstado()}`}>{vm.obtenerEstadoSuscripcion()}</span></Field>
                         </div>
                     </div>
-                    {/* Cuentas Bancarias — al lado de Suscripción Actual */}
-                    <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:order-7">
-                        <CuentasBancariasConfig />
+                    {/* Cuentas Bancarias — movidas a "Caja y Bancos" */}
+                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:order-7 ${configTab}`}>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                            <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:card-bold-duotone" width="20" /></div>
+                            Cuentas Bancarias
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Las cuentas bancarias ahora se administran junto con la caja, donde también ves su saldo y movimientos.</p>
+                        <Link to="/administrador/ventas/caja?tab=bancos" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-all">
+                            <Icon icon="solar:arrow-right-up-linear" width="18" /> Ir a Caja y Bancos
+                        </Link>
                     </div>
                 </div>
             </div>

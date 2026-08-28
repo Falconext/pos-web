@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useSearchParams } from 'react-router-dom';
 import CajaControl from './components/CajaControl';
 import CajaHistorial from './components/CajaHistorial';
 import CajaDepositos from './components/CajaDepositos';
+import BancosPanel from './components/BancosPanel';
 import { useAuthStore } from '@/zustand/auth';
 
+type CajaTab = 'CONTROL' | 'HISTORIAL' | 'DEPOSITOS' | 'BANCOS';
+
 const CajaIndex: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'CONTROL' | 'HISTORIAL' | 'DEPOSITOS'>('CONTROL');
     const { auth } = useAuthStore();
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA';
+    const [searchParams] = useSearchParams();
+    const tabInicial: CajaTab =
+        searchParams.get('tab') === 'bancos' && isAdmin ? 'BANCOS' : 'CONTROL';
+    const [activeTab, setActiveTab] = useState<CajaTab>(tabInicial);
 
     return (
         <div className="space-y-6 max-w-8xl px-2 mx-auto bg-gray-50 dark:bg-[#0A0D14] min-h-screen">
@@ -16,9 +23,9 @@ const CajaIndex: React.FC = () => {
             <div className="pt-4">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Icon icon="solar:cash-out-bold-duotone" className="text-blue-600 dark:text-blue-400" />
-                    Gestión de Caja
+                    Caja y Bancos
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Control de turnos, apertura, cierre y reportes de caja</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Turnos y arqueo de efectivo, depósitos, y saldo/movimientos de tus cuentas bancarias</p>
             </div>
 
             {/* Tabs */}
@@ -55,6 +62,18 @@ const CajaIndex: React.FC = () => {
                         Depósitos
                     </button>
                 )}
+                {isAdmin && (
+                    <button
+                        onClick={() => setActiveTab('BANCOS')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'BANCOS'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
+                            }`}
+                    >
+                        <Icon icon="solar:card-bold-duotone" className="text-lg" />
+                        Bancos
+                    </button>
+                )}
             </div>
 
             {/* Content */}
@@ -62,6 +81,7 @@ const CajaIndex: React.FC = () => {
                 {activeTab === 'CONTROL' && <CajaControl />}
                 {activeTab === 'HISTORIAL' && <CajaHistorial />}
                 {activeTab === 'DEPOSITOS' && isAdmin && <CajaDepositos />}
+                {activeTab === 'BANCOS' && isAdmin && <BancosPanel />}
             </div>
         </div>
     );

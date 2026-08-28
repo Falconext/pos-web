@@ -15,7 +15,7 @@ export default function ConfiguracionTienda() {
 
   if (!vm.config?.plan?.tieneTienda) {
     return (
-      <div className="max-w-2xl mx-auto mt-12 p-8 bg-white dark:bg-[#111827] rounded-lg shadow text-center border dark:border-slate-800">
+      <div className="max-w-2xl mx-auto mt-12 p-8 bg-white dark:bg-[#111827] rounded-lg shadow text-center border dark:border-transparent">
         <Icon icon="mdi:store-off" className="w-16 h-16 mx-auto text-gray-400 mb-4" />
         <h2 className="text-2xl font-bold mb-2 dark:text-white">Tienda Virtual no disponible</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">Tu plan actual no incluye tienda virtual. Actualiza tu plan para activar esta funcionalidad.</p>
@@ -69,7 +69,7 @@ export default function ConfiguracionTienda() {
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* ── Información Básica ── */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
             <Icon icon="solar:info-circle-bold-duotone" className="text-xl text-blue-500" />
             Información Básica
@@ -88,7 +88,7 @@ export default function ConfiguracionTienda() {
         </div>
 
         {/* ── Logo de Tienda ── */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <Icon icon="solar:image-bold-duotone" className="text-xl text-[#FF9500]" />
             Logo de Tienda
@@ -160,7 +160,7 @@ export default function ConfiguracionTienda() {
         </div>
 
         {/* ── Redes Sociales ── */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
             <Icon icon="solar:share-circle-bold-duotone" className="text-xl text-purple-500" />
             Redes Sociales
@@ -173,7 +173,7 @@ export default function ConfiguracionTienda() {
         </div>
 
         {/* ── Envío y Recojo ── */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent p-6">
           <h3 className="text-lg font-semibold dark:text-white mb-4 flex items-center gap-2">
             <Icon icon="solar:delivery-bold" className="text-xl text-amber-500" />
             Configuración de Envío y Recojo

@@ -458,11 +458,13 @@ export default function ProductsView() {
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Precio venta</p>
                                     <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{String((item as any)?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} {Number(item?.precioUnitario || 0).toFixed(2)}</p>
                                 </div>
+                                {!vm.ocultarCosto && (
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Costo</p>
                                     {/* Costo CON IGV (de bolsillo), consistente con la tabla y el modal */}
                                     <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{String((item as any)?.moneda || 'PEN').toUpperCase() === 'USD' ? '$' : 'S/'} {(Number(item?.costoUnitario || item?.costoPromedio || 0) * (String((item as any)?.tipoAfectacionIGV ?? '10') === '10' ? 1.18 : 1)).toFixed(2)}</p>
                                 </div>
+                                )}
                                 <div className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/70">
                                     <p className="font-bold uppercase tracking-wide text-gray-400">Marca</p>
                                     <p className="mt-1 truncate font-bold text-gray-700 dark:text-gray-200">{item?.marca?.nombre || 'Sin marca'}</p>

@@ -1,4 +1,4 @@
-import { detectarFuncionesRubro, esRubroFabricacion } from '@/utils/rubro-features';
+import { detectarFuncionesRubro, esRubroFabricacion, esRubroVeterinaria } from '@/utils/rubro-features';
 import { hasPlanFeature } from '@/utils/permissions';
 
 const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true';
@@ -157,6 +157,10 @@ export const MODULE_META: Record<string, ModuleMeta> = {
           { codigo: 'kardex:libro-control', nombre: 'Libro Control', ruta: '/administrador/kardex/libro-control' },
         );
       }
+      // Listas de Precio: solo el ADMIN_EMPRESA las gestiona.
+      if (auth?.rol === 'ADMIN_EMPRESA') {
+        items.push({ codigo: 'kardex:listas-precio', nombre: 'Listas de Precio', ruta: '/administrador/listas-precio' });
+      }
       return items;
     },
   },
@@ -234,6 +238,8 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   caja: {
+    // Bancos vive como pestaña dentro de la página de Caja (mismo módulo).
+    labelOverride: () => 'Caja y Bancos',
     navRoute: () => '/administrador/ventas/caja',
     pathPrefix: () => '/administrador/ventas/caja',
   },
@@ -244,7 +250,9 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   tienda: {
-    condition: (auth) => !isDesktopBuild && hasPlanFeature(auth, 'tieneTienda'),
+    // La ruta principal del módulo es "pedidos" (ecommerce). Si el usuario tiene
+    // la restricción ocultarPedidosEcommerce, se oculta todo el módulo tienda.
+    condition: (auth) => !isDesktopBuild && hasPlanFeature(auth, 'tieneTienda') && !auth?.ocultarPedidosEcommerce,
     navRoute: () => '/administrador/tienda/pedidos',
     pathPrefix: () => '/administrador/tienda',
     extraItems: () => [
@@ -260,13 +268,22 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   clientes: {
+    labelOverride: (auth) => esRubroVeterinaria(auth?.empresa?.rubro?.nombre) ? 'Dueños' : undefined,
+    iconOverride: (auth) => esRubroVeterinaria(auth?.empresa?.rubro?.nombre) ? 'solar:user-heart-bold-duotone' : undefined,
     navRoute: () => '/administrador/clientes',
     pathPrefix: () => '/administrador/clientes',
     extraItems: (auth) => {
-      if (!isFarmacia(auth)) return [];
-      return [
-        { codigo: 'clientes:medicos', nombre: '🩺 Médicos', ruta: '/administrador/medicos' },
-      ];
+      if (isFarmacia(auth)) {
+        return [
+          { codigo: 'clientes:medicos', nombre: '🩺 Médicos', ruta: '/administrador/medicos' },
+        ];
+      }
+      if (esRubroVeterinaria(auth?.empresa?.rubro?.nombre)) {
+        return [
+          { codigo: 'clientes:medicos', nombre: 'Veterinarios', ruta: '/administrador/medicos' },
+        ];
+      }
+      return [];
     },
   },
 

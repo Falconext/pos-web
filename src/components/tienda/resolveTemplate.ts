@@ -21,6 +21,8 @@ export type PlantillaId =
   | 'spa'
   | 'carteras'
   | 'joyeria'
+  | 'abarrotes'
+  | 'supermercado'
   | 'ropa-hombre'
   | 'bicicletas'
   | 'motos'
@@ -531,6 +533,40 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#2563EB',
     icon: 'mdi:motorbike-electric',
     rubrosPermitidos: ['Motos', 'Motos eléctricas', 'Motocicletas', 'Venta de motos', 'Vehículos', 'Automotriz y repuestos', 'Taller mecánico', 'Servicio automotriz', 'Mecánica', 'Motos y repuestos', 'Concesionario'],
+  },
+  abarrotes: {
+    cardComponent: 'ProductCardGromuse',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Grogin',
+    description: 'Supermercado de abarrotes estilo Grocery (Grogin): hero slider de 3 slides (solo-imagen o con textos/precio y botón, cada uno enlazable), círculos de categorías, selección destacada con rating y "Agregar al carrito", banners promocionales + fila de productos, banda de salud/seguridad, más vendidos y tarjetas promocionales inferiores. Buscador ancho, favoritos y carrito lateral. Estética luminosa verde fresco + navy con acento morado en el hero y amarillo en el rating, tipografía Quicksand; color de acento personalizable. Todo editable en vivo.',
+    accentColor: '#3BB77E',
+    icon: 'solar:cart-large-2-bold',
+    rubrosPermitidos: ['Abarrotes', 'Minimarket', 'Mini market', 'Bodega', 'Supermercado', 'Supermercados', 'Market', 'Tienda de abarrotes', 'Comestibles', 'Alimentos', 'Alimentos y bebidas', 'Retail y comercio', 'Comercio minorista'],
+  },
+  supermercado: {
+    cardComponent: 'ProductCardGromuse',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'FreshMart',
+    description: 'Supermercado grocery verde & blanco (estilo FreshMart): barra utilitaria superior, buscador con categorías, hero slider de 3 slides (solo-imagen o con textos, badge y botón, cada uno enlazable) + badge circular de descuento y tira de garantías, "Compra por categoría", banner "Súper ahorro" + tarjeta de entrega rápida, "Ofertas del día" con tarjetas "Agregar al carrito", "¿Por qué elegirnos?", testimonios + contador de clientes + newsletter, y footer verde oscuro con métodos de pago. Tipografía Poppins; color de acento personalizable. Todo editable en vivo.',
+    accentColor: '#4CA82F',
+    icon: 'solar:bag-4-bold',
+    rubrosPermitidos: ['Abarrotes', 'Minimarket', 'Mini market', 'Bodega', 'Supermercado', 'Supermercados', 'Market', 'Tienda de abarrotes', 'Comestibles', 'Alimentos', 'Alimentos y bebidas', 'Retail y comercio', 'Comercio minorista'],
   },
   hoodie: {
     cardComponent: 'ProductCardGlamora',

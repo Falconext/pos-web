@@ -46,6 +46,22 @@ export function usaLotesFarmaciaRubro(nombre: string | null | undefined): boolea
     return esFarmaciaRetailRubro(nombre) || esDrogueriaRubro(nombre);
 }
 
+/**
+ * Veterinaria / petshop con consultorio: habilita mascotas, ficha clínica,
+ * plan sanitario y agenda de citas.
+ */
+export function esRubroVeterinaria(nombre: string | null | undefined): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return (
+        n.includes('veterinaria') ||
+        n.includes('veterinario') ||
+        n.includes('petshop') ||
+        n.includes('pet shop') ||
+        n.includes('mascota')
+    );
+}
+
 export function esRubroFabricacion(
     nombreRubro: string | null | undefined,
 ): boolean {

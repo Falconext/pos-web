@@ -53,6 +53,16 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con barra tipo "Dream" (solo-imagen o con textos y botón, cada uno enlazable)', 'Home tipo feed: "lo más querido", tiles de materiales, dreamboards/colecciones y sección "próximamente"', 'Detalle de joya con selector de variantes de color (swatches oro/plata/oro rosa/gemas) y tallas, con precio/stock por variante', 'Banner de grabado personalizado, favoritos + carrito lateral y newsletter', 'Checkout y contacto premium con personalización en vivo de textos, imágenes y enlaces'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  abarrotes: {
+    headline: 'Supermercado de abarrotes estilo grocery (Grogin): luminoso verde fresco + navy con acento morado en el hero y rating amarillo, tipografía Quicksand. Ideal para minimarket, bodega y supermercado.',
+    features: ['Hero slider de 3 slides (solo-imagen o con textos, precio y botón, cada uno enlazable)', 'Círculos de categorías + selección destacada con rating y "Agregar al carrito"', 'Banners promocionales + fila de productos y banda de salud/seguridad', 'Más vendidos, tarjetas promocionales inferiores, favoritos y carrito lateral', 'Detalle con variantes (presentación/tamaño), checkout y contacto; personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  supermercado: {
+    headline: 'Supermercado grocery verde & blanco (estilo FreshMart): barra utilitaria, buscador con categorías, hero con badge de descuento, "¿Por qué elegirnos?", testimonios y footer con métodos de pago. Ideal para minimarket, bodega y supermercado.',
+    features: ['Hero slider de 3 slides (solo-imagen o con textos, badge y botón, cada uno enlazable) + tira de garantías', '"Compra por categoría" en tarjetas + banner "Súper ahorro" y tarjeta de entrega rápida', '"Ofertas del día" con tarjetas "Agregar al carrito" + "¿Por qué elegirnos?" (5 ventajas)', 'Testimonios + contador de clientes + newsletter; favoritos y carrito lateral', 'Detalle con variantes, checkout y contacto; personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
   'ropa-hombre': {
     headline: 'Tienda editorial de ropa de hombre (estilo Urbanic): estética beige/crema/negro con tipografía serif, pensada para moda masculina moderna.',
     features: ['Hero slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', 'Home con garantías, categorías y más buscados con swatches de color', 'Banners promocionales y bloque Club/Newsletter', 'Detalle de producto con galería + checkout y contacto premium', 'Personalización en vivo de textos, imágenes y enlaces'],

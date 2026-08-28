@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import { BancoLogo } from '@/components/shared/BancoLogo';
 
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
 
 const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   YAPE:          { label: 'Yape',          icon: 'solar:smartphone-line-duotone' },
@@ -15,6 +15,7 @@ const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   EFECTIVO:      { label: 'Efectivo',      icon: 'solar:banknote-2-line-duotone' },
   TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-line-duotone' },
   TARJETA:       { label: 'Tarjeta',       icon: 'solar:card-2-line-duotone' },
+  MERCADO_PAGO:  { label: 'Mercado Pago',  icon: 'simple-icons:mercadopago' },
 };
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -194,12 +195,13 @@ export default function ModaCheckoutPage({
             <section>
               <SectionTitle>Pago</SectionTitle>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA'] as MedioPago[]).map(method => {
+                {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPago[]).map(method => {
                   const meta = PAYMENT_META[method];
                   const show =
                     method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
                     : method === 'TRANSFERENCIA' ? Boolean(configPago?.cuentasBancarias?.length > 0)
                     : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
+                    : method === 'MERCADO_PAGO' ? Boolean(configPago?.aceptaMercadoPago)
                     : true;
                   if (!show) return null;
                   const active = formData.medioPago === method;

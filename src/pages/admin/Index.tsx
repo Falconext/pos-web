@@ -18,7 +18,10 @@ export default function AdminIndex() {
   const { auth, sedeActiva } = useAuthStore()
   const { showModal, tourStep, startTour, skipTour, nextStep, prevStep, endTour } = useWelcomeTour(auth)
   const { sedes, listarSedes } = useSedesStore()
-  const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA'
+  // El supervisor (convertirEnSupervisor) tiene la misma visibilidad multi-sede
+  // que un admin en el dashboard (selector de sede + vista de todas las sedes).
+  const esSupervisor = !!(auth as any)?.convertirEnSupervisor
+  const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || esSupervisor
   const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true
 
   // Por defecto el dashboard muestra el mes en curso completo (del 1 al último día).

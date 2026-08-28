@@ -62,7 +62,7 @@ export default function CotizacionesView() {
                             vm.setAnchorEl(e.currentTarget);
                         }
                     }}
-                    className="px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 flex items-center gap-1"
+                    className="h-8 w-8 grid place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors"
                 >
                     <Icon icon="mdi:dots-vertical" width={18} height={18} />
                 </button>
@@ -114,8 +114,18 @@ export default function CotizacionesView() {
             </div>
 
             <div className="min-h-screen px-4 pb-6 bg-gray-50 dark:bg-[#0A0D14]">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 pt-4 mb-2">
+                <Icon icon="solar:home-smile-linear" className="text-base" />
+                <span>Panel</span>
+                <Icon icon="solar:alt-arrow-right-linear" className="text-xs" />
+                <span>Ventas</span>
+                <Icon icon="solar:alt-arrow-right-linear" className="text-xs" />
+                <span className="font-semibold text-blue-600 dark:text-blue-400">Cotizaciones</span>
+            </div>
+
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
                         <Icon icon="solar:document-text-bold-duotone" className="text-blue-600 dark:text-blue-400" />
@@ -258,8 +268,8 @@ export default function CotizacionesView() {
                                 type="button"
                                 onClick={() => vm.setPaymentMethod(key)}
                                 className={`p-1 justify-center rounded-lg flex border-2 ${vm.paymentMethod === key
-                                    ? 'border-blue-500 bg-blue-100'
-                                    : 'border-transparent hover:border-gray-300'
+                                    ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/30'
+                                    : 'border-transparent hover:border-gray-300 dark:hover:border-slate-600'
                                     }`}
                             >
                                 <img src={src} alt={key} className="w-14 object-cover" />
@@ -325,12 +335,12 @@ export default function CotizacionesView() {
                     </div>
                     <div className="h-[80vh] flex items-center justify-center">
                         {!vm.pdfUrl ? (
-                            <div className="flex flex-col items-center gap-3 text-gray-400">
+                            <div className="flex flex-col items-center gap-3 text-gray-400 dark:text-gray-500">
                                 <Icon icon="solar:refresh-bold" className="animate-spin text-violet-500" width={36} />
                                 <span className="text-sm">Generando PDF...</span>
                             </div>
                         ) : (
-                            <iframe src={vm.pdfUrl} className="w-full h-full rounded-lg border" />
+                            <iframe src={vm.pdfUrl} className="w-full h-full rounded-lg border dark:border-slate-700" />
                         )}
                     </div>
                 </div>

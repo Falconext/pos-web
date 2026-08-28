@@ -11,6 +11,8 @@ import LuxuryContactPage from '@/templates/luxury/LuxuryContactPage';
 import SpaContactPage from '@/templates/spa/SpaContactPage';
 import CarterasContactPage from '@/templates/carteras/CarterasContactPage';
 import AurumContactPage from '@/templates/joyeria/AurumContactPage';
+import GroginContactPage from '@/templates/abarrotes/GroginContactPage';
+import FreshMartContactPage from '@/templates/supermercado/FreshMartContactPage';
 import RopaHombreContactPage from '@/templates/ropa-hombre/RopaHombreContactPage';
 import BicicletasContactPage from '@/templates/bicicletas/BicicletasContactPage';
 import MotosContactPage from '@/templates/motos/MotosContactPage';
@@ -115,6 +117,32 @@ export default function ContactoRouter() {
         />
       ) : templateId === 'joyeria' ? (
         <AurumContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'abarrotes' ? (
+        <GroginContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'supermercado' ? (
+        <FreshMartContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}

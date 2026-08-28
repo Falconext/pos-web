@@ -111,6 +111,9 @@ export const useProductsViewModel = () => {
     const tieneTienda = hasPlanFeature(userPermissions, 'tieneTienda');
 
     const COLUMNAS_ECOMMERCE = ['Tienda'];
+    // Restricción por usuario: ocultar columnas que revelan el costo.
+    const ocultarCosto = !!(auth as any)?.ocultarPrecioCosto;
+    const COLUMNAS_COSTO = ['Costo', 'Valor Inventario'];
 
     const allColumns = useMemo(() => {
         // Rubros farmacéuticos: "Lotes" (próximo vencimiento) al costado de Producto, sin U.M/%Venta/%Provisión
@@ -120,13 +123,17 @@ export const useProductsViewModel = () => {
         return base.filter(c => {
             if (COLUMNAS_CORPORATIVAS.includes(c) && !tieneGestionProvisiones) return false;
             if (COLUMNAS_ECOMMERCE.includes(c) && !tieneTienda) return false;
+            if (COLUMNAS_COSTO.includes(c) && ocultarCosto) return false;
             return true;
         });
-    }, [tieneGestionProvisiones, tieneTienda, esFarmaceuticoRubro]);
+    }, [tieneGestionProvisiones, tieneTienda, esFarmaceuticoRubro, ocultarCosto]);
 
     const initialVisibleColumns = allColumns;
 
-    const fallbackVisibleColumns = FALLBACK_VISIBLE_COLUMNS;
+    const fallbackVisibleColumns = useMemo(
+        () => ocultarCosto ? FALLBACK_VISIBLE_COLUMNS.filter(c => !COLUMNAS_COSTO.includes(c)) : FALLBACK_VISIBLE_COLUMNS,
+        [ocultarCosto],
+    );
 
     // Labels
     const labels = useMemo(() => ({
@@ -805,6 +812,7 @@ export const useProductsViewModel = () => {
         isRestaurante,
         isCodigoBarrasEnabled,
         safeVisibleColumns,
+        ocultarCosto,
         stockSort,
         actions: {
             ...actions,

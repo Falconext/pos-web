@@ -78,6 +78,16 @@ import AurumHomePage from './joyeria/AurumHomePage';
 import AurumCatalogoPage from './joyeria/AurumCatalogoPage';
 import AurumCheckoutPage from './joyeria/AurumCheckoutPage';
 
+// Abarrotes (Grogin — abarrotes / minimarket / supermercado)
+import GroginHomePage from './abarrotes/GroginHomePage';
+import GroginCatalogoPage from './abarrotes/GroginCatalogoPage';
+import GroginCheckoutPage from './abarrotes/GroginCheckoutPage';
+
+// Supermercado (FreshMart — grocery verde/blanco)
+import FreshMartHomePage from './supermercado/FreshMartHomePage';
+import FreshMartCatalogoPage from './supermercado/FreshMartCatalogoPage';
+import FreshMartCheckoutPage from './supermercado/FreshMartCheckoutPage';
+
 // Ropa Hombre (Urbanic — moda masculina editorial)
 import RopaHombreHomePage from './ropa-hombre/RopaHombreHomePage';
 import RopaHombreCatalogoPage from './ropa-hombre/RopaHombreCatalogoPage';
@@ -208,6 +218,18 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: AurumHomePage,
     CatalogoPage: AurumCatalogoPage,
     CheckoutPage: AurumCheckoutPage,
+  },
+  abarrotes: {
+    id: 'abarrotes',
+    HomePage: GroginHomePage,
+    CatalogoPage: GroginCatalogoPage,
+    CheckoutPage: GroginCheckoutPage,
+  },
+  supermercado: {
+    id: 'supermercado',
+    HomePage: FreshMartHomePage,
+    CatalogoPage: FreshMartCatalogoPage,
+    CheckoutPage: FreshMartCheckoutPage,
   },
   'ropa-hombre': {
     id: 'ropa-hombre',

@@ -26,6 +26,22 @@ const catOf = (p: any) => (typeof p?.categoria === 'object' ? p?.categoria?.nomb
 const marcaOf = (p: any) => (typeof p?.marca === 'object' ? p?.marca?.nombre : p?.marca) || '';
 const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
 
+/** Convierte HTML del editor (con <p>, <br> y entidades como &nbsp;) en texto limpio y legible. */
+const htmlToText = (html: any): string => {
+  let s = String(html || '')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '');
+  if (typeof document !== 'undefined') {
+    const ta = document.createElement('textarea');
+    ta.innerHTML = s;
+    s = ta.value;
+  } else {
+    s = s.replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'");
+  }
+  return s.split('\n').map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n').trim();
+};
+
 /* ── Estrellas de rating ── */
 function Stars({ value, size = 14 }: { value: number; size?: number }) {
   const v = Math.max(0, Math.min(5, value));
@@ -355,7 +371,7 @@ export function ModaMinimalProductoDetalleView({
             {/* Acordeones */}
             <div className="mt-8 border-t" style={{ borderColor: MIN.line }}>
               <Accordion title={diseno?.modaMinimalPdpDetailsTitle || 'Detalles'} defaultOpen>
-                {producto?.descripcionLarga ? String(producto.descripcionLarga).replace(/<[^>]+>/g, ' ') : (diseno?.modaMinimalPdpDetailsText || desc)}
+                <span className="whitespace-pre-line">{producto?.descripcionLarga ? htmlToText(producto.descripcionLarga) : (diseno?.modaMinimalPdpDetailsText || desc)}</span>
                 <div className="mt-4 grid gap-1.5 text-[13px]">
                   <p><span className="font-medium" style={{ color: MIN.ink }}>Categoría:</span> {categoria || '—'}</p>
                   <p><span className="font-medium" style={{ color: MIN.ink }}>SKU:</span> {activeVariant?.codigo || producto?.codigo || producto?.sku || '—'}</p>

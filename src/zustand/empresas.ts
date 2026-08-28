@@ -60,7 +60,19 @@ interface Empresa {
     email?: string | null;
     celular?: string | null;
   }>;
+  salud?: EmpresaSalud;
+  estadoGestion?: 'POR_CONTACTAR' | 'CONTACTADA' | 'EN_NEGOCIACION' | 'RECUPERADA' | 'PERDIDA' | null;
   series?: EmpresaSerieConfig[];
+}
+
+export type EstadoSalud = 'sana' | 'riesgo' | 'critico';
+
+export interface EmpresaSalud {
+  estado: EstadoSalud;
+  diasSinVender: number;
+  ultimaVenta: string | null;
+  ventas7: number;
+  ventas30: number;
 }
 
 export interface EmpresaSerieConfig {

@@ -34,6 +34,15 @@ export interface IUser {
     subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[]
     sistemaNegocio?: string | null
     sistemaProducto?: string | null
+    // Sede por defecto al loguear (Usuario.sedeId reutilizado).
+    sedeId?: number | null
+    // Permisos finos (multi-local/minimarket): restricciones que el admin activa.
+    bloquearEdicionPrecioVenta?: boolean
+    ocultarPrecioCosto?: boolean
+    ocultarPedidosEcommerce?: boolean
+    convertirEnSupervisor?: boolean
+    noPermitirVentaProductosGratuitos?: boolean
+    restringirTransferenciasASuSede?: boolean
 }
 
 export interface IResponse {

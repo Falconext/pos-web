@@ -295,6 +295,16 @@ const GuiaRemision = () => {
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-gray-50 p-3 dark:bg-[#0A0D14] sm:p-4">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 mb-2">
+                <Icon icon="solar:home-smile-linear" className="text-base" />
+                <span>Panel</span>
+                <Icon icon="solar:alt-arrow-right-linear" className="text-xs" />
+                <span>Facturación</span>
+                <Icon icon="solar:alt-arrow-right-linear" className="text-xs" />
+                <span className="font-semibold text-blue-600 dark:text-blue-400">Guías de Remisión</span>
+            </div>
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -397,7 +407,7 @@ const GuiaRemision = () => {
                                     handleCloseMenu();
                                     navigate("/administrador/facturacion/nuevo", { state: { guiaRemision: selectedRow } });
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             >
                                 <Icon icon="solar:bill-bold" width={16} height={16} /> <span>Facturar Guía</span>
                             </button>
@@ -410,7 +420,7 @@ const GuiaRemision = () => {
                                     await downloadPdf(selectedRow.id);
                                 }
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                         >
                             <Icon icon="heroicons:arrow-down-tray" width={16} height={16} /> <span>Descargar PDF</span>
                         </button>
@@ -431,7 +441,7 @@ const GuiaRemision = () => {
                                         useAlertStore.getState().alert('Error al abrir PDF para imprimir', 'error');
                                     });
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                         >
                             <Icon icon="solar:printer-bold" width={16} height={16} /> <span>Imprimir Formato</span>
                         </button>
@@ -440,14 +450,14 @@ const GuiaRemision = () => {
                             <>
                                 <button
                                     onClick={handleEditar}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                                 >
                                     <Icon icon="material-symbols:edit" width={16} height={16} /> <span>Editar</span>
                                 </button>
                                 {canSendGuia && (
                                     <button
                                         onClick={handleEnviarSunat}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 hover:bg-green-50"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-green-700 dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-emerald-900/20"
                                     >
                                         <Icon icon="heroicons:paper-airplane" width={16} height={16} /> <span>{isRetryGuia ? 'Reintentar envío a SUNAT' : 'Enviar a SUNAT'}</span>
                                     </button>
@@ -458,7 +468,7 @@ const GuiaRemision = () => {
                         {canDeleteGuia && (
                             <button
                                 onClick={handleEliminar}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-900/20"
                             >
                                 <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
                             </button>

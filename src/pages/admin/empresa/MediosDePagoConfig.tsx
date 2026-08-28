@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import ModalConfirm from '@/components/ModalConfirm';
+import MercadoPagoConnect from '@/components/Empresa/MercadoPagoConnect';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 
@@ -229,6 +230,9 @@ export default function MediosDePagoConfig() {
           </div>
         </div>
       </div>
+
+      {/* Mercado Pago (OAuth) — conexión de la cuenta del negocio */}
+      <MercadoPagoConnect />
 
       <div className="mt-5 flex justify-end">
         <button

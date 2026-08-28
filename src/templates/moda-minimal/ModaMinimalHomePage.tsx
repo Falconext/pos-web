@@ -259,14 +259,14 @@ export default function ModaMinimalHomePage({
         {/* ── Banner editorial ─────────────────────────────────────────────── */}
         <motion.section variants={minSection} initial="hidden" whileInView="show" viewport={minViewport} className="relative">
           <div className="relative h-[420px] w-full overflow-hidden md:h-[520px]">
-            <img src={diseno?.modaMinimalEditorialImage || EDITORIAL_FALLBACK} alt="" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 flex items-center" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 60%)' }}>
+            <img src={diseno?.modaMinimalEditorialImage || EDITORIAL_FALLBACK} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '75% center' }} />
+            <div className="absolute inset-0 flex items-center" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.08) 55%, rgba(0,0,0,0) 72%)' }}>
               <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-                <div className="max-w-md text-white">
+                <div className="max-w-md text-white" style={{ textShadow: '0 2px 18px rgba(0,0,0,0.35)' }}>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em]">{diseno?.modaMinimalEditorialEyebrow || 'Nuestra promesa'}</p>
                   <h2 className="mt-3 text-3xl font-medium leading-tight md:text-4xl">{diseno?.modaMinimalEditorialTitle || 'Transparencia radical.'}</h2>
                   <p className="mt-4 text-sm leading-relaxed text-white/85">{diseno?.modaMinimalEditorialText || 'Conoce el origen de cada prenda: los materiales, quién la hizo y cuánto cuesta realmente producirla.'}</p>
-                  <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 inline-flex bg-white px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 transition-transform hover:-translate-y-0.5">
+                  <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 inline-flex bg-white px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
                     {diseno?.modaMinimalEditorialButton || 'Conocer más'}
                   </button>
                 </div>

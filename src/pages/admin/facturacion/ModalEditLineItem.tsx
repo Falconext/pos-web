@@ -3,6 +3,7 @@ import Modal from "@/components/Modal";
 import InputPro from "@/components/InputPro";
 import Button from "@/components/Button";
 import { Icon } from "@iconify/react";
+import { useAuthStore } from "@/zustand/auth";
 
 interface IProps {
     isOpen: boolean;
@@ -59,6 +60,9 @@ const getApplicablePrice = (
 };
 
 const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/" }: IProps) => {
+    // Restricción por usuario: si está activa, el precio de venta no se puede
+    // editar (ni el input directo ni los botones de precio mayorista).
+    const bloquearPrecio = !!useAuthStore((s) => s.auth?.bloquearEdicionPrecioVenta);
     const [formValues, setFormValues] = useState<any>({
         precioUnitario: 0,
         cantidad: 0,
@@ -121,8 +125,12 @@ const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/"
                             type="number"
                             value={formValues.precioUnitario}
                             onChange={handleChange}
+                            disabled={bloquearPrecio}
                         />
-                        {hasWholesaleRules && (
+                        {bloquearPrecio && (
+                            <p className="text-xs text-gray-400 mt-1">No tienes permiso para editar el precio de venta.</p>
+                        )}
+                        {!bloquearPrecio && hasWholesaleRules && (
                             <p className="text-xs text-green-600 mt-1">Precio mayorista aplicado según cantidad</p>
                         )}
                     </div>
@@ -146,7 +154,7 @@ const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/"
                     </div>
                 </div>
 
-                {hasWholesaleRules && (
+                {hasWholesaleRules && !bloquearPrecio && (
                     <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gradient-to-br from-white to-gray-50/50 dark:from-slate-800/60 dark:to-slate-900/40 p-3">
                         <div className="flex items-center gap-2 mb-2.5">
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-sm flex-shrink-0">

@@ -1001,8 +1001,16 @@ export const useFacturacionViewModel = () => {
             }
 
             if (cliente) {
-                fromNVComprobanteRef.current = formValues.comprobante;
+                // Importante: el ref debe apuntar al comprobante DESTINO (FACTURA/BOLETA
+                // vía state.defaultType), no a formValues.comprobante — que todavía tiene
+                // el valor previo del render (setFormValues del defaultType aún no se
+                // aplicó). Si se usa el valor stale, el effect de reset lo interpreta como
+                // "cambió de comprobante" y borra el cliente recién seteado.
+                // defaultType para conversión de NV es 'FACTURA' o 'BOLETA' (labels que
+                // coinciden con el comprobante final), así que se usa directo.
+                fromNVComprobanteRef.current = (state?.defaultType as string) || formValues.comprobante;
                 setSelectedClient(cliente);
+                setFormValuesClient(cliente as any);
                 setFormValues(prev => ({
                     ...prev,
                     clienteId: clienteId || cliente.id || 0,
@@ -1683,6 +1691,13 @@ export const useFacturacionViewModel = () => {
         const subtotal = price * qty;
         const descuento = Number(newItem.descuento || 0);
         const totalConDescuento = subtotal * (1 - descuento / 100);
+
+        // Restricción por usuario: no permitir dejar una línea en S/ 0 (precio 0
+        // o descuento 100%). Regla de negocio blanda para evitar "regalar" stock.
+        if ((auth as any)?.noPermitirVentaProductosGratuitos && totalConDescuento <= 0) {
+            useAlertStore.getState().alert('No tienes permiso para vender productos gratuitos (precio en S/ 0).', 'error');
+            return;
+        }
 
         updateProductInvoice(editingIndex, {
             ...newItem,

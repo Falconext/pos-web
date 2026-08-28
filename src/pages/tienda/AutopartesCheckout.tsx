@@ -6,7 +6,7 @@ import AutopartesFooter from '@/components/tienda/AutopartesFooter';
 import ProductCardAutopartes from '@/components/tienda/ProductCardAutopartes';
 import { BancoLogo } from '@/components/shared/BancoLogo';
 
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
 
 interface Props {
   slug: string;
@@ -40,6 +40,7 @@ const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
   EFECTIVO:      { label: 'Efectivo',      icon: 'solar:banknote-2-bold' },
   TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-bold' },
   TARJETA:       { label: 'Tarjeta',       icon: 'solar:card-2-bold' },
+  MERCADO_PAGO:  { label: 'Mercado Pago',  icon: 'simple-icons:mercadopago' },
 };
 
 // ── Reusable section heading ────────────────────────────────────────────────
@@ -365,12 +366,13 @@ export default function AutopartesCheckout({
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <SectionTitle cp={cp}>Método de pago</SectionTitle>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA'] as MedioPago[]).map(method => {
+                {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPago[]).map(method => {
                   const meta = PAYMENT_META[method];
                   const show =
                     method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
                     : method === 'TRANSFERENCIA' ? Boolean(configPago?.cuentasBancarias?.length > 0)
                     : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
+                    : method === 'MERCADO_PAGO' ? Boolean(configPago?.aceptaMercadoPago)
                     : true;
                   if (!show) return null;
                   const active = formData.medioPago === method;

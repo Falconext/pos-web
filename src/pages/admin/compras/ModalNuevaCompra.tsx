@@ -98,6 +98,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     const [barcodeLoading, setBarcodeLoading] = useState(false);
     const barcodeRef = useRef<HTMLInputElement>(null);
 
+    // Presentación de la fila manual "Agregar" (UNIDAD u otro paquete del
+    // producto elegido, ej. "caja x20") — mismo concepto que el escaneo de
+    // código de paquete, pero disponible también sin escanear.
+    const [presentacionManual, setPresentacionManual] = useState('UNIDAD');
+    const [paquetesManual, setPaquetesManual] = useState<any[]>([]);
+
     // Compra por PAQUETE (código de caja escaneado, ej. caja x20): el bodeguero
     // habla en cajas y en el precio final **CON IGV** (como lo ve en la boleta
     // del proveedor: "el six-pack me costó 36"). El sistema convierte a
@@ -174,7 +180,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
 
     // XML import
     const xmlInputRef = useRef<HTMLInputElement>(null);
+    const fotoInputRef = useRef<HTMLInputElement>(null);
     const [isParsingXml, setIsParsingXml] = useState(false);
+    const [isParsingFoto, setIsParsingFoto] = useState(false);
     const [supplierDisplay, setSupplierDisplay] = useState('');
     const [xmlBanner, setXmlBanner] = useState<{ matched: number; total: number; proveedor: boolean } | null>(null);
     const [xmlSupplierInfo, setXmlSupplierInfo] = useState<{ ruc: string; nombre: string } | null>(null);
@@ -212,6 +220,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             setIncluyeIgv(false);
             setCuotas([]);
             setBarcodeInput('');
+            setPresentacionManual('UNIDAD');
+            setPaquetesManual([]);
             setSupplierDisplay('');
             setXmlBanner(null);
             setXmlSupplierInfo(null);
@@ -378,6 +388,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         let prod: any = products.find(p => p.id === nid);
         let descripcion = prod?.descripcion;
         let costo = prod?.costoUnitario;
+        // Los paquetes (six-pack, caja, etc.) viven en el producto padre.
+        let paquetesProd: any[] = prod?.paquetes || [];
         // Si no es un producto padre, buscar entre las variantes
         if (!prod) {
             for (const p of (products as any[])) {
@@ -387,6 +399,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     const label = etiquetaAtributos(v);
                     descripcion = `${p.descripcion}${label ? ' - ' + label : ''}`;
                     costo = v.costoUnitario ?? p.costoUnitario;
+                    paquetesProd = p.paquetes || [];
                     break;
                 }
             }
@@ -394,6 +407,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         if (prod) {
             setPkg(null); // producto elegido del buscador: se compra en unidades
             setPkgLineKey(null);
+            setPresentacionManual('UNIDAD');
+            setPaquetesManual(paquetesProd);
             setCurrentItem({
                 ...currentItem,
                 productoId: prod.id,
@@ -401,6 +416,40 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 precioUnitario: costo || 0
             });
         }
+    };
+
+    // Cambia la presentación de la fila manual (UNIDAD u otro paquete
+    // configurado para el producto elegido). El costo POR UNIDAD no cambia con
+    // la presentación (es el mismo producto); solo cambia la cantidad (1 paquete
+    // = N unidades) y la etiqueta de la línea. Se mantiene el costo NETO igual
+    // que onProductChange, para no quedar inconsistente con el toggle "incluye
+    // IGV" (que convierte las líneas ya agregadas por su cuenta). El stock y el
+    // kardex siempre van en unidades base, así que la cantidad se expande a
+    // unidades — consistente con el flujo de escaneo.
+    const onPresentacionManualChange = (codigo: string) => {
+        setPresentacionManual(codigo);
+        const prodBase: any = products.find(p => p.id === currentItem.productoId)
+            ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
+        const baseDescripcion = (currentItem.descripcion || '').replace(/\s*\(\d+ paq\. x\d+\)$/, '');
+        const costoUnit = Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0;
+        if (codigo === 'UNIDAD') {
+            setCurrentItem(prev => ({
+                ...prev,
+                cantidad: 1,
+                precioUnitario: costoUnit,
+                descripcion: baseDescripcion,
+            }));
+            return;
+        }
+        const paquete = paquetesManual.find((pq: any) => pq.codigo === codigo);
+        if (!paquete) return;
+        const unidades = Math.max(1, Number(paquete.unidadesPorPaquete) || 1);
+        setCurrentItem(prev => ({
+            ...prev,
+            cantidad: unidades,
+            precioUnitario: costoUnit,
+            descripcion: etiquetaPaquete(baseDescripcion, 1, unidades),
+        }));
     };
 
     const handleBarcodeScan = async (codigo: string) => {
@@ -598,6 +647,64 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         });
     };
 
+    // Pre-llena el formulario de compra desde los datos extraídos de un XML o
+    // una foto (ambos endpoints devuelven el mismo formato).
+    const aplicarDatosCompraImportada = (data: any, origen: 'xml' | 'foto') => {
+        // Si la extracción detectó que los precios ya incluyen IGV (boleta/nota
+        // de venta), se marca la casilla SIN disparar la conversión de líneas
+        // (se sincroniza el ref, igual que al cargar una compra en edición).
+        if (typeof data.incluyeIgv === 'boolean') {
+            setIncluyeIgv(data.incluyeIgv);
+            prevIncluyeIgv.current = data.incluyeIgv;
+        }
+        setHeader(h => ({
+            ...h,
+            tipoDoc: data.tipoDoc || h.tipoDoc,
+            serie: data.serie || h.serie,
+            numero: data.numero || h.numero,
+            fechaEmision: data.fechaEmision || h.fechaEmision,
+            fechaVencimiento: data.fechaEmision || h.fechaVencimiento,
+            moneda: data.moneda || h.moneda,
+            proveedorId: data.proveedorId || 0,
+        }));
+
+        const proveedorLabel = [data.proveedorRuc, data.proveedorNombre].filter(Boolean).join(' - ');
+        if (proveedorLabel) setSupplierDisplay(proveedorLabel);
+        setXmlSupplierInfo({
+            ruc: String(data.proveedorRuc || '').trim(),
+            nombre: String(data.proveedorNombre || '').trim(),
+        });
+        if (data.proveedorId) {
+            setSupplierOptions([{ id: data.proveedorId, value: proveedorLabel }]);
+        }
+
+        const importedItems = (data.items || []).map((item: any) => ({
+            productoId: item.productoId || 0,
+            descripcion: item.productoDescripcion || item.descripcion,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            lote: '',
+            fechaVencimiento: '',
+            subtotal: item.subtotal,
+            _fromXml: true,
+            _codigoXml: item.codigo,
+            _sinVincular: !item.productoId,
+        }));
+        setItems(importedItems);
+
+        const matched = importedItems.filter((i: any) => !i._sinVincular).length;
+        setXmlBanner({ matched, total: importedItems.length, proveedor: !!data.proveedorId });
+
+        const etiqueta = origen === 'foto' ? 'Foto leída' : 'XML importado';
+        if (!data.proveedorId) {
+            alert(`${etiqueta}. Proveedor no encontrado (RUC: ${data.proveedorRuc || '—'}) — selecciónalo manualmente.`, 'error');
+        } else if (data.proveedorCreado) {
+            alert(`${etiqueta}: proveedor "${data.proveedorNombre}" creado automáticamente. ${matched}/${importedItems.length} productos vinculados.`, 'success');
+        } else {
+            alert(`${etiqueta}: ${matched}/${importedItems.length} productos vinculados.`, 'success');
+        }
+    };
+
     const handleXmlFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -611,54 +718,33 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             const data = res.data?.data ?? res.data;
-
-            setHeader(h => ({
-                ...h,
-                tipoDoc: data.tipoDoc || h.tipoDoc,
-                serie: data.serie || h.serie,
-                numero: data.numero || h.numero,
-                fechaEmision: data.fechaEmision || h.fechaEmision,
-                fechaVencimiento: data.fechaEmision || h.fechaVencimiento,
-                moneda: data.moneda || h.moneda,
-                proveedorId: data.proveedorId || 0,
-            }));
-
-            const proveedorLabel = [data.proveedorRuc, data.proveedorNombre].filter(Boolean).join(' - ');
-            if (proveedorLabel) setSupplierDisplay(proveedorLabel);
-            setXmlSupplierInfo({
-                ruc: String(data.proveedorRuc || '').trim(),
-                nombre: String(data.proveedorNombre || '').trim(),
-            });
-            if (data.proveedorId) {
-                setSupplierOptions([{ id: data.proveedorId, value: proveedorLabel }]);
-            }
-
-            const importedItems = (data.items || []).map((item: any) => ({
-                productoId: item.productoId || 0,
-                descripcion: item.productoDescripcion || item.descripcion,
-                cantidad: item.cantidad,
-                precioUnitario: item.precioUnitario,
-                lote: '',
-                fechaVencimiento: '',
-                subtotal: item.subtotal,
-                _fromXml: true,
-                _codigoXml: item.codigo,
-                _sinVincular: !item.productoId,
-            }));
-            setItems(importedItems);
-
-            const matched = importedItems.filter((i: any) => !i._sinVincular).length;
-            setXmlBanner({ matched, total: importedItems.length, proveedor: !!data.proveedorId });
-
-            if (!data.proveedorId) {
-                alert(`XML importado. Proveedor no encontrado (RUC: ${data.proveedorRuc}) — selecciónalo manualmente.`, 'error');
-            } else {
-                alert(`XML importado: ${matched}/${importedItems.length} productos vinculados.`, 'success');
-            }
+            aplicarDatosCompraImportada(data, 'xml');
         } catch (err: any) {
             alert(err?.response?.data?.message || 'Error al procesar el XML. Verifica que sea una factura SUNAT válida.', 'error');
         } finally {
             setIsParsingXml(false);
+        }
+    };
+
+    // Sube una FOTO de la factura/boleta; la IA la lee y pre-llena la compra.
+    const handleImagenFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        setIsParsingFoto(true);
+        setXmlBanner(null);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await apiClient.post('/compras/parse-imagen', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const data = res.data?.data ?? res.data;
+            aplicarDatosCompraImportada(data, 'foto');
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'No se pudo leer la foto. Probá con una imagen más nítida y bien iluminada.', 'error');
+        } finally {
+            setIsParsingFoto(false);
         }
     };
 
@@ -676,6 +762,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         setCurrentItem({ productoId: 0, descripcion: '', cantidad: 1, precioUnitario: 0, lote: '', fechaVencimiento: '' });
         setPkg(null);
         setPkgLineKey(null);
+        setPresentacionManual('UNIDAD');
+        setPaquetesManual([]);
         // Incrementar key fuerza remount del Select y limpia la selección visual
         setProductSelectKey(k => k + 1);
     };
@@ -1042,15 +1130,27 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800">
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide">Detalle de Productos</h3>
-                            <button
-                                type="button"
-                                onClick={() => xmlInputRef.current?.click()}
-                                disabled={isParsingXml}
-                                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50 transition-colors bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg"
-                            >
-                                <Icon icon={isParsingXml ? "svg-spinners:270-ring-with-bg" : "solar:upload-minimalistic-bold-duotone"} width={14} />
-                                {isParsingXml ? 'Procesando...' : 'Importar XML'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => fotoInputRef.current?.click()}
+                                    disabled={isParsingFoto}
+                                    title="Sube una foto de la factura/boleta y la IA la lee para llenar la compra"
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 disabled:opacity-50 transition-colors bg-violet-50 dark:bg-violet-900/30 px-3 py-1.5 rounded-lg"
+                                >
+                                    <Icon icon={isParsingFoto ? "svg-spinners:270-ring-with-bg" : "solar:camera-bold-duotone"} width={14} />
+                                    {isParsingFoto ? 'Leyendo foto...' : 'Subir foto (IA)'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => xmlInputRef.current?.click()}
+                                    disabled={isParsingXml}
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50 transition-colors bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg"
+                                >
+                                    <Icon icon={isParsingXml ? "svg-spinners:270-ring-with-bg" : "solar:upload-minimalistic-bold-duotone"} width={14} />
+                                    {isParsingXml ? 'Procesando...' : 'Importar XML'}
+                                </button>
+                            </div>
                         </div>
                         <input
                             ref={xmlInputRef}
@@ -1058,6 +1158,14 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                             accept=".xml,application/xml,text/xml"
                             className="hidden"
                             onChange={handleXmlFileSelect}
+                        />
+                        <input
+                            ref={fotoInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                            capture="environment"
+                            className="hidden"
+                            onChange={handleImagenFileSelect}
                         />
 
                         {/* Banner resultado XML */}
@@ -1153,7 +1261,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
 
                         {/* Add Item Form */}
                         <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800">
-                            <div className="col-span-4">
+                            <div className={paquetesManual.length > 0 ? "col-span-3" : "col-span-4"}>
                                 <Select
                                     key={productSelectKey}
                                     label="Producto"
@@ -1168,6 +1276,27 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                     defaultValue={currentItem.descripcion || undefined}
                                 />
                             </div>
+                            {paquetesManual.length > 0 && (
+                            <div className="col-span-2">
+                                <Select
+                                    label="Presentación"
+                                    name="presentacionManual"
+                                    options={[
+                                        { id: 'UNIDAD', value: 'Unidad' },
+                                        ...paquetesManual.map((pq: any) => ({
+                                            id: pq.codigo,
+                                            value: `${pq.alias || 'Paquete'} (x${pq.unidadesPorPaquete})`,
+                                        })),
+                                    ]}
+                                    onChange={(id) => onPresentacionManualChange(String(id))}
+                                    value={presentacionManual === 'UNIDAD'
+                                        ? 'Unidad'
+                                        : (() => { const pq = paquetesManual.find((p: any) => p.codigo === presentacionManual); return pq ? `${pq.alias || 'Paquete'} (x${pq.unidadesPorPaquete})` : 'Unidad'; })()}
+                                    withLabel
+                                    error={null}
+                                />
+                            </div>
+                            )}
                             <div className="col-span-2">
                                 <InputPro autocomplete="off" type="number" label="Cantidad" name="cantidad" value={currentItem.cantidad} onChange={(e) => setCurrentItem({ ...currentItem, cantidad: Number(e.target.value) })} isLabel />
                             </div>
