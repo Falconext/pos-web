@@ -10,6 +10,7 @@ export interface RubroFeatures {
     permiteFraccionamiento: boolean; // Farmacia
     gestionOfertas: boolean;         // Supermarket
     fichaTecnicaComputo: boolean;    // Accesorios/repuestos de cómputo
+    fichaTecnicaVehiculo: boolean;   // Motos/vehículos: ficha con VIN, motor, cilindrada
     controlSeriesGarantia: boolean;  // Cómputo/electrónica
     controlStock: boolean;           // Todos (siempre true)
     descripcionRica: boolean;        // Cualquier rubro con tienda virtual
@@ -74,6 +75,25 @@ export function esRubroFabricacion(
         nombre.includes('industria') ||
         nombre.includes('producción') ||
         nombre.includes('produccion')
+    );
+}
+
+/**
+ * Rubro de venta de vehículos menores: motos, mototaxis, scooters, trimotos.
+ * Habilita la ficha técnica del vehículo (marca, VIN, motor, cilindrada, año)
+ * que se anexa a la descripción del comprobante estilo boleta vehicular.
+ * NO incluye seguridad/GPS vehicular (ver `esVehicular` en detectarFuncionesRubro).
+ */
+export function esRubroMotos(nombreRubro: string | null | undefined): boolean {
+    if (!nombreRubro) return false;
+    const nombre = nombreRubro.toLowerCase();
+    return (
+        nombre.includes('moto') ||       // moto, motos, motocicleta, mototaxi, motorizado
+        nombre.includes('scooter') ||
+        nombre.includes('trimoto') ||
+        (nombre.includes('vehiculo') && !nombre.includes('seguridad')) ||
+        (nombre.includes('vehículo') && !nombre.includes('seguridad')) ||
+        (nombre.includes('automotriz') && !nombre.includes('repuesto'))
     );
 }
 
@@ -150,6 +170,7 @@ function applyConfiguredFeatures(base: RubroFeatures, input: RubroInput): RubroF
             permiteFraccionamiento: false,
             gestionOfertas: false,
             fichaTecnicaComputo: false,
+            fichaTecnicaVehiculo: false,
             controlSeriesGarantia: false,
             controlStock: true,
             descripcionRica: false,
@@ -186,6 +207,7 @@ export function detectarFuncionesRubro(
             permiteFraccionamiento: false,
             gestionOfertas: false,
             fichaTecnicaComputo: false,
+            fichaTecnicaVehiculo: false,
             controlSeriesGarantia: false,
             controlStock: true,
             descripcionRica: false,
@@ -222,6 +244,7 @@ export function detectarFuncionesRubro(
     // FABRICACIÓN / MANUFACTURA
     const esFabricacion = esRubroFabricacion(nombreRubro);
     const esComputo = esRubroComputo(nombreRubro);
+    const esMotos = esRubroMotos(nombreRubro);
 
     // MODA / TEXTIL / CALZADO (usa variantes color/talla por defecto)
     const esModa =
@@ -274,6 +297,9 @@ export function detectarFuncionesRubro(
         // Cómputo: ficha técnica y trazabilidad por serie/garantía
         fichaTecnicaComputo: esComputo,
         controlSeriesGarantia: esComputo,
+
+        // Motos/vehículos: ficha del vehículo (VIN, motor, cilindrada) en el comprobante
+        fichaTecnicaVehiculo: esMotos,
 
         // Control de stock: TODOS
         controlStock: true,

@@ -50,7 +50,7 @@ interface CreateFormData {
   usaDemo: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
-  producto?: 'facturacion' | 'hotel' | 'logistica';
+  producto?: 'facturacion' | 'hotel' | 'logistica' | 'full' | 'ventas';
   productoContratado?: 'SOLO_VENTAS' | 'TODO_EN_UNO' | 'AMBOS';
   usuario: {
     nombre: string;
@@ -99,7 +99,7 @@ interface EditFormData {
   contrato?: boolean;
   bienvenidaRedes?: boolean;
   brand?: string;
-  producto?: 'facturacion' | 'hotel' | 'logistica';
+  producto?: 'facturacion' | 'hotel' | 'logistica' | 'full' | 'ventas';
   usuario?: {
     nombre?: string;
     email?: string;
@@ -153,18 +153,6 @@ const unirSeriesEmpresa = (series?: EmpresaSerieConfig[] | null, billingProvider
   });
 };
 
-
-const PRODUCTO_CONTRATADO_LABEL: Record<'SOLO_VENTAS' | 'TODO_EN_UNO' | 'AMBOS', string> = {
-  SOLO_VENTAS: 'Solo Ventas (SalesFilter)',
-  TODO_EN_UNO: 'Todo en uno (Falconext)',
-  AMBOS: 'Ambos (Falconext + SalesFilter)',
-};
-
-const PRODUCTO_CONTRATADO_OPTIONS = [
-  { id: 'TODO_EN_UNO', value: PRODUCTO_CONTRATADO_LABEL.TODO_EN_UNO },
-  { id: 'SOLO_VENTAS', value: PRODUCTO_CONTRATADO_LABEL.SOLO_VENTAS },
-  { id: 'AMBOS', value: PRODUCTO_CONTRATADO_LABEL.AMBOS },
-];
 
 export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSaved }: EmpresaFormModalProps) {
   const isEdit = mode === 'edit';
@@ -707,8 +695,10 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {([
                               { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
+                              { id: 'full', label: 'Facturación + Ventas', icon: 'solar:magic-stick-3-bold-duotone', color: '#7C3AED' },
                               { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
                               { id: 'logistica', label: 'Logística', icon: 'solar:routing-2-bold-duotone', color: '#6366F1' },
+                              { id: 'ventas', label: 'Ventas (IA)', icon: 'solar:chat-round-dots-bold-duotone', color: '#10B981' },
                             ] as const).map((p) => {
                               const selectedProducto = isEdit ? editData.producto : createData.producto;
                               const sel = selectedProducto === p.id;
@@ -759,23 +749,6 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       <Select name="rubroId" label="Rubro" options={rubrosOptions} value={isEdit ? (rubrosOptions as any[]).find((r: any) => r.id === editData.rubroId)?.value : (rubrosOptions as any[]).find((r: any) => r.id === createData.rubroId)?.value} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
                     </div>
                     <Select error={() => {}} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
-
-                    {!isEdit && (
-                      <div className="md:col-span-2">
-                        <Select
-                          error={() => {}}
-                          name="productoContratado"
-                          label="Producto contratado"
-                          options={PRODUCTO_CONTRATADO_OPTIONS}
-                          value={PRODUCTO_CONTRATADO_LABEL[createData.productoContratado || 'TODO_EN_UNO']}
-                          onChange={(id: any, v: string) => handleSelect(id, v, 'productoContratado')}
-                          withLabel
-                        />
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          "Solo Ventas" crea además la cuenta en SalesFilter (el cliente inicia sesión allá). "Ambos" hace las dos.
-                        </p>
-                      </div>
-                    )}
 
                     <div className="md:col-span-2">
                       <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />

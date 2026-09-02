@@ -136,7 +136,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     farmacia: features.gestionLotes && esFarmaceutico,
     fraccionamiento: features.permiteFraccionamiento,
     ofertas: features.gestionOfertas,
-    fichaComputo: features.fichaTecnicaComputo,
+    fichaComputo: features.fichaTecnicaComputo || features.fichaTecnicaVehiculo,
     seriesGarantia: features.controlSeriesGarantia,
     ecommerce: tieneTienda,
     descripcionRica: tieneDescripcionRica,

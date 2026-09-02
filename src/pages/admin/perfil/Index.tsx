@@ -2,7 +2,8 @@ import { usePerfilViewModel } from '@/features/admin/perfil/usePerfilViewModel';
 import { Icon } from '@iconify/react';
 import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
-import { hasPlanFeature } from '@/utils/permissions';
+import { hasPlanFeature, hasPermission } from '@/utils/permissions';
+import { useAuthStore } from '@/zustand/auth';
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
@@ -10,6 +11,9 @@ import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
+    const { auth } = useAuthStore();
+    // "Conectar WhatsApp" solo para quienes tienen el módulo IA de Ventas (plan de Ventas).
+    const tieneVentas = hasPermission(auth as any, 'leads');
     const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingVentaSinStockConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword } = vm;
     const [showActual, setShowActual] = useState(false);
     const [showNueva, setShowNueva] = useState(false);
@@ -392,7 +396,9 @@ export default function PerfilIndex() {
                     </div>
                     )}
 
-                    {/* ── Conectar mi WhatsApp (Embedded Signup / número propio) ── */}
+                    {/* ── Conectar mi WhatsApp (Embedded Signup / número propio) ──
+                        Solo visible si la empresa tiene el plan de Ventas (módulo IA de Ventas). */}
+                    {tieneVentas && (
                     <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-900/30 dark:bg-[#111827] ${configTab}`}>
                         <div className="relative border-b border-emerald-100/70 bg-gradient-to-br from-emerald-50 via-white to-green-50 p-5 dark:border-emerald-900/30 dark:from-emerald-950/30 dark:via-[#111827] dark:to-green-950/20">
                             <div className="flex items-start gap-3">
@@ -417,6 +423,7 @@ export default function PerfilIndex() {
                             />
                         </div>
                     </div>
+                    )}
 
                     {/* ── Rastreo Shalom (courier) — automático, sin cuenta Pro ── */}
                     {puedeShalom && (
