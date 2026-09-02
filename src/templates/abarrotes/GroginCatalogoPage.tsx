@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
-import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary } from './GroginParts';
+import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary, titleCase } from './GroginParts';
 import { groCard, groPage, groSection, groStagger, groViewport } from './motion';
 
 function getName(item: any) {
@@ -126,7 +126,7 @@ export default function GroginCatalogoPage({
                     const name = getName(cat);
                     const active = selectedCategorías.includes(name);
                     return (
-                      <button key={`${name}-${i}`} type="button" onClick={() => toggleCategory(name)} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors" style={active ? { backgroundColor: GRO.greenSoft, color: GRO.greenDark } : { color: GRO.inkSoft }}>{name}</button>
+                      <button key={`${name}-${i}`} type="button" onClick={() => toggleCategory(name)} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors" style={active ? { backgroundColor: GRO.greenSoft, color: GRO.greenDark } : { color: GRO.inkSoft }}>{titleCase(name)}</button>
                     );
                   })}
                 </div>

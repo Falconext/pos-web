@@ -1253,9 +1253,9 @@ const COMIDA_APP_LINK_FIELDS: LinkFieldDef[] = [
 ];
 
 const ABARROTES_IMAGE_FIELDS: ImageFieldDef[] = [
-  { key: 'abarrotesHeroImage', label: 'Slider · Slide 1: imagen', hint: 'Imagen del primer slide del hero. Recomendado 900×700px.', fallback: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=600&q=80' },
-  { key: 'abarrotesSlide2Image', label: 'Slider · Slide 2: imagen', hint: 'Imagen del segundo slide del hero. Recomendado 900×700px.', fallback: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80' },
-  { key: 'abarrotesSlide3Image', label: 'Slider · Slide 3: imagen', hint: 'Imagen del tercer slide del hero. Recomendado 900×700px.', fallback: 'https://images.unsplash.com/photo-1579113800032-c38bd7635818?auto=format&fit=crop&w=600&q=80' },
+  { key: 'abarrotesHeroImage', label: 'Slider · Slide 1: imagen (banner completo)', hint: 'Imagen de fondo del banner (a todo el ancho). Recomendado 1600×640px, horizontal.', fallback: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80' },
+  { key: 'abarrotesSlide2Image', label: 'Slider · Slide 2: imagen (banner completo)', hint: 'Imagen de fondo del banner (a todo el ancho). Recomendado 1600×640px, horizontal.', fallback: 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=600&q=80' },
+  { key: 'abarrotesSlide3Image', label: 'Slider · Slide 3: imagen (banner completo)', hint: 'Imagen de fondo del banner (a todo el ancho). Recomendado 1600×640px, horizontal.', fallback: 'https://images.unsplash.com/photo-1607349913338-fca6f7fc42d0?auto=format&fit=crop&w=600&q=80' },
   { key: 'abarrotesPromoOneImage', label: 'Banner promo 1', hint: 'Fondo del banner promocional izquierdo. Recomendado 700×300px.', fallback: 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=600&q=80' },
   { key: 'abarrotesPromoTwoImage', label: 'Banner promo 2', hint: 'Fondo del banner promocional derecho. Recomendado 700×300px.', fallback: 'https://images.unsplash.com/photo-1584680226833-0d680d0a0794?auto=format&fit=crop&w=600&q=80' },
   { key: 'abarrotesSafetyImage', label: 'Banda de salud/seguridad', hint: 'Imagen de la banda "tu salud es nuestra prioridad". Recomendado 500×300px.', fallback: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80' },

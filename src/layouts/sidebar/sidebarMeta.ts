@@ -81,6 +81,7 @@ export const LEGACY_MODULE_ROUTES: Record<string, string> = {
   vehiculos: '/administrador/vehiculos',
   'contratos-vehiculares': '/administrador/vehiculos/contratos',
   logistica: '/administrador/logistica/dashboard',
+  leads: '/administrador/leads',
 };
 
 // Fallback routes for submodules that don't have ruta set in DB yet
@@ -320,6 +321,12 @@ export const MODULE_META: Record<string, ModuleMeta> = {
       { codigo: 'logistica:importar', nombre: 'Importar Flota', ruta: '/administrador/logistica/importar' },
       { codigo: 'logistica:integraciones', nombre: 'Integraciones', ruta: '/administrador/logistica/integraciones' },
     ],
+  },
+
+  leads: {
+    navRoute: () => '/administrador/leads',
+    pathPrefix: () => '/administrador/leads',
+    exactPath: true,
   },
 };
 

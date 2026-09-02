@@ -223,6 +223,8 @@ export default function PanelVentasView() {
         return defaults;
     });
     const [showColsMenu, setShowColsMenu] = useState(false);
+    // Fila cuyo popover "ver más productos" está abierto (key = `${tipo}-${id}`).
+    const [prodPopover, setProdPopover] = useState<string | null>(null);
     const col = (key: string) => visibleCols[key] !== false;
     const toggleCol = (key: string) => {
         setVisibleCols((prev) => {
@@ -280,7 +282,7 @@ export default function PanelVentasView() {
     // Paginación (client-side) de la tabla de ventas.
     const PAGE_SIZE = 20;
     const [page, setPage] = useState(1);
-    useEffect(() => { setPage(1); }, [vm.tab, vm.filtroUsuarioId, vm.busqueda, vm.fecha, vm.fechaFin, filasVisibles.length]);
+    useEffect(() => { setPage(1); }, [vm.tab, vm.filtroUsuarioId, vm.busqueda, vm.filtroProducto, vm.fecha, vm.fechaFin, filasVisibles.length]);
     const totalPages = Math.max(1, Math.ceil(filasVisibles.length / PAGE_SIZE));
     const filasPagina = filasVisibles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -652,6 +654,17 @@ export default function PanelVentasView() {
                             </>
                         )}
                     </div>
+                    {/* Filtro por Producto */}
+                    <div className="relative">
+                        <Icon icon="solar:box-minimalistic-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+                        <input
+                            type="text"
+                            placeholder="Producto"
+                            value={vm.filtroProducto}
+                            onChange={(e) => vm.setFiltroProducto(e.target.value)}
+                            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-40"
+                        />
+                    </div>
                     {/* Filtro Serie Garantía */}
                     <div className="relative">
                         <Icon icon="solar:shield-check-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
@@ -812,25 +825,34 @@ export default function PanelVentasView() {
                                             </td>
                                             {mostrarProductos && (
                                                 <td className="px-3 py-2.5 max-w-[220px]">
-                                                    {item.productos && item.productos.length > 0 ? (
-                                                        <div className="space-y-1">
-                                                            {item.productos.slice(0, 3).map((prod, idx) => (
-                                                                <div key={idx} className="flex items-center gap-1.5">
-                                                                    <span className="flex-shrink-0 min-w-[22px] h-[18px] flex items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30 text-[9px] font-black text-violet-600 dark:text-violet-400 px-1">
-                                                                        {prod.cantidad}x
-                                                                    </span>
-                                                                    <span className="text-[10px] text-gray-700 dark:text-gray-300 truncate leading-tight" title={prod.nombre}>
-                                                                        {prod.nombre}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                            {item.productos.length > 3 && (
-                                                                <span className="text-[9px] text-slate-400 dark:text-slate-500 pl-0.5">
-                                                                    +{item.productos.length - 3} más
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ) : (
+                                                    {item.productos && item.productos.length > 0 ? (() => {
+                                                        const prodKey = `${item.tipo}-${item.id}`;
+                                                        const abierto = prodPopover === prodKey;
+                                                        const visibles = abierto ? item.productos : item.productos.slice(0, 3);
+                                                        return (
+                                                            <div className="space-y-1">
+                                                                {visibles.map((prod, idx) => (
+                                                                    <div key={idx} className="flex items-center gap-1.5">
+                                                                        <span className="flex-shrink-0 min-w-[22px] h-[18px] flex items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30 text-[9px] font-black text-violet-600 dark:text-violet-400 px-1">
+                                                                            {prod.cantidad}x
+                                                                        </span>
+                                                                        <span className={`text-[10px] text-gray-700 dark:text-gray-300 leading-tight ${abierto ? '' : 'truncate'}`} title={prod.nombre}>
+                                                                            {prod.nombre}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                                {item.productos.length > 3 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setProdPopover(abierto ? null : prodKey)}
+                                                                        className="text-[9px] font-bold text-violet-600 dark:text-violet-400 hover:underline pl-0.5"
+                                                                    >
+                                                                        {abierto ? 'ver menos' : `+${item.productos.length - 3} más · ver todos`}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })() : (
                                                         <span className="text-slate-300 dark:text-slate-600 text-xs">—</span>
                                                     )}
                                                 </td>

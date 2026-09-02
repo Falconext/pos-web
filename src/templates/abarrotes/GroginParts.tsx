@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -35,6 +35,11 @@ export const GRO = {
 
 export const groPrimary = (cp?: string) => cp || GRO.green;
 export const groFont = (diseno?: any) => `'${diseno?.tipografia || 'Lato'}', ui-sans-serif, system-ui, sans-serif`;
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+
+/** Convierte "ACEITES Y VINAGRES" → "Aceites Y Vinagres" y "AZÚCAR" → "Azúcar" (respeta tildes). */
+export const titleCase = (s: any) => String(s || '').toLowerCase().replace(/(^|[\s/&·,-])(\p{L})/gu, (_m, sep, ch) => sep + ch.toUpperCase());
 
 export function withAlpha(hex: string, alpha: string) {
   return /^#([0-9a-fA-F]{6})$/.test(hex) ? `${hex}${alpha}` : hex;
@@ -171,6 +176,77 @@ export function GroProductCard({
   );
 }
 
+/* ─────────────────────────── Buscador con dropdown ──────────────────────── */
+
+function GroSearchBox({ slug, primary, diseno, initial = '', setValue, onSubmit, mobile = false }: {
+  slug: string; primary: string; diseno?: any; initial?: string;
+  setValue?: (v: string) => void; onSubmit?: (e: React.FormEvent, value?: string) => void; mobile?: boolean;
+}) {
+  const [q, setQ] = useState(initial || '');
+  const [results, setResults] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
+
+  useEffect(() => { setQ(initial || ''); }, [initial]);
+
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2 || slug === 'preview') { setResults([]); setLoading(false); return; }
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/public/store/${slug}/products?search=${encodeURIComponent(term)}&limit=6`);
+        const json = await res.json();
+        const arr = json?.data?.data ?? json?.data ?? [];
+        setResults(Array.isArray(arr) ? arr.slice(0, 6) : []);
+      } catch { setResults([]); } finally { setLoading(false); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, slug]);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const goProduct = (id: any) => { setOpen(false); if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; } window.location.href = `/tienda/${slug}/producto/${id}`; };
+  const goAll = () => { setOpen(false); const term = q.trim(); if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; } window.location.href = `/tienda/${slug}/catalogo${term ? `?search=${encodeURIComponent(term)}` : ''}`; };
+
+  return (
+    <div ref={boxRef} className={`relative ${mobile ? '' : 'mx-auto hidden max-w-2xl flex-1 md:block'}`}>
+      <form onSubmit={(e) => { e.preventDefault(); setOpen(false); if (onSubmit) onSubmit(e, q); else goAll(); }} className="flex h-11 items-center overflow-hidden rounded-full border bg-white" style={{ borderColor: primary }}>
+        <input value={q} onChange={(e) => { setQ(e.target.value); setValue?.(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} placeholder={diseno?.abarrotesSearchPlaceholder || 'Busca productos, marcas y categorías...'} className="h-full flex-1 border-0 bg-transparent px-5 text-sm text-neutral-800 outline-none placeholder:text-neutral-400 focus:ring-0" />
+        <button type="submit" className="flex h-full items-center gap-1.5 px-5 text-sm font-bold text-white" style={{ backgroundColor: primary }}><Icon icon="solar:magnifer-linear" width={17} /> <span className={mobile ? 'hidden' : 'hidden lg:inline'}>Buscar</span></button>
+      </form>
+      <AnimatePresence>
+        {open && q.trim().length >= 2 && (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }} className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border bg-white shadow-[0_20px_50px_-20px_rgba(37,61,78,0.4)]" style={{ borderColor: GRO.line }}>
+            {loading ? (
+              <div className="flex items-center gap-2 p-4 text-sm text-neutral-400"><Icon icon="svg-spinners:ring-resize" width={18} /> Buscando…</div>
+            ) : results.length === 0 ? (
+              <button type="button" onClick={goAll} className="block w-full p-4 text-left text-sm text-neutral-500 hover:bg-neutral-50">Sin coincidencias. Ver todo para “{q.trim()}” →</button>
+            ) : (
+              <>
+                {results.map((p) => (
+                  <button key={p.id} type="button" onClick={() => goProduct(p.id)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-neutral-50">
+                    <span className="h-10 w-10 shrink-0 overflow-hidden rounded-lg p-1" style={{ backgroundColor: GRO.soft2 }}><GroProductImage producto={p} /></span>
+                    <span className="line-clamp-1 min-w-0 flex-1 text-sm font-medium" style={{ color: GRO.ink }}>{p.descripcion || p.nombre}</span>
+                    <span className="shrink-0 text-sm font-bold" style={{ color: primary }}>{money(p.precioUnitario ?? p.precio ?? p.precioVenta ?? 0)}</span>
+                  </button>
+                ))}
+                <button type="button" onClick={goAll} className="block w-full border-t px-4 py-2.5 text-center text-[13px] font-bold hover:bg-neutral-50" style={{ borderColor: GRO.line, color: primary }}>Ver todos los resultados →</button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* ─────────────────────────────────── Header ─────────────────────────────── */
 
 export function GroHeader({
@@ -224,35 +300,26 @@ export function GroHeader({
       {/* Header principal */}
       <header className="border-b bg-white" style={{ borderColor: GRO.line }}>
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-4 md:px-6">
-          <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2">
-            {tienda?.logo ? (
-              <img src={tienda.logo} alt={name} className="h-10 object-contain" />
-            ) : (
-              <>
-                <span className="grid h-9 w-9 place-items-center rounded-full text-white" style={{ backgroundColor: primary }}>
-                  <Icon icon="solar:leaf-bold" width={19} />
-                </span>
-                <span className="text-2xl font-bold lowercase tracking-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{name}</span>
-              </>
-            )}
-          </a>
-
-          {/* Buscador */}
-          <form
-            onSubmit={(e) => onSearchSubmit?.(e, searchQuery)}
-            className="mx-auto hidden h-11 max-w-2xl flex-1 items-center overflow-hidden rounded-full border md:flex"
-            style={{ borderColor: primary }}
+          <motion.a
+            href={`/tienda/${slug}`}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: groEase }}
+            whileHover={{ scale: 1.02 }}
+            className="flex shrink-0 items-center gap-2.5"
           >
-            <input
-              value={searchQuery || ''}
-              onChange={(e) => setSearchQuery?.(e.target.value)}
-              placeholder={diseno?.abarrotesSearchPlaceholder || 'Busca productos, marcas y categorías...'}
-              className="h-full flex-1 border-0 bg-transparent px-5 text-sm text-neutral-800 outline-none placeholder:text-neutral-400 focus:ring-0"
-            />
-            <button type="submit" className="flex h-full items-center gap-1.5 px-6 text-sm font-bold text-white" style={{ backgroundColor: primary }}>
-              <Icon icon="solar:magnifer-linear" width={17} /> <span className="hidden lg:inline">Buscar</span>
-            </button>
-          </form>
+            {tienda?.logo ? (
+              <img src={tienda.logo} alt={name} className="h-10 w-10 rounded-full object-cover ring-1" style={{ ['--tw-ring-color' as any]: GRO.line }} />
+            ) : (
+              <span className="grid h-10 w-10 place-items-center rounded-full text-white" style={{ backgroundColor: primary }}>
+                <Icon icon="solar:leaf-bold" width={20} />
+              </span>
+            )}
+            <span className="text-2xl font-bold lowercase leading-none tracking-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{name}</span>
+          </motion.a>
+
+          {/* Buscador con dropdown en vivo */}
+          <GroSearchBox slug={slug} primary={primary} diseno={diseno} initial={searchQuery} setValue={setSearchQuery} onSubmit={onSearchSubmit} />
 
           <div className="ml-auto flex items-center gap-1 md:ml-0">
             <button type="button" onClick={() => setOpenFavs(true)} className="relative rounded-full p-2.5 transition-colors hover:bg-neutral-100" style={{ color: GRO.ink }} title="Favoritos">
@@ -279,15 +346,7 @@ export function GroHeader({
 
         {/* Buscador móvil */}
         <div className="px-5 pb-3 md:hidden">
-          <form onSubmit={(e) => onSearchSubmit?.(e, searchQuery)} className="flex h-11 items-center overflow-hidden rounded-full border" style={{ borderColor: primary }}>
-            <input
-              value={searchQuery || ''}
-              onChange={(e) => setSearchQuery?.(e.target.value)}
-              placeholder="Buscar productos..."
-              className="h-full flex-1 border-0 bg-transparent px-4 text-sm outline-none placeholder:text-neutral-400 focus:ring-0"
-            />
-            <button type="submit" className="flex h-full items-center px-5 text-white" style={{ backgroundColor: primary }}><Icon icon="solar:magnifer-linear" width={18} /></button>
-          </form>
+          <GroSearchBox slug={slug} primary={primary} diseno={diseno} initial={searchQuery} setValue={setSearchQuery} onSubmit={onSearchSubmit} mobile />
         </div>
       </header>
 
@@ -301,7 +360,7 @@ export function GroHeader({
             <a href={`/tienda/${slug}`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--gro-cp)]" style={{ color: GRO.ink, ['--gro-cp' as any]: primary }}>Inicio</a>
             <a href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--gro-cp)]" style={{ color: GRO.ink, ['--gro-cp' as any]: primary }}>Tienda</a>
             {navCats.map((category) => (
-              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)] lg:inline" style={{ ['--gro-cp' as any]: primary }}>{category}</a>
+              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)] lg:inline" style={{ ['--gro-cp' as any]: primary }}>{titleCase(category)}</a>
             ))}
             <a href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors" style={{ color: GRO.pink }}>Ofertas</a>
             <a href={`/tienda/${slug}/contacto`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>Contacto</a>
@@ -399,7 +458,7 @@ export function GroFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           <div className="space-y-2.5 text-sm" style={{ color: GRO.inkSoft }}>
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>{cat}</a>
+                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>{titleCase(cat)}</a>
               ))
             ) : (
               <a href={`/tienda/${slug}/catalogo`} className="block">Ver todo</a>

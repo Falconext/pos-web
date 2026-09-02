@@ -107,6 +107,7 @@ import DispositivosPage from './features/admin/logistica/dispositivos/Dispositiv
 import GeocercasPage from './features/admin/logistica/geocercas/GeocercasPage'
 import ImportarPage from './features/admin/logistica/importar/ImportarPage'
 import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
+import LeadsPage from './features/admin/leads/LeadsPage'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -243,6 +244,11 @@ function App() {
             <Route path="logistica/geocercas" element={<GeocercasPage />} />
             <Route path="logistica/importar" element={<ImportarPage />} />
             <Route path="logistica/integraciones" element={<IntegracionesPage />} />
+          </Route>
+
+          {/* Módulo IA de Ventas / Leads — gateado por el módulo 'leads' del plan */}
+          <Route element={<ModuleRoute module="leads" />}>
+            <Route path="leads" element={<LeadsPage />} />
           </Route>
 
           {/* Rutas de ADMIN_SISTEMA */}

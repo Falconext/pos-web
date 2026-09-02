@@ -4,15 +4,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
-import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary } from './GroginParts';
+import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary, titleCase } from './GroginParts';
 import { groCard, groEase, groPage, groSection, groStagger, groTap, groViewport } from './motion';
 
 const navigate = (to: string) => { window.location.href = to; };
 
 const HERO_FALLBACKS = [
-  'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1000&q=80',
-  'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80',
-  'https://images.unsplash.com/photo-1579113800032-c38bd7635818?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=80',
+  'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=1600&q=80',
+  'https://images.unsplash.com/photo-1607349913338-fca6f7fc42d0?auto=format&fit=crop&w=1600&q=80',
 ];
 const CATEGORY_FALLBACKS = [
   'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80',
@@ -121,26 +121,34 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
             </motion.button>
           </AnimatePresence>
         ) : (
-          <div className="grid items-center gap-6 px-7 py-10 md:grid-cols-2 md:gap-8 md:px-14 md:py-14">
+          <div className="relative h-[440px] overflow-hidden md:h-[520px]">
             <AnimatePresence mode="wait">
-              <motion.div key={`c-${index}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.5, ease: groEase }}>
-                <span className="inline-block rounded-full bg-white px-3 py-1 text-[11px] font-bold shadow-sm" style={{ color: GRO.purple }}>{slide.eyebrow}</span>
-                <h1 className="mt-4 text-3xl font-bold leading-[1.08] md:text-[2.9rem]" style={{ fontFamily: GRO.display, color: GRO.ink }}>
-                  {slide.title} {slide.title2 && <span style={{ color: primary }}>{slide.title2}</span>}
-                </h1>
-                {slide.subtitle && <p className="mt-4 max-w-md text-sm leading-relaxed md:text-[15px]" style={{ color: GRO.inkSoft }}>{slide.subtitle}</p>}
-                <div className="mt-7 flex flex-wrap items-center gap-4">
-                  <motion.button type="button" onClick={() => goAction(slide.actionKey)} whileHover={{ scale: 1.03, y: -2 }} whileTap={groTap} className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-lg" style={{ backgroundColor: primary }}>
-                    {slide.button} <Icon icon="solar:arrow-right-linear" width={17} />
-                  </motion.button>
-                  {slide.price && <span className="text-sm font-bold" style={{ color: GRO.pink }}>{slide.price}</span>}
-                </div>
-              </motion.div>
+              <motion.img
+                key={`img-${index}`}
+                src={slide.image}
+                alt={slide.eyebrow}
+                initial={{ opacity: 0, scale: 1.06 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, ease: groEase }}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             </AnimatePresence>
-            <div className="order-first md:order-last">
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(243,239,251,0.97) 0%, rgba(248,244,254,0.92) 32%, rgba(255,255,255,0.5) 56%, rgba(255,255,255,0.06) 80%, rgba(255,255,255,0) 100%)' }} />
+            <div className="absolute inset-0 flex items-center">
               <AnimatePresence mode="wait">
-                <motion.div key={`i-${index}`} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: groEase }} className="mx-auto aspect-[4/3] max-w-md overflow-hidden rounded-2xl">
-                  <img src={slide.image} alt={slide.eyebrow} className="h-full w-full object-cover" />
+                <motion.div key={`c-${index}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.5, ease: groEase }} className="max-w-lg px-7 md:px-14">
+                  <span className="inline-block rounded-full bg-white px-3 py-1 text-[11px] font-bold shadow-sm" style={{ color: GRO.purple }}>{slide.eyebrow}</span>
+                  <h1 className="mt-4 text-4xl font-bold leading-[1.05] md:text-[3.1rem]" style={{ fontFamily: GRO.display, color: GRO.ink }}>
+                    {slide.title} {slide.title2 && <span style={{ color: primary }}>{slide.title2}</span>}
+                  </h1>
+                  {slide.subtitle && <p className="mt-4 max-w-md text-sm leading-relaxed md:text-[15px]" style={{ color: GRO.inkSoft }}>{slide.subtitle}</p>}
+                  <div className="mt-7 flex flex-wrap items-center gap-4">
+                    <motion.button type="button" onClick={() => goAction(slide.actionKey)} whileHover={{ scale: 1.03, y: -2 }} whileTap={groTap} className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-lg" style={{ backgroundColor: primary }}>
+                      {slide.button} <Icon icon="solar:arrow-right-linear" width={17} />
+                    </motion.button>
+                    {slide.price && <span className="text-sm font-bold" style={{ color: GRO.pink }}>{slide.price}</span>}
+                  </div>
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -249,7 +257,7 @@ export default function GroginHomePage({
                   <span className="grid h-16 w-16 place-items-center overflow-hidden rounded-full" style={{ backgroundColor: CATEGORY_TINTS[i % CATEGORY_TINTS.length] }}>
                     <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   </span>
-                  <span className="line-clamp-2 text-[11.5px] font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{cat.nombre}</span>
+                  <span className="line-clamp-2 text-[11.5px] font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{titleCase(cat.nombre)}</span>
                 </motion.a>
               ))}
             </motion.div>

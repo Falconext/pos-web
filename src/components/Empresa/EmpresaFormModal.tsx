@@ -51,6 +51,7 @@ interface CreateFormData {
   usaCodigoBarrasManual?: boolean;
   brand?: string;
   producto?: 'facturacion' | 'hotel' | 'logistica';
+  productoContratado?: 'SOLO_VENTAS' | 'TODO_EN_UNO' | 'AMBOS';
   usuario: {
     nombre: string;
     email: string;
@@ -153,6 +154,18 @@ const unirSeriesEmpresa = (series?: EmpresaSerieConfig[] | null, billingProvider
 };
 
 
+const PRODUCTO_CONTRATADO_LABEL: Record<'SOLO_VENTAS' | 'TODO_EN_UNO' | 'AMBOS', string> = {
+  SOLO_VENTAS: 'Solo Ventas (SalesFilter)',
+  TODO_EN_UNO: 'Todo en uno (Falconext)',
+  AMBOS: 'Ambos (Falconext + SalesFilter)',
+};
+
+const PRODUCTO_CONTRATADO_OPTIONS = [
+  { id: 'TODO_EN_UNO', value: PRODUCTO_CONTRATADO_LABEL.TODO_EN_UNO },
+  { id: 'SOLO_VENTAS', value: PRODUCTO_CONTRATADO_LABEL.SOLO_VENTAS },
+  { id: 'AMBOS', value: PRODUCTO_CONTRATADO_LABEL.AMBOS },
+];
+
 export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSaved }: EmpresaFormModalProps) {
   const isEdit = mode === 'edit';
   const navigate = useNavigate();
@@ -198,6 +211,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     billingApiPassword: '',
     brand: '',
     producto: 'facturacion',
+    productoContratado: 'TODO_EN_UNO',
     usuario: { nombre: '', email: '', password: '', dni: '', celular: '' },
   }), []);
 
@@ -745,6 +759,23 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                       <Select name="rubroId" label="Rubro" options={rubrosOptions} value={isEdit ? (rubrosOptions as any[]).find((r: any) => r.id === editData.rubroId)?.value : (rubrosOptions as any[]).find((r: any) => r.id === createData.rubroId)?.value} onChange={(id: any, v: string) => handleSelect(id, v, 'rubroId')} error={errors.rubroId} withLabel />
                     </div>
                     <Select error={() => {}} name="tipoEmpresa" label="Tipo de Empresa" options={[{ id: 'FORMAL', value: 'Empresa Formal' }, { id: 'INFORMAL', value: 'Empresa Informal' }]} value={isEdit ? (editData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal') : (createData.tipoEmpresa === 'FORMAL' ? 'Empresa Formal' : 'Empresa Informal')} onChange={(id: any, v: string) => handleSelect(id, v, 'tipoEmpresa')} withLabel />
+
+                    {!isEdit && (
+                      <div className="md:col-span-2">
+                        <Select
+                          error={() => {}}
+                          name="productoContratado"
+                          label="Producto contratado"
+                          options={PRODUCTO_CONTRATADO_OPTIONS}
+                          value={PRODUCTO_CONTRATADO_LABEL[createData.productoContratado || 'TODO_EN_UNO']}
+                          onChange={(id: any, v: string) => handleSelect(id, v, 'productoContratado')}
+                          withLabel
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          "Solo Ventas" crea además la cuenta en SalesFilter (el cliente inicia sesión allá). "Ambos" hace las dos.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="md:col-span-2">
                       <InputPro name="direccion" label="Dirección" isLabel value={isEdit ? editData.direccion : createData.direccion} onChange={handleChange} error={errors.direccion} />

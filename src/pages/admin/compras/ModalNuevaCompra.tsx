@@ -181,8 +181,15 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     // XML import
     const xmlInputRef = useRef<HTMLInputElement>(null);
     const fotoInputRef = useRef<HTMLInputElement>(null);
+    // Input aparte para "Adjuntar foto" (evidencia): sube la imagen sin leerla
+    // con IA ni sobrescribir los datos de la compra.
+    const fotoEvidenciaInputRef = useRef<HTMLInputElement>(null);
     const [isParsingXml, setIsParsingXml] = useState(false);
     const [isParsingFoto, setIsParsingFoto] = useState(false);
+    const [isUploadingFoto, setIsUploadingFoto] = useState(false);
+    // URL en S3 de la foto de la factura/boleta leída por IA. Se guarda con la
+    // compra y se muestra como evidencia en el detalle.
+    const [fotoUrl, setFotoUrl] = useState<string | null>(null);
     const [supplierDisplay, setSupplierDisplay] = useState('');
     const [xmlBanner, setXmlBanner] = useState<{ matched: number; total: number; proveedor: boolean } | null>(null);
     const [xmlSupplierInfo, setXmlSupplierInfo] = useState<{ ruc: string; nombre: string } | null>(null);
@@ -223,6 +230,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             setPresentacionManual('UNIDAD');
             setPaquetesManual([]);
             setSupplierDisplay('');
+            setFotoUrl(null);
             setXmlBanner(null);
             setXmlSupplierInfo(null);
             setLinkingRowIndex(null);
@@ -262,6 +270,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     setSupplierDisplay(provLabel);
                 }
                 setSedeDestinoId(Number(d.sedeId || 0));
+                setFotoUrl(d.fotoUrl || null);
                 // Restaurar condición de pago: si la compra tiene cuotas guardadas es
                 // a CRÉDITO; de lo contrario, CONTADO. El método de pago se toma del
                 // primer pago registrado, si existe.
@@ -742,11 +751,40 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             const data = res.data?.data ?? res.data;
+            if (data?.fotoUrl) setFotoUrl(data.fotoUrl);
             aplicarDatosCompraImportada(data, 'foto');
         } catch (err: any) {
             alert(err?.response?.data?.message || 'No se pudo leer la foto. Probá con una imagen más nítida y bien iluminada.', 'error');
         } finally {
             setIsParsingFoto(false);
+        }
+    };
+
+    // Adjunta una foto como evidencia SIN leerla con IA: solo la sube a S3 y
+    // guarda su URL. No modifica proveedor ni ítems. Ideal para agregarle la
+    // foto a una compra que ya se registró sin ella.
+    const handleFotoEvidenciaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        setIsUploadingFoto(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await apiClient.post('/compras/subir-foto', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const data = res.data?.data ?? res.data;
+            if (data?.fotoUrl) {
+                setFotoUrl(data.fotoUrl);
+                alert('Foto adjuntada. Guarda la compra para conservarla.', 'success');
+            } else {
+                alert('No se pudo adjuntar la foto.', 'error');
+            }
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'No se pudo adjuntar la foto.', 'error');
+        } finally {
+            setIsUploadingFoto(false);
         }
     };
 
@@ -947,6 +985,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             metodoPagoInicial: payment.metodoPagoInicial,
             cuentaBancariaIdInicial: payment.metodoPagoInicial === 'TRANSFERENCIA' ? (payment.cuentaBancariaId || undefined) : undefined,
             referenciaInicial: payment.metodoPagoInicial === 'TRANSFERENCIA' ? (payment.numeroOperacion || undefined) : undefined,
+            // Siempre se envía (url o null) para que también se pueda quitar la
+            // foto al editar; en edición el estado ya trae la foto existente.
+            fotoUrl: fotoUrl || null,
             cuotas: payment.condicionPago === 'CREDITO' ? cuotas : undefined,
             subtotal,
             igv,
@@ -1145,6 +1186,16 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                 </button>
                                 <button
                                     type="button"
+                                    onClick={() => fotoEvidenciaInputRef.current?.click()}
+                                    disabled={isUploadingFoto}
+                                    title="Adjunta una foto de la factura/boleta como evidencia, sin leerla ni modificar los datos"
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 disabled:opacity-50 transition-colors bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-lg"
+                                >
+                                    <Icon icon={isUploadingFoto ? "svg-spinners:270-ring-with-bg" : "solar:paperclip-bold-duotone"} width={14} />
+                                    {isUploadingFoto ? 'Subiendo...' : (fotoUrl ? 'Cambiar foto' : 'Adjuntar foto')}
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => xmlInputRef.current?.click()}
                                     disabled={isParsingXml}
                                     className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50 transition-colors bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg"
@@ -1169,6 +1220,35 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                             className="hidden"
                             onChange={handleImagenFileSelect}
                         />
+                        <input
+                            ref={fotoEvidenciaInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                            capture="environment"
+                            className="hidden"
+                            onChange={handleFotoEvidenciaSelect}
+                        />
+
+                        {/* Foto adjunta (evidencia de la factura/boleta leída por IA) */}
+                        {fotoUrl && (
+                            <div className="mb-3 flex items-center gap-3 p-2.5 rounded-xl border border-violet-100 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-900/10">
+                                <a href={fotoUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                                    <img src={fotoUrl} alt="Foto de la compra" className="h-14 w-14 object-cover rounded-lg border border-violet-200 dark:border-violet-700" />
+                                </a>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-violet-700 dark:text-violet-300">Foto de la factura/boleta adjunta</p>
+                                    <a href={fotoUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-violet-500 hover:underline">Ver en tamaño completo</a>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setFotoUrl(null)}
+                                    title="Quitar foto"
+                                    className="shrink-0 text-gray-400 hover:text-rose-500 transition-colors"
+                                >
+                                    <Icon icon="solar:close-circle-bold-duotone" width={20} />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Banner resultado XML */}
                         {xmlBanner && (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { get, put } from '@/utils/fetch';
+import { get, put, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 
 interface DespachoConfig {
@@ -105,13 +105,14 @@ export default function DespachoConfigPage() {
     const navigate = useNavigate();
     const { alert } = useAlertStore();
     const [config, setConfig] = useState<DespachoConfig>(DEFAULTS);
+    const [autoTracking, setAutoTracking] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
     const cargar = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await get<DespachoConfig>('/envio-despacho/config');
+            const res = await get<DespachoConfig & { shalomAutoTrackingActivo?: boolean }>('/envio-despacho/config');
             if (res.data) {
                 setConfig({
                     mensajeEnCamino: res.data.mensajeEnCamino ?? DEFAULTS.mensajeEnCamino,
@@ -119,6 +120,7 @@ export default function DespachoConfigPage() {
                     notificarEnCamino: res.data.notificarEnCamino ?? true,
                     notificarEntregado: res.data.notificarEntregado ?? true,
                 });
+                setAutoTracking(res.data.shalomAutoTrackingActivo ?? false);
             }
         } catch {
             alert('Error al cargar configuración', 'error');
@@ -126,6 +128,24 @@ export default function DespachoConfigPage() {
             setLoading(false);
         }
     }, [alert]);
+
+    // El rastreo automático se guarda al instante (no espera al botón "Guardar"),
+    // porque activa un comportamiento con efectos hacia el cliente (WhatsApp).
+    const toggleAutoTracking = async (activo: boolean) => {
+        setAutoTracking(activo); // optimista
+        try {
+            await patch('/envio-despacho/auto-tracking', { activo });
+            alert(
+                activo
+                    ? 'Rastreo automático Shalom ACTIVADO: los estados se actualizarán solos y se avisará al cliente por WhatsApp.'
+                    : 'Rastreo automático Shalom desactivado.',
+                activo ? 'warning' : 'success',
+            );
+        } catch {
+            setAutoTracking(!activo); // revertir
+            alert('No se pudo cambiar el rastreo automático', 'error');
+        }
+    };
 
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -193,6 +213,38 @@ export default function DespachoConfigPage() {
                     Estas notificaciones se envían automáticamente cuando cambias el estado de un despacho.
                     Requiere tener WhatsApp activo en tu empresa.
                 </p>
+            </div>
+
+            {/* Rastreo automático Shalom (interruptor maestro) */}
+            <div className="mb-4 rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-900/15 p-6">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 shrink-0">
+                            <Icon icon="solar:routing-2-bold-duotone" className="text-xl" />
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-900 dark:text-white">Rastreo automático Shalom</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
+                                Cada 30 min consulta Shalom y <b>actualiza solo</b> el estado de tus despachos
+                                (En camino / En agencia / Entregado). Al avanzar, <b>envía WhatsApp al cliente</b>
+                                {' '}con las notificaciones de arriba. Actívalo solo cuando estés listo para que
+                                tus clientes reciban esos mensajes automáticamente.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => toggleAutoTracking(!autoTracking)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoTracking ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                    >
+                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoTracking ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                </div>
+                {!autoTracking && (
+                    <p className="mt-3 text-xs text-slate-500 italic">
+                        Desactivado: los estados no se actualizan solos y no se envía nada automáticamente. Puedes seguir cambiando estados a mano en el panel.
+                    </p>
+                )}
             </div>
 
             {/* Secciones */}

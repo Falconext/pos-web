@@ -20,6 +20,7 @@ export interface ICompra {
     detalles?: any[];
     cuotas?: any | string;
     saldo?: number;
+    fotoUrl?: string | null;
 }
 
 export interface IComprasState {

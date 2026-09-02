@@ -129,6 +129,7 @@ interface CreateEmpresaDto {
   permitirVentaSinStock?: boolean;
   brand?: string;
   producto?: string;
+  productoContratado?: 'SOLO_VENTAS' | 'TODO_EN_UNO' | 'AMBOS';
   usuarioPse?: string;
   contrasenaPse?: string;
   billingProvider?: 'QPSE' | 'APISUNAT' | 'JAMBLE';

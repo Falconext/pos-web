@@ -101,6 +101,7 @@ export function usePanelVentasViewModel() {
     const [busqueda, setBusqueda] = useState('');
     const [filtroSerie, setFiltroSerie] = useState('');
     const [filtroDni, setFiltroDni] = useState('');
+    const [filtroProducto, setFiltroProducto] = useState('');
     const [filtroRepartidorId, setFiltroRepartidorId] = useState<number | null | undefined>(undefined);
     const [filtroUsuarioId, setFiltroUsuarioId] = useState<number | null>(null);
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
@@ -153,6 +154,7 @@ export function usePanelVentasViewModel() {
         const search = busqueda.toLowerCase().trim();
         const serie = filtroSerie.trim().toUpperCase();
         const dni = filtroDni.trim();
+        const producto = filtroProducto.trim().toLowerCase();
         let base = items.filter(esDocumentoVisible);
 
         if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA' && esVentaFinal(i));
@@ -169,6 +171,7 @@ export function usePanelVentasViewModel() {
 
         if (serie) base = base.filter((i) => (i.seriesGarantia ?? []).some((s) => s.toUpperCase().includes(serie)));
         if (dni) base = base.filter((i) => (i.clienteDoc ?? '').includes(dni));
+        if (producto) base = base.filter((i) => (i.productos ?? []).some((p) => (p.nombre ?? '').toLowerCase().includes(producto)));
 
         if (search) {
             base = base.filter(
@@ -182,7 +185,7 @@ export function usePanelVentasViewModel() {
         }
 
         return base;
-    }, [items, tab, busqueda, filtroSerie, filtroDni, filtroRepartidorId]);
+    }, [items, tab, busqueda, filtroSerie, filtroDni, filtroProducto, filtroRepartidorId]);
 
     const actualizarEstado = useCallback(async (item: VentaPanelItem, nuevoEstado: string) => {
         try {
@@ -266,6 +269,7 @@ export function usePanelVentasViewModel() {
         busqueda, setBusqueda,
         filtroSerie, setFiltroSerie,
         filtroDni, setFiltroDni,
+        filtroProducto, setFiltroProducto,
         filtroRepartidorId, setFiltroRepartidorId,
         filtroUsuarioId, setFiltroUsuarioId,
         canFilterByUsuario,
