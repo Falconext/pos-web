@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { format, isSameDay, isToday, isYesterday } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -662,6 +662,34 @@ function DocRow({ d, onDelete }: { d: LeadDocumento; onDelete: () => void }) {
   )
 }
 
+// Secciones de inserción rápida para el contexto (texto plano — la IA lo consume tal cual).
+const SECCIONES_CONTEXTO: { label: string; icon: string; snippet: string }[] = [
+  { label: 'Qué vendemos', icon: 'solar:box-bold-duotone', snippet: 'QUÉ VENDEMOS:\n- ' },
+  { label: 'Precios', icon: 'solar:tag-price-bold-duotone', snippet: 'PRECIOS:\n- Producto/plan: S/00 (qué incluye)\n- ' },
+  { label: 'Planes', icon: 'solar:layers-bold-duotone', snippet: 'PLANES:\n- Básico: ...\n- Pro: ...\n' },
+  { label: 'FAQs', icon: 'solar:question-circle-bold-duotone', snippet: 'PREGUNTAS FRECUENTES:\n- ¿...? R: ...\n- ' },
+  { label: 'Objeciones', icon: 'solar:shield-warning-bold-duotone', snippet: 'OBJECIONES Y RESPUESTAS:\n- "Es caro" → ...\n- ' },
+  { label: 'Tono', icon: 'solar:chat-round-line-bold-duotone', snippet: 'TONO Y ESTILO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.\n' },
+  { label: 'Horario', icon: 'solar:clock-circle-bold-duotone', snippet: 'HORARIO DE ATENCIÓN: Lun-Sáb 9am-7pm. Fuera de horario, avisa que responderás pronto.\n' },
+]
+
+const PLANTILLA_CONTEXTO = `NEGOCIO: (nombre y a qué se dedica)
+
+QUÉ VENDEMOS: (productos o servicios principales)
+
+PRECIOS:
+- ...
+
+OBJETIVO DE LA IA: calificar al prospecto y llevarlo a (comprar / agendar demo / dejar sus datos).
+
+PREGUNTAS FRECUENTES:
+- ¿...? R: ...
+
+OBJECIONES:
+- "..." → ...
+
+TONO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.`
+
 function ConfigForm({
   initial,
   onSave,
@@ -673,11 +701,35 @@ function ConfigForm({
 }) {
   const [contexto, setContexto] = useState(initial.iaVentasContexto)
   const [activa, setActiva] = useState(initial.iaVentasActiva)
+  const taRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setContexto(initial.iaVentasContexto)
     setActiva(initial.iaVentasActiva)
   }, [initial])
+
+  // Auto-crecer el textarea según su contenido (tope de altura con scroll interno).
+  const autoGrow = useCallback(() => {
+    const el = taRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 460) + 'px'
+  }, [])
+  useEffect(() => {
+    autoGrow()
+  }, [contexto, autoGrow])
+
+  // Inserta un bloque al final del contexto (texto plano).
+  const insertar = (snippet: string) => {
+    setContexto((prev) => {
+      const base = prev.replace(/\s+$/, '')
+      return (base ? base + '\n\n' : '') + snippet
+    })
+    // Devuelve el foco al textarea tras insertar.
+    setTimeout(() => taRef.current?.focus(), 0)
+  }
+
+  const palabras = contexto.trim() ? contexto.trim().split(/\s+/).length : 0
 
   return (
     <div className="space-y-4 p-1">
@@ -707,13 +759,42 @@ function ConfigForm({
           Describe tu oferta, precios, planes y preguntas frecuentes. La IA usa esto como
           conocimiento base para responder y calificar.
         </p>
+
+        {/* Inserción rápida de secciones (texto plano, ideal para la IA) */}
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {SECCIONES_CONTEXTO.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => insertar(s.snippet)}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 dark:hover:border-violet-700 dark:hover:bg-violet-900/20"
+            >
+              <Icon icon={s.icon} width={13} /> {s.label}
+            </button>
+          ))}
+        </div>
+
         <textarea
+          ref={taRef}
           value={contexto}
           onChange={(e) => setContexto(e.target.value)}
           rows={8}
           placeholder="Ej: Vendemos planes de software para restaurantes. Plan Básico S/99/mes, Plan Pro S/199/mes con delivery. Atendemos Lima y provincias..."
-          className="block w-full resize-y rounded-xl border border-gray-200 bg-white p-3 text-sm leading-relaxed text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
+          className="block max-h-[460px] min-h-[180px] w-full resize-none overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 text-sm leading-relaxed text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
         />
+
+        <div className="mt-2 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => insertar(PLANTILLA_CONTEXTO)}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400"
+          >
+            <Icon icon="solar:magic-stick-3-bold-duotone" width={14} /> Usar plantilla sugerida
+          </button>
+          <span className="text-[11px] text-gray-400">
+            {palabras} {palabras === 1 ? 'palabra' : 'palabras'} · {contexto.length} caracteres
+          </span>
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
