@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import useAlertStore from '@/zustand/alert'
 import { useDebounce } from '@/hooks/useDebounce'
 import * as api from '@/services/leads.service'
@@ -47,8 +47,11 @@ export function useLeadsViewModel() {
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [guardandoDoc, setGuardandoDoc] = useState(false)
 
-  const cargarProspectos = useCallback(async () => {
-    setIsLoading(true)
+  // Id de la conversación abierta (para el auto-refresco en vivo del chat).
+  const convAbiertaRef = useRef<number | null>(null)
+
+  const cargarProspectos = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true)
     try {
       const [pros, res] = await Promise.all([
         api.fetchProspectos({ search: debouncedSearch || undefined }),
@@ -57,15 +60,40 @@ export function useLeadsViewModel() {
       setProspectos(pros)
       setResumen(res)
     } catch (e: any) {
-      alertStore.alert(e.message || 'Error al cargar prospectos', 'error')
+      if (!silent) alertStore.alert(e.message || 'Error al cargar prospectos', 'error')
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch])
 
   useEffect(() => {
     cargarProspectos()
+  }, [cargarProspectos])
+
+  // Auto-refresco en vivo (cada 4s): trae leads nuevos y los mensajes/respuestas
+  // de la IA de la conversación abierta sin recargar la página ni mostrar spinner.
+  useEffect(() => {
+    const t = setInterval(() => {
+      cargarProspectos(true)
+      const id = convAbiertaRef.current
+      if (id != null) {
+        api
+          .fetchConversacion(id)
+          .then((det) =>
+            setConversacion((prev) =>
+              // Evita parpadeo: solo reemplaza si cambió el nº de mensajes o el prospecto.
+              prev &&
+              prev.mensajes?.length === det.mensajes?.length &&
+              prev.prospecto?.puntaje === det.prospecto?.puntaje
+                ? prev
+                : det,
+            ),
+          )
+          .catch(() => {})
+      }
+    }, 4000)
+    return () => clearInterval(t)
   }, [cargarProspectos])
 
   useEffect(() => {
@@ -80,6 +108,7 @@ export function useLeadsViewModel() {
   // ─── Acciones ──────────────────────────────────────────────────────────────
 
   const abrirConversacion = async (conversacionId: number) => {
+    convAbiertaRef.current = conversacionId
     setLoadingConversacion(true)
     try {
       const detalle = await api.fetchConversacion(conversacionId)
@@ -91,7 +120,10 @@ export function useLeadsViewModel() {
     }
   }
 
-  const cerrarConversacion = () => setConversacion(null)
+  const cerrarConversacion = () => {
+    convAbiertaRef.current = null
+    setConversacion(null)
+  }
 
   const toggleBot = async (prospectoId: number, activo: boolean) => {
     try {
