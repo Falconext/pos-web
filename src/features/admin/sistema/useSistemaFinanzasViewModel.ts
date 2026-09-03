@@ -43,6 +43,7 @@ export function useSistemaFinanzasViewModel() {
     const [tab, setTab] = useState<'dashboard' | 'movimientos' | 'clientes'>('dashboard');
     const [dashboard, setDashboard] = useState<any>(null);
     const [tendencia, setTendencia] = useState<any[]>([]);
+    const [proyeccion, setProyeccion] = useState<any>(null);
     const [gastos, setGastos] = useState<any[]>([]);
     const [totalGastos, setTotalGastos] = useState(0);
     const [ingresos, setIngresos] = useState<any[]>([]);
@@ -83,6 +84,8 @@ export function useSistemaFinanzasViewModel() {
 
     // tendencia periodo
     const [mesesTendencia, setMesesTendencia] = useState(12);
+    // horizonte de la proyección (1 / 3 / 6 / 12 meses)
+    const [mesesProyeccion, setMesesProyeccion] = useState(6);
 
     const cargarDashboard = useCallback(async () => {
         setLoadingDash(true);
@@ -101,6 +104,13 @@ export function useSistemaFinanzasViewModel() {
             const { data } = await apiClient.get(`/sistema-finanzas/tendencia?meses=${meses}`);
             const lista = data?.data ?? data;
             setTendencia(Array.isArray(lista) ? lista : []);
+        } catch { }
+    }, []);
+
+    const cargarProyeccion = useCallback(async (meses: number) => {
+        try {
+            const { data } = await apiClient.get(`/sistema-finanzas/proyeccion?meses=${meses}`);
+            setProyeccion(data?.data ?? data);
         } catch { }
     }, []);
 
@@ -141,6 +151,7 @@ export function useSistemaFinanzasViewModel() {
     }, [filtroDesdeIngreso, filtroHastaIngreso, filtroTipoIngreso]);
 
     useEffect(() => { cargarDashboard(); }, [cargarDashboard]);
+    useEffect(() => { cargarProyeccion(mesesProyeccion); }, [mesesProyeccion, cargarProyeccion]);
     useEffect(() => { cargarTendencia(mesesTendencia); }, [mesesTendencia, cargarTendencia]);
     useEffect(() => { if (tab === 'movimientos') cargarGastos(); }, [tab, cargarGastos]);
     useEffect(() => {
@@ -280,7 +291,7 @@ export function useSistemaFinanzasViewModel() {
 
     return {
         tab, setTab,
-        dashboard, tendencia, gastos, totalGastos, ingresos, totalIngresos,
+        dashboard, tendencia, proyeccion, gastos, totalGastos, ingresos, totalIngresos,
         loadingDash, loadingGastos, loadingIngresos, guardando,
         filtroDesde, setFiltroDesde,
         filtroHasta, setFiltroHasta,
@@ -289,6 +300,7 @@ export function useSistemaFinanzasViewModel() {
         filtroHastaIngreso, setFiltroHastaIngreso,
         filtroTipoIngreso, setFiltroTipoIngreso,
         mesesTendencia, setMesesTendencia,
+        mesesProyeccion, setMesesProyeccion,
         busquedaEmpresa, setBusquedaEmpresa,
         empresasFiltradas,
         showModal, setShowModal,

@@ -364,6 +364,13 @@ export default function AdminLayout() {
                   {!isSidebarCollapsed && <span>Empresas</span>}
                 </NavLink>
 
+                {!isDesktopBuild && (
+                  <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
+                    <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Finanzas</span>}
+                  </NavLink>
+                )}
+
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Usuarios del Sistema">
                   <Icon icon="solar:shield-user-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Usuarios Sistema</span>}
@@ -406,14 +413,6 @@ export default function AdminLayout() {
               </motion.div>
             )}
 
-            {auth?.rol === 'ADMIN_SISTEMA' && !isDesktopBuild && (
-              <motion.div variants={navItemReveal} className="space-y-0.5">
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
-                  <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                  {!isSidebarCollapsed && <span>Finanzas</span>}
-                </NavLink>
-              </motion.div>
-            )}
 
             {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && (
               <>
