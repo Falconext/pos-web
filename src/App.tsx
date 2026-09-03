@@ -108,6 +108,7 @@ import GeocercasPage from './features/admin/logistica/geocercas/GeocercasPage'
 import ImportarPage from './features/admin/logistica/importar/ImportarPage'
 import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
 import LeadsPage from './features/admin/leads/LeadsPage'
+import PrivacidadPage from './pages/legal/PrivacidadPage'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -116,6 +117,9 @@ function App() {
       <Alert />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* Política de privacidad pública (requerida por Meta para publicar la app de WhatsApp) */}
+        <Route path="/privacidad" element={<PrivacidadPage />} />
+        <Route path="/privacy" element={<PrivacidadPage />} />
         <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
         <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
         {/* Redirects de compatibilidad para enlaces viejos */}
