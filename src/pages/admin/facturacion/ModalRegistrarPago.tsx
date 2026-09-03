@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { usePagosStore } from '@/zustand/pagos';
 import { useAuthStore } from '@/zustand/auth';
 import { useUsersStore } from '@/zustand/users';
+import { useCuentasBancariasStore } from '@/zustand/cuentasBancarias';
 import Select from '@/components/Select';
 import PaymentReceipt from '@/components/PaymentReceipt';
 
@@ -23,8 +24,10 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
     const { auth } = useAuthStore();
     const { registrarPagoComprobante, subirComprobantePago, loading } = usePagosStore();
     const { usuarios, getAllUsers } = useUsersStore();
+    const { cuentas, listar: listarCuentas } = useCuentasBancariasStore();
     const [monto, setMonto] = useState('');
     const [medioPago, setMedioPago] = useState('EFECTIVO');
+    const [cuentaBancariaId, setCuentaBancariaId] = useState<number | null>(null);
     const [observacion, setObservacion] = useState('');
     const [referencia, setReferencia] = useState('');
     const [dirigidoA, setDirigidoA] = useState('');
@@ -52,6 +55,30 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
             setVendedorId(Number(comprobante.vendedorCampoId));
         }
     }, [cobranzaCampo, comprobante?.vendedorCampoId]);
+
+    // Cuenta bancaria de destino: se pide para medios que no son efectivo, así el
+    // pago queda vinculado a un banco y aparece en Caja y Bancos.
+    const medioUpper = medioPago.toUpperCase();
+    const requiereBanco = medioUpper !== 'EFECTIVO';
+    const bancoObligatorio = ['TRANSFERENCIA', 'TARJETA', 'DEPOSITO'].includes(medioUpper);
+    const cuentasActivas = (cuentas || []).filter((c: any) => c.activo);
+    const nombreCuenta = (c: any) =>
+        `${c.banco}${c.alias ? ` · ${c.alias}` : ''} · ${c.numeroCuenta}`;
+
+    useEffect(() => { listarCuentas(); }, [listarCuentas]);
+
+    // Al elegir Yape/Plin, preseleccionar la cuenta vinculada de la empresa (a la
+    // que abonan esos medios); al volver a Efectivo, limpiar la cuenta.
+    useEffect(() => {
+        if (medioUpper === 'EFECTIVO') { setCuentaBancariaId(null); return; }
+        if (medioUpper === 'YAPE' || medioUpper === 'PLIN') {
+            const vinc = cuentasActivas.find(
+                (c: any) => (c.medioPagoVinculado || '').toUpperCase() === medioUpper,
+            );
+            if (vinc) setCuentaBancariaId(vinc.id);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [medioUpper, cuentas]);
 
     const handleComprobanteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
@@ -91,6 +118,9 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
         if (montoNum > saldoActual) { setError(`El monto no puede exceder el saldo (S/ ${saldoActual.toFixed(2)})`); return; }
         if (cobranzaCampo && !vendedorId) { setError('Selecciona el vendedor de campo que envió el comprobante'); return; }
         if (cobranzaCampo && !dirigidoA) { setError('Indica a quién fue dirigido el pago'); return; }
+        if (bancoObligatorio && cuentasActivas.length > 0 && !cuentaBancariaId) {
+            setError('Selecciona la cuenta de destino del pago'); return;
+        }
         setError('');
 
         const vendedorNombre = cobranzaCampo ? usuarios.find((u: any) => u.id === vendedorId)?.nombre : undefined;
@@ -98,6 +128,7 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
         const result = await registrarPagoComprobante(comprobante.id, {
             monto: montoNum,
             medioPago,
+            cuentaBancariaId: requiereBanco ? (cuentaBancariaId ?? undefined) : undefined,
             observacion: observacion || undefined,
             referencia: referencia || undefined,
             dirigidoA: cobranzaCampo ? (dirigidoA || undefined) : undefined,
@@ -254,6 +285,28 @@ const ModalRegistrarPago = ({ comprobante, onClose, onSuccess }: ModalRegistrarP
                             ]}
                         />
                     </div>
+
+                    {requiereBanco && (
+                        <div>
+                            {cuentasActivas.length > 0 ? (
+                                <Select
+                                    error=""
+                                    label={`Cuenta de destino${bancoObligatorio ? ' *' : ''}`}
+                                    name="cuentaBancariaId"
+                                    value={(() => {
+                                        const c = cuentasActivas.find((x: any) => x.id === cuentaBancariaId);
+                                        return c ? nombreCuenta(c) : '';
+                                    })()}
+                                    onChange={(id: any) => { setCuentaBancariaId(Number(id) || null); setError(''); }}
+                                    options={cuentasActivas.map((c: any) => ({ id: c.id, value: nombreCuenta(c) }))}
+                                />
+                            ) : (
+                                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 border border-amber-100 dark:border-amber-900/30">
+                                    No tienes cuentas bancarias registradas. Agrégalas en Caja y Bancos para que este pago se refleje ahí.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Referencia (opcional)</label>

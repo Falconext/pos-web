@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { BarChart } from '@tremor/react';
+import { MonoBarChart, fmtMoney, MONO_SERIES } from '@/components/charts/mono';
 import {
     CategoriaRentabilidad,
     CategoriasResponse,
@@ -188,16 +188,22 @@ function GananciasChart({ data }: { data: CategoriasResponse }) {
     return (
         <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 shadow-sm border border-gray-100/50 dark:border-slate-800">
             <h3 className="font-semibold text-gray-800 dark:text-white text-sm mb-1">Ingresos vs Ganancia por categoría</h3>
-            <p className="text-xs text-gray-400 mb-5">Top {chartData.length} categorías del período</p>
-            <BarChart
+            <p className="text-xs text-gray-400 mb-4">Top {chartData.length} categorías del período</p>
+            <div className="flex items-center gap-3 flex-wrap mb-4">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: MONO_SERIES[0] }} /> Ingresos
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: MONO_SERIES[1] }} /> Ganancia
+                </span>
+            </div>
+            <MonoBarChart
                 data={chartData}
                 index="name"
                 categories={['Ingresos', 'Ganancia']}
-                colors={['indigo', 'emerald']}
-                valueFormatter={(v) => `S/ ${v.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-                showLegend
-                showGridLines={false}
-                className="h-56"
+                orientation="columns"
+                valueFormatter={(v) => fmtMoney(v)}
+                height={300}
             />
         </div>
     );

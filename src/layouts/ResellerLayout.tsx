@@ -32,7 +32,7 @@ export default function ResellerLayout() {
         <div
             className="flex overflow-hidden bg-[#F0F2FA] transition-all duration-300"
             style={{
-                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 zoom: String(ZOOM_OPTIONS[zoomLevel]?.zoom ?? 1),
                 height: ZOOM_OPTIONS[zoomLevel]?.height ?? '100vh'
             }}

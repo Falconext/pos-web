@@ -115,6 +115,25 @@ body {
   background-color: #F0F2FA;
 }
 
+/* ── Fuente del SISTEMA (panel de administración): Plus Jakarta Sans ──────────
+   Se aplica solo bajo `html.is-admin` (clase que AdminLayout pone en <html>),
+   por lo que NO afecta a las tiendas virtuales (se renderizan fuera de is-admin).
+   Se excluyen los comprobantes (#print-root), que además fuerzan su propia
+   fuente al imprimir (ver src/utils/printStyles.ts). */
+html.is-admin,
+html.is-admin body,
+html.is-admin .font-sans,
+html.is-admin .font-inter,
+html.is-admin .font-poppins {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+}
+
+/* Comprobantes: conservan su fuente (no Plus Jakarta Sans). */
+html.is-admin #print-root,
+html.is-admin #print-root * {
+  font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif !important;
+}
+
 .tr-shadow {
   box-shadow: none !important;
   border: none !important;

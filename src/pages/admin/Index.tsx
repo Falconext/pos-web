@@ -9,7 +9,7 @@ import { Icon } from '@iconify/react'
 import moment from 'moment'
 import Select from '@/components/Select'
 import { Calendar } from '@/components/Date'
-import { AreaChart, DonutChart, ProgressCircle, SparkAreaChart } from '@tremor/react'
+import { MonoSparkline, MonoAreaChart, MonoDonutChart, MonoGauge, MONO_SEGMENTS } from '@/components/charts/mono'
 import { WelcomeModal, TourSpotlight, useWelcomeTour } from '@/components/WelcomeTour'
 
 export default function AdminIndex() {
@@ -182,7 +182,7 @@ export default function AdminIndex() {
               </div>
             </div>
             <div className="mt-4 h-10 sm:h-12 opacity-80">
-              <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['violet']} />
+              <MonoSparkline data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} category="total" />
             </div>
           </div>
 
@@ -201,7 +201,7 @@ export default function AdminIndex() {
               </div>
             </div>
             <div className="mt-4 h-10 sm:h-12 opacity-80">
-              <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['blue']} />
+              <MonoSparkline data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} category="total" />
             </div>
           </div>
 
@@ -220,7 +220,7 @@ export default function AdminIndex() {
               </div>
             </div>
             <div className="mt-4 h-10 sm:h-12 opacity-80">
-              <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['emerald']} />
+              <MonoSparkline data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} category="total" />
             </div>
           </div>
 
@@ -239,7 +239,7 @@ export default function AdminIndex() {
               </div>
             </div>
             <div className="mt-4 h-10 sm:h-12 opacity-80">
-              <SparkAreaChart data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} categories={['total']} index="date" colors={['amber']} />
+              <MonoSparkline data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} category="total" />
             </div>
           </div>
         </div>
@@ -258,18 +258,16 @@ export default function AdminIndex() {
               </div>
             </div>
             {chartVentas.length > 0 ? (
-              <AreaChart
-                className="h-56 sm:h-64 mt-4"
-                data={chartVentas}
-                index="date"
-                categories={['total']}
-                colors={['violet']}
-                valueFormatter={(number: number) => `S/ ${number.toLocaleString('es-PE')}`}
-                showLegend={false}
-                showGridLines={true}
-                curveType="monotone"
-                showAnimation={true}
-              />
+              <div className="mt-4">
+                <MonoAreaChart
+                  data={chartVentas}
+                  index="date"
+                  categories={['total']}
+                  valueFormatter={(v: number) => formatMoney(v)}
+                  height={300}
+                  curveType="monotone"
+                />
+              </div>
             ) : (
               <div className="h-56 sm:h-64 mt-4 flex items-center justify-center text-gray-400 text-sm">No hay ventas en este periodo</div>
             )}
@@ -280,14 +278,13 @@ export default function AdminIndex() {
             <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-4 sm:mb-6">Ventas por Canal</h3>
             <div className="flex-1 flex flex-col justify-center">
               {chartCanales.length > 0 ? (
-                <DonutChart
-                  className="h-40 sm:h-44"
+                <MonoDonutChart
                   data={chartCanales}
                   category="value"
                   index="name"
                   valueFormatter={(val: number) => formatMoney(val)}
-                  colors={['violet', 'blue', 'emerald', 'amber']}
-                  showAnimation
+                  centerLabel="Total"
+                  height={240}
                 />
               ) : (
                 <div className="text-center text-gray-400 text-sm h-40 sm:h-44 flex items-center justify-center">No hay datos</div>
@@ -295,11 +292,10 @@ export default function AdminIndex() {
 
               <div className="mt-6 sm:mt-8 space-y-3">
                 {chartCanales.map((c: any, i: number) => {
-                  const colorMap = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500'];
                   return (
                     <div key={c.name} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className={`w-2.5 h-2.5 rounded-full ${colorMap[i % 4]}`}></div>
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: MONO_SEGMENTS[i % MONO_SEGMENTS.length] }}></div>
                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300 truncate">{c.name}</span>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -588,9 +584,7 @@ export default function AdminIndex() {
             </div>
 
             <div className="mt-auto pt-6 flex items-center justify-center gap-6">
-              <ProgressCircle value={Math.max(0, Math.min(100, financiero.margen))} size="lg" color={financiero.margen >= 0 ? 'violet' : 'rose'} strokeWidth={8} showAnimation>
-                <span className={`text-lg font-bold ${financiero.margen >= 0 ? 'text-gray-900 dark:text-white' : 'text-rose-500'}`}>{financiero.margen.toFixed(0)}%</span>
-              </ProgressCircle>
+              <MonoGauge value={Number(financiero?.margen) || 0} variant="ring" centerLabel="Margen" height={180} />
               <div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">Margen de Ganancia</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-snug">Salud financiera<br />del negocio</p>

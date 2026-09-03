@@ -1,4 +1,4 @@
-import { AreaChart } from '@tremor/react';
+import { MonoAreaChart, fmtMoney, MONO_SERIES } from '@/components/charts/mono';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { useState } from 'react';
@@ -133,26 +133,20 @@ export default function FinanceDashboardView() {
                             {/* Chart Legend/Actions if needed */}
                             <div className="flex gap-2">
                                 <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Ingresos
+                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: MONO_SERIES[0] }}></span> Ingresos
                                 </span>
                                 <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg">
-                                    <span className="w-2 h-2 rounded-full bg-rose-500"></span> Egresos
+                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: MONO_SERIES[1] }}></span> Egresos
                                 </span>
                             </div>
                         </div>
 
-                        <AreaChart
-                            className="h-80 mt-4"
+                        <MonoAreaChart
                             data={vm.formattedChartData}
                             index="date"
                             categories={["Ingresos", "Egresos"]}
-                            colors={["indigo", "rose"]}
-                            curveType="monotone"
-                            showLegend={false}
-                            showGridLines={false}
-                            showAnimation
-                            yAxisWidth={60}
-                            valueFormatter={vm.valueFormatter}
+                            valueFormatter={(v) => fmtMoney(v)}
+                            height={300}
                         />
                     </div>
 
