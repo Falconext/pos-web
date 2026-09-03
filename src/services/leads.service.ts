@@ -70,6 +70,7 @@ export interface LeadsConfig {
   iaVentasActiva: boolean
   iaVentasContexto: string
   iaVentasSeguimiento: boolean
+  iaVentasBrochureUrl: string
 }
 
 // ─── Llamadas a la API (todas scoped por empresa del token) ──────────────────

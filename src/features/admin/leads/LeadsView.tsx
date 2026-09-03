@@ -695,19 +695,30 @@ function ConfigForm({
   onSave,
   onToggle,
 }: {
-  initial: { iaVentasActiva: boolean; iaVentasContexto: string; iaVentasSeguimiento: boolean }
-  onSave: (data: { iaVentasContexto: string; iaVentasSeguimiento: boolean }) => void
+  initial: {
+    iaVentasActiva: boolean
+    iaVentasContexto: string
+    iaVentasSeguimiento: boolean
+    iaVentasBrochureUrl: string
+  }
+  onSave: (data: {
+    iaVentasContexto: string
+    iaVentasSeguimiento: boolean
+    iaVentasBrochureUrl: string
+  }) => void
   onToggle: (v: boolean) => void
 }) {
   const [contexto, setContexto] = useState(initial.iaVentasContexto)
   const [activa, setActiva] = useState(initial.iaVentasActiva)
   const [seguimiento, setSeguimiento] = useState(initial.iaVentasSeguimiento)
+  const [brochure, setBrochure] = useState(initial.iaVentasBrochureUrl)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setContexto(initial.iaVentasContexto)
     setActiva(initial.iaVentasActiva)
     setSeguimiento(initial.iaVentasSeguimiento)
+    setBrochure(initial.iaVentasBrochureUrl)
   }, [initial])
 
   // Auto-crecer el textarea según su contenido (tope de altura con scroll interno).
@@ -811,10 +822,32 @@ function ConfigForm({
         </div>
       </div>
 
+      <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
+        <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
+          Enlace de brochure / catálogo (opcional)
+        </label>
+        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+          PDF o imagen que la IA envía por WhatsApp cuando el prospecto pide más información.
+        </p>
+        <input
+          type="url"
+          value={brochure}
+          onChange={(e) => setBrochure(e.target.value)}
+          placeholder="https://tuweb.com/brochure.pdf"
+          className="block w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
+        />
+      </div>
+
       <div className="flex justify-end gap-2 pt-1">
         <Button
           color="primary"
-          onClick={() => onSave({ iaVentasContexto: contexto, iaVentasSeguimiento: seguimiento })}
+          onClick={() =>
+            onSave({
+              iaVentasContexto: contexto,
+              iaVentasSeguimiento: seguimiento,
+              iaVentasBrochureUrl: brochure,
+            })
+          }
         >
           Guardar
         </Button>
