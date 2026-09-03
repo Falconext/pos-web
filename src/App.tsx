@@ -109,6 +109,7 @@ import ImportarPage from './features/admin/logistica/importar/ImportarPage'
 import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
 import LeadsPage from './features/admin/leads/LeadsPage'
 import PrivacidadPage from './pages/legal/PrivacidadPage'
+import EliminarDatosPage from './pages/legal/EliminarDatosPage'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -120,6 +121,9 @@ function App() {
         {/* Política de privacidad pública (requerida por Meta para publicar la app de WhatsApp) */}
         <Route path="/privacidad" element={<PrivacidadPage />} />
         <Route path="/privacy" element={<PrivacidadPage />} />
+        {/* Eliminación de datos (requerida por Meta para el App Review de WhatsApp) */}
+        <Route path="/eliminar-datos" element={<EliminarDatosPage />} />
+        <Route path="/data-deletion" element={<EliminarDatosPage />} />
         <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
         <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
         {/* Redirects de compatibilidad para enlaces viejos */}
