@@ -26,6 +26,7 @@ export function useLeadsViewModel() {
   const [config, setConfig] = useState<LeadsConfig>({
     iaVentasActiva: false,
     iaVentasContexto: '',
+    iaVentasSeguimiento: true,
   })
   const [resumen, setResumen] = useState<ResumenProspectos>(RESUMEN_VACIO)
   const [prospectos, setProspectos] = useState<LeadProspecto[]>([])

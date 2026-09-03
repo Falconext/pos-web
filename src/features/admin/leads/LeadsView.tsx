@@ -695,17 +695,19 @@ function ConfigForm({
   onSave,
   onToggle,
 }: {
-  initial: { iaVentasActiva: boolean; iaVentasContexto: string }
-  onSave: (data: { iaVentasContexto: string }) => void
+  initial: { iaVentasActiva: boolean; iaVentasContexto: string; iaVentasSeguimiento: boolean }
+  onSave: (data: { iaVentasContexto: string; iaVentasSeguimiento: boolean }) => void
   onToggle: (v: boolean) => void
 }) {
   const [contexto, setContexto] = useState(initial.iaVentasContexto)
   const [activa, setActiva] = useState(initial.iaVentasActiva)
+  const [seguimiento, setSeguimiento] = useState(initial.iaVentasSeguimiento)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setContexto(initial.iaVentasContexto)
     setActiva(initial.iaVentasActiva)
+    setSeguimiento(initial.iaVentasSeguimiento)
   }, [initial])
 
   // Auto-crecer el textarea según su contenido (tope de altura con scroll interno).
@@ -749,6 +751,18 @@ function ConfigForm({
             onToggle(v)
           }}
         />
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800">
+        <div className="pr-3">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            Seguimiento automático
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Si un prospecto deja de responder, la IA le manda un recordatorio (gratis, dentro de las 24h).
+          </p>
+        </div>
+        <SwitchIa activa={seguimiento} onChange={setSeguimiento} />
       </div>
 
       <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
@@ -798,7 +812,10 @@ function ConfigForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button color="primary" onClick={() => onSave({ iaVentasContexto: contexto })}>
+        <Button
+          color="primary"
+          onClick={() => onSave({ iaVentasContexto: contexto, iaVentasSeguimiento: seguimiento })}
+        >
           Guardar
         </Button>
       </div>

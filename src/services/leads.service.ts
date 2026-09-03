@@ -69,6 +69,7 @@ export type ResumenProspectos = Record<EstadoLeadProspecto, number>
 export interface LeadsConfig {
   iaVentasActiva: boolean
   iaVentasContexto: string
+  iaVentasSeguimiento: boolean
 }
 
 // ─── Llamadas a la API (todas scoped por empresa del token) ──────────────────
