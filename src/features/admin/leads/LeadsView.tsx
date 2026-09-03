@@ -699,7 +699,7 @@ function ConfigForm({
         />
       </div>
 
-      <div>
+      <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
         <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
           Contexto del negocio
         </label>
@@ -712,7 +712,7 @@ function ConfigForm({
           onChange={(e) => setContexto(e.target.value)}
           rows={8}
           placeholder="Ej: Vendemos planes de software para restaurantes. Plan Básico S/99/mes, Plan Pro S/199/mes con delivery. Atendemos Lima y provincias..."
-          className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
+          className="block w-full resize-y rounded-xl border border-gray-200 bg-white p-3 text-sm leading-relaxed text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
         />
       </div>
 
