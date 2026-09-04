@@ -263,24 +263,29 @@ const GuiaRemision = () => {
         documento: `${guia.serie}-${guia.correlativo}`,
         destinatario: guia.destinatarioRazonSocial,
         motivo: MOTIVOS_TRASLADO[guia.tipoTraslado] || guia.tipoTraslado,
-        estadoSunat: (
-            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border shadow-sm ${
-                guia.estadoSunat === 'ACEPTADO' 
-                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' :
-                guia.estadoSunat === 'RECHAZADO' || guia.estadoSunat === 'FALLIDO_ENVIO'
-                ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' :
-                guia.estadoSunat === 'ENVIADO' 
-                ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-100 dark:border-violet-500/20' :
-                'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
-            }`}>
-                <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                    guia.estadoSunat === 'ACEPTADO' ? 'bg-emerald-500' :
-                    guia.estadoSunat === 'RECHAZADO' || guia.estadoSunat === 'FALLIDO_ENVIO' ? 'bg-rose-500' :
-                    guia.estadoSunat === 'ENVIADO' ? 'bg-violet-500' : 'bg-blue-500'
-                }`}></span>
-                {guia.estadoSunat === 'FALLIDO_ENVIO' ? 'FALLIDO' : (guia.estadoSunat || 'PENDIENTE')}
-            </span>
-        ),
+        estadoSunat: (() => {
+            // Mismo criterio de color que la lista de Comprobantes (Comprobantes.tsx
+            // renderEstadoBadge): EMITIDO es el estado de éxito real de una guía (el
+            // enum no tiene 'ACEPTADO' — ese es propio de Comprobante), por eso antes
+            // una guía emitida caía al color por defecto en vez de verde.
+            const estado = guia.estadoSunat || 'PENDIENTE';
+            const tone =
+                estado === 'EMITIDO' || estado === 'REGISTRADO'
+                    ? { badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20', dot: 'bg-emerald-500' }
+                    : estado === 'RECHAZADO' || estado === 'FALLIDO_ENVIO' || estado === 'ANULADO'
+                        ? { badge: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/20', dot: 'bg-rose-500' }
+                        : estado === 'PENDIENTE_CONCILIACION'
+                            ? { badge: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-100 dark:border-sky-500/20', dot: 'bg-sky-500' }
+                            : estado === 'ENVIADO'
+                                ? { badge: 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-100 dark:border-violet-500/20', dot: 'bg-violet-500' }
+                                : { badge: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20', dot: 'bg-amber-500' };
+            return (
+                <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border shadow-sm ${tone.badge}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${tone.dot}`}></span>
+                    {estado === 'FALLIDO_ENVIO' ? 'FALLIDO' : estado}
+                </span>
+            );
+        })(),
         acciones: (
             <button
                 onClick={(e) => handleOpenMenu(e, guia)}
@@ -405,7 +410,7 @@ const GuiaRemision = () => {
                             <button
                                 onClick={() => {
                                     handleCloseMenu();
-                                    navigate("/administrador/facturacion/nuevo", { state: { guiaRemision: selectedRow } });
+                                    navigate("/administrador/facturacion/nuevo", { state: { guiaRemision: selectedRow, defaultType: 'FACTURA' } });
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             >
