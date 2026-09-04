@@ -9,6 +9,13 @@ import type { PaymentLine } from "../useFacturacionViewModel";
 
 const METODOS = ['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'];
 
+// Línea marcada como operación gratuita (Catálogo 07: 11-16/21/31-37) — el P.U. sigue
+// siendo informativo, pero el importe cobrado es 0. No suma al importe total.
+const esItemGratuitoPreview = (item: any): boolean => {
+    const n = Number(item?.tipoAfectacionIGV ?? item?.tipAfeIgv ?? 10);
+    return (n >= 11 && n <= 16) || n === 21 || (n >= 31 && n <= 37);
+};
+
 const METODO_LOGOS: Record<string, string> = {
     Efectivo: '/assets/pagos/efectivo.png',
     Yape: '/assets/pagos/yape.png',
@@ -700,9 +707,12 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                             <div key={i} className="flex">
                                                 <span className="w-6 text-center">{p.cantidad}</span>
                                                 <span className="w-7 text-center uppercase">{(p.unidad || p.unidadMedida || 'NIU').toString().toUpperCase().slice(0, 3)}</span>
-                                                <span className="flex-1 px-1 uppercase break-words" style={{ whiteSpace: 'pre-line' }}>{descripcionParaImpresion(p.descripcion || p.nombre || 'Producto', p.atributosTecnicos)}</span>
+                                                <span className="flex-1 px-1 uppercase break-words" style={{ whiteSpace: 'pre-line' }}>
+                                                    {descripcionParaImpresion(p.descripcion || p.nombre || 'Producto', p.atributosTecnicos)}
+                                                    {esItemGratuitoPreview(p) && <span className="font-bold"> [GRATIS]</span>}
+                                                </span>
                                                 <span className="w-10 text-right">{Number(p.precioUnitario ?? p.mtoPrecioUnitario ?? 0).toFixed(2)}</span>
-                                                <span className="w-12 text-right">{Number(p.total ?? 0).toFixed(2)}</span>
+                                                <span className="w-12 text-right">{esItemGratuitoPreview(p) ? '0.00' : Number(p.total ?? 0).toFixed(2)}</span>
                                             </div>
                                         ))}
                                     </div>

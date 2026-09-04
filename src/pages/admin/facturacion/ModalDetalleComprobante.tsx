@@ -88,6 +88,13 @@ const getDetalleSubtotal = (detalle: any) => Number(
     detalle?.subtotal ??
     (Number(detalle?.cantidad ?? 0) * getDetallePrecio(detalle))
 );
+// Línea marcada como operación gratuita (Catálogo 07: 11-16/21/31-37) — no suma al
+// total a pagar, pero el precio referencial se muestra igual (tachado + "GRATIS")
+// para que no parezca un error de suma en el detalle.
+const esDetalleGratuito = (detalle: any) => {
+    const n = Number(detalle?.tipAfeIgv ?? detalle?.tipoAfectacionIGV ?? 10);
+    return (n >= 11 && n <= 16) || n === 21 || (n >= 31 && n <= 37);
+};
 
 const planPermiteDespacho = (auth: any) => {
     return hasPlanFeature(auth, 'tieneDeliveryGPS');
@@ -424,16 +431,26 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                                     className="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-50 dark:border-slate-800/50 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors"
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate flex items-center gap-1.5">
                                             {getDetalleDescripcion(det)}
+                                            {esDetalleGratuito(det) && (
+                                                <span className="shrink-0 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full">GRATIS</span>
+                                            )}
                                         </p>
                                         <p className="text-xs text-gray-400 mt-0.5">
                                             {det.unidad || 'NIU'} &middot; {Number(det.cantidad ?? 0)} und &times; {monedaSimbolo} {getDetallePrecio(det).toFixed(2)}
+                                            {esDetalleGratuito(det) && ' (valor referencial)'}
                                         </p>
                                     </div>
-                                    <p className="text-sm font-bold text-gray-800 dark:text-white shrink-0">
-                                        {monedaSimbolo} {getDetalleSubtotal(det).toFixed(2)}
-                                    </p>
+                                    {esDetalleGratuito(det) ? (
+                                        <p className="text-sm font-bold text-gray-400 line-through shrink-0">
+                                            {monedaSimbolo} {getDetalleSubtotal(det).toFixed(2)}
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm font-bold text-gray-800 dark:text-white shrink-0">
+                                            {monedaSimbolo} {getDetalleSubtotal(det).toFixed(2)}
+                                        </p>
+                                    )}
                                 </div>
                             ))}
                         </div>

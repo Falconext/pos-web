@@ -6,6 +6,14 @@ import { elemCfg } from '@/features/admin/cotizaciones/cotizFormatoElementos';
 import { useAuthStore } from '@/zustand/auth';
 import { descripcionParaImpresion } from '@/utils/descripcion-vehiculo';
 
+// Línea marcada como operación gratuita (Catálogo 07: 11-16/21/31-37) — el P.U.
+// impreso sigue siendo informativo, pero el importe cobrado es 0. El item puede
+// venir del carrito en vivo (tipoAfectacionIGV) o ya persistido (tipAfeIgv).
+const esItemGratuito = (item: any): boolean => {
+    const n = Number(item?.tipoAfectacionIGV ?? item?.tipAfeIgv ?? 10);
+    return (n >= 11 && n <= 16) || n === 21 || (n >= 31 && n <= 37);
+};
+
 const ComprobantePrintPage = ({
     productsInvoice,
     totalInWords,
@@ -328,6 +336,9 @@ console.log(formValues)
                                     <span className={`basis-[16%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{item?.cantidad || 0}</span>
                                     <span className={`basis-[44%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-left`}>
                                         <span style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>{descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase() || ''}</span>
+                                        {esItemGratuito(item) && (
+                                            <span className={`ml-1 font-bold ${size === 'TICKET' ? 'text-[13px]' : 'text-[9px]'}`}>[GRATIS]</span>
+                                        )}
                                         {item?.lotes && item.lotes.length > 0 && (
                                             <div className="flex flex-col mt-0.5">
                                                 {item.lotes.map((l: any, idx: number) => (
@@ -355,7 +366,7 @@ console.log(formValues)
                                             ? item.precioUnitario
                                             : Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || 0) + (Number(item?.mtoDescuento || 0) / Number(item?.cantidad || 1))
                                     ).toFixed(2)}</span>
-                                    <span className={`basis-[20%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{Number(
+                                    <span className={`basis-[20%] shrink-0 ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} text-center`}>{esItemGratuito(item) ? '0.00' : Number(
                                         (item?.precioUnitario != null
                                             ? Number(item.precioUnitario)
                                             : Number(item?.mtoPrecioUnitario || item?.producto?.precioUnitario || 0) + (Number(item?.mtoDescuento || 0) / Number(item?.cantidad || 1))
@@ -647,7 +658,8 @@ console.log(formValues)
                                         const pUnit = item?.precioUnitario != null
                                             ? Number(item.precioUnitario)
                                             : pUnitFinal + (Number(item?.mtoDescuento || 0) / (cant || 1));
-                                        const totalItem = Number(item?.total || (pUnitFinal * cant));
+                                        const esGratis = esItemGratuito(item);
+                                        const totalItem = esGratis ? 0 : Number(item?.total || (pUnitFinal * cant));
 
                                         return (
                                             <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
@@ -660,7 +672,10 @@ console.log(formValues)
                                                     </div>
                                                 )}
                                                 {/* <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.codigo || '-'}</div> */}
-                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>{descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}</div>
+                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
+                                                    {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
+                                                    {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
+                                                </div>
                                                 {/* <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit / 1.18).toFixed(2)}</div> */}
                                                 {/* <div className="w-[8%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit - (pUnit / 1.18)).toFixed(2)}</div> */}
                                                 <div className="w-[9%] text-center border-r border-gray-300 py-1">{monedaSimbolo}</div>
@@ -1012,7 +1027,8 @@ console.log(formValues)
                                         const pUnit = item?.precioUnitario != null
                                             ? Number(item.precioUnitario)
                                             : pUnitFinal + (Number(item?.mtoDescuento || 0) / (cant || 1));
-                                        const totalItem = Number(item?.total || (pUnitFinal * cant));
+                                        const esGratis = esItemGratuito(item);
+                                        const totalItem = esGratis ? 0 : Number(item?.total || (pUnitFinal * cant));
 
                                         return (
                                             <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
@@ -1025,7 +1041,10 @@ console.log(formValues)
                                                     </div>
                                                 )}
                                                 <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">
-                                                    <div style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>{descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}</div>
+                                                    <div style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
+                                                        {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
+                                                        {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
+                                                    </div>
                                                     {item?.lotes && item.lotes.length > 0 && (
                                                         <div className="flex flex-col mt-0.5">
                                                             {item.lotes.map((l: any, idx: number) => (
