@@ -1,10 +1,101 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import InputPro from '@/components/InputPro';
 import { useAuthStore } from '@/zustand/auth';
 import { useProductModalViewModel } from '../useProductModalViewModel';
 
 type ViewProps = ReturnType<typeof useProductModalViewModel>;
+
+// Ayuda para calcular el stock total en unidades sueltas cuando el producto se
+// maneja por cajas/paquetes (ej. al migrar de Variantes por presentación a
+// Códigos de barra adicionales). Evita el error típico de sumar los números
+// de cada presentación directo (ej. 99 + 300 = 399) en vez de multiplicar
+// cada uno por su tamaño de caja (99×50 + 300×100 = 34,950).
+const StockFromBoxesCalculator: React.FC<{ onApply: (total: number) => void }> = ({ onApply }) => {
+    const [open, setOpen] = useState(false);
+    const [rows, setRows] = useState<{ cajas: string; unidades: string }[]>([{ cajas: '', unidades: '' }]);
+
+    const total = rows.reduce((sum, r) => sum + (Number(r.cajas) || 0) * (Number(r.unidades) || 0), 0);
+
+    const updateRow = (i: number, patch: Partial<{ cajas: string; unidades: string }>) =>
+        setRows(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+    const addRow = () => setRows([...rows, { cajas: '', unidades: '' }]);
+    const removeRow = (i: number) => setRows(rows.filter((_, idx) => idx !== i));
+
+    return (
+        <div className="mt-3 rounded-lg border border-dashed border-violet-200 dark:border-violet-900/40 bg-violet-50/40 dark:bg-violet-950/10 p-3">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="flex w-full items-center justify-between gap-2 text-left"
+            >
+                <span className="flex items-center gap-1.5 text-xs font-bold text-violet-700 dark:text-violet-300">
+                    <Icon icon="mdi:calculator-variant-outline" width={15} />
+                    ¿Vendes por cajas o vienes de Variantes? Calcula el stock en unidades
+                </span>
+                <Icon icon={open ? 'mdi:chevron-up' : 'mdi:chevron-down'} width={16} className="shrink-0 text-violet-500" />
+            </button>
+            {open && (
+                <div className="mt-3 space-y-2">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Indica cuántas cajas/paquetes tienes de cada presentación y cuántas unidades trae cada una —
+                        sumamos por ti el total real en unidades sueltas (el que va en el campo Stock).
+                    </p>
+                    {rows.map((row, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Cajas"
+                                value={row.cajas}
+                                onChange={(e) => updateRow(i, { cajas: e.target.value })}
+                                className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-violet-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                            />
+                            <span className="text-xs text-gray-400">×</span>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Unid./caja"
+                                value={row.unidades}
+                                onChange={(e) => updateRow(i, { unidades: e.target.value })}
+                                className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-violet-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                            />
+                            <span className="text-xs text-gray-400">=</span>
+                            <span className="w-16 text-xs font-bold text-gray-700 dark:text-gray-200">
+                                {((Number(row.cajas) || 0) * (Number(row.unidades) || 0)).toLocaleString()}
+                            </span>
+                            {rows.length > 1 && (
+                                <button type="button" onClick={() => removeRow(i)} className="text-gray-400 hover:text-rose-500">
+                                    <Icon icon="mdi:close" width={14} />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={addRow}
+                        className="flex items-center gap-1 text-[11px] font-bold text-violet-600 hover:underline dark:text-violet-400"
+                    >
+                        <Icon icon="mdi:plus" width={13} /> Agregar otra presentación
+                    </button>
+                    <div className="flex items-center justify-between border-t border-violet-100 pt-2 dark:border-violet-900/30">
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                            Total en unidades: <span className="text-violet-700 dark:text-violet-300">{total.toLocaleString()}</span>
+                        </span>
+                        <button
+                            type="button"
+                            disabled={total <= 0}
+                            onClick={() => { onApply(total); setOpen(false); }}
+                            className="rounded-lg bg-violet-600 px-3 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Usar este total
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const { auth } = useAuthStore();
@@ -187,6 +278,13 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                     </div>
                                 )}
 
+                                <StockFromBoxesCalculator
+                                    onApply={(total) => {
+                                        setTipoAjusteStock('reemplazar');
+                                        setCantidadAjuste(total);
+                                    }}
+                                />
+
                                 {tipoAjusteStock !== 'ninguno' && (
                                     <div className="mt-2 text-[10px] text-gray-600 dark:text-amber-400 bg-yellow-50 dark:bg-amber-900/20 p-2 rounded border border-yellow-200 dark:border-amber-800/50">
                                         <Icon icon="mdi:information" className="inline mr-1" width={14} height={14} />
@@ -211,6 +309,11 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         <div className={hasSedePolicy ? 'lg:col-span-1' : ''}>
                             <InputPro autocomplete="off" type="number" readOnly={esFarmaceutico} value={formValues?.stock} error={errors.stock} name="stock" onChange={handleChange} isLabel label="Stock Inicial" placeholder="Cantidad inicial en inventario" />
                             {esFarmaceutico && <p className="text-[11px] text-amber-500 mt-1"><Icon icon="mdi:information" className="inline mr-1" />En farmacia, ingresa el stock inicial usando el botón "Gestión de Lotes".</p>}
+                            {!esFarmaceutico && (
+                                <StockFromBoxesCalculator
+                                    onApply={(total) => handleChange({ target: { name: 'stock', value: String(total) } } as any)}
+                                />
+                            )}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                 <InputPro autocomplete="off" type="number" value={formValues?.stockMinimo ?? ''} name="stockMinimo" onChange={handleChange} isLabel label="Stock mínimo" placeholder="Ej. 5" />
                                 <InputPro autocomplete="off" type="number" value={formValues?.stockMaximo ?? ''} name="stockMaximo" onChange={handleChange} isLabel label={isMobile ? "Stock máximo" : "Stock máximo"} placeholder="Ej. 100" />
