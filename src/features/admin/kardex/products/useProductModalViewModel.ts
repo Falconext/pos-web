@@ -822,6 +822,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         marca: (formValues as any)?.marcaNombre || "",
         categoria: (formValues as any)?.categoriaNombre || "",
         codigoBarras: "",
+        // El color viaja aparte para que el backend lo exija y descarte las
+        // fotos del mismo modelo en otro acabado.
+        color: colorClean,
       });
       const result = response.data?.data || response.data;
       const candidates = Array.isArray(result?.candidates)
