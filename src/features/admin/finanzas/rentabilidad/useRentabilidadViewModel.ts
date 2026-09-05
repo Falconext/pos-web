@@ -19,6 +19,7 @@ interface RentabilidadState {
     evolucion: EvolucionPoint[];
     gastos: GastoOperativo[];
     ingresos: IngresoManual[];
+    valorInventario: number | null;
     isLoading: boolean;
     isModalOpen: boolean;
     gastoEditando: GastoOperativo | null;
@@ -41,6 +42,7 @@ export function useRentabilidadViewModel() {
         evolucion: [],
         gastos: [],
         ingresos: [],
+        valorInventario: null,
         isLoading: false,
         isModalOpen: false,
         gastoEditando: null,
@@ -91,6 +93,18 @@ export function useRentabilidadViewModel() {
         }
     }, []);
 
+    // Capital inmovilizado en stock (comprado, aún sin vender). Es una foto
+    // del inventario ACTUAL, no del período seleccionado: la compra no se
+    // gasta hasta que el producto se vende (ver "Costo Real de Productos"
+    // en el P&L), así que este valor complementa esa fila explicando dónde
+    // quedó el dinero de las compras que todavía no impactan la ganancia.
+    const fetchValorInventario = useCallback(async () => {
+        const resp = await get<{ resumen?: { valorTotalInventario?: number } }>(`kardex/inventario-valorizado`);
+        if (resp.data) {
+            setState(prev => ({ ...prev, valorInventario: resp.data!.resumen?.valorTotalInventario ?? 0 }));
+        }
+    }, []);
+
     // ─── Load on mount and on mes/año change ──────────────────────────────────
 
     useEffect(() => {
@@ -109,9 +123,10 @@ export function useRentabilidadViewModel() {
         load();
     }, [state.mesActual, state.anioActual]);
 
-    // Fetch evolution only once on mount
+    // Fetch evolution and current inventory value only once on mount
     useEffect(() => {
         fetchEvolucion();
+        fetchValorInventario();
     }, []);
 
     // ─── Navigation ───────────────────────────────────────────────────────────
@@ -274,6 +289,7 @@ export function useRentabilidadViewModel() {
         evolucion: state.evolucion,
         gastos: state.gastos,
         ingresos: state.ingresos,
+        valorInventario: state.valorInventario,
         isLoading: state.isLoading,
         isModalOpen: state.isModalOpen,
         gastoEditando: state.gastoEditando,

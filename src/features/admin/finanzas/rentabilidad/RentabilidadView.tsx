@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import {
     PnlResponse,
@@ -27,6 +28,7 @@ interface RentabilidadViewProps {
     evolucion: EvolucionPoint[];
     gastos: GastoOperativo[];
     ingresos: IngresoManual[];
+    valorInventario: number | null;
     isLoading: boolean;
     isModalOpen: boolean;
     gastoEditando: GastoOperativo | null;
@@ -121,6 +123,36 @@ function VariacionBadge({ variacion }: { variacion: number | null }) {
     );
 }
 
+// ─── Nota: capital en inventario sin vender ────────────────────────────────────
+// El "Costo Real de Productos" del P&L solo cuenta lo que SE VENDIÓ este
+// período: una compra de mercadería no es un gasto hasta que el producto se
+// vende. Esta nota explica dónde quedó el dinero de lo comprado y aún no
+// vendido, y enlaza al detalle en Kardex (mismo dato, ya usado ahí).
+function InventarioNota({ valorInventario }: { valorInventario: number }) {
+    return (
+        <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/50 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-sky-100 dark:bg-sky-900/40 flex items-center justify-center flex-shrink-0">
+                <Icon icon="solar:box-bold-duotone" className="text-sky-600 dark:text-sky-400 text-xl" />
+            </div>
+            <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    Tienes {formatCurrency(valorInventario)} en mercadería comprada y aún sin vender
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Ese monto no aparece como gasto arriba: el costo de una compra recién se descuenta cuando el producto se vende ("Costo Real de Productos"). Hasta entonces, tu dinero queda invertido en stock.
+                </p>
+            </div>
+            <Link
+                to="/administrador/kardex/dashboard"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline flex-shrink-0 whitespace-nowrap"
+            >
+                Ver inventario
+                <Icon icon="solar:arrow-right-bold" className="text-sm" />
+            </Link>
+        </div>
+    );
+}
+
 function DailyProfitCard({ pnl }: { pnl: PnlResponse }) {
     const topDays = pnl.resumenDiario.slice(0, 7);
 
@@ -207,7 +239,7 @@ function DailyProfitCard({ pnl }: { pnl: PnlResponse }) {
 
 export default function RentabilidadView(props: RentabilidadViewProps) {
     const {
-        mesActual, anioActual, pnl, evolucion, gastos, ingresos,
+        mesActual, anioActual, pnl, evolucion, gastos, ingresos, valorInventario,
         isLoading, isModalOpen, gastoEditando, isSaving, isCurrentOrFuture,
         isIngresoModalOpen, ingresoEditando, isSavingIngreso,
         navegarMes, crearGasto, actualizarGasto, eliminarGasto,
@@ -373,6 +405,10 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             <p className="text-gray-500 dark:text-gray-400 font-semibold">Sin datos para {getMesFullLabel(mesActual)} {anioActual}</p>
                             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Aún no hay ventas registradas en este período</p>
                         </div>
+                    )}
+
+                    {pnl && !!valorInventario && (
+                        <InventarioNota valorInventario={valorInventario} />
                     )}
 
                     {pnl && <DailyProfitCard pnl={pnl} />}

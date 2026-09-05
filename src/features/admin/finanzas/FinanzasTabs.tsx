@@ -113,6 +113,7 @@ export default function FinanzasTabs() {
                         evolucion={vm.evolucion}
                         gastos={vm.gastos}
                         ingresos={vm.ingresos}
+                        valorInventario={vm.valorInventario}
                         isLoading={vm.isLoading}
                         isModalOpen={vm.isModalOpen}
                         gastoEditando={vm.gastoEditando}
