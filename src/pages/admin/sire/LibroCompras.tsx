@@ -1,8 +1,30 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import apiClient from '@/utils/apiClient';
-import { post } from '@/utils/fetch';
+import { get, post } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
+
+// Totales del período tal como saldrán en el TXT/Excel (mismo origen de datos).
+interface ResumenCompras {
+  periodo: string;
+  cantidad: number;
+  base: number;
+  igv: number;
+  total: number;
+  porTipoDoc: Record<string, { cantidad: number; total: number }>;
+}
+
+const TIPO_DOC_LABEL: Record<string, string> = {
+  '01': 'Facturas',
+  '02': 'Recibos por honorarios',
+  '03': 'Boletas',
+  '04': 'Liquidaciones',
+  '07': 'Notas de crédito',
+  '08': 'Notas de débito',
+};
+
+const fmtMoneda = (v: number) =>
+  `S/ ${Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const MESES = [
   { id: 1, value: 'Enero' }, { id: 2, value: 'Febrero' }, { id: 3, value: 'Marzo' },
@@ -22,6 +44,12 @@ export default function LibroCompras() {
   const [enviandoCorreo, setEnviandoCorreo] = useState(false);
   const [destinatario, setDestinatario] = useState('');
   const [mostrarCorreo, setMostrarCorreo] = useState(false);
+  const [resumen, setResumen] = useState<ResumenCompras | null>(null);
+  const [cargandoResumen, setCargandoResumen] = useState(false);
+
+  // El resumen corresponde a un período concreto: si cambia, se descarta para
+  // no mostrar totales que ya no corresponden a lo que se descargaría.
+  const resetResumen = () => setResumen(null);
 
   const validar = () => {
     if (!mes || !anio) {
@@ -37,6 +65,25 @@ export default function LibroCompras() {
       anio: String(anio),
       simple: String(simple),
     }).toString();
+  };
+
+  const handlePrevisualizar = async () => {
+    if (!validar()) return;
+    try {
+      setCargandoResumen(true);
+      const resp = await get<ResumenCompras>(
+        `contabilidad/sire/compras-resumen?mes=${mes}&anio=${anio}`,
+      );
+      if (resp.error || !resp.data) {
+        alert(resp.error ?? 'No se pudo calcular el resumen', 'error');
+        return;
+      }
+      setResumen(resp.data);
+    } catch {
+      alert('No se pudo calcular el resumen', 'error');
+    } finally {
+      setCargandoResumen(false);
+    }
   };
 
   const handleDescargarTxt = async () => {
@@ -147,7 +194,7 @@ export default function LibroCompras() {
             <div className="flex-1">
               <select
                 value={mes ?? ''}
-                onChange={(e) => setMes(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => { setMes(e.target.value ? Number(e.target.value) : null); resetResumen(); }}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Mes</option>
@@ -159,7 +206,7 @@ export default function LibroCompras() {
             <div className="flex-1">
               <select
                 value={anio ?? ''}
-                onChange={(e) => setAnio(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => { setAnio(e.target.value ? Number(e.target.value) : null); resetResumen(); }}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Año</option>
@@ -191,7 +238,7 @@ export default function LibroCompras() {
             </button>
           </div>
 
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center gap-3 mb-6">
             <button
               onClick={handleDescargarExcel}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
@@ -199,7 +246,65 @@ export default function LibroCompras() {
               <Icon icon="solar:file-check-bold-duotone" className="text-lg" />
               Descargar Excel
             </button>
+            <button
+              onClick={handlePrevisualizar}
+              disabled={cargandoResumen}
+              className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <Icon
+                icon={cargandoResumen ? 'solar:refresh-circle-bold-duotone' : 'solar:calculator-minimalistic-bold-duotone'}
+                className={`text-lg ${cargandoResumen ? 'animate-spin' : ''}`}
+              />
+              Ver totales
+            </button>
           </div>
+
+          {/* Resumen del período — para cuadrar antes de exportar */}
+          {resumen && (
+            <div className="border-t border-gray-100 pt-6 mb-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 text-center">
+                Totales del período {resumen.periodo}
+              </p>
+
+              {resumen.cantidad === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-3">
+                  No hay compras registradas en este período.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {[
+                      { label: 'Compras', valor: String(resumen.cantidad) },
+                      { label: 'Base gravada', valor: fmtMoneda(resumen.base) },
+                      { label: 'IGV', valor: fmtMoneda(resumen.igv) },
+                    ].map((f) => (
+                      <div key={f.label} className="bg-gray-50 rounded-xl px-3 py-2">
+                        <p className="text-[11px] text-gray-400">{f.label}</p>
+                        <p className="text-sm font-semibold text-gray-800">{f.valor}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-3 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-blue-700">Importe total</span>
+                    <span className="text-base font-bold text-blue-700">{fmtMoneda(resumen.total)}</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {Object.entries(resumen.porTipoDoc).map(([tipo, d]) => (
+                      <span key={tipo} className="text-[11px] bg-gray-100 text-gray-600 rounded-lg px-2 py-1">
+                        {TIPO_DOC_LABEL[tipo] ?? tipo}: {d.cantidad} · {fmtMoneda(d.total)}
+                      </span>
+                    ))}
+                  </div>
+
+                  <p className="text-[11px] text-gray-400 text-center mt-3">
+                    Solo incluye compras en estado REGISTRADO (excluye anuladas, rechazadas y pendientes de aprobación).
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Panel correo */}
           {mostrarCorreo && (
