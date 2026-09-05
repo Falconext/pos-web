@@ -86,6 +86,7 @@ export default function CombosAdmin() {
             onChange={setSearch}
             placeholder="Buscar kit, promo o descripción..."
             className="w-full sm:max-w-md"
+            bordered={false}
           />
         </InventoryToolbar>
 
@@ -97,37 +98,90 @@ export default function CombosAdmin() {
           subtitle={vm.combos.length === 0 ? 'Crea tu primer kit para empezar a ofrecer promociones y packs.' : 'Prueba con otro término de búsqueda o cambia el estado seleccionado.'}
         />
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredCombos.map((combo) => (
-            <div key={combo.id} className={`overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-[0_30px_80px_-60px_rgba(15,23,42,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_35px_90px_-55px_rgba(106,90,249,0.35)] dark:border-slate-800 dark:bg-[#111827] ${!combo.activo ? 'opacity-65' : ''}`}>
-              <div className="relative h-44 bg-gray-900 overflow-hidden">
-                {combo.imagenUrl ? <img src={combo.imagenUrl} alt={combo.nombre} className="w-full h-full object-cover transition-transform group-hover:scale-110" /> : <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"><Icon icon="solar:bag-smile-bold-duotone" className="w-20 h-20 text-white/30" /></div>}
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-md shadow-lg ${combo.activo ? 'bg-green-500/80 text-white' : 'bg-gray-500/80 text-white'}`}>{combo.activo ? 'Activo' : 'Inactivo'}</span>
-                  <span className="bg-red-500/80 text-white px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-md shadow-lg">-{Math.round(Number(combo.descuentoPorcentaje))}%</span>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredCombos.map((combo) => {
+            const precioRegular = Number(combo.precioRegular);
+            const precioCombo = Number(combo.precioCombo);
+            const ahorro = Math.max(0, precioRegular - precioCombo);
+            const descuentoPct = precioRegular > 0 ? Math.round((ahorro / precioRegular) * 100) : 0;
+            return (
+            <div
+              key={combo.id}
+              className={`group relative flex flex-col overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_20px_55px_-30px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_35px_80px_-30px_rgba(106,90,249,0.4)] dark:border-slate-800 dark:bg-[#111827] ${!combo.activo ? 'opacity-60 saturate-50' : ''}`}
+            >
+              {/* Vitrina del logo/imagen: una placa-marco de tamaño fijo (no la imagen suelta)
+                  ocupa el espacio de forma consistente sin importar si la imagen es un logo
+                  ancho o un póster vertical — antes, limitar solo por alto dejaba las imágenes
+                  angostas "perdidas" en medio de espacio vacío. */}
+              <div className="relative h-48 shrink-0 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/70 dark:to-slate-900">
+                <div
+                  className="absolute inset-0 opacity-70 dark:opacity-[0.08]"
+                  style={{
+                    backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
+                    backgroundSize: '18px 18px',
+                    color: 'rgb(203 213 225)',
+                  }}
+                />
+                <div className="relative flex h-full items-center justify-center p-5">
+                  {combo.imagenUrl ? (
+                    <div className="flex h-full max-h-32 w-full max-w-[88%] items-center justify-center rounded-2xl border border-white/70 bg-white/95 p-3 shadow-[0_16px_36px_-16px_rgba(15,23,42,0.35)] dark:border-slate-700/70 dark:bg-slate-900/85">
+                      <img
+                        src={combo.imagenUrl}
+                        alt={combo.nombre}
+                        className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.05]"
+                      />
+                    </div>
+                  ) : (
+                    <Icon icon="solar:bag-smile-bold-duotone" className="h-16 w-16 text-slate-300 dark:text-white/15" />
+                  )}
+                </div>
+
+                <div className="absolute left-3 top-3">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm backdrop-blur-md ${combo.activo ? 'bg-emerald-500/90 text-white' : 'bg-slate-500/90 text-white'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${combo.activo ? 'bg-white' : 'bg-white/70'}`} />
+                    {combo.activo ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+                {descuentoPct > 0 && (
+                  <div className="absolute right-3 top-3">
+                    <span className="inline-flex items-center rounded-full bg-slate-900/90 px-2.5 py-1 text-[10px] font-black tracking-wide text-white shadow-sm backdrop-blur-md dark:bg-white/10">
+                      -{descuentoPct}%
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Panel de precio elevado, superpuesto a la vitrina — el punto focal de la tarjeta */}
+              <div className="relative z-10 mx-5 -mt-6 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_18px_40px_-20px_rgba(15,23,42,0.25)] dark:border-slate-700/80 dark:bg-slate-800">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    {precioRegular > precioCombo && (
+                      <p className="text-xs font-semibold text-slate-400 line-through dark:text-slate-500">S/ {precioRegular.toFixed(2)}</p>
+                    )}
+                    <p className={`text-2xl font-black tracking-tight tabular-nums ${t.text}`}>S/ {precioCombo.toFixed(2)}</p>
+                  </div>
+                  {ahorro > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Ahorras</p>
+                      <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">S/ {ahorro.toFixed(2)}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="p-5">
-                <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-white">{combo.nombre}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{combo.descripcion || 'Sin descripción'}</p>
-                <div className="flex items-center justify-between mb-4 bg-gray-50 dark:bg-slate-800 rounded-xl p-3">
-                  <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 line-through">S/ {Number(combo.precioRegular).toFixed(2)}</p>
-                    <p className={`text-xl font-bold ${t.text}`}>S/ {Number(combo.precioCombo).toFixed(2)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Ahorra</p>
-                    <p className="text-sm text-green-600 font-bold">S/ {(Number(combo.precioRegular) - Number(combo.precioCombo)).toFixed(2)}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => vm.toggleComboActivo(combo)} className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all ${combo.activo ? 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800/50'}`}>{combo.activo ? 'Desactivar' : 'Activar'}</button>
-                  <button onClick={() => vm.abrirModal(combo)} className={`p-2.5 ${t.soft} dark:bg-indigo-900/30 dark:text-indigo-400 rounded-2xl hover:opacity-80 transition-colors border dark:border-indigo-800/50`}><Icon icon="solar:pen-bold" width={18} /></button>
-                  <button onClick={() => vm.handleEliminarCombo(combo.id)} className="p-2.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors border dark:border-red-800/50"><Icon icon="solar:trash-bin-trash-bold" width={18} /></button>
+
+              <div className="flex flex-1 flex-col p-5 pt-4">
+                <h3 className="text-[17px] font-extrabold tracking-tight text-slate-900 dark:text-white">{combo.nombre}</h3>
+                <p className="mt-1 mb-4 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{combo.descripcion || 'Sin descripción'}</p>
+
+                <div className="mt-auto flex gap-2">
+                  <button onClick={() => vm.toggleComboActivo(combo)} className={`flex-1 rounded-2xl py-2.5 text-sm font-bold transition-all ${combo.activo ? 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700' : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50'}`}>{combo.activo ? 'Desactivar' : 'Activar'}</button>
+                  <button onClick={() => vm.abrirModal(combo)} className={`rounded-2xl border p-2.5 transition-all hover:-translate-y-0.5 ${t.soft} border-transparent hover:shadow-sm dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-400`}><Icon icon="solar:pen-bold" width={18} /></button>
+                  <button onClick={() => vm.handleEliminarCombo(combo.id)} className="rounded-2xl border border-red-200 bg-red-50 p-2.5 text-red-600 transition-all hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-sm dark:border-red-800/50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"><Icon icon="solar:trash-bin-trash-bold" width={18} /></button>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
         </div>
@@ -143,24 +197,35 @@ export default function CombosAdmin() {
             <div className="p-6 space-y-6">
               <InputPro name="nombre" isLabel label="Nombre del Kit *" value={vm.form.nombre} onChange={(e) => vm.setForm(prev => ({ ...prev, nombre: e.target.value }))} placeholder="Ej: Kit de Baño Completo" />
               <InputPro isLabel name="descripcion" label="Descripción" value={vm.form.descripcion} onChange={(e) => vm.setForm(prev => ({ ...prev, descripcion: e.target.value }))} placeholder="Descripción del kit..." />
-              <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-4 bg-gray-50/50 dark:bg-slate-800/50">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Imagen del Kit</label>
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/40">
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Imagen del Kit</label>
                 <div className="space-y-3">
-                  <div className="relative w-full h-52 rounded-xl overflow-hidden border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 group shadow-sm">
-                    {vm.form.imagenUrl ? (
-                      <>
-                        <img src={vm.form.imagenUrl} alt="Imagen del kit" className="w-full h-full object-cover" />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
-                          <p className="text-xs font-medium text-white/90">Vista previa del kit</p>
+                  {/* Misma placa con textura de puntos + marco blanco de las tarjetas del listado:
+                      la imagen se contiene completa (nunca se recorta), sea un logo ancho o un póster vertical. */}
+                  <div className="relative h-52 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/70 dark:to-slate-900">
+                    <div
+                      className="absolute inset-0 opacity-70 dark:opacity-[0.08]"
+                      style={{
+                        backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
+                        backgroundSize: '18px 18px',
+                        color: 'rgb(203 213 225)',
+                      }}
+                    />
+                    <div className="relative flex h-full items-center justify-center p-5">
+                      {vm.form.imagenUrl ? (
+                        <div className="flex h-full max-h-36 w-full max-w-[85%] items-center justify-center rounded-2xl border border-white/70 bg-white/95 p-3 shadow-[0_16px_36px_-16px_rgba(15,23,42,0.35)] dark:border-slate-700/70 dark:bg-slate-900/85">
+                          <img src={vm.form.imagenUrl} alt="Imagen del kit" className="h-full w-full object-contain" />
                         </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
-                        <Icon icon="solar:camera-bold" width={30} />
-                        <p className="text-sm font-medium">Sin imagen</p>
-                        <p className="text-xs text-gray-400">Sube una imagen para destacar el kit</p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-500">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-600">
+                            <Icon icon="solar:camera-bold-duotone" width={22} />
+                          </div>
+                          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Sin imagen</p>
+                          <p className="text-xs">Sube una imagen para destacar el kit</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {vm.editingCombo ? (

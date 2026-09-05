@@ -126,14 +126,16 @@ export function InventorySearchBox({
   onChange,
   placeholder,
   className = '',
+  bordered = true,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   className?: string;
+  bordered?: boolean;
 }) {
   return (
-    <label className={`flex h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/60 ${className}`}>
+    <label className={`flex h-12 items-center gap-3 rounded-2xl bg-white px-4 shadow-sm dark:bg-slate-900/60 ${bordered ? 'border border-slate-200 dark:border-slate-700' : 'border border-transparent'} ${className}`}>
       <Icon icon="solar:magnifer-linear" className="text-xl text-slate-400" />
       <input
         value={value}
