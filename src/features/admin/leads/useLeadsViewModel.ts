@@ -27,6 +27,7 @@ export function useLeadsViewModel() {
     iaVentasActiva: false,
     iaVentasContexto: '',
     iaVentasSeguimiento: true,
+    iaVentasCotizacion: false,
     iaVentasBrochureUrl: '',
   })
   const [resumen, setResumen] = useState<ResumenProspectos>(RESUMEN_VACIO)

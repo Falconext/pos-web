@@ -258,11 +258,18 @@ function ProspectoCard({
           {p.resumen}
         </p>
       )}
-      {!p.botActivo && (
-        <span className="mt-2 inline-flex items-center gap-1 rounded-md bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-          <Icon icon="solar:pause-bold" width={11} /> IA pausada
-        </span>
-      )}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {p.cotizacion && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+            <Icon icon="solar:document-text-bold" width={11} /> {p.cotizacion.codigo}
+          </span>
+        )}
+        {!p.botActivo && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+            <Icon icon="solar:pause-bold" width={11} /> IA pausada
+          </span>
+        )}
+      </div>
     </button>
   )
 }
@@ -699,11 +706,13 @@ function ConfigForm({
     iaVentasActiva: boolean
     iaVentasContexto: string
     iaVentasSeguimiento: boolean
+    iaVentasCotizacion: boolean
     iaVentasBrochureUrl: string
   }
   onSave: (data: {
     iaVentasContexto: string
     iaVentasSeguimiento: boolean
+    iaVentasCotizacion: boolean
     iaVentasBrochureUrl: string
   }) => void
   onToggle: (v: boolean) => void
@@ -711,6 +720,7 @@ function ConfigForm({
   const [contexto, setContexto] = useState(initial.iaVentasContexto)
   const [activa, setActiva] = useState(initial.iaVentasActiva)
   const [seguimiento, setSeguimiento] = useState(initial.iaVentasSeguimiento)
+  const [cotizacion, setCotizacion] = useState(initial.iaVentasCotizacion)
   const [brochure, setBrochure] = useState(initial.iaVentasBrochureUrl)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -718,6 +728,7 @@ function ConfigForm({
     setContexto(initial.iaVentasContexto)
     setActiva(initial.iaVentasActiva)
     setSeguimiento(initial.iaVentasSeguimiento)
+    setCotizacion(initial.iaVentasCotizacion)
     setBrochure(initial.iaVentasBrochureUrl)
   }, [initial])
 
@@ -774,6 +785,18 @@ function ConfigForm({
           </p>
         </div>
         <SwitchIa activa={seguimiento} onChange={setSeguimiento} />
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800">
+        <div className="pr-3">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            Cotización automática
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Cuando el prospecto confirma qué productos y cantidades quiere, la IA arma un borrador de cotización (sin afectar stock ni caja) y lo deja listo en el panel.
+          </p>
+        </div>
+        <SwitchIa activa={cotizacion} onChange={setCotizacion} />
       </div>
 
       <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
@@ -845,6 +868,7 @@ function ConfigForm({
             onSave({
               iaVentasContexto: contexto,
               iaVentasSeguimiento: seguimiento,
+              iaVentasCotizacion: cotizacion,
               iaVentasBrochureUrl: brochure,
             })
           }

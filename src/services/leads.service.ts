@@ -34,6 +34,9 @@ export interface LeadProspecto {
   botActivo: boolean
   notificadoEn: string | null
   clienteId: number | null
+  cotizacionId: number | null
+  /** Cotización (COT) que la IA generó desde el chat, si aplica. */
+  cotizacion: { id: number; codigo: string } | null
   conversacionId: number
   creadoEn: string
   actualizadoEn: string
@@ -70,6 +73,7 @@ export interface LeadsConfig {
   iaVentasActiva: boolean
   iaVentasContexto: string
   iaVentasSeguimiento: boolean
+  iaVentasCotizacion: boolean
   iaVentasBrochureUrl: string
 }
 
