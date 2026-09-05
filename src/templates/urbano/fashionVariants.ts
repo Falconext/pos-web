@@ -4,6 +4,13 @@ export type FashionColorOption = {
   name: string;
   hex: string;
   image: string | null;
+  /**
+   * true cuando el color NO tiene un hex propio que lo distinga (el admin dejó
+   * el placeholder gris, ej. "Verde Botella") pero sí tiene foto. En ese caso
+   * el swatch se pinta con la foto del color, como hacen las tiendas de moda:
+   * tres círculos grises idénticos no le dicen nada al comprador.
+   */
+  useImage: boolean;
 };
 
 const COLOR_HEX: Record<string, string> = {
@@ -143,7 +150,27 @@ const colorMapFromProducto = (producto: any): Record<string, string> => {
 // Hex "placeholder" que el admin asigna cuando el comerciante NO personalizó
 // el color (gris por defecto). Si el color sí es conocido, preferimos el hex
 // real para que, p.ej., "Cobre" salga cobre y no gris.
-const PLACEHOLDER_HEX = new Set(['#cbd5e1', '#e5e7eb']);
+const PLACEHOLDER_HEX = new Set([
+  '#cbd5e1',
+  '#e5e7eb',
+  '#e5e5e5',
+  '#dddddd',
+  '#ddd',
+]);
+
+/**
+ * ¿El color tiene un hex que realmente lo represente? Falso cuando no está en
+ * la paleta conocida y el comerciante no lo personalizó (quedó en placeholder).
+ */
+export const hasDistinctColorHex = (
+  name: string,
+  colorMap?: Record<string, string>,
+): boolean => {
+  const normalized = normalizeText(name);
+  if (COLOR_HEX[normalized]) return true;
+  const custom = colorMap?.[normalized];
+  return Boolean(custom && !PLACEHOLDER_HEX.has(custom.trim().toLowerCase()));
+};
 
 // Resuelve el hex de un color respetando primero lo que el comerciante guardó
 // en el producto, luego la paleta conocida, y por último un gris neutro.
@@ -160,8 +187,38 @@ export const resolveColorHex = (
   return known || custom || '#E5E7EB';
 };
 
+// Galería por color guardada en el producto (`atributosTecnicos.galeriaPorColor`).
+const colorGalleryFromProducto = (producto: any): Record<string, any> => {
+  const attrs = producto?.atributosTecnicos || {};
+  const raw =
+    attrs?.galeriaPorColor ||
+    attrs?.galeriaImagenesPorColor ||
+    attrs?.imagenesPorColor ||
+    {};
+  if (typeof raw !== 'string') {
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const galleryForColor = (producto: any, colorValue: string): string[] => {
+  const gallery = colorGalleryFromProducto(producto);
+  const target = normalizeText(colorValue);
+  const direct = Array.isArray(gallery?.[colorValue]) ? gallery[colorValue] : null;
+  if (direct) return direct.filter(Boolean);
+  const key = Object.keys(gallery).find((k) => normalizeText(k) === target);
+  return key && Array.isArray(gallery[key]) ? gallery[key].filter(Boolean) : [];
+};
+
 // Imagen representativa de un color: la primera variante de ese color con imagen.
 // En la tienda la imagen es por color (todas las tallas comparten la misma foto).
+// Si ninguna variante trae `imagenUrl` (caso habitual cuando las fotos se cargan
+// desde "Imágenes por color" en el admin), cae a la galería de ese color.
 export const getFashionColorImage = (producto: any, colorValue: string): string | null => {
   const target = normalizeText(colorValue);
   if (!target) return null;
@@ -170,33 +227,12 @@ export const getFashionColorImage = (producto: any, colorValue: string): string 
     const key = Object.keys(values).find(isColorName);
     return key ? normalizeText(values[key]) === target && Boolean(variant?.imagenUrl) : false;
   });
-  return match?.imagenUrl || null;
+  return match?.imagenUrl || galleryForColor(producto, colorValue)[0] || null;
 };
 
 export const getFashionColorGallery = (producto: any, colorValue: string): string[] => {
-  const target = normalizeText(colorValue);
-  const attrs = producto?.atributosTecnicos || {};
-  const rawGallery =
-    attrs?.galeriaPorColor ||
-    attrs?.galeriaImagenesPorColor ||
-    attrs?.imagenesPorColor ||
-    {};
-  const gallery = typeof rawGallery === 'string'
-    ? (() => {
-        try {
-          const parsed = JSON.parse(rawGallery);
-          return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-        } catch {
-          return {};
-        }
-      })()
-    : rawGallery;
-
-  const direct = Array.isArray(gallery?.[colorValue]) ? gallery[colorValue] : null;
-  const normalizedKey = Object.keys(gallery || {}).find((key) => normalizeText(key) === target);
-  const byNormalized = normalizedKey && Array.isArray(gallery?.[normalizedKey]) ? gallery[normalizedKey] : null;
   const principal = getFashionColorImage(producto, colorValue);
-  const urls = [principal, ...(direct || byNormalized || [])].filter(Boolean) as string[];
+  const urls = [principal, ...galleryForColor(producto, colorValue)].filter(Boolean) as string[];
   const seen = new Set<string>();
   return urls.filter((url) => {
     const key = (() => {
@@ -218,11 +254,15 @@ export const getFashionColors = (producto: any): FashionColorOption[] => {
     ? valuesFromOptions(producto, isColorName)
     : valuesFromVariants(producto, isColorName);
   const colorMap = colorMapFromProducto(producto);
-  return values.map((name) => ({
-    name,
-    hex: resolveColorHex(name, colorMap),
-    image: getFashionColorImage(producto, name),
-  }));
+  return values.map((name) => {
+    const image = getFashionColorImage(producto, name);
+    return {
+      name,
+      hex: resolveColorHex(name, colorMap),
+      image,
+      useImage: Boolean(image) && !hasDistinctColorHex(name, colorMap),
+    };
+  });
 };
 
 export const getFashionSizes = (producto: any): string[] => {

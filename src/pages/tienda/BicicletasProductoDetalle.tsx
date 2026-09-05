@@ -317,8 +317,25 @@ export function BicicletasProductoDetalleView({
                             className={`relative flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform hover:scale-110 ${available ? '' : 'opacity-35'}`}
                             style={{ backgroundColor: c.hex || '#CBD5E1', boxShadow: active ? `0 0 0 2px #fff, 0 0 0 4px ${primary}` : undefined, ['--tw-ring-color' as any]: 'rgba(14,14,18,0.16)' }}
                           >
-                            {active && <Icon icon="mdi:check" width={17} style={{ color: light ? '#111114' : '#fff' }} />}
-                            {c.image && <img src={c.image} alt="" className="pointer-events-none absolute inset-0 h-full w-full rounded-full object-cover opacity-0" />}
+                            {c.useImage && c.image && (
+                              <img
+                                src={c.image}
+                                alt={c.name}
+                                className="pointer-events-none absolute inset-0 h-full w-full rounded-full object-cover"
+                                draggable={false}
+                              />
+                            )}
+                            {active && (
+                              <Icon
+                                icon="mdi:check"
+                                width={17}
+                                className="relative"
+                                style={{
+                                  color: c.useImage && c.image ? '#fff' : light ? '#111114' : '#fff',
+                                  filter: c.useImage && c.image ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))' : undefined,
+                                }}
+                              />
+                            )}
                           </button>
                         );
                       })}

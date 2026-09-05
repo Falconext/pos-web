@@ -8,6 +8,7 @@ import { getApiculturaVariantData, findApiculturaVariant, optionValueAvailable, 
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { AUR, AurCartModal, AurFooter, AurHeader, AurProductCard, AurProductImage, AurWhatsAppFab, aurFont, aurPrimary, waLink, withAlpha } from '@/templates/joyeria/AurumParts';
 import { aurCard, aurFade, aurPage, aurSection, aurStagger, aurTap, aurViewport } from '@/templates/joyeria/motion';
+import { getFashionColorImage } from '@/templates/urbano/fashionVariants';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -51,10 +52,30 @@ function jewelHex(label: string): string {
   for (const [re, hex] of JEWEL_HEX) if (re.test(n)) return hex;
   return '';
 }
+// Grises que el admin deja cuando no reconoce el color: no representan nada.
+const AUR_PLACEHOLDER_HEX = new Set(['#cbd5e1', '#e5e7eb', '#e5e5e5', '#ddd', '#dddddd']);
+
 function resolveColorHex(label: string, producto: any, fallback?: string): string {
   const overrides = producto?.atributosTecnicos?.coloresTienda;
   if (overrides && typeof overrides === 'object' && overrides[label]) return overrides[label];
   return jewelHex(label) || fallback || '#E5E5E5';
+}
+
+/**
+ * Swatch del color: hex cuando el color tiene uno propio; si quedó en gris
+ * placeholder y hay foto de ese color, se pinta la foto.
+ */
+function resolveColorSwatch(label: string, producto: any, fallback?: string) {
+  const hex = resolveColorHex(label, producto, fallback);
+  const overrides = producto?.atributosTecnicos?.coloresTienda;
+  const override = overrides && typeof overrides === 'object' ? overrides[label] : '';
+  const overrideEsReal =
+    typeof override === 'string' &&
+    override.trim() !== '' &&
+    !AUR_PLACEHOLDER_HEX.has(override.trim().toLowerCase());
+  const tieneHexPropio = overrideEsReal || Boolean(jewelHex(label));
+  const image = tieneHexPropio ? null : getFashionColorImage(producto, label);
+  return { hex, image };
 }
 
 /** Selector de variantes (color con swatch hex + otras opciones como pills), estilo Aurum/Arcade. */
@@ -91,7 +112,19 @@ function AurVariantSelector({ data, selection, onChange, primary, producto }: {
                     className={`relative flex h-10 w-10 items-center justify-center rounded-full ring-2 transition-transform disabled:cursor-not-allowed disabled:opacity-30 ${selected ? 'scale-105' : 'hover:scale-105'}`}
                     style={{ ['--tw-ring-color' as any]: selected ? primary : AUR.line }}
                   >
-                    <span className="h-7 w-7 rounded-full ring-1 ring-black/10" style={{ backgroundColor: resolveColorHex(value.label, producto, value.hex) }} />
+                    {(() => {
+                      const swatch = resolveColorSwatch(value.label, producto, value.hex);
+                      return swatch.image ? (
+                        <img
+                          src={swatch.image}
+                          alt={value.label}
+                          className="h-7 w-7 rounded-full object-cover ring-1 ring-black/10"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="h-7 w-7 rounded-full ring-1 ring-black/10" style={{ backgroundColor: swatch.hex }} />
+                      );
+                    })()}
                     {selected && <Icon icon="solar:check-circle-bold" width={15} className="absolute -right-1 -top-1 rounded-full bg-white" style={{ color: primary }} />}
                   </button>
                 );

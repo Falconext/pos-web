@@ -52,12 +52,23 @@ export default function UrbanoProductCard({ producto, onClick }: UrbanoProductCa
                     <div className="mt-auto flex w-full items-center justify-between gap-3">
                         <div className="flex items-center gap-1.5">
                             {colors.slice(0, 5).map((color) => (
-                                <div
-                                    key={color.name}
-                                    className="h-3.5 w-3.5 border border-gray-200"
-                                    style={{ backgroundColor: color.hex }}
-                                    title={color.name}
-                                />
+                                color.useImage && color.image ? (
+                                    <img
+                                        key={color.name}
+                                        src={color.image}
+                                        alt={color.name}
+                                        title={color.name}
+                                        className="h-3.5 w-3.5 border border-gray-200 object-cover"
+                                        draggable={false}
+                                    />
+                                ) : (
+                                    <div
+                                        key={color.name}
+                                        className="h-3.5 w-3.5 border border-gray-200"
+                                        style={{ backgroundColor: color.hex }}
+                                        title={color.name}
+                                    />
+                                )
                             ))}
                         </div>
                         {sizes.length > 0 && (

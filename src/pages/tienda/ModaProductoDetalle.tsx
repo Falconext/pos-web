@@ -799,7 +799,7 @@ export default function ModaProductoDetalle() {
                 <div className="flex flex-wrap gap-2.5">
                   {variantColors.map((color) => {
                     const isSelected = selectedColor === color.name;
-                    const colorPreview = color.image || getFashionColorGallery(producto, color.name)[0];
+                    const colorPreview = color.image || getFashionColorGallery(producto, color.name)[0] || null;
                     return (
                       <motion.button
                         key={color.name}

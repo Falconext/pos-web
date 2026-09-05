@@ -146,7 +146,18 @@ export function MinProductCard({
         {swatches.length > 0 && (
           <div className="mt-2 flex items-center gap-1.5">
             {swatches.map((c, i) => (
-              <span key={i} className="h-3 w-3 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c.hex }} title={c.name} />
+              c.useImage && c.image ? (
+                <img
+                  key={i}
+                  src={c.image}
+                  alt={c.name}
+                  title={c.name}
+                  className="h-3 w-3 rounded-full object-cover ring-1 ring-black/10"
+                  draggable={false}
+                />
+              ) : (
+                <span key={i} className="h-3 w-3 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c.hex }} title={c.name} />
+              )
             ))}
             <span className="ml-1 text-[10px] uppercase tracking-[0.08em]" style={{ color: MIN.muted }}>
               {colorOptions.length} color{colorOptions.length === 1 ? '' : 'es'}

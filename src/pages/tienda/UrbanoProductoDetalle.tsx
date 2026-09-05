@@ -592,7 +592,16 @@ export default function UrbanoProductoDetalle() {
                             style={{ borderColor: varianteSelecciones[variantOptionNames.color] === color.name ? '#000' : '#E5E7EB' }}
                             title={color.name}
                           >
-                            <div className="w-full h-full rounded-[2px]" style={{ backgroundColor: color.hex }} />
+                            {color.useImage && color.image ? (
+                              <img
+                                src={color.image}
+                                alt={color.name}
+                                className="w-full h-full rounded-[2px] object-cover"
+                                draggable={false}
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-[2px]" style={{ backgroundColor: color.hex }} />
+                            )}
                           </motion.button>
                         );
                       })}
