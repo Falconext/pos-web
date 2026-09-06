@@ -29,6 +29,15 @@ const TIPO_DOC_LABEL: Record<string, string> = {
 const fmtMoneda = (v: number) =>
   `S/ ${Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// El backend manda el nombre oficial que exige SUNAT (LE+RUC+periodo+...) en
+// la cabecera Content-Disposition. Hay que respetarlo: si el navegador guarda
+// el archivo con otro nombre, el validador PVSIRE y el portal lo rechazan.
+function nombreDesdeRespuesta(headers: any, fallback: string): string {
+  const cd = headers?.['content-disposition'] ?? headers?.['Content-Disposition'];
+  const m = typeof cd === 'string' ? cd.match(/filename="?([^";]+)"?/i) : null;
+  return m?.[1]?.trim() || fallback;
+}
+
 const MESES = [
   { id: 1, value: 'Enero' }, { id: 2, value: 'Febrero' }, { id: 3, value: 'Marzo' },
   { id: 4, value: 'Abril' }, { id: 5, value: 'Mayo' }, { id: 6, value: 'Junio' },
@@ -43,7 +52,6 @@ export default function LibroVentas() {
   const { alert, load } = useAlertStore();
   const [mes, setMes] = useState<number | null>(null);
   const [anio, setAnio] = useState<number | null>(null);
-  const [simple, setSimple] = useState(false);
   const [empresarial, setEmpresarial] = useState(false);
   const [enviandoCorreo, setEnviandoCorreo] = useState(false);
   const [destinatario, setDestinatario] = useState('');
@@ -68,7 +76,6 @@ export default function LibroVentas() {
     const params = new URLSearchParams({
       mes: String(mes),
       anio: String(anio),
-      simple: String(simple),
       empresarial: String(empresarial),
     });
     return params.toString();
@@ -104,7 +111,10 @@ export default function LibroVentas() {
       const link = document.createElement('a');
       link.href = url;
       const periodo = `${anio}${String(mes).padStart(2, '0')}`;
-      link.setAttribute('download', `SIRE_RVIE_${periodo}.txt`);
+      link.setAttribute(
+        'download',
+        nombreDesdeRespuesta(resp.headers, `SIRE_RVIE_${periodo}.txt`),
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -152,7 +162,6 @@ export default function LibroVentas() {
       const result = await post('/contabilidad/sire/ventas-correo', {
         mes,
         anio,
-        simple,
         empresarial,
         destinatario: destinatario.trim(),
       });
@@ -184,17 +193,8 @@ export default function LibroVentas() {
           </h2>
           <p className="text-xs text-gray-400 text-center mb-6">RVIE — Registro de Ventas e Ingresos Electrónico</p>
 
-          {/* Checkboxes */}
+          {/* Alcance */}
           <div className="flex justify-center gap-6 mb-6">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={simple}
-                onChange={(e) => setSimple(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              Formato simple
-            </label>
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
               <input
                 type="checkbox"

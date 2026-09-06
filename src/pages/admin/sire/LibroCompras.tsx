@@ -26,6 +26,15 @@ const TIPO_DOC_LABEL: Record<string, string> = {
 const fmtMoneda = (v: number) =>
   `S/ ${Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// El backend manda el nombre oficial que exige SUNAT (LE+RUC+periodo+...) en
+// la cabecera Content-Disposition. Hay que respetarlo: si el navegador guarda
+// el archivo con otro nombre, el validador PVSIRE y el portal lo rechazan.
+function nombreDesdeRespuesta(headers: any, fallback: string): string {
+  const cd = headers?.['content-disposition'] ?? headers?.['Content-Disposition'];
+  const m = typeof cd === 'string' ? cd.match(/filename="?([^";]+)"?/i) : null;
+  return m?.[1]?.trim() || fallback;
+}
+
 const MESES = [
   { id: 1, value: 'Enero' }, { id: 2, value: 'Febrero' }, { id: 3, value: 'Marzo' },
   { id: 4, value: 'Abril' }, { id: 5, value: 'Mayo' }, { id: 6, value: 'Junio' },
@@ -40,7 +49,6 @@ export default function LibroCompras() {
   const { alert, load } = useAlertStore();
   const [mes, setMes] = useState<number | null>(null);
   const [anio, setAnio] = useState<number | null>(null);
-  const [simple, setSimple] = useState(false);
   const [enviandoCorreo, setEnviandoCorreo] = useState(false);
   const [destinatario, setDestinatario] = useState('');
   const [mostrarCorreo, setMostrarCorreo] = useState(false);
@@ -63,7 +71,6 @@ export default function LibroCompras() {
     return new URLSearchParams({
       mes: String(mes),
       anio: String(anio),
-      simple: String(simple),
     }).toString();
   };
 
@@ -97,7 +104,10 @@ export default function LibroCompras() {
       const link = document.createElement('a');
       link.href = url;
       const periodo = `${anio}${String(mes).padStart(2, '0')}`;
-      link.setAttribute('download', `SIRE_RCE_${periodo}.txt`);
+      link.setAttribute(
+        'download',
+        nombreDesdeRespuesta(resp.headers, `SIRE_RCE_${periodo}.txt`),
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -145,7 +155,6 @@ export default function LibroCompras() {
       const result = await post('/contabilidad/sire/compras-correo', {
         mes,
         anio,
-        simple,
         destinatario: destinatario.trim(),
       });
       if (!result.success) {
@@ -175,19 +184,6 @@ export default function LibroCompras() {
             Libro electrónico de compras
           </h2>
           <p className="text-xs text-gray-400 text-center mb-6">RCE — Registro de Compras Electrónico</p>
-
-          {/* Checkbox */}
-          <div className="flex justify-center mb-6">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={simple}
-                onChange={(e) => setSimple(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              Formato simple
-            </label>
-          </div>
 
           {/* Selectores */}
           <div className="flex gap-4 mb-8">
