@@ -344,7 +344,7 @@ export default function LibroCompras() {
               <ul className="space-y-0.5 text-xs text-blue-600">
                 <li>• El TXT sigue el formato SUNAT para importación en el sistema SIRE.</li>
                 <li>• Incluye todas las compras registradas en el período seleccionado.</li>
-                <li>• <strong>Formato simple:</strong> incluye solo los campos básicos (base, IGV, total).</li>
+                <li>• Sigue la RS 000040-2022/SUNAT (37 campos). Validado con el Programa Validador SIRE.</li>
                 <li>• El proveedor debe estar registrado con su RUC para el formato correcto.</li>
               </ul>
             </div>
