@@ -5,6 +5,7 @@ import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import ShalomTrackingModal from '@/components/ShalomTrackingModal';
+import OlvaTrackingModal from '@/components/OlvaTrackingModal';
 import { useInvoiceStore } from '@/zustand/invoices';
 import {
     usePanelVentasViewModel,
@@ -196,6 +197,7 @@ function mapProductosComprobante(comprobante: any) {
 // ─── Shalom ───────────────────────────────────────────────────────────────────
 
 const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+const OLVA_COURIER = 'OLVA';
 
 
 // ─── Main view ────────────────────────────────────────────────────────────────
@@ -260,6 +262,7 @@ export default function PanelVentasView() {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [menuItem, setMenuItem] = useState<VentaPanelItem | null>(null);
     const [shalomTracking, setShalomTracking] = useState<{ orderNumber: string; orderCode: string; item: VentaPanelItem } | null>(null);
+    const [olvaTracking, setOlvaTracking] = useState<{ trackingNumber: string; item: VentaPanelItem } | null>(null);
     const [anularItem, setAnularItem] = useState<VentaPanelItem | null>(null);
     const { cancelInvoice } = useInvoiceStore((s) => s);
 
@@ -1125,6 +1128,22 @@ export default function PanelVentasView() {
                                             <span>{it.nroOrden ? `Tracking Shalom #${it.nroOrden}` : 'Tracking Shalom (sin N° orden)'}</span>
                                         </button>
                                     )}
+                                    {it.courier === OLVA_COURIER && (
+                                        <button type="button"
+                                            onClick={() => {
+                                                handleCloseMenu();
+                                                if (!it.nroOrden) {
+                                                    useAlertStore.getState().alert('Agrega el N° de guía Olva en "Editar despacho" primero', 'warning');
+                                                    return;
+                                                }
+                                                setOlvaTracking({ trackingNumber: it.nroOrden, item: it });
+                                            }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                        >
+                                            <Icon icon="solar:delivery-bold-duotone" width={15} />
+                                            <span>{it.nroOrden ? `Tracking Olva #${it.nroOrden}` : 'Tracking Olva (sin N° de guía)'}</span>
+                                        </button>
+                                    )}
                                 </>
                             )}
 
@@ -1273,6 +1292,14 @@ export default function PanelVentasView() {
                     orderCode={shalomTracking.orderCode}
                     onClose={() => setShalomTracking(null)}
                     onEntregado={async () => { await vm.actualizarEstado(shalomTracking.item, 'ENTREGADO'); }}
+                    wrapperClassName="top-[-30px]"
+                />
+            )}
+            {olvaTracking && (
+                <OlvaTrackingModal
+                    trackingNumber={olvaTracking.trackingNumber}
+                    onClose={() => setOlvaTracking(null)}
+                    onEntregado={async () => { await vm.actualizarEstado(olvaTracking.item, 'ENTREGADO'); }}
                     wrapperClassName="top-[-30px]"
                 />
             )}

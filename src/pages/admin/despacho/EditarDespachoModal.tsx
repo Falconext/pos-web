@@ -8,6 +8,8 @@ import useAlertStore from "@/zustand/alert";
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
 import { mensajeErrorShalom, shalomService, type ShalomInstancia } from "@/services/shalom.service";
+import { OlvaAgenciaSelect } from "@/components/OlvaAgenciaSelect";
+import { mensajeErrorOlva, olvaService, type OlvaConfig } from "@/services/olva.service";
 import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
 
 export const COURIERS = [
@@ -24,6 +26,7 @@ export const TURNOS = [
 ];
 
 const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+const OLVA_COURIER = 'OLVA';
 
 const inp = "w-full h-10 px-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all placeholder:text-slate-400";
 const lbl = "block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5";
@@ -82,10 +85,14 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         pagarFlete: 'CLIENTE' as 'CLIENTE' | 'NEGOCIO',
         aplicacionMontoCliente: 'ADELANTO' as 'ITEM_ENVIO' | 'ADELANTO' | 'NEGOCIO',
         montoCOD: 0,
+        pesoKg: 0,
         shalomAgenciaDestinoId: '',
+        olvaAgenciaDestinoCodigo: '',
     });
     // Cuenta Shalom Pro conectada (plan Corporativo): habilita generar la guía.
     const [shalomPro, setShalomPro] = useState<ShalomInstancia | null>(null);
+    // Config Olva de la empresa: `habilitadoPorPlan` habilita generar la guía.
+    const [olva, setOlva] = useState<OlvaConfig | null>(null);
     const [generandoGuia, setGenerandoGuia] = useState(false);
     const [esNV, setEsNV] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -132,7 +139,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         pagarFlete: payload.pagarFlete ?? (adelantoComprobante > 0 ? 'CLIENTE' : 'NEGOCIO'),
                         aplicacionMontoCliente: payload.aplicacionMontoCliente ?? (adelantoComprobante > 0 ? 'ADELANTO' : 'NEGOCIO'),
                         montoCOD: payload.montoCOD ?? 0,
+                        pesoKg: payload.pesoKg ?? 0,
                         shalomAgenciaDestinoId: payload.shalomAgenciaDestinoId || '',
+                        olvaAgenciaDestinoCodigo: payload.olvaAgenciaDestinoCodigo || '',
                     });
                 }
             } catch (error) {
@@ -150,6 +159,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         shalomService.getInstancia()
             .then(data => { if (vivo) setShalomPro(data); })
             .catch(() => { if (vivo) setShalomPro(null); });
+        olvaService.getConfig()
+            .then(data => { if (vivo) setOlva(data); })
+            .catch(() => { if (vivo) setOlva(null); });
         return () => { vivo = false; };
     }, []);
 
@@ -159,6 +171,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
     const esPropio = envioData.transportista === 'PROPIOS';
+    const esOlva = envioData.transportista === OLVA_COURIER;
 
     // Genera la guía en Shalom Pro con los datos ya cargados y trae de vuelta el
     // N° de orden / clave, que es lo que el rastreo necesita después.
@@ -186,6 +199,42 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
             alert(guia.nroOrden ? `Guía ${guia.nroOrden} generada en Shalom` : 'Envío registrado en Shalom', 'success');
         } catch (error: unknown) {
             alert(mensajeErrorShalom(error, 'No se pudo generar la guía en Shalom'), 'error');
+        } finally {
+            setGenerandoGuia(false);
+        }
+    };
+
+    // Genera la guía en Olva con los datos ya cargados y trae de vuelta el N° de
+    // guía, que es lo que el rastreo necesita después. Olva no usa clave: el
+    // número de guía viaja solo, y se guarda también como código de guía.
+    const handleGenerarGuiaOlva = async () => {
+        if (generandoGuia) return;
+        setGenerandoGuia(true);
+        try {
+            // Se guarda primero para que el backend arme la guía con lo que se ve en pantalla.
+            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, {
+                ...envioData,
+                pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
+                repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
+                repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
+            });
+            const guia = await olvaService.crearGuia(comprobanteId, {
+                tipoEnvio: envioData.tipoEnvio === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
+                destinoCodigo: envioData.olvaAgenciaDestinoCodigo || undefined,
+                destinoNombre: envioData.agenciaDestino || undefined,
+                pesoKg: Number(envioData.pesoKg) > 0 ? Number(envioData.pesoKg) : undefined,
+                contenido: envioData.tipoMercaderia || undefined,
+                forzar: Boolean(envioData.nroOrden),
+            });
+            setEnvioData((prev: any) => ({
+                ...prev,
+                nroOrden: guia.nroOrden ?? prev.nroOrden,
+                codigoGuia: guia.codigoGuia ?? prev.codigoGuia,
+                olvaAgenciaDestinoCodigo: guia.olvaAgenciaDestinoCodigo ?? prev.olvaAgenciaDestinoCodigo,
+            }));
+            alert(guia.nroOrden ? `Guía ${guia.nroOrden} generada en Olva` : 'Envío registrado en Olva', 'success');
+        } catch (error: unknown) {
+            alert(mensajeErrorOlva(error, 'No se pudo generar la guía en Olva'), 'error');
         } finally {
             setGenerandoGuia(false);
         }
@@ -393,6 +442,79 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </div>
                     )}
 
+                    {/* SECCIÓN OLVA — visible solo con Olva Courier */}
+                    {esOlva && (
+                        <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400">
+                                <div className="flex items-center gap-2">
+                                    <Icon icon="solar:box-bold-duotone" className="text-white text-base" />
+                                    <span className="text-white text-xs font-black tracking-wide">Datos de envío Olva</span>
+                                </div>
+                                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/25 text-white">
+                                    {envioData.tipoEnvio === 'DOMICILIO' ? 'A domicilio' : 'Para agencia'}
+                                </span>
+                            </div>
+
+                            <div className="p-4 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="N° de guía Olva">
+                                        <input
+                                            type="text"
+                                            value={envioData.nroOrden}
+                                            onChange={e => set('nroOrden', e.target.value)}
+                                            placeholder="Ej: 2071856-26"
+                                            className={inp}
+                                        />
+                                    </Field>
+                                    <Field label="Peso del paquete (kg)">
+                                        <input
+                                            type="number"
+                                            min={0.1}
+                                            step={0.1}
+                                            value={envioData.pesoKg || ''}
+                                            onChange={e => set('pesoKg', Number(e.target.value) || 0)}
+                                            placeholder="Ej: 2.5"
+                                            className={inp}
+                                        />
+                                    </Field>
+                                </div>
+
+                                {/* Generar la guía en Olva (plan Corporativo) */}
+                                {olva?.habilitadoPorPlan ? (
+                                    olva.apiConfigurada && olva.agenciaOrigenCodigo ? (
+                                        <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-white p-3 dark:border-amber-900/40 dark:bg-slate-900/40">
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerarGuiaOlva}
+                                                disabled={generandoGuia || !envioData.agenciaDestino}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 text-sm font-black text-white shadow-lg shadow-amber-500/20 transition-opacity hover:opacity-90 disabled:opacity-50"
+                                            >
+                                                <Icon icon={generandoGuia ? 'eos-icons:loading' : 'solar:add-square-bold'} className="text-lg" />
+                                                {envioData.nroOrden ? 'Regenerar guía en Olva' : 'Generar guía en Olva'}
+                                            </button>
+                                            <p className="text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                                                Registra el envío en Olva desde {olva.agenciaOrigenNombre ?? 'tu agencia de origen'} y completa solo el N° de guía.
+                                                {!envioData.agenciaDestino && (envioData.tipoEnvio === 'DOMICILIO' ? ' Ingresa primero la dirección de entrega.' : ' Elige primero la agencia de destino.')}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="flex items-start gap-2 rounded-xl bg-white p-3 text-[11px] leading-4 text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
+                                            <Icon icon="solar:info-circle-bold" className="mt-0.5 shrink-0 text-amber-400" />
+                                            {olva.apiConfigurada
+                                                ? 'Configura tu agencia Olva de origen en Perfil → Configuración para generar las guías desde aquí.'
+                                                : 'La API de Olva no está configurada. Contacta al administrador.'}
+                                        </p>
+                                    )
+                                ) : (
+                                    <p className="flex items-start gap-2 rounded-xl bg-white p-3 text-[11px] leading-4 text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
+                                        <Icon icon="solar:info-circle-bold" className="mt-0.5 shrink-0 text-amber-400" />
+                                        Generar guías en Olva está disponible en el plan Corporativo. El rastreo funciona igual con el N° de guía.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* SECCIÓN 2: Tipo envío + Agencia destino */}
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
@@ -407,6 +529,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                     onChange={v => setEnvioData((prev: any) => ({ ...prev, agenciaDestino: v, shalomAgenciaDestinoId: '' }))}
                                     onSelectAgencia={a => setEnvioData((prev: any) => ({ ...prev, shalomAgenciaDestinoId: a.terId }))}
                                     placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
+                                />
+                            ) : esOlva && envioData.tipoEnvio === 'AGENCIA' ? (
+                                <OlvaAgenciaSelect
+                                    value={envioData.agenciaDestino}
+                                    onChange={v => setEnvioData((prev: any) => ({ ...prev, agenciaDestino: v, olvaAgenciaDestinoCodigo: '' }))}
+                                    onSelectAgencia={a => setEnvioData((prev: any) => ({ ...prev, olvaAgenciaDestinoCodigo: a.codigo }))}
+                                    placeholder="Buscar agencia Olva por nombre, distrito o departamento..."
                                 />
                             ) : (
                                 <input type="text" value={envioData.agenciaDestino}

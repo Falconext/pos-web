@@ -9,6 +9,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
+import OlvaConfiguracion from '@/components/OlvaConfiguracion';
 import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard';
 
 export default function PerfilIndex() {
@@ -462,6 +463,9 @@ export default function PerfilIndex() {
                         className={configTab}
                         nombreSugerido={perfil.empresa.nombreComercial || perfil.empresa.razonSocial}
                     />
+
+                    {/* ── Envíos Olva — rastreo para todos, guías en plan Corporativo ── */}
+                    <OlvaConfiguracion className={configTab} />
                     <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2 ${perfilTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
                         <div className="space-y-4">

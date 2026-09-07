@@ -6,6 +6,7 @@ import moment from "moment";
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import useAlertStore from "@/zustand/alert";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
+import { OlvaAgenciaSelect } from "@/components/OlvaAgenciaSelect";
 import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
 
 export const COURIERS = [
@@ -22,6 +23,7 @@ export const TURNOS = [
 ];
 
 const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+const OLVA_COURIER = 'OLVA';
 
 const inp = "w-full h-10 px-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all placeholder:text-slate-400";
 const lbl = "block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5";
@@ -91,6 +93,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
     const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
     const esPropio = envioData.transportista === 'PROPIOS';
+    const esOlva = envioData.transportista === OLVA_COURIER;
     const inputClass = (field: keyof EnvioValidationErrors) => `${inp} ${errors[field] ? invalidInp : ''}`;
     const esInformal = Boolean(vm.esInformal);
     const opcionesMontoCliente = esInformal
@@ -303,6 +306,52 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                         </div>
                     )}
 
+                    {/* SECCIÓN OLVA — visible solo con Olva Courier */}
+                    {esOlva && (
+                        <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50">
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400">
+                                <div className="flex items-center gap-2">
+                                    <Icon icon="solar:box-bold-duotone" className="text-white text-base" />
+                                    <span className="text-white text-xs font-black tracking-wide">Datos de envío Olva</span>
+                                </div>
+                                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/25 text-white">
+                                    Guía generable desde el despacho
+                                </span>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-4 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="Peso del paquete (kg)">
+                                        <input
+                                            type="number"
+                                            min={0.1}
+                                            step={0.1}
+                                            value={envioData.pesoKg || ''}
+                                            onChange={e => set('pesoKg', Number(e.target.value) || 0)}
+                                            placeholder="Ej: 2.5"
+                                            className={inp}
+                                        />
+                                    </Field>
+                                    <Field label="Tipo de paquetería">
+                                        <input
+                                            type="text"
+                                            value={envioData.tipoMercaderia}
+                                            onChange={e => set('tipoMercaderia', e.target.value)}
+                                            placeholder="Ej: Caja, Sobre, Frágil..."
+                                            className={inp}
+                                        />
+                                    </Field>
+                                </div>
+                                <p className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold flex items-start gap-1.5">
+                                    <Icon icon="solar:info-circle-bold-duotone" className="text-sm mt-px flex-shrink-0" />
+                                    Olva exige el peso para registrar la guía. Si lo dejas vacío se envía 1 kg.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* SECCIÓN 2: Tipo envío + Agencia destino */}
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
@@ -317,6 +366,13 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                     onChange={v => set('agenciaDestino', v)}
                                     invalid={Boolean(errors.agenciaDestino)}
                                     placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
+                                />
+                            ) : esOlva && envioData.tipoEnvio === 'AGENCIA' ? (
+                                <OlvaAgenciaSelect
+                                    value={envioData.agenciaDestino}
+                                    onChange={v => set('agenciaDestino', v)}
+                                    invalid={Boolean(errors.agenciaDestino)}
+                                    placeholder="Buscar agencia Olva por nombre, distrito o departamento..."
                                 />
                             ) : (
                                 <input type="text" value={envioData.agenciaDestino}

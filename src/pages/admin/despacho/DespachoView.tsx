@@ -11,8 +11,10 @@ import { ModalTrazabilidad } from './ModalTrazabilidad';
 import { useRepartidoresStore } from '@/zustand/repartidores';
 import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
 import ShalomTrackingModal from '@/components/ShalomTrackingModal';
+import OlvaTrackingModal from '@/components/OlvaTrackingModal';
 
 const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+const OLVA_COURIER = 'OLVA';
 
 
 const ESTADOS_WA_NOTIFICADOS = new Set(['EN_CAMINO', 'EN_AGENCIA', 'ENTREGADO']);
@@ -556,6 +558,7 @@ export default function DespachoView() {
     const [trazabilidadItem, setTrazabilidadItem] = useState<DespachoItem | null>(null);
     const [trazabilidadPedidoTienda, setTrazabilidadPedidoTienda] = useState<DespachoItem | null>(null);
     const [shalomTracking, setShalomTracking] = useState<{ orderNumber: string; orderCode: string } | null>(null);
+    const [olvaTracking, setOlvaTracking] = useState<{ trackingNumber: string } | null>(null);
     const [waConfig, setWaConfig] = useState(WA_CONFIG_DEFAULTS);
     const { alert } = useAlertStore();
 
@@ -924,6 +927,22 @@ export default function DespachoView() {
                             <Icon icon="solar:delivery-bold-duotone" className="text-base" />
                         </button>
                     )}
+                    {item.courier === OLVA_COURIER && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!item.nroOrden) {
+                                    useAlertStore.getState().alert('Agrega el N° de guía Olva en "Editar despacho" primero', 'warning');
+                                    return;
+                                }
+                                setOlvaTracking({ trackingNumber: item.nroOrden });
+                            }}
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${item.nroOrden ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}
+                            title={item.nroOrden ? `Tracking Olva #${item.nroOrden}` : 'Sin N° de guía — edita el despacho para agregarlo'}
+                        >
+                            <Icon icon="solar:delivery-bold-duotone" className="text-base" />
+                        </button>
+                    )}
                     {celular ? (
                         <a
                             href={`https://wa.me/51${celular.replace(/\D/g, '')}?text=${encodeURIComponent(buildWaMessage(item, waConfig))}`}
@@ -1183,6 +1202,12 @@ export default function DespachoView() {
                     orderNumber={shalomTracking.orderNumber}
                     orderCode={shalomTracking.orderCode}
                     onClose={() => setShalomTracking(null)}
+                />
+            )}
+            {olvaTracking && (
+                <OlvaTrackingModal
+                    trackingNumber={olvaTracking.trackingNumber}
+                    onClose={() => setOlvaTracking(null)}
                 />
             )}
         </div>

@@ -61,6 +61,8 @@ type EnvioDespachoFormData = {
     dniDestinatario?: string;
     contenidoPaquete?: string;
     montoCOD?: number;
+    // Peso del paquete: Olva lo exige para registrar la guía.
+    pesoKg?: number;
 };
 
 export type PaymentLine = {
@@ -166,6 +168,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         pagarFlete: data.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
         aplicacionMontoCliente: data.aplicacionMontoCliente ?? ((Number(data.costoEnvio) > 0 && data.pagarFlete === 'CLIENTE') ? 'ITEM_ENVIO' : 'NEGOCIO'),
         ...(Number(data.montoCOD) > 0 ? { montoCOD: Number(data.montoCOD) } : {}),
+        ...(Number(data.pesoKg) > 0 ? { pesoKg: Number(data.pesoKg) } : {}),
     };
 };
 
@@ -399,6 +402,7 @@ export const useFacturacionViewModel = () => {
         dniDestinatario: '',
         contenidoPaquete: '',
         montoCOD: 0,
+        pesoKg: 0,
     });
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
