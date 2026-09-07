@@ -209,6 +209,41 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                     )}
                 </div>
 
+                {/* Generación automática: solo tiene sentido con la cuenta ya conectada. */}
+                {conectada && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-800/40 dark:bg-amber-900/15">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <p className="font-bold text-gray-900 dark:text-white">Generar la guía al cerrar la venta</p>
+                                <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-400">
+                                    Cuando eliges Shalom en la coordinación de envío, la guía se registra sola al
+                                    guardar la venta y el N° de orden queda en el despacho — sin pasar por el panel.
+                                    <b> Crea envíos reales en tu cuenta Shalom Pro</b>, así que actívalo cuando estés
+                                    listo. Si la guía falla, la venta se guarda igual y te avisamos.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={guardando}
+                                onClick={() => ejecutar(
+                                    () => shalomService.actualizarConfig({ autoGuiaActivo: !instancia.autoGuiaActivo }),
+                                    !instancia.autoGuiaActivo
+                                        ? 'Las ventas con Shalom generarán la guía automáticamente.'
+                                        : 'Generación automática desactivada.',
+                                )}
+                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${guardando ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${instancia.autoGuiaActivo ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                            >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${instancia.autoGuiaActivo ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                        {!instancia.autoGuiaActivo && (
+                            <p className="mt-3 text-xs italic text-slate-500">
+                                Desactivado: generas cada guía a mano desde Editar Despacho.
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 <div className="flex items-start gap-2 rounded-xl bg-gray-50 p-3 text-xs leading-5 text-gray-500 dark:bg-slate-800/40 dark:text-gray-400">
                     <Icon icon="solar:info-circle-bold" width={16} className="mt-0.5 shrink-0 text-red-400" />
                     <span>

@@ -34,6 +34,33 @@ import {
     type IDatosReceta,
 } from "./FacturacionModel";
 import { COURIERS } from "./components/EnvioModal";
+import { mensajeErrorShalom, shalomService } from "@/services/shalom.service";
+
+const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+
+/**
+ * Registra la guía en Shalom al cerrar la venta, solo si la empresa activó la
+ * generación automática y tiene la cuenta conectada. Se consulta el estado en
+ * este momento (y no al cargar la página) para no pedir /shalom/instancia en
+ * cada venta que no usa Shalom.
+ */
+async function generarGuiaShalomSiCorresponde(comprobanteId: number, transportista?: string) {
+    if (!transportista || !SHALOM_COURIERS.has(transportista)) return;
+    try {
+        const instancia = await shalomService.getInstancia();
+        if (!instancia?.habilitadoPorPlan || !instancia.conectada || !instancia.autoGuiaActivo) return;
+        const guia = await shalomService.crearGuia(comprobanteId);
+        useAlertStore.getState().alert(
+            guia.nroOrden ? `Guía ${guia.nroOrden} generada en Shalom.` : 'Envío registrado en Shalom.',
+            'success',
+        );
+    } catch (error: unknown) {
+        useAlertStore.getState().alert(
+            `La venta se guardó, pero no se pudo generar la guía en Shalom: ${mensajeErrorShalom(error, 'error desconocido')}. Puedes generarla desde Editar Despacho.`,
+            'warning',
+        );
+    }
+}
 import { mapDetalleToInvoiceProduct } from "./utils/comprobanteProductMapper";
 import { tipoCambioService } from "@/services/tipoCambio.service";
 
@@ -2532,6 +2559,10 @@ export const useFacturacionViewModel = () => {
                         );
                     } else {
                         setDespachoCreado(true);
+                        // Guía Shalom automática (opt-in por empresa). Nunca debe
+                        // tumbar la venta: si falla, solo se avisa y la guía queda
+                        // para generarla a mano desde Editar Despacho.
+                        await generarGuiaShalomSiCorresponde(comprobanteId, envioData.transportista);
                     }
                 } else {
                     useAlertStore.getState().alert(

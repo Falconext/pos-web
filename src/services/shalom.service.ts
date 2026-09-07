@@ -28,6 +28,8 @@ export interface ShalomInstancia {
     securityCodeGuardado: boolean;
     agenciaOrigenId?: string | null;
     agenciaOrigenNombre?: string | null;
+    /** La venta genera la guía sola al cerrarse (opt-in por empresa). */
+    autoGuiaActivo?: boolean;
 }
 
 export interface ConectarInstanciaPayload {
@@ -37,6 +39,7 @@ export interface ConectarInstanciaPayload {
     securityCode?: string;
     agenciaOrigenId?: string;
     agenciaOrigenNombre?: string;
+    autoGuiaActivo?: boolean;
 }
 
 export interface CrearGuiaPayload {
