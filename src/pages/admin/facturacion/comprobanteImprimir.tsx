@@ -5,6 +5,7 @@ import { BRAND } from '@/lib/branding';
 import { elemCfg } from '@/features/admin/cotizaciones/cotizFormatoElementos';
 import { useAuthStore } from '@/zustand/auth';
 import { descripcionParaImpresion } from '@/utils/descripcion-vehiculo';
+import { useQrSunat } from '@/utils/qrSunat';
 
 // Línea marcada como operación gratuita (Catálogo 07: 11-16/21/31-37) — el P.U.
 // impreso sigue siendo informativo, pero el importe cobrado es 0. El item puede
@@ -155,6 +156,23 @@ console.log(formValues)
     const mtoIcbper = parseAmount(formValues?.icbper ?? formValues?.mtoIcbper, 0);
     const mtoIgv = parseAmount(formValues?.mtoIGV, netTotalFallback - (netTotalFallback / 1.18));
     const mtoImpVenta = parseAmount(formValues?.mtoImpVenta, netTotalFallback);
+
+    // QR de SUNAT al pie (opt-in por empresa en Perfil → Configuración). Apunta
+    // al PDF del comprobante si ya existe; si no, lleva la cadena normativa.
+    // Devuelve '' cuando está apagado o el documento no es electrónico.
+    const qrSunat = useQrSunat(
+        {
+            tipoDoc: formValues?.tipoDoc,
+            serie: formValues?.serie,
+            correlativo: formValues?.correlativo,
+            mtoIGV: mtoIgv,
+            mtoImpVenta,
+            fechaEmision: formValues?.fechaEmision,
+            s3PdfUrl: formValues?.s3PdfUrl,
+        },
+        company?.empresa,
+        selectedClient,
+    );
     // Porcentaje de descuento (respecto al bruto), para mostrarlo junto al monto en soles
     const descuentoPct = totalDescuentos > 0 && totalPrices > 0
         ? Math.round((totalDescuentos / totalPrices) * 1000) / 10
@@ -506,6 +524,15 @@ console.log(formValues)
                                 );
                             })()}
                         </div>
+                        {qrSunat && (
+                            <>
+                                <hr className="my-1 border-dashed border-[#222]" />
+                                <div className="text-center">
+                                    <img src={qrSunat} alt="QR SUNAT" className="mx-auto" style={{ width: '26mm', height: '26mm' }} />
+                                    <p className="text-[11px]">Escanea para ver tu comprobante en línea</p>
+                                </div>
+                            </>
+                        )}
                         <hr className="my-1 border-dashed border-[#222]" />
                         {fc('gracias').visible && <p className={`${size === 'TICKET' ? 'text-[15px]' : 'text-xs'} text-center`}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>}
                         {fc('gracias').visible && <hr className="my-1 border-dashed border-[#222]" />}
@@ -1128,6 +1155,13 @@ console.log(formValues)
                                         </div>
                                     </div>
                                 </div>
+
+                                {qrSunat && (
+                                    <div className="mt-6 text-center">
+                                        <img src={qrSunat} alt="QR SUNAT" className="mx-auto" style={{ width: 110, height: 110 }} />
+                                        <p className="text-[9px] text-gray-500 mt-1">Escanea para ver tu comprobante en línea</p>
+                                    </div>
+                                )}
 
                                 <div className="mt-8 text-center text-[10px]">
                                     {fc('gracias').visible && (<>

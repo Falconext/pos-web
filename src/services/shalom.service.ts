@@ -66,10 +66,6 @@ export interface GuiaCreada {
 export interface ShalomProducto {
     id: number;
     nombre: string;
-    alto: number;
-    ancho: number;
-    largo: number;
-    peso: number;
 }
 
 export const shalomService = {

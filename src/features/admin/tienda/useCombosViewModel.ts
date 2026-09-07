@@ -18,16 +18,61 @@ export const useCombosViewModel = () => {
     const { sidebarColor } = useThemeStore();
     const t = getThemeColor(sidebarColor);
 
+    // Catálogo del selector de productos del kit. Antes se cargaba una sola página
+    // de 500 y el Select filtraba en cliente: con más productos que eso, la cola
+    // (los ids más antiguos) simplemente no existía para el buscador. Ahora la
+    // búsqueda va al servidor y `catalogo` acumula todo lo visto, para que un
+    // producto ya elegido conserve su nombre y precio aunque cambie el listado.
+    const [opcionesProducto, setOpcionesProducto] = useState<any[]>([]);
+    const catalogoRef = useRef<Map<number, any>>(new Map());
+
     const [showModal, setShowModal] = useState(false);
     const [editingCombo, setEditingCombo] = useState<Combo | null>(null);
     const [uploading, setUploading] = useState(false);
     const [form, setForm] = useState(initialForm);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    /** Guarda los productos vistos y actualiza lo que muestra el selector. */
+    const recordarProductos = (lista: any[]) => {
+        for (const p of lista) catalogoRef.current.set(Number(p.id), p);
+        setOpcionesProducto(lista);
+    };
+
+    /**
+     * Búsqueda en servidor del selector de productos (la llama el Select a partir
+     * de 3 caracteres). Sin esto el buscador solo veía la primera página.
+     */
+    const buscarProductos = async (query: string, done?: () => void) => {
+        try {
+            const params = new URLSearchParams({ limit: '50', page: '1' });
+            const texto = String(query || '').trim();
+            if (texto) params.set('search', texto);
+            const resp = await apiClient.get(`/productos?${params.toString()}`);
+            const data = resp.data?.data ?? resp.data;
+            const lista = Array.isArray(data?.productos) ? data.productos : [];
+            recordarProductos(lista);
+        } catch {
+            // Silencioso: el selector se queda con lo que ya tenía.
+        } finally {
+            done?.();
+        }
+    };
+
     useEffect(() => {
         fetchCombos(true);
+        // Primera página solo para poder navegar sin escribir; el buscador ya no
+        // depende de que todo el catálogo quepa aquí.
         getAllProducts({ limit: 500 });
+        void buscarProductos('');
     }, []);
+
+    // Lo que trae el store también sirve para resolver nombres de items guardados.
+    useEffect(() => {
+        if (products.length) {
+            for (const p of products) catalogoRef.current.set(Number(p.id), p);
+            setOpcionesProducto((prev) => (prev.length ? prev : products));
+        }
+    }, [products]);
 
     const refreshCombos = () => {
         fetchCombos(true);
@@ -60,14 +105,18 @@ export const useCombosViewModel = () => {
 
     const eliminarItem = (index: number) => setForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
 
+    const buscarEnCatalogo = (productoId: number) =>
+        catalogoRef.current.get(Number(productoId)) ??
+        products.find((p) => Number(p.id) === Number(productoId));
+
     const getProductOptionLabel = (productoId: number) => {
-        const product = products.find((p) => Number(p.id) === Number(productoId));
+        const product = buscarEnCatalogo(productoId);
         if (!product) return '';
         return `${String(product.descripcion || '').toUpperCase()} - S/ ${Number(product.precioUnitario || 0).toFixed(2)}`;
     };
 
     const calcularPrecioRegular = () => form.items.reduce((sum, item) => {
-        const producto = products.find((p) => p.id === item.productoId);
+        const producto = buscarEnCatalogo(item.productoId);
         return producto ? sum + Number(producto.precioUnitario) * item.cantidad : sum;
     }, 0);
 
@@ -140,6 +189,7 @@ export const useCombosViewModel = () => {
         showModal, editingCombo, form, setForm, uploading, fileInputRef,
         abrirModal, cerrarModal, agregarProducto, actualizarItem, eliminarItem,
         getProductOptionLabel,
+        opcionesProducto, buscarProductos,
         calcularPrecioRegular, calcularDescuento, guardarCombo, onFileSelect,
         handleEliminarCombo, toggleComboActivo, refreshCombos,
     };

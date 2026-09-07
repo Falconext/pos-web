@@ -6,10 +6,11 @@ import RentabilidadView from './rentabilidad/RentabilidadView';
 import FinanceDashboardView from './FinanceDashboardView';
 import ComisionesView from './comisiones/ComisionesView';
 import CategoriasView from './categorias/CategoriasView';
+import ProductosView from './productos/ProductosView';
 import MetodosPagoView from './metodos-pago/MetodosPagoView';
 import ConciliacionView from './conciliacion/ConciliacionView';
 
-type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'metodosPago' | 'conciliacion';
+type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'productos' | 'metodosPago' | 'conciliacion';
 
 interface Tab {
     id: TabId;
@@ -42,6 +43,12 @@ const TABS: Tab[] = [
         label: 'Categorías',
         icon: 'solar:tag-bold-duotone',
         description: 'Ganancia por categoría de producto',
+    },
+    {
+        id: 'productos',
+        label: 'Productos',
+        icon: 'solar:box-bold-duotone',
+        description: 'Ventas por producto y acumulado por día',
     },
     {
         id: 'metodosPago',
@@ -153,6 +160,12 @@ export default function FinanzasTabs() {
             {activeTab === 'categorias' && (
                 <div className="px-3 pb-6 sm:px-6">
                     <CategoriasView />
+                </div>
+            )}
+
+            {activeTab === 'productos' && (
+                <div className="px-3 pb-6 sm:px-6">
+                    <ProductosView />
                 </div>
             )}
 

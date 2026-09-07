@@ -265,11 +265,13 @@ export default function CombosAdmin() {
                           label={index === 0 ? "Producto" : "Producto"}
                           name={`producto-${index}`}
                           value={vm.getProductOptionLabel(item.productoId)}
-                          options={vm.products.map(p => ({ id: String(p.id), value: `${String(p.descripcion || '').toUpperCase()} - S/ ${Number(p.precioUnitario).toFixed(2)}` }))}
+                          options={vm.opcionesProducto.map((p: any) => ({ id: String(p.id), value: `${String(p.descripcion || '').toUpperCase()} - S/ ${Number(p.precioUnitario).toFixed(2)}` }))}
                           onChange={(id: string) => vm.actualizarItem(index, 'productoId', Number(id))}
-                          placeholder="Seleccionar producto..."
+                          placeholder="Buscar producto por nombre o código..."
                           error={undefined}
                           withLabel={true}
+                          isSearch
+                          handleGetData={vm.buscarProductos}
                         />
                       </div>
                       <div className="w-24"><InputPro name={`cantidad-${index}`} label={index === 0 ? "Cant." : "Cant."} type="number" value={item.cantidad} onChange={(e) => vm.actualizarItem(index, 'cantidad', Number(e.target.value))} isLabel={true} /></div>

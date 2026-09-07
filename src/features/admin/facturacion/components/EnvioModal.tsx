@@ -298,7 +298,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                     </Field>
                                 </div>
 
-                                {/* Producto de Shalom: define el contenido y el costo de la guía. */}
+                                {/* Producto de Shalom: el catálogo es POR CUENTA, se lee del propio Shalom. */}
                                 <div className="grid grid-cols-1 gap-3">
                                     <Field label="Producto Shalom (tamaño del paquete)">
                                         <ShalomProductoSelect

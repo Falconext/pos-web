@@ -60,6 +60,7 @@ export const usePerfilViewModel = () => {
     const [savingVentaSinStockConfig, setSavingVentaSinStockConfig] = useState(false);
     const cobranzaCampoToggleInFlight = useRef(false);
     const [savingCobranzaCampoConfig, setSavingCobranzaCampoConfig] = useState(false);
+    const [savingImpresionConfig, setSavingImpresionConfig] = useState(false);
     const { alert } = useAlertStore();
 
     useEffect(() => { cargarPerfil(); cargarUsageStats(); }, []);
@@ -126,6 +127,42 @@ export const usePerfilViewModel = () => {
             useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudo actualizar la configuración', 'error');
         } finally {
             setSavingCotizConfig(false);
+        }
+    };
+
+    /**
+     * Configuración de impresión de comprobantes: QR de SUNAT al pie y formato
+     * preseleccionado (TICKET/A4/A5). Ambos viven en la empresa, así que se
+     * guardan igual y se reflejan en el store de auth — de ahí los leen tanto
+     * la impresión del web como la preselección del formato.
+     */
+    const handleImpresionConfig = async (
+        campo: 'mostrarQrSunat' | 'formatoImpresionDefault' | 'imprimirAutomatico',
+        valor: boolean | string,
+    ) => {
+        if (savingImpresionConfig) return;
+        if ((perfil?.empresa as any)?.[campo] === valor) return;
+        try {
+            setSavingImpresionConfig(true);
+            await useEmpresasStore.getState().actualizarMiEmpresa({ [campo]: valor } as any);
+            setPerfil(prev => (prev ? { ...prev, empresa: { ...prev.empresa, [campo]: valor } } : prev));
+            useAuthStore.setState(state => ({
+                auth: state.auth ? { ...state.auth, empresa: { ...(state.auth as any).empresa, [campo]: valor } } : state.auth,
+            }));
+            const mensajes: Record<string, string> = {
+                mostrarQrSunat: valor
+                    ? 'El QR de SUNAT se imprimirá en tus comprobantes'
+                    : 'El QR de SUNAT ya no se imprimirá',
+                imprimirAutomatico: valor
+                    ? 'Al emitir se abrirá la impresión automáticamente'
+                    : 'Al emitir podrás elegir el formato antes de imprimir',
+                formatoImpresionDefault: `Formato de impresión por defecto: ${String(valor)}`,
+            };
+            useAlertStore.getState().alert(mensajes[campo], 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudo actualizar la configuración', 'error');
+        } finally {
+            setSavingImpresionConfig(false);
         }
     };
 
@@ -541,5 +578,5 @@ export const usePerfilViewModel = () => {
         }
     };
 
-    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, savingVentaSinStockConfig, handleVentaSinStockToggle, savingCobranzaCampoConfig, handleCobranzaCampoToggle, savingControlFlag, handleControlFlagToggle, savingCotizConfig, handleCotizToggle, handleDirectorTecnicoSave, savingSunatValidez, handleSunatValidezSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave, personalForm, savingPersonal, personalDirty, updatePersonalField, handleSavePersonal };
+    return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, savingVentaSinStockConfig, handleVentaSinStockToggle, savingImpresionConfig, handleImpresionConfig, savingCobranzaCampoConfig, handleCobranzaCampoToggle, savingControlFlag, handleControlFlagToggle, savingCotizConfig, handleCotizToggle, handleDirectorTecnicoSave, savingSunatValidez, handleSunatValidezSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave, personalForm, savingPersonal, personalDirty, updatePersonalField, handleSavePersonal };
 };

@@ -42,9 +42,9 @@ export default function PerfilIndex() {
     const limiteRaw = Number(usageStats?.limiteMaximo ?? 0);
     const comprobantesIlimitados = !!usageStats && (!Number.isFinite(limiteRaw) || limiteRaw <= 0);
     const fefoPermitidoPorPlan = hasPlanFeature(perfil as any, 'tieneGestionLotes');
-    // Conexión Shalom: solo disponible en planes Negocio y Corporativo.
-    const planNombre = String(perfil?.empresa?.plan?.nombre ?? '').toLowerCase();
-    const puedeShalom = /negocio|corporativo/.test(planNombre);
+    // Módulo Shalom: sale de las características del plan (Sistema → Planes),
+    // no del nombre del plan — así se administra sin tocar código.
+    const puedeShalom = hasPlanFeature(perfil as any, 'tieneShalom');
     // Envío automático por WhatsApp: desactivado temporalmente (a pedido).
     const SHOW_WHATSAPP: boolean = false;
     // Visibilidad por pestaña
@@ -544,6 +544,82 @@ export default function PerfilIndex() {
                                         {vm.savingCobranzaCampoConfig && <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                                {/* ── Impresión de comprobantes ── */}
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Icon icon="solar:printer-bold-duotone" width={14} />
+                                        Impresión de comprobantes
+                                    </p>
+                                </div>
+                                <label className="flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).mostrarQrSunat)}
+                                        disabled={vm.savingImpresionConfig}
+                                        onChange={(e) => vm.handleImpresionConfig('mostrarQrSunat', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-sky-600 dark:text-sky-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-sky-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Imprimir el QR de SUNAT en el comprobante</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Agrega el QR del comprobante electrónico al pie del ticket, A4 y A5. Tu cliente lo escanea y ve su
+                                            boleta o factura en línea; si el documento aún no tiene su PDF, el QR lleva la cadena oficial de SUNAT.
+                                            No tiene nada que ver con el QR de pago de Yape o Plin.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Solo aplica a boletas, facturas y notas de crédito/débito.</p>
+                                        {vm.savingImpresionConfig && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <div className="mt-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/40 dark:bg-indigo-900/10">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Formato de impresión por defecto</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-3">
+                                        El formato que se usará al imprimir un comprobante recién emitido y al reimprimir desde la lista.
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { value: 'TICKET', label: 'Ticket', sub: '80mm', icon: 'solar:receipt-bold-duotone' },
+                                            { value: 'A4', label: 'A4', sub: '210×297mm', icon: 'solar:document-bold-duotone' },
+                                            { value: 'A5', label: 'A5', sub: '148×210mm', icon: 'solar:file-bold-duotone' },
+                                        ].map(({ value, label, sub, icon }) => {
+                                            const activo = String((perfil.empresa as any).formatoImpresionDefault || 'TICKET') === value;
+                                            return (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    disabled={vm.savingImpresionConfig}
+                                                    onClick={() => vm.handleImpresionConfig('formatoImpresionDefault', value)}
+                                                    className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all disabled:opacity-60 ${activo
+                                                        ? 'border-indigo-500 bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300'
+                                                        : 'border-gray-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/40 text-gray-600 dark:text-gray-400 hover:border-gray-300'}`}
+                                                >
+                                                    <Icon icon={icon} width={20} />
+                                                    <span className="text-xs font-bold">{label}</span>
+                                                    <span className="text-[10px] text-gray-400">{sub}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {vm.savingImpresionConfig && <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">Guardando configuración...</p>}
+                                </div>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).imprimirAutomatico)}
+                                        disabled={vm.savingImpresionConfig}
+                                        onChange={(e) => vm.handleImpresionConfig('imprimirAutomatico', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Imprimir automáticamente al emitir</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Apenas se genere el comprobante se abrirá la impresión en el formato de arriba, sin que la cajera tenga que elegirlo.
+                                            Igual podrá reimprimir en otro formato desde el mismo modal.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Actívalo solo si imprimes todas tus ventas: el diálogo de impresión tapa la pantalla hasta que lo cierres.</p>
+                                        {vm.savingImpresionConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                     <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                         <Icon icon="solar:shield-check-bold-duotone" width={14} />

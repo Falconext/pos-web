@@ -85,42 +85,107 @@ const EmpresasIndex = () => {
     handleCloseMenu();
   };
 
-  const checkCell = (ok: boolean) => (
-    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${ok ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-500 dark:bg-rose-900/30 dark:text-rose-400'}`}>
-      <Icon icon={ok ? 'solar:check-circle-bold' : 'solar:close-circle-bold'} width={16} height={16} />
-    </span>
-  );
+  /**
+   * Hito de onboarding: casilla que se marca y desmarca desde la propia tabla,
+   * sin abrir el formulario de edición. El cambio se pinta al instante
+   * (optimista) y el viewmodel lo revierte si el backend falla.
+   *
+   * La casilla nativa se oculta (`sr-only peer`) y se dibuja un cuadro propio:
+   * así el check se ve igual en Chrome, Safari y Firefox, y en modo oscuro.
+   */
+  const checkCell = (
+    ok: boolean,
+    empresaId: number,
+    campo: 'capacitacion' | 'altaSunat' | 'contrato' | 'bienvenidaRedes',
+    etiqueta: string,
+  ) => {
+    const guardando = vm.onboardingGuardando === `${empresaId}:${campo}`;
+    return (
+      <label
+        className={`group inline-flex items-center justify-center p-1 ${guardando ? 'cursor-wait' : 'cursor-pointer'}`}
+        title={`${etiqueta}: ${ok ? 'hecho' : 'pendiente'} — clic para ${ok ? 'desmarcar' : 'marcar'}`}
+      >
+        <input
+          type="checkbox"
+          className="sr-only peer"
+          checked={ok}
+          disabled={guardando}
+          onChange={() => vm.handleToggleOnboarding(empresaId, campo, ok)}
+          aria-label={`${etiqueta}: ${ok ? 'hecho' : 'pendiente'}`}
+        />
+        <span
+          className="flex h-[22px] w-[22px] items-center justify-center rounded-[7px] border-2 border-gray-300 bg-white text-white shadow-sm transition-all duration-150
+            group-hover:border-emerald-400 group-active:scale-90
+            peer-checked:border-emerald-500 peer-checked:bg-emerald-500 peer-checked:shadow-emerald-500/25
+            peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500/40 peer-focus-visible:ring-offset-1
+            peer-disabled:opacity-60
+            dark:border-slate-600 dark:bg-slate-800 dark:group-hover:border-emerald-500"
+        >
+          {/* El check va como SVG en línea, no con <Icon/>: Iconify resuelve los
+              sets de forma asíncrona y si el nombre no existe (o no hay red) no
+              pinta nada — que es justo lo que pasaba, el cuadro salía verde y
+              vacío. Un SVG propio siempre se dibuja.
+              Tampoco se usa `peer-checked:` aquí: esa variante solo alcanza a
+              HERMANOS del input, y este icono va anidado dentro del cuadro. */}
+          {guardando ? (
+            <Icon icon="svg-spinners:180-ring" width={13} className={ok ? 'text-white' : 'text-emerald-500'} />
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={3.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className={`transition-all duration-150 ${ok ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+            >
+              <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />
+            </svg>
+          )}
+        </span>
+      </label>
+    );
+  };
 
   const buildRows = (rows: any[]) => rows.map((row: any) => {
     const sev = VENCE_STYLES[row.severidad as Severidad] ?? VENCE_STYLES.sinfecha;
     return {
       ...row,
       'Razon Social': (
-        <div className="max-w-[150px] sm:max-w-[190px] truncate font-medium text-gray-800 dark:text-gray-100" title={row['Razon Social']}>
-          {row['Razon Social']}
+        <div className="max-w-[170px] sm:max-w-[230px]" title={`${row['Razon Social']} · RUC ${row['RUC']}`}>
+          <span className="block truncate font-medium text-gray-800 dark:text-gray-100">{row['Razon Social']}</span>
           {row.nombreComercial && row.nombreComercial !== row['Razon Social'] && (
             <span className="block text-[11px] text-gray-400 dark:text-gray-500 truncate font-normal">{row.nombreComercial}</span>
           )}
+          {/* El RUC vive aquí abajo: ganamos una columna y se lee junto al nombre. */}
+          <span className="block text-[11px] font-mono text-gray-400 dark:text-gray-500">{row['RUC']}</span>
         </div>
       ),
       'Mes Activacion': (
         <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">{row['Mes Activacion'] ?? '—'}</span>
       ),
-      capacitacion: checkCell(Boolean(row.capacitacion)),
-      altaSunat: checkCell(Boolean(row.altaSunat)),
-      contrato: checkCell(Boolean(row.contrato)),
-      bienvenidaRedes: checkCell(Boolean(row.bienvenidaRedes)),
-      'Plan': (
-        <div className="flex flex-col leading-tight">
-          <span className="font-semibold text-gray-800 dark:text-gray-100">{row['Plan']}</span>
-          {row.planCosto != null && (
-            <span className="text-xs text-gray-400 dark:text-gray-500">S/ {row.planCosto.toFixed(2)}</span>
-          )}
+      capacitacion: checkCell(Boolean(row.capacitacion), row.id, 'capacitacion', 'Capacitación'),
+      altaSunat: checkCell(Boolean(row.altaSunat), row.id, 'altaSunat', 'Alta SUNAT'),
+      contrato: checkCell(Boolean(row.contrato), row.id, 'contrato', 'Contrato'),
+      bienvenidaRedes: checkCell(Boolean(row.bienvenidaRedes), row.id, 'bienvenidaRedes', 'Bienvenida en redes'),
+      'Rubro': (
+        <div className="max-w-[170px] sm:max-w-[220px] leading-tight">
+          <span className="block truncate text-gray-700 dark:text-gray-200" title={row['Rubro']}>{row['Rubro']}</span>
+          {/* El plan y su precio van debajo del rubro, así se libera una columna. */}
+          <span className="block text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 truncate">
+            {row['Plan']}
+            {row.planCosto != null && (
+              <span className="font-normal text-gray-400 dark:text-gray-500"> · S/ {row.planCosto.toFixed(2)}</span>
+            )}
+          </span>
         </div>
       ),
       'Vence en': (
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sev.pill}`}>
-          <Icon icon={sev.icon} width={13} height={13} />
+        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${sev.pill}`}>
+          <Icon icon={sev.icon} width={11} height={11} />
           {row['Vence en']}
         </span>
       ),
@@ -194,7 +259,9 @@ const EmpresasIndex = () => {
     (g) => vm.grupoFiltro === '' || vm.grupoFiltro === g,
   );
 
-  const baseColumns: any[] = ['RUC', 'Razon Social', 'Rubro', 'Plan', 'Vence en', 'Estado', 'Salud'];
+  // RUC va dentro de 'Razon Social' y el plan dentro de 'Rubro': dos columnas
+  // menos, que en esta tabla ancha se agradecen.
+  const baseColumns: any[] = ['Razon Social', 'Rubro', 'Vence en', 'Estado', 'Salud'];
   const onboardingColumns: any[] = [
     { label: 'Mes Activación', key: 'Mes Activacion' },
     { label: 'Capacitación', key: 'capacitacion' },

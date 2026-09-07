@@ -12,6 +12,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { accordionReveal, fadeIn, fadeUp, interactiveHover, navItemReveal, navStagger, pageTransition, scaleIn, slideRight } from '@/lib/motion/presets'
 import { useReducedMotionPreference } from '@/lib/motion/reducedMotion'
 import { MODULE_META, SUBMODULE_META, LEGACY_MODULE_ROUTES, LEGACY_SUBMODULE_ROUTES, type SidebarSubItem } from '@/layouts/sidebar/sidebarMeta'
+import { contarNovedadesSinVer, hayNovedadesSinVer } from '@/data/novedades'
+import NovedadesModal from '@/components/NovedadesModal'
 
 const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true'
 
@@ -33,6 +35,32 @@ export default function AdminLayout() {
 
   const [nameNavbar, setNameNavbar] = useState<string>('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  // Novedades sin ver: alimenta el punto del menú. Se calcula una sola vez al
+  // montar (la lista es estática) y se apaga al entrar a la sección.
+  const [novedadesSinVer, setNovedadesSinVer] = useState(() => contarNovedadesSinVer())
+  const [novedadesAbierto, setNovedadesAbierto] = useState(false)
+  // `true` cuando el modal se abrió solo (no porque el usuario lo pidiera):
+  // cambia el encabezado para que se lea como un saludo.
+  const [novedadesAuto, setNovedadesAuto] = useState(false)
+
+  // Las novedades se abren solas la primera vez que hay algo sin ver, sin
+  // importar si el usuario acaba de iniciar sesión o ya estaba dentro. No hace
+  // falta otra marca: al abrirse se dan por leídas, así que no vuelve a saltar.
+  useEffect(() => {
+    if (!hayNovedadesSinVer()) return
+    setNovedadesAuto(true)
+    setNovedadesAbierto(true)
+  }, [])
+
+  const abrirNovedades = () => {
+    setNovedadesAuto(false)
+    setNovedadesAbierto(true)
+  }
+  const cerrarNovedades = () => {
+    setNovedadesAbierto(false)
+    setNovedadesAuto(false)
+    setNovedadesSinVer(0)
+  }
   const [openModuleCode, setOpenModuleCode] = useState<string | null>(null)
   const toggleModule = (codigo: string) => setOpenModuleCode(prev => prev === codigo ? null : codigo)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -563,6 +591,30 @@ export default function AdminLayout() {
 
         {/* Divider y configuración abajo */}
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">
+          <button
+            type="button"
+            onClick={() => { setIsSidebarOpen(false); abrirNovedades() }}
+            className={theme.inactiveLink}
+            title={novedadesSinVer > 0 ? `Novedades · ${novedadesSinVer} sin ver` : 'Novedades'}
+          >
+            <span className="relative flex items-center">
+              <Icon icon="solar:confetti-minimalistic-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
+              {/* Punto de "sin leer": se apaga al abrir el modal de novedades. */}
+              {novedadesSinVer > 0 && (
+                <span className={`absolute -top-0.5 ${isSidebarCollapsed ? 'right-0' : 'right-2'} h-2 w-2 rounded-full bg-violet-500 ring-2 ring-white dark:ring-[#111827]`} />
+              )}
+            </span>
+            {!isSidebarCollapsed && (
+              <span className="flex-1 flex items-center justify-between">
+                <span>Novedades</span>
+                {novedadesSinVer > 0 && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-black">
+                    {novedadesSinVer}
+                  </span>
+                )}
+              </span>
+            )}
+          </button>
           <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración') }} to="/administrador/perfil" className={() => theme.inactiveLink} title="Configuración">
             <Icon icon="solar:settings-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
             {!isSidebarCollapsed && <span>Configuración</span>}
@@ -836,6 +888,11 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      <NovedadesModal
+        abierto={novedadesAbierto}
+        onClose={cerrarNovedades}
+        autoAbierto={novedadesAuto}
+      />
       <Configurator />
     </motion.div>
   )

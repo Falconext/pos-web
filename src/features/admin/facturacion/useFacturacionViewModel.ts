@@ -10,6 +10,7 @@ import { numberToWords } from "@/utils/numberToLetters";
 import { calculateTotals } from "@/utils/calculateTotals";
 import useAlertStore from "@/zustand/alert";
 import { useAuthStore } from "@/zustand/auth";
+import { getFormatoImpresionDefault } from "@/utils/formatoImpresion";
 import { useEmpresasStore } from "@/zustand/empresas";
 import { useUsersStore } from "@/zustand/users";
 import { IFormClient } from "@/interfaces/clients";
@@ -474,7 +475,11 @@ export const useFacturacionViewModel = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(20);
 
-    const [printSize, setPrintSize] = useState(isQuotationRoute ? "A4" : "TICKET");
+    // Formato de impresión: el que la empresa configuró en Perfil → Configuración.
+    // Las cotizaciones siguen saliendo en A4 (no son un comprobante de caja).
+    const [printSize, setPrintSize] = useState(() =>
+        isQuotationRoute ? "A4" : getFormatoImpresionDefault(auth?.empresa),
+    );
     const [includeProductImages, setIncludeProductImages] = useState(isQuotationRoute);
 
     // Quotation-specific states
@@ -2546,7 +2551,9 @@ export const useFacturacionViewModel = () => {
             setIsComprobantePendiente(!!(result as any).pendiente);
             const r = result as any;
             if (r.serie != null && r.correlativo != null) {
-                setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null, total: r.mtoImpVenta ?? totalAdjusted });
+                // `s3PdfUrl` y `fechaEmision` alimentan el QR de SUNAT del ticket:
+                // con el PDF ya disponible el QR lleva el enlace en vez de la cadena.
+                setEmittedDataReceipt({ ...dataReceipt, serie: r.serie, correlativo: r.correlativo, id: r.id ?? dataReceipt?.id ?? null, total: r.mtoImpVenta ?? totalAdjusted, s3PdfUrl: r.s3PdfUrl ?? null, fechaEmision: r.fechaEmision ?? null });
             }
             // Auto-crear despacho si se completó la coordinación de envío.
             const comprobanteId = r.id ?? dataReceipt?.id ?? null;

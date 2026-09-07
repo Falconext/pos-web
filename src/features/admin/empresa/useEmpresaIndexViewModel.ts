@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useEmpresasStore } from '@/zustand/empresas';
 import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
-import { post } from '@/utils/fetch';
+import { post, patch } from '@/utils/fetch';
 import apiClient from '@/utils/apiClient';
 
 const DAY_MS = 86400000;
@@ -150,6 +150,50 @@ export const useEmpresaIndexViewModel = (): any => {
 
     useEffect(() => { if (success === true) { setIsOpenModalConfirm(false); setSelectedEmpresa(null); } }, [success]);
 
+    // Marcado de onboarding directo desde la tabla, sin abrir el formulario.
+    // Actualización optimista: el check cambia al instante y se revierte si el
+    // backend falla, para que marcar 4 hitos de 25 empresas no sea una espera.
+    const [onboardingGuardando, setOnboardingGuardando] = useState<string | null>(null);
+    const [onboardingLocal, setOnboardingLocal] = useState<Record<string, boolean>>({});
+
+    const handleToggleOnboarding = async (
+        empresaId: number,
+        campo: 'capacitacion' | 'altaSunat' | 'contrato' | 'bienvenidaRedes',
+        valorActual: boolean,
+    ) => {
+        const clave = `${empresaId}:${campo}`;
+        if (onboardingGuardando === clave) return;
+        const nuevo = !valorActual;
+        setOnboardingLocal((prev) => ({ ...prev, [clave]: nuevo }));
+        setOnboardingGuardando(clave);
+        const revertir = (motivo: string) => {
+            setOnboardingLocal((prev) => {
+                const copia = { ...prev };
+                delete copia[clave];
+                return copia;
+            });
+            useAlertStore.getState().alert(motivo, 'error');
+        };
+        try {
+            const resp: any = await patch(`empresa/${empresaId}/onboarding`, {
+                campo,
+                valor: nuevo,
+            });
+            // OJO: el helper `patch` NO lanza ante un error HTTP — atrapa todo y
+            // devuelve { success: false, error }. Si solo se usa try/catch, un 404
+            // o un 401 pasan por buenos y el check se queda marcado hasta recargar.
+            if (resp?.success === false || resp?.code === 0) {
+                revertir(resp?.error || resp?.message || 'No se pudo actualizar el seguimiento');
+            }
+        } catch (error: any) {
+            revertir(
+                error?.response?.data?.message || error?.message || 'No se pudo actualizar el seguimiento',
+            );
+        } finally {
+            setOnboardingGuardando(null);
+        }
+    };
+
     const handleSearch = (e: any) => { setSearchTerm(e.target.value); setCurrentPageState(1); };
     const handleEdit = (empresa: any) => { setEmpresaEditingId(empresa.id); setEmpresaModalMode('edit'); setOpenEmpresaModal(true); };
     const handleToggleState = (empresa: any) => { setSelectedEmpresa({ ...empresa, accion: 'cambiarEstado' }); setIsOpenModalConfirm(true); };
@@ -182,10 +226,10 @@ export const useEmpresaIndexViewModel = (): any => {
             fechaExpiracion: formatDateOnly(empresa.fechaExpiracion),
             'Vence en': formatDaysUntil(diasRestantes),
             'Mes Activacion': mesAbrev(empresa.fechaActivacion),
-            capacitacion: Boolean(empresa.capacitacion),
-            altaSunat: Boolean(empresa.altaSunat),
-            contrato: Boolean(empresa.contrato),
-            bienvenidaRedes: Boolean(empresa.bienvenidaRedes),
+            capacitacion: onboardingLocal[`${empresa.id}:capacitacion`] ?? Boolean(empresa.capacitacion),
+            altaSunat: onboardingLocal[`${empresa.id}:altaSunat`] ?? Boolean(empresa.altaSunat),
+            contrato: onboardingLocal[`${empresa.id}:contrato`] ?? Boolean(empresa.contrato),
+            bienvenidaRedes: onboardingLocal[`${empresa.id}:bienvenidaRedes`] ?? Boolean(empresa.bienvenidaRedes),
             estado: empresa.estado,
             grupo: resolveGrupo(empresa),
             severidad: resolveSeveridad(diasRestantes),
@@ -357,5 +401,5 @@ export const useEmpresaIndexViewModel = (): any => {
     const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
 
-    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
+    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
 };

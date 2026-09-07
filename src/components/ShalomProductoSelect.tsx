@@ -31,7 +31,7 @@ export function ShalomProductoSelect({ value, onChange }: { value?: number | str
             <option value="">{cargando ? 'Cargando productos…' : 'Usar el predeterminado'}</option>
             {productos.map(p => (
                 <option key={p.id} value={p.id}>
-                    {p.nombre} · hasta {p.peso} kg
+                    {p.nombre}
                 </option>
             ))}
         </select>
