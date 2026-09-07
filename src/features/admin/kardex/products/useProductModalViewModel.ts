@@ -188,6 +188,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [variantImageUrls, setVariantImageUrls] = useState<Record<string, string>>({});
   // URLs sugeridas marcadas para la galería del color (se descargan a S3 al guardar).
   const [variantGalleryUrls, setVariantGalleryUrls] = useState<Record<string, string[]>>({});
+  // Término con el que se buscan las fotos por color. `null` = sigue a la descripción
+  // del producto; al editarlo se afina la búsqueda de TODOS los colores sin subir a
+  // cambiar la descripción real (que además se guarda en el catálogo).
+  const [colorSearchBase, setColorSearchBase] = useState<string | null>(null);
 
   // Galería del producto (imagen principal + imágenes adicionales). Límite por rubro.
   const [galleryImages, setGalleryImages] = useState<{ url: string; display: string }[]>([]);
@@ -802,15 +806,21 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
   };
 
+  // Término efectivo para las fotos por color: el que el usuario escribió en la
+  // sección de colores o, si no tocó nada, la descripción del producto.
+  const colorSearchQueryBase = String(
+    colorSearchBase ?? formValues.descripcion ?? "",
+  ).trim();
+
   // Busca sugerencias de imagen (IA/Serper) para un color de variante concreto.
   // Enriquece la consulta con el color para traer fotos específicas de ese acabado.
   const handleAutoImageColor = async (color: string) => {
-    const base = String(formValues.descripcion || "").trim();
+    const base = colorSearchQueryBase;
     const colorClean = String(color || "").trim();
     if (!base) {
       useAlertStore
         .getState()
-        .alert("Ingresa el nombre del producto para buscar imagen", "warning");
+        .alert("Escribe qué buscar para las fotos por color", "warning");
       return;
     }
     if (!colorClean) return;
@@ -869,7 +879,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     setVariantImageUrls((prev) => ({ ...prev, [colorClean]: imageUrl }));
     // Aprende la imagen bajo el nombre ENRIQUECIDO con el color (mismo query que la
     // búsqueda) para no contaminar la memoria de la imagen principal del producto.
-    const baseNombre = String(formValues?.descripcion || "").trim();
+    const baseNombre = colorSearchQueryBase;
     if (baseNombre) {
       void apiClient
         .post("/productos/ia/aprobar-imagen", {
@@ -1913,6 +1923,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     variantImageCandidatesLoading,
     variantImageUrls,
     variantGalleryUrls,
+    colorSearchBase,
+    setColorSearchBase,
+    colorSearchQueryBase,
     handleAutoImageColor,
     selectColorImageCandidate,
     tipoAjusteStock,

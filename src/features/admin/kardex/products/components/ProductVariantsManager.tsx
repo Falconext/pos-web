@@ -132,6 +132,9 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     setVariantGalleryUrls,
     handleAutoImageColor,
     selectColorImageCandidate,
+    colorSearchBase,
+    setColorSearchBase,
+    colorSearchQueryBase,
     productSections,
   } = vm;
 
@@ -801,6 +804,38 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
           <div className="mb-3 flex items-center justify-between">
             <h6 className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Imágenes por color</h6>
             <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-300">Se aplican a todas sus tallas</span>
+          </div>
+
+          {/* Término de búsqueda de las fotos por color: se edita aquí mismo, sin
+              volver arriba a cambiar la descripción real del producto. */}
+          <div className="mb-3">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Buscar como
+              </label>
+              {colorSearchBase !== null && (
+                <button
+                  type="button"
+                  onClick={() => setColorSearchBase(null)}
+                  className="flex items-center gap-1 text-[11px] font-bold text-violet-600 transition hover:text-violet-700 dark:text-violet-300"
+                >
+                  <Icon icon="solar:refresh-bold" width={12} />
+                  Usar la descripción
+                </button>
+              )}
+            </div>
+            <input
+              type="text"
+              value={colorSearchQueryBase}
+              onChange={(e) => setColorSearchBase(e.target.value)}
+              placeholder="Ej: Zapatillas Adidas Gazelle"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-800 outline-none transition focus:border-violet-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            />
+            <p className="mt-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              {colorSearchQueryBase
+                ? `Cada color busca «${colorSearchQueryBase} ${colorValues[0]}»`
+                : 'Se le suma el color de cada variante al buscar.'}
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {colorValues.map((color) => {
