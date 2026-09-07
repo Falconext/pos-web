@@ -62,7 +62,21 @@ export interface GuiaCreada {
     shalomGuiaCreadaEn: string | null;
 }
 
+/** Tipo de producto/paquete de Shalom, con sus medidas por defecto. */
+export interface ShalomProducto {
+    id: number;
+    nombre: string;
+    alto: number;
+    ancho: number;
+    largo: number;
+    peso: number;
+}
+
 export const shalomService = {
+    /** Productos de la cuenta Shalom Pro de la empresa (derivados de su historial). */
+    productos: async (): Promise<ShalomProducto[]> =>
+        unwrap(await api.get('/shalom/productos')) ?? [],
+
     getInstancia: async (): Promise<ShalomInstancia> =>
         unwrap(await api.get('/shalom/instancia')),
 

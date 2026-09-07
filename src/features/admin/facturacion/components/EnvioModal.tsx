@@ -6,6 +6,8 @@ import moment from "moment";
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import useAlertStore from "@/zustand/alert";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
+import { ShalomProductoSelect } from "@/components/ShalomProductoSelect";
+import { shalomService } from "@/services/shalom.service";
 import { OlvaAgenciaSelect } from "@/components/OlvaAgenciaSelect";
 import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
 
@@ -92,6 +94,18 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
 
     const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
+    // Con la generación automática activa, el N° de orden y las claves los
+    // devuelve Shalom al guardar la venta: pedirlos antes invita a tipear datos
+    // que se van a sobreescribir.
+    const [autoGuia, setAutoGuia] = useState(false);
+    useEffect(() => {
+        if (!esShalom) return;
+        let vivo = true;
+        shalomService.getInstancia()
+            .then(i => { if (vivo) setAutoGuia(Boolean(i?.habilitadoPorPlan && i?.conectada && i?.autoGuiaActivo)); })
+            .catch(() => { if (vivo) setAutoGuia(false); });
+        return () => { vivo = false; };
+    }, [esShalom]);
     const esPropio = envioData.transportista === 'PROPIOS';
     const esOlva = envioData.transportista === OLVA_COURIER;
     const inputClass = (field: keyof EnvioValidationErrors) => `${inp} ${errors[field] ? invalidInp : ''}`;
@@ -226,7 +240,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
 
                             {/* Body */}
                             <div className="p-4 bg-red-50/30 dark:bg-red-950/10 space-y-3">
-                                {/* Credenciales */}
+                                {autoGuia && (
+                                    <p className="flex items-start gap-2 rounded-xl bg-white/70 p-3 text-[11px] leading-4 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                                        <Icon icon="solar:magic-stick-3-bold-duotone" className="mt-0.5 shrink-0 text-red-500 text-sm" />
+                                        Al guardar la venta se registra el envío en tu cuenta Shalom Pro y el N° de orden
+                                        y la clave se completan solos.
+                                    </p>
+                                )}
+
+                                {/* Credenciales — solo si se cargan a mano */}
+                                {!autoGuia && (
                                 <div className="grid grid-cols-2 gap-3">
                                     <Field label="Clave de envío">
                                         <input
@@ -249,9 +272,11 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                         />
                                     </Field>
                                 </div>
+                                )}
 
                                 {/* N° Orden + Tipo paquetería */}
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className={`grid gap-3 ${autoGuia ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                    {!autoGuia && (
                                     <Field label="N° Orden courier">
                                         <input
                                             type="text"
@@ -261,6 +286,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                             className={inp}
                                         />
                                     </Field>
+                                    )}
                                     <Field label="Tipo de paquetería">
                                         <input
                                             type="text"
@@ -268,6 +294,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                             onChange={e => set('tipoMercaderia', e.target.value)}
                                             placeholder="Ej: Caja, Sobre, Frágil..."
                                             className={inp}
+                                        />
+                                    </Field>
+                                </div>
+
+                                {/* Producto de Shalom: define el contenido y el costo de la guía. */}
+                                <div className="grid grid-cols-1 gap-3">
+                                    <Field label="Producto Shalom (tamaño del paquete)">
+                                        <ShalomProductoSelect
+                                            value={envioData.shalomTipoProducto}
+                                            onChange={v => set('shalomTipoProducto', v)}
                                         />
                                     </Field>
                                 </div>

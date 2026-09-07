@@ -18,6 +18,7 @@ import { ProductFinancialAnalysis } from './ProductFinancialAnalysis';
 import { tipoCambioService } from '@/services/tipoCambio.service';
 import { useAuthStore } from '@/zustand/auth';
 import ProductPriceListsPanel from './ProductPriceListsPanel';
+import ModalEtiquetasBarras from './ModalEtiquetasBarras';
 
 const afectaciones = [
     { id: "10", value: "Gravado - Operación Onerosa" },
@@ -43,6 +44,10 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const ocultarCosto = !!useAuthStore((s) => s.auth?.ocultarPrecioCosto);
     const rolAuth = useAuthStore((s) => s.auth?.rol);
     const [listasPrecioOpen, setListasPrecioOpen] = useState(false);
+    // Imprimir la etiqueta sin salir de la ficha: es lo que se quiere hacer justo
+    // después de generar el código. El modal trae también las variantes.
+    const [etiquetasAbiertas, setEtiquetasAbiertas] = useState(false);
+    const productoIdActual = Number((formValues as any)?.productoId) || 0;
 
     // Creación inline de categoría/marca (sin salir del modal de producto)
     const [creatingCat, setCreatingCat] = useState(false);
@@ -591,28 +596,49 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     {/* Generación de un EAN-13 interno para productos sin código de
                         fábrica (ropa, artesanía, producción propia). El código se
                         deriva del id, así que existe recién con el producto guardado. */}
-                    <button
-                        type="button"
-                        onClick={() => generarCodigoBarras()}
-                        disabled={generandoCodigoBarras || !Number((formValues as any)?.productoId)}
-                        title={
-                            Number((formValues as any)?.productoId)
-                                ? 'Genera un EAN-13 interno para imprimir en la etiqueta'
-                                : 'Guarda el producto y vuelve a abrirlo para generar su código'
-                        }
-                        className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-[1.4px] border-violet-300 text-xs font-bold text-violet-600 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-800 dark:text-violet-300 dark:hover:bg-violet-950/30"
-                    >
-                        <Icon
-                            icon={generandoCodigoBarras ? 'svg-spinners:180-ring-with-bg' : 'mdi:barcode'}
-                            className="h-4 w-4"
-                        />
-                        {(formValues as any)?.codigoBarras ? 'Regenerar código' : 'Generar código'}
-                    </button>
-                    {!Number((formValues as any)?.productoId) && (
+                    <div className="mt-2 flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => generarCodigoBarras()}
+                            disabled={generandoCodigoBarras || !productoIdActual}
+                            title={
+                                productoIdActual
+                                    ? 'Genera un EAN-13 interno para imprimir en la etiqueta'
+                                    : 'Guarda el producto y vuelve a abrirlo para generar su código'
+                            }
+                            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border-[1.4px] border-violet-300 text-xs font-bold text-violet-600 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-800 dark:text-violet-300 dark:hover:bg-violet-950/30"
+                        >
+                            <Icon
+                                icon={generandoCodigoBarras ? 'svg-spinners:180-ring-with-bg' : 'mdi:barcode'}
+                                className="h-4 w-4"
+                            />
+                            {(formValues as any)?.codigoBarras ? 'Regenerar código' : 'Generar código'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setEtiquetasAbiertas(true)}
+                            disabled={!productoIdActual}
+                            title={
+                                productoIdActual
+                                    ? 'Vista previa e impresión de la etiqueta (incluye las variantes)'
+                                    : 'Guarda el producto para imprimir su etiqueta'
+                            }
+                            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-violet-600 text-xs font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <Icon icon="solar:printer-bold" className="h-4 w-4" />
+                            Imprimir etiqueta
+                        </button>
+                    </div>
+                    {!productoIdActual && (
                         <p className="mt-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
                             Disponible al guardar el producto
                         </p>
                     )}
+                    <ModalEtiquetasBarras
+                        isOpen={etiquetasAbiertas}
+                        onClose={() => setEtiquetasAbiertas(false)}
+                        productoIds={productoIdActual ? [productoIdActual] : []}
+                    />
                 </div>
             )}
 

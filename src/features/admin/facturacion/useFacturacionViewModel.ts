@@ -90,6 +90,7 @@ type EnvioDespachoFormData = {
     montoCOD?: number;
     // Peso del paquete: Olva lo exige para registrar la guía.
     pesoKg?: number;
+    shalomTipoProducto?: number;
 };
 
 export type PaymentLine = {
@@ -196,6 +197,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         aplicacionMontoCliente: data.aplicacionMontoCliente ?? ((Number(data.costoEnvio) > 0 && data.pagarFlete === 'CLIENTE') ? 'ITEM_ENVIO' : 'NEGOCIO'),
         ...(Number(data.montoCOD) > 0 ? { montoCOD: Number(data.montoCOD) } : {}),
         ...(Number(data.pesoKg) > 0 ? { pesoKg: Number(data.pesoKg) } : {}),
+        ...(Number(data.shalomTipoProducto) > 0 ? { shalomTipoProducto: Number(data.shalomTipoProducto) } : {}),
     };
 };
 
@@ -406,7 +408,8 @@ export const useFacturacionViewModel = () => {
     // Coordinación de envío nacional
     const [envioActivo, setEnvioActivo] = useState(false);
     const [envioData, setEnvioData] = useState({
-        transportista: '',
+        // Shalom PRO es el courier que usan casi todos los envíos: viene marcado.
+        transportista: 'SHALOM_PRO',
         tipoEnvio: 'AGENCIA',
         agenciaDestino: '',
         celularDest: '',
@@ -430,6 +433,7 @@ export const useFacturacionViewModel = () => {
         contenidoPaquete: '',
         montoCOD: 0,
         pesoKg: 0,
+        shalomTipoProducto: undefined as number | undefined,
     });
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);

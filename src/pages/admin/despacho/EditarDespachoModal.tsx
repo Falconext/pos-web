@@ -7,6 +7,7 @@ import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
+import { ShalomProductoSelect } from "@/components/ShalomProductoSelect";
 import { mensajeErrorShalom, shalomService, type ShalomInstancia } from "@/services/shalom.service";
 import { OlvaAgenciaSelect } from "@/components/OlvaAgenciaSelect";
 import { mensajeErrorOlva, olvaService, type OlvaConfig } from "@/services/olva.service";
@@ -76,6 +77,7 @@ function construirPayloadDespacho(envioData: any) {
         repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
         fechaEstimada: opcional(envioData.fechaEstimada),
         pesoKg: Number(envioData.pesoKg) > 0 ? Number(envioData.pesoKg) : undefined,
+        shalomTipoProducto: Number(envioData.shalomTipoProducto) > 0 ? Number(envioData.shalomTipoProducto) : undefined,
         nroPaquetes: Number(envioData.nroPaquetes) > 0 ? Number(envioData.nroPaquetes) : undefined,
         montoCOD: Number(envioData.montoCOD) >= 0 ? Number(envioData.montoCOD) : undefined,
         costoEnvio: Number(envioData.costoEnvio) >= 0 ? Number(envioData.costoEnvio) : undefined,
@@ -107,6 +109,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         montoCOD: 0,
         pesoKg: 0,
         shalomAgenciaDestinoId: '',
+        shalomTipoProducto: undefined as number | undefined,
         olvaAgenciaDestinoCodigo: '',
     });
     // Cuenta Shalom Pro conectada (plan Corporativo): habilita generar la guía.
@@ -161,6 +164,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         montoCOD: payload.montoCOD ?? 0,
                         pesoKg: payload.pesoKg ?? 0,
                         shalomAgenciaDestinoId: payload.shalomAgenciaDestinoId || '',
+                        shalomTipoProducto: payload.shalomTipoProducto ?? undefined,
                         olvaAgenciaDestinoCodigo: payload.olvaAgenciaDestinoCodigo || '',
                     });
                 }
@@ -385,6 +389,15 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         <input type="text" value={envioData.tipoMercaderia}
                                             onChange={e => set('tipoMercaderia', e.target.value)}
                                             placeholder="Ej: Caja, Sobre, Frágil..." className={inp} />
+                                    </Field>
+                                </div>
+                                {/* Producto de Shalom: define el contenido y el costo de la guía. */}
+                                <div className="grid grid-cols-1 gap-3">
+                                    <Field label="Producto Shalom (tamaño del paquete)">
+                                        <ShalomProductoSelect
+                                            value={envioData.shalomTipoProducto}
+                                            onChange={v => set('shalomTipoProducto', v)}
+                                        />
                                     </Field>
                                 </div>
                                 {/* Fecha + monto COD */}
