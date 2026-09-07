@@ -18,8 +18,6 @@ import { ProductFinancialAnalysis } from './ProductFinancialAnalysis';
 import { tipoCambioService } from '@/services/tipoCambio.service';
 import { useAuthStore } from '@/zustand/auth';
 import ProductPriceListsPanel from './ProductPriceListsPanel';
-import CodigoBarrasEAN13 from '@/components/CodigoBarrasEAN13';
-import { esEan13Valido } from '@/utils/ean13';
 
 const afectaciones = [
     { id: "10", value: "Gravado - Operación Onerosa" },
@@ -593,39 +591,27 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     {/* Generación de un EAN-13 interno para productos sin código de
                         fábrica (ropa, artesanía, producción propia). El código se
                         deriva del id, así que existe recién con el producto guardado. */}
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => generarCodigoBarras()}
-                            disabled={generandoCodigoBarras || !Number((formValues as any)?.productoId)}
-                            title={
-                                Number((formValues as any)?.productoId)
-                                    ? 'Genera un EAN-13 interno para imprimir en la etiqueta'
-                                    : 'Guarda el producto y vuelve a abrirlo para generar su código'
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-[11px] font-bold text-violet-600 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-900/60 dark:bg-violet-900/30 dark:text-violet-300"
-                        >
-                            <Icon
-                                icon={generandoCodigoBarras ? 'svg-spinners:180-ring-with-bg' : 'mdi:barcode'}
-                                className="h-3.5 w-3.5"
-                            />
-                            {(formValues as any)?.codigoBarras ? 'Regenerar código' : 'Generar código'}
-                        </button>
-                        {!Number((formValues as any)?.productoId) && (
-                            <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
-                                Disponible al guardar el producto
-                            </span>
-                        )}
-                    </div>
-                    {esEan13Valido(String((formValues as any)?.codigoBarras || '')) && (
-                        <div className="mt-2 inline-block rounded-xl border border-gray-200 bg-white p-2 dark:border-slate-700">
-                            <CodigoBarrasEAN13
-                                codigo={String((formValues as any).codigoBarras)}
-                                moduloPx={1.6}
-                                altoBarras={44}
-                                altoTexto={10}
-                            />
-                        </div>
+                    <button
+                        type="button"
+                        onClick={() => generarCodigoBarras()}
+                        disabled={generandoCodigoBarras || !Number((formValues as any)?.productoId)}
+                        title={
+                            Number((formValues as any)?.productoId)
+                                ? 'Genera un EAN-13 interno para imprimir en la etiqueta'
+                                : 'Guarda el producto y vuelve a abrirlo para generar su código'
+                        }
+                        className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-[1.4px] border-violet-300 text-xs font-bold text-violet-600 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-800 dark:text-violet-300 dark:hover:bg-violet-950/30"
+                    >
+                        <Icon
+                            icon={generandoCodigoBarras ? 'svg-spinners:180-ring-with-bg' : 'mdi:barcode'}
+                            className="h-4 w-4"
+                        />
+                        {(formValues as any)?.codigoBarras ? 'Regenerar código' : 'Generar código'}
+                    </button>
+                    {!Number((formValues as any)?.productoId) && (
+                        <p className="mt-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                            Disponible al guardar el producto
+                        </p>
                     )}
                 </div>
             )}
