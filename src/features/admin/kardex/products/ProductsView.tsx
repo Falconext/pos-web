@@ -8,6 +8,7 @@ import ModalProduct from '@/pages/admin/kardex/modal-productos';
 import ModalCategories from '@/pages/admin/kardex/modal-categorias';
 import ModalMarcas from '@/pages/admin/kardex/modal-marcas';
 import ModalCatalog from '@/features/admin/kardex/shared/ModalCatalog';
+import ModalEtiquetasBarras from './components/ModalEtiquetasBarras';
 import ModalConfirm from '@/components/ModalConfirm';
 import Pagination from '@/components/Pagination';
 import CardRestaurante from '@/components/productos/CardRestaurante';
@@ -77,6 +78,9 @@ export default function ProductsView() {
         }
     };
 
+    // Etiquetas de código de barras: la selección de productos y cantidades
+    // ocurre dentro del modal (la tabla compartida no maneja selección múltiple).
+    const [etiquetasIds, setEtiquetasIds] = useState<number[]>([]);
     const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
     const [isOpenModalPreviewCatalogo, setIsOpenModalPreviewCatalogo] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -606,6 +610,19 @@ export default function ProductsView() {
                                                 className="hidden"
                                             />
                                             <button
+                                                onClick={() => {
+                                                    setShowOptionsDropdown(false);
+                                                    // Los productos que se ven ahora (ya filtrados por
+                                                    // la búsqueda/categoría): dentro del modal se eligen
+                                                    // cuáles etiquetar y cuántas etiquetas de cada uno.
+                                                    setEtiquetasIds(productsSource.map((p: any) => p.id));
+                                                }}
+                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-400 transition-colors"
+                                            >
+                                                <Icon icon="mdi:barcode" className="mr-2 text-violet-500" width={18} />
+                                                Etiquetas de código de barras
+                                            </button>
+                                            <button
                                                 onClick={() => { actions.exportProducts(); setShowOptionsDropdown(false); }}
                                                 className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 transition-colors"
                                             >
@@ -688,6 +705,11 @@ export default function ProductsView() {
                 </div>
 
                 {/* Modals */}
+                <ModalEtiquetasBarras
+                    isOpen={etiquetasIds.length > 0}
+                    onClose={() => setEtiquetasIds([])}
+                    productoIds={etiquetasIds}
+                />
                 <ModalCategories isOpenModal={vm.isOpenModalCategory} closeModal={() => actions.setIsOpenModalCategory(false)} setIsOpenModal={actions.setIsOpenModalCategory} />
                 <ModalMarcas isOpenModal={vm.isOpenModalBrands} closeModal={() => actions.setIsOpenModalBrands(false)} setIsOpenModal={actions.setIsOpenModalBrands} />
                 {vm.isOpenModalCatalog && <ModalCatalog
@@ -724,6 +746,9 @@ export default function ProductsView() {
                                         <span>{(rowBase as any).publicarEnTienda ? 'Quitar de tienda' : 'Publicar en tienda'}</span>
                                     </button>
                                 )}
+                                <button type="button" onClick={() => { setEtiquetasIds([rowBase.id]); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+                                    <Icon icon="mdi:barcode" width={15} /> Etiqueta de código de barras
+                                </button>
                                 <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
                                     <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
                                 </button>

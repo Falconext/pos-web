@@ -188,6 +188,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [variantImageUrls, setVariantImageUrls] = useState<Record<string, string>>({});
   // URLs sugeridas marcadas para la galería del color (se descargan a S3 al guardar).
   const [variantGalleryUrls, setVariantGalleryUrls] = useState<Record<string, string[]>>({});
+  // Generación de códigos de barra internos (EAN-13 prefijo 2).
+  const [generandoCodigoBarras, setGenerandoCodigoBarras] = useState(false);
+
   // Término con el que se buscan las fotos por color. `null` = sigue a la descripción
   // del producto; al editarlo se afina la búsqueda de TODOS los colores sin subir a
   // cambiar la descripción real (que además se guarda en el catálogo).
@@ -748,6 +751,75 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       useAlertStore.getState().alert("Error al categorizar con IA", "error");
     } finally {
       setIsCategorizing(false);
+    }
+  };
+
+  // ─── Códigos de barra internos ─────────────────────────────────────────────
+
+  /**
+   * Pide al backend el EAN-13 interno del producto. El código se deriva del id,
+   * así que solo existe una vez guardado: en creación el botón queda deshabilitado
+   * y el usuario lo genera al reabrir o desde la acción masiva de la lista.
+   */
+  const generarCodigoBarras = async (opts: { incluirVariantes?: boolean } = {}) => {
+    const productoId = Number(formValues?.productoId || 0);
+    if (!productoId) {
+      useAlertStore
+        .getState()
+        .alert("Guarda el producto y vuelve a abrirlo para generar su código", "info");
+      return;
+    }
+    setGenerandoCodigoBarras(true);
+    try {
+      const response = await apiClient.post("/productos/codigos-barras/generar", {
+        productoIds: [productoId],
+        incluirVariantes: opts.incluirVariantes === true,
+      });
+      const data = response.data?.data || response.data;
+      const generados: { id: number; codigoBarras: string }[] = data?.generados ?? [];
+
+      const delPadre = generados.find((g) => g.id === productoId);
+      if (delPadre) {
+        setFormValues((prev: any) => ({ ...prev, codigoBarras: delPadre.codigoBarras }));
+      }
+
+      // Las variantes son Producto hijos: se refleja su código en la matriz.
+      if (opts.incluirVariantes && generados.length) {
+        const porId = new Map(generados.map((g) => [g.id, g.codigoBarras]));
+        setFormValues((prev: any) => ({
+          ...prev,
+          variantes: Array.isArray(prev?.variantes)
+            ? prev.variantes.map((v: any) =>
+                porId.has(Number(v?.productoId))
+                  ? { ...v, codigoBarras: porId.get(Number(v.productoId)) }
+                  : v,
+              )
+            : prev?.variantes,
+        }));
+      }
+
+      const n = generados.length;
+      if (n === 0) {
+        useAlertStore
+          .getState()
+          .alert("Ya tenían código de barras. No se generó ninguno nuevo.", "info");
+      } else {
+        useAlertStore
+          .getState()
+          .alert(
+            n === 1 ? "Código de barras generado" : `Se generaron ${n} códigos de barra`,
+            "success",
+          );
+      }
+    } catch (e: any) {
+      useAlertStore
+        .getState()
+        .alert(
+          e?.response?.data?.message || "No se pudo generar el código de barras",
+          "error",
+        );
+    } finally {
+      setGenerandoCodigoBarras(false);
     }
   };
 
@@ -1946,6 +2018,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     variantImageCandidatesLoading,
     variantImageUrls,
     variantGalleryUrls,
+    generandoCodigoBarras,
+    generarCodigoBarras,
     colorSearchBase,
     setColorSearchBase,
     colorSearchBaseValue,

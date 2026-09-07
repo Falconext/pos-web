@@ -62,6 +62,26 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     );
 }
 
+/**
+ * Payload del despacho para el PUT. `@IsOptional()` de class-validator solo salta
+ * null/undefined, así que los vacíos del formulario ('' en la fecha, 0 en el peso)
+ * rebotan contra @IsDateString y @Min(0.1). Aquí se omiten en vez de enviarse.
+ */
+function construirPayloadDespacho(envioData: any) {
+    const opcional = (v: any) => (v === '' || v === null ? undefined : v);
+    return {
+        ...envioData,
+        pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
+        repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
+        repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
+        fechaEstimada: opcional(envioData.fechaEstimada),
+        pesoKg: Number(envioData.pesoKg) > 0 ? Number(envioData.pesoKg) : undefined,
+        nroPaquetes: Number(envioData.nroPaquetes) > 0 ? Number(envioData.nroPaquetes) : undefined,
+        montoCOD: Number(envioData.montoCOD) >= 0 ? Number(envioData.montoCOD) : undefined,
+        costoEnvio: Number(envioData.costoEnvio) >= 0 ? Number(envioData.costoEnvio) : undefined,
+    };
+}
+
 export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { comprobanteId: number; onClose: () => void; onSuccess: () => void }) {
     const [envioData, setEnvioData] = useState<any>({
         transportista: '',
@@ -180,12 +200,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         setGenerandoGuia(true);
         try {
             // Se guarda primero para que el backend arme la guía con lo que se ve en pantalla.
-            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, {
-                ...envioData,
-                pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
-                repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
-                repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
-            });
+            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, construirPayloadDespacho(envioData));
             const guia = await shalomService.crearGuia(comprobanteId, {
                 destinoId: envioData.shalomAgenciaDestinoId || undefined,
                 destinoNombre: envioData.agenciaDestino || undefined,
@@ -212,12 +227,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         setGenerandoGuia(true);
         try {
             // Se guarda primero para que el backend arme la guía con lo que se ve en pantalla.
-            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, {
-                ...envioData,
-                pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
-                repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
-                repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
-            });
+            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, construirPayloadDespacho(envioData));
             const guia = await olvaService.crearGuia(comprobanteId, {
                 tipoEnvio: envioData.tipoEnvio === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
                 destinoCodigo: envioData.olvaAgenciaDestinoCodigo || undefined,
@@ -243,17 +253,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const handleConfirmar = async () => {
         setSaving(true);
         try {
-            const payload = {
-                ...envioData,
-                pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
-                repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
-                repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
-            };
-            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, payload);
+            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, construirPayloadDespacho(envioData));
             alert('Despacho actualizado correctamente', 'success');
             onSuccess();
-        } catch (error) {
-            alert('Error al actualizar el despacho', 'error');
+        } catch (error: unknown) {
+            alert(mensajeErrorShalom(error, 'Error al actualizar el despacho'), 'error');
         } finally {
             setSaving(false);
         }

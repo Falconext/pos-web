@@ -137,6 +137,8 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     colorSearchBaseValue,
     colorSearchQueryBase,
     construirQueryColor,
+    generandoCodigoBarras,
+    generarCodigoBarras,
     productSections,
   } = vm;
 
@@ -1156,6 +1158,25 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 Aplicar stock
               </button>
             </div>
+            {/* Cada talla×color es un Producto hijo con su propio EAN-13: una sola
+                acción les asigna código a todas para poder etiquetarlas. */}
+            <button
+              type="button"
+              onClick={() => generarCodigoBarras({ incluirVariantes: true })}
+              disabled={generandoCodigoBarras || !Number((formValues as any)?.productoId)}
+              title={
+                Number((formValues as any)?.productoId)
+                  ? 'Genera un EAN-13 interno para cada variante sin código'
+                  : 'Guarda el producto y vuelve a abrirlo para generar los códigos'
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-violet-300 px-3 py-1.5 text-[11px] font-bold text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-violet-800 dark:text-violet-300 dark:hover:bg-violet-950/30"
+            >
+              <Icon
+                icon={generandoCodigoBarras ? 'svg-spinners:180-ring-with-bg' : 'mdi:barcode'}
+                width={14}
+              />
+              Generar códigos de barra
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-sm">

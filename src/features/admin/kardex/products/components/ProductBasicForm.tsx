@@ -18,6 +18,8 @@ import { ProductFinancialAnalysis } from './ProductFinancialAnalysis';
 import { tipoCambioService } from '@/services/tipoCambio.service';
 import { useAuthStore } from '@/zustand/auth';
 import ProductPriceListsPanel from './ProductPriceListsPanel';
+import CodigoBarrasEAN13 from '@/components/CodigoBarrasEAN13';
+import { esEan13Valido } from '@/utils/ean13';
 
 const afectaciones = [
     { id: "10", value: "Gravado - Operación Onerosa" },
@@ -36,6 +38,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
         handleChange, handleChangeSelect, handleAutoCategorize, handlePrecioUnitarioBlur,
         setShowMedicamentoModal, setShowLotesModal, toggleGrupoSeleccionado,
         setFormValues, addCategory, addBrand,
+        generandoCodigoBarras, generarCodigoBarras,
     } = vm;
 
     // Restricción por usuario: ocultar el costo (y su desglose/margen) en la ficha.
@@ -587,6 +590,43 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                         label="Código de Barras"
                         placeholder="EAN-13 / UPC"
                     />
+                    {/* Generación de un EAN-13 interno para productos sin código de
+                        fábrica (ropa, artesanía, producción propia). El código se
+                        deriva del id, así que existe recién con el producto guardado. */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => generarCodigoBarras()}
+                            disabled={generandoCodigoBarras || !Number((formValues as any)?.productoId)}
+                            title={
+                                Number((formValues as any)?.productoId)
+                                    ? 'Genera un EAN-13 interno para imprimir en la etiqueta'
+                                    : 'Guarda el producto y vuelve a abrirlo para generar su código'
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-[11px] font-bold text-violet-600 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-900/60 dark:bg-violet-900/30 dark:text-violet-300"
+                        >
+                            <Icon
+                                icon={generandoCodigoBarras ? 'svg-spinners:180-ring-with-bg' : 'mdi:barcode'}
+                                className="h-3.5 w-3.5"
+                            />
+                            {(formValues as any)?.codigoBarras ? 'Regenerar código' : 'Generar código'}
+                        </button>
+                        {!Number((formValues as any)?.productoId) && (
+                            <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                                Disponible al guardar el producto
+                            </span>
+                        )}
+                    </div>
+                    {esEan13Valido(String((formValues as any)?.codigoBarras || '')) && (
+                        <div className="mt-2 inline-block rounded-xl border border-gray-200 bg-white p-2 dark:border-slate-700">
+                            <CodigoBarrasEAN13
+                                codigo={String((formValues as any).codigoBarras)}
+                                moduloPx={1.6}
+                                altoBarras={44}
+                                altoTexto={10}
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 
