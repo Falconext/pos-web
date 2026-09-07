@@ -7,16 +7,14 @@ import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
+import { mensajeErrorShalom, shalomService, type ShalomInstancia } from "@/services/shalom.service";
 import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
 
 export const COURIERS = [
     { value: 'SHALOM_PRO', label: 'Shalom PRO' },
     { value: 'SHALOM_COD', label: 'Shalom COD' },
     { value: 'OLVA', label: 'Olva Courier' },
-    { value: 'URBANO', label: 'Urbano Express' },
-    { value: 'CRUZ_SUR', label: 'Cruz del Sur' },
     { value: 'PROPIOS', label: 'Reparto propio' },
-    { value: 'OTRO', label: 'Otro' },
 ];
 
 export const TURNOS = [
@@ -84,7 +82,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         pagarFlete: 'CLIENTE' as 'CLIENTE' | 'NEGOCIO',
         aplicacionMontoCliente: 'ADELANTO' as 'ITEM_ENVIO' | 'ADELANTO' | 'NEGOCIO',
         montoCOD: 0,
+        shalomAgenciaDestinoId: '',
     });
+    // Cuenta Shalom Pro conectada (plan Corporativo): habilita generar la guía.
+    const [shalomPro, setShalomPro] = useState<ShalomInstancia | null>(null);
+    const [generandoGuia, setGenerandoGuia] = useState(false);
     const [esNV, setEsNV] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -130,6 +132,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         pagarFlete: payload.pagarFlete ?? (adelantoComprobante > 0 ? 'CLIENTE' : 'NEGOCIO'),
                         aplicacionMontoCliente: payload.aplicacionMontoCliente ?? (adelantoComprobante > 0 ? 'ADELANTO' : 'NEGOCIO'),
                         montoCOD: payload.montoCOD ?? 0,
+                        shalomAgenciaDestinoId: payload.shalomAgenciaDestinoId || '',
                     });
                 }
             } catch (error) {
@@ -142,12 +145,51 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         fetchDespacho();
     }, [comprobanteId, alert, fetchRepartidores, onClose]);
 
+    useEffect(() => {
+        let vivo = true;
+        shalomService.getInstancia()
+            .then(data => { if (vivo) setShalomPro(data); })
+            .catch(() => { if (vivo) setShalomPro(null); });
+        return () => { vivo = false; };
+    }, []);
+
     const set = (field: string, value: any) =>
         setEnvioData((prev: any) => ({ ...prev, [field]: value }));
 
     const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
     const esPropio = envioData.transportista === 'PROPIOS';
+
+    // Genera la guía en Shalom Pro con los datos ya cargados y trae de vuelta el
+    // N° de orden / clave, que es lo que el rastreo necesita después.
+    const handleGenerarGuia = async () => {
+        if (generandoGuia) return;
+        setGenerandoGuia(true);
+        try {
+            // Se guarda primero para que el backend arme la guía con lo que se ve en pantalla.
+            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, {
+                ...envioData,
+                pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
+                repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
+                repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
+            });
+            const guia = await shalomService.crearGuia(comprobanteId, {
+                destinoId: envioData.shalomAgenciaDestinoId || undefined,
+                destinoNombre: envioData.agenciaDestino || undefined,
+            });
+            setEnvioData((prev: any) => ({
+                ...prev,
+                nroOrden: guia.nroOrden ?? prev.nroOrden,
+                claveOrden: guia.claveOrden ?? prev.claveOrden,
+                claveEnvio: guia.claveEnvio ?? prev.claveEnvio,
+            }));
+            alert(guia.nroOrden ? `Guía ${guia.nroOrden} generada en Shalom` : 'Envío registrado en Shalom', 'success');
+        } catch (error: unknown) {
+            alert(mensajeErrorShalom(error, 'No se pudo generar la guía en Shalom'), 'error');
+        } finally {
+            setGenerandoGuia(false);
+        }
+    };
 
     const handleConfirmar = async () => {
         setSaving(true);
@@ -321,6 +363,32 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         </Field>
                                     )}
                                 </div>
+
+                                {/* Generar la guía en Shalom Pro (plan Corporativo con cuenta conectada) */}
+                                {shalomPro?.habilitadoPorPlan && (
+                                    shalomPro.conectada ? (
+                                        <div className="flex flex-col gap-2 rounded-xl border border-red-200 bg-white p-3 dark:border-red-900/40 dark:bg-slate-900/40">
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerarGuia}
+                                                disabled={generandoGuia || !envioData.agenciaDestino}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-black text-white shadow-lg shadow-red-500/20 transition-opacity hover:opacity-90 disabled:opacity-50"
+                                            >
+                                                <Icon icon={generandoGuia ? 'eos-icons:loading' : 'solar:add-square-bold'} className="text-lg" />
+                                                {envioData.nroOrden ? 'Regenerar guía en Shalom' : 'Generar guía en Shalom'}
+                                            </button>
+                                            <p className="text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                                                Registra el envío en tu cuenta Shalom Pro y completa solo el N° de orden y la clave.
+                                                {!envioData.agenciaDestino && ' Elige primero la agencia de destino.'}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="flex items-start gap-2 rounded-xl bg-white p-3 text-[11px] leading-4 text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
+                                            <Icon icon="solar:info-circle-bold" className="mt-0.5 shrink-0 text-red-400" />
+                                            Conecta tu cuenta Shalom Pro en Perfil → Configuración para generar las guías desde aquí.
+                                        </p>
+                                    )
+                                )}
                             </div>
                         </div>
                     )}
@@ -336,7 +404,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             {esShalom && envioData.tipoEnvio === 'AGENCIA' ? (
                                 <ShalomAgenciaSelect
                                     value={envioData.agenciaDestino}
-                                    onChange={v => set('agenciaDestino', v)}
+                                    onChange={v => setEnvioData((prev: any) => ({ ...prev, agenciaDestino: v, shalomAgenciaDestinoId: '' }))}
+                                    onSelectAgencia={a => setEnvioData((prev: any) => ({ ...prev, shalomAgenciaDestinoId: a.terId }))}
                                     placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
                                 />
                             ) : (

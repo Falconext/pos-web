@@ -986,9 +986,9 @@ export default function DespachoView() {
                             }}
                         />
                         <button
-                            onClick={() => navigate('/administrador/despacho/config')}
+                            onClick={() => navigate('/administrador/perfil?tab=configuracion')}
                             className="relative top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
-                            title="Configurar notificaciones WhatsApp"
+                            title="Configurar notificaciones y rastreo automático (Perfil → Configuración)"
                         >
                             <Icon icon="mdi:whatsapp" />
                         </button>

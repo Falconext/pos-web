@@ -12,10 +12,7 @@ export const COURIERS = [
     { value: 'SHALOM_PRO', label: 'Shalom PRO' },
     { value: 'SHALOM_COD', label: 'Shalom COD' },
     { value: 'OLVA', label: 'Olva Courier' },
-    { value: 'URBANO', label: 'Urbano Express' },
-    { value: 'CRUZ_SUR', label: 'Cruz del Sur' },
     { value: 'PROPIOS', label: 'Reparto propio' },
-    { value: 'OTRO', label: 'Otro' },
 ];
 
 export const TURNOS = [
