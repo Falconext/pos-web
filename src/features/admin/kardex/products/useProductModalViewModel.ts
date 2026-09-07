@@ -806,11 +806,34 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     }
   };
 
-  // Término efectivo para las fotos por color: el que el usuario escribió en la
-  // sección de colores o, si no tocó nada, la descripción del producto.
-  const colorSearchQueryBase = String(
+  // Lo que se muestra en el campo "Buscar como": SIN recortar. Si se recorta el
+  // valor mostrado, cada espacio al final desaparece apenas se teclea y las
+  // palabras terminan pegadas ("ForestAzulPersa").
+  const colorSearchBaseValue = String(
     colorSearchBase ?? formValues.descripcion ?? "",
-  ).trim();
+  );
+
+  // Término efectivo con el que se busca: el que el usuario escribió en la
+  // sección de colores o, si no tocó nada, la descripción del producto.
+  const colorSearchQueryBase = colorSearchBaseValue.trim();
+
+  // Consulta final de un color. Si el usuario ya escribió el color dentro del
+  // término base (es lo natural al afinar a mano: "Casaca Hombre Forest Azul
+  // Persa"), no se vuelve a añadir: si no, se buscaría duplicado.
+  const construirQueryColor = (color: string) => {
+    const base = colorSearchQueryBase;
+    const norm = (v: string) =>
+      ` ${v
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()} `;
+    const c = String(color || "").trim();
+    if (!c) return base;
+    if (norm(base).includes(norm(c))) return base;
+    return `${base} ${c}`.trim();
+  };
 
   // Busca sugerencias de imagen (IA/Serper) para un color de variante concreto.
   // Enriquece la consulta con el color para traer fotos específicas de ese acabado.
@@ -824,7 +847,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       return;
     }
     if (!colorClean) return;
-    const query = `${base} ${colorClean}`.trim();
+    const query = construirQueryColor(colorClean);
     setVariantImageCandidatesLoading((prev) => ({ ...prev, [colorClean]: true }));
     try {
       const response = await apiClient.post("/productos/ia/generar-imagen", {
@@ -883,7 +906,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     if (baseNombre) {
       void apiClient
         .post("/productos/ia/aprobar-imagen", {
-          nombre: `${baseNombre} ${colorClean}`.trim(),
+          nombre: construirQueryColor(colorClean),
           marca: (formValues as any)?.marcaNombre || "",
           categoria: (formValues as any)?.categoriaNombre || "",
           url: imageUrl,
@@ -1925,7 +1948,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     variantGalleryUrls,
     colorSearchBase,
     setColorSearchBase,
+    colorSearchBaseValue,
     colorSearchQueryBase,
+    construirQueryColor,
     handleAutoImageColor,
     selectColorImageCandidate,
     tipoAjusteStock,

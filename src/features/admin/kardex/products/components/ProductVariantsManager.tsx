@@ -134,7 +134,9 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     selectColorImageCandidate,
     colorSearchBase,
     setColorSearchBase,
+    colorSearchBaseValue,
     colorSearchQueryBase,
+    construirQueryColor,
     productSections,
   } = vm;
 
@@ -826,14 +828,14 @@ export const ProductVariantsManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             </div>
             <input
               type="text"
-              value={colorSearchQueryBase}
+              value={colorSearchBaseValue}
               onChange={(e) => setColorSearchBase(e.target.value)}
               placeholder="Ej: Zapatillas Adidas Gazelle"
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-800 outline-none transition focus:border-violet-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
             <p className="mt-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               {colorSearchQueryBase
-                ? `Cada color busca «${colorSearchQueryBase} ${colorValues[0]}»`
+                ? `Cada color busca «${construirQueryColor(colorValues[0])}»`
                 : 'Se le suma el color de cada variante al buscar.'}
             </p>
           </div>
