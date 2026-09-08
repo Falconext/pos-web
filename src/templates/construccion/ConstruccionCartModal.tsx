@@ -1,6 +1,35 @@
+import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
+
+function CartQtyInput({ qty, onChange }: { qty: number; onChange: (cantidad: number) => void }) {
+  const [text, setText] = useState(String(qty));
+  useEffect(() => { setText(String(qty)); }, [qty]);
+  const commit = () => {
+    const parsed = parseInt(text.replace(/\D/g, ''), 10);
+    const next = Number.isNaN(parsed) || parsed < 1 ? 1 : parsed;
+    setText(String(next));
+    if (next !== qty) onChange(next);
+  };
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      aria-label="Cantidad"
+      value={text}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/\D/g, '');
+        setText(digits);
+        if (digits !== '') onChange(parseInt(digits, 10));
+      }}
+      onBlur={commit}
+      onFocus={(e) => e.currentTarget.select()}
+      onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+      className="w-16 appearance-none border-x border-gray-200 bg-transparent px-1 text-center text-sm font-black text-[#111] outline-none focus:ring-0"
+    />
+  );
+}
 
 interface ConstruccionCartModalProps {
   isOpen: boolean;
@@ -28,6 +57,7 @@ export default function ConstruccionCartModal({
   const total = carrito.reduce((acc, item) => acc + Number(item.precioUnitario || 0) * Number(item.cantidad || 1), 0);
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'Ferretería';
   const diseno = tienda?.diseno || {};
+  const cta = diseno?.colorAccento || cp; // "Color de acento / CTA" con fallback al color principal
 
   const cotizarPorWhatsApp = () => {
     if (!carrito.length) return;
@@ -123,7 +153,7 @@ export default function ConstruccionCartModal({
                           <div className="mt-3 flex items-center justify-between gap-3">
                             <div className="flex h-10 overflow-hidden rounded-md border border-gray-200 bg-white">
                               <button type="button" onClick={() => actualizarCantidad(itemId, qty - 1)} className="flex w-10 items-center justify-center text-lg font-black text-gray-600 hover:bg-gray-100">-</button>
-                              <span className="flex w-11 items-center justify-center border-x border-gray-200 text-sm font-black text-[#111]">{qty}</span>
+                              <CartQtyInput qty={qty} onChange={(cantidad) => actualizarCantidad(itemId, cantidad)} />
                               <button type="button" onClick={() => actualizarCantidad(itemId, qty + 1)} className="flex w-10 items-center justify-center text-lg font-black text-gray-600 hover:bg-gray-100">+</button>
                             </div>
                             <span className="text-sm font-black text-gray-900">{money(price * qty)}</span>
@@ -154,7 +184,7 @@ export default function ConstruccionCartModal({
                     onCheckout();
                   }}
                   className="flex w-full items-center justify-center gap-2 rounded-md px-5 py-4 text-sm font-black uppercase tracking-wide text-[#111] shadow-lg shadow-black/10 transition-transform hover:scale-[1.01]"
-                  style={{ background: cp }}
+                  style={{ background: cta }}
                 >
                   {editable(diseno?.construccionCartCheckoutLabel, 'Ir a pagar')} <Icon icon="solar:arrow-right-bold" width={18} />
                 </button>

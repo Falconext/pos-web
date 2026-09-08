@@ -395,16 +395,19 @@ export default function TiendaPublica() {
       : producto.id;
 
     const precioExtra = modificadores?.reduce((sum: number, mod: any) => sum + Number(mod.precioExtra || 0), 0) || 0;
+    // Cantidad opcional enviada desde la tarjeta (ej. ferretería: "1000" de golpe). Por defecto 1.
+    const cantidadInicial = Math.max(1, Number(producto?.__cantidad) || 1);
 
     const nuevoItem = {
       ...producto,
       id: itemId,
       productoId: producto.id,
-      cantidad: 1,
+      cantidad: cantidadInicial,
       precioBase: producto.precioUnitario,
       precioUnitario: Number(producto.precioUnitario) + precioExtra,
       modificadores: modificadores || [],
     };
+    delete (nuevoItem as any).__cantidad;
 
     if (!modificadores?.length) {
       // Sin modificadores: buscar si ya existe y sumar cantidad
@@ -413,7 +416,7 @@ export default function TiendaPublica() {
         setCarrito(
           carrito.map((item) =>
             item.id === producto.id && !item.modificadores?.length
-              ? { ...item, cantidad: item.cantidad + 1 }
+              ? { ...item, cantidad: Number(item.cantidad || 1) + cantidadInicial }
               : item
           )
         );

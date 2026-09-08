@@ -11,6 +11,16 @@ import ConstruccionCartModal from './ConstruccionCartModal';
 const getName = (item: any) => (typeof item === 'string' ? item : item?.nombre || item?.name || '');
 const fmt = (value: number) => `S/ ${Number(value || 0).toFixed(2)}`;
 const editable = (value: any, fallback: string) => String(value || '').trim() || fallback;
+const formatPhone = (raw: any) => {
+  const value = String(raw || '').trim();
+  if (!value) return value;
+  const digits = value.replace(/\D/g, '');
+  let national = digits;
+  if (digits.length === 11 && digits.startsWith('51')) national = digits.slice(2);
+  else if (digits.length === 9) national = digits;
+  else return value;
+  return `+51 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+};
 
 function HammerLogo({ storeName, subtitle = 'Herramientas y accesorios', accent = '#ffb400' }: { storeName: string; subtitle?: string; accent?: string }) {
   const label = storeName?.trim() ? storeName.trim().split(/\s+/)[0] : 'HAMMER';
@@ -67,7 +77,7 @@ function HammerHeader({ tienda, slug, cp, carritoSize, search, setSearch, onOpen
             </span>
             <div>
               <p className="text-[13px] font-black text-white/80">{editable(diseno?.construccionCallLabel, 'Llámanos:')}</p>
-              <p className="text-[13px] font-black" style={{ color: cp }}>{tienda?.whatsappTienda || tienda?.telefono || '(+51) 999-999-999'}</p>
+              <p className="text-[13px] font-black" style={{ color: cp }}>{formatPhone(tienda?.whatsappTienda || tienda?.telefono) || '(+51) 999-999-999'}</p>
             </div>
           </div>
           <Icon icon="solar:user-linear" width={30} className="text-white" />
@@ -290,8 +300,10 @@ export default function ConstruccionCatalogoPage({
     setSearch('');
   };
 
+  const cta = diseno?.colorAccento || cp; // "Color de acento / CTA" con fallback al color principal
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white" style={{ fontFamily: `'${diseno?.tipografia || 'Inter'}', sans-serif` }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: diseno?.colorSecundario || '#ffffff', fontFamily: `'${diseno?.tipografia || 'Inter'}', sans-serif` }}>
       <HammerHeader
         tienda={tienda || {}}
         slug={slug}
@@ -387,8 +399,9 @@ export default function ConstruccionCatalogoPage({
                     key={producto.id}
                     producto={producto}
                     cp={cp}
+                    cta={cta}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
-                    onAdd={() => handleAgregarProducto(producto)}
+                    onAdd={(qty) => handleAgregarProducto({ ...producto, __cantidad: qty })}
                   />
                 ))}
               </div>

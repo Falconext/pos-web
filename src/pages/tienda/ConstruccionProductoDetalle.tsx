@@ -14,6 +14,16 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const getName = (item: any) => (typeof item === 'string' ? item : item?.nombre || item?.name || '');
 const editable = (value: any, fallback: string) => String(value || '').trim() || fallback;
 const fmt = (value: number) => `S/ ${Number(value || 0).toFixed(2)}`;
+const formatPhone = (raw: any) => {
+  const value = String(raw || '').trim();
+  if (!value) return value;
+  const digits = value.replace(/\D/g, '');
+  let national = digits;
+  if (digits.length === 11 && digits.startsWith('51')) national = digits.slice(2);
+  else if (digits.length === 9) national = digits;
+  else return value;
+  return `+51 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+};
 
 const fadeUp = {
   hidden: { opacity: 0, y: 22 },
@@ -88,7 +98,7 @@ function HammerHeader({
             </span>
             <div>
               <p className="text-[13px] font-black text-white/80">{editable(diseno?.construccionCallLabel, 'Llámanos:')}</p>
-              <p className="text-[13px] font-black" style={{ color: cp }}>{tienda?.whatsappTienda || tienda?.telefono || '(+51) 999-999-999'}</p>
+              <p className="text-[13px] font-black" style={{ color: cp }}>{formatPhone(tienda?.whatsappTienda || tienda?.telefono) || '(+51) 999-999-999'}</p>
             </div>
           </div>
           <Icon icon="solar:user-linear" width={30} className="text-white" />
@@ -199,6 +209,7 @@ export function ConstruccionProductoDetalleView({
   const [activeTab, setActiveTab] = useState('Descripción');
   const [showStickyBar, setShowStickyBar] = useState(false);
   const cp = tienda?.diseno?.colorPrimario || '#ffb400';
+  const cta = tienda?.diseno?.colorAccento || cp; // "Color de acento / CTA" con fallback al color principal
   const pricing = getProductPricing(producto);
   const extraImages = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
   const images = [producto?.imagenUrl, ...extraImages].filter(Boolean);
@@ -213,13 +224,21 @@ export function ConstruccionProductoDetalleView({
     if (onNavigate && page) onNavigate(page);
     else navigate(url);
   };
+  const handleQtyInput = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    if (digits === '') { setQty(0); return; }
+    setQty(parseInt(digits, 10));
+  };
+  const handleQtyBlur = () => setQty((q) => Math.max(1, q));
   const add = () => {
-    const item = { ...producto, ...pricing, precioUnitario: pricing.precioFinal, cantidad: qty, id: producto.id, productoId: producto.id };
+    const cantidad = Math.max(1, qty);
+    if (cantidad !== qty) setQty(cantidad);
+    const item = { ...producto, ...pricing, precioUnitario: pricing.precioFinal, cantidad, id: producto.id, productoId: producto.id };
     if (onAddToCart) onAddToCart(item);
     else {
       const exists = carrito.find((cartItem) => cartItem.id === producto.id || cartItem.productoId === producto.id);
       const next = exists
-        ? carrito.map((cartItem) => (cartItem.id === producto.id || cartItem.productoId === producto.id) ? { ...cartItem, cantidad: Number(cartItem.cantidad || 1) + qty } : cartItem)
+        ? carrito.map((cartItem) => (cartItem.id === producto.id || cartItem.productoId === producto.id) ? { ...cartItem, cantidad: Number(cartItem.cantidad || 1) + cantidad } : cartItem)
         : [...carrito, item];
       setCarrito(next);
       localStorage.setItem(`tienda:${slug}:carrito`, JSON.stringify(next));
@@ -235,7 +254,7 @@ export function ConstruccionProductoDetalleView({
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white pb-24" style={{ fontFamily: `'${tienda?.diseno?.tipografia || 'Inter'}', sans-serif` }}>
+    <div className="min-h-screen overflow-x-hidden pb-24" style={{ background: tienda?.diseno?.colorSecundario || '#ffffff', fontFamily: `'${tienda?.diseno?.tipografia || 'Inter'}', sans-serif` }}>
       <HammerHeader
         tienda={tienda}
         slug={slug}
@@ -314,16 +333,25 @@ export function ConstruccionProductoDetalleView({
               <li>• Soporte de la tienda antes y después de la compra.</li>
             </ul>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
-              <div className="flex h-12 w-32 items-center justify-between rounded-md bg-gray-50 px-4 text-[13px] font-black">
-                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-                <span>{qty}</span>
-                <button type="button" onClick={() => setQty(isOutOfStock ? qty : stock > 0 ? Math.min(stock, qty + 1) : qty + 1)}>+</button>
+              <div className="flex h-12 w-32 items-center justify-between rounded-md bg-gray-50 px-3 text-[13px] font-black">
+                <button type="button" className="px-1 text-lg leading-none" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  aria-label="Cantidad"
+                  value={qty === 0 ? '' : qty}
+                  onChange={(e) => handleQtyInput(e.target.value)}
+                  onBlur={handleQtyBlur}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="w-full min-w-0 appearance-none border-0 bg-transparent p-0 text-center font-black outline-none focus:ring-0"
+                />
+                <button type="button" className="px-1 text-lg leading-none" onClick={() => setQty(isOutOfStock ? qty : Math.max(1, qty) + 1)}>+</button>
               </div>
-              <button type="button" disabled={isOutOfStock} onClick={add} className="h-12 flex-1 rounded-md text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cp }}>
+              <button type="button" disabled={isOutOfStock} onClick={add} className="h-12 flex-1 rounded-md text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cta }}>
                 {isOutOfStock ? 'Sin stock' : editable(tienda?.diseno?.construccionProductAddLabel, 'Agregar al carrito')}
               </button>
             </div>
-            <button type="button" disabled={isOutOfStock} onClick={add} className="mt-5 h-12 w-full rounded-md text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cp }}>
+            <button type="button" disabled={isOutOfStock} onClick={add} className="mt-5 h-12 w-full rounded-md text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cta }}>
               {editable(tienda?.diseno?.construccionProductBuyLabel, 'Comprar ahora')}
             </button>
             <div className="mt-6 flex flex-wrap gap-6 border-b border-gray-200 pb-6 text-[13px] font-black text-[#222]">
@@ -414,15 +442,24 @@ export function ConstruccionProductoDetalleView({
           {producto.imagenUrl && <img src={producto.imagenUrl} alt="" className="hidden h-10 w-10 object-contain sm:block" />}
           <p className="min-w-0 flex-1 truncate text-[13px] font-black text-[#111]">{producto.descripcion}</p>
           <span className="hidden text-[13px] font-black text-[#111] sm:inline">{fmt(pricing.precioFinal)}</span>
-          <div className="hidden h-11 w-28 items-center justify-between rounded-md bg-gray-50 px-4 text-[13px] font-black sm:flex">
-            <button type="button" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-            <span>{qty}</span>
-            <button type="button" onClick={() => setQty(isOutOfStock ? qty : stock > 0 ? Math.min(stock, qty + 1) : qty + 1)}>+</button>
+          <div className="hidden h-11 w-28 items-center justify-between rounded-md bg-gray-50 px-3 text-[13px] font-black sm:flex">
+            <button type="button" className="px-1 text-lg leading-none" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label="Cantidad"
+              value={qty === 0 ? '' : qty}
+              onChange={(e) => handleQtyInput(e.target.value)}
+              onBlur={handleQtyBlur}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-full min-w-0 bg-transparent text-center font-black outline-none"
+            />
+            <button type="button" className="px-1 text-lg leading-none" onClick={() => setQty(isOutOfStock ? qty : Math.max(1, qty) + 1)}>+</button>
           </div>
-          <button type="button" disabled={isOutOfStock} onClick={add} className="h-11 rounded-md px-4 text-[12px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400 sm:px-5 sm:text-[13px]" style={isOutOfStock ? undefined : { background: cp }}>
+          <button type="button" disabled={isOutOfStock} onClick={add} className="h-11 rounded-md px-4 text-[12px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400 sm:px-5 sm:text-[13px]" style={isOutOfStock ? undefined : { background: cta }}>
             {editable(tienda?.diseno?.construccionProductAddLabel, 'Agregar al carrito')}
           </button>
-          <button type="button" disabled={isOutOfStock} onClick={add} className="hidden h-11 rounded-md px-5 text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400 sm:block" style={isOutOfStock ? undefined : { background: cp }}>
+          <button type="button" disabled={isOutOfStock} onClick={add} className="hidden h-11 rounded-md px-5 text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400 sm:block" style={isOutOfStock ? undefined : { background: cta }}>
             {editable(tienda?.diseno?.construccionProductBuyLabel, 'Comprar ahora')}
           </button>
         </div>

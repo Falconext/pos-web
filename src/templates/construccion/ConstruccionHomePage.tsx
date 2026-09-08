@@ -16,6 +16,18 @@ const fadeUp = {
 
 const getName = (item: any) => (typeof item === 'string' ? item : item?.nombre || item?.name || '');
 const editable = (value: any, fallback: string) => String(value || '').trim() || fallback;
+
+// Formatea teléfonos peruanos: "51987654220" -> "+51 987 654 220". Deja intactos los que ya vienen formateados.
+const formatPhone = (raw: any) => {
+  const value = String(raw || '').trim();
+  if (!value) return value;
+  const digits = value.replace(/\D/g, '');
+  let national = digits;
+  if (digits.length === 11 && digits.startsWith('51')) national = digits.slice(2);
+  else if (digits.length === 9) national = digits;
+  else return value; // formato no reconocido: se respeta como está
+  return `+51 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+};
 const pickProducts = (custom: any, fallback: any[]) => (Array.isArray(custom) && custom.length > 0 ? custom : fallback);
 
 const getPrice = (producto: any) => getProductPricing(producto).precioFinal;
@@ -289,21 +301,21 @@ function HammerSectionHeader({
   cp: string;
 }) {
   return (
-    <div className="flex flex-col gap-5 border-b-4 md:flex-row md:items-end md:justify-between" style={{ borderColor: cp }}>
+    <div className="flex flex-col gap-3 border-b-4 md:flex-row md:items-end md:justify-between" style={{ borderColor: cp }}>
       <h2 className="pb-4 text-2xl font-black text-[#151515] sm:text-3xl">{title}</h2>
-      <div className="flex items-end gap-2 overflow-x-auto pb-1">
+      <div className="flex items-end gap-2 overflow-x-auto">
         {tabs?.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => onChange?.(tab)}
-            className={`shrink-0 px-4 py-3 text-sm font-black transition-colors sm:px-6 sm:py-4 sm:text-base ${active === tab ? 'text-[#111111]' : 'text-[#151515] hover:bg-gray-50'}`}
+            className={`shrink-0 rounded-t-md px-4 py-3 text-sm font-black transition-colors sm:px-6 sm:py-4 sm:text-base ${active === tab ? 'text-[#111111]' : 'text-[#151515] hover:bg-gray-100'}`}
             style={active === tab ? { background: cp } : undefined}
           >
             {tab}
           </button>
         ))}
-        <div className="flex gap-2 pb-4 pl-4 text-gray-400">
+        <div className="flex gap-2 self-center pb-2 pl-4 text-gray-400">
           <button type="button" className="transition-colors hover:text-[#111111]">
             <Icon icon="solar:alt-arrow-left-linear" width={26} />
           </button>
@@ -340,7 +352,7 @@ export function ConstruccionFooter({ tienda, slug, cp, categories, diseno: disen
 
   return (
     <footer className="bg-[#1d1d1d] text-white">
-      <section className="bg-white">
+      <section>
         <div className="mx-auto max-w-7xl px-4 py-12 lg:px-6">
           <div className="flex items-end justify-between border-b-4 pb-4" style={{ borderColor: cp }}>
             <h2 className="text-2xl font-black text-[#151515] sm:text-3xl">{editable(diseno?.construccionBrandsTitle, 'Marcas')}</h2>
@@ -377,10 +389,10 @@ export function ConstruccionFooter({ tienda, slug, cp, categories, diseno: disen
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-6">
         <div>
           <HammerLogo storeName={storeName} subtitle={editable(diseno?.construccionLogoSubtitle, 'Herramientas y accesorios')} accent={cp} />
-          <p className="mt-6 text-2xl font-black" style={{ color: cp }}>{tienda?.whatsappTienda || tienda?.telefono || '(+51) 999-999-999'}</p>
+          <p className="mt-6 text-2xl font-black" style={{ color: cp }}>{formatPhone(tienda?.whatsappTienda || tienda?.telefono) || '(+51) 999-999-999'}</p>
           <div className="mt-7 space-y-4 text-base font-semibold text-white/75">
             <p className="flex gap-3"><Icon icon="solar:map-point-linear" width={22} /> {tienda?.direccion || 'Av. Principal 123, Lima, Perú'}</p>
-            <p className="flex gap-3"><Icon icon="solar:phone-linear" width={22} /> {tienda?.telefono || '(+51) 123 456 789'}</p>
+            <p className="flex gap-3"><Icon icon="solar:phone-linear" width={22} /> {formatPhone(tienda?.telefono) || '(+51) 123 456 789'}</p>
             <p className="flex gap-3"><Icon icon="solar:letter-linear" width={22} /> {tienda?.email || 'demo@example.com'}</p>
           </div>
         </div>
@@ -445,6 +457,7 @@ export default function ConstruccionHomePage({
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'Hammer';
   const categories = allCategories.map(getName).filter(Boolean).slice(0, 6);
   const accent = cp || '#ffb400';
+  const cta = diseno?.colorAccento || accent; // "Color de acento / CTA" con fallback al color principal
   const heroImage = diseno?.construccionHeroImageUrl || diseno?.ferreteriaHeroImageUrl || diseno?.bannerHeroUrl || '/assets/templates/ferreteria/banner.png';
   const cartCount = carrito.reduce((sum: number, item: any) => sum + Number(item?.cantidad || 1), 0);
   const irACheckout = () => navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } });
@@ -491,7 +504,7 @@ export default function ConstruccionHomePage({
   }, [specialProducts]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f4f4f4]" style={{ fontFamily: `'${diseno?.tipografia || 'Inter'}', sans-serif` }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: diseno?.colorSecundario || '#f4f4f4', fontFamily: `'${diseno?.tipografia || 'Inter'}', sans-serif` }}>
       <header className="relative z-20 bg-[#111111] text-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 lg:flex-row lg:items-center lg:px-6">
           <button type="button" onClick={() => navigate(`/tienda/${slug}`)} className="text-left">
@@ -528,7 +541,7 @@ export default function ConstruccionHomePage({
               <div>
               <p className="text-[13px] font-black text-white/80">{editable(diseno?.construccionCallLabel, 'Llámanos:')}</p>
                 <p className="text-[13px] font-black" style={{ color: accent }}>
-                  {tienda?.whatsappTienda || tienda?.telefono || '(+51) 999-999-999'}
+                  {formatPhone(tienda?.whatsappTienda || tienda?.telefono) || '(+51) 999-999-999'}
                 </p>
               </div>
             </div>
@@ -608,7 +621,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white">
+        <section>
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 md:grid-cols-2 lg:grid-cols-4 lg:px-6">
             {[
               ['solar:delivery-bold', editable(diseno?.construccionBenefitOneTitle, 'Compra y devolución fáciles'), editable(diseno?.construccionBenefitOneText, 'Compra y gestiona devoluciones sin fricción')],
@@ -627,7 +640,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white">
+        <section>
           <div className="mx-auto grid max-w-7xl gap-7 px-4 py-14 md:grid-cols-3 lg:px-6">
             <HammerPromoCard
               tone="yellow"
@@ -660,7 +673,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white pb-16">
+        <section className="pb-16">
           <div className="mx-auto max-w-7xl px-4 lg:px-6">
             <HammerSectionHeader
               title={editable(diseno?.construccionTrendingTitle, 'Productos en tendencia')}
@@ -678,12 +691,13 @@ export default function ConstruccionHomePage({
               </div>
             ) : (
               <div className="grid gap-x-10 gap-y-16 pt-12 sm:grid-cols-2 lg:grid-cols-5">
-                {trendingProducts.map((producto, index) => (
+                {trendingProducts.map((producto: any, index: number) => (
                   <HammerCatalogCard
                     key={`${producto.id || producto.descripcion}-${index}`}
                     producto={producto}
                     cp={accent}
-                    onAdd={() => agregarAlCarrito(producto)}
+                    cta={cta}
+                    onAdd={(qty) => agregarAlCarrito({ ...producto, __cantidad: qty })}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                   />
                 ))}
@@ -692,7 +706,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white">
+        <section>
           <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
             <WorkshopBanner
               eyebrow={editable(diseno?.construccionWideBannerEyebrow, 'Oferta limitada en herramientas eléctricas')}
@@ -704,7 +718,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white pb-16">
+        <section className="pb-16">
           <div className="mx-auto max-w-7xl px-4 lg:px-6">
             <HammerSectionHeader
               title={editable(diseno?.construccionTopCategoriesTitle, 'Categorías destacadas')}
@@ -726,7 +740,8 @@ export default function ConstruccionHomePage({
                     key={`top-${producto.id || producto.descripcion}-${index}`}
                     producto={producto}
                     cp={accent}
-                    onAdd={() => agregarAlCarrito(producto)}
+                    cta={cta}
+                    onAdd={(qty) => agregarAlCarrito({ ...producto, __cantidad: qty })}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                   />
                 ))}
@@ -735,7 +750,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white">
+        <section>
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 md:grid-cols-2 lg:px-6">
             <WorkshopBanner
               layout="half"
@@ -756,7 +771,7 @@ export default function ConstruccionHomePage({
           </div>
         </section>
 
-        <section className="bg-white pb-20">
+        <section className="pb-20">
           <div className="mx-auto max-w-7xl px-4 lg:px-6">
             <div className="flex flex-col gap-5 border-b-4 md:flex-row md:items-end md:justify-between" style={{ borderColor: accent }}>
               <h2 className="pb-4 text-2xl font-black text-[#151515] sm:text-3xl">{editable(diseno?.construccionSpecialProductsTitle, 'Productos especiales')}</h2>
@@ -790,7 +805,8 @@ export default function ConstruccionHomePage({
                     key={`special-${producto.id || producto.descripcion}-${index}`}
                     producto={producto}
                     cp={accent}
-                    onAdd={() => agregarAlCarrito(producto)}
+                    cta={cta}
+                    onAdd={(qty) => agregarAlCarrito({ ...producto, __cantidad: qty })}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                   />
                 ))}
