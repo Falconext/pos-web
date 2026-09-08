@@ -10,6 +10,15 @@ import useEscapeKey from '@/hooks/useEscapeKey';
 import ModalRegistrarGasto from './ModalRegistrarGasto';
 import ModalTransferirCaja from './ModalTransferirCaja';
 
+/** Fecha corta en hora de Lima (el backend devuelve ISO en UTC). */
+const fechaCorta = (iso: string) =>
+    new Date(iso).toLocaleDateString('es-PE', {
+        timeZone: 'America/Lima',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
+
 const CajaControl: React.FC = () => {
     const {
         estadoCaja,
@@ -248,6 +257,43 @@ const CajaControl: React.FC = () => {
 
                 <div className={`absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full blur-3xl opacity-20 ${isAbierta ? 'bg-emerald-100' : 'bg-slate-100'}`} />
             </div>
+
+            {/* Turnos anteriores que quedaron abiertos: sus movimientos se
+                contabilizan igual, pero nadie contó el cajón (no hay arqueo
+                ni diferencia registrada). Antes esto pasaba en silencio. */}
+            {(estadoCaja?.pendientesDeCierre?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/20 p-4">
+                    <div className="flex items-start gap-3">
+                        <Icon icon="solar:danger-triangle-bold-duotone" className="text-2xl text-amber-500 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                {estadoCaja!.pendientesDeCierre!.length === 1
+                                    ? 'Tienes 1 turno anterior sin cerrar'
+                                    : `Tienes ${estadoCaja!.pendientesDeCierre!.length} turnos anteriores sin cerrar`}
+                            </p>
+                            <p className="text-xs text-amber-700/80 dark:text-amber-300/70 mt-0.5">
+                                Sus ventas y gastos sí están contabilizados, pero esos días quedaron sin arqueo: nadie contó el efectivo del cajón.
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                {estadoCaja!.pendientesDeCierre!.slice(0, 6).map((t) => (
+                                    <span
+                                        key={t.id}
+                                        title={[t.sede, t.usuario, t.turno].filter(Boolean).join(' · ')}
+                                        className="px-2 py-0.5 rounded-lg bg-white/70 dark:bg-slate-800/60 text-[11px] font-bold text-amber-700 dark:text-amber-300"
+                                    >
+                                        {fechaCorta(t.fecha)}
+                                    </span>
+                                ))}
+                                {estadoCaja!.pendientesDeCierre!.length > 6 && (
+                                    <span className="px-2 py-0.5 text-[11px] font-bold text-amber-700/70 dark:text-amber-300/70">
+                                        +{estadoCaja!.pendientesDeCierre!.length - 6} más
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Resumen del turno abierto o, si ya se cerró, del día. */}
             {estadoCaja && (
