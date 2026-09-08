@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
+import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
 
 export type TipoVenta =
@@ -108,14 +109,34 @@ export function usePanelVentasViewModel() {
     const canFilterByUsuario = isAdmin;
     const esPrincipalAdmin = isAdmin && Boolean(sedeActiva?.esPrincipal);
 
+    // Alcance de la vista para el admin parado en la sede principal: por
+    // defecto CONSOLIDADO (todas las sedes), que es como se comportó siempre.
+    // `null` = todas; un id = solo esa sede. Antes no había forma de acotar y
+    // el encabezado decía "Sede Principal" mientras la tabla y los KPIs
+    // mostraban todas las sedes, que confundía a los usuarios.
+    const [sedeVista, setSedeVista] = useState<number | null>(null);
+    const { sedes, listarSedes } = useSedesStore();
+    useEffect(() => {
+        if (esPrincipalAdmin) void listarSedes();
+    }, [esPrincipalAdmin, listarSedes]);
+    const sedesOpciones = useMemo(
+        () => sedes.map((s: any) => ({ id: s.id as number, nombre: s.nombre as string })),
+        [sedes],
+    );
+
     const cargar = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({ fecha });
             // Rango: solo se envía si el usuario eligió una fecha final posterior
             if (fechaFin && fechaFin > fecha) params.set('fechaFin', fechaFin);
-            // Admins on the principal sede see all sedes; everyone else filters by their sede
-            if (sedeActiva?.id && !esPrincipalAdmin) params.set('sedeId', String(sedeActiva.id));
+            // El admin en la sede principal ve todas por defecto, o solo una si
+            // la eligió en el selector; el resto siempre ve la suya.
+            if (esPrincipalAdmin) {
+                if (sedeVista) params.set('sedeId', String(sedeVista));
+            } else if (sedeActiva?.id) {
+                params.set('sedeId', String(sedeActiva.id));
+            }
             if (canFilterByUsuario && filtroUsuarioId) params.set('usuarioId', String(filtroUsuarioId));
             // Reporte pesado: damos más margen que el timeout global de 12s
             const { data } = await apiClient.get<any>(`/ventas/panel?${params}`, { timeout: 30_000 });
@@ -131,7 +152,7 @@ export function usePanelVentasViewModel() {
         } finally {
             setLoading(false);
         }
-    }, [fecha, fechaFin, sedeActiva?.id, esPrincipalAdmin, filtroUsuarioId, canFilterByUsuario, alert]);
+    }, [fecha, fechaFin, sedeActiva?.id, esPrincipalAdmin, sedeVista, filtroUsuarioId, canFilterByUsuario, alert]);
 
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -236,7 +257,11 @@ export function usePanelVentasViewModel() {
                 fechaFin: hasta,
                 formato,
             });
-            if (sedeActiva?.id && !esPrincipalAdmin) params.set('sedeId', String(sedeActiva.id));
+            if (esPrincipalAdmin) {
+                if (sedeVista) params.set('sedeId', String(sedeVista));
+            } else if (sedeActiva?.id) {
+                params.set('sedeId', String(sedeActiva.id));
+            }
             if (canFilterByUsuario && filtroUsuarioId) params.set('usuarioId', String(filtroUsuarioId));
             // Columnas visibles elegidas por el usuario (para que el Excel coincida con la tabla).
             if (columnas) params.set('columnas', columnas);
@@ -257,7 +282,7 @@ export function usePanelVentasViewModel() {
         } finally {
             setExportando(null);
         }
-    }, [fecha, fechaFin, sedeActiva?.id, esPrincipalAdmin, filtroUsuarioId, canFilterByUsuario, alert]);
+    }, [fecha, fechaFin, sedeActiva?.id, esPrincipalAdmin, sedeVista, filtroUsuarioId, canFilterByUsuario, alert]);
 
     return {
         fecha, setFecha,
@@ -274,6 +299,7 @@ export function usePanelVentasViewModel() {
         filtroUsuarioId, setFiltroUsuarioId,
         canFilterByUsuario,
         esPrincipalAdmin,
+        sedeVista, setSedeVista, sedesOpciones,
         repartidoresOpciones,
         countTodo, countVentas, countDespacho, countPorCobrar,
         totalVentasDia,

@@ -5,6 +5,8 @@ import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import ShalomTrackingModal from '@/components/ShalomTrackingModal';
+import Select from '@/components/Select';
+import { Calendar } from '@/components/Date';
 import OlvaTrackingModal from '@/components/OlvaTrackingModal';
 import { useInvoiceStore } from '@/zustand/invoices';
 import {
@@ -224,7 +226,40 @@ export default function PanelVentasView() {
         } catch { /* usa defaults */ }
         return defaults;
     });
+    // El componente Calendar entrega la fecha en DD/MM/YYYY; el VM trabaja en
+    // YYYY-MM-DD. Reemplaza a los <input type="date"> nativos para usar el
+    // mismo datepicker que el resto del sistema.
+    const handleFecha = (date: string, name: string) => {
+        const iso = date ? moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD') : '';
+        if (name === 'fecha') {
+            if (iso) vm.setFecha(iso); // la fecha de inicio siempre debe tener valor
+        } else if (name === 'fechaFin') {
+            vm.setFechaFin(iso); // vacío = quitar rango (un solo día)
+        }
+    };
+
     const [showColsMenu, setShowColsMenu] = useState(false);
+    const [showFiltrosMenu, setShowFiltrosMenu] = useState(false);
+    // El Select del proyecto espera {id, value}; el id 0 representa "todas".
+    const sedesSelectOptions = [
+        { id: 0, value: 'Todas las sedes (consolidado)' },
+        ...vm.sedesOpciones.map((x: { id: number; nombre: string }) => ({ id: x.id, value: x.nombre })),
+    ];
+    // Contador para el badge: cuántos filtros secundarios están puestos.
+    // La sede no cuenta acá porque tiene su propio selector siempre visible.
+    const filtrosActivos =
+        (vm.filtroRepartidorId !== undefined ? 1 : 0) +
+        (vm.filtroUsuarioId ? 1 : 0) +
+        (vm.filtroProducto ? 1 : 0) +
+        (vm.filtroSerie ? 1 : 0) +
+        (vm.filtroDni ? 1 : 0);
+    const limpiarFiltros = () => {
+        vm.setFiltroRepartidorId(undefined);
+        vm.setFiltroUsuarioId(null);
+        vm.setFiltroProducto('');
+        vm.setFiltroSerie('');
+        vm.setFiltroDni('');
+    };
     // Fila cuyo popover "ver más productos" está abierto (key = `${tipo}-${id}`).
     const [prodPopover, setProdPopover] = useState<string | null>(null);
     const col = (key: string) => visibleCols[key] !== false;
@@ -497,35 +532,49 @@ export default function PanelVentasView() {
                         {vm.fechaFin && vm.fechaFin > vm.fecha
                             ? 'Resumen del rango seleccionado y deuda pendiente acumulada.'
                             : 'Resumen del día seleccionado y deuda pendiente acumulada.'}
+                        {/* El alcance se dice explícitamente: los KPIs y la tabla
+                            cambian con él, y antes no había forma de saberlo. */}
+                        {vm.esPrincipalAdmin && (
+                            <span className="font-semibold">
+                                {' '}Mostrando{' '}
+                                {vm.sedeVista
+                                    ? vm.sedesOpciones.find((s: { id: number; nombre: string }) => s.id === vm.sedeVista)?.nombre ?? 'una sede'
+                                    : 'todas las sedes'}.
+                            </span>
+                        )}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => vm.setFecha(moment(vm.fecha).subtract(1, 'day').format('YYYY-MM-DD'))}
-                        className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                        className="h-10 w-10 grid place-items-center rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                         title="Día anterior"
                     >
                         <Icon icon="solar:arrow-left-linear" className="text-lg" />
                     </button>
-                    <input
-                        type="date"
-                        value={vm.fecha}
-                        onChange={(e) => vm.setFecha(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    />
+                    <div className="w-40 shrink-0">
+                        <Calendar
+                            name="fecha"
+                            value={vm.fecha ? moment(vm.fecha).format('DD/MM/YYYY') : ''}
+                            onChange={handleFecha}
+                            className="admin-date-filter"
+                            portal
+                        />
+                    </div>
                     <span className="text-xs font-medium text-gray-400 dark:text-slate-500">hasta</span>
-                    <input
-                        type="date"
-                        value={vm.fechaFin}
-                        min={vm.fecha}
-                        onChange={(e) => vm.setFechaFin(e.target.value)}
-                        title="Fecha final del rango (opcional) — déjalo vacío para ver un solo día"
-                        className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    />
+                    <div className="w-40 shrink-0">
+                        <Calendar
+                            name="fechaFin"
+                            value={vm.fechaFin ? moment(vm.fechaFin).format('DD/MM/YYYY') : ''}
+                            onChange={handleFecha}
+                            className="admin-date-filter"
+                            portal
+                        />
+                    </div>
                     {vm.fechaFin && (
                         <button
                             onClick={() => vm.setFechaFin('')}
-                            className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-rose-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                            className="h-10 w-10 grid place-items-center rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-rose-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                             title="Quitar rango (volver a un solo día)"
                         >
                             <Icon icon="solar:close-circle-linear" className="text-lg" />
@@ -533,14 +582,14 @@ export default function PanelVentasView() {
                     )}
                     <button
                         onClick={() => vm.setFecha(moment(vm.fecha).add(1, 'day').format('YYYY-MM-DD'))}
-                        className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                        className="h-10 w-10 grid place-items-center rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                         title="Día siguiente"
                     >
                         <Icon icon="solar:arrow-right-linear" className="text-lg" />
                     </button>
                     <button
                         onClick={vm.cargar}
-                        className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                        className="h-10 w-10 grid place-items-center rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                         title="Recargar"
                     >
                         <Icon icon="solar:refresh-linear" className={`text-lg ${vm.loading ? 'animate-spin' : ''}`} />
@@ -548,7 +597,7 @@ export default function PanelVentasView() {
                     <button
                         onClick={() => vm.exportarResumen('pdf', columnasVisiblesCSV)}
                         disabled={vm.exportando !== null}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-slate-700 text-rose-600 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-slate-700 text-rose-600 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
                         title="Exportar el rango en PDF imprimible"
                     >
                         <Icon icon={vm.exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
@@ -557,7 +606,7 @@ export default function PanelVentasView() {
                     <button
                         onClick={() => vm.exportarResumen('excel', columnasVisiblesCSV)}
                         disabled={vm.exportando !== null}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
                         title="Exportar el rango en Excel"
                     >
                         <Icon icon={vm.exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
@@ -579,40 +628,129 @@ export default function PanelVentasView() {
                         <TabBtn key={t.key} active={vm.tab === t.key} onClick={() => vm.setTab(t.key)} label={t.label} count={t.count} variant={t.variant} />
                     ))}
                 </div>
-                <div className="flex gap-2 flex-wrap ml-auto">
-                    {/* Filtro repartidor */}
-                    {vm.repartidoresOpciones.length > 0 && (
-                        <select
-                            value={vm.filtroRepartidorId === undefined ? '' : vm.filtroRepartidorId === null ? 'sin' : String(vm.filtroRepartidorId)}
-                            onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === '') vm.setFiltroRepartidorId(undefined);
-                                else if (v === 'sin') vm.setFiltroRepartidorId(null);
-                                else vm.setFiltroRepartidorId(Number(v));
-                            }}
-                            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                <div className="flex gap-2 flex-wrap ml-auto items-center">
+                    {/* Alcance por sede: el admin de la sede principal ve TODAS por defecto.
+                        Antes no había forma de acotar y el encabezado decía "Sede Principal"
+                        mientras la tabla y los KPIs mostraban todas las sedes. */}
+                    {vm.esPrincipalAdmin && vm.sedesOpciones.length > 1 && (
+                        <div className="w-[280px] shrink-0">
+                            <Select
+                                error=""
+                                label="Sede"
+                                withLabel={false}
+                                name="sedeVista"
+                                defaultValue="Todas las sedes (consolidado)"
+                                value={
+                                    vm.sedeVista
+                                        ? vm.sedesOpciones.find((x: { id: number; nombre: string }) => x.id === vm.sedeVista)?.nombre ?? ''
+                                        : 'Todas las sedes (consolidado)'
+                                }
+                                onChange={(id: any) => vm.setSedeVista(Number(id) === 0 ? null : Number(id))}
+                                options={sedesSelectOptions}
+                            />
+                        </div>
+                    )}
+                    {/* Filtros secundarios agrupados: la fila tenía 9 controles y los
+                        selects se recortaban. Solo queda a la vista lo que cambia los
+                        totales (sede) o el layout (columnas), más la búsqueda. */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFiltrosMenu((v) => !v)}
+                            title="Filtrar por repartidor, vendedor, producto, serie o documento"
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${
+                                filtrosActivos > 0 || showFiltrosMenu
+                                    ? 'bg-blue-100 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
+                                    : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                            }`}
                         >
-                            <option value="">Todos los repartidores</option>
-                            <option value="sin">Sin asignar</option>
-                            {vm.repartidoresOpciones
-                                .filter((r) => r.id !== null)
-                                .map((r) => (
-                                    <option key={r.id} value={String(r.id)}>{r.nombre}</option>
+                            <Icon icon="solar:filter-bold-duotone" className="text-base" />
+                            Filtros
+                            {filtrosActivos > 0 && (
+                                <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-black">
+                                    {filtrosActivos}
+                                </span>
+                            )}
+                        </button>
+                        {showFiltrosMenu && (
+                            <>
+                                <div className="fixed inset-0 z-20" onClick={() => setShowFiltrosMenu(false)} />
+                                <div className="absolute right-0 mt-2 z-30 w-72 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-3 space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Filtros</span>
+                                        {filtrosActivos > 0 && (
+                                            <button onClick={limpiarFiltros} className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Limpiar</button>
+                                        )}
+                                    </div>
+                        {/* Filtro repartidor */}
+                        {vm.repartidoresOpciones.length > 0 && (
+                            <select
+                                value={vm.filtroRepartidorId === undefined ? '' : vm.filtroRepartidorId === null ? 'sin' : String(vm.filtroRepartidorId)}
+                                onChange={(e) => {
+                                    const v = e.target.value;
+                                    if (v === '') vm.setFiltroRepartidorId(undefined);
+                                    else if (v === 'sin') vm.setFiltroRepartidorId(null);
+                                    else vm.setFiltroRepartidorId(Number(v));
+                                }}
+                                className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full"
+                            >
+                                <option value="">Todos los repartidores</option>
+                                <option value="sin">Sin asignar</option>
+                                {vm.repartidoresOpciones
+                                    .filter((r) => r.id !== null)
+                                    .map((r) => (
+                                        <option key={r.id} value={String(r.id)}>{r.nombre}</option>
+                                    ))}
+                            </select>
+                        )}
+                        {vm.canFilterByUsuario && (
+                            <select
+                                value={vm.filtroUsuarioId ?? ''}
+                                onChange={(e) => vm.setFiltroUsuarioId(e.target.value ? Number(e.target.value) : null)}
+                                className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full"
+                            >
+                                <option value="">Todos los vendedores</option>
+                                {vendedoresOptions.map((usuario) => (
+                                    <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
                                 ))}
-                        </select>
-                    )}
-                    {vm.canFilterByUsuario && (
-                        <select
-                            value={vm.filtroUsuarioId ?? ''}
-                            onChange={(e) => vm.setFiltroUsuarioId(e.target.value ? Number(e.target.value) : null)}
-                            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        >
-                            <option value="">Todos los vendedores</option>
-                            {vendedoresOptions.map((usuario) => (
-                                <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
-                            ))}
-                        </select>
-                    )}
+                            </select>
+                        )}
+                        {/* Filtro por Producto */}
+                        <div className="relative">
+                            <Icon icon="solar:box-minimalistic-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+                            <input
+                                type="text"
+                                placeholder="Producto"
+                                value={vm.filtroProducto}
+                                onChange={(e) => vm.setFiltroProducto(e.target.value)}
+                                className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full"
+                            />
+                        </div>
+                        {/* Filtro Serie Garantía */}
+                        <div className="relative">
+                            <Icon icon="solar:shield-check-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+                            <input
+                                type="text"
+                                placeholder="N° serie garantía"
+                                value={vm.filtroSerie}
+                                onChange={(e) => vm.setFiltroSerie(e.target.value.toUpperCase())}
+                                className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full"
+                            />
+                        </div>
+                        {/* Filtro DNI */}
+                        <div className="relative">
+                            <Icon icon="solar:card-2-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+                            <input
+                                type="text"
+                                placeholder="DNI / RUC"
+                                value={vm.filtroDni}
+                                onChange={(e) => vm.setFiltroDni(e.target.value)}
+                                className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full"
+                            />
+                        </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                     {/* Configurar columnas visibles (reemplaza el toggle de productos) */}
                     <div className="relative">
                         <button
@@ -656,39 +794,6 @@ export default function PanelVentasView() {
                                 </div>
                             </>
                         )}
-                    </div>
-                    {/* Filtro por Producto */}
-                    <div className="relative">
-                        <Icon icon="solar:box-minimalistic-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
-                        <input
-                            type="text"
-                            placeholder="Producto"
-                            value={vm.filtroProducto}
-                            onChange={(e) => vm.setFiltroProducto(e.target.value)}
-                            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-40"
-                        />
-                    </div>
-                    {/* Filtro Serie Garantía */}
-                    <div className="relative">
-                        <Icon icon="solar:shield-check-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
-                        <input
-                            type="text"
-                            placeholder="N° serie garantía"
-                            value={vm.filtroSerie}
-                            onChange={(e) => vm.setFiltroSerie(e.target.value.toUpperCase())}
-                            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-40"
-                        />
-                    </div>
-                    {/* Filtro DNI */}
-                    <div className="relative">
-                        <Icon icon="solar:card-2-bold-duotone" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
-                        <input
-                            type="text"
-                            placeholder="DNI / RUC"
-                            value={vm.filtroDni}
-                            onChange={(e) => vm.setFiltroDni(e.target.value)}
-                            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-36"
-                        />
                     </div>
                     {/* Búsqueda */}
                     <div className="relative">
