@@ -100,6 +100,12 @@ export default function MovementsView() {
                             label="Actualizar"
                             onClick={actions.applyFilters}
                         />
+                        <InventoryToolbarButton
+                            icon="vscode-icons:file-type-excel"
+                            label="Exportar Excel"
+                            tone="primary"
+                            onClick={() => actions.exportToExcel('excel')}
+                        />
                         <InventoryInfoPill
                             icon="solar:document-text-linear"
                             label={`${pagination.total} registros`}
@@ -142,6 +148,9 @@ export default function MovementsView() {
                             name="fechaInicio"
                             onChange={actions.handleDate}
                             isLabel
+                            // El panel se monta en document.body: la tarjeta de
+                            // filtros tiene overflow-hidden y lo recortaba.
+                            portal
                             value={moment(filters.fechaInicio, 'YYYY-MM-DD').format('DD/MM/YYYY')}
                         />
                     </div>
@@ -151,6 +160,7 @@ export default function MovementsView() {
                             name="fechaFin"
                             onChange={actions.handleDate}
                             isLabel
+                            portal
                             value={moment(filters.fechaFin, 'YYYY-MM-DD').format('DD/MM/YYYY')}
                         />
                     </div>
