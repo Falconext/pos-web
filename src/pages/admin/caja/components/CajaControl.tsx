@@ -128,6 +128,10 @@ const CajaControl: React.FC = () => {
     };
 
     const isAbierta = estadoCaja?.estado === 'ABIERTA';
+    // Con la caja cerrada, el backend devuelve el acumulado del DÍA (misma
+    // ventana que ventasDelDia); con turno abierto, lo del turno. La etiqueta
+    // acompaña ese cambio para no mentirle al usuario.
+    const periodoLabel = isAbierta ? 'Turno' : 'Día';
 
     useEscapeKey(() => setShowApertura(false), showApertura);
     useEscapeKey(() => setShowCierre(false), showCierre);
@@ -245,27 +249,30 @@ const CajaControl: React.FC = () => {
                 <div className={`absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full blur-3xl opacity-20 ${isAbierta ? 'bg-emerald-100' : 'bg-slate-100'}`} />
             </div>
 
-            {/* Stats Grid - Only visible when Open */}
-            {isAbierta && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-lg dark:hover:shadow-blue-500/5">
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl">
-                            <Icon icon="solar:wallet-money-bold-duotone" className="text-3xl" />
+            {/* Resumen del turno abierto o, si ya se cerró, del día. */}
+            {estadoCaja && (
+                <div className={`grid grid-cols-1 gap-6 ${isAbierta ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                    {/* El monto inicial solo existe mientras el turno está abierto. */}
+                    {isAbierta && (
+                        <div className="bg-white dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-lg dark:hover:shadow-blue-500/5">
+                            <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl">
+                                <Icon icon="solar:wallet-money-bold-duotone" className="text-3xl" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Monto Inicial</p>
+                                <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
+                                    {formatCurrency(Number(estadoCaja?.movimiento?.montoInicial || 0))}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Monto Inicial</p>
-                            <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
-                                {formatCurrency(Number(estadoCaja?.movimiento?.montoInicial || 0))}
-                            </p>
-                        </div>
-                    </div>
+                    )}
 
                     <div className="bg-white dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-lg dark:hover:shadow-emerald-500/5">
                         <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl">
                             <Icon icon="solar:hand-money-bold-duotone" className="text-3xl" />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Ingresos del Turno</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">{`Ingresos del ${periodoLabel}`}</p>
                             <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
                                 {formatCurrency(Number(estadoCaja?.ventasDelDia?.totalIngresos || 0))}
                             </p>
@@ -277,7 +284,7 @@ const CajaControl: React.FC = () => {
                             <Icon icon="solar:bill-list-bold-duotone" className="text-3xl" />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Gastos del Turno</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">{`Gastos del ${periodoLabel}`}</p>
                             <p className="text-2xl font-bold text-gray-800 dark:text-white mt-0.5">
                                 {formatCurrency(Number(estadoCaja?.totalEgresos || 0))}
                             </p>
