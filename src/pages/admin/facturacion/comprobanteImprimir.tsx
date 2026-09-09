@@ -2,7 +2,7 @@ import moment from 'moment';
 import React, { useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { BRAND } from '@/lib/branding';
-import { elemCfg } from '@/features/admin/cotizaciones/cotizFormatoElementos';
+import { elemCfg, lineasDeTexto } from '@/features/admin/cotizaciones/cotizFormatoElementos';
 import { useAuthStore } from '@/zustand/auth';
 import { descripcionParaImpresion } from '@/utils/descripcion-vehiculo';
 import { useQrSunat } from '@/utils/qrSunat';
@@ -749,7 +749,15 @@ console.log(formValues)
                                             )}
                                             {fc('observaciones').visible && (<>
                                             <div className="font-bold mb-1" style={{ fontSize: px('observaciones') }}>OBSERVACIONES:</div>
-                                            <div style={{ fontSize: px('observaciones') }}>{observation?.toUpperCase() || ''}</div>
+                                            {(() => {
+                                                // Cada línea escrita por el empresario se imprime en su propio
+                                                // renglón (el HTML colapsa los saltos), sin viñetas ni numeración.
+                                                const lineas = lineasDeTexto(observation);
+                                                if (!lineas.length) return <div style={{ fontSize: px('observaciones') }} />;
+                                                return lineas.map((l, i) => (
+                                                    <div key={i} style={{ fontSize: px('observaciones') }}>{l.toUpperCase()}</div>
+                                                ));
+                                            })()}
                                             </>)}
 
                                             {quotationTerms && (
@@ -883,10 +891,22 @@ console.log(formValues)
                                 {/* Custom Footer: Gracias / Vuelva Pronto / FalcoNext */}
                                 <div className="mt-8 text-center text-[10px]">
                                     {fc('gracias').visible && (<>
-                                    <div className="font-bold mb-1" style={{ fontSize: px('gracias') }}>
-                                        GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS DE {company?.empresa?.rubro?.nombre?.toUpperCase() || 'SERVICIOS'}
-                                    </div>
-                                    <div className="font-bold mb-8" style={{ fontSize: px('gracias') }}>VUELVA PRONTO</div>
+                                    {(() => {
+                                        // Mensaje del pie configurable por empresa (Configurar formato →
+                                        // Mensaje de agradecimiento). Vacío = el texto por defecto de siempre.
+                                        const propio = lineasDeTexto(fc('gracias').texto);
+                                        if (propio.length) return propio.map((l, i) => (
+                                            <div key={i} className={`font-bold ${i === propio.length - 1 ? 'mb-8' : 'mb-1'}`} style={{ fontSize: px('gracias') }}>
+                                                {l.toUpperCase()}
+                                            </div>
+                                        ));
+                                        return (<>
+                                            <div className="font-bold mb-1" style={{ fontSize: px('gracias') }}>
+                                                GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS
+                                            </div>
+                                            <div className="font-bold mb-8" style={{ fontSize: px('gracias') }}>VUELVA PRONTO</div>
+                                        </>);
+                                    })()}
                                     </>)}
 
                                     <div className="flex justify-between items-end border-t border-gray-400 pt-1">
@@ -1187,7 +1207,7 @@ console.log(formValues)
                                 <div className="mt-8 text-center text-[10px]">
                                     {fc('gracias').visible && (<>
                                     <div className="font-bold mb-1" style={{ fontSize: px('gracias') }}>
-                                        GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS DE {company?.empresa?.rubro?.nombre?.toUpperCase() || 'SERVICIOS'}
+                                        GRACIAS POR ELEGIR {company?.empresa?.nombreComercial?.toUpperCase() || company?.empresa?.razonSocial?.toUpperCase()} PARA CUBRIR SUS REQUERIMIENTOS
                                     </div>
                                     <div className="font-bold mb-8" style={{ fontSize: px('gracias') }}>VUELVA PRONTO</div>
                                     </>)}
