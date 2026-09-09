@@ -31,7 +31,13 @@ interface RentabilidadState {
 
 // ─── ViewModel ────────────────────────────────────────────────────────────────
 
-export function useRentabilidadViewModel() {
+/**
+ * @param sedeId sede por la que filtrar; `null`/undefined = todas las sedes.
+ *   OJO: los gastos operativos, ingresos manuales y campañas se registran a
+ *   nivel empresa (no tienen sedeId en la BD), así que esas cifras NO se filtran
+ *   — la vista lo advierte cuando hay una sede seleccionada.
+ */
+export function useRentabilidadViewModel(sedeId?: number | null) {
     const { alert } = useAlertStore();
 
     const now = new Date();
@@ -63,19 +69,21 @@ export function useRentabilidadViewModel() {
 
     // ─── Fetchers ─────────────────────────────────────────────────────────────
 
+    const qSede = sedeId ? `&sedeId=${sedeId}` : '';
+
     const fetchPnl = useCallback(async (mes: number, anio: number) => {
-        const resp = await get<PnlResponse>(`analisis-financiero/pnl?mes=${mes}&anio=${anio}`);
+        const resp = await get<PnlResponse>(`analisis-financiero/pnl?mes=${mes}&anio=${anio}${qSede}`);
         if (resp.data) {
             setState(prev => ({ ...prev, pnl: resp.data! }));
         }
-    }, []);
+    }, [qSede]);
 
     const fetchGastos = useCallback(async (mes: number, anio: number) => {
-        const resp = await get<GastoOperativo[]>(`analisis-financiero/gastos?mes=${mes}&anio=${anio}`);
+        const resp = await get<GastoOperativo[]>(`analisis-financiero/gastos?mes=${mes}&anio=${anio}${qSede}`);
         if (resp.data) {
             setState(prev => ({ ...prev, gastos: resp.data! }));
         }
-    }, []);
+    }, [qSede]);
 
     const fetchIngresos = useCallback(async (mes: number, anio: number) => {
         const fi = `${anio}-${String(mes).padStart(2, '0')}-01`;
@@ -87,11 +95,11 @@ export function useRentabilidadViewModel() {
     }, []);
 
     const fetchEvolucion = useCallback(async () => {
-        const resp = await get<EvolucionPoint[]>(`analisis-financiero/evolucion?meses=6`);
+        const resp = await get<EvolucionPoint[]>(`analisis-financiero/evolucion?meses=6${qSede}`);
         if (resp.data) {
             setState(prev => ({ ...prev, evolucion: resp.data! }));
         }
-    }, []);
+    }, [qSede]);
 
     // Capital inmovilizado en stock (comprado, aún sin vender). Es una foto
     // del inventario ACTUAL, no del período seleccionado: la compra no se
@@ -121,11 +129,16 @@ export function useRentabilidadViewModel() {
             }
         };
         load();
-    }, [state.mesActual, state.anioActual]);
+    }, [state.mesActual, state.anioActual, qSede]);
 
     // Fetch evolution and current inventory value only once on mount
     useEffect(() => {
         fetchEvolucion();
+    }, [qSede]);
+
+    // Valor del inventario: foto actual de toda la empresa, no depende del período
+    // ni de la sede seleccionada.
+    useEffect(() => {
         fetchValorInventario();
     }, []);
 
@@ -298,6 +311,7 @@ export function useRentabilidadViewModel() {
         ingresoEditando: state.ingresoEditando,
         isSavingIngreso: state.isSavingIngreso,
         isCurrentOrFuture,
+        sedeFiltrada: !!sedeId,
 
         // Actions
         navegarMes,

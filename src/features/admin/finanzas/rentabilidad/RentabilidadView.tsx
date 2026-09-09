@@ -24,6 +24,10 @@ import HistorialFinancieroDrawer from './components/HistorialFinancieroDrawer';
 interface RentabilidadViewProps {
     mesActual: number;
     anioActual: number;
+    /** Sedes de la empresa, para asignar la sede al registrar un gasto. */
+    sedesOptions?: Array<{ id: number; value: string }>;
+    /** Sede que se está viendo; se sugiere al crear un gasto. */
+    sedeIdActual?: number | null;
     pnl: PnlResponse | null;
     evolucion: EvolucionPoint[];
     gastos: GastoOperativo[];
@@ -246,6 +250,7 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
         abrirModalCrear, abrirModalEditar, cerrarModal,
         crearIngreso, actualizarIngreso, eliminarIngreso,
         abrirModalCrearIngreso, abrirModalEditarIngreso, cerrarModalIngreso,
+        sedesOptions = [], sedeIdActual = null,
     } = props;
 
     const isNeta = (pnl?.gananciaNeta ?? 0) >= 0;
@@ -348,7 +353,11 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             iconBg="bg-amber-50 dark:bg-amber-900/20"
                             iconColor="text-amber-600 dark:text-amber-400"
                             sub={pnl
-                                ? `Publicidad ${formatCurrency(pnl.gastoPublicidad)}`
+                                ? (pnl.gastosEmpresa
+                                    // Viendo una sede: los gastos compartidos no se le cargan,
+                                    // pero hay que decir cuánto quedó fuera o el número engaña.
+                                    ? `Publicidad ${formatCurrency(pnl.gastoPublicidad)} · ${formatCurrency(pnl.gastosEmpresa)} de empresa no incluidos`
+                                    : `Publicidad ${formatCurrency(pnl.gastoPublicidad)}`)
                                 : 'Sin gastos registrados'}
                             subColor="text-amber-500 dark:text-amber-400"
                         />
@@ -428,6 +437,8 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                 onClose={cerrarModal}
                 onCrear={crearGasto}
                 onActualizar={actualizarGasto}
+                sedesOptions={sedesOptions}
+                sedeIdActual={sedeIdActual}
             />
 
             {/* ── Ingreso Form Modal ── */}

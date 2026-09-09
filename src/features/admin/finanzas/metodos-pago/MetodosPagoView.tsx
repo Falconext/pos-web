@@ -104,8 +104,8 @@ function MetodoRow({ metodo, maxTotal, expanded, onToggle }: {
     );
 }
 
-export default function MetodosPagoView() {
-    const vm = useMetodosPagoViewModel();
+export default function MetodosPagoView({ sedeId }: { sedeId?: number | null } = {}) {
+    const vm = useMetodosPagoViewModel(sedeId);
     const data = vm.data;
     const maxTotal = Math.max(...(data?.metodos ?? []).map((m) => m.total), 1);
 

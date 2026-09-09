@@ -82,8 +82,8 @@ function ProductoRow({ producto, maxIngreso }: { producto: ProductoVendido; maxI
     );
 }
 
-export default function ProductosView() {
-    const vm = useProductosViewModel();
+export default function ProductosView({ sedeId }: { sedeId?: number | null } = {}) {
+    const vm = useProductosViewModel(sedeId);
     const data = vm.data;
     const maxIngreso = Math.max(...(data?.productos ?? []).map(p => p.ingresoTotal), 1);
     const valueFormatter = vm.metrica === 'unidades' ? formatUnidades : (v: number) => fmtMoney(v);

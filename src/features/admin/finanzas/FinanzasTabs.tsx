@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import Select from '@/components/Select';
+import { useSedeFinanzas } from './useSedeFinanzas';
 import { useRentabilidadViewModel } from './rentabilidad/useRentabilidadViewModel';
 import RentabilidadView from './rentabilidad/RentabilidadView';
 import FinanceDashboardView from './FinanceDashboardView';
@@ -69,7 +71,10 @@ export default function FinanzasTabs() {
     const tabParam = searchParams.get('tab') as TabId | null;
     const initialTab: TabId = tabParam && TABS.some((t) => t.id === tabParam) ? tabParam : 'rentabilidad';
     const [activeTab, setActiveTab] = useState<TabId>(initialTab);
-    const vm = useRentabilidadViewModel();
+    // Sede compartida por todas las pestañas del análisis (Flujo de Caja tiene su
+    // propio filtro interno). `null` = todas las sedes.
+    const sede = useSedeFinanzas();
+    const vm = useRentabilidadViewModel(sede.sedeId);
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-[#F8F9FB] dark:bg-[#0A0D14]">
@@ -84,9 +89,33 @@ export default function FinanzasTabs() {
                             {TABS.find(t => t.id === activeTab)?.label}
                         </span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-                        Análisis Financiero
-                    </h1>
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+                            Análisis Financiero
+                        </h1>
+                        {sede.puedeElegirSede && (
+                            <div className="w-full sm:w-[220px]">
+                                <Select
+                                    onChange={sede.handleSelectSede}
+                                    label="Sede"
+                                    name="sedeId"
+                                    options={sede.sedesOptions}
+                                    error=""
+                                    defaultValue="Todas las sedes"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    {sede.sedeId && (
+                        <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                            <Icon icon="solar:info-circle-bold" className="mt-0.5 shrink-0" />
+                            <span>
+                                Mostrando <strong>{sede.sedeNombre}</strong>. Los gastos marcados como
+                                "toda la empresa" (alquiler central, contador) no se le cargan a esta
+                                sede; se informan aparte en Total Gastos Op.
+                            </span>
+                        </p>
+                    )}
                 </div>
 
                 {/* Tab Switcher */}
@@ -116,6 +145,8 @@ export default function FinanzasTabs() {
                     <RentabilidadView
                         mesActual={vm.mesActual}
                         anioActual={vm.anioActual}
+                        sedesOptions={sede.sedesOptions.filter((o) => o.id > 0)}
+                        sedeIdActual={sede.sedeId}
                         pnl={vm.pnl}
                         evolucion={vm.evolucion}
                         gastos={vm.gastos}
@@ -159,19 +190,19 @@ export default function FinanzasTabs() {
 
             {activeTab === 'categorias' && (
                 <div className="px-3 pb-6 sm:px-6">
-                    <CategoriasView />
+                    <CategoriasView sedeId={sede.sedeId} />
                 </div>
             )}
 
             {activeTab === 'productos' && (
                 <div className="px-3 pb-6 sm:px-6">
-                    <ProductosView />
+                    <ProductosView sedeId={sede.sedeId} />
                 </div>
             )}
 
             {activeTab === 'metodosPago' && (
                 <div className="px-3 pb-6 sm:px-6">
-                    <MetodosPagoView />
+                    <MetodosPagoView sedeId={sede.sedeId} />
                 </div>
             )}
 

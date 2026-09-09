@@ -50,7 +50,7 @@ const sumarDias = (iso: string, n: number) => {
     return dt.toISOString().slice(0, 10);
 };
 
-export function useProductosViewModel() {
+export function useProductosViewModel(sedeId?: number | null) {
     const now = new Date();
     const { auth } = useAuthStore();
     const [state, setState] = useState<State>({
@@ -89,12 +89,13 @@ export function useProductosViewModel() {
                 params.set('mes', String(state.mesActual));
                 params.set('anio', String(state.anioActual));
             }
+            if (sedeId) params.set('sedeId', String(sedeId));
             const resp = await get<ProductosVendidosResponse>(`analisis-financiero/productos?${params}`);
             if (resp.data) setState(prev => ({ ...prev, data: resp.data! }));
         } finally {
             setState(prev => ({ ...prev, isLoading: false }));
         }
-    }, [state.periodo, state.dia, state.fechaInicio, state.fechaFin, state.mesActual, state.anioActual]);
+    }, [state.periodo, state.dia, state.fechaInicio, state.fechaFin, state.mesActual, state.anioActual, sedeId]);
 
     useEffect(() => {
         fetchData();

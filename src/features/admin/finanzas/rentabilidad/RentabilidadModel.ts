@@ -22,6 +22,11 @@ export interface PnlResponse {
     gastosTotales: number;
     gastoPublicidad: number;
     gastosPorCategoria: Array<{ categoria: string; etiqueta: string | null; monto: number }>;
+    /**
+     * Gastos marcados como "de toda la empresa" (sin sede) que NO están sumados
+     * arriba porque se está viendo una sede concreta. 0 en la vista consolidada.
+     */
+    gastosEmpresa?: number;
     gananciaNeta: number;
     margenNeto: number;
     resumenDiario: RentabilidadDia[];
@@ -125,6 +130,8 @@ export function esFinanciamiento(tipo: string): boolean {
 export interface GastoFormData {
     mes: number;
     anio: number;
+    /** null / undefined = gasto de toda la empresa (no se carga a una sede). */
+    sedeId?: number | null;
     fecha?: string;
     recurrenteDiario?: boolean;
     fechaInicio?: string;
