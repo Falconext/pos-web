@@ -134,7 +134,7 @@ export default function ModalConfigCotizacion({
               <div key={g} className="mb-5">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 mb-2">{g}</p>
                 <div className="space-y-2">
-                  {COTIZ_ELEMENTOS.filter((e) => e.grupo === g).map((el) => {
+                  {COTIZ_ELEMENTOS.filter((e) => e.grupo === g && (!e.soloEn || e.soloEn.includes(configKey))).map((el) => {
                     const cur = elemCfg(config, el.key);
                     return (
                       <div key={el.key} className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40">
@@ -149,12 +149,14 @@ export default function ModalConfigCotizacion({
                         ) : (
                           <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-300"><Icon icon="solar:lock-keyhole-minimalistic-bold" width={14} /></div>
                         )}
-                        <span className={`flex-1 text-sm ${cur.visible ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 line-through'}`}>{el.label}</span>
+                        <span className={`flex-1 text-sm ${cur.visible || el.esModo ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 line-through'}`}>{el.label}</span>
+                        {!el.esModo && (
                         <div className="flex items-center gap-1 shrink-0">
                           <button onClick={() => setSize(el.key, Math.max(el.min, cur.size - 1))} className="w-6 h-6 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300"><Icon icon="solar:minus-square-bold" width={14} /></button>
                           <span className="w-11 text-center text-xs font-mono text-gray-600 dark:text-gray-300">{cur.size}{el.unit || 'px'}</span>
                           <button onClick={() => setSize(el.key, Math.min(el.max, cur.size + 1))} className="w-6 h-6 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300"><Icon icon="solar:add-square-bold" width={14} /></button>
                         </div>
+                        )}
                       </div>
                     );
                   })}

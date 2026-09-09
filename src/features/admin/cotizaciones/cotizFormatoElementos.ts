@@ -14,6 +14,10 @@ export interface ElemDef {
   max: number;
   unit?: string;
   grupo: 'Encabezado' | 'Cuerpo' | 'Pie';
+  /** Opción de modo (solo on/off): no se muestra el control de tamaño. */
+  esModo?: boolean;
+  /** Formatos donde aplica. Si se omite, aplica a todos. */
+  soloEn?: string[];
 }
 
 export const COTIZ_ELEMENTOS: ElemDef[] = [
@@ -39,6 +43,10 @@ export const COTIZ_ELEMENTOS: ElemDef[] = [
   { key: 'descuentos', label: 'Descuentos', hasVisible: true, defaultSize: 12, min: 8, max: 16, grupo: 'Cuerpo' },
   { key: 'igv', label: 'IGV', hasVisible: true, defaultSize: 12, min: 8, max: 16, grupo: 'Cuerpo' },
   { key: 'montoTotal', label: 'Monto total', hasVisible: true, defaultSize: 14, min: 10, max: 24, grupo: 'Cuerpo' },
+  // Modo: imprime la columna de precio como VALOR unitario (sin IGV) y el importe
+  // de línea como valor de venta. El bloque de totales no cambia — ya muestra
+  // Op. gravadas (sin IGV) + IGV + Total.
+  { key: 'preciosSinIgv', label: 'Precios unitarios sin IGV', hasVisible: true, defaultVisible: false, esModo: true, defaultSize: 12, min: 12, max: 12, grupo: 'Cuerpo', soloEn: ['cotizFormatoConfig', 'notaVentaFormatoConfig'] },
   { key: 'qrPagos', label: 'QR de pago (Yape / Plin)', hasVisible: true, defaultVisible: false, defaultSize: 90, min: 60, max: 180, unit: 'px', grupo: 'Cuerpo' },
   { key: 'cuentas', label: 'Cuentas bancarias', hasVisible: true, defaultSize: 10, min: 7, max: 16, grupo: 'Pie' },
   { key: 'gracias', label: 'Mensaje de agradecimiento', hasVisible: true, defaultSize: 10, min: 7, max: 16, grupo: 'Pie' },
