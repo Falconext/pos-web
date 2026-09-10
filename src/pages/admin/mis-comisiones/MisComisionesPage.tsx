@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { get } from '@/utils/fetch';
 import DataTable from '@/components/Datatable';
 import { fadeUp, interactiveHover, listItemFadeUp, listItemHidden, listStagger } from '@/lib/motion/presets';
+import { dentroDelRangoLima } from '@/utils/fechaLima';
 
 interface Comision {
     id: number;
@@ -150,10 +151,12 @@ export default function MisComisionesPage() {
     // ── Datos filtrados ───────────────────────────────────────────────────────
     const comisionesFiltradas = useMemo(() => {
         if (!data?.comisiones) return [];
-        return data.comisiones.filter(c => {
-            const fecha = c.comprobante.fechaEmision.slice(0, 10);
-            return fecha >= desde && fecha <= hasta;
-        });
+        // El día se toma en hora de Lima, no del ISO en UTC (ver fechaLima.ts): con
+        // `.slice(0,10)` las ventas posteriores a las 19:00 caían en el día siguiente
+        // y el vendedor no las veía en su propio reporte.
+        return data.comisiones.filter(c =>
+            dentroDelRangoLima(c.comprobante.fechaEmision, desde, hasta),
+        );
     }, [data, desde, hasta]);
 
     const totalFiltrado    = useMemo(() => comisionesFiltradas.reduce((s, c) => s + toNum(c.montoComision), 0), [comisionesFiltradas]);
