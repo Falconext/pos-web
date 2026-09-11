@@ -147,15 +147,16 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
 
   // z-[1000000]: por encima del Modal compartido (z-[999999]), ya que se abre desde "Editar producto".
   return createPortal(
-    <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="flex h-[95vh] w-full max-w-[1200px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/30">
+    <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-black/50 p-2 backdrop-blur-sm sm:p-4">
+      {/* En móvil/tablet el panel de configuración va arriba y todo el cuerpo scrollea; en desktop, dos columnas. */}
+      <div className="flex h-[96dvh] w-full max-w-[1200px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:h-[95vh]">
+        <div className="flex items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-800/50 sm:p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/30">
               <Icon icon="mdi:barcode" className="text-xl text-violet-600" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">Etiquetas de código de barras</h2>
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-bold text-gray-800 dark:text-white sm:text-lg">Etiquetas de código de barras</h2>
               <p className="text-xs text-gray-500">
                 {etiquetas.length} etiqueta{etiquetas.length === 1 ? '' : 's'} a imprimir ·{' '}
                 {seleccionados.size} de {productos.length} productos
@@ -164,18 +165,18 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700"
+            className="shrink-0 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700"
           >
             <Icon icon="solar:close-circle-bold" className="text-2xl" />
           </button>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
           {/* Configuración */}
-          <div className="flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r border-gray-100 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex w-full shrink-0 flex-col gap-4 border-b border-gray-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:w-80 md:gap-5 md:overflow-y-auto md:border-b-0 md:border-r md:p-5">
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-gray-500">Formato</p>
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2 md:flex md:flex-col">
                 {(Object.keys(FORMATOS) as FormatoKey[]).map((key) => (
                   <button
                     key={key}
@@ -244,11 +245,12 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
               </div>
             )}
 
+            {/* En móvil el botón de imprimir va en el pie fijo del modal */}
             <button
               type="button"
               onClick={() => imprimir?.()}
               disabled={!etiquetas.length}
-              className="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-auto hidden items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40 md:inline-flex"
             >
               <Icon icon="solar:printer-bold" width={18} />
               Imprimir {etiquetas.length || ''}
@@ -256,8 +258,8 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
           </div>
 
           {/* Lista + vista previa */}
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="max-h-[38%] overflow-y-auto border-b border-gray-100 p-4 dark:border-slate-800">
+          <div className="flex flex-1 flex-col md:overflow-hidden">
+            <div className="overflow-x-auto border-b border-gray-100 p-4 dark:border-slate-800 md:max-h-[38%] md:overflow-y-auto">
               {cargando ? (
                 <p className="text-xs text-gray-500">Cargando productos…</p>
               ) : (
@@ -313,7 +315,7 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
               )}
             </div>
 
-            <div className="flex-1 overflow-auto bg-gray-100 p-5 dark:bg-slate-950">
+            <div className="min-h-[260px] flex-1 overflow-auto bg-gray-100 p-3 dark:bg-slate-950 sm:p-5">
               <div ref={printRef}>
                 <div
                   className="mx-auto bg-white"
@@ -369,6 +371,19 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Pie solo en móvil/tablet: el botón de imprimir siempre a la vista */}
+        <div className="border-t border-gray-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 md:hidden">
+          <button
+            type="button"
+            onClick={() => imprimir?.()}
+            disabled={!etiquetas.length}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Icon icon="solar:printer-bold" width={18} />
+            Imprimir {etiquetas.length || ''}
+          </button>
         </div>
       </div>
     </div>,
