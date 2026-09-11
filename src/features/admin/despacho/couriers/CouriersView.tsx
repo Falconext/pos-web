@@ -349,6 +349,12 @@ export default function CouriersView() {
                     </div>
                 </div>
 
+                {vm.error && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-900/10 px-4 py-3">
+                        <p className="text-sm text-rose-700 dark:text-rose-300 flex items-center gap-2"><Icon icon="solar:danger-triangle-bold" /> {vm.error}{data ? ' · se muestra la última información cargada.' : ''}</p>
+                        <button onClick={vm.refreshData} className="h-9 px-4 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700">Reintentar</button>
+                    </div>
+                )}
                 {vm.isLoading && !data ? <Skeleton /> : data && activeTab === 'resumen' && (
                     <>
                         {/* ── KPIs ── */}

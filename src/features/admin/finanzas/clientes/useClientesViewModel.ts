@@ -14,6 +14,8 @@ interface State {
     periodo: Periodo;
     data: AnalisisClientesResponse | null;
     isLoading: boolean;
+    /** Mensaje si la última carga falló (se conserva la data previa). */
+    error: string | null;
     busqueda: string;
 }
 
@@ -42,11 +44,12 @@ export function useClientesViewModel(sedeId?: number | null) {
         periodo: 'mes',
         data: null,
         isLoading: false,
+        error: null,
         busqueda: '',
     });
 
     const fetchData = useCallback(async () => {
-        setState(prev => ({ ...prev, isLoading: true }));
+        setState(prev => ({ ...prev, isLoading: true, error: null }));
         try {
             const params = new URLSearchParams();
             if (state.periodo === 'dia') {
@@ -65,6 +68,9 @@ export function useClientesViewModel(sedeId?: number | null) {
             if (sedeId) params.set('sedeId', String(sedeId));
             const resp = await get<AnalisisClientesResponse>(`analisis-financiero/clientes?${params}`);
             if (resp.data) setState(prev => ({ ...prev, data: resp.data! }));
+        } catch (e: any) {
+            // No se borra la data anterior: se avisa y se puede reintentar.
+            setState(prev => ({ ...prev, error: e?.response?.data?.message || e?.message || 'No se pudo cargar la información' }));
         } finally {
             setState(prev => ({ ...prev, isLoading: false }));
         }

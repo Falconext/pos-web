@@ -14,6 +14,8 @@ interface State {
     periodo: Periodo;
     data: AnalisisCouriersResponse | null;
     isLoading: boolean;
+    /** Mensaje si la última carga falló (se conserva la data previa). */
+    error: string | null;
     filtroCourier: FiltroCourier;
     busqueda: string;
     soloRetrasados: boolean;
@@ -45,6 +47,7 @@ export function useCouriersViewModel(sedeId?: number | null) {
         periodo: 'mes',
         data: null,
         isLoading: false,
+        error: null,
         filtroCourier: 'TODOS',
         busqueda: '',
         soloRetrasados: false,
@@ -52,7 +55,7 @@ export function useCouriersViewModel(sedeId?: number | null) {
     });
 
     const fetchData = useCallback(async () => {
-        setState(prev => ({ ...prev, isLoading: true }));
+        setState(prev => ({ ...prev, isLoading: true, error: null }));
         try {
             const params = new URLSearchParams();
             if (state.periodo === 'dia') {
@@ -71,6 +74,9 @@ export function useCouriersViewModel(sedeId?: number | null) {
             if (sedeId) params.set('sedeId', String(sedeId));
             const resp = await get<AnalisisCouriersResponse>(`analisis-financiero/couriers?${params}`);
             if (resp.data) setState(prev => ({ ...prev, data: resp.data! }));
+        } catch (e: any) {
+            // No se borra la data anterior: se avisa y se puede reintentar.
+            setState(prev => ({ ...prev, error: e?.response?.data?.message || e?.message || 'No se pudo cargar la información' }));
         } finally {
             setState(prev => ({ ...prev, isLoading: false }));
         }
