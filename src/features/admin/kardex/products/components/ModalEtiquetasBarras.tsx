@@ -145,8 +145,9 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
 
   if (!isOpen) return null;
 
+  // z-[1000000]: por encima del Modal compartido (z-[999999]), ya que se abre desde "Editar producto".
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="flex h-[95vh] w-full max-w-[1200px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
