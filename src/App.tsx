@@ -41,6 +41,7 @@ import PedidosTienda from './pages/admin/tienda/Pedidos'
 import ReviewsTienda from './pages/admin/tienda/Reviews'
 import BlogTienda from './pages/admin/tienda/Blog'
 import PanelVentasView from './pages/admin/despacho/PanelVentasView'
+import CouriersView from './features/admin/despacho/couriers/CouriersView'
 import RepartidoresView from './pages/admin/repartidores/RepartidoresView'
 import CombosTienda from './pages/admin/tienda/Combos'
 import ModificadoresTienda from './pages/admin/tienda/Modificadores'
@@ -173,6 +174,7 @@ function App() {
           <Route path="facturacion/comprobantes-informales" element={<ComprobantesInformales />} />
           <Route path="pagos" element={<Pagos />} />
           <Route path="pagos/cuentas-cobrar" element={<CuentasPorCobrar />} />
+          <Route path="ventas/couriers" element={<CouriersView />} />
           <Route path="ventas/pagos" element={<Pagos />} />
           <Route path="ventas/pagos/cuentas-cobrar" element={<CuentasPorCobrar />} />
           <Route path="cotizaciones" element={<Cotizaciones />} />

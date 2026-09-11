@@ -11,8 +11,9 @@ import CategoriasView from './categorias/CategoriasView';
 import ProductosView from './productos/ProductosView';
 import MetodosPagoView from './metodos-pago/MetodosPagoView';
 import ConciliacionView from './conciliacion/ConciliacionView';
+import ClientesView from './clientes/ClientesView';
 
-type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'productos' | 'metodosPago' | 'conciliacion';
+type TabId = 'rentabilidad' | 'flujo' | 'comisiones' | 'categorias' | 'productos' | 'clientes' | 'metodosPago' | 'conciliacion';
 
 interface Tab {
     id: TabId;
@@ -51,6 +52,12 @@ const TABS: Tab[] = [
         label: 'Productos',
         icon: 'solar:box-bold-duotone',
         description: 'Ventas por producto y acumulado por día',
+    },
+    {
+        id: 'clientes',
+        label: 'Clientes y envíos',
+        icon: 'solar:map-point-wave-bold-duotone',
+        description: 'Ciudades que más compran, ranking de clientes, cliente más fiel y repartidores',
     },
     {
         id: 'metodosPago',
@@ -197,6 +204,12 @@ export default function FinanzasTabs() {
             {activeTab === 'productos' && (
                 <div className="px-3 pb-6 sm:px-6">
                     <ProductosView sedeId={sede.sedeId} />
+                </div>
+            )}
+
+            {activeTab === 'clientes' && (
+                <div className="px-3 pb-6 sm:px-6">
+                    <ClientesView sedeId={sede.sedeId} />
                 </div>
             )}
 
