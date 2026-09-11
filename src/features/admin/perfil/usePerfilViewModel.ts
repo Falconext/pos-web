@@ -18,7 +18,7 @@ interface WhatsAppSettingsForm {
 interface PerfilData {
     id: number; nombre: string; email: string; rol: string; celular?: string; telefono?: string;
     empresaId: number; estado: string; fechaCreacion: string; fechaActualizacion: string;
-    empresa: { id: number; razonSocial: string; nombreComercial: string; paginaWeb?: string | null; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; permitirVentaSinStock?: boolean | null; cobranzaCampo?: boolean | null; cotizMostrarEmail?: boolean | null; cotizMostrarCuentas?: boolean | null; cotizMostrarRazonSocial?: boolean | null; cotizMostrarDetraccion?: boolean | null; ticketLogoSize?: number | null; directorTecnico?: string | null; sunatClientId?: string | null; sunatClientSecret?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
+    empresa: { id: number; razonSocial: string; nombreComercial: string; paginaWeb?: string | null; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; permitirVentaSinStock?: boolean | null; cobranzaCampo?: boolean | null; mostrarMarcaSistema?: boolean | null; cotizMostrarEmail?: boolean | null; cotizMostrarCuentas?: boolean | null; cotizMostrarRazonSocial?: boolean | null; cotizMostrarDetraccion?: boolean | null; ticketLogoSize?: number | null; directorTecnico?: string | null; sunatClientId?: string | null; sunatClientSecret?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
 }
 
 const whatsappFormFromPerfil = (perfil: PerfilData): WhatsAppSettingsForm => ({
@@ -137,7 +137,7 @@ export const usePerfilViewModel = () => {
      * la impresión del web como la preselección del formato.
      */
     const handleImpresionConfig = async (
-        campo: 'mostrarQrSunat' | 'formatoImpresionDefault' | 'imprimirAutomatico',
+        campo: 'mostrarQrSunat' | 'formatoImpresionDefault' | 'imprimirAutomatico' | 'mostrarMarcaSistema',
         valor: boolean | string,
     ) => {
         if (savingImpresionConfig) return;
@@ -153,6 +153,9 @@ export const usePerfilViewModel = () => {
                 mostrarQrSunat: valor
                     ? 'El QR de SUNAT se imprimirá en tus comprobantes'
                     : 'El QR de SUNAT ya no se imprimirá',
+                mostrarMarcaSistema: valor
+                    ? 'La marca del sistema volverá a salir al pie de tus comprobantes'
+                    : 'La marca del sistema ya no saldrá en tus comprobantes',
                 imprimirAutomatico: valor
                     ? 'Al emitir se abrirá la impresión automáticamente'
                     : 'Al emitir podrás elegir el formato antes de imprimir',
@@ -211,7 +214,7 @@ export const usePerfilViewModel = () => {
     const [savingControlFlag, setSavingControlFlag] = useState<string | null>(null);
     const controlFlagInFlight = useRef(false);
     const handleControlFlagToggle = async (
-        flag: 'requiereAprobacionGastos' | 'requiereAprobacionCompras' | 'requiereCajaParaEmitir',
+        flag: 'requiereAprobacionGastos' | 'requiereAprobacionCompras' | 'requiereCajaParaEmitir' | 'catalogoPorSede',
         enabled: boolean,
     ) => {
         if (savingControlFlag || controlFlagInFlight.current) return;

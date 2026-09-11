@@ -1,4 +1,5 @@
 import { usePerfilViewModel } from '@/features/admin/perfil/usePerfilViewModel';
+import { BRAND } from '@/lib/branding';
 import { Icon } from '@iconify/react';
 import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
@@ -570,6 +571,25 @@ export default function PerfilIndex() {
                                         {vm.savingImpresionConfig && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={(perfil.empresa as any).mostrarMarcaSistema !== false}
+                                        disabled={vm.savingImpresionConfig}
+                                        onChange={(e) => vm.handleImpresionConfig('mostrarMarcaSistema', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-slate-600 dark:text-slate-400 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-slate-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Mostrar la marca del sistema al pie del comprobante</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Es el pie "Sistema punto de venta – {BRAND.name} · Desarrollado por {BRAND.name} · {BRAND.website}" del ticket
+                                            y la línea "{BRAND.name} ™ · Comprobante emitido a través de…" del A4, A5 y la cotización.
+                                            Desmárcalo si prefieres que tus comprobantes salgan solo con los datos de tu negocio.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Aplica a la impresión web y al PDF (Ver PDF, WhatsApp, correo).</p>
+                                        {vm.savingImpresionConfig && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
                                 <div className="mt-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/40 dark:bg-indigo-900/10">
                                     <p className="text-sm font-semibold text-gray-900 dark:text-white">Formato de impresión por defecto</p>
                                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-3">
@@ -620,6 +640,32 @@ export default function PerfilIndex() {
                                     </div>
                                 </label>
 
+                                {/* ── Sedes y catálogo ── */}
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Icon icon="solar:shop-2-bold-duotone" width={14} />
+                                        Sedes y catálogo
+                                    </p>
+                                </div>
+                                <label className="flex items-start gap-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).catalogoPorSede)}
+                                        disabled={vm.savingControlFlag === 'catalogoPorSede'}
+                                        onChange={(e) => vm.handleControlFlagToggle('catalogoPorSede', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Catálogo independiente por sede</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Desactivado: cada producto nuevo queda disponible en todas tus sedes (catálogo compartido).
+                                            Activado: un producto creado o importado desde una sede existe <span className="font-semibold">solo en esa sede</span>; no aparece en el inventario ni en el POS de las otras hasta que lo asignes
+                                            (en la ficha del producto, con "Asignar a sede" en Inventario, o automáticamente al trasladarle stock).
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No cambia los productos que ya tienes: solo define cómo se crean los nuevos y qué sedes nuevas heredan el catálogo.</p>
+                                        {vm.savingControlFlag === 'catalogoPorSede' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                     <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                         <Icon icon="solar:shield-check-bold-duotone" width={14} />

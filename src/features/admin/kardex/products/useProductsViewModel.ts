@@ -7,7 +7,7 @@ import { useAuthStore } from '@/zustand/auth';
 import { useSedesStore } from '@/zustand/sedes';
 import useAlertStore from '@/zustand/alert';
 import apiClient from '@/utils/apiClient';
-import { get } from '@/utils/fetch';
+import { get, patch } from '@/utils/fetch';
 import { hasPlanFeature, type IUserPermissions } from '@/utils/permissions';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
@@ -177,7 +177,13 @@ export const useProductsViewModel = () => {
         vistaActual: isRestaurante ? 'cards' : 'tabla',
         marcaIdFilter: undefined,
         soloStockBajo: searchParams.get('stockBajo') === 'true',
+        incluirOcultos: false,
+        isOpenModalAsignarSedes: false,
     });
+
+    // Asignación de productos a sedes: solo tiene sentido con 2+ sedes reales.
+    const tieneVariasSedes = (sedes?.length ?? 0) > 1;
+    const catalogoPorSede = Boolean((auth as any)?.empresa?.catalogoPorSede);
 
     const debounce = useDebounce(state.searchClient, 600);
     const [products, setProducts] = useState<IProduct[]>([]);
@@ -272,9 +278,12 @@ export const useProductsViewModel = () => {
     }, [state.visibleColumns, columnsStorageKey, fallbackVisibleColumns]);
 
     // Cargar sedes solo en sede principal
+    // Sedes: el admin de la principal las usa para el filtro; todos las
+    // necesitan para saber si hay 2+ sedes (acciones "Asignar/Quitar de sede").
     useEffect(() => {
-        if (isAdmin && esPrincipal) listarSedes();
-    }, [isAdmin, esPrincipal]);
+        listarSedes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const fetchProductsList = useCallback(async () => {
         if (!auth?.empresaId) {
@@ -294,6 +303,7 @@ export const useProductsViewModel = () => {
             if (state.marcaIdFilter) params.marcaId = String(state.marcaIdFilter);
             if (effectiveSedeId) params.sedeId = String(effectiveSedeId);
             if (state.soloStockBajo) params.soloStockBajo = 'true';
+            if (effectiveSedeId && state.incluirOcultos) params.incluirOcultos = 'true';
             const query = new URLSearchParams(params).toString();
             const resp: any = await get(`productos?${query}`);
             if (resp?.code === 1) {
@@ -312,7 +322,7 @@ export const useProductsViewModel = () => {
             setProductsLoaded(true);
             setProductsLoading(false);
         }
-    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, debounce, effectiveSedeId]);
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, state.incluirOcultos, debounce, effectiveSedeId]);
 
     // Siempre mantiene la ref actualizada sin recrear efectos dependientes
     const fetchProductsListRef = useRef(fetchProductsList);
@@ -322,7 +332,7 @@ export const useProductsViewModel = () => {
     useEffect(() => {
         if (!auth?.empresaId) return;
         fetchProductsListRef.current();
-    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, state.incluirOcultos, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchResumenInventario = useCallback(async () => {
         if (!auth?.empresaId) {
@@ -727,6 +737,37 @@ export const useProductsViewModel = () => {
         }
     };
 
+    /**
+     * Asignar / quitar UN producto de la sede seleccionada (menú de acciones).
+     * Quitar falla si tiene stock en la sede: el backend lo devuelve en `omitidos`.
+     */
+    const toggleDisponibleEnSede = async (producto: any) => {
+        if (!effectiveSedeId) return;
+        const disponible = producto?.disponibleEnSede !== false;
+        const resp: any = await patch('productos/sedes/asignar', {
+            sedeId: effectiveSedeId,
+            productoIds: [Number(producto.id)],
+            disponible: !disponible,
+        });
+        if (!resp?.success) {
+            useAlertStore.getState().alert(resp?.error || 'No se pudo actualizar la asignación', 'error');
+            return;
+        }
+        const omitido = (resp?.data?.omitidos ?? [])[0];
+        if (omitido) {
+            useAlertStore.getState().alert(`No puedes quitar "${omitido.descripcion}" de ${selectedSedeName ?? 'la sede'}: aún tiene ${omitido.stock} en stock. Traslada o ajusta el stock primero.`, 'warning');
+            return;
+        }
+        useAlertStore.getState().alert(
+            disponible
+                ? `"${producto.descripcion}" ya no aparece en ${selectedSedeName ?? 'esta sede'}`
+                : `"${producto.descripcion}" ahora está disponible en ${selectedSedeName ?? 'esta sede'}`,
+            'success',
+        );
+        await fetchProductsList();
+        await fetchResumenInventario();
+    };
+
     const togglePublicarTienda = async (producto: any) => {
         try {
             await apiClient.patch(`productos/${producto.id}/publicar-tienda`, {
@@ -780,6 +821,9 @@ export const useProductsViewModel = () => {
         handleToggleClientState,
         confirmToggleroduct,
         togglePublicarTienda,
+        toggleDisponibleEnSede,
+        setIncluirOcultos: (v: boolean) => setState(prev => ({ ...prev, incluirOcultos: v, currentPage: 1 })),
+        setIsOpenModalAsignarSedes: (v: boolean) => setState(prev => ({ ...prev, isOpenModalAsignarSedes: v })),
         toggleStockSort,
         exportProducts: () => exportProductsAction(debounce, effectiveSedeId),
         refreshProducts: async () => {
@@ -831,7 +875,10 @@ export const useProductsViewModel = () => {
         effectiveSedeId,
         selectedSedeName,
         sedesOptions,
+        sedes,
         handleSelectSede,
+        tieneVariasSedes,
+        catalogoPorSede,
         tieneTienda,
         // Computed
         indexOfFirstItem: (state.currentPage - 1) * state.itemsPerPage,

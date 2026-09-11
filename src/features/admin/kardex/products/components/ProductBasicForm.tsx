@@ -12,6 +12,7 @@ import { IBrand } from '@/zustand/brands';
 import { GrupoModificador } from '@/zustand/modificadores';
 import { useProductModalViewModel } from '../useProductModalViewModel';
 import { ProductStockManager } from './ProductStockManager';
+import { ProductSedesDisponibles } from './ProductSedesDisponibles';
 
 import { ProductVariantsManager } from './ProductVariantsManager';
 import { ProductFinancialAnalysis } from './ProductFinancialAnalysis';
@@ -1272,6 +1273,9 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
             </div>
 
             {!esServicio && productSections.inventario && <ProductStockManager vm={vm} />}
+
+            {/* Asignación del producto a sedes (solo empresas con 2+ sedes). */}
+            <ProductSedesDisponibles vm={vm} />
 
             {/* Listas de Precio: precio de este producto por lista (unidad + paquetes).
                 Solo en edición (necesita productoId) y solo para ADMIN_EMPRESA. */}
