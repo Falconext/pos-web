@@ -4,6 +4,7 @@ import { useReactToPrint } from 'react-to-print';
 import { BRAND } from '@/lib/branding';
 import { elemCfg, lineasDeTexto } from '@/features/admin/cotizaciones/cotizFormatoElementos';
 import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 import { descripcionParaImpresion } from '@/utils/descripcion-vehiculo';
 import { useQrSunat } from '@/utils/qrSunat';
 
@@ -72,6 +73,16 @@ const ComprobantePrintPage = ({
     const fiscalDireccion = String(company?.empresa?.direccion || '').trim().toUpperCase();
     const sedeDireccionRaw = String(formValues?.sede?.direccion || sedeActiva?.direccion || '').trim().toUpperCase();
     const sedeDireccion = sedeDireccionRaw && sedeDireccionRaw !== fiscalDireccion ? sedeDireccionRaw : '';
+    // Nombre de la sede emisora ("SEDE: ZAPALLAL"): solo aporta si la empresa
+    // tiene 2+ sedes; con una sola sería ruido. En reimpresión viene con el
+    // comprobante; en emisión, de la sede activa.
+    const { sedes, listarSedes } = useSedesStore();
+    useEffect(() => {
+        if (sedes.length === 0 && company?.empresa?.id) void listarSedes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [company?.empresa?.id]);
+    const sedeNombreRaw = String(formValues?.sede?.nombre || sedeActiva?.nombre || '').trim().toUpperCase();
+    const sedeNombre = sedes.length > 1 ? sedeNombreRaw : '';
 
 
     const localComponentRef = useRef(null);
@@ -314,7 +325,8 @@ console.log(formValues)
                         <p className={`text-center ${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}>
                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial?.toUpperCase()}<br /></>}
                             {fc('direccion').visible && <>DIRECCION: {company?.empresa?.direccion?.toUpperCase()}<br /></>}
-                            {fc('direccion').visible && sedeDireccion && <>SEDE: {sedeDireccion}<br /></>}
+                            {fc('direccion').visible && sedeNombre && <>SEDE: {sedeNombre}<br /></>}
+                            {fc('direccion').visible && sedeDireccion && <>DIRECCION SEDE: {sedeDireccion}<br /></>}
                             {fc('rubro').visible && company?.empresa?.rubro?.nombre && <>RUBRO: {company?.empresa?.rubro?.nombre?.toUpperCase()}<br /></>}
                             {fc('celular').visible && empresaNumero && <>CELULAR: {empresaNumero}<br /></>}
                             {fc('email').visible && company?.email && <>EMAIL: {company?.email}<br /></>}
@@ -571,7 +583,8 @@ console.log(formValues)
                                         {fc('razonSocial').visible && <h6 className="font-bold leading-tight" style={{ fontSize: px('razonSocial') }}>{company?.empresa?.razonSocial?.toUpperCase()}</h6>}
                                         <div className="leading-snug">
                                             {fc('direccion').visible && <div style={{ fontSize: px('direccion') }}>{company?.empresa?.direccion}</div>}
-                                            {fc('direccion').visible && sedeDireccion && <div style={{ fontSize: px('direccion') }}>SEDE: {sedeDireccion}</div>}
+                                            {fc('direccion').visible && sedeNombre && <div style={{ fontSize: px('direccion') }}>SEDE: {sedeNombre}</div>}
+                                            {fc('direccion').visible && sedeDireccion && <div style={{ fontSize: px('direccion') }}>DIRECCION SEDE: {sedeDireccion}</div>}
                                             {fc('rubro').visible && <div style={{ fontSize: px('rubro') }}>{company?.empresa?.rubro?.nombre?.toUpperCase()}</div>}
                                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <div style={{ fontSize: px('nombreComercial') }}>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}</div>}
                                             {fc('celular').visible && empresaNumero && <div style={{ fontSize: px('celular') }}>CELULAR: {empresaNumero}</div>}
@@ -949,7 +962,8 @@ console.log(formValues)
                                         {fc('razonSocial').visible && <h6 className="font-bold leading-tight" style={{ fontSize: px('razonSocial') }}>{company?.empresa?.razonSocial?.toUpperCase()}</h6>}
                                         <div className="leading-snug">
                                             {fc('direccion').visible && <div style={{ fontSize: px('direccion') }}>{company?.empresa?.direccion}</div>}
-                                            {fc('direccion').visible && sedeDireccion && <div style={{ fontSize: px('direccion') }}>SEDE: {sedeDireccion}</div>}
+                                            {fc('direccion').visible && sedeNombre && <div style={{ fontSize: px('direccion') }}>SEDE: {sedeNombre}</div>}
+                                            {fc('direccion').visible && sedeDireccion && <div style={{ fontSize: px('direccion') }}>DIRECCION SEDE: {sedeDireccion}</div>}
                                             {fc('rubro').visible && company?.empresa?.rubro?.nombre && <div style={{ fontSize: px('rubro') }}>{company?.empresa?.rubro?.nombre?.toUpperCase()}</div>}
                                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <div style={{ fontSize: px('nombreComercial') }}>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}</div>}
                                             {fc('celular').visible && empresaNumero && <div style={{ fontSize: px('celular') }}>CELULAR: {empresaNumero}</div>}
