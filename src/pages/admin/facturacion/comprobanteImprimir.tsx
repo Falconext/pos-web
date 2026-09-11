@@ -107,6 +107,8 @@ const ComprobantePrintPage = ({
     const esFormatoFiscal = usaFormatoFactura || _rc === 'BOLETA';
     const fc = (key: string) => elemCfg(formatoConfig, key, esFormatoFiscal);
     const px = (key: string) => `${fc(key).size}px`;
+    // Perfil → Configuración → "Mostrar la marca del sistema": pie de marca en todos los formatos.
+    const mostrarMarcaSistema = (company?.empresa as any)?.mostrarMarcaSistema !== false;
     // Modo "precios unitarios sin IGV" — solo aplica al diseño de cotización /
     // nota de venta, no a los comprobantes fiscales.
     const sinIgv = fc('preciosSinIgv').visible;
@@ -526,6 +528,7 @@ console.log(formValues)
                         <hr className="my-1 border-dashed border-[#222]" />
                         {formValues?.ordenCompraCliente && <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">N° ORDEN DE COMPRA : </span>{String(formValues.ordenCompraCliente).toUpperCase()}</p>}
                         {fc('observaciones').visible && <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'}`}><span className="">OBSERVACIONES : </span>{observation?.toUpperCase() || ''}</p>}
+                        {mostrarMarcaSistema && (
                         <div className="uppercase">
                             {(() => {
                                 const reseller = company?.empresa?.reseller;
@@ -542,6 +545,7 @@ console.log(formValues)
                                 );
                             })()}
                         </div>
+                        )}
                         {qrSunat && (
                             <>
                                 <hr className="my-1 border-dashed border-[#222]" />
@@ -917,6 +921,7 @@ console.log(formValues)
                                             USUARIO: {formValues?.vendedor || 'ADMIN'} {moment().format('DD/MM/YYYY HH:mm')}
                                         </div>
 
+                                        {mostrarMarcaSistema && (
                                         <div className="text-right text-[10px] text-gray-500">
                                             {(() => {
                                                 const reseller = company?.empresa?.reseller;
@@ -930,6 +935,7 @@ console.log(formValues)
                                                 );
                                             })()}
                                         </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1314,6 +1320,7 @@ console.log(formValues)
                                             USUARIO: {formValues?.vendedor || 'ADMIN'} {moment().format('DD/MM/YYYY HH:mm')}
                                         </div>
 
+                                        {mostrarMarcaSistema && (
                                         <div className="text-right text-[10px] text-gray-500">
                                             {(() => {
                                                 const reseller = company?.empresa?.reseller;
@@ -1327,6 +1334,7 @@ console.log(formValues)
                                                 );
                                             })()}
                                         </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -128,6 +128,31 @@ describe('formato configurable en factura/boleta A4', () => {
     expect(fila('OP. GRAVADAS:').style.fontSize).toBe('8px');
   });
 
+  it('oculta la marca del sistema en A4 y ticket cuando la empresa lo desactiva', () => {
+    const conMarca = renderFactura({}).container.innerHTML;
+    expect(conMarca).toContain('Comprobante emitido a través de');
+    const sinMarca = render(
+      <ComprobantePrintPage
+        company={{ email: 'x@y.com', empresa: { ...empresaBase, mostrarMarcaSistema: false } }}
+        formValues={{ serie: 'F001', correlativo: '1', tipoDoc: '01', mtoImpVenta: 10, mtoOperGravadas: 10 }}
+        size="A4" serie="F001" correlative="1" productsInvoice={[]} total="10.00" mode="preview" receipt="FACTURA"
+        selectedClient={{ nombre: 'CLIENTE', nroDoc: '20123456789' }} totalInWords="DIEZ CON 00/100 SOLES" observation="" includeProductImages={false}
+      />,
+    ).container.innerHTML;
+    expect(sinMarca).not.toContain('Comprobante emitido a través de');
+    expect(sinMarca).toContain('USUARIO:'); // el pie de usuario se mantiene
+    const ticketSinMarca = render(
+      <ComprobantePrintPage
+        company={{ email: 'x@y.com', empresa: { ...empresaBase, mostrarMarcaSistema: false } }}
+        formValues={{ serie: 'F001', correlativo: '1', tipoDoc: '01', mtoImpVenta: 10, mtoOperGravadas: 10 }}
+        size="TICKET" serie="F001" correlative="1" productsInvoice={[]} total="10.00" mode="preview" receipt="FACTURA"
+        selectedClient={{ nombre: 'CLIENTE', nroDoc: '20123456789' }} totalInWords="DIEZ CON 00/100 SOLES" observation="" includeProductImages={false}
+      />,
+    ).container.innerHTML;
+    expect(ticketSinMarca).not.toContain('Sistema punto de venta');
+    expect(ticketSinMarca).not.toContain('Desarrollado por');
+  });
+
   it('la boleta usa boletaFormatoConfig y no facturaFormatoConfig', () => {
     const { container } = render(
       <ComprobantePrintPage
