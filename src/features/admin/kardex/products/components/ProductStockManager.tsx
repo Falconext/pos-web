@@ -11,11 +11,28 @@ type ViewProps = ReturnType<typeof useProductModalViewModel>;
 // Códigos de barra adicionales). Evita el error típico de sumar los números
 // de cada presentación directo (ej. 99 + 300 = 399) en vez de multiplicar
 // cada uno por su tamaño de caja (99×50 + 300×100 = 34,950).
-const StockFromBoxesCalculator: React.FC<{ onApply: (total: number) => void }> = ({ onApply }) => {
+const StockFromBoxesCalculator: React.FC<{
+    onApply: (total: number) => void;
+    /** Unidades sueltas que ya tiene (stock actual en edición, stock tipeado en alta). */
+    unidadesSueltasInicial?: number;
+    /** Unidades por caja sugeridas (de las presentaciones del producto). */
+    unidadesPorCajaSugeridas?: number;
+}> = ({ onApply, unidadesSueltasInicial = 0, unidadesPorCajaSugeridas }) => {
     const [open, setOpen] = useState(false);
-    const [rows, setRows] = useState<{ cajas: string; unidades: string }[]>([{ cajas: '', unidades: '' }]);
+    const [rows, setRows] = useState<{ cajas: string; unidades: string }[]>([
+        { cajas: '', unidades: unidadesPorCajaSugeridas ? String(unidadesPorCajaSugeridas) : '' },
+    ]);
+    // Unidades sueltas: se suman al total de las cajas (el empresario suele tener
+    // "39 sueltas + 10 cajas de 10" = 139). Se propone el stock actual y se puede editar.
+    const [sueltas, setSueltas] = useState<string>(unidadesSueltasInicial > 0 ? String(unidadesSueltasInicial) : '');
+    const [sueltasTocadas, setSueltasTocadas] = useState(false);
+    React.useEffect(() => {
+        if (!sueltasTocadas) setSueltas(unidadesSueltasInicial > 0 ? String(unidadesSueltasInicial) : '');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [unidadesSueltasInicial]);
 
-    const total = rows.reduce((sum, r) => sum + (Number(r.cajas) || 0) * (Number(r.unidades) || 0), 0);
+    const totalCajas = rows.reduce((sum, r) => sum + (Number(r.cajas) || 0) * (Number(r.unidades) || 0), 0);
+    const total = (Number(sueltas) || 0) + totalCajas;
 
     const updateRow = (i: number, patch: Partial<{ cajas: string; unidades: string }>) =>
         setRows(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -38,9 +55,20 @@ const StockFromBoxesCalculator: React.FC<{ onApply: (total: number) => void }> =
             {open && (
                 <div className="mt-3 space-y-2">
                     <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Indica cuántas cajas/paquetes tienes de cada presentación y cuántas unidades trae cada una —
-                        sumamos por ti el total real en unidades sueltas (el que va en el campo Stock).
+                        Indica las unidades sueltas que tienes y cuántas cajas/paquetes de cada presentación —
+                        sumamos por ti el total real en unidades (sueltas + cajas × unidades por caja).
                     </p>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={sueltas}
+                            onChange={(e) => { setSueltasTocadas(true); setSueltas(e.target.value); }}
+                            className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-violet-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">unidades sueltas</span>
+                    </div>
                     {rows.map((row, i) => (
                         <div key={i} className="flex items-center gap-2">
                             <input
@@ -81,6 +109,7 @@ const StockFromBoxesCalculator: React.FC<{ onApply: (total: number) => void }> =
                     <div className="flex items-center justify-between border-t border-violet-100 pt-2 dark:border-violet-900/30">
                         <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
                             Total en unidades: <span className="text-violet-700 dark:text-violet-300">{total.toLocaleString()}</span>
+                            <span className="ml-1 font-normal text-gray-400">({(Number(sueltas) || 0).toLocaleString()} sueltas + {totalCajas.toLocaleString()} en cajas)</span>
                         </span>
                         <button
                             type="button"
@@ -330,8 +359,11 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                 )}
 
                                 <StockFromBoxesCalculator
+                                    unidadesSueltasInicial={stockOriginal}
+                                    unidadesPorCajaSugeridas={presentaciones[0]?.unidades}
                                     onApply={(total) => {
                                         setTipoAjusteStock('reemplazar');
+                                        setFactorAjuste(1);
                                         setCantidadAjuste(total);
                                     }}
                                 />
@@ -374,7 +406,9 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             {esFarmaceutico && <p className="text-[11px] text-amber-500 mt-1"><Icon icon="mdi:information" className="inline mr-1" />En farmacia, ingresa el stock inicial usando el botón "Gestión de Lotes".</p>}
                             {!esFarmaceutico && (
                                 <StockFromBoxesCalculator
-                                    onApply={(total) => handleChange({ target: { name: 'stock', value: String(total) } } as any)}
+                                    unidadesSueltasInicial={factorInicial > 1 ? 0 : Number(formValues?.stock) || 0}
+                                    unidadesPorCajaSugeridas={presentaciones[0]?.unidades}
+                                    onApply={(total) => { setFactorInicial(1); handleChange({ target: { name: 'stock', value: String(total) } } as any); }}
                                 />
                             )}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">

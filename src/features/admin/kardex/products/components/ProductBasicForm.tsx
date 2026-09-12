@@ -696,7 +696,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 placeholder=""
                                             />
                                         </div>
-                                        <div className="w-32 shrink-0" title="Unidades que trae el paquete">
+                                        <div className="w-40 shrink-0" title="Unidades que trae el paquete">
                                             <InputPro
                                                 autocomplete="off"
                                                 type="number"
@@ -706,7 +706,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                     updateUnidadesPorPaquete(i, Math.max(1, Number(e.target.value) || 1))
                                                 }
                                                 isLabel
-                                                label="Unid. por paquete"
+                                                label="Unidades por paquete"
                                                 placeholder=""
                                             />
                                         </div>
