@@ -5,6 +5,7 @@ import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { FM, FmFooter, FmHeader, FmProductImage, FmWhatsAppFab, fmFont, fmPrimary } from './FreshMartParts';
 import { fmCard, fmPage, fmSection, fmStagger, fmTap, fmViewport } from './motion';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 function money(value: number) { return `S/ ${Number(value || 0).toFixed(2)}`; }
 function inputClass(hasError?: boolean) {
@@ -24,7 +25,7 @@ export default function FreshMartCheckoutPage(props: TemplateCheckoutPageProps) 
   const cartCount = carritoState.reduce((s, i) => s + Number(i.cantidad || 1), 0);
   const cartTotal = carritoState.reduce((s, i) => s + Number(i.precioUnitario || 0) * Number(i.cantidad || 1), 0);
   const canSubmit = !enviando && carritoState.length > 0;
-  const deliveryType = formData.tipoEntrega || 'delivery';
+  const deliveryType = formData.tipoEntrega || 'RECOJO';
   const ocultarEnvio = Boolean(diseno?.supermercadoOcultarEnvio);
 
   return (
@@ -53,10 +54,13 @@ export default function FreshMartCheckoutPage(props: TemplateCheckoutPageProps) 
             <motion.div initial="hidden" whileInView="show" viewport={fmViewport} variants={fmCard} className="rounded-xl border bg-white p-6 md:p-7" style={{ borderColor: FM.line }}>
               <div className="mb-6 flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full text-white" style={{ backgroundColor: FM.greenDark }}><Icon icon="solar:delivery-linear" width={21} /></span><div><p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Paso 2</p><h2 className="text-xl font-bold" style={{ fontFamily: FM.display, color: FM.ink }}>Entrega y pago</h2></div></div>
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="block"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Tipo de entrega</span><select name="tipoEntrega" value={deliveryType} onChange={handleChange} className={inputClass(erroresForm.tipoEntrega)}>{configEnvio?.aceptaRecojo !== false && <option value="recojo">Recojo en tienda</option>}{configEnvio?.aceptaEnvio !== false && <option value="delivery">Envío a domicilio</option>}</select></label>
-                <label className="block"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Medio de pago</span><select name="medioPago" value={formData.medioPago || 'efectivo'} onChange={handleChange} className={inputClass(erroresForm.medioPago)}>{configPago?.aceptaEfectivo !== false && <option value="efectivo">Efectivo</option>}{configPago?.aceptaYape !== false && <option value="yape">Yape</option>}{configPago?.aceptaPlin !== false && <option value="plin">Plin</option>}{configPago?.aceptaTarjeta && <option value="tarjeta">Tarjeta</option>}</select></label>
-                <label className="block md:col-span-2"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Dirección de entrega</span><input name="direccionEntrega" value={formData.direccionEntrega || ''} onChange={handleChange} className={inputClass(erroresForm.direccionEntrega)} />{erroresForm.direccionEntrega && <p className="mt-1.5 text-xs font-medium text-red-500">{erroresForm.direccionEntrega}</p>}</label>
-                <label className="block md:col-span-2"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Nota del pedido (opcional)</span><textarea name="notaPedido" value={formData.notaPedido || ''} onChange={handleChange} rows={3} className="mt-2 w-full resize-none rounded-lg border border-neutral-200 bg-white px-4 py-3.5 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--fm-cp)]" placeholder="Referencias de entrega, horario preferido..." /></label>
+                <label className="block"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Tipo de entrega</span><select name="tipoEntrega" value={deliveryType} onChange={handleChange} className={inputClass(erroresForm.tipoEntrega)}>{configEnvio?.aceptaRecojo !== false && <option value="RECOJO">Recojo en tienda</option>}{configEnvio?.aceptaEnvio !== false && <option value="ENVIO">Envío a domicilio</option>}</select></label>
+                <div className="block md:col-span-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Medio de pago</span>
+                  <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={primary} radius="10px" className="mt-2" />
+                </div>
+                <label className="block md:col-span-2"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Dirección de entrega</span><input name="clienteDireccion" value={formData.clienteDireccion || ''} onChange={handleChange} className={inputClass(erroresForm.clienteDireccion)} />{erroresForm.clienteDireccion && <p className="mt-1.5 text-xs font-medium text-red-500">{erroresForm.clienteDireccion}</p>}</label>
+                <label className="block md:col-span-2"><span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.inkSoft }}>Nota del pedido (opcional)</span><textarea name="observaciones" value={formData.observaciones || ''} onChange={handleChange} rows={3} className="mt-2 w-full resize-none rounded-lg border border-neutral-200 bg-white px-4 py-3.5 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--fm-cp)]" placeholder="Referencias de entrega, horario preferido..." /></label>
               </div>
             </motion.div>
 

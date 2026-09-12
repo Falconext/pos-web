@@ -13,6 +13,7 @@ import { clearTiendaCart, persistTiendaCart, tiendaCartKey } from '@/utils/tiend
 import { withPricingList } from '@/templates/shared/pricing';
 import { withStorePurchaseWhatsapp } from '@/utils/storeWhatsapp';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -685,34 +686,7 @@ export default function Checkout() {
                                 {/* Payment method */}
                                 <div className="md:col-span-2">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Método de pago</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPagoCheckout[]).map(method => {
-                                            const labels: Record<MedioPagoCheckout, string> = { YAPE: 'Yape', PLIN: 'Plin', EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', MERCADO_PAGO: 'Mercado Pago' };
-                                            const icons: Record<MedioPagoCheckout, string> = { YAPE: 'solar:smartphone-bold', PLIN: 'solar:wallet-money-bold', EFECTIVO: 'solar:banknote-2-bold', TRANSFERENCIA: 'solar:card-transfer-bold', TARJETA: 'solar:card-2-bold', MERCADO_PAGO: 'simple-icons:mercadopago' };
-                                            const show =
-                                                method === 'EFECTIVO'
-                                                    ? Boolean(configPago?.aceptaEfectivo)
-                                                    : method === 'TARJETA'
-                                                        ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                                                        : method === 'MERCADO_PAGO'
-                                                            ? Boolean(configPago?.aceptaMercadoPago)
-                                                            : method === 'YAPE'
-                                                                ? Boolean(configPago?.yapeQrUrl || configPago?.yapeQR || configPago?.yapeNumero)
-                                                                : method === 'PLIN'
-                                                                    ? Boolean(configPago?.plinQrUrl || configPago?.plinQR || configPago?.plinNumero)
-                                                                    : method === 'TRANSFERENCIA'
-                                                                        ? Boolean(configPago?.cuentasBancarias && configPago.cuentasBancarias.length > 0)
-                                                                        : false;
-                                            if (!show) return null;
-                                            return (
-                                                <label key={method} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full text-sm font-bold border-2 transition-colors ${formData.medioPago === method ? 'border-[#FF9500] bg-[#FFF3E0] text-[#FF9500]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                                                    <input type="radio" className="hidden" name="medioPago" value={method} checked={formData.medioPago === method} onChange={handleChange} />
-                                                    <Icon icon={icons[method]} width={14} />
-                                                    {labels[method]}
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
+                                    <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent="#FF9500" radius="16px" />
                                 </div>
 
                                 {/* Observaciones */}

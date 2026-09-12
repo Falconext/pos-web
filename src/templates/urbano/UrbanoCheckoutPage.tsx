@@ -7,17 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import { BancoLogo } from '@/components/shared/BancoLogo';
 import { buildStorePurchaseWhatsappUrl, normalizeStoreWhatsapp } from '@/utils/storeWhatsapp';
-
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
-
-const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
-  YAPE:          { label: 'Yape',          icon: 'solar:smartphone-line-duotone' },
-  PLIN:          { label: 'Plin',          icon: 'solar:wallet-money-line-duotone' },
-  EFECTIVO:      { label: 'Efectivo',      icon: 'solar:banknote-2-line-duotone' },
-  TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-line-duotone' },
-  TARJETA:       { label: 'Tarjeta',       icon: 'solar:card-2-line-duotone' },
-  MERCADO_PAGO:  { label: 'Mercado Pago',  icon: 'simple-icons:mercadopago' },
-};
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 const IMPACT = '"Impact", "Arial Black", sans-serif';
 
@@ -263,33 +253,7 @@ export default function UrbanoCheckoutPage({
             {/* Payment Method */}
             <section>
               <SectionTitle>Pago</SectionTitle>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPago[]).map(method => {
-                  const meta = PAYMENT_META[method];
-                  const show =
-                    method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
-                    : method === 'TRANSFERENCIA' ? Boolean(configPago?.cuentasBancarias?.length > 0)
-                    : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                    : method === 'MERCADO_PAGO' ? Boolean(configPago?.aceptaMercadoPago)
-                    : method === 'YAPE' ? Boolean(configPago?.yapeQR || configPago?.yapeQrUrl || configPago?.yapeNumero)
-                    : method === 'PLIN' ? Boolean(configPago?.plinQR || configPago?.plinQrUrl || configPago?.plinNumero)
-                    : false;
-                  if (!show) return null;
-                  const active = safeFormData.medioPago === method;
-                  return (
-                    <label
-                      key={method}
-                      className={`flex flex-col items-center justify-center gap-2 py-4 border-2 cursor-pointer transition-all ${
-                        active ? 'border-black bg-black text-white' : 'border-gray-200 text-gray-500 hover:border-black'
-                      }`}
-                    >
-                      <input type="radio" className="hidden" name="medioPago" value={method} checked={active} onChange={handleChange} />
-                      <Icon icon={meta.icon} width={20} className={active ? 'text-white' : 'text-gray-400'} />
-                      <span className="text-[11px] font-bold tracking-[0.1em] uppercase">{meta.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              <MedioPagoSelector configPago={configPago} value={safeFormData.medioPago} onChange={handleChange} accent={'#111827'} radius="0px" />
 
               {safeFormData.medioPago === 'TRANSFERENCIA' && configPago?.cuentasBancarias?.length > 0 && (
                 <div className="mt-6">

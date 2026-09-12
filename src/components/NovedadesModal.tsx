@@ -244,29 +244,34 @@ export default function NovedadesModal({ abierto, onClose, autoAbierto = false }
                         role="dialog"
                         aria-modal="true"
                         aria-label="Novedades del sistema"
-                        className="relative w-full max-w-6xl max-h-[88vh] lg:h-[min(480px,88vh)] flex flex-col lg:flex-row bg-[#F9FAFC] dark:bg-[#0A0D14] rounded-3xl shadow-2xl overflow-hidden"
+                        className="relative w-full max-w-7xl max-h-[88vh] lg:h-[min(560px,88vh)] flex flex-col lg:flex-row bg-[#F9FAFC] dark:bg-[#0A0D14] rounded-3xl shadow-2xl overflow-hidden"
                         initial={{ opacity: 0, y: 18, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                     >
                         {/* ── Lado izquierdo: solo Niky ─────────────────────────────
-                            El modal tiene ALTURA FIJA en escritorio y el panel toma su ancho
-                            de esa altura (`h-full` + `aspect-[1295/1215]`), así que `object-cover`
-                            calza la imagen exacta: sin recorte y sin franjas violetas. Hacerlo al
-                            revés (ancho fijo, alto libre) no funciona: `align-items: stretch`
-                            estira el panel para igualar al listado, pisa el aspect-ratio y recorta
-                            la imagen a los costados. Si cambias el PNG por uno de otra proporción,
-                            actualiza ese aspect. El degradado de respaldo está tomado de los bordes
-                            reales de la imagen. En móvil se oculta: ahí manda el listado. */}
+                            Banner apaisado (1500×1049) con su propio texto, así que se muestra
+                            ENTERO (`object-contain`) sobre un degradado tomado de los bordes de
+                            la imagen: recortarlo partía las frases ("te dar las nuevas…").
+                            El panel ocupa un ancho fijo y el listado se queda con el resto.
+                            En móvil se oculta: ahí manda el listado. */}
                         {!mascotaFallo && (
-                            <aside className="hidden lg:block shrink-0 h-full w-auto aspect-[1295/1215] overflow-hidden bg-gradient-to-br from-[#3c17cc] via-[#5b25f0] to-[#6b28f5]">
-                                <img
-                                    src={MASCOTA_URL}
-                                    alt={`Niky, la mascota de ${BRAND.name}, presentando las novedades del sistema`}
-                                    onError={() => setMascotaFallo(true)}
-                                    className="w-full h-full object-cover"
-                                />
+                            <aside className="hidden lg:flex shrink-0 h-full w-[46%] flex-col overflow-hidden bg-[linear-gradient(90deg,#1a0ea9_0%,#3214d5_50%,#7c24fc_100%)]">
+                                {/* Encabezado sobre el mismo degradado del borde superior de la imagen, para que no se note el corte. */}
+                                <div className="px-7 pt-7 pb-2 text-white">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Novedades de {BRAND.name}</p>
+                                    <h2 className="mt-1 text-2xl font-black leading-tight">Lo nuevo de {etiquetaMes(NOVEDADES[0]?.fecha.slice(0, 7) ?? '')}</h2>
+                                    <p className="mt-1 text-sm text-white/80">{NOVEDADES.length} funciones y mejoras publicadas.</p>
+                                </div>
+                                <div className="flex-1 min-h-0 flex items-end">
+                                    <img
+                                        src={MASCOTA_URL}
+                                        alt={`Niky, la mascota de ${BRAND.name}, presentando las novedades del sistema`}
+                                        onError={() => setMascotaFallo(true)}
+                                        className="w-full h-auto max-h-full object-contain object-bottom"
+                                    />
+                                </div>
                             </aside>
                         )}
 

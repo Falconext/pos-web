@@ -4,8 +4,8 @@ import { Icon } from '@iconify/react';
 import XtraHeader from '@/components/tienda/XtraHeader';
 import Footer from '@/components/tienda/Footer';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
 
 interface Props {
   slug: string;
@@ -32,15 +32,6 @@ interface Props {
   freeDeliveryRemaining: number;
   freeDeliveryProgress: number;
 }
-
-const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
-  YAPE: { label: 'Yape', icon: 'solar:smartphone-bold' },
-  PLIN: { label: 'Plin', icon: 'solar:wallet-money-bold' },
-  EFECTIVO: { label: 'Efectivo', icon: 'solar:banknote-2-bold' },
-  TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-bold' },
-  TARJETA: { label: 'Tarjeta', icon: 'solar:card-2-bold' },
-  MERCADO_PAGO: { label: 'Mercado Pago', icon: 'simple-icons:mercadopago' },
-};
 
 export default function GadgetsCheckout({
   slug, tienda, carrito, formData, erroresForm, configPago, configEnvio,
@@ -287,27 +278,7 @@ export default function GadgetsCheckout({
             {/* Payment method */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 md:p-6">
               <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Método de pago</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {(['YAPE', 'PLIN', 'EFECTIVO', 'TARJETA', 'MERCADO_PAGO'] as MedioPago[]).map(method => {
-                  const meta = PAYMENT_META[method];
-                  const show =
-                    method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
-                    : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                    : method === 'MERCADO_PAGO' ? Boolean(configPago?.aceptaMercadoPago)
-                    : true;
-                  if (!show) return null;
-                  const active = formData.medioPago === method;
-                  return (
-                    <label key={method}
-                      className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl cursor-pointer text-sm font-bold border-2 transition-all ${active ? '' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
-                      style={active ? { borderColor: cp, background: `${cp}10`, color: cp } : {}}>
-                      <input type="radio" className="hidden" name="medioPago" value={method} checked={active} onChange={handleChange} />
-                      <Icon icon={meta.icon} width={18} />
-                      {meta.label}
-                    </label>
-                  );
-                })}
-              </div>
+              <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={cp} radius="12px" />
             </div>
 
             {/* Notes */}

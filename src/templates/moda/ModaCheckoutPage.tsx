@@ -6,17 +6,7 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import { BancoLogo } from '@/components/shared/BancoLogo';
-
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
-
-const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
-  YAPE:          { label: 'Yape',          icon: 'solar:smartphone-line-duotone' },
-  PLIN:          { label: 'Plin',          icon: 'solar:wallet-money-line-duotone' },
-  EFECTIVO:      { label: 'Efectivo',      icon: 'solar:banknote-2-line-duotone' },
-  TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-line-duotone' },
-  TARJETA:       { label: 'Tarjeta',       icon: 'solar:card-2-line-duotone' },
-  MERCADO_PAGO:  { label: 'Mercado Pago',  icon: 'simple-icons:mercadopago' },
-};
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -194,31 +184,7 @@ export default function ModaCheckoutPage({
             {/* Payment Method */}
             <section>
               <SectionTitle>Pago</SectionTitle>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {(['YAPE', 'PLIN', 'EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADO_PAGO'] as MedioPago[]).map(method => {
-                  const meta = PAYMENT_META[method];
-                  const show =
-                    method === 'EFECTIVO' ? Boolean(configPago?.aceptaEfectivo)
-                    : method === 'TRANSFERENCIA' ? Boolean(configPago?.cuentasBancarias?.length > 0)
-                    : method === 'TARJETA' ? Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey)
-                    : method === 'MERCADO_PAGO' ? Boolean(configPago?.aceptaMercadoPago)
-                    : true;
-                  if (!show) return null;
-                  const active = formData.medioPago === method;
-                  return (
-                    <label
-                      key={method}
-                      className={`flex flex-col items-center justify-center gap-2 py-4 border cursor-pointer transition-all ${
-                        active ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <input type="radio" className="hidden" name="medioPago" value={method} checked={active} onChange={handleChange} />
-                      <Icon icon={meta.icon} width={20} className={active ? 'text-gray-900' : 'text-gray-400'} />
-                      <span className={`text-xs font-semibold ${active ? 'text-gray-900' : 'text-gray-500'}`}>{meta.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={'#111827'} radius="0px" />
 
               {formData.medioPago === 'TRANSFERENCIA' && configPago?.cuentasBancarias?.length > 0 && (
                 <div className="mt-6">

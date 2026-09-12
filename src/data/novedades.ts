@@ -58,6 +58,187 @@ export const TODOS_LOS_PLANES: PlanNovedad[] = ['EMPRENDEDOR', 'NEGOCIO', 'CORPO
 
 /** Novedades ordenadas de la más reciente a la más antigua. */
 export const NOVEDADES: Novedad[] = [
+    // ── Anuncio ──────────────────────────────────────────────────────────────
+    {
+        id: '2026-09-mercado-pago',
+        fecha: '2026-09-11',
+        titulo: 'Mercado Pago llega el 25 de noviembre a todas las tiendas virtuales',
+        descripcion:
+            'Desde el 25 de noviembre tus clientes podrán pagar con tarjeta, Yape y billeteras en tu tienda virtual a través de Mercado Pago, con el cobro conciliado solo en tu caja. Niky ya lo tiene en la mira: te avisamos aquí el mismo día del lanzamiento.',
+        categoria: 'Tienda virtual',
+        tipo: 'NUEVO',
+        // La tienda virtual (tieneTienda) solo existe en Negocio y Corporativo.
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        estado: 'PROXIMAMENTE',
+        donde: 'Tienda Virtual → Configuración → Medios de pago (desde el 25/11)',
+    },
+
+    // ── 11 de septiembre ─────────────────────────────────────────────────────
+    {
+        id: '2026-09-couriers-mapa',
+        fecha: '2026-09-11',
+        titulo: 'Tablero de couriers Shalom y Olva, con mapa',
+        descripcion:
+            'Una vista nueva para tus envíos: cuánto sale por cada courier y por tus repartidores, tasa y tiempo de entrega, flete y cobros contra entrega, qué está en camino y qué ya se retrasó, con rastreo desde la misma tabla. Además un mapa del Perú con las ciudades a donde más envías.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Couriers Shalom / Olva',
+        nota: 'Aparece cuando tu plan tiene Shalom u Olva habilitados.',
+    },
+    {
+        id: '2026-09-clientes-y-envios',
+        fecha: '2026-09-11',
+        titulo: 'Qué ciudades y qué clientes te compran más',
+        descripcion:
+            'Pestaña nueva en el Análisis Financiero: ciudades que más te compran (por el destino del envío o la ubicación del cliente), ranking de clientes, tu cliente más fiel, y el ranking de repartidores y couriers por envíos entregados.',
+        categoria: 'Clientes',
+        tipo: 'NUEVO',
+        donde: 'Finanzas → Análisis Financiero → Clientes y envíos',
+        nota: 'Usa el período "Histórico" para medir la fidelidad con todo lo vendido.',
+    },
+    {
+        id: '2026-09-catalogo-por-sede',
+        fecha: '2026-09-11',
+        titulo: 'Catálogo independiente por sede',
+        descripcion:
+            'Si lo activas, cada sede maneja sus propios productos: lo que creas o importas desde una sede queda solo en esa sede, el inventario y el punto de venta muestran únicamente lo disponible ahí, y desde la ficha eliges en qué sedes está cada producto. Puedes asignar productos a una sede de forma masiva.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Perfil → Configuración → Sedes y catálogo',
+        nota: 'Viene apagado (catálogo compartido): tiene sentido cuando manejas más de una sede.',
+    },
+    {
+        id: '2026-09-marca-sistema',
+        fecha: '2026-09-11',
+        titulo: 'Comprobantes solo con tu marca',
+        descripcion:
+            'Ahora decides si el pie "Sistema punto de venta · Desarrollado por" sale o no en tus comprobantes. Apágalo y el ticket, el A4, el A5 y la cotización se imprimen únicamente con los datos de tu negocio, tanto en la impresión como en el PDF que envías por WhatsApp o correo.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Perfil → Configuración → Impresión de comprobantes',
+        // El PDF lo rinde el servidor, así que aplica también a lo que la app comparte.
+        plataformas: ['WEB', 'MOVIL'],
+    },
+    {
+        id: '2026-09-observaciones-recordadas',
+        fecha: '2026-09-11',
+        titulo: 'Las observaciones de la venta se recuerdan solas',
+        descripcion:
+            'Lo que escribes en Observaciones al configurar una venta se guarda automáticamente y se propone en la siguiente, para no tipear siempre lo mismo. Un botón Limpiar lo borra cuando quieras.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Crear comprobante → Configurar venta → Observaciones',
+    },
+    {
+        id: '2026-09-rastreo-ultimo-estado',
+        fecha: '2026-09-11',
+        titulo: 'El rastreo no pierde el último estado conocido',
+        descripcion:
+            'Si Shalom u Olva no responden por un momento, el sistema conserva el último estado del envío y lo muestra marcado como "último estado conocido", en vez de dejarte la ventana vacía.',
+        categoria: 'Envíos',
+        tipo: 'CORRECCION',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        plataformas: ['WEB', 'MOVIL'],
+    },
+
+    // ── 08 y 09 de septiembre ────────────────────────────────────────────────
+    {
+        id: '2026-09-finanzas-por-sede',
+        fecha: '2026-09-09',
+        titulo: 'Análisis Financiero por sede',
+        descripcion:
+            'Elige una sede y la Rentabilidad, las Categorías, los Productos y los Métodos de pago se calculan solo con lo de esa sede. Los gastos marcados "toda la empresa" se informan aparte para no cargárselos a una sola.',
+        categoria: 'Finanzas',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Finanzas → Análisis Financiero → selector Sede',
+        nota: 'Los usuarios de una sede ven siempre la suya.',
+    },
+    {
+        id: '2026-09-cotizacion-sin-igv',
+        fecha: '2026-09-09',
+        titulo: 'Cotización con precios unitarios sin IGV',
+        descripcion:
+            'Opción para imprimir la columna de precio como valor unitario (sin IGV) y el importe de la línea como valor de venta, como lo piden muchas empresas para comparar propuestas. Los totales siguen mostrando gravadas, IGV y total.',
+        categoria: 'Facturación',
+        tipo: 'NUEVO',
+        donde: 'Cotizaciones → Configurar formato → Precios unitarios sin IGV',
+    },
+    {
+        id: '2026-09-cotizacion-observaciones-pie',
+        fecha: '2026-09-09',
+        titulo: 'Cotización: observaciones por renglón y pie editable',
+        descripcion:
+            'Cada línea que escribes en Observaciones sale como un punto aparte en el PDF, y el mensaje final de agradecimiento ahora lo redactas tú (o dejas el de siempre). Los saltos de línea también se respetan en boletas y facturas.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Cotizaciones → Configurar formato → Mensaje de agradecimiento',
+    },
+    {
+        id: '2026-09-kardex-excel',
+        fecha: '2026-09-08',
+        titulo: 'Exportar los movimientos del Kardex a Excel',
+        descripcion:
+            'Los movimientos de inventario que estás viendo (con sus filtros de fecha, producto y tipo) se descargan en Excel o CSV con un clic, listos para revisar con tu contador.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Kardex → Movimientos → Exportar',
+    },
+    {
+        id: '2026-09-panel-ventas-sede-excel',
+        fecha: '2026-09-08',
+        titulo: 'Panel de ventas: filtro por sede y Excel por producto',
+        descripcion:
+            'El panel del día se puede filtrar por sede y los filtros quedaron agrupados para no ocupar toda la pantalla. El Excel exportado ahora trae una fila por producto vendido y la columna Total Unid.',
+        categoria: 'Ventas',
+        tipo: 'MEJORA',
+        donde: 'Ventas → Panel de ventas',
+    },
+    {
+        id: '2026-09-caja-turnos-abiertos',
+        fecha: '2026-09-08',
+        titulo: 'Aviso de turnos de caja sin cerrar',
+        descripcion:
+            'Al abrir caja, el sistema te avisa si quedó un turno anterior abierto para que lo cierres antes de seguir. Los arqueos ya cerrados quedan protegidos y no se pueden alterar.',
+        categoria: 'Ventas',
+        tipo: 'MEJORA',
+        donde: 'Ventas → Caja y bancos',
+        // En la app: la caja móvil usa los mismos endpoints de apertura/cierre.
+        plataformas: ['WEB', 'MOVIL'],
+    },
+    {
+        id: '2026-09-gastos-caja-finanzas',
+        fecha: '2026-09-08',
+        titulo: 'Los gastos de caja chica ya cuentan en tus finanzas',
+        descripcion:
+            'Lo que registras como gasto desde la caja (pasajes, compras menores, propinas) ahora aparece en la Rentabilidad, en el Dashboard y en Contabilidad como egreso del día, sin que tengas que volver a cargarlo. Además siguen visibles después de cerrar el turno.',
+        categoria: 'Finanzas',
+        tipo: 'MEJORA',
+        donde: 'Finanzas → Análisis Financiero → Rentabilidad',
+    },
+    {
+        id: '2026-09-comisiones-correcciones',
+        fecha: '2026-09-10',
+        titulo: 'Comisiones: se pagan aunque SUNAT ya tuviera el comprobante',
+        descripcion:
+            'Cuando SUNAT respondía que la boleta o factura ya estaba registrada, la comisión del vendedor no se generaba; ahora sí. El corte diario de comisiones también usa la hora del Perú, así una venta de la noche ya no se pasaba al día siguiente.',
+        categoria: 'Ventas',
+        tipo: 'CORRECCION',
+        donde: 'Mis Comisiones · Comisiones del equipo',
+    },
+    {
+        id: '2026-09-envios-correcciones',
+        fecha: '2026-09-09',
+        titulo: 'Envíos: adelanto sin duplicar y guías de Shalom más seguras',
+        descripcion:
+            'Al coordinar el envío de una venta con adelanto ya no se registraba el pago dos veces. Shalom ya no da por creada una guía que rechazó, pide el tipo de producto y no adivina la agencia destino cuando el nombre es ambiguo: te la pide a ti.',
+        categoria: 'Envíos',
+        tipo: 'CORRECCION',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+    },
+
     // ── 07 de septiembre ─────────────────────────────────────────────────────
     {
         id: '2026-09-ventas-por-producto',

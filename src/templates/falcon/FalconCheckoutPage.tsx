@@ -5,18 +5,8 @@ import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { BancoLogo } from '@/components/shared/BancoLogo';
 import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
-import { GREEN, resolveFalconGreen, money, getImg, editable, withPreviewQuery, FalconHeader, FalconFooter, falconFadeUp, falconScaleIn, falconStagger, falconTap } from './FalconShared';
-
-type MedioPago = 'YAPE' | 'PLIN' | 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'MERCADO_PAGO';
-
-const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
-  YAPE: { label: 'Yape', icon: 'solar:smartphone-bold' },
-  PLIN: { label: 'Plin', icon: 'solar:wallet-money-bold' },
-  EFECTIVO: { label: 'Efectivo', icon: 'solar:banknote-2-bold' },
-  TRANSFERENCIA: { label: 'Transferencia', icon: 'solar:card-transfer-bold' },
-  TARJETA: { label: 'Tarjeta', icon: 'solar:card-2-bold' },
-  MERCADO_PAGO: { label: 'Mercado Pago', icon: 'simple-icons:mercadopago' },
-};
+import { resolveFalconGreen, money, getImg, editable, withPreviewQuery, FalconHeader, FalconFooter, falconFadeUp, falconScaleIn, falconStagger, falconTap } from './FalconShared';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 const inputCls = (field: string, errors: Record<string, string>) => {
   const base = 'h-12 w-full rounded-md border bg-white px-4 text-sm font-semibold text-gray-900 outline-none transition-colors placeholder:text-gray-400';
@@ -43,15 +33,6 @@ export default function FalconCheckoutPage(props: TemplateCheckoutPageProps) {
   const go = (path: string) => navigate(withPreviewQuery(path, diseno));
 
   const hasBankAccounts = Array.isArray(configPago?.cuentasBancarias) && configPago.cuentasBancarias.length > 0;
-  const acceptedPaymentMethods = ([
-    configPago?.yapeQR || configPago?.yapeQrUrl || configPago?.yapeNumero ? 'YAPE' : null,
-    configPago?.plinQR || configPago?.plinQrUrl || configPago?.plinNumero ? 'PLIN' : null,
-    configPago?.aceptaEfectivo ? 'EFECTIVO' : null,
-    hasBankAccounts ? 'TRANSFERENCIA' : null,
-    configPago?.aceptaTarjeta && configPago?.culqiPublicKey ? 'TARJETA' : null,
-    configPago?.aceptaMercadoPago ? 'MERCADO_PAGO' : null,
-  ].filter(Boolean) as MedioPago[]);
-  const paymentMethods = acceptedPaymentMethods.length ? acceptedPaymentMethods : (['YAPE', 'EFECTIVO'] as MedioPago[]);
 
   const Section = ({ icon, step, title, children }: { icon: string; step: number; title: string; children: React.ReactNode }) => (
     <motion.section variants={falconFadeUp} whileHover={{ y: -2 }} className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
@@ -128,18 +109,7 @@ export default function FalconCheckoutPage(props: TemplateCheckoutPageProps) {
 
           {/* Payment */}
           <Section icon="solar:card-bold" step={3} title={editable(diseno?.falconCheckoutPaymentTitle, 'Método de pago')}>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {paymentMethods.map((method) => {
-                const meta = PAYMENT_META[method];
-                const active = formData.medioPago === method;
-                return (
-                  <motion.label key={method} whileHover={{ y: -2 }} whileTap={falconTap} className="flex cursor-pointer items-center gap-3 rounded-md border-2 px-4 py-4 text-sm font-black transition-colors" style={active ? { borderColor: green, background: `${green}14`, color: '#111' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
-                    <input type="radio" className="hidden" name="medioPago" value={method} checked={active} onChange={handleChange} />
-                    <Icon icon={meta.icon} width={22} /> {meta.label}
-                  </motion.label>
-                );
-              })}
-            </div>
+            <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={green} radius="6px" />
             {formData.medioPago === 'TRANSFERENCIA' && hasBankAccounts && (
               <div className="mt-4 space-y-3">
                 {configPago.cuentasBancarias.map((cuenta: any, i: number) => (

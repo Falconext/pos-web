@@ -5,6 +5,7 @@ import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { GRO, GroFooter, GroHeader, GroProductImage, GroWhatsAppFab, groFont, groPrimary } from './GroginParts';
 import { groCard, groPage, groSection, groStagger, groTap, groViewport } from './motion';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 function money(value: number) {
   return `S/ ${Number(value || 0).toFixed(2)}`;
@@ -34,7 +35,7 @@ export default function GroginCheckoutPage(props: TemplateCheckoutPageProps) {
   const font = groFont(diseno);
   const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
   const canSubmit = !enviando && carritoState.length > 0;
-  const deliveryType = formData.tipoEntrega || 'delivery';
+  const deliveryType = formData.tipoEntrega || 'RECOJO';
   const ocultarEnvio = Boolean(diseno?.abarrotesOcultarEnvio);
 
   return (
@@ -105,27 +106,22 @@ export default function GroginCheckoutPage(props: TemplateCheckoutPageProps) {
                 <label className="block">
                   <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: GRO.inkSoft }}>Tipo de entrega</span>
                   <select name="tipoEntrega" value={deliveryType} onChange={handleChange} className={inputClass(erroresForm.tipoEntrega)}>
-                    {configEnvio?.aceptaRecojo !== false && <option value="recojo">Recojo en tienda</option>}
-                    {configEnvio?.aceptaEnvio !== false && <option value="delivery">Envío a domicilio</option>}
+                    {configEnvio?.aceptaRecojo !== false && <option value="RECOJO">Recojo en tienda</option>}
+                    {configEnvio?.aceptaEnvio !== false && <option value="ENVIO">Envío a domicilio</option>}
                   </select>
                 </label>
-                <label className="block">
+                <div className="block md:col-span-2">
                   <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: GRO.inkSoft }}>Medio de pago</span>
-                  <select name="medioPago" value={formData.medioPago || 'efectivo'} onChange={handleChange} className={inputClass(erroresForm.medioPago)}>
-                    {configPago?.aceptaEfectivo !== false && <option value="efectivo">Efectivo</option>}
-                    {configPago?.aceptaYape !== false && <option value="yape">Yape</option>}
-                    {configPago?.aceptaPlin !== false && <option value="plin">Plin</option>}
-                    {configPago?.aceptaTarjeta && <option value="tarjeta">Tarjeta</option>}
-                  </select>
-                </label>
+                  <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={primary} radius="12px" className="mt-2" />
+                </div>
                 <label className="block md:col-span-2">
                   <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: GRO.inkSoft }}>Dirección de entrega</span>
-                  <input name="direccionEntrega" value={formData.direccionEntrega || ''} onChange={handleChange} className={inputClass(erroresForm.direccionEntrega)} />
-                  {erroresForm.direccionEntrega && <p className="mt-1.5 text-xs font-medium text-red-500">{erroresForm.direccionEntrega}</p>}
+                  <input name="clienteDireccion" value={formData.clienteDireccion || ''} onChange={handleChange} className={inputClass(erroresForm.clienteDireccion)} />
+                  {erroresForm.clienteDireccion && <p className="mt-1.5 text-xs font-medium text-red-500">{erroresForm.clienteDireccion}</p>}
                 </label>
                 <label className="block md:col-span-2">
                   <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: GRO.inkSoft }}>Nota del pedido (opcional)</span>
-                  <textarea name="notaPedido" value={formData.notaPedido || ''} onChange={handleChange} rows={3} className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--gro-cp)]" placeholder="Referencias de entrega, horario preferido..." />
+                  <textarea name="observaciones" value={formData.observaciones || ''} onChange={handleChange} rows={3} className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--gro-cp)]" placeholder="Referencias de entrega, horario preferido..." />
                 </label>
               </div>
             </motion.div>

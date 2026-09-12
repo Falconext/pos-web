@@ -231,9 +231,7 @@ export default function MediosDePagoConfig() {
         </div>
       </div>
 
-      {/* Mercado Pago (OAuth) — conexión de la cuenta del negocio */}
-      <MercadoPagoConnect />
-
+      {/* Guardar aplica solo a Yape/Plin; Mercado Pago se conecta por OAuth y no requiere guardar. */}
       <div className="mt-5 flex justify-end">
         <button
           type="button"
@@ -242,9 +240,12 @@ export default function MediosDePagoConfig() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon icon={saving ? 'solar:refresh-bold' : 'solar:diskette-bold'} className={saving ? 'animate-spin' : ''} width={16} />
-          {saving ? 'Guardando...' : 'Guardar medios de pago'}
+          {saving ? 'Guardando...' : 'Guardar Yape y Plin'}
         </button>
       </div>
+
+      {/* Mercado Pago (OAuth) — conexión de la cuenta del negocio */}
+      <MercadoPagoConnect />
     </>
   );
 }

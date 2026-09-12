@@ -5,6 +5,7 @@ import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { APICULTURA_BANNER, ApiculturaFooter, ApiculturaHeader, ApiculturaProductCard } from './ApiculturaParts';
 import { honeyCard, honeyHover, honeyPage, honeySection, honeyStagger, honeyTap, honeyViewport } from './motion';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 const honeyPattern = {
   backgroundImage:
@@ -60,7 +61,7 @@ export default function ApiculturaCheckoutPage(props: TemplateCheckoutPageProps)
 
   const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
   const canSubmit = !enviando && carritoState.length > 0;
-  const deliveryType = formData.tipoEntrega || 'delivery';
+  const deliveryType = formData.tipoEntrega || 'RECOJO';
   // El emprendedor coordina el envío internamente: oculta la línea "Envío" y no lo suma al total.
   const ocultarEnvio = Boolean(diseno?.apiculturaOcultarEnvio);
 
@@ -97,7 +98,7 @@ export default function ApiculturaCheckoutPage(props: TemplateCheckoutPageProps)
         <motion.section variants={honeyStagger} className="mb-10 grid gap-4 md:grid-cols-3">
           {[
             ['solar:user-check-bold', 'Datos del cliente', 'Identificación y contacto'],
-            ['solar:delivery-bold', 'Entrega', deliveryType === 'recojo' ? 'Recojo en tienda' : 'Delivery configurado'],
+            ['solar:delivery-bold', 'Entrega', deliveryType === 'RECOJO' ? 'Recojo en tienda' : 'Delivery configurado'],
             ['solar:shield-check-bold', 'Pago seguro', 'Pedido validado antes de enviar'],
           ].map(([icon, title, text]) => (
             <motion.div key={title} variants={honeyCard} whileHover={honeyHover} className="flex items-center gap-4 border border-gray-100 bg-[#F7F7F7] p-5">
@@ -159,30 +160,23 @@ export default function ApiculturaCheckoutPage(props: TemplateCheckoutPageProps)
                 <label className="block">
                   <span className="text-xs font-black uppercase tracking-[0.15em] text-gray-500">Tipo de entrega</span>
                   <select name="tipoEntrega" value={deliveryType} onChange={handleChange} className={inputClass(erroresForm.tipoEntrega)}>
-                    {configEnvio?.aceptaRecojo !== false && <option value="recojo">Recojo en tienda</option>}
-                    {configEnvio?.aceptaEnvio !== false && <option value="delivery">Entrega</option>}
+                    {configEnvio?.aceptaRecojo !== false && <option value="RECOJO">Recojo en tienda</option>}
+                    {configEnvio?.aceptaEnvio !== false && <option value="ENVIO">Entrega</option>}
                   </select>
                   {erroresForm.tipoEntrega && <p className="mt-2 text-xs font-bold text-red-500">{erroresForm.tipoEntrega}</p>}
                 </label>
-                <label className="block">
+                <div className="block md:col-span-2">
                   <span className="text-xs font-black uppercase tracking-[0.15em] text-gray-500">Medio de pago</span>
-                  <select name="medioPago" value={formData.medioPago || 'efectivo'} onChange={handleChange} className={inputClass(erroresForm.medioPago)}>
-                    {configPago?.aceptaEfectivo !== false && <option value="efectivo">Efectivo</option>}
-                    {configPago?.aceptaYape !== false && <option value="yape">Yape</option>}
-                    {configPago?.aceptaPlin !== false && <option value="plin">Plin</option>}
-                    {configPago?.aceptaTarjeta && <option value="tarjeta">Tarjeta</option>}
-                    {configPago?.aceptaMercadoPago && <option value="MERCADO_PAGO">Mercado Pago</option>}
-                  </select>
-                  {erroresForm.medioPago && <p className="mt-2 text-xs font-bold text-red-500">{erroresForm.medioPago}</p>}
-                </label>
+                  <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={cp} radius="0px" className="mt-2" />
+                </div>
                 <label className="block md:col-span-2">
                   <span className="text-xs font-black uppercase tracking-[0.15em] text-gray-500">Dirección</span>
-                  <input name="direccionEntrega" value={formData.direccionEntrega || ''} onChange={handleChange} className={inputClass(erroresForm.direccionEntrega)} />
-                  {erroresForm.direccionEntrega && <p className="mt-2 text-xs font-bold text-red-500">{erroresForm.direccionEntrega}</p>}
+                  <input name="clienteDireccion" value={formData.clienteDireccion || ''} onChange={handleChange} className={inputClass(erroresForm.clienteDireccion)} />
+                  {erroresForm.clienteDireccion && <p className="mt-2 text-xs font-bold text-red-500">{erroresForm.clienteDireccion}</p>}
                 </label>
                 <label className="block md:col-span-2">
                   <span className="text-xs font-black uppercase tracking-[0.15em] text-gray-500">Nota del pedido</span>
-                  <textarea name="notaPedido" value={formData.notaPedido || ''} onChange={handleChange} rows={5} className={textareaClass()} placeholder="Indicaciones, referencia o datos adicionales..." />
+                  <textarea name="observaciones" value={formData.observaciones || ''} onChange={handleChange} rows={5} className={textareaClass()} placeholder="Indicaciones, referencia o datos adicionales..." />
                 </label>
               </div>
             </motion.div>

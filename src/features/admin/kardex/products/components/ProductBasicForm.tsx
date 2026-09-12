@@ -696,7 +696,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 placeholder=""
                                             />
                                         </div>
-                                        <div className="w-24 shrink-0" title="Unidades que trae el paquete">
+                                        <div className="w-32 shrink-0" title="Unidades que trae el paquete">
                                             <InputPro
                                                 autocomplete="off"
                                                 type="number"
@@ -710,7 +710,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 placeholder=""
                                             />
                                         </div>
-                                        <div className="w-28 shrink-0" title="Precio TOTAL del paquete (opcional). Vacío = precio unitario × unidades">
+                                        <div className="w-36 shrink-0" title="Precio TOTAL del paquete (opcional). Vacío = precio unitario × unidades">
                                             <InputPro
                                                 autocomplete="off"
                                                 type="number"

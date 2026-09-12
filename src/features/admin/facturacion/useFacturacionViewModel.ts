@@ -1345,6 +1345,54 @@ export const useFacturacionViewModel = () => {
             }
         }
 
+        // Configuración del negocio: el kit entra al carrito como UN solo producto
+        // (línea "KIT: X" al precio del kit). El stock de cada componente lo descuenta
+        // el backend al emitir (DetalleComprobante.comboId). Cada clic suma 1 kit.
+        if ((auth?.empresa as any)?.kitsComoUnaLinea) {
+            const precioKit = Number(combo?.precioCombo || 0);
+            const existente = productsInvoice.findIndex((p: any) => Number(p?.comboId) === Number(combo.id));
+            if (existente >= 0) {
+                const actual = productsInvoice[existente];
+                const nuevaCantidad = Number(actual?.cantidad || 0) + 1;
+                const subtotal = precioKit * nuevaCantidad;
+                updateProductInvoice(existente, {
+                    cantidad: nuevaCantidad,
+                    cantidadOriginal: nuevaCantidad,
+                    total: subtotal.toFixed(2),
+                    sale: (subtotal / 1.18).toFixed(2),
+                    igv: (subtotal - subtotal / 1.18).toFixed(2),
+                });
+            } else {
+                addProductsInvoice({
+                    productoId: null,
+                    id: null,
+                    comboId: Number(combo.id),
+                    descripcion: `KIT: ${String(combo?.nombre || '').toUpperCase()}`,
+                    detalleKit: (combo.items || []).map((it: any) => `${it?.cantidad || 1} × ${it?.producto?.descripcion || ''}`).join(', '),
+                    imagenUrl: combo?.imagenUrl || null,
+                    cantidadInicial: 1,
+                    precioUnitario: precioKit,
+                    precioBase: precioKit,
+                    precioOrigen: 'KIT',
+                    preciosMayorista: [],
+                    descuento: 0,
+                    // El stock real lo valida el backend componente por componente; en el
+                    // carrito se limita al kit más escaso para no prometer de más.
+                    stock: Math.max(0, Math.min(...combo.items.map((it: any) => Math.floor(Number(it?.producto?.stock || 0) / Math.max(1, Number(it?.cantidad || 1)))))),
+                    unidadMedida: 'KIT',
+                    unidadMedidaNombre: 'KIT',
+                    unidadMedidaCodigo: 'ZZ',
+                    tipoAfectacionIGV: '10',
+                    afectacionNombre: 'Gravado – Operación Onerosa',
+                    estado: 'ACTIVO',
+                    esItemLibre: true,
+                    esKit: true,
+                } as any);
+            }
+            useAlertStore.getState().alert(`Kit "${String(combo?.nombre || "").toUpperCase()}" agregado al comprobante`, "success");
+            return;
+        }
+
         const lineasDistribuidas = distribuirPrecioCombo(combo);
         lineasDistribuidas.forEach((linea: any) => {
             mergeOrAddProductToCart(
@@ -2461,6 +2509,8 @@ export const useFacturacionViewModel = () => {
             detalles: [
                 ...(productsInvoice?.map((item: any) => ({
                     productoId: Number(item?.productoId || item?.id) || null,
+                    // Kit como una sola línea: el backend descuenta el stock de sus componentes.
+                    ...(item?.comboId ? { comboId: Number(item.comboId) } : {}),
                     // Línea de PAQUETE (ej. six-pack): la cantidad va en unidades
                     // (así el kardex descuenta el stock real), pero la descripción
                     // aclara la equivalencia en packs para el cliente:
