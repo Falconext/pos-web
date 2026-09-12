@@ -596,95 +596,73 @@ export default function ProductsView() {
                             </label>
                         )}
                         <div className="w-full flex md:top-3 relative z-50 lg:w-auto overflow-visible pb-2 lg:pb-0">
-                            <div className="flex gap-2 px-1 items-center overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                <Button color="default" onClick={() => actions.setIsOpenModalCategory(true)} className="text-sm !bg-blue-500 !text-white border-none shadow-sm shadow-blue-200/50">
-                                    <Icon icon="solar:tag-bold-duotone" className="mr-1.5 !text-white" /> Categorías
+                            {/* Un solo menú de acciones (antes eran 5 botones sueltos): catálogo,
+                                Excel/CSV, PDF y sedes. Reusa el estado/ref del dropdown existente. */}
+                            <div className="relative inline-block ml-auto top-3" ref={dropdownRef}>
+                                <Button
+                                    color="default"
+                                    onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
+                                    className="text-sm flex items-center gap-1.5 !bg-dark-600 !text-white border-none shadow-sm shadow-violet-200/50"
+                                >
+                                    <Icon icon="solar:widget-4-bold-duotone" className="!text-white" width={16} />
+                                    Herramientas
+                                    <Icon icon={showOptionsDropdown ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"} width={14} />
                                 </Button>
-                                <Button color="default" onClick={() => actions.setIsOpenModalBrands(true)} className="text-sm !bg-emerald-500 !text-white border-none shadow-sm shadow-emerald-200/50">
-                                    <Icon icon="solar:star-bold-duotone" className="mr-1.5 !text-white" /> Marcas
-                                </Button>
-                                <div className="relative inline-block" ref={dropdownRef}>
-                                    <Button
-                                        color="default"
-                                        onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
-                                        className="text-sm flex items-center gap-1 !bg-amber-500 !text-white border-none shadow-sm shadow-amber-200/50"
-                                    >
-                                        <Icon icon="solar:file-bold-duotone" className="mr-1 !text-white" width={16} />
-                                        Excel / CSV
-                                        <Icon icon={showOptionsDropdown ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"} className="ml-1" width={14} />
-                                    </Button>
 
-                                    {showOptionsDropdown && (
-                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1E2435] border border-gray-100 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
+                                {showOptionsDropdown && (() => {
+                                    const cerrar = () => setShowOptionsDropdown(false);
+                                    const item = (icon: string, color: string, label: string, onClick: () => void, title?: string) => (
+                                        <button
+                                            key={label}
+                                            type="button"
+                                            onClick={() => { cerrar(); onClick(); }}
+                                            title={title}
+                                            className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                                        >
+                                            <Icon icon={icon} className={`mr-2.5 ${color}`} width={18} />
+                                            {label}
+                                        </button>
+                                    );
+                                    const seccion = (t: string) => (
+                                        <p className="px-4 pt-2 pb-1 text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">{t}</p>
+                                    );
+                                    return (
+                                        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#1E2435] border border-gray-100 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls"
                                                 ref={vm.fileInputRef}
-                                                onChange={(e) => {
-                                                    actions.handleImportExcel(e);
-                                                    setShowOptionsDropdown(false);
-                                                }}
+                                                onChange={(e) => { actions.handleImportExcel(e); cerrar(); }}
                                                 className="hidden"
                                             />
-                                            <button
-                                                onClick={() => {
-                                                    setShowOptionsDropdown(false);
-                                                    // Los productos que se ven ahora (ya filtrados por
-                                                    // la búsqueda/categoría): dentro del modal se eligen
-                                                    // cuáles etiquetar y cuántas etiquetas de cada uno.
-                                                    setEtiquetasIds(productsSource.map((p: any) => p.id));
-                                                }}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-400 transition-colors"
-                                            >
-                                                <Icon icon="mdi:barcode" className="mr-2 text-violet-500" width={18} />
-                                                Etiquetas de código de barras
-                                            </button>
-                                            <button
-                                                onClick={() => { actions.exportProducts(); setShowOptionsDropdown(false); }}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 transition-colors"
-                                            >
-                                                <Icon icon="solar:export-bold" className="mr-2 text-green-500" width={18} />
-                                                Exportar Productos
-                                            </button>
-                                            <button
-                                                onClick={() => { vm.fileInputRef.current?.click(); }}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
-                                            >
-                                                <Icon icon="solar:import-bold" className="mr-2 text-blue-500" width={18} />
-                                                Importar desde Excel
-                                            </button>
-                                            <div className="mx-4 my-1 border-t border-gray-100 dark:border-slate-700"></div>
-                                            <button
-                                                onClick={async () => {
-                                                    setShowOptionsDropdown(false);
-                                                    const baseUrl = (import.meta.env.VITE_API_URL as string) || '';
-                                                    const resp = await fetch(`${baseUrl}/productos/plantilla`, {
-                                                        headers: { Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}` },
-                                                    });
-                                                    const blob = await resp.blob();
-                                                    const url = URL.createObjectURL(blob);
-                                                    const a = document.createElement('a');
-                                                    a.href = url;
-                                                    a.download = 'plantilla_productos.xlsx';
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                }}
-                                                className="w-full flex items-center px-4 py-2.5 text-[13px] font-[500] text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
-                                            >
-                                                <Icon icon="solar:file-download-bold" className="mr-2 text-amber-500" width={18} />
-                                                Descargar Modelo (Guía)
-                                            </button>
+                                            {seccion('Catálogo')}
+                                            {item('solar:tag-bold-duotone', 'text-blue-500', 'Categorías', () => actions.setIsOpenModalCategory(true))}
+                                            {item('solar:star-bold-duotone', 'text-emerald-500', 'Marcas', () => actions.setIsOpenModalBrands(true))}
+                                            {item('solar:shop-bold', 'text-blue-600', 'Catálogo PDF', () => setIsOpenModalPreviewCatalogo(true))}
+                                            {vm.tieneVariasSedes && item('solar:shop-2-bold-duotone', 'text-violet-500', 'Asignar a sede', () => actions.setIsOpenModalAsignarSedes(true), 'Asignar o quitar varios productos de una sede')}
+                                            <div className="mx-4 my-1 border-t border-gray-100 dark:border-slate-700" />
+                                            {seccion('Excel / CSV')}
+                                            {/* Los productos que se ven ahora (ya filtrados): dentro del modal se
+                                                eligen cuáles etiquetar y cuántas etiquetas de cada uno. */}
+                                            {item('mdi:barcode', 'text-violet-500', 'Etiquetas de código de barras', () => setEtiquetasIds(productsSource.map((p: any) => p.id)))}
+                                            {item('solar:export-bold', 'text-green-500', 'Exportar productos', () => actions.exportProducts())}
+                                            {item('solar:import-bold', 'text-blue-500', 'Importar desde Excel', () => vm.fileInputRef.current?.click())}
+                                            {item('solar:file-download-bold', 'text-amber-500', 'Descargar modelo (guía)', async () => {
+                                                const baseUrl = (import.meta.env.VITE_API_URL as string) || '';
+                                                const resp = await fetch(`${baseUrl}/productos/plantilla`, {
+                                                    headers: { Authorization: `Bearer ${localStorage.getItem('ACCESS_TOKEN')}` },
+                                                });
+                                                const blob = await resp.blob();
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = 'plantilla_productos.xlsx';
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                            })}
                                         </div>
-                                    )}
-                                </div>
-                                <Button color="default" onClick={() => setIsOpenModalPreviewCatalogo(true)} className="text-sm !bg-blue-600 !text-white border-none shadow-sm shadow-blue-200/50">
-                                    <Icon icon="solar:shop-bold" className="mr-1.5 !text-white" /> Catálogo PDF
-                                </Button>
-                                {vm.tieneVariasSedes && (
-                                    <Button color="default" onClick={() => actions.setIsOpenModalAsignarSedes(true)} className="text-sm !bg-violet-600 !text-white border-none shadow-sm shadow-violet-200/50" title="Asignar o quitar varios productos de una sede">
-                                        <Icon icon="solar:shop-2-bold-duotone" className="mr-1.5 !text-white" /> Asignar a sede
-                                    </Button>
-                                )}
+                                    );
+                                })()}
                             </div>
                              </div>
                 </div>
@@ -815,6 +793,17 @@ export default function ProductsView() {
             information={vm.tieneVariasSedes
                 ? `${vm.labels.eliminarInfo} Se eliminará de TODAS las sedes. Si solo quieres que deje de aparecer en una sede, usa "Quitar de esta sede" en el menú de acciones.`
                 : vm.labels.eliminarInfo}
+        />
+
+        <ModalConfirm
+            isOpenModal={!!vm.quitarConStock}
+            setIsOpenModal={(v: boolean) => { if (!v) actions.setQuitarConStock(null); }}
+            confirmSubmit={actions.confirmarQuitarConStock}
+            confirmText="Quitar y poner stock en 0"
+            title={`Este producto tiene stock en ${vm.selectedSedeName ?? 'esta sede'}`}
+            information={vm.quitarConStock
+                ? `"${vm.quitarConStock.descripcion}" tiene ${vm.quitarConStock.stock} unidades en ${vm.selectedSedeName ?? 'esta sede'}. Si el stock realmente está en otra sede, usa Traslado. Si ese stock no existe aquí (se cargó por error), puedes quitarlo ahora: se registrará una SALIDA en el kardex por ${vm.quitarConStock.stock} unidades y el producto dejará de aparecer en ${vm.selectedSedeName ?? 'esta sede'}.`
+                : ''}
         />
 
         {vm.tieneVariasSedes && (

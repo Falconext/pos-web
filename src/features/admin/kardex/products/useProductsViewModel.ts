@@ -741,13 +741,17 @@ export const useProductsViewModel = () => {
      * Asignar / quitar UN producto de la sede seleccionada (menú de acciones).
      * Quitar falla si tiene stock en la sede: el backend lo devuelve en `omitidos`.
      */
-    const toggleDisponibleEnSede = async (producto: any) => {
+    // Quitar con stock: se pide confirmación para dejar el stock de la sede en 0
+    // (salida en kardex) y quitar igual — caso "se cargó stock en la sede equivocada".
+    const [quitarConStock, setQuitarConStock] = useState<{ id: number; descripcion: string; stock: number } | null>(null);
+    const toggleDisponibleEnSede = async (producto: any, ajustarStockACero = false) => {
         if (!effectiveSedeId) return;
         const disponible = producto?.disponibleEnSede !== false;
         const resp: any = await patch('productos/sedes/asignar', {
             sedeId: effectiveSedeId,
             productoIds: [Number(producto.id)],
             disponible: !disponible,
+            ...(ajustarStockACero ? { ajustarStockACero: true } : {}),
         });
         if (!resp?.success) {
             useAlertStore.getState().alert(resp?.error || 'No se pudo actualizar la asignación', 'error');
@@ -755,17 +759,23 @@ export const useProductsViewModel = () => {
         }
         const omitido = (resp?.data?.omitidos ?? [])[0];
         if (omitido) {
-            useAlertStore.getState().alert(`No puedes quitar "${omitido.descripcion}" de ${selectedSedeName ?? 'la sede'}: aún tiene ${omitido.stock} en stock. Traslada o ajusta el stock primero.`, 'warning');
+            setQuitarConStock({ id: Number(producto.id), descripcion: omitido.descripcion, stock: Number(omitido.stock) });
             return;
         }
         useAlertStore.getState().alert(
             disponible
-                ? `"${producto.descripcion}" ya no aparece en ${selectedSedeName ?? 'esta sede'}`
+                ? `"${producto.descripcion}" ya no aparece en ${selectedSedeName ?? 'esta sede'}${ajustarStockACero ? ' (stock puesto en 0, salida registrada en kardex)' : ''}`
                 : `"${producto.descripcion}" ahora está disponible en ${selectedSedeName ?? 'esta sede'}`,
             'success',
         );
         await fetchProductsList();
         await fetchResumenInventario();
+    };
+    const confirmarQuitarConStock = async () => {
+        if (!quitarConStock) return;
+        const p = { id: quitarConStock.id, descripcion: quitarConStock.descripcion, disponibleEnSede: true };
+        setQuitarConStock(null);
+        await toggleDisponibleEnSede(p, true);
     };
 
     const togglePublicarTienda = async (producto: any) => {
@@ -822,6 +832,8 @@ export const useProductsViewModel = () => {
         confirmToggleroduct,
         togglePublicarTienda,
         toggleDisponibleEnSede,
+        confirmarQuitarConStock,
+        setQuitarConStock,
         setIncluirOcultos: (v: boolean) => setState(prev => ({ ...prev, incluirOcultos: v, currentPage: 1 })),
         setIsOpenModalAsignarSedes: (v: boolean) => setState(prev => ({ ...prev, isOpenModalAsignarSedes: v })),
         toggleStockSort,
@@ -879,6 +891,7 @@ export const useProductsViewModel = () => {
         handleSelectSede,
         tieneVariasSedes,
         catalogoPorSede,
+        quitarConStock,
         tieneTienda,
         // Computed
         indexOfFirstItem: (state.currentPage - 1) * state.itemsPerPage,

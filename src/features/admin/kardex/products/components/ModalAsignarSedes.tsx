@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import Modal from '@/components/Modal';
+import ModalConfirm from '@/components/ModalConfirm';
 import Button from '@/components/Button';
 import Select from '@/components/Select';
 import InputPro from '@/components/InputPro';
@@ -47,6 +48,9 @@ export default function ModalAsignarSedes({ isOpen, onClose, sedes, defaultSedeI
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [seleccion, setSeleccion] = useState<Set<number>>(new Set());
+    // Productos con stock que no se pudieron quitar: se ofrece quitarlos poniendo
+    // su stock en 0 (salida en kardex), con confirmación explícita.
+    const [pendientesConStock, setPendientesConStock] = useState<{ id: number; descripcion: string; stock: number }[]>([]);
 
     const sedeActual = useMemo(() => sedes.find(s => Number(s.id) === Number(sedeId)) ?? null, [sedes, sedeId]);
     const sedesOptions = useMemo(() => sedes.map(s => ({ id: s.id, value: s.nombre })), [sedes]);
@@ -107,29 +111,31 @@ export default function ModalAsignarSedes({ isOpen, onClose, sedes, defaultSedeI
         setSeleccion(next);
     };
 
-    const aplicar = async (disponible: boolean) => {
-        if (!sedeId || seleccion.size === 0 || saving) return;
+    const aplicar = async (disponible: boolean, ids?: number[], ajustarStockACero = false) => {
+        const productoIds = ids ?? Array.from(seleccion);
+        if (!sedeId || productoIds.length === 0 || saving) return;
         setSaving(true);
         try {
             const resp: any = await patch('productos/sedes/asignar', {
                 sedeId,
-                productoIds: Array.from(seleccion),
+                productoIds,
                 disponible,
+                ...(ajustarStockACero ? { ajustarStockACero: true } : {}),
             });
             if (!resp?.success) {
                 useAlertStore.getState().alert(resp?.error || 'No se pudo actualizar la asignación', 'error');
                 return;
             }
-            const omitidos: { descripcion: string; stock: number }[] = resp?.data?.omitidos ?? [];
+            const omitidos: { id: number; descripcion: string; stock: number }[] = resp?.data?.omitidos ?? [];
             const n = Number(resp?.data?.actualizados ?? 0);
+            const ajustados = Number(resp?.data?.ajustados ?? 0);
             const msg = disponible
                 ? `${n} producto${n === 1 ? '' : 's'} asignado${n === 1 ? '' : 's'} a ${sedeActual?.nombre ?? 'la sede'}`
-                : `${n} producto${n === 1 ? '' : 's'} quitado${n === 1 ? '' : 's'} de ${sedeActual?.nombre ?? 'la sede'}`;
+                : `${n} producto${n === 1 ? '' : 's'} quitado${n === 1 ? '' : 's'} de ${sedeActual?.nombre ?? 'la sede'}${ajustados > 0 ? ` (${ajustados} con stock puesto en 0, salida en kardex)` : ''}`;
             if (omitidos.length > 0) {
-                useAlertStore.getState().alert(
-                    `${msg}. No se quitaron ${omitidos.length} con stock: ${omitidos.slice(0, 3).map(o => `${o.descripcion} (${o.stock})`).join(', ')}${omitidos.length > 3 ? '…' : ''}. Traslada o ajusta su stock primero.`,
-                    'warning',
-                );
+                // Se quitaron los que no tenían stock; los demás quedan pendientes de confirmación.
+                if (n > 0) useAlertStore.getState().alert(msg, 'success');
+                setPendientesConStock(omitidos);
             } else {
                 useAlertStore.getState().alert(msg, 'success');
             }
@@ -140,10 +146,26 @@ export default function ModalAsignarSedes({ isOpen, onClose, sedes, defaultSedeI
             setSaving(false);
         }
     };
+    const confirmarQuitarConStock = async () => {
+        const ids = pendientesConStock.map((p) => p.id);
+        setPendientesConStock([]);
+        await aplicar(false, ids, true);
+    };
+    const totalStockPendiente = pendientesConStock.reduce((s, p) => s + Number(p.stock || 0), 0);
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     return (
+        <>
+        <ModalConfirm
+            isOpenModal={pendientesConStock.length > 0}
+            setIsOpenModal={(v: boolean) => { if (!v) setPendientesConStock([]); }}
+            confirmSubmit={() => void confirmarQuitarConStock()}
+            confirmText="Quitar y poner stock en 0"
+            confirmLoading={saving}
+            title={`${pendientesConStock.length} producto${pendientesConStock.length === 1 ? '' : 's'} con stock en ${sedeActual?.nombre ?? 'la sede'}`}
+            information={`No se quitaron porque tienen stock aquí (${totalStockPendiente} unidades en total): ${pendientesConStock.slice(0, 5).map(p => `${p.descripcion} (${p.stock})`).join(', ')}${pendientesConStock.length > 5 ? `, y ${pendientesConStock.length - 5} más` : ''}. Si ese stock está físicamente en otra sede, usa Traslado. Si se cargó por error en ${sedeActual?.nombre ?? 'esta sede'}, puedes quitarlos ahora: se registrará una SALIDA en el kardex por cada uno y dejarán de aparecer en esta sede.`}
+        />
         <Modal
             isOpenModal={isOpen}
             closeModal={onClose}
@@ -260,5 +282,6 @@ export default function ModalAsignarSedes({ isOpen, onClose, sedes, defaultSedeI
                 </div>
             </div>
         </Modal>
+        </>
     );
 }
