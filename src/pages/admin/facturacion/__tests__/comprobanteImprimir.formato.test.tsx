@@ -9,6 +9,8 @@ import ComprobantePrintPage from '../comprobanteImprimir';
 jest.mock('@iconify/react', () => ({ Icon: () => null }));
 // El store de auth usa import.meta (Vite); solo se necesita la sede activa.
 jest.mock('@/zustand/auth', () => ({ useAuthStore: (sel: any) => sel({ sedeActiva: null }) }));
+// El store de sedes arrastra apiClient (import.meta); el nombre de la sede no se prueba acá.
+jest.mock('@/zustand/sedes', () => ({ useSedesStore: () => ({ sedes: [], listarSedes: jest.fn() }) }));
 jest.mock('@/lib/branding', () => ({ BRAND: { name: 'Falconext', website: 'https://falconext.pe' } }));
 
 const empresaBase = {

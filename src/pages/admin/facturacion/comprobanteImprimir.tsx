@@ -285,13 +285,20 @@ console.log(formValues)
     // Cobranza en campo: prioriza el vendedor de campo atribuido. Soporta tanto el
     // row plano del panel (formValues.vendedor) como el comprobante crudo del detalle.
     const vendedorNombre = (formValues?.vendedorCampoNombre || formValues?.vendedor || formValues?.usuario?.nombre || company?.nombre || 'ADMIN').toString().toUpperCase();
+    // Contacto de la cabecera: SIEMPRE el del negocio (credenciales principales /
+    // ADMIN_EMPRESA, que el backend expone en empresa.contactoPrincipal), no el del
+    // usuario que está emitiendo. El fallback al usuario queda solo para sesiones
+    // viejas sin ese dato.
+    const contactoPrincipal = (company?.empresa as any)?.contactoPrincipal;
     const empresaNumero = (
+        contactoPrincipal?.celular ||
         company?.empresa?.celular ||
         company?.empresa?.telefono ||
         company?.celular ||
         company?.telefono ||
         ''
     ).toString().trim();
+    const empresaEmail = (contactoPrincipal?.email || company?.email || '').toString().trim();
 
     console.log(formValues)
 
@@ -329,7 +336,7 @@ console.log(formValues)
                             {fc('direccion').visible && sedeDireccion && <>DIRECCION SEDE: {sedeDireccion}<br /></>}
                             {fc('rubro').visible && company?.empresa?.rubro?.nombre && <>RUBRO: {company?.empresa?.rubro?.nombre?.toUpperCase()}<br /></>}
                             {fc('celular').visible && empresaNumero && <>CELULAR: {empresaNumero}<br /></>}
-                            {fc('email').visible && company?.email && <>EMAIL: {company?.email}<br /></>}
+                            {fc('email').visible && empresaEmail && <>EMAIL: {empresaEmail}<br /></>}
                             {fc('web').visible && (company?.empresa as any)?.paginaWeb && <>WEB: {(company?.empresa as any).paginaWeb}<br /></>}
                             <span className="">RUC: {company?.empresa?.ruc}</span>
                         </p>
@@ -588,7 +595,7 @@ console.log(formValues)
                                             {fc('rubro').visible && <div style={{ fontSize: px('rubro') }}>{company?.empresa?.rubro?.nombre?.toUpperCase()}</div>}
                                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <div style={{ fontSize: px('nombreComercial') }}>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}</div>}
                                             {fc('celular').visible && empresaNumero && <div style={{ fontSize: px('celular') }}>CELULAR: {empresaNumero}</div>}
-                                            {fc('email').visible && company?.email && <div style={{ fontSize: px('email') }}>EMAIL: {company?.email}</div>}
+                                            {fc('email').visible && empresaEmail && <div style={{ fontSize: px('email') }}>EMAIL: {empresaEmail}</div>}
                                             {fc('web').visible && (company?.empresa as any)?.paginaWeb && <div style={{ fontSize: px('web') }}>WEB: {(company?.empresa as any).paginaWeb}</div>}
                                         </div>
                                     </div>
@@ -967,7 +974,7 @@ console.log(formValues)
                                             {fc('rubro').visible && company?.empresa?.rubro?.nombre && <div style={{ fontSize: px('rubro') }}>{company?.empresa?.rubro?.nombre?.toUpperCase()}</div>}
                                             {fc('nombreComercial').visible && company?.empresa?.nombreComercial && <div style={{ fontSize: px('nombreComercial') }}>NOMBRE COMERCIAL: {company?.empresa?.nombreComercial}</div>}
                                             {fc('celular').visible && empresaNumero && <div style={{ fontSize: px('celular') }}>CELULAR: {empresaNumero}</div>}
-                                            {fc('email').visible && company?.email && <div style={{ fontSize: px('email') }}>EMAIL: {company?.email}</div>}
+                                            {fc('email').visible && empresaEmail && <div style={{ fontSize: px('email') }}>EMAIL: {empresaEmail}</div>}
                                             {fc('web').visible && (company?.empresa as any)?.paginaWeb && <div style={{ fontSize: px('web') }}>WEB: {(company?.empresa as any).paginaWeb}</div>}
                                         </div>
                                     </div>

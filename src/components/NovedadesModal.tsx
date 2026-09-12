@@ -342,9 +342,18 @@ export default function NovedadesModal({ abierto, onClose, autoAbierto = false }
                             </div>
 
                             <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-3.5 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
-                                <p className="text-[11px] text-gray-400 dark:text-gray-500 hidden md:block">
-                                    Vuelve a verlas cuando quieras desde <strong className="font-semibold text-gray-500 dark:text-gray-400">Novedades</strong>, en el menú.
-                                </p>
+                                <div className="hidden md:block min-w-0">
+                                    {/* Aviso web → app: casi todo sale primero en el panel; la app lo recibe después. */}
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-start gap-1.5">
+                                        <Icon icon="solar:smartphone-bold-duotone" width={13} className="mt-px shrink-0 text-violet-500" />
+                                        <span>
+                                            <strong className="font-semibold text-gray-600 dark:text-gray-300">¿Usas la app del celular?</strong> Las novedades salen primero en la web; la mayoría llegará a la app en las próximas actualizaciones, porque toma más tiempo desarrollarlas. No te preocupes: te avisaremos aquí cuando estén.
+                                        </span>
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
+                                        Vuelve a verlas cuando quieras desde <strong className="font-semibold text-gray-500 dark:text-gray-400">Novedades</strong>, en el menú.
+                                    </p>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={onClose}

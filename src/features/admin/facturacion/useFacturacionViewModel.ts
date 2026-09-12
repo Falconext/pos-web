@@ -1367,7 +1367,8 @@ export const useFacturacionViewModel = () => {
                     productoId: null,
                     id: null,
                     comboId: Number(combo.id),
-                    descripcion: `KIT: ${String(combo?.nombre || '').toUpperCase()}`,
+                    // Solo el nombre del kit (sin prefijo ni contenido): así sale en el carrito y en el comprobante.
+                    descripcion: String(combo?.nombre || '').toUpperCase(),
                     detalleKit: (combo.items || []).map((it: any) => `${it?.cantidad || 1} × ${it?.producto?.descripcion || ''}`).join(', '),
                     imagenUrl: combo?.imagenUrl || null,
                     cantidadInicial: 1,
@@ -1389,7 +1390,7 @@ export const useFacturacionViewModel = () => {
                     esKit: true,
                 } as any);
             }
-            useAlertStore.getState().alert(`Kit "${String(combo?.nombre || "").toUpperCase()}" agregado al comprobante`, "success");
+            // Sin toast: la línea aparece en el carrito y con eso basta (el aviso se acumulaba con cada clic).
             return;
         }
 
@@ -1403,7 +1404,6 @@ export const useFacturacionViewModel = () => {
             );
         });
 
-        useAlertStore.getState().alert(`Kit "${String(combo?.nombre || "").toUpperCase()}" agregado al comprobante`, "success");
     };
 
     const handleProductClick = (product: any) => {

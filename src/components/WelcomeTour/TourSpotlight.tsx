@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import { BRAND } from '@/lib/branding';
-import { TOUR_STEPS } from './useWelcomeTour';
+import { TOUR_STEPS, type TourStep } from './useWelcomeTour';
 
 interface TourSpotlightProps {
     step: number;
@@ -13,26 +13,10 @@ interface TourSpotlightProps {
 
 interface Rect { top: number; left: number; width: number; height: number; }
 
-const ACCENT = BRAND.primaryColor || '#3E2BC7';
+const ACCENT = BRAND.panelAccent || BRAND.primaryColor || '#7C3AED';
 const PAD = 6;
 const TOOLTIP_W = 272;
 const GAP = 14;
-const TOUR_OVERLAY_TOP_OFFSET: Record<string, number> = {
-    dashboard: 17,
-    facturacion: 24,
-    'kardex-toggle': 20,
-    clientes: 36,
-    cotizaciones: 30,
-};
-
-const TOUR_ROUTE_SELECTOR: Record<string, string> = {
-    dashboard: 'a[href="/administrador"]',
-    facturacion: 'button[data-tour="facturacion"]',
-    'kardex-toggle': 'button[data-tour="kardex-toggle"]',
-    'productos-link': 'a[href="/administrador/kardex/productos"]',
-    clientes: 'a[href="/administrador/clientes"]',
-    cotizaciones: 'button[data-tour="cotizaciones"]',
-};
 
 const isVisibleElement = (el: HTMLElement): boolean => {
     let current: HTMLElement | null = el;
@@ -52,31 +36,52 @@ const isVisibleElement = (el: HTMLElement): boolean => {
     return rect.width > 0 && rect.height > 0 && inViewport;
 };
 
-const getTargetElement = (target: string): HTMLElement | null => {
-    const routeSelector = TOUR_ROUTE_SELECTOR[target];
-    if (routeSelector) {
-        const routeMatches = Array.from(document.querySelectorAll<HTMLElement>(routeSelector)).filter((el) => {
-            if (!isVisibleElement(el)) return false;
-            return Boolean(el.closest('aside'));
-        });
-        if (routeMatches.length > 0) return routeMatches[0];
+const findInSidebar = (selector: string): HTMLElement | null =>
+    Array.from(document.querySelectorAll<HTMLElement>(selector)).find(
+        (el) => Boolean(el.closest('aside')) && isVisibleElement(el),
+    ) ?? null;
+
+/** Candidatos del paso: el principal y sus alternativas, en orden. */
+const candidatosDe = (step: TourStep) => [{ modulo: step.modulo, sub: step.sub }, ...(step.alternativas ?? [])];
+
+/**
+ * Pide al sidebar abrir el módulo del paso (solo tiene efecto si el módulo
+ * existe y tiene submódulos). Se llama una vez por paso, antes de buscar.
+ */
+const abrirModuloDelPaso = (step: TourStep) => {
+    for (const c of candidatosDe(step)) {
+        if (c.sub && findInSidebar(`[data-tour="mod:${c.modulo}"]`)) {
+            window.dispatchEvent(new CustomEvent('tour:open-module', { detail: c.modulo }));
+            return;
+        }
     }
+};
 
-    const matches = Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${target}"]`));
-    if (!matches.length) return null;
-
-    const visible = matches.filter(isVisibleElement);
-    if (!visible.length) return null;
-
-    const preferSidebar = visible.find((el) => Boolean(el.closest('aside')));
-    if (preferSidebar) return preferSidebar;
-
-    return visible[0];
+/**
+ * Elemento a resaltar: el submódulo (ya abierto) o, si el plan no lo tiene, el
+ * módulo. El dashboard es un enlace simple, así que cae en la rama de módulo.
+ */
+const getTargetElement = (step: TourStep, permitirModulo = true): HTMLElement | null => {
+    for (const c of candidatosDe(step)) {
+        if (c.sub) {
+            const sub = findInSidebar(`[data-tour="sub:${c.sub}"]`);
+            if (sub) return sub;
+        }
+    }
+    // Mientras el acordeón se abre, el submódulo todavía no existe: se espera
+    // (permitirModulo=false) antes de conformarse con resaltar el módulo.
+    if (!permitirModulo) return null;
+    for (const c of candidatosDe(step)) {
+        const mod = findInSidebar(`[data-tour="mod:${c.modulo}"]`);
+        if (mod) return mod;
+    }
+    // Dashboard legacy (plan sin módulo dashboard).
+    if (step.modulo === 'dashboard') return findInSidebar('[data-tour="dashboard"]');
+    return null;
 };
 
 export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPrev, onEnd }) => {
     const current = TOUR_STEPS[step];
-    const overlayTopOffset = TOUR_OVERLAY_TOP_OFFSET[current.target] ?? 30;
     const tooltipRef = useRef<HTMLDivElement>(null);
 
     // rect = null → overlay invisible (entre pasos)
@@ -145,17 +150,22 @@ export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPr
 
         let cleanupTracking: (() => void) | undefined;
 
+        // Abrir el módulo (acordeón) y esperar a que el submódulo exista y termine
+        // de animarse antes de medirlo.
+        abrirModuloDelPaso(current);
+
         const resolveTargetElement = (attempt = 0) => {
             if (cancelled) return;
 
-            const found = getTargetElement(current.target);
+            // ~45 frames (≈750 ms) para que aparezca el submódulo; después vale el módulo.
+            const found = getTargetElement(current, attempt >= 45);
 
             if (found) {
                 cleanupTracking = startTracking(found);
                 return;
             }
 
-            if (attempt < 30) {
+            if (attempt < 90) {
                 findRafId = window.requestAnimationFrame(() => resolveTargetElement(attempt + 1));
             } else {
                 setTargetMissing(true);
@@ -172,7 +182,7 @@ export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPr
             window.cancelAnimationFrame(settleRafId);
             cleanupTracking?.();
         };
-    }, [step, current.target]);
+    }, [step, current]);
 
     // 3. Posicionar tooltip midiendo su altura real
     useLayoutEffect(() => {
@@ -217,10 +227,10 @@ export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPr
                 <div
                     style={{
                         position: 'absolute',
-                        top: rect.top - (PAD - overlayTopOffset),
-                        left: rect.left + 8 - PAD,
-                        width: (rect.width + 8 ) + PAD * 2,
-                        height: (rect.height - 12) + PAD * 2,
+                        top: rect.top - PAD,
+                        left: rect.left - PAD,
+                        width: rect.width + PAD * 2,
+                        height: rect.height + PAD * 2,
                         borderRadius: 10,
                         boxShadow: `0 0 0 9999px rgba(0,0,0,0.52)`,
                         outline: `2.5px solid ${ACCENT}`,
@@ -245,7 +255,7 @@ export const TourSpotlight: React.FC<TourSpotlightProps> = ({ step, onNext, onPr
                            border border-gray-100 dark:border-white/10 p-5"
                 style={{
                     top: rect ? tooltipPos.top  : '50%',
-                    left: rect ? tooltipPos.left + 20 : '50%',
+                    left: rect ? tooltipPos.left : '50%',
                     transform: rect ? 'none' : 'translate(-50%, -50%)',
                     width: TOOLTIP_W,
                     opacity: tooltipReady ? 1 : 0,

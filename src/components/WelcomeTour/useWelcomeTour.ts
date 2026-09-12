@@ -2,44 +2,60 @@ import { useState, useCallback } from 'react';
 import { IUser } from '@/interfaces/auth';
 
 export interface TourStep {
-    target: string;          // data-tour attribute value
+    /** Código del módulo del sidebar (Modulo.codigo). */
+    modulo: string;
+    /** Código del submódulo a resaltar (SubModulo.codigo). Si falta, se resalta el módulo. */
+    sub?: string;
+    /** Alternativas por si el plan no tiene ese submódulo/módulo (se prueban en orden). */
+    alternativas?: Array<{ modulo: string; sub?: string }>;
     title: string;
     description: string;
     icon: string;
     position: 'right' | 'bottom' | 'left';
 }
 
+/**
+ * Recorrido de bienvenida: cada paso resalta un ítem REAL del menú lateral.
+ * Los módulos con submódulos se abren solos y se resalta el submódulo (antes
+ * el tour buscaba anclas que no existían y decía "no estuvo visible").
+ */
 export const TOUR_STEPS: TourStep[] = [
     {
-        target: 'dashboard',
+        modulo: 'dashboard',
         title: 'Dashboard',
         description: 'Tus ventas, cobros y métricas del negocio en tiempo real.',
         icon: 'solar:home-angle-bold-duotone',
         position: 'right',
     },
     {
-        target: 'facturacion',
+        modulo: 'comprobantes',
+        sub: 'comprobantes:emitir',
         title: 'Facturación',
         description: 'Emite boletas, facturas y tickets con validez SUNAT en segundos.',
         icon: 'solar:bill-list-bold-duotone',
         position: 'right',
     },
     {
-        target: 'kardex-toggle',
+        modulo: 'kardex',
+        sub: 'kardex:productos',
         title: 'Kardex',
         description: 'Desde aquí controlas inventario, movimientos, lotes y reservas.',
         icon: 'solar:box-bold-duotone',
         position: 'right',
     },
     {
-        target: 'clientes',
+        modulo: 'usuarios',
+        sub: 'usuarios:clientes',
+        alternativas: [{ modulo: 'clientes' }],
         title: 'Clientes',
         description: 'Registro de clientes con DNI/RUC para emitir comprobantes.',
         icon: 'solar:users-group-rounded-bold-duotone',
         position: 'right',
     },
     {
-        target: 'cotizaciones',
+        modulo: 'comprobantes',
+        sub: 'comprobantes:cotizaciones',
+        alternativas: [{ modulo: 'cotizaciones' }],
         title: 'Cotizaciones',
         description: 'Crea presupuestos y conviértelos en facturas con un clic.',
         icon: 'solar:document-text-bold-duotone',

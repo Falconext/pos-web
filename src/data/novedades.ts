@@ -62,18 +62,62 @@ export const NOVEDADES: Novedad[] = [
     {
         id: '2026-09-mercado-pago',
         fecha: '2026-09-11',
-        titulo: 'Mercado Pago llega el 25 de noviembre a todas las tiendas virtuales',
+        titulo: 'Mercado Pago llega el 18 de septiembre a todas las tiendas virtuales',
         descripcion:
-            'Desde el 25 de noviembre tus clientes podrán pagar con tarjeta, Yape y billeteras en tu tienda virtual a través de Mercado Pago, con el cobro conciliado solo en tu caja. Niky ya lo tiene en la mira: te avisamos aquí el mismo día del lanzamiento.',
+            'Desde el 18 de septiembre tus clientes podrán pagar con tarjeta, Yape y billeteras en tu tienda virtual a través de Mercado Pago, con el cobro conciliado solo en tu caja. Niky ya lo tiene en la mira: te avisamos aquí el mismo día del lanzamiento.',
         categoria: 'Tienda virtual',
         tipo: 'NUEVO',
         // La tienda virtual (tieneTienda) solo existe en Negocio y Corporativo.
         planes: ['NEGOCIO', 'CORPORATIVO'],
         estado: 'PROXIMAMENTE',
-        donde: 'Tienda Virtual → Configuración → Medios de pago (desde el 25/11)',
+        donde: 'Tienda Virtual → Configuración → Medios de pago (desde el 18/09)',
+    },
+
+    // ── 12 de septiembre ─────────────────────────────────────────────────────
+    {
+        id: '2026-09-quitar-sede-stock-cero',
+        fecha: '2026-09-12',
+        titulo: 'Quitar un producto de una sede dejando su stock en 0',
+        descripcion:
+            'Si cargaste stock en la sede equivocada, ahora puedes quitar el producto de esa sede y dejarlo en 0 con una salida registrada en el kardex, en vez de tener que trasladarlo. El sistema te explica la diferencia (traslado vs. carga por error) antes de confirmar, tanto desde el menú del producto como en la asignación masiva.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Kardex → Inventario → Acciones → Quitar de la sede',
+    },
+    {
+        id: '2026-09-dashboard-sede-activa',
+        fecha: '2026-09-12',
+        titulo: 'Dashboard y Movimientos arrancan en tu sede',
+        descripcion:
+            'El Dashboard y los Movimientos del Kardex se abren mostrando la sede activa de la cabecera, y el administrador puede cambiar a otra sede o ver todas desde el selector, esté en la sede que esté. Los usuarios asignados a una sede ven solo la suya.',
+        categoria: 'Finanzas',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Dashboard · Kardex → Movimientos → filtro Sede',
     },
 
     // ── 11 de septiembre ─────────────────────────────────────────────────────
+    {
+        id: '2026-09-stock-por-caja',
+        fecha: '2026-09-11',
+        titulo: 'Ingresa stock por cajas y códigos por presentación',
+        descripcion:
+            'En la gestión de inventario eliges "Ingresar en" Unidades o Caja ×N según las presentaciones del producto: agregar, quitar, reemplazar y el stock inicial aceptan cantidad de cajas y se convierten a unidades, con el detalle visible antes de guardar. Cada presentación (caja, paquete) puede llevar su propio código interno junto a los códigos de barra adicionales.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Productos → ficha → Gestión de inventario · Códigos de barra adicionales',
+    },
+    {
+        id: '2026-09-calculadora-sueltas-cajas',
+        fecha: '2026-09-11',
+        titulo: 'La calculadora de stock suma sueltas + cajas',
+        descripcion:
+            'Al contar inventario, propone tu stock actual como unidades sueltas y las unidades por caja del producto; el total sale solo: sueltas + cajas × unidades (por ejemplo, 39 sueltas + 10 cajas de 10 = 139).',
+        categoria: 'Productos',
+        tipo: 'MEJORA',
+        donde: 'Productos → ficha → Calculadora de stock',
+    },
     {
         id: '2026-09-couriers-mapa',
         fecha: '2026-09-11',
@@ -124,12 +168,12 @@ export const NOVEDADES: Novedad[] = [
     {
         id: '2026-09-observaciones-recordadas',
         fecha: '2026-09-11',
-        titulo: 'Las observaciones de la venta se recuerdan solas',
+        titulo: 'Observaciones de la venta: fijas por negocio o recordadas',
         descripcion:
-            'Lo que escribes en Observaciones al configurar una venta se guarda automáticamente y se propone en la siguiente, para no tipear siempre lo mismo. Un botón Limpiar lo borra cuando quieras.',
+            'Define en tu Perfil un texto fijo de OBSERVACIONES y el punto de venta lo propone en cada venta nueva. Además, lo que escribas al configurar una venta se recuerda solo en ese equipo para la siguiente, con un botón Limpiar para borrarlo cuando quieras.',
         categoria: 'Facturación',
         tipo: 'MEJORA',
-        donde: 'Crear comprobante → Configurar venta → Observaciones',
+        donde: 'Perfil → Configuración → Impresión de comprobantes · Crear comprobante → Configurar venta',
     },
     {
         id: '2026-09-rastreo-ultimo-estado',

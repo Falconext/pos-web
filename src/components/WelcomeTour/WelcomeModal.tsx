@@ -18,7 +18,7 @@ const MODULES = [
     { icon: 'solar:document-text-bold-duotone', label: 'Cotizaciones', desc: 'Presupuestos que se convierten en facturas' },
 ];
 
-const ACCENT = BRAND.primaryColor || '#3E2BC7';
+const ACCENT = BRAND.panelAccent || BRAND.primaryColor || '#7C3AED';
 
 export const WelcomeModal: React.FC<WelcomeModalProps> = ({ user, onStartTour, onSkip }) => {
     const firstName = user.nombre?.split(' ')[0] || 'bienvenido';

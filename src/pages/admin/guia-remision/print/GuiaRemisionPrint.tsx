@@ -61,8 +61,8 @@ const GuiaRemisionPrint = forwardRef<HTMLDivElement, GuiaRemisionPrintProps>(({ 
                             {company?.direccion}<br />
                             {company?.ubigeoCode && <span>{company.ubigeoCode} - </span>}
                             {company?.departamento} - {company?.provincia} - {company?.distrito}<br />
-                            <span className="font-bold">CORREO:</span> {company?.email}<br />
-                            <span className="font-bold">CELULAR:</span> {company?.celular || company?.telefono}
+                            <span className="font-bold">CORREO:</span> {company?.contactoPrincipal?.email || company?.email}<br />
+                            <span className="font-bold">CELULAR:</span> {company?.contactoPrincipal?.celular || company?.celular || company?.telefono}
                         </p>
                     </div>
 

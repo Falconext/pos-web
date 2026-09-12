@@ -63,6 +63,16 @@ export default function AdminLayout() {
   }
   const [openModuleCode, setOpenModuleCode] = useState<string | null>(null)
   const toggleModule = (codigo: string) => setOpenModuleCode(prev => prev === codigo ? null : codigo)
+  // El tour de bienvenida pide abrir un módulo para poder resaltar su submódulo.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const codigo = (e as CustomEvent<string>).detail;
+      if (codigo) { setOpenModuleCode(codigo); setSidebarCollapsed(false); }
+    };
+    window.addEventListener('tour:open-module', onOpen);
+    return () => window.removeEventListener('tour:open-module', onOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const autoCollapsePaths = ['/administrador/ventas', '/administrador/tienda/pedidos']
   const isSidebarCollapsed = sidebarCollapsed || autoCollapsePaths.some(p => location.pathname.startsWith(p))
@@ -480,6 +490,7 @@ export default function AdminLayout() {
                     return (
                       <NavLink
                         key={modulo.id ?? modulo.codigo}
+                        data-tour={`mod:${modulo.codigo}`}
                         onClick={() => { setIsSidebarOpen(false); setNameNavbar(label); }}
                         to={ruta ?? '#'}
                         end={modulo.codigo === 'dashboard'}
@@ -495,6 +506,7 @@ export default function AdminLayout() {
                   return (
                     <div key={modulo.id ?? modulo.codigo} className="relative group">
                       <button
+                        data-tour={`mod:${modulo.codigo}`}
                         onClick={() => {
                           if (isSidebarCollapsed) { navigate(navRoute); }
                           else { toggleModule(modulo.codigo); }
@@ -536,7 +548,7 @@ export default function AdminLayout() {
                             style={{ overflow: 'hidden' }}
                           >
                             {allSubItems.map(item => (
-                              <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
+                              <NavLink key={item.codigo} data-tour={`sub:${item.codigo}`} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
                                 className={() => {
                                   const active = item.end ? location.pathname === item.ruta : location.pathname.startsWith(item.ruta);
                                   return active ? theme.submenuActiveLink : theme.submenuInactiveLink;

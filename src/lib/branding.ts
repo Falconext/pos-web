@@ -12,6 +12,8 @@ export type BrandConfig = {
   logoWhite: string;
   favicon?: string;
   primaryColor: string;
+  /** Acento del panel administrativo (botones, tour, estados). Si falta, usa primaryColor. */
+  panelAccent?: string;
   secondaryColor: string;
   socials: {
     facebook?: string;
@@ -61,6 +63,9 @@ const staticBrands: Record<string, BrandConfig> = {
     favicon: '/assets/krezka/krezkalogo.png',
     primaryColor: '#00D0D4',
     secondaryColor: '#00A0A4',
+    // El panel de Krezka es morado (violet-600 del sidebar/botones); el cian es
+    // solo de marketing/landing.
+    panelAccent: '#7C3AED',
     socials: {
       facebook: '#',
       instagram: '#',
