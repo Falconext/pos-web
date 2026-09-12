@@ -188,6 +188,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
         unidadesPorPaquete?: number;
         precioPaquete?: number | null;
         alias?: string | null;
+        codigoInterno?: string | null;
         imagenUrl?: string | null;
         imagenUrlDisplay?: string | null;
     };
@@ -658,14 +659,11 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             Agregar código
                         </button>
                     </div>
-                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-2 leading-snug">
-                        Para el mismo producto que llega con distinto código de barras según el lote o la importación
-                        (ej. perfumes sellados), o para el código de un PAQUETE que contiene varias unidades de este
-                        mismo producto (ej. el six-pack de esta cerveza). Al escanear cualquiera de estos códigos
-                        aparece este mismo producto y se descuenta del mismo stock — indica "Unid. x paq." solo si
-                        ese código representa más de una unidad, y opcionalmente el precio TOTAL del paquete si es
-                        distinto (normalmente más barato) que unidades × precio unitario.
-                    </p>
+                    <ul className="text-[11px] text-gray-500 dark:text-gray-400 mb-2 leading-snug list-disc pl-4 space-y-0.5">
+                        <li><span className="font-semibold">Otro código del mismo producto</span> (ej. otro lote o importación): déjalo en 1 unidad.</li>
+                        <li><span className="font-semibold">Caja o paquete</span>: pon cuántas unidades trae; al venderlo se descuentan esas unidades del stock. El precio del paquete es opcional (si no, cobra unidades × precio).</li>
+                        <li><span className="font-semibold">Código interno</span>: tu propio código para esa presentación (ej. 22005-CJ). Se puede buscar y escanear en el POS igual que el de barras.</li>
+                    </ul>
                     {codigosExtra.length === 0 ? (
                         <p className="text-[11px] italic text-gray-400 dark:text-gray-600">
                             Sin códigos adicionales. Usa “Agregar código” si un mismo perfume tiene varios EAN, o si
@@ -682,7 +680,20 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 value={item.codigo}
                                                 name={`codigoBarrasExtra-${i}`}
                                                 onChange={(e: any) => updateCodigoExtra(i, e.target.value)}
-                                                placeholder="EAN-13 / UPC del otro lote o del paquete"
+                                                isLabel
+                                                label="Código de barras"
+                                                placeholder=""
+                                            />
+                                        </div>
+                                        <div className="w-36 shrink-0" title="Código interno del negocio para esta presentación (ej. 22005-CJ). Se busca y se tipea/escanea en el POS igual que el código de barras">
+                                            <InputPro
+                                                autocomplete="off"
+                                                value={item.codigoInterno ?? ''}
+                                                name={`codigoInterno-${i}`}
+                                                onChange={(e: any) => updateCodigoExtraField(i, { codigoInterno: e.target.value.toUpperCase() })}
+                                                isLabel
+                                                label="Código interno"
+                                                placeholder=""
                                             />
                                         </div>
                                         <div className="w-24 shrink-0" title="Unidades que trae el paquete">
@@ -694,7 +705,9 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 onChange={(e: any) =>
                                                     updateUnidadesPorPaquete(i, Math.max(1, Number(e.target.value) || 1))
                                                 }
-                                                placeholder="Unid. x paq."
+                                                isLabel
+                                                label="Unid. por paquete"
+                                                placeholder=""
                                             />
                                         </div>
                                         <div className="w-28 shrink-0" title="Precio TOTAL del paquete (opcional). Vacío = precio unitario × unidades">
@@ -704,13 +717,15 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                 value={item.precioPaquete ?? ''}
                                                 name={`precioPaquete-${i}`}
                                                 onChange={(e: any) => updatePrecioPaquete(i, e.target.value)}
-                                                placeholder="Precio paq. (opc.)"
+                                                isLabel
+                                                label="Precio del paquete"
+                                                placeholder=""
                                             />
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => removeCodigoExtra(i)}
-                                            className="shrink-0 p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                                            className="shrink-0 p-2 mt-5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                             title="Quitar código"
                                         >
                                             <Icon icon="mdi:trash-can-outline" className="w-4 h-4" />
@@ -765,7 +780,9 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                         value={item.alias ?? ''}
                                                         name={`aliasPaquete-${i}`}
                                                         onChange={(e: any) => updateCodigoExtraField(i, { alias: e.target.value })}
-                                                        placeholder={`Nombre del paquete (ej. SIX PACK ${String((formValues as any)?.descripcion || '').toUpperCase()})`.slice(0, 60)}
+                                                        isLabel
+                                                        label="Nombre del paquete"
+                                                        placeholder=""
                                                     />
                                                 </div>
                                             </div>

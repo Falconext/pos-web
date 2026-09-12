@@ -10,6 +10,9 @@ export type ICodigoBarraExtra = {
   // Nombre propio del paquete (ej. "SIX PACK CERVEZA PILSEN"): descripción de
   // la línea al vender por este código.
   alias?: string | null
+  // Código interno del negocio para esta presentación (ej. "22005-CJ"): se
+  // busca y se escanea/tipea en el POS igual que el código de barras.
+  codigoInterno?: string | null
   // Imagen propia del paquete: URL S3, o data-URI base64 al subir una nueva.
   imagenUrl?: string | null
   imagenUrlDisplay?: string | null

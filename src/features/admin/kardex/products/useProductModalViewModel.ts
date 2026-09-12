@@ -215,6 +215,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const [tipoAjusteStock, setTipoAjusteStock] =
     useState<TipoAjusteStock>("ninguno");
   const [cantidadAjuste, setCantidadAjuste] = useState<number>(0);
+  // Presentación con la que se ingresa el ajuste: 1 = unidades sueltas; N =
+  // unidades por caja/paquete (de "Códigos de barra adicionales"). El stock
+  // SIEMPRE se guarda en unidades: cantidad × factor.
+  const [factorAjuste, setFactorAjuste] = useState<number>(1);
+  const cantidadAjusteUnidades = Math.max(0, Math.round(cantidadAjuste * Math.max(1, factorAjuste)));
   const stockOriginal = Number(formValues?.stock || 0);
 
   // --- Drawers State ---
@@ -1492,13 +1497,13 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
       if (isEdit && tipoAjusteStock !== "ninguno") {
         switch (tipoAjusteStock) {
           case "reemplazar":
-            stockFinal = cantidadAjuste;
+            stockFinal = cantidadAjusteUnidades;
             break;
           case "sumar":
-            stockFinal = stockOriginal + cantidadAjuste;
+            stockFinal = stockOriginal + cantidadAjusteUnidades;
             break;
           case "restar":
-            stockFinal = Math.max(0, stockOriginal - cantidadAjuste);
+            stockFinal = Math.max(0, stockOriginal - cantidadAjusteUnidades);
             break;
           default:
             stockFinal = stockOriginal;
@@ -2207,6 +2212,9 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     selectColorImageCandidate,
     tipoAjusteStock,
     cantidadAjuste,
+    factorAjuste,
+    setFactorAjuste,
+    cantidadAjusteUnidades,
     stockOriginal,
     showMedicamentoModal,
     showLotesModal,

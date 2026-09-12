@@ -102,8 +102,47 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     const {
         isEdit, isRestaurante, isFarmacia, esFarmaceutico, isFabricacion, tipoAjusteStock, cantidadAjuste, stockOriginal, productSections,
         formValues, errors, isMobile,
-        setTipoAjusteStock, setCantidadAjuste, handleChange, sedeActiva
+        setTipoAjusteStock, setCantidadAjuste, handleChange, sedeActiva,
+        factorAjuste, setFactorAjuste, cantidadAjusteUnidades,
     } = vm;
+
+    // Presentaciones por caja/paquete definidas en "Códigos de barra adicionales"
+    // (unidadesPorPaquete > 1). Permiten ingresar stock "por caja": el sistema
+    // convierte a unidades (cajas × unidades por caja), que es como se guarda.
+    const presentaciones: { unidades: number; label: string }[] = (() => {
+        const raw: any[] = Array.isArray((formValues as any)?.codigosBarrasExtra) ? (formValues as any).codigosBarrasExtra : [];
+        const vistos = new Map<number, string>();
+        raw.forEach((c) => {
+            const u = Math.trunc(Number(c?.unidadesPorPaquete) || 1);
+            if (u > 1 && !vistos.has(u)) vistos.set(u, String(c?.alias || '').trim() || `Caja / paquete x${u}`);
+        });
+        return Array.from(vistos, ([unidades, label]) => ({ unidades, label }));
+    })();
+    // Stock inicial (alta): cantidad de cajas cuando se elige una presentación.
+    const [factorInicial, setFactorInicial] = useState(1);
+    const [cajasInicial, setCajasInicial] = useState('');
+    const aplicarCajasInicial = (cajas: string, factor: number) => {
+        setCajasInicial(cajas);
+        const total = Math.max(0, Math.round((Number(cajas) || 0) * factor));
+        handleChange({ target: { name: 'stock', value: String(total) } } as any);
+    };
+    const PresentacionSelector = ({ value, onChange }: { value: number; onChange: (u: number) => void }) => (
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Ingresar en:</span>
+            {[{ unidades: 1, label: 'Unidades' }, ...presentaciones].map((p) => (
+                <button
+                    key={p.unidades}
+                    type="button"
+                    onClick={() => onChange(p.unidades)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors ${value === p.unidades
+                        ? 'bg-violet-600 text-white border-violet-600'
+                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}
+                >
+                    {p.unidades === 1 ? p.label : `${p.label} (${p.unidades} und)`}
+                </button>
+            ))}
+        </div>
+    );
 
     const esServicio = String((formValues as any)?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
     if (!productSections.inventario && !esServicio) return null;
@@ -226,9 +265,9 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                 <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-green-100 dark:border-green-900/30">
                                     <div className="text-lg font-bold text-green-600 dark:text-green-400">
                                         {tipoAjusteStock === 'ninguno' ? stockOriginal :
-                                            tipoAjusteStock === 'reemplazar' ? cantidadAjuste :
-                                                tipoAjusteStock === 'sumar' ? stockOriginal + cantidadAjuste :
-                                                    tipoAjusteStock === 'restar' ? Math.max(0, stockOriginal - cantidadAjuste) : stockOriginal
+                                            tipoAjusteStock === 'reemplazar' ? cantidadAjusteUnidades :
+                                                tipoAjusteStock === 'sumar' ? stockOriginal + cantidadAjusteUnidades :
+                                                    tipoAjusteStock === 'restar' ? Math.max(0, stockOriginal - cantidadAjusteUnidades) : stockOriginal
                                         }
                                     </div>
                                     <div className="text-xs text-gray-600">Stock Resultante</div>
@@ -262,10 +301,16 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                                 {tipoAjusteStock !== 'ninguno' && (
                                     <div className="mt-3">
+                                        {presentaciones.length > 0 && (
+                                            <PresentacionSelector value={factorAjuste} onChange={setFactorAjuste} />
+                                        )}
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">
-                                            {tipoAjusteStock === 'reemplazar' ? 'Nuevo stock total:' :
-                                                tipoAjusteStock === 'sumar' ? 'Cantidad a agregar:' :
-                                                    'Cantidad a quitar:'}
+                                            {factorAjuste > 1
+                                                ? (tipoAjusteStock === 'reemplazar' ? 'Nuevo stock total (en cajas):' :
+                                                    tipoAjusteStock === 'sumar' ? 'Cajas a agregar:' : 'Cajas a quitar:')
+                                                : (tipoAjusteStock === 'reemplazar' ? 'Nuevo stock total:' :
+                                                    tipoAjusteStock === 'sumar' ? 'Cantidad a agregar:' :
+                                                        'Cantidad a quitar:')}
                                         </label>
                                         <input
                                             type="number"
@@ -273,8 +318,14 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                             value={cantidadAjuste}
                                             onChange={(e) => setCantidadAjuste(Number(e.target.value))}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                            placeholder="Ingrese la cantidad"
+                                            placeholder={factorAjuste > 1 ? 'Ingrese la cantidad de cajas' : 'Ingrese la cantidad'}
                                         />
+                                        {factorAjuste > 1 && (
+                                            <p className="mt-1 text-[11px] font-semibold text-violet-700 dark:text-violet-300">
+                                                {cantidadAjuste || 0} caja{Number(cantidadAjuste) === 1 ? '' : 's'} × {factorAjuste} = {cantidadAjusteUnidades} unidades
+                                                {tipoAjusteStock === 'sumar' && ` → stock resultante ${stockOriginal + cantidadAjusteUnidades}`}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
 
@@ -307,7 +358,19 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 ) : (
                     <div className={hasSedePolicy ? 'grid grid-cols-1 lg:grid-cols-4 gap-6' : ''}>
                         <div className={hasSedePolicy ? 'lg:col-span-1' : ''}>
-                            <InputPro autocomplete="off" type="number" readOnly={esFarmaceutico} value={formValues?.stock} error={errors.stock} name="stock" onChange={handleChange} isLabel label="Stock Inicial" placeholder="Cantidad inicial en inventario" />
+                            {presentaciones.length > 0 && !esFarmaceutico && (
+                                <PresentacionSelector value={factorInicial} onChange={(u) => { setFactorInicial(u); if (u > 1) aplicarCajasInicial(cajasInicial, u); }} />
+                            )}
+                            {factorInicial > 1 ? (
+                                <>
+                                    <InputPro autocomplete="off" type="number" value={cajasInicial} name="cajasInicial" onChange={(e: any) => aplicarCajasInicial(e.target.value, factorInicial)} isLabel label="Stock inicial (cajas)" placeholder="Cantidad de cajas" />
+                                    <p className="mt-1 text-[11px] font-semibold text-violet-700 dark:text-violet-300">
+                                        {Number(cajasInicial) || 0} caja{Number(cajasInicial) === 1 ? '' : 's'} × {factorInicial} = {Number(formValues?.stock) || 0} unidades en inventario
+                                    </p>
+                                </>
+                            ) : (
+                                <InputPro autocomplete="off" type="number" readOnly={esFarmaceutico} value={formValues?.stock} error={errors.stock} name="stock" onChange={handleChange} isLabel label="Stock Inicial" placeholder="Cantidad inicial en inventario" />
+                            )}
                             {esFarmaceutico && <p className="text-[11px] text-amber-500 mt-1"><Icon icon="mdi:information" className="inline mr-1" />En farmacia, ingresa el stock inicial usando el botón "Gestión de Lotes".</p>}
                             {!esFarmaceutico && (
                                 <StockFromBoxesCalculator
