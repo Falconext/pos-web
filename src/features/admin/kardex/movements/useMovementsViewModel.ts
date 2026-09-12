@@ -2,6 +2,8 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import moment from 'moment';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useKardexStore } from '@/zustand/kardex';
+import { useAuthStore } from '@/zustand/auth';
+import { useSedesStore } from '@/zustand/sedes';
 import { useProductsStore } from '@/zustand/products';
 import useAlertStore from '@/zustand/alert';
 import { format } from 'date-fns';
@@ -13,6 +15,17 @@ export const useMovementsViewModel = () => {
     const { kardex, loading, getKardex, exportKardex } = useKardexStore();
     const { getAllProducts, products } = useProductsStore();
     const { alert } = useAlertStore();
+    // Sede: el admin arranca en su sede activa y puede cambiar a otra o a
+    // "Todas las sedes"; el usuario de sede fija ve solo la suya (el backend
+    // lo fuerza aunque no se envíe sedeId).
+    const { auth, sedeActiva } = useAuthStore();
+    const { sedes, listarSedes } = useSedesStore();
+    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    const sedeInicial = sedeActiva?.id ? String(sedeActiva.id) : '';
+    useEffect(() => {
+        if (isAdmin) listarSedes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAdmin]);
 
     // Initial State
     const todayStr = moment().format('YYYY-MM-DD');
@@ -23,6 +36,7 @@ export const useMovementsViewModel = () => {
             fechaFin: todayStr,
             productoId: '',
             tipoMovimiento: '',
+            sedeId: sedeInicial,
         },
         productQuery: '',
         showSuggestions: false,
@@ -67,7 +81,7 @@ export const useMovementsViewModel = () => {
         } else {
             getKardex({ page: 1, limit: state.itemsPerPage, ...state.filters });
         }
-    }, [state.filters.fechaInicio, state.filters.fechaFin, state.filters.tipoMovimiento, state.filters.productoId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [state.filters.fechaInicio, state.filters.fechaFin, state.filters.tipoMovimiento, state.filters.productoId, state.filters.sedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Search Products
     useEffect(() => {
@@ -123,6 +137,7 @@ export const useMovementsViewModel = () => {
             fechaFin: todayStr,
             productoId: '',
             tipoMovimiento: '',
+            sedeId: sedeInicial,
         };
         setState(prev => ({
             ...prev,
@@ -242,6 +257,9 @@ export const useMovementsViewModel = () => {
         products, // for suggestions
         movimientosTable,
         actions,
+        // Sede (filtro solo para admin con 2+ sedes)
+        isAdmin,
+        sedes,
         helpers: {
             formatCurrency,
             formatDate,

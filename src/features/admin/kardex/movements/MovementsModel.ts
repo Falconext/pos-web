@@ -60,6 +60,8 @@ export interface IMovementsViewModelState {
         fechaFin: string;
         productoId: string;
         tipoMovimiento: string;
+        /** Sede (solo admin); '' = todas las sedes. */
+        sedeId: string;
     };
     productQuery: string;
     showSuggestions: boolean;

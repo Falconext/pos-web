@@ -10,6 +10,8 @@ export interface IKardexFilters {
   productoId?: string;
   tipoMovimiento?: string;
   concepto?: string;
+  /** Sede a consultar (solo admin); vacío = todas las sedes. */
+  sedeId?: string;
 }
 
 export interface IKardexPagination {

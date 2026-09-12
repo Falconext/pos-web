@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboardStore, type IDashboardState } from '@/zustand/dashboard'
 import { get } from '@/utils/fetch'
@@ -22,12 +22,19 @@ export default function AdminIndex() {
   // que un admin en el dashboard (selector de sede + vista de todas las sedes).
   const esSupervisor = !!(auth as any)?.convertirEnSupervisor
   const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || esSupervisor
-  const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true
 
   // Por defecto el dashboard muestra el mes en curso completo (del 1 al último día).
   const [fechaInicio, setFechaInicio] = useState<string>(moment().startOf('month').format('YYYY-MM-DD'))
   const [fechaFin, setFechaFin] = useState<string>(moment().endOf('month').format('YYYY-MM-DD'))
-  const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null)
+  // Sede del dashboard. El admin (o supervisor) arranca en su sede activa y
+  // puede cambiar a otra o a "Todas las sedes" desde cualquier sede; el usuario
+  // de sede fija ve solo la suya (el backend igual lo fuerza).
+  const [selectedSedeId, setSelectedSedeId] = useState<number | null>(sedeActiva?.id ?? null)
+  const userChoseSede = useRef(false)
+  const handleSelectSede = (id: any) => {
+    userChoseSede.current = true
+    setSelectedSedeId(Number(id) > 0 ? Number(id) : null)
+  }
 
   const [period, setPeriod] = useState<string>('Este mes')
 
@@ -40,7 +47,9 @@ export default function AdminIndex() {
   const [catMoneda, setCatMoneda] = useState<'PEN' | 'USD'>('PEN')
   const [catSelId, setCatSelId] = useState<number | null>(null)
 
-  const effectiveSedeId = esPrincipal ? selectedSedeId : (sedeActiva?.id ?? null)
+  const effectiveSedeId = isAdmin
+    ? (userChoseSede.current ? selectedSedeId : (selectedSedeId ?? sedeActiva?.id ?? null))
+    : (sedeActiva?.id ?? null)
 
   const abrirTopDetalle = async () => {
     setShowTopModal(true)
@@ -85,8 +94,13 @@ export default function AdminIndex() {
   }, [soloLogistica, navigate])
 
   useEffect(() => {
-    if (isAdmin && esPrincipal) listarSedes()
-  }, [isAdmin, esPrincipal])
+    if (isAdmin) listarSedes()
+  }, [isAdmin])
+  // Si cambia la sede activa (selector de la cabecera) y el admin no eligió otra
+  // en el dashboard, se sigue a la sede activa.
+  useEffect(() => {
+    if (!userChoseSede.current) setSelectedSedeId(sedeActiva?.id ?? null)
+  }, [sedeActiva?.id])
 
   useEffect(() => {
     if (fechaInicio && fechaFin) {
@@ -153,9 +167,9 @@ export default function AdminIndex() {
             <p className="text-sm sm:text-[15px] text-gray-500 dark:text-gray-400 font-medium mt-1">Aquí tienes un resumen de tu negocio hoy.</p>
           </div>
           <div className="w-full xl:w-auto grid grid-cols-1 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] xl:flex items-stretch xl:items-center gap-3">
-            {isAdmin && esPrincipal && (
+            {isAdmin && sedes.length > 1 && (
               <div className="w-full xl:w-48 rounded-xl shadow-sm">
-                <Select name="sedeId" label="Sede" options={sedesOptions} onChange={(id) => setSelectedSedeId(Number(id))} value={selectedSedeId ? sedes.find(s => s.id === selectedSedeId)?.nombre || '' : 'Todas las sedes'} error="" />
+                <Select name="sedeId" label="Sede" options={sedesOptions} onChange={(id) => handleSelectSede(id)} value={effectiveSedeId ? sedes.find(s => s.id === effectiveSedeId)?.nombre || '' : 'Todas las sedes'} error="" />
               </div>
             )}
             <div className="grid grid-cols-2 gap-2 min-w-0">
