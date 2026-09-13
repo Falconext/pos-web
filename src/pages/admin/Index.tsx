@@ -36,7 +36,39 @@ export default function AdminIndex() {
     setSelectedSedeId(Number(id) > 0 ? Number(id) : null)
   }
 
-  const [period, setPeriod] = useState<string>('Este mes')
+  // Atajos de periodo. El empresario quiere ver "solo hoy" sin tener que
+  // ajustar las dos fechas (arrancaban del 1 al último día del mes y se confundía).
+  type PeriodoKey = 'hoy' | 'ayer' | 'semana' | 'mes' | 'mes_anterior' | 'personalizado'
+  const PERIODOS: { key: PeriodoKey; label: string }[] = [
+    { key: 'hoy', label: 'Hoy' },
+    { key: 'ayer', label: 'Ayer' },
+    { key: 'semana', label: 'Esta semana' },
+    { key: 'mes', label: 'Este mes' },
+    { key: 'mes_anterior', label: 'Mes anterior' },
+  ]
+  const [period, setPeriod] = useState<PeriodoKey>('mes')
+  const aplicarPeriodo = (key: PeriodoKey) => {
+    const f = 'YYYY-MM-DD'
+    const hoy = moment()
+    let ini = hoy
+    let fin = hoy
+    if (key === 'ayer') { ini = hoy.clone().subtract(1, 'day'); fin = ini }
+    else if (key === 'semana') { ini = hoy.clone().startOf('isoWeek'); fin = hoy.clone().endOf('isoWeek') }
+    else if (key === 'mes') { ini = hoy.clone().startOf('month'); fin = hoy.clone().endOf('month') }
+    else if (key === 'mes_anterior') { ini = hoy.clone().subtract(1, 'month').startOf('month'); fin = ini.clone().endOf('month') }
+    setPeriod(key)
+    setFechaInicio(ini.format(f))
+    setFechaFin(fin.format(f))
+  }
+  // Texto del subtítulo según el periodo elegido (antes decía siempre "hoy").
+  const descripcionPeriodo = (() => {
+    const ini = moment(fechaInicio).format('DD/MM/YYYY')
+    const fin = moment(fechaFin).format('DD/MM/YYYY')
+    if (period === 'hoy') return `Resumen de hoy, ${ini}.`
+    if (period === 'ayer') return `Resumen de ayer, ${ini}.`
+    if (ini === fin) return `Resumen del ${ini}.`
+    return `Resumen del ${ini} al ${fin}.`
+  })()
 
   // "Productos Más Vendidos" — modal de detalle + exportable
   const [showTopModal, setShowTopModal] = useState(false)
@@ -126,6 +158,7 @@ export default function AdminIndex() {
 
   const handleDate = (date: string, name: string) => {
     const parsed = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD')
+    setPeriod('personalizado')
     if (name === 'fechaInicio') setFechaInicio(parsed)
     if (name === 'fechaFin') setFechaFin(parsed)
   }
@@ -164,7 +197,7 @@ export default function AdminIndex() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2 leading-tight">
               ¡Hola, {auth?.nombre?.split(' ')[0] || 'Administrador'}! <span>👋</span>
             </h1>
-            <p className="text-sm sm:text-[15px] text-gray-500 dark:text-gray-400 font-medium mt-1">Aquí tienes un resumen de tu negocio hoy.</p>
+            <p className="text-sm sm:text-[15px] text-gray-500 dark:text-gray-400 font-medium mt-1">{descripcionPeriodo}</p>
           </div>
           <div className="w-full xl:w-auto grid grid-cols-1 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] xl:flex items-stretch xl:items-center gap-3">
             {isAdmin && sedes.length > 1 && (
@@ -172,6 +205,18 @@ export default function AdminIndex() {
                 <Select name="sedeId" label="Sede" options={sedesOptions} onChange={(id) => handleSelectSede(id)} value={effectiveSedeId ? sedes.find(s => s.id === effectiveSedeId)?.nombre || '' : 'Todas las sedes'} error="" />
               </div>
             )}
+            <div className="order-first xl:order-none sm:col-span-2 xl:col-span-1 inline-flex w-full xl:w-auto overflow-x-auto bg-gray-100 dark:bg-slate-800 rounded-xl p-1 gap-0.5">
+              {PERIODOS.map(p => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => aplicarPeriodo(p.key)}
+                  className={`flex-1 xl:flex-none whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${period === p.key ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-2 gap-2 min-w-0">
               <Calendar name="fechaInicio" onChange={handleDate} value={moment(fechaInicio).format('DD/MM/YYYY')} text="Fecha Inicio" />
               <Calendar left name="fechaFin" onChange={handleDate} value={moment(fechaFin).format('DD/MM/YYYY')} text="Fecha Fin" />
@@ -180,7 +225,7 @@ export default function AdminIndex() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-5 sm:mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-5 mb-5 sm:mb-6">
           <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
             <div className="flex justify-between items-start gap-2 mb-4">
               <h3 className="text-violet-600 text-[13px] font-bold tracking-wide">Ventas Totales</h3>
@@ -254,6 +299,27 @@ export default function AdminIndex() {
             </div>
             <div className="mt-4 h-10 sm:h-12 opacity-80">
               <MonoSparkline data={chartVentas.length ? chartVentas.slice(-7) : [{ date: '1', total: 0 }]} category="total" />
+            </div>
+          </div>
+
+          {/* Utilidad bruta del periodo: venta neta − costo de lo vendido. */}
+          <div className="bg-white dark:bg-[#131620] rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between group hover:shadow-md transition-shadow min-w-0">
+            <div className="flex justify-between items-start gap-2 mb-4">
+              <h3 className="text-teal-500 text-[13px] font-bold tracking-wide">Utilidad</h3>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-teal-500 flex items-center justify-center text-white shadow-teal-200 group-hover:-translate-y-1 transition-transform shrink-0">
+                <Icon icon="solar:chart-2-bold" className="text-xl" />
+              </div>
+            </div>
+            <div>
+              <h2 className={`text-xl sm:text-[28px] leading-none font-extrabold mb-2 truncate ${(kpis.utilidad?.value ?? 0) < 0 ? 'text-rose-500' : 'text-gray-900 dark:text-white'}`}>{formatMoney(kpis.utilidad?.value ?? 0)}</h2>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {renderTrend(kpis.utilidad?.trend ?? 0)}
+                <span className="text-gray-400 text-[11px] sm:text-xs font-medium">vs semana pasada</span>
+              </div>
+            </div>
+            <div className="mt-4 h-10 sm:h-12 flex flex-col justify-end gap-0.5">
+              <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium truncate">Margen <span className="font-bold text-gray-700 dark:text-gray-200">{Number(kpis.utilidad?.margen ?? 0).toFixed(1)}%</span> sobre venta sin IGV</p>
+              <p className="text-[11px] sm:text-xs text-gray-400 truncate">Costo de lo vendido {formatMoney(kpis.utilidad?.costo ?? 0)}</p>
             </div>
           </div>
         </div>
