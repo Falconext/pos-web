@@ -189,5 +189,10 @@ describe('formato configurable en factura/boleta A4', () => {
     expect(oculto).not.toContain('JR. C MZ. S LT. 6');
     expect(oculto).not.toContain('GRACIAS POR SU COMPRA');
     expect(oculto).not.toContain('OBS NV');
+    // Al ocultar "SON:" se va también su línea de puntos (una <hr> menos).
+    const hrs = (html: string) => (html.match(/<hr/g) || []).length;
+    const sinSon = renderTicketNV({ sonTexto: { visible: false } });
+    expect(sinSon).not.toContain('SON:');
+    expect(hrs(sinSon)).toBe(hrs(todo) - 1);
   });
 });

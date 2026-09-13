@@ -434,8 +434,14 @@ console.log(formValues)
                             ))}
                         </div>
                         <hr className="my-1 border-dashed border-[#222]" />
-                        {fc('sonTexto').visible && <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {sonEnMoneda || ''}</p>}
-                        <hr className="my-1 border-dashed border-[#222]" />
+                        {/* Si se oculta "SON:", también se va su línea de puntos: si no, quedaban
+                            dos líneas seguidas con una franja vacía antes de los totales. */}
+                        {fc('sonTexto').visible && (
+                            <>
+                                <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} `}>SON: {sonEnMoneda || ''}</p>
+                                <hr className="my-1 border-dashed border-[#222]" />
+                            </>
+                        )}
                         {fc('subTotal').visible && totalDescuentos > 0 && (
                             <label className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                                 <div className="">SUBTOTAL:</div>
