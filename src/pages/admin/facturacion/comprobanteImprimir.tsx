@@ -307,6 +307,7 @@ console.log(formValues)
     return (
         <div
             id="print-root"
+            data-size={size}
             aria-hidden={isScreenHidden}
             className={isScreenHidden ? 'pointer-events-none opacity-0 fixed -left-[200vw] top-0 z-[-1]' : 'bg-[#fff]'}
         >

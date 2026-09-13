@@ -128,10 +128,18 @@ html.is-admin .font-poppins {
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
 }
 
-/* Comprobantes: conservan su fuente (no Plus Jakarta Sans). */
+/* Comprobantes: en pantalla usan LA MISMA fuente que al imprimir (ver
+   src/utils/printStyles.ts), para que la vista previa del modal "Configurar
+   formato" y del POS se vea igual que el papel: Inter en A4/A5 y VT323
+   (monoespaciada de impresora térmica) en ticket. Antes se forzaba Poppins
+   y el ticket en pantalla no se parecía al impreso. */
 html.is-admin #print-root,
 html.is-admin #print-root * {
-  font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Inter', Arial, sans-serif !important;
+}
+html.is-admin #print-root[data-size='TICKET'],
+html.is-admin #print-root[data-size='TICKET'] * {
+  font-family: 'VT323', monospace !important;
 }
 
 .tr-shadow {
