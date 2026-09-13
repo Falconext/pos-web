@@ -42,6 +42,18 @@ interface RentabilidadViewProps {
     isSavingIngreso: boolean;
     isCurrentOrFuture: boolean;
     navegarMes: (delta: -1 | 1) => void;
+    /** Día · Mes · Rango (mismo selector que la pestaña Productos). */
+    periodo: 'dia' | 'mes' | 'rango';
+    dia: string;
+    fechaInicio: string;
+    fechaFin: string;
+    esHoy: boolean;
+    hoy: string;
+    navegarDia: (delta: -1 | 1) => void;
+    setPeriodo: (p: 'dia' | 'mes' | 'rango') => void;
+    setDia: (dia: string) => void;
+    setFechaInicio: (f: string) => void;
+    setFechaFin: (f: string) => void;
     crearGasto: (data: GastoFormData) => Promise<boolean>;
     actualizarGasto: (id: number, data: Partial<GastoFormData>) => Promise<boolean>;
     eliminarGasto: (id: number) => Promise<boolean>;
@@ -107,9 +119,26 @@ function KpiCard({ title, value, icon, iconBg, iconColor, sub, subColor, badge, 
     );
 }
 
+// ─── Selector de período ──────────────────────────────────────────────────────
+
+function SegmentedButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                active
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+            }`}
+        >
+            {children}
+        </button>
+    );
+}
+
 // ─── Variación badge ──────────────────────────────────────────────────────────
 
-function VariacionBadge({ variacion }: { variacion: number | null }) {
+function VariacionBadge({ variacion, label = 'vs mes ant.' }: { variacion: number | null; label?: string }) {
     if (variacion === null) return null;
     const isPositive = variacion >= 0;
     return (
@@ -122,7 +151,7 @@ function VariacionBadge({ variacion }: { variacion: number | null }) {
                 icon={isPositive ? 'solar:arrow-up-bold' : 'solar:arrow-down-bold'}
                 className="text-xs"
             />
-            {formatPercent(variacion)} vs mes ant.
+            {formatPercent(variacion)} {label}
         </span>
     );
 }
@@ -173,7 +202,7 @@ function DailyProfitCard({ pnl }: { pnl: PnlResponse }) {
                     </div>
                 </div>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
-                    Últimos {topDays.length || 0} días
+                    {topDays.length === 1 ? 'Día seleccionado' : `Últimos ${topDays.length || 0} días`}
                 </span>
             </div>
 
@@ -247,6 +276,8 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
         isLoading, isModalOpen, gastoEditando, isSaving, isCurrentOrFuture,
         isIngresoModalOpen, ingresoEditando, isSavingIngreso,
         navegarMes, crearGasto, actualizarGasto, eliminarGasto,
+        periodo, dia, fechaInicio, fechaFin, esHoy, hoy,
+        navegarDia, setPeriodo, setDia, setFechaInicio, setFechaFin,
         abrirModalCrear, abrirModalEditar, cerrarModal,
         crearIngreso, actualizarIngreso, eliminarIngreso,
         abrirModalCrearIngreso, abrirModalEditarIngreso, cerrarModalIngreso,
@@ -273,30 +304,59 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white dark:bg-[#111827] border border-gray-100/50 dark:border-slate-800 rounded-2xl p-1.5 shadow-sm">
-                    <button
-                        onClick={() => navegarMes(-1)}
-                        className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                    >
-                        <Icon icon="solar:arrow-left-bold" className="text-base" />
-                        <span className="hidden sm:inline">Anterior</span>
-                    </button>
-
-                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20">
-                        <Icon icon="solar:calendar-date-bold-duotone" className="text-indigo-600 dark:text-indigo-400 text-base" />
-                        <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
-                            {getMesFullLabel(mesActual)} {anioActual}
-                        </span>
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Día · Mes · Rango, igual que en Productos. El día se pide al
+                        backend como rango de un solo día (fechaInicio = fechaFin). */}
+                    <div className="flex bg-gray-100 dark:bg-slate-800/60 rounded-xl p-1 gap-1">
+                        <SegmentedButton active={periodo === 'dia'} onClick={() => setPeriodo('dia')}>Día</SegmentedButton>
+                        <SegmentedButton active={periodo === 'mes'} onClick={() => setPeriodo('mes')}>Mes</SegmentedButton>
+                        <SegmentedButton active={periodo === 'rango'} onClick={() => setPeriodo('rango')}>Rango</SegmentedButton>
                     </div>
+                    {periodo === 'rango' && (
+                        <>
+                            <input type="date" value={fechaInicio} max={hoy} onChange={(e) => setFechaInicio(e.target.value)} className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] px-3 text-sm" />
+                            <span className="text-xs text-gray-400">al</span>
+                            <input type="date" value={fechaFin} max={hoy} onChange={(e) => setFechaFin(e.target.value)} className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] px-3 text-sm" />
+                        </>
+                    )}
+                    {periodo === 'dia' && (
+                        <>
+                            <button onClick={() => navegarDia(-1)} className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800">
+                                <Icon icon="solar:alt-arrow-left-bold" className="text-gray-600 dark:text-gray-400" />
+                            </button>
+                            <input type="date" value={dia} max={hoy} onChange={(e) => setDia(e.target.value)} className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] px-3 text-sm" />
+                            <button onClick={() => navegarDia(1)} disabled={esHoy} className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-30">
+                                <Icon icon="solar:alt-arrow-right-bold" className="text-gray-600 dark:text-gray-400" />
+                            </button>
+                        </>
+                    )}
+                    {periodo === 'mes' && (
+                    <div className="flex items-center gap-2 bg-white dark:bg-[#111827] border border-gray-100/50 dark:border-slate-800 rounded-2xl p-1.5 shadow-sm">
+                        <button
+                            onClick={() => navegarMes(-1)}
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                        >
+                            <Icon icon="solar:arrow-left-bold" className="text-base" />
+                            <span className="hidden sm:inline">Anterior</span>
+                        </button>
 
-                    <button
-                        onClick={() => navegarMes(1)}
-                        disabled={isCurrentOrFuture}
-                        className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 disabled:hover:bg-transparent"
-                    >
-                        <span className="hidden sm:inline">Siguiente</span>
-                        <Icon icon="solar:arrow-right-bold" className="text-base" />
-                    </button>
+                        <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20">
+                            <Icon icon="solar:calendar-date-bold-duotone" className="text-indigo-600 dark:text-indigo-400 text-base" />
+                            <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                                {getMesFullLabel(mesActual)} {anioActual}
+                            </span>
+                        </div>
+
+                        <button
+                            onClick={() => navegarMes(1)}
+                            disabled={isCurrentOrFuture}
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 disabled:hover:bg-transparent"
+                        >
+                            <span className="hidden sm:inline">Siguiente</span>
+                            <Icon icon="solar:arrow-right-bold" className="text-base" />
+                        </button>
+                    </div>
+                    )}
                 </div>
             </div>
 
@@ -377,7 +437,10 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                                 : 'bg-rose-500 border-rose-400 hover:shadow-rose-200 dark:hover:shadow-rose-900/20'}
                             badge={
                                 pnl != null && pnl.comparacion.variacionPorcentaje !== null
-                                    ? <VariacionBadge variacion={pnl.comparacion.variacionPorcentaje} />
+                                    ? <VariacionBadge
+                                        variacion={pnl.comparacion.variacionPorcentaje}
+                                        label={periodo === 'mes' ? 'vs mes ant.' : periodo === 'dia' ? 'vs día ant.' : 'vs período ant.'}
+                                    />
                                     : undefined
                             }
                         />

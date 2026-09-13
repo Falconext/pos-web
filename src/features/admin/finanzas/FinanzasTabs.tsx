@@ -152,6 +152,17 @@ export default function FinanzasTabs() {
                     <RentabilidadView
                         mesActual={vm.mesActual}
                         anioActual={vm.anioActual}
+                        periodo={vm.periodo}
+                        dia={vm.dia}
+                        fechaInicio={vm.fechaInicio}
+                        fechaFin={vm.fechaFin}
+                        esHoy={vm.esHoy}
+                        hoy={vm.hoy}
+                        navegarDia={vm.navegarDia}
+                        setPeriodo={vm.setPeriodo}
+                        setDia={vm.setDia}
+                        setFechaInicio={vm.setFechaInicio}
+                        setFechaFin={vm.setFechaFin}
                         sedesOptions={sede.sedesOptions.filter((o) => o.id > 0)}
                         sedeIdActual={sede.sedeId}
                         pnl={vm.pnl}

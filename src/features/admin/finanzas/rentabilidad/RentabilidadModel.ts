@@ -7,7 +7,14 @@ export interface OtroIngreso {
 }
 
 export interface PnlResponse {
-    periodo: { mes: number; anio: number; label: string };
+    periodo: {
+        mes: number;
+        anio: number;
+        label: string;
+        tipo?: 'mes' | 'dia' | 'rango';
+        fechaInicio?: string;
+        fechaFin?: string;
+    };
     ventasNetas: number;
     costoBaseProductos: number;
     costosFijosProducto: number;

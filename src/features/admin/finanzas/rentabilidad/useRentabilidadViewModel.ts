@@ -10,11 +10,34 @@ import {
     IngresoFormData,
 } from './RentabilidadModel';
 
+export type PeriodoRentabilidad = 'dia' | 'mes' | 'rango';
+
+const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const monthStart = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+
+/** Suma días a YYYY-MM-DD en UTC, para que en Lima (UTC-5) no retroceda un día. */
+const sumarDias = (iso: string, n: number) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + n);
+    return dt.toISOString().slice(0, 10);
+};
+
 // ─── State shape ─────────────────────────────────────────────────────────────
 
 interface RentabilidadState {
     mesActual: number;
     anioActual: number;
+    /** Día · Mes · Rango. El mes es el comportamiento histórico del P&L. */
+    periodo: PeriodoRentabilidad;
+    /** Día seleccionado cuando periodo = 'dia' (YYYY-MM-DD). */
+    dia: string;
+    fechaInicio: string;
+    fechaFin: string;
     pnl: PnlResponse | null;
     evolucion: EvolucionPoint[];
     gastos: GastoOperativo[];
@@ -44,6 +67,10 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
     const [state, setState] = useState<RentabilidadState>({
         mesActual: now.getMonth() + 1,
         anioActual: now.getFullYear(),
+        periodo: 'mes',
+        dia: today(),
+        fechaInicio: monthStart(now),
+        fechaFin: today(),
         pnl: null,
         evolucion: [],
         gastos: [],
@@ -67,32 +94,52 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
         state.anioActual > currentYear ||
         (state.anioActual === currentYear && state.mesActual >= currentMonth);
 
+    // ─── Período efectivo ─────────────────────────────────────────────────────
+    // Rango de fechas que se pide al backend según el selector. El día se pide
+    // como rango de un solo día (fechaInicio = fechaFin), sin endpoint nuevo.
+    const { periodo, dia, fechaInicio, fechaFin, mesActual, anioActual } = state;
+    const rango = periodo === 'dia'
+        ? { fi: dia, ff: dia }
+        : periodo === 'rango'
+            ? { fi: fechaInicio, ff: fechaFin }
+            : {
+                fi: `${anioActual}-${String(mesActual).padStart(2, '0')}-01`,
+                ff: new Date(Date.UTC(anioActual, mesActual, 0)).toISOString().slice(0, 10),
+            };
+    // Mes al que pertenece el período (el del inicio): la lista de gastos
+    // operativos sigue siendo mensual.
+    const mesDePeriodo = periodo === 'mes'
+        ? { mes: mesActual, anio: anioActual }
+        : { mes: Number(rango.fi.slice(5, 7)), anio: Number(rango.fi.slice(0, 4)) };
+    const pnlQuery = periodo === 'mes'
+        ? `mes=${mesActual}&anio=${anioActual}`
+        : `fechaInicio=${rango.fi}&fechaFin=${rango.ff}`;
+    const rangoValido = periodo !== 'rango' || (fechaInicio !== '' && fechaFin !== '' && fechaInicio <= fechaFin);
+
     // ─── Fetchers ─────────────────────────────────────────────────────────────
 
     const qSede = sedeId ? `&sedeId=${sedeId}` : '';
 
-    const fetchPnl = useCallback(async (mes: number, anio: number) => {
-        const resp = await get<PnlResponse>(`analisis-financiero/pnl?mes=${mes}&anio=${anio}${qSede}`);
+    const fetchPnl = useCallback(async () => {
+        const resp = await get<PnlResponse>(`analisis-financiero/pnl?${pnlQuery}${qSede}`);
         if (resp.data) {
             setState(prev => ({ ...prev, pnl: resp.data! }));
         }
-    }, [qSede]);
+    }, [pnlQuery, qSede]);
 
-    const fetchGastos = useCallback(async (mes: number, anio: number) => {
-        const resp = await get<GastoOperativo[]>(`analisis-financiero/gastos?mes=${mes}&anio=${anio}${qSede}`);
+    const fetchGastos = useCallback(async () => {
+        const resp = await get<GastoOperativo[]>(`analisis-financiero/gastos?mes=${mesDePeriodo.mes}&anio=${mesDePeriodo.anio}${qSede}`);
         if (resp.data) {
             setState(prev => ({ ...prev, gastos: resp.data! }));
         }
-    }, [qSede]);
+    }, [mesDePeriodo.mes, mesDePeriodo.anio, qSede]);
 
-    const fetchIngresos = useCallback(async (mes: number, anio: number) => {
-        const fi = `${anio}-${String(mes).padStart(2, '0')}-01`;
-        const ff = new Date(anio, mes, 0).toISOString().slice(0, 10);
-        const resp = await get<{ items: IngresoManual[]; total: number }>(`finanzas/ingresos-manuales?fechaInicio=${fi}&fechaFin=${ff}`);
+    const fetchIngresos = useCallback(async () => {
+        const resp = await get<{ items: IngresoManual[]; total: number }>(`finanzas/ingresos-manuales?fechaInicio=${rango.fi}&fechaFin=${rango.ff}`);
         if (resp.data) {
             setState(prev => ({ ...prev, ingresos: (resp.data as any).items ?? [] }));
         }
-    }, []);
+    }, [rango.fi, rango.ff]);
 
     const fetchEvolucion = useCallback(async () => {
         const resp = await get<EvolucionPoint[]>(`analisis-financiero/evolucion?meses=6${qSede}`);
@@ -113,23 +160,19 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
         }
     }, []);
 
-    // ─── Load on mount and on mes/año change ──────────────────────────────────
-
+    // ─── Load on mount and on period change ──────────────────────────────────
     useEffect(() => {
+        if (!rangoValido) return;
         const load = async () => {
             setState(prev => ({ ...prev, isLoading: true }));
             try {
-                await Promise.all([
-                    fetchPnl(state.mesActual, state.anioActual),
-                    fetchGastos(state.mesActual, state.anioActual),
-                    fetchIngresos(state.mesActual, state.anioActual),
-                ]);
+                await Promise.all([fetchPnl(), fetchGastos(), fetchIngresos()]);
             } finally {
                 setState(prev => ({ ...prev, isLoading: false }));
             }
         };
         load();
-    }, [state.mesActual, state.anioActual, qSede]);
+    }, [pnlQuery, mesDePeriodo.mes, mesDePeriodo.anio, rango.fi, rango.ff, rangoValido, qSede]);
 
     // Fetch evolution and current inventory value only once on mount
     useEffect(() => {
@@ -161,12 +204,24 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
         });
     }, []);
 
+    /** Mueve el día seleccionado. No deja pasar de hoy: no hay ventas futuras. */
+    const navegarDia = useCallback((delta: -1 | 1) => {
+        setState(prev => {
+            const siguiente = sumarDias(prev.dia, delta);
+            return siguiente > today() ? prev : { ...prev, dia: siguiente };
+        });
+    }, []);
+    const setPeriodo = useCallback((p: PeriodoRentabilidad) => setState(prev => ({ ...prev, periodo: p })), []);
+    const setDia = useCallback((d: string) => setState(prev => ({ ...prev, dia: d })), []);
+    const setFechaInicio = useCallback((f: string) => setState(prev => ({ ...prev, fechaInicio: f })), []);
+    const setFechaFin = useCallback((f: string) => setState(prev => ({ ...prev, fechaFin: f })), []);
+
     // ─── Gasto CRUD ───────────────────────────────────────────────────────────
 
-    const refreshPnlAndGastos = useCallback(async (mes: number, anio: number) => {
+    const refreshPnlAndGastos = useCallback(async () => {
         setState(prev => ({ ...prev, isLoading: true }));
         try {
-            await Promise.all([fetchPnl(mes, anio), fetchGastos(mes, anio), fetchIngresos(mes, anio)]);
+            await Promise.all([fetchPnl(), fetchGastos(), fetchIngresos()]);
         } finally {
             setState(prev => ({ ...prev, isLoading: false }));
         }
@@ -182,7 +237,7 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
             }
             alert('Gasto registrado correctamente', 'success', 'Éxito');
             setState(prev => ({ ...prev, isModalOpen: false, gastoEditando: null }));
-            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            await refreshPnlAndGastos();
             return true;
         } catch {
             alert('No se pudo registrar el gasto', 'error', 'Error');
@@ -190,7 +245,7 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
         } finally {
             setState(prev => ({ ...prev, isSaving: false }));
         }
-    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+    }, [alert, refreshPnlAndGastos]);
 
     const actualizarGasto = useCallback(async (id: number, data: Partial<GastoFormData>) => {
         setState(prev => ({ ...prev, isSaving: true }));
@@ -202,7 +257,7 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
             }
             alert('Gasto actualizado correctamente', 'success', 'Éxito');
             setState(prev => ({ ...prev, isModalOpen: false, gastoEditando: null }));
-            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            await refreshPnlAndGastos();
             return true;
         } catch {
             alert('No se pudo actualizar el gasto', 'error', 'Error');
@@ -210,7 +265,7 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
         } finally {
             setState(prev => ({ ...prev, isSaving: false }));
         }
-    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+    }, [alert, refreshPnlAndGastos]);
 
     const eliminarGasto = useCallback(async (id: number) => {
         try {
@@ -220,13 +275,13 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
                 return false;
             }
             alert('Gasto eliminado', 'success', 'Éxito');
-            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            await refreshPnlAndGastos();
             return true;
         } catch {
             alert('No se pudo eliminar el gasto', 'error', 'Error');
             return false;
         }
-    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+    }, [alert, refreshPnlAndGastos]);
 
     // ─── Modal helpers ────────────────────────────────────────────────────────
 
@@ -251,11 +306,11 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
             if (resp.error) { alert(resp.error, 'error', 'Error'); return false; }
             alert('Ingreso registrado correctamente', 'success', 'Éxito');
             setState(prev => ({ ...prev, isIngresoModalOpen: false, ingresoEditando: null }));
-            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            await refreshPnlAndGastos();
             return true;
         } catch { alert('No se pudo registrar el ingreso', 'error', 'Error'); return false; }
         finally { setState(prev => ({ ...prev, isSavingIngreso: false })); }
-    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+    }, [alert, refreshPnlAndGastos]);
 
     const actualizarIngreso = useCallback(async (id: number, data: Partial<IngresoFormData>) => {
         setState(prev => ({ ...prev, isSavingIngreso: true }));
@@ -264,21 +319,21 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
             if (resp.error) { alert(resp.error, 'error', 'Error'); return false; }
             alert('Ingreso actualizado correctamente', 'success', 'Éxito');
             setState(prev => ({ ...prev, isIngresoModalOpen: false, ingresoEditando: null }));
-            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            await refreshPnlAndGastos();
             return true;
         } catch { alert('No se pudo actualizar el ingreso', 'error', 'Error'); return false; }
         finally { setState(prev => ({ ...prev, isSavingIngreso: false })); }
-    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+    }, [alert, refreshPnlAndGastos]);
 
     const eliminarIngreso = useCallback(async (id: number) => {
         try {
             const resp = await del(`finanzas/ingresos-manuales/${id}`);
             if (resp.error) { alert(resp.error, 'error', 'Error'); return false; }
             alert('Ingreso eliminado', 'success', 'Éxito');
-            await refreshPnlAndGastos(state.mesActual, state.anioActual);
+            await refreshPnlAndGastos();
             return true;
         } catch { alert('No se pudo eliminar el ingreso', 'error', 'Error'); return false; }
-    }, [state.mesActual, state.anioActual, alert, refreshPnlAndGastos]);
+    }, [alert, refreshPnlAndGastos]);
 
     const abrirModalCrearIngreso = useCallback(() => {
         setState(prev => ({ ...prev, isIngresoModalOpen: true, ingresoEditando: null }));
@@ -298,6 +353,13 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
         // State
         mesActual: state.mesActual,
         anioActual: state.anioActual,
+        periodo: state.periodo,
+        dia: state.dia,
+        fechaInicio: state.fechaInicio,
+        fechaFin: state.fechaFin,
+        esHoy: state.dia >= today(),
+        /** Tope del selector de fecha: no se piden ventas futuras. */
+        hoy: today(),
         pnl: state.pnl,
         evolucion: state.evolucion,
         gastos: state.gastos,
@@ -315,6 +377,11 @@ export function useRentabilidadViewModel(sedeId?: number | null) {
 
         // Actions
         navegarMes,
+        navegarDia,
+        setPeriodo,
+        setDia,
+        setFechaInicio,
+        setFechaFin,
         crearGasto,
         actualizarGasto,
         eliminarGasto,
