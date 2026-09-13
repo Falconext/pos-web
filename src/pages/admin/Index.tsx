@@ -205,17 +205,21 @@ export default function AdminIndex() {
                 <Select name="sedeId" label="Sede" options={sedesOptions} onChange={(id) => handleSelectSede(id)} value={effectiveSedeId ? sedes.find(s => s.id === effectiveSedeId)?.nombre || '' : 'Todas las sedes'} error="" />
               </div>
             )}
-            <div className="order-first xl:order-none sm:col-span-2 xl:col-span-1 inline-flex w-full xl:w-auto overflow-x-auto bg-gray-100 dark:bg-slate-800 rounded-xl p-1 gap-0.5">
-              {PERIODOS.map(p => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => aplicarPeriodo(p.key)}
-                  className={`flex-1 xl:flex-none whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${period === p.key ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
-                >
-                  {p.label}
-                </button>
-              ))}
+            {/* Mismo label y misma altura que Sede / Fecha para que la fila quede alineada. */}
+            <div className="order-first xl:order-none sm:col-span-2 xl:col-span-1 w-full xl:w-auto min-w-0">
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Periodo</label>
+              <div className="flex h-10 items-stretch overflow-x-auto bg-gray-100 dark:bg-slate-800 rounded-xl p-1 gap-0.5">
+                {PERIODOS.map(p => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => aplicarPeriodo(p.key)}
+                    className={`flex-1 xl:flex-none whitespace-nowrap px-3 text-xs font-bold rounded-lg transition-colors ${period === p.key ? 'bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 min-w-0">
               <Calendar name="fechaInicio" onChange={handleDate} value={moment(fechaInicio).format('DD/MM/YYYY')} text="Fecha Inicio" />

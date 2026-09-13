@@ -268,7 +268,10 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     const condicionPreview = isCreditoPreview ? 'CRÉDITO' : 'CONTADO';
     const vueltoPreview = isCreditoPreview ? 0 : (vm.isMixedPayment ? splitChange : (vm.isCashPayment ? (vm.vueltoCalculado || 0) : 0));
     const montoMedioPreview = isCreditoPreview ? inicialCreditoPreview : total;
-    const pagadoPreview = isCreditoPreview ? inicialCreditoPreview : total + vueltoPreview;
+    // Lo realmente recibido: si en efectivo se ingresó menos que el total, se muestra
+    // ese monto (y no el total) para que el faltante sea evidente en la vista previa.
+    const pagadoPreview = isCreditoPreview ? inicialCreditoPreview : (vm.isCashPayment && !vm.isMixedPayment ? vm.montoRecibido : total + vueltoPreview);
+    const faltanteEfectivo = Number(vm.faltanteEfectivo ?? 0);
     const creditoMensaje = inicialCreditoPreview > 0
         ? `Venta a crédito con pago inicial de S/ ${inicialCreditoPreview.toFixed(2)} (${metodoPreviewLabel}). El resto queda a crédito.`
         : 'Venta a crédito — no requiere método de pago (o configura un pago inicial en “Configurar venta”).';
@@ -581,13 +584,28 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                             Exacto
                                         </button>
                                     </div>
-                                    <div className={`min-w-[88px] rounded-lg px-2.5 py-1.5 text-right ${vm.vueltoCalculado > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-gray-50 dark:bg-slate-800'}`}>
-                                        <p className="text-[9px] font-black uppercase text-gray-400">Vuelto</p>
-                                        <p className={`text-xs font-black ${vm.vueltoCalculado > 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-400'}`}>
-                                            S/ {vm.vueltoCalculado.toFixed(2)}
-                                        </p>
-                                    </div>
+                                    {faltanteEfectivo > 0 ? (
+                                        <div className="min-w-[88px] rounded-lg px-2.5 py-1.5 text-right bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800">
+                                            <p className="text-[9px] font-black uppercase text-rose-500">Falta</p>
+                                            <p className="text-xs font-black text-rose-600 dark:text-rose-300">
+                                                S/ {faltanteEfectivo.toFixed(2)}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className={`min-w-[88px] rounded-lg px-2.5 py-1.5 text-right ${vm.vueltoCalculado > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-gray-50 dark:bg-slate-800'}`}>
+                                            <p className="text-[9px] font-black uppercase text-gray-400">Vuelto</p>
+                                            <p className={`text-xs font-black ${vm.vueltoCalculado > 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-400'}`}>
+                                                S/ {vm.vueltoCalculado.toFixed(2)}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
+                            )}
+                            {faltanteEfectivo > 0 && (
+                                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1">
+                                    <Icon icon="solar:danger-triangle-bold" />
+                                    El cliente aún debe S/ {faltanteEfectivo.toFixed(2)}. Ingresa el monto recibido completo o usa Crédito / Pago mixto.
+                                </p>
                             )}
 
                             {renderPaymentTraceFields(
@@ -775,8 +793,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                             </button>
                             <button
                                 onClick={() => vm.addInvoiceReceipt()}
-                                disabled={!isCreditoPreview && vm.isMixedPayment && !splitValid}
-                                className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all ${(!isCreditoPreview && vm.isMixedPayment && !splitValid) ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-500/30'}`}
+                                disabled={!isCreditoPreview && ((vm.isMixedPayment && !splitValid) || faltanteEfectivo > 0)}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all ${(!isCreditoPreview && ((vm.isMixedPayment && !splitValid) || faltanteEfectivo > 0)) ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-500/30'}`}
                             >
                                 <Icon icon={vm.isEditMode ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} width={18} />
                                 {vm.isEditMode ? 'ACTUALIZAR' : 'EMITIR'}

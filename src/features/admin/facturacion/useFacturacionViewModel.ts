@@ -2221,6 +2221,14 @@ export const useFacturacionViewModel = () => {
             ? Number(pay.toFixed(2))
             : Number(totalAdjusted.toFixed(2));
     const vueltoCalculado = Number(Math.max(0, montoRecibido - totalAdjusted).toFixed(2));
+    // Efectivo simple con un monto recibido MENOR al total: lo que aún falta cobrar.
+    // Caso real: al editar una nota de venta el campo arranca con lo que el cliente ya
+    // pagó (p.ej. 8.90); si se cambia el producto por otro de 26.70, antes el modal
+    // mostraba "Vuelto 0.00" y registraba la venta como pagada completa (se regalaban
+    // 17.80). Para mixto, el propio panel de líneas ya muestra "Falta S/ ...".
+    const faltanteEfectivo = !isMixedPayment && isCashPayment && pay > 0
+        ? Number(Math.max(0, totalAdjusted - montoRecibido).toFixed(2))
+        : 0;
     const esCreditoNV = formValues.medioPago === 'Crédito';
     // Pago inicial del crédito: si es mixto, la suma de las líneas; si es simple, el campo adelanto.
     const inicialCreditoMonto = esCreditoNV
@@ -2451,6 +2459,14 @@ export const useFacturacionViewModel = () => {
         const paymentDetails = buildPaymentDetails();
         const esPagoCredito = formValues.medioPago === 'Crédito';
         const esDocumentoInformal = esInformal;
+        // Efectivo: no se emite/actualiza con un monto recibido menor al total. Si el
+        // cliente no va a pagar todo, debe ir por Crédito (queda saldo) o pago mixto.
+        if (!esPagoCredito && faltanteEfectivo > 0.009) {
+            return useAlertStore.getState().alert(
+                `El monto recibido (S/ ${montoRecibido.toFixed(2)}) es menor al total (S/ ${totalAdjusted.toFixed(2)}). Falta cobrar S/ ${faltanteEfectivo.toFixed(2)}.`,
+                "error",
+            );
+        }
         // Crédito con pago inicial: el inicial se registra con su método real y el
         // resto queda a crédito. Para el resto de casos, se usan los valores normales.
         const creditoConInicial = esPagoCredito && adelantoCreditoCalculado > 0;
@@ -2970,7 +2986,7 @@ export const useFacturacionViewModel = () => {
         // Derived Logic
         totalAdjusted, totalCredito, total, productDiscount, hasDiscount,
         opGravadaAdjusted, igvAdjusted, opExoneradaAdjusted, opInafectaAdjusted, finalDiscount, totalInWords,
-        montoRecibido, vueltoCalculado, isCashPayment,
+        montoRecibido, vueltoCalculado, faltanteEfectivo, isCashPayment,
 
         // References & Inputs
         serie, setSerie,
