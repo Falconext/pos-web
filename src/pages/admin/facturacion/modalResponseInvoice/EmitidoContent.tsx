@@ -104,7 +104,7 @@ const EmitidoContent = ({ isLoading, dataReceipt, auth, client, comprobante, clo
                             {isPendiente ? (
                                 <>
                                     Comprobante <strong>registrado correctamente</strong>.<br />
-                                    <span className="text-amber-500 font-medium text-xs">{pendienteMensaje || 'SUNAT no disponible — se confirmará automáticamente.'}</span>
+                                    <span className="text-amber-500 font-medium text-xs">{pendienteMensaje?.replace(/^comprobante registrado correctamente\.?\s*/i, '') || 'SUNAT no disponible — se confirmará automáticamente.'}</span>
                                 </>
                             ) : (
                                 <>

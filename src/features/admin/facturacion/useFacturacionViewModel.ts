@@ -213,7 +213,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
 };
 
 export const useFacturacionViewModel = () => {
-    const { receipt, importReference, addInformalInvoice, addProductsInvoice, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, deleteProductInvoiceByIndex, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation, updateNotaVenta }: IInvoicesState = useInvoiceStore();
+    const { receipt, importReference, addInformalInvoice, addProductsInvoice: addProductsInvoiceStore, updateProductInvoice, productsInvoice, getInvoiceBySerieCorrelative, resetProductInvoice, invoiceData, deleteProductInvoice, deleteProductInvoiceByIndex, addInvoice, dataReceipt, resetInvoice, getSerieAndCorrelativeByReceipt, updateQuotation, updateNotaVenta }: IInvoicesState = useInvoiceStore();
     const { zoomLevel } = useThemeStore();
     const { auth, sedeActiva } = useAuthStore();
     const { categories, getAllCategories }: ICategoriesState = useCategoriesStore();
@@ -291,6 +291,15 @@ export const useFacturacionViewModel = () => {
     // POS STATES
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState<string>("");
+
+    // Al agregar un producto al carrito (desde búsqueda, variante, kit o
+    // escáner) se limpia lo escrito en "Buscar productos": el catálogo vuelve a
+    // mostrarse completo y la cajera puede teclear el siguiente producto sin
+    // tener que borrar a mano lo anterior.
+    const addProductsInvoice: IInvoicesState['addProductsInvoice'] = (product: any) => {
+        addProductsInvoiceStore(product);
+        setSearchTerm(prev => (prev ? "" : prev));
+    };
 
     // Fraccionamiento: modo por producto (CAJA = unidadCompra, UNIDAD = unidadVenta)
     const [modoFraccionPorProducto, setModoFraccionPorProducto] = useState<Record<number, 'CAJA' | 'UNIDAD'>>({});
@@ -1084,7 +1093,17 @@ export const useFacturacionViewModel = () => {
                 // "cambió de comprobante" y borra el cliente recién seteado.
                 // defaultType para conversión de NV es 'FACTURA' o 'BOLETA' (labels que
                 // coinciden con el comprobante final), así que se usa directo.
-                fromNVComprobanteRef.current = (state?.defaultType as string) || formValues.comprobante;
+                // Al EDITAR una NV, defaultType llega como código ('NV', 'TICKET'…) y
+                // formValues.comprobante como etiqueta ('NOTA DE VENTA'): si se guarda
+                // el código, el effect de reset cree que se cambió de comprobante y
+                // pisa el cliente de la nota con "CLIENTES VARIOS" (y al actualizar se
+                // guardaba así). Se normaliza a la misma etiqueta que usa formValues.
+                const LABEL_POR_CODIGO: Record<string, string> = {
+                    NP: 'NOTA DE PEDIDO', NV: 'NOTA DE VENTA', TICKET: 'TICKET',
+                    OT: 'ORDEN DE TRABAJO', RH: 'RECIBO POR HONORARIO', CP: 'COMPROBANTE DE PAGO',
+                };
+                const dt = state?.defaultType as string | undefined;
+                fromNVComprobanteRef.current = (dt ? (LABEL_POR_CODIGO[dt] ?? dt) : null) || formValues.comprobante;
                 setSelectedClient(cliente);
                 setFormValuesClient(cliente as any);
                 setFormValues(prev => ({
@@ -2827,6 +2846,14 @@ export const useFacturacionViewModel = () => {
         setEmittedDataReceipt(null);
         setSnapshotClient(null);
         setDespachoCreado(false);
+        // "Nueva venta" tras EDITAR una nota de venta/cotización: la siguiente es
+        // una venta nueva, no otra actualización. Sin esto el POS se quedaba en
+        // modo edición (botón "ACTUALIZAR PAGO") y la próxima venta sobreescribía
+        // la nota recién editada en vez de crear una.
+        setIsEditMode(false);
+        setEditNotaVentaId(null);
+        setEditQuotationId(null);
+        setOrigenComprobanteId(null);
         const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
         setFormValues({
             ...initFormValues,
