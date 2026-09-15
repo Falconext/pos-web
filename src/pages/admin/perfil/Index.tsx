@@ -550,6 +550,24 @@ export default function PerfilIndex() {
                                         {vm.savingControlFlag === 'kitsComoUnaLinea' && <p className="text-xs text-fuchsia-600 dark:text-fuchsia-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-fuchsia-100 dark:border-fuchsia-900/30 bg-fuchsia-50/40 dark:bg-fuchsia-900/10 cursor-pointer hover:bg-fuchsia-50 dark:hover:bg-fuchsia-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).paquetesComoUnaLinea)}
+                                        disabled={vm.savingControlFlag === 'paquetesComoUnaLinea'}
+                                        onChange={(e) => vm.handleControlFlagToggle('paquetesComoUnaLinea', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-fuchsia-600 dark:text-fuchsia-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-fuchsia-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Las cajas/paquetes entran al carrito como una sola unidad</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Al vender paquetes completos (ej. 1 caja de 10, o 2 cajas de 10 = 20 unidades) de un código de "caja o paquete" (Kardex → Productos → Códigos de barra adicionales), el comprobante sale como cantidad en paquetes al precio completo del paquete, en vez de como unidades sueltas.
+                                            El stock del producto se sigue descontando por las unidades reales (y se repone si anulas). Si en el carrito quedan unidades sueltas mezcladas con el paquete (cantidad que no es múltiplo exacto), esa línea se factura como antes.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Apagado, el paquete se desarma en unidades sueltas con el precio repartido entre ellas (comportamiento anterior).</p>
+                                        {vm.savingControlFlag === 'paquetesComoUnaLinea' && <p className="text-xs text-fuchsia-600 dark:text-fuchsia-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
                                 <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-900/10 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
                                     <input
                                         type="checkbox"

@@ -2209,6 +2209,11 @@ export const useFacturacionViewModel = () => {
         esFacturaOBoleta && montoDescuentoNV > 0 && totalOriginal > 0
             ? (totalOriginal - montoDescuentoNV) / totalOriginal
             : 1;
+    // Empresa.paquetesComoUnaLinea: al armar el detalle a enviar, las líneas de
+    // paquete completo (cantidad múltiplo exacto de unidadesPorPaquete) se
+    // facturan como N paquetes al precio completo en vez de como unidades
+    // sueltas al precio repartido (ver detalles más abajo).
+    const paquetesComoUnaLinea = Boolean((auth?.empresa as any)?.paquetesComoUnaLinea);
     const totalAdjusted = isDiscountGlobalApplicable
         ? Math.max(totalOriginal - descountGlobal, 0)
         : Math.max(totalOriginal - montoDescuentoNV, 0);
@@ -2523,50 +2528,77 @@ export const useFacturacionViewModel = () => {
                 }
                 : {}),
             detalles: [
-                ...(productsInvoice?.map((item: any) => ({
-                    productoId: Number(item?.productoId || item?.id) || null,
-                    // Kit como una sola línea: el backend descuenta el stock de sus componentes.
-                    ...(item?.comboId ? { comboId: Number(item.comboId) } : {}),
-                    // Línea de PAQUETE (ej. six-pack): la cantidad va en unidades
-                    // (así el kardex descuenta el stock real), pero la descripción
-                    // aclara la equivalencia en packs para el cliente:
-                    // "30 SIX PACK... (5 pack x6)".
-                    descripcion: (() => {
-                        const u = Number(item?.unidadesPorPaquete) || 1;
-                        if (item?.esPaquete && u > 1) {
-                            const packs = Number(item.cantidad) / u;
-                            if (packs >= 1 && Number.isInteger(packs)) return `${item.descripcion} (${packs} pack x${u})`;
-                        }
-                        return item.descripcion;
-                    })(),
-                    cantidad: Number(item.cantidad),
-                    // Afectación IGV por línea (Catálogo 07). Necesario para ítems libres
-                    // como "ANTICIPO/ADELANTO DEL PEDIDO" que van sin IGV (exportación/exonerado).
-                    ...(item.tipoAfectacionIGV ? { tipoAfectacionIGV: String(item.tipoAfectacionIGV) } : {}),
-                    // El backend recalcula base/IGV/total desde nuevoValorUnitario y NO lee el
-                    // campo `descuento` por línea, por lo que el descuento por ítem debe quedar
-                    // plegado dentro del precio unitario (igual que el descuento global vía
-                    // factorDescuentoProrrateo). Así la lista y la reimpresión persisten el total
-                    // con descuento y no el precio de lista.
-                    nuevoValorUnitario:
-                        Number(item.precioUnitario) *
-                        (1 - Number(item.descuento || 0) / 100) *
-                        factorDescuentoProrrateo,
-                    descuento: Number(item.descuento ?? 0),
-                    // Precio de lista (sin descuento) para que el ticket guardado muestre el
-                    // precio original y el ahorro, igual que el ticket de creación.
-                    precioUnitarioOriginal: Number(item.precioUnitario),
-                    // Farmacia: trazabilidad de lote y receta médica
-                    ...(item.loteId != null ? { loteId: item.loteId } : {}),
-                    ...(item.datosReceta?.numeroReceta ? { numeroReceta: item.datosReceta.numeroReceta } : {}),
-                    ...(item.datosReceta?.dniPaciente ? { dniPaciente: item.datosReceta.dniPaciente } : {}),
-                    ...(item.datosReceta?.nombrePaciente ? { nombrePaciente: item.datosReceta.nombrePaciente } : {}),
-                    ...(item.datosReceta?.medicoNombre ? { medicoNombre: item.datosReceta.medicoNombre } : {}),
-                    ...(item.numerosSerie ? { numerosSerie: item.numerosSerie } : {}),
-                    // Fraccionamiento: unidad de venta cuando difiere de la unidad base
-                    ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
-                    ...(item.esItemLibre && item.unidadMedidaCodigo ? { unidadVenta: item.unidadMedidaCodigo } : {}),
-                })) ?? []),
+                ...(productsInvoice?.map((item: any) => {
+                    const uPaquete = Number(item?.unidadesPorPaquete) || 1;
+                    const esPaqueteConUnidades = Boolean(item?.esPaquete) && uPaquete > 1;
+                    const packsExactos = esPaqueteConUnidades ? Number(item.cantidad) / uPaquete : null;
+                    // Empresa.paquetesComoUnaLinea: si la cantidad del carrito es un
+                    // múltiplo exacto de unidadesPorPaquete (paquetes completos, sin
+                    // unidades sueltas mezcladas en la misma línea), se factura como
+                    // N paquetes al precio completo del paquete en vez de como
+                    // unidades sueltas al precio repartido entre ellas.
+                    const facturarComoUnaLinea =
+                        esPaqueteConUnidades &&
+                        paquetesComoUnaLinea &&
+                        packsExactos != null &&
+                        packsExactos >= 1 &&
+                        Number.isInteger(packsExactos);
+                    const cantidadFinal = facturarComoUnaLinea ? (packsExactos as number) : Number(item.cantidad);
+                    // El precio de la línea es por UNIDAD REAL (item.precioUnitario); si
+                    // se factura como paquete, se multiplica por las unidades para que
+                    // sea el precio por cada paquete (cantidadFinal × este precio da el
+                    // mismo total que antes: unidades reales × precio por unidad).
+                    const multiplicadorPrecio = facturarComoUnaLinea ? uPaquete : 1;
+                    return {
+                        productoId: Number(item?.productoId || item?.id) || null,
+                        // Kit como una sola línea: el backend descuenta el stock de sus componentes.
+                        ...(item?.comboId ? { comboId: Number(item.comboId) } : {}),
+                        // Línea de PAQUETE (ej. six-pack) en modo histórico: la cantidad va
+                        // en unidades y la descripción aclara la equivalencia en packs para
+                        // el cliente ("30 SIX PACK... (5 pack x6)"). En modo "una línea" la
+                        // cantidad ya queda en packs, así que no hace falta la aclaración.
+                        descripcion: (() => {
+                            if (esPaqueteConUnidades && !facturarComoUnaLinea) {
+                                const packs = Number(item.cantidad) / uPaquete;
+                                if (packs >= 1 && Number.isInteger(packs)) return `${item.descripcion} (${packs} pack x${uPaquete})`;
+                            }
+                            return item.descripcion;
+                        })(),
+                        cantidad: cantidadFinal,
+                        // Paquete facturado como UNA línea (Empresa.paquetesComoUnaLinea):
+                        // el backend usa esto para descontar/reponer las unidades reales
+                        // del producto, aunque la línea facture cantidad en paquetes (ver
+                        // expandirKitsParaStock en el backend).
+                        ...(facturarComoUnaLinea ? { unidadesPorPaquete: uPaquete } : {}),
+                        // Afectación IGV por línea (Catálogo 07). Necesario para ítems libres
+                        // como "ANTICIPO/ADELANTO DEL PEDIDO" que van sin IGV (exportación/exonerado).
+                        ...(item.tipoAfectacionIGV ? { tipoAfectacionIGV: String(item.tipoAfectacionIGV) } : {}),
+                        // El backend recalcula base/IGV/total desde nuevoValorUnitario y NO lee el
+                        // campo `descuento` por línea, por lo que el descuento por ítem debe quedar
+                        // plegado dentro del precio unitario (igual que el descuento global vía
+                        // factorDescuentoProrrateo). Así la lista y la reimpresión persisten el total
+                        // con descuento y no el precio de lista.
+                        nuevoValorUnitario:
+                            Number(item.precioUnitario) *
+                            (1 - Number(item.descuento || 0) / 100) *
+                            factorDescuentoProrrateo *
+                            multiplicadorPrecio,
+                        descuento: Number(item.descuento ?? 0),
+                        // Precio de lista (sin descuento) para que el ticket guardado muestre el
+                        // precio original y el ahorro, igual que el ticket de creación.
+                        precioUnitarioOriginal: Number(item.precioUnitario) * multiplicadorPrecio,
+                        // Farmacia: trazabilidad de lote y receta médica
+                        ...(item.loteId != null ? { loteId: item.loteId } : {}),
+                        ...(item.datosReceta?.numeroReceta ? { numeroReceta: item.datosReceta.numeroReceta } : {}),
+                        ...(item.datosReceta?.dniPaciente ? { dniPaciente: item.datosReceta.dniPaciente } : {}),
+                        ...(item.datosReceta?.nombrePaciente ? { nombrePaciente: item.datosReceta.nombrePaciente } : {}),
+                        ...(item.datosReceta?.medicoNombre ? { medicoNombre: item.datosReceta.medicoNombre } : {}),
+                        ...(item.numerosSerie ? { numerosSerie: item.numerosSerie } : {}),
+                        // Fraccionamiento: unidad de venta cuando difiere de la unidad base
+                        ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
+                        ...(item.esItemLibre && item.unidadMedidaCodigo ? { unidadVenta: item.unidadMedidaCodigo } : {}),
+                    };
+                }) ?? []),
                 // Monto cobrado como item de envío: aumenta el total del comprobante.
                 ...(envioActivo && Number(envioData.costoEnvio) > 0 && aplicacionMontoEnvio === 'ITEM_ENVIO' ? [{
                     productoId: null,
