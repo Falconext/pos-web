@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Icon } from '@iconify/react';
 import { get, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
-import { dentroDelRangoLima } from '@/utils/fechaLima';
+import { usePeriodo } from '../shared/usePeriodo';
+import { PeriodoSelector, PeriodoTitulo } from '../shared/PeriodoSelector';
 
 interface ComisionDetalle {
     id: number;
@@ -24,35 +25,21 @@ interface VendedorComision {
 }
 
 interface ResumenMensual {
-    mes: number;
-    anio: number;
+    mes: number | null;
+    anio: number | null;
+    fechaInicio?: string | null;
+    fechaFin?: string | null;
     vendedores: VendedorComision[];
 }
-
-const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 function formatCurrency(n: number | string) {
     return `S/ ${parseFloat(String(n || 0)).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function toISODate(d: Date) {
-    return d.toISOString().slice(0, 10);
-}
-
-function firstDayOfMonth(mes: number, anio: number) {
-    return toISODate(new Date(anio, mes - 1, 1));
-}
-
-function lastDayOfMonth(mes: number, anio: number) {
-    return toISODate(new Date(anio, mes, 0));
-}
-
-type Preset = 'mes' | 'q1' | 'q2' | 'hoy';
-
 export default function ComisionesView() {
-    const now = new Date();
-    const [mes, setMes] = useState(now.getMonth() + 1);
-    const [anio, setAnio] = useState(now.getFullYear());
+    // Día · Mes · Rango, el mismo selector que en las demás pestañas de Análisis
+    // Financiero. El backend filtra por mes/año o por fecha de emisión (rango).
+    const periodo = usePeriodo('mes');
     const [data, setData] = useState<ResumenMensual | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -63,84 +50,45 @@ export default function ComisionesView() {
 
     // ── Filtros ───────────────────────────────────────────────────────────────
     const [filtroVendedor, setFiltroVendedor] = useState<number | null>(null);
-    const [desde, setDesde] = useState(() => firstDayOfMonth(now.getMonth() + 1, now.getFullYear()));
-    const [hasta, setHasta] = useState(() => lastDayOfMonth(now.getMonth() + 1, now.getFullYear()));
-    const [preset, setPreset] = useState<Preset>('mes');
-
-    // Sincroniza rango cuando cambia mes/año
-    useEffect(() => {
-        applyPreset(preset, mes, anio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mes, anio]);
-
-    function applyPreset(p: Preset, m = mes, a = anio) {
-        setPreset(p);
-        const lastDay = new Date(a, m, 0).getDate();
-        const today = toISODate(now);
-        switch (p) {
-            case 'mes': setDesde(firstDayOfMonth(m, a)); setHasta(lastDayOfMonth(m, a)); break;
-            case 'q1':  setDesde(`${a}-${String(m).padStart(2,'0')}-01`); setHasta(`${a}-${String(m).padStart(2,'0')}-15`); break;
-            case 'q2':  setDesde(`${a}-${String(m).padStart(2,'0')}-16`); setHasta(lastDayOfMonth(m, a)); break;
-            case 'hoy': setDesde(today); setHasta(today); break;
-        }
-    }
 
     // ── Fetch ─────────────────────────────────────────────────────────────────
+    // El período ya lo filtra el backend (mes/año o rango por fecha de emisión
+    // en hora de Lima), igual que en las demás pestañas: acá no se vuelve a
+    // filtrar en cliente.
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await get<ResumenMensual>(`/comisiones/resumen?mes=${mes}&anio=${anio}`);
+            const res = await get<ResumenMensual>(`/comisiones/resumen?${periodo.queryParams()}`);
             setData(res.data ?? null);
         } catch {
-            setData({ mes, anio, vendedores: [] });
+            setData({ mes: periodo.mesActual, anio: periodo.anioActual, vendedores: [] });
         } finally {
             setIsLoading(false);
         }
-    }, [mes, anio]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [periodo.key]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const navegarMes = (delta: number) => {
-        let m = mes + delta;
-        let a = anio;
-        if (m > 12) { m = 1; a++; }
-        if (m < 1) { m = 12; a--; }
-        setMes(m);
-        setAnio(a);
+    // Al cambiar de período se cierra el detalle abierto y el filtro de vendedor.
+    useEffect(() => {
         setExpandedId(null);
         setFiltroVendedor(null);
-    };
+    }, [periodo.key]);
 
     // ── Datos filtrados ───────────────────────────────────────────────────────
     const vendedoresFiltrados = useMemo<VendedorComision[]>(() => {
         if (!data?.vendedores) return [];
-
         return data.vendedores
             .filter(v => filtroVendedor === null || v.vendedor.id === filtroVendedor)
-            .map(v => {
-                // El día se toma en hora de Lima, no del ISO en UTC: una venta de las
-                // 19:00 de Lima ya es del día siguiente en UTC, así que con `.slice(0,10)`
-                // las ventas de la tarde-noche caían en el día equivocado y las del
-                // último día del mes se iban al mes siguiente.
-                const comisionesFiltradas = v.comisiones.filter(c =>
-                    dentroDelRangoLima(c.comprobante.fechaEmision, desde, hasta),
-                );
-
-                const totalComision  = comisionesFiltradas.reduce((s, c) => s + parseFloat(String(c.montoComision || 0)), 0);
-                const totalPagado    = comisionesFiltradas.filter(c => c.estado === 'PAGADO').reduce((s, c) => s + parseFloat(String(c.montoComision || 0)), 0);
-                const totalPendiente = comisionesFiltradas.filter(c => c.estado === 'PENDIENTE').reduce((s, c) => s + parseFloat(String(c.montoComision || 0)), 0);
-
-                return {
-                    ...v,
-                    comisiones: comisionesFiltradas,
-                    totalComision,
-                    totalPagado,
-                    totalPendiente,
-                    cantidadVentas: new Set(comisionesFiltradas.map(c => `${c.comprobante.serie}-${c.comprobante.correlativo}`)).size,
-                };
-            })
+            .map(v => ({
+                ...v,
+                totalComision: parseFloat(String(v.totalComision || 0)),
+                totalPagado: parseFloat(String(v.totalPagado || 0)),
+                totalPendiente: parseFloat(String(v.totalPendiente || 0)),
+            }))
             .filter(v => v.comisiones.length > 0);
-    }, [data, filtroVendedor, desde, hasta]);
+    }, [data, filtroVendedor]);
 
     const totalGeneral   = useMemo(() => vendedoresFiltrados.reduce((s, v) => s + v.totalComision, 0), [vendedoresFiltrados]);
     const totalPendiente = useMemo(() => vendedoresFiltrados.reduce((s, v) => s + v.totalPendiente, 0), [vendedoresFiltrados]);
@@ -149,7 +97,8 @@ export default function ComisionesView() {
     const marcarPagado = async (vendedorId: number) => {
         setPagandoId(vendedorId);
         try {
-            await patch(`/comisiones/pagar/${vendedorId}?mes=${mes}&anio=${anio}`, {});
+            // Se liquida exactamente lo que se está viendo (mes, día o rango).
+            await patch(`/comisiones/pagar/${vendedorId}?${periodo.queryParams()}`, {});
             alertFn('Comisiones marcadas como PAGADO', 'success');
             fetchData();
         } catch {
@@ -161,12 +110,10 @@ export default function ComisionesView() {
 
     const exportarCSV = async () => {
         try {
-            const res = await get<any[]>(`/comisiones/exportar?mes=${mes}&anio=${anio}`);
-            const rows = (res.data ?? []).filter((r: any) => {
-                const fecha = (r.fechaVenta ?? '').slice(0, 10);
-                const matchVendedor = filtroVendedor === null || r.vendedorId === filtroVendedor;
-                return matchVendedor && fecha >= desde && fecha <= hasta;
-            });
+            const res = await get<any[]>(`/comisiones/exportar?${periodo.queryParams()}`);
+            const rows = (res.data ?? []).filter((r: any) =>
+                filtroVendedor === null || r.vendedorId === filtroVendedor,
+            );
             if (!rows.length) { alertFn('Sin datos para exportar con los filtros actuales', 'warning'); return; }
             const headers = ['Vendedor', 'DNI', 'Comprobante', 'Tipo', 'Fecha', 'Total Venta', 'Producto', 'Cantidad', 'Comisión', 'Estado'];
             const csvRows = [
@@ -180,7 +127,7 @@ export default function ComisionesView() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Comisiones_${desde}_${hasta}.csv`;
+            a.download = `Comisiones_${periodo.rango.fechaInicio}_${periodo.rango.fechaFin}.csv`;
             a.click();
             URL.revokeObjectURL(url);
         } catch {
@@ -189,28 +136,22 @@ export default function ComisionesView() {
     };
 
     const todosLosVendedores = data?.vendedores ?? [];
-    const hayFiltrosActivos = filtroVendedor !== null || desde !== firstDayOfMonth(mes, anio) || hasta !== lastDayOfMonth(mes, anio);
+    const hayFiltrosActivos = filtroVendedor !== null;
 
     return (
         <div className="space-y-5">
-            {/* ── Fila 1: navegación mes + export ── */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2 bg-white dark:bg-[#111827] rounded-2xl px-3 py-2 border border-gray-100/50 dark:border-slate-800 shadow-sm">
-                    <button onClick={() => navegarMes(-1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                        <Icon icon="solar:alt-arrow-left-bold" className="text-gray-600 dark:text-gray-300" />
-                    </button>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white px-2 min-w-[100px] text-center">
-                        {MESES[mes - 1]} {anio}
-                    </span>
-                    <button
-                        onClick={() => navegarMes(1)}
-                        disabled={mes === now.getMonth() + 1 && anio === now.getFullYear()}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30"
-                    >
-                        <Icon icon="solar:alt-arrow-right-bold" className="text-gray-600 dark:text-gray-300" />
-                    </button>
+            {/* ── Fila 1: período + export ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-0.5">Período</p>
+                    <PeriodoTitulo vm={periodo} />
                 </div>
-
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Día · Mes · Rango, el mismo selector que en las demás pestañas. */}
+                    <PeriodoSelector vm={periodo} />
+                    <button onClick={fetchData} className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-900 text-white hover:bg-gray-800" title="Actualizar">
+                        <Icon icon="solar:refresh-bold" />
+                    </button>
                 <button
                     onClick={exportarCSV}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm"
@@ -218,16 +159,18 @@ export default function ComisionesView() {
                     <Icon icon="solar:file-download-bold-duotone" />
                     Exportar CSV
                 </button>
+                </div>
             </div>
 
-            {/* ── Fila 2: filtros ── */}
+            {/* ── Fila 2: filtros (solo si hay algo que filtrar: el período ya vive arriba) ── */}
+            {(todosLosVendedores.length > 1 || hayFiltrosActivos) && (
             <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100/50 dark:border-slate-800 shadow-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                     <Icon icon="solar:filter-bold-duotone" className="text-indigo-500 text-base" />
                     <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Filtros</span>
                     {hayFiltrosActivos && (
                         <button
-                            onClick={() => { setFiltroVendedor(null); applyPreset('mes'); }}
+                            onClick={() => setFiltroVendedor(null)}
                             className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
                         >
                             <Icon icon="solar:restart-bold" className="text-xs" />
@@ -237,56 +180,6 @@ export default function ComisionesView() {
                 </div>
 
                 <div className="flex flex-wrap gap-3 items-end">
-                    {/* Presets de período */}
-                    <div>
-                        <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Período rápido</p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {([
-                                { key: 'mes', label: 'Mes completo', icon: 'solar:calendar-bold-duotone' },
-                                { key: 'q1',  label: '1ra quincena', icon: 'solar:calendar-minimalistic-bold-duotone' },
-                                { key: 'q2',  label: '2da quincena', icon: 'solar:calendar-minimalistic-bold-duotone' },
-                                { key: 'hoy', label: 'Hoy',          icon: 'solar:sun-bold-duotone' },
-                            ] as { key: Preset; label: string; icon: string }[]).map(p => (
-                                <button
-                                    key={p.key}
-                                    onClick={() => applyPreset(p.key)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap ${
-                                        preset === p.key
-                                            ? 'bg-indigo-600 text-white shadow-sm'
-                                            : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'
-                                    }`}
-                                >
-                                    <Icon icon={p.icon} className="text-xs" />
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Rango manual */}
-                    <div>
-                        <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Rango personalizado</p>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={desde}
-                                min={firstDayOfMonth(mes, anio)}
-                                max={hasta}
-                                onChange={e => { setDesde(e.target.value); setPreset('mes'); }}
-                                className="px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            />
-                            <Icon icon="solar:arrow-right-linear" className="text-gray-400 text-sm flex-shrink-0" />
-                            <input
-                                type="date"
-                                value={hasta}
-                                min={desde}
-                                max={lastDayOfMonth(mes, anio)}
-                                onChange={e => { setHasta(e.target.value); setPreset('mes'); }}
-                                className="px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            />
-                        </div>
-                    </div>
-
                     {/* Filtro por vendedor */}
                     {todosLosVendedores.length > 1 && (
                         <div>
@@ -310,7 +203,7 @@ export default function ComisionesView() {
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center gap-2 text-[11px] text-gray-500 dark:text-slate-400">
                         <Icon icon="solar:calendar-search-bold-duotone" className="text-indigo-400 text-base flex-shrink-0" />
                         <span>
-                            Mostrando <strong className="text-gray-700 dark:text-gray-200">{desde === hasta ? desde : `${desde} → ${hasta}`}</strong>
+                            Mostrando <strong className="text-gray-700 dark:text-gray-200">{periodo.label}</strong>
                             {filtroVendedor !== null && (
                                 <> · vendedor: <strong className="text-indigo-600 dark:text-indigo-400">
                                     {todosLosVendedores.find(v => v.vendedor.id === filtroVendedor)?.vendedor.nombre}
@@ -320,6 +213,7 @@ export default function ComisionesView() {
                     </div>
                 )}
             </div>
+            )}
 
             {/* ── KPI Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -353,7 +247,7 @@ export default function ComisionesView() {
                     <p className="text-sm text-gray-400 dark:text-gray-500">
                         {hayFiltrosActivos
                             ? 'Sin comisiones para los filtros seleccionados'
-                            : `Sin comisiones registradas para ${MESES[mes - 1]} ${anio}`}
+                            : `Sin comisiones registradas para ${periodo.label}`}
                     </p>
                     {!hayFiltrosActivos && (
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">

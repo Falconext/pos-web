@@ -1,12 +1,12 @@
 import { Icon } from '@iconify/react';
 import {
-    MESES_FULL,
     MetodoPagoGrupo,
     formatSoles,
     methodColor,
     methodIcon,
 } from './MetodosPagoModel';
 import { useMetodosPagoViewModel } from './useMetodosPagoViewModel';
+import { PeriodoSelector, PeriodoTitulo } from '../shared/PeriodoSelector';
 
 function Skeleton() {
     return (
@@ -114,38 +114,12 @@ export default function MetodosPagoView({ sedeId }: { sedeId?: number | null } =
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                     <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-0.5">Período</p>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {vm.usarRango ? `${formatDate(vm.fechaInicio)} - ${formatDate(vm.fechaFin)}` : `${MESES_FULL[vm.mesActual - 1]} ${vm.anioActual}`}
-                        {!vm.usarRango && vm.isCurrentOrFuture && (
-                            <span className="ml-2 text-xs font-normal bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded-full">
-                                En curso
-                            </span>
-                        )}
-                    </h2>
+                    <PeriodoTitulo vm={vm.periodo} />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        onClick={() => vm.setUsarRango(!vm.usarRango)}
-                        className={`px-3 py-2 rounded-xl text-xs font-black border transition-colors ${vm.usarRango ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-[#111827] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-800'}`}
-                    >
-                        {vm.usarRango ? 'Rango de fechas' : 'Mes completo'}
-                    </button>
-                    {vm.usarRango ? (
-                        <>
-                            <input type="date" value={vm.fechaInicio} onChange={(e) => vm.setFechaInicio(e.target.value)} className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] px-3 text-sm" />
-                            <input type="date" value={vm.fechaFin} onChange={(e) => vm.setFechaFin(e.target.value)} className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#111827] px-3 text-sm" />
-                        </>
-                    ) : (
-                        <>
-                            <button onClick={() => vm.navegarMes(-1)} className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800">
-                                <Icon icon="solar:alt-arrow-left-bold" className="text-gray-600 dark:text-gray-400" />
-                            </button>
-                            <button onClick={() => vm.navegarMes(1)} disabled={vm.isCurrentOrFuture} className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-30">
-                                <Icon icon="solar:alt-arrow-right-bold" className="text-gray-600 dark:text-gray-400" />
-                            </button>
-                        </>
-                    )}
+                    {/* Día · Mes · Rango, el mismo selector que en las demás pestañas. */}
+                    <PeriodoSelector vm={vm.periodo} />
                     <button onClick={vm.refreshData} className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-900 text-white hover:bg-gray-800">
                         <Icon icon="solar:refresh-bold" />
                     </button>

@@ -1,8 +1,7 @@
 import { MonoAreaChart, fmtMoney, MONO_SERIES } from '@/components/charts/mono';
 import { Icon } from '@iconify/react';
-import moment from 'moment';
 import { useState } from 'react';
-import { Calendar } from '@/components/Date';
+import { PeriodoSelector, PeriodoTitulo } from './shared/PeriodoSelector';
 import Select from '@/components/Select';
 import { useFinanceDashboardViewModel } from './useFinanceDashboardViewModel';
 
@@ -27,6 +26,7 @@ export default function FinanceDashboardView() {
                             <span className="text-indigo-600">Dashboard</span>
                         </div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Resumen Financiero</h1>
+                        <PeriodoTitulo vm={vm.periodo} className="!text-base mt-1 !font-semibold text-gray-600 dark:text-gray-300" />
                     </div>
 
                     <button
@@ -65,25 +65,12 @@ export default function FinanceDashboardView() {
                             />
                         </div>
                     )}
-                    <div className="w-full md:min-w-[170px] md:flex-1 md:basis-[180px]">
-                        <Calendar
-                            text="Fecha Inicio"
-                            name="fechaInicio"
-                            value={moment(vm.fechaInicio).format('DD/MM/YYYY')}
-                            onChange={vm.handleDateChange}
-                            className="admin-date-filter"
-                            portal
-                        />
-                    </div>
-                    <div className="w-full md:min-w-[170px] md:flex-1 md:basis-[180px]">
-                        <Calendar
-                            text="Fecha Fin"
-                            name="fechaFin"
-                            value={moment(vm.fechaFin).format('DD/MM/YYYY')}
-                            onChange={vm.handleDateChange}
-                            className="admin-date-filter"
-                            portal
-                        />
+                    {/* Día · Mes · Rango, el mismo selector que en las demás pestañas de Análisis Financiero. */}
+                    <div className="w-full md:w-auto">
+                        <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-1">Período</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <PeriodoSelector vm={vm.periodo} />
+                        </div>
                     </div>
                     <div className="flex gap-3 md:ml-auto">
                         <button
@@ -241,9 +228,9 @@ export default function FinanceDashboardView() {
                             )}
                         </div>
 
-                        {vm.conciliacion?.comprobantesRespaldo > 0 && (
+                        {(vm.conciliacion?.comprobantesRespaldo ?? 0) > 0 && (
                             <div className="mt-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/40 p-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                Incluye {vm.conciliacion.comprobantesRespaldo} comprobante(s) antiguo(s) sin pago separado para no perder el monto en el reporte.
+                                Incluye {vm.conciliacion?.comprobantesRespaldo} comprobante(s) antiguo(s) sin pago separado para no perder el monto en el reporte.
                             </div>
                         )}
                     </div>
@@ -256,7 +243,7 @@ export default function FinanceDashboardView() {
                             <div className="p-2 bg-white/20 rounded-xl  ">
                                 <Icon icon="solar:wallet-money-bold-duotone" className="text-2xl" />
                             </div>
-                            <span className="text-indigo-100 text-sm font-medium bg-indigo-500/30 px-2 py-1 rounded-lg">Este mes</span>
+                            <span className="text-indigo-100 text-sm font-medium bg-indigo-500/30 px-2 py-1 rounded-lg">{vm.periodo.periodo === 'mes' ? 'Este mes' : vm.periodo.periodo === 'dia' ? 'Día' : 'Rango'}</span>
                         </div>
                         <p className="text-indigo-100 font-medium mb-1">Ingresos Totales</p>
                         <h3 className="text-3xl font-bold mb-4">{vm.valueFormatter(vm.kpis?.ingresosPeriodo || 0)}</h3>
