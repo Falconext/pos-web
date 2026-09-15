@@ -412,6 +412,10 @@ export const useFacturacionViewModel = () => {
     const [serie, setSerie] = useState<string>("");
     const [IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice] = useState<boolean>(false);
     const [isComprobantePendiente, setIsComprobantePendiente] = useState<boolean>(false);
+    // Texto real del backend para el estado "pendiente" (varía si SUNAT está caída
+    // vs. si el proveedor de facturación rechazó por cuenta/config — este último
+    // NO se resuelve solo, y decirlo distinto evita que el negocio espere en vano).
+    const [pendienteMensaje, setPendienteMensaje] = useState<string | null>(null);
     const [despachoCreado, setDespachoCreado] = useState<boolean>(false);
     const [emittedDataReceipt, setEmittedDataReceipt] = useState<any>(null);
     const [snapshotClient, setSnapshotClient] = useState<any>(null);
@@ -2687,8 +2691,9 @@ export const useFacturacionViewModel = () => {
         }
 
         if (result.success === true) {
-            setIsComprobantePendiente(!!(result as any).pendiente);
             const r = result as any;
+            setIsComprobantePendiente(!!r.pendiente);
+            setPendienteMensaje(r.pendiente ? (r.mensajePendiente ?? null) : null);
             if (r.serie != null && r.correlativo != null) {
                 // `s3PdfUrl` y `fechaEmision` alimentan el QR de SUNAT del ticket:
                 // con el PDF ya disponible el QR lleva el enlace en vez de la cadena.
@@ -2953,6 +2958,7 @@ export const useFacturacionViewModel = () => {
         isQuotationConfigModalOpen, setIsQuotationConfigModalOpen,
         IsOpenModalSuccessInvoice, setIsOpenModalSuccessInvoice,
         isComprobantePendiente,
+        pendienteMensaje,
         despachoCreado,
         showMobileCart, setShowMobileCart,
         editingIndex, setEditingIndex,
