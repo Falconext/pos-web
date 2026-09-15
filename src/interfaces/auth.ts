@@ -43,6 +43,9 @@ export interface IUser {
     convertirEnSupervisor?: boolean
     noPermitirVentaProductosGratuitos?: boolean
     restringirTransferenciasASuSede?: boolean
+    // Único permiso opt-in en sentido contrario: el admin lo ACTIVA para dar
+    // una capacidad (anular/eliminar comprobantes), no para restringir.
+    puedeAnularComprobantes?: boolean
 }
 
 export interface IResponse {

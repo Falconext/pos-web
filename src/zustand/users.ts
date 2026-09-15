@@ -58,6 +58,7 @@ export interface IUsuario {
   convertirEnSupervisor?: boolean;
   noPermitirVentaProductosGratuitos?: boolean;
   restringirTransferenciasASuSede?: boolean;
+  puedeAnularComprobantes?: boolean;
 }
 
 export interface IFormUsuario {
@@ -80,6 +81,7 @@ export interface IFormUsuario {
   convertirEnSupervisor?: boolean;
   noPermitirVentaProductosGratuitos?: boolean;
   restringirTransferenciasASuSede?: boolean;
+  puedeAnularComprobantes?: boolean;
 }
 
 export interface IUsersState {

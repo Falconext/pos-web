@@ -23,6 +23,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   const { modulos, getAllModulos } = useModulosStore();
   const { auth } = useAuthStore();
   const productoEmpresa = (auth?.empresa?.producto || 'facturacion') as 'facturacion' | 'hotel';
+  // Solo un admin puede otorgar/quitar "anular/eliminar comprobantes" (el
+  // backend ignora el campo si lo manda un no-admin, igual que con '*').
+  const actorEsAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
 
   const [formData, setFormData] = useState<IFormUsuario>({
     nombre: '',
@@ -40,6 +43,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     convertirEnSupervisor: false,
     noPermitirVentaProductosGratuitos: false,
     restringirTransferenciasASuSede: false,
+    puedeAnularComprobantes: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -76,6 +80,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         convertirEnSupervisor: user.convertirEnSupervisor ?? false,
         noPermitirVentaProductosGratuitos: user.noPermitirVentaProductosGratuitos ?? false,
         restringirTransferenciasASuSede: user.restringirTransferenciasASuSede ?? false,
+        puedeAnularComprobantes: user.puedeAnularComprobantes ?? false,
       });
     } else {
       setFormData({
@@ -97,6 +102,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         convertirEnSupervisor: false,
         noPermitirVentaProductosGratuitos: false,
         restringirTransferenciasASuSede: false,
+        puedeAnularComprobantes: false,
       });
     }
     setErrors({});
@@ -191,12 +197,16 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     setFormData(prev => ({ ...prev, sedeDefaultId: sedeId }));
   };
 
-  // Todas son restricciones que el admin ACTIVA (por defecto apagadas = el
-  // usuario opera normal). Redactadas como "lo que se le restringe".
-  const PERMISOS_AVANZADOS: { key: keyof IFormUsuario; icon: string; label: string; descripcion: string }[] = [
+  // La mayoría son restricciones que el admin ACTIVA (por defecto apagadas =
+  // el usuario opera normal), redactadas como "lo que se le restringe".
+  // "puedeAnularComprobantes" es la excepción: es una CAPACIDAD que el admin
+  // otorga (por defecto apagada = sigue sin poder anular/eliminar, igual que
+  // hoy — solo el administrador puede).
+  const PERMISOS_AVANZADOS: { key: keyof IFormUsuario; icon: string; label: string; descripcion: string; soloAdmin?: boolean }[] = [
     { key: 'bloquearEdicionPrecioVenta', icon: 'solar:pen-2-bold-duotone', label: 'Bloquear edición de precio de venta', descripcion: 'No podrá modificar el precio al vender; usará siempre el precio de lista.' },
     { key: 'ocultarPrecioCosto', icon: 'solar:eye-closed-bold-duotone', label: 'Ocultar precio de costo', descripcion: 'No verá el costo del producto en kardex ni en la ficha de producto.' },
     { key: 'ocultarPedidosEcommerce', icon: 'solar:cart-large-2-bold-duotone', label: 'Ocultar pedidos de Ecommerce', descripcion: 'No verá la sección de pedidos de la tienda online.' },
+    { key: 'puedeAnularComprobantes', icon: 'solar:shield-check-bold-duotone', label: 'Permitir anular/eliminar comprobantes', descripcion: 'Por defecto solo el administrador puede anular o eliminar una venta/nota de venta. Activa esto para que este usuario también pueda.', soloAdmin: true },
     { key: 'convertirEnSupervisor', icon: 'solar:eye-scan-bold-duotone', label: 'Convertir en Supervisor', descripcion: 'Ve el Dashboard y Reportes de TODAS sus sedes asignadas, no solo la activa.' },
     { key: 'noPermitirVentaProductosGratuitos', icon: 'solar:forbidden-circle-bold-duotone', label: 'No permitir venta de productos gratuitos', descripcion: 'Bloquea agregar al carrito una línea con precio S/ 0.' },
     { key: 'restringirTransferenciasASuSede', icon: 'solar:transfer-horizontal-bold-duotone', label: 'Restringir transferencias solo a sus sedes', descripcion: 'Solo podrá transferir stock hacia las sedes que tiene asignadas.' },
@@ -449,13 +459,17 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
             Permisos Avanzados
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {PERMISOS_AVANZADOS.map(({ key, icon, label, descripcion }) => {
+            {PERMISOS_AVANZADOS.map(({ key, icon, label, descripcion, soloAdmin }) => {
               const activo = !!formData[key];
+              const bloqueado = Boolean(soloAdmin) && !actorEsAdmin;
               return (
                 <label
                   key={key}
-                  onClick={() => handlePermisoAvanzadoToggle(key)}
-                  className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  onClick={() => { if (!bloqueado) handlePermisoAvanzadoToggle(key); }}
+                  title={bloqueado ? 'Solo el administrador de la empresa puede otorgar o quitar este permiso.' : undefined}
+                  className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all ${
+                    bloqueado ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                  } ${
                     activo
                       ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
                       : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0A0D14] hover:border-amber-200 dark:hover:border-amber-800'
@@ -470,6 +484,9 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
                       <span className="font-medium text-sm text-gray-900 dark:text-white">{label}</span>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{descripcion}</p>
+                    {bloqueado && (
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">Solo el administrador de la empresa puede otorgar o quitar este permiso.</p>
+                    )}
                   </div>
                 </label>
               );

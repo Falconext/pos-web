@@ -217,6 +217,10 @@ const Comprobantes = () => {
     const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
     const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
     const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    // Dar de baja / Eliminar comprobante: admin siempre puede; un vendedor
+    // solo si se le activó el permiso fino "puedeAnularComprobantes"
+    // (backend igual lo revalida).
+    const canAnularOEliminar = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || Boolean((auth as any)?.puedeAnularComprobantes);
 
 
     useEffect(() => {
@@ -1227,10 +1231,13 @@ const Comprobantes = () => {
                                         onClick={async () => {
                                             handleCloseMenu();
                                             const res = await reemitirInvoice(rowBase.id);
-                                            if (res?.success) {
+                                            if (res?.success && res.estadoEnvioSunat) {
+                                                // Se pinta el estado REAL que devolvió el backend (antes se
+                                                // asumía "Aceptado" con cualquier 200 y al refrescar volvía a
+                                                // "En procesamiento"). normalizeSunatEstado lo traduce al label.
                                                 setInvoicesList((prev) => prev.map((inv: any) =>
                                                     inv.id === rowBase.id
-                                                        ? { ...inv, estadoEnvioSunat: 'ACEPTADO', estadoSunatRaw: 'EMITIDO' }
+                                                        ? normalizeSunatEstado({ ...inv, estadoEnvioSunat: res.estadoEnvioSunat, sunatCdrResponse: null, qpseCode: null, sunatCode: null })
                                                         : inv
                                                 ));
                                             }
@@ -1278,7 +1285,7 @@ const Comprobantes = () => {
                                 </>
                             )}
 
-                            {!canEmitirSunat && (
+                            {!canEmitirSunat && canAnularOEliminar && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button
@@ -1327,7 +1334,7 @@ const Comprobantes = () => {
                                 </>
                             )}
 
-                            {canEmitirSunat && rowBase.estadoSunatRaw !== 'EMITIDO' && rowBase.estadoSunatRaw !== 'ANULADO' && rowBase.estadoSunatRaw !== 'NO_APLICA' && (
+                            {canAnularOEliminar && canEmitirSunat && rowBase.estadoSunatRaw !== 'EMITIDO' && rowBase.estadoSunatRaw !== 'ANULADO' && rowBase.estadoSunatRaw !== 'NO_APLICA' && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button
