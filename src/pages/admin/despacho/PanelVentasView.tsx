@@ -8,6 +8,8 @@ import ShalomTrackingModal from '@/components/ShalomTrackingModal';
 import Select from '@/components/Select';
 import { Calendar } from '@/components/Date';
 import OlvaTrackingModal from '@/components/OlvaTrackingModal';
+import AutoScrollTable from '@/components/Autoscrolltable';
+import RotuloPrint from './RotuloPrint';
 import { useInvoiceStore } from '@/zustand/invoices';
 import {
     usePanelVentasViewModel,
@@ -299,6 +301,7 @@ export default function PanelVentasView() {
     const [shalomTracking, setShalomTracking] = useState<{ orderNumber: string; orderCode: string; item: VentaPanelItem } | null>(null);
     const [olvaTracking, setOlvaTracking] = useState<{ trackingNumber: string; item: VentaPanelItem } | null>(null);
     const [anularItem, setAnularItem] = useState<VentaPanelItem | null>(null);
+    const [rotuloPrintComprobanteId, setRotuloPrintComprobanteId] = useState<number | null>(null);
     const { cancelInvoice } = useInvoiceStore((s) => s);
 
     useEffect(() => {
@@ -423,6 +426,17 @@ export default function PanelVentasView() {
             alert('No se pudo cargar el comprobante para generar la guía', 'error');
         }
     }, [navigate, alert]);
+
+    /**
+     * Rótulo propio (no el PDF con la marca de Shalom): solo el bloque de
+     * destinatario/destino, con el formato de ticket que ya usan los demás
+     * comprobantes. `RotuloPrint` hace el fetch y dispara la impresión sola
+     * apenas tiene los datos.
+     */
+    const imprimirRotuloShalom = useCallback((item: VentaPanelItem) => {
+        if (!item.comprobanteId) return;
+        setRotuloPrintComprobanteId(item.comprobanteId);
+    }, []);
 
     const convertirPedidoTienda = useCallback(async (item: VentaPanelItem, defaultType: 'BOLETA' | 'FACTURA') => {
         if (!item.pedidoId) return;
@@ -811,7 +825,7 @@ export default function PanelVentasView() {
 
             {/* Tabla */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
+                <AutoScrollTable>
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-800/50">
@@ -1041,7 +1055,7 @@ export default function PanelVentasView() {
                             )}
                         </tbody>
                     </table>
-                </div>
+                </AutoScrollTable>
                 {filasVisibles.length > PAGE_SIZE && (
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 dark:border-slate-800 text-xs">
                         <span className="text-gray-500 dark:text-gray-400">
@@ -1233,6 +1247,15 @@ export default function PanelVentasView() {
                                             <span>{it.nroOrden ? `Tracking Shalom #${it.nroOrden}` : 'Tracking Shalom (sin N° orden)'}</span>
                                         </button>
                                     )}
+                                    {SHALOM_COURIERS.has(it.courier) && (
+                                        <button type="button"
+                                            onClick={() => { handleCloseMenu(); imprimirRotuloShalom(it); }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                        >
+                                            <Icon icon="solar:printer-2-bold-duotone" width={15} />
+                                            <span>Imprimir Rótulo</span>
+                                        </button>
+                                    )}
                                     {it.courier === OLVA_COURIER && (
                                         <button type="button"
                                             onClick={() => {
@@ -1390,6 +1413,11 @@ export default function PanelVentasView() {
                     </div>
                 </div>
             )}
+
+            <RotuloPrint
+                comprobanteId={rotuloPrintComprobanteId}
+                onDone={() => setRotuloPrintComprobanteId(null)}
+            />
 
             {shalomTracking && (
                 <ShalomTrackingModal

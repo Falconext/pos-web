@@ -78,6 +78,18 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
     const [errors, setErrors] = useState<EnvioValidationErrors>({});
     const { alert } = useAlertStore();
 
+    // Precarga el celular del destinatario con el del cliente ya seleccionado
+    // en la venta (si tiene uno registrado y el campo todavía está vacío) —
+    // en la práctica casi siempre es la misma persona que recibe el envío.
+    useEffect(() => {
+        if (envioData.celularDest) return;
+        const celularCliente = onlyDigits(vm.selectedClient?.telefono);
+        if (celularCliente.length === 9 && celularCliente.startsWith('9')) {
+            setEnvioData((prev: any) => ({ ...prev, celularDest: celularCliente }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const set = (field: string, value: any) => {
         setErrors(prev => {
             if (!(field in prev)) return prev;
@@ -240,14 +252,6 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
 
                             {/* Body */}
                             <div className="p-4 bg-red-50/30 dark:bg-red-950/10 space-y-3">
-                                {autoGuia && (
-                                    <p className="flex items-start gap-2 rounded-xl bg-white/70 p-3 text-[11px] leading-4 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
-                                        <Icon icon="solar:magic-stick-3-bold-duotone" className="mt-0.5 shrink-0 text-red-500 text-sm" />
-                                        Al guardar la venta se registra el envío en tu cuenta Shalom Pro y el N° de orden
-                                        y la clave se completan solos.
-                                    </p>
-                                )}
-
                                 {/* Credenciales — solo si se cargan a mano */}
                                 {!autoGuia && (
                                 <div className="grid grid-cols-2 gap-3">
@@ -338,6 +342,14 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                     )}
                                 </div>
                                 {errors.fechaEstimada ? <p className="text-[11px] font-semibold text-red-500 -mt-1">{errors.fechaEstimada}</p> : null}
+
+                                {autoGuia && (
+                                    <p className="flex items-start gap-2 rounded-xl bg-white/70 p-3 text-sm leading-5 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                                        <Icon icon="solar:magic-stick-3-bold-duotone" className="mt-0.5 shrink-0 text-red-500 text-base" />
+                                        Al guardar la venta se registra el envío en tu cuenta Shalom Pro y el N° de orden
+                                        y la clave se completan solos.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
