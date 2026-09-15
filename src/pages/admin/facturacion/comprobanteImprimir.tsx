@@ -116,7 +116,9 @@ const ComprobantePrintPage = ({
         ? (company?.empresa as any)?.notaVentaFormatoConfig
         : (company?.empresa as any)?.cotizFormatoConfig;
     const esFormatoFiscal = usaFormatoFactura || _rc === 'BOLETA';
-    const fc = (key: string) => elemCfg(formatoConfig, key, esFormatoFiscal);
+    // A5 puede tener tamaños propios (desvinculados del general de A4); el
+    // ticket los resuelve ticketPx. Ver sizeOverride en cotizFormatoElementos.
+    const fc = (key: string) => elemCfg(formatoConfig, key, esFormatoFiscal, size === 'A5' ? 'A5' : undefined);
     const px = (key: string) => `${fc(key).size}px`;
     // Ticket: tamaño configurado escalado a la base del ticket (ver ticketPx).
     const tpx = (key: string, base?: number) => `${ticketPx(formatoConfig, key, esFormatoFiscal, base)}px`;
@@ -585,7 +587,15 @@ console.log(formValues)
                             </>
                         )}
                         <hr className="my-1 border-dashed border-[#222]" />
-                        {fc('gracias').visible && <p className={`text-center`} style={{ fontSize: tpx('gracias', 15) }}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>}
+                        {fc('gracias').visible && (() => {
+                            // Ticket: el mismo mensaje configurable que A4/A5 (Configurar formato →
+                            // Mensaje de agradecimiento). Vacío = el texto por defecto de siempre.
+                            const propio = lineasDeTexto(fc('gracias').texto);
+                            if (propio.length) return propio.map((l, i) => (
+                                <p key={i} className="text-center" style={{ fontSize: tpx('gracias', 15) }}>{l.toUpperCase()}</p>
+                            ));
+                            return <p className="text-center" style={{ fontSize: tpx('gracias', 15) }}>GRACIAS POR SU COMPRA, VUELVA PRONTO !</p>;
+                        })()}
                         {fc('gracias').visible && <hr className="my-1 border-dashed border-[#222]" />}
                     </div>
                 ) : (
