@@ -50,6 +50,13 @@ const CajaControl: React.FC = () => {
         observaciones: ''
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    // Montos que el sistema espera al cierre. Se muestran como referencia
+    // debajo de cada campo, pero NO se prellenan: el cajero tiene que escribir
+    // lo que contó de verdad para que la diferencia del arqueo sea real (con el
+    // prellenado todos los cierres salían con diferencia 0).
+    const [esperadoCierre, setEsperadoCierre] = useState({
+        montoEfectivo: 0, montoYape: 0, montoPlin: 0, montoTransferencia: 0, montoTarjeta: 0,
+    });
 
     useEffect(() => {
         obtenerEstadoCaja();
@@ -162,17 +169,32 @@ const CajaControl: React.FC = () => {
             const transferenciasRecibidas = Number(estadoCaja.totalTransferenciasRecibidas || 0);
             const transferenciasEnviadas = Number(estadoCaja.totalTransferenciasEnviadas || 0);
 
-            setFormCierre({
-                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas).toFixed(2),
-                montoYape: Number(mediosPago.YAPE || 0).toFixed(2),
-                montoPlin: Number(mediosPago.PLIN || 0).toFixed(2),
-                montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0).toFixed(2),
-                montoTarjeta: Number(mediosPago.TARJETA || 0).toFixed(2),
-                observaciones: ''
+            setEsperadoCierre({
+                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas),
+                montoYape: Number(mediosPago.YAPE || 0),
+                montoPlin: Number(mediosPago.PLIN || 0),
+                montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0),
+                montoTarjeta: Number(mediosPago.TARJETA || 0),
             });
         }
+        setFormCierre({ montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' });
         setShowCierre(true);
     };
+
+    /** Copia los montos del sistema al formulario. Es una acción explícita, no el estado inicial. */
+    const usarMontosDelSistema = () => {
+        setFormCierre(prev => ({
+            ...prev,
+            montoEfectivo: esperadoCierre.montoEfectivo.toFixed(2),
+            montoYape: esperadoCierre.montoYape.toFixed(2),
+            montoPlin: esperadoCierre.montoPlin.toFixed(2),
+            montoTransferencia: esperadoCierre.montoTransferencia.toFixed(2),
+            montoTarjeta: esperadoCierre.montoTarjeta.toFixed(2),
+        }));
+    };
+    const HintEsperado = ({ monto }: { monto: number }) => (
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Según el sistema: {formatCurrency(monto)}</p>
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -424,7 +446,7 @@ const CajaControl: React.FC = () => {
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <Icon icon="solar:safe-circle-bold" className="text-red-500" /> Cierre de Turno
                             </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ingresa los montos finales contados en caja.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Cuenta el dinero y escribe lo que hay de verdad. Debajo de cada campo va lo que el sistema espera, solo como referencia.</p>
                         </div>
                         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2">
@@ -437,39 +459,52 @@ const CajaControl: React.FC = () => {
                                     isLabel
                                     autoFocus
                                 />
+                                <HintEsperado monto={esperadoCierre.montoEfectivo} />
                             </div>
-                            <InputPro
-                                label="Yape (S/)"
-                                name="montoYape"
-                                type="number"
-                                value={formCierre.montoYape}
-                                onChange={(e: any) => setFormCierre({ ...formCierre, montoYape: e.target.value })}
-                                isLabel
-                            />
-                            <InputPro
-                                label="Plin (S/)"
-                                name="montoPlin"
-                                type="number"
-                                value={formCierre.montoPlin}
-                                onChange={(e: any) => setFormCierre({ ...formCierre, montoPlin: e.target.value })}
-                                isLabel
-                            />
-                            <InputPro
-                                label="Tarjetas (S/)"
-                                name="montoTarjeta"
-                                type="number"
-                                value={formCierre.montoTarjeta}
-                                onChange={(e: any) => setFormCierre({ ...formCierre, montoTarjeta: e.target.value })}
-                                isLabel
-                            />
-                            <InputPro
-                                label="Transferencias (S/)"
-                                name="montoTransferencia"
-                                type="number"
-                                value={formCierre.montoTransferencia}
-                                onChange={(e: any) => setFormCierre({ ...formCierre, montoTransferencia: e.target.value })}
-                                isLabel
-                            />
+                            <div>
+                                <InputPro
+                                    label="Yape (S/)"
+                                    name="montoYape"
+                                    type="number"
+                                    value={formCierre.montoYape}
+                                    onChange={(e: any) => setFormCierre({ ...formCierre, montoYape: e.target.value })}
+                                    isLabel
+                                />
+                                <HintEsperado monto={esperadoCierre.montoYape} />
+                            </div>
+                            <div>
+                                <InputPro
+                                    label="Plin (S/)"
+                                    name="montoPlin"
+                                    type="number"
+                                    value={formCierre.montoPlin}
+                                    onChange={(e: any) => setFormCierre({ ...formCierre, montoPlin: e.target.value })}
+                                    isLabel
+                                />
+                                <HintEsperado monto={esperadoCierre.montoPlin} />
+                            </div>
+                            <div>
+                                <InputPro
+                                    label="Tarjetas (S/)"
+                                    name="montoTarjeta"
+                                    type="number"
+                                    value={formCierre.montoTarjeta}
+                                    onChange={(e: any) => setFormCierre({ ...formCierre, montoTarjeta: e.target.value })}
+                                    isLabel
+                                />
+                                <HintEsperado monto={esperadoCierre.montoTarjeta} />
+                            </div>
+                            <div>
+                                <InputPro
+                                    label="Transferencias (S/)"
+                                    name="montoTransferencia"
+                                    type="number"
+                                    value={formCierre.montoTransferencia}
+                                    onChange={(e: any) => setFormCierre({ ...formCierre, montoTransferencia: e.target.value })}
+                                    isLabel
+                                />
+                                <HintEsperado monto={esperadoCierre.montoTransferencia} />
+                            </div>
                             <div className="col-span-2">
                                 <InputPro
                                     label="Observaciones"
@@ -502,6 +537,7 @@ const CajaControl: React.FC = () => {
 
                         <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t dark:border-slate-800 flex justify-end gap-3">
                             <button onClick={() => setShowCierre(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Cancelar</button>
+                            <button type="button" onClick={usarMontosDelSistema} title="Copia los montos que calcula el sistema; úsalo solo si ya contaste y coincide" className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors">Usar montos del sistema</button>
                             <Button onClick={() => setConfirmCierre(true)} className="bg-amber-500 text-white hover:bg-amber-600 border-none">
                                 <Icon icon="solar:shield-warning-bold" className="mr-1" />
                                 Revisar y Cerrar
