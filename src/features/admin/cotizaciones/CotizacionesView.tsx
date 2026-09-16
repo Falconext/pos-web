@@ -15,6 +15,7 @@ import ModalPaymentUnified from "@/components/ModalPaymentUnified";
 import PaymentReceipt from "@/components/PaymentReceipt";
 import Modal from "@/components/Modal";
 import TableActionMenu from "@/components/TableActionMenu";
+import HeaderMoreMenu from "@/components/HeaderMoreMenu";
 import Button from "@/components/Button";
 
 import { useCotizacionesViewModel } from "./useCotizacionesViewModel";
@@ -133,12 +134,20 @@ export default function CotizacionesView() {
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona y convierte tus cotizaciones en facturas</p>
                 </div>
-                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3">
+                <div className="flex w-full items-center gap-2 sm:w-auto lg:grid lg:grid-cols-3">
+                    {/* Tablet/móvil: solo "Nueva Cotización" + menú "Más"; desktop (lg+): todos los botones */}
+                    <HeaderMoreMenu
+                        className="order-last lg:hidden"
+                        items={[
+                            { key: 'formato', label: 'Configurar formato', icon: 'solar:tuning-square-bold-duotone', tone: 'primary', onClick: () => setConfigFormatoOpen(true) },
+                            { key: 'limpiar', label: 'Limpiar pruebas', icon: 'solar:trash-bin-trash-bold-duotone', tone: 'danger', onClick: () => vm.setIsOpenModalClean(true) },
+                        ]}
+                    />
                     <Button
                         outline
                         color="primary"
                         onClick={() => setConfigFormatoOpen(true)}
-                        className="w-full md:w-auto"
+                        className="hidden lg:inline-flex lg:w-auto"
                     >
                         <Icon icon="solar:tuning-square-bold-duotone" className="mr-2" />
                         Configurar formato
@@ -147,12 +156,12 @@ export default function CotizacionesView() {
                         outline
                         color="danger"
                         onClick={() => vm.setIsOpenModalClean(true)}
-                        className="w-full md:w-auto"
+                        className="hidden lg:inline-flex lg:w-auto"
                     >
                         <Icon icon="solar:trash-bin-trash-bold-duotone" className="mr-2" />
                         Limpiar pruebas
                     </Button>
-                    <Button color="primary" onClick={() => navigate('/administrador/cotizaciones/nuevo')} className="w-full md:w-auto shadow-lg shadow-blue-500/20">
+                    <Button color="primary" onClick={() => navigate('/administrador/cotizaciones/nuevo')} className="min-w-0 flex-1 lg:flex-none lg:w-auto shadow-lg shadow-blue-500/20">
                         <Icon icon="heroicons:plus" className="mr-2" />
                         Nueva Cotización
                     </Button>

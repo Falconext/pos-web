@@ -30,6 +30,7 @@ import { useSedesStore } from "@/zustand/sedes";
 import { useNavigate } from "react-router-dom";
 import { useUsersStore } from "@/zustand/users";
 import TableActionMenu from "@/components/TableActionMenu";
+import HeaderMoreMenu from "@/components/HeaderMoreMenu";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import ModalDetalleComprobante from "./ModalDetalleComprobante";
 import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
@@ -555,15 +556,25 @@ const ComprobantesInformales = () => {
             {/* Header */}
             <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:mb-6 sm:flex-row sm:items-center">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">Notas de venta</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white lg:text-3xl">Notas de venta</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de notas de pedido</p>
                 </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                    {/* Tablet/móvil: solo "Nueva venta" + menú "Más"; desktop (lg+): todos los botones */}
+                    <HeaderMoreMenu
+                        className="order-last lg:hidden"
+                        items={[
+                            { key: 'pdf', label: exportando === 'pdf' ? 'Exportando PDF…' : 'Exportar PDF', icon: 'solar:file-text-bold-duotone', tone: 'rose', disabled: exportando !== null, onClick: () => handleExportarResumen('pdf') },
+                            { key: 'excel', label: exportando === 'excel' ? 'Exportando Excel…' : 'Exportar Excel', icon: 'solar:document-add-bold-duotone', tone: 'success', disabled: exportando !== null, onClick: () => handleExportarResumen('excel') },
+                            { key: 'importar', label: 'Importar histórico (Excel)', icon: 'solar:import-bold-duotone', tone: 'primary', onClick: () => setIsOpenModalImportarNV(true) },
+                            { key: 'formato', label: 'Configurar formato', icon: 'solar:tuning-square-bold-duotone', onClick: () => setIsOpenConfigFormato(true) },
+                        ]}
+                    />
                     <button
                         type="button"
                         onClick={() => handleExportarResumen('pdf')}
                         disabled={exportando !== null}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
                     >
                         <Icon icon={exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
                         Exportar PDF
@@ -572,7 +583,7 @@ const ComprobantesInformales = () => {
                         type="button"
                         onClick={() => handleExportarResumen('excel')}
                         disabled={exportando !== null}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
                     >
                         <Icon icon={exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
                         Exportar Excel
@@ -580,7 +591,7 @@ const ComprobantesInformales = () => {
                     <button
                         type="button"
                         onClick={() => setIsOpenModalImportarNV(true)}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
                     >
                         <Icon icon="solar:import-bold-duotone" className="text-lg" />
                         Importar histórico (Excel)
@@ -588,7 +599,7 @@ const ComprobantesInformales = () => {
                     <button
                         type="button"
                         onClick={() => setIsOpenConfigFormato(true)}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto sm:py-2"
+                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
                     >
                         <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
                         Configurar formato
@@ -596,7 +607,7 @@ const ComprobantesInformales = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', defaultClient: 'CLIENTES_VARIOS' } })}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:w-auto sm:py-2"
+                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:py-2 lg:flex-none"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-lg" />
                         Nueva venta
