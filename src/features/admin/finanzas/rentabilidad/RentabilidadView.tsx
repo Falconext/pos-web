@@ -379,6 +379,10 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             icon="solar:cart-large-4-bold-duotone"
                             iconBg="bg-indigo-50 dark:bg-indigo-900/20"
                             iconColor="text-indigo-600 dark:text-indigo-400"
+                            sub={(pnl?.igvVentas ?? 0) > 0
+                                ? `Sin IGV · ${formatCurrency(pnl!.ventasConIgv ?? 0)} con IGV`
+                                : undefined}
+                            subColor="text-indigo-500 dark:text-indigo-400"
                         />
 
                         {/* Ingresos Manuales (operativos del mes) */}
