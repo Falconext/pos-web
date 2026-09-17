@@ -303,6 +303,12 @@ export default function Checkout() {
 
     const freeDeliveryThreshold = configEnvio?.envioGratisDesdeSoles || 0;
     const subtotal = calcularSubtotal();
+    // Mercado Pago rechaza cobros menores a S/ 5 ("Invalid value for
+    // transaction_amount"): por debajo de ese monto la opción no se ofrece.
+    const MP_MINIMO_SOLES = 5;
+    const configPagoVisible = configPago && configPago.aceptaMercadoPago && calcularTotal() < MP_MINIMO_SOLES
+        ? { ...configPago, aceptaMercadoPago: false }
+        : configPago;
     const freeDeliveryProgress = freeDeliveryThreshold > 0 ? Math.min((subtotal / freeDeliveryThreshold) * 100, 100) : 100;
     const freeDeliveryRemaining = freeDeliveryThreshold > 0 ? Math.max(freeDeliveryThreshold - subtotal, 0) : 0;
 
@@ -483,7 +489,7 @@ export default function Checkout() {
                 setCarritoState={setCarritoState}
                 formData={formData}
                 erroresForm={erroresForm}
-                configPago={configPago}
+                configPago={configPagoVisible}
                 configEnvio={configEnvio}
                 enviando={enviando}
                 suggestedProducts={suggestedProducts}
@@ -686,7 +692,7 @@ export default function Checkout() {
                                 {/* Payment method */}
                                 <div className="md:col-span-2">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Método de pago</p>
-                                    <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent="#FF9500" radius="16px" />
+                                    <MedioPagoSelector configPago={configPagoVisible} value={formData.medioPago} onChange={handleChange} accent="#FF9500" radius="16px" />
                                 </div>
 
                                 {/* Observaciones */}
