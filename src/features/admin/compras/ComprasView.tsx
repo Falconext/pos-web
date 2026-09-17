@@ -13,6 +13,7 @@ import ModalDetalleCompra from '@/pages/admin/compras/ModalDetalleCompra';
 import ModalRegistrarPagoCompra from '@/pages/admin/compras/ModalRegistrarPagoCompra';
 import ModalHistorialPagosCompra from '@/pages/admin/compras/ModalHistorialPagosCompra';
 import ModalNuevaCompra from '@/pages/admin/compras/ModalNuevaCompra';
+import ModalImportarCompras from '@/pages/admin/compras/ModalImportarCompras';
 import ModalConfirm from '@/components/ModalConfirm';
 import { motion } from 'framer-motion';
 import { fadeUp, interactiveHover, listItemFadeUp, listItemHidden, listStagger } from '@/lib/motion/presets';
@@ -108,12 +109,20 @@ export default function ComprasView() {
                     <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-2xl">Cuentas por Pagar / Compras</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestión de compras y pagos a proveedores</p>
                 </div>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <motion.div className="w-full sm:w-auto" whileHover={interactiveHover.whileHover} whileTap={interactiveHover.whileTap}>
+                <Button color="secondary" className="flex w-full items-center justify-center gap-2 border border-violet-200 !bg-white !text-violet-700 shadow-sm hover:!bg-violet-50 dark:border-violet-800 dark:!bg-slate-900 dark:!text-violet-300 sm:w-auto" onClick={actions.openImportar}>
+                    <Icon icon="solar:import-bold-duotone" className="text-lg" />
+                    Importar Excel
+                </Button>
+                </motion.div>
                 <motion.div className="w-full sm:w-auto" whileHover={interactiveHover.whileHover} whileTap={interactiveHover.whileTap}>
                 <Button color="secondary" className="flex w-full items-center justify-center gap-2 border-none !bg-violet-600 !text-white shadow-md shadow-violet-200 hover:opacity-90 sm:w-auto" onClick={actions.openNuevaCompra}>
                     <Icon icon="solar:cart-plus-bold" className="text-lg" />
                     Nueva Compra
                 </Button>
                 </motion.div>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
@@ -373,6 +382,12 @@ export default function ComprasView() {
                 isOpen={vm.showNuevaCompraModal}
                 onClose={actions.closeNuevaCompra}
                 onSuccess={actions.handleNuevaCompraSuccess}
+            />
+
+            <ModalImportarCompras
+                isOpen={vm.showImportarModal}
+                onClose={actions.closeImportar}
+                onSuccess={actions.handleImportarSuccess}
             />
 
             <ModalNuevaCompra
