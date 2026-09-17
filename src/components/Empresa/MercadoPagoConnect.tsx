@@ -5,6 +5,8 @@ import useAlertStore from '@/zustand/alert';
 
 interface EstadoMp {
     configuradoPlataforma: boolean;
+    /** false = la empresa no está en la lista blanca (lanzamiento piloto): no se muestra nada. */
+    disponible?: boolean;
     conectado: boolean;
     mpUserId: string | null;
 }
@@ -25,7 +27,7 @@ export default function MercadoPagoConnect() {
             const { data } = await apiClient.get('/mercadopago/estado');
             setEstado(data.data || data);
         } catch {
-            setEstado({ configuradoPlataforma: false, conectado: false, mpUserId: null });
+            setEstado({ configuradoPlataforma: false, disponible: false, conectado: false, mpUserId: null });
         } finally {
             setLoading(false);
         }
@@ -73,6 +75,8 @@ export default function MercadoPagoConnect() {
             setWorking(false);
         }
     };
+
+    if (!loading && estado && estado.disponible === false) return null;
 
     return (
         <div className="mt-6 border border-gray-100 dark:border-slate-800 rounded-xl p-5 bg-gray-50/50 dark:bg-slate-900/30">

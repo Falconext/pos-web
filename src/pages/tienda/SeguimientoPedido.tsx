@@ -37,10 +37,38 @@ export default function SeguimientoPedido() {
         }
     }, [slug]);
 
+    // Retorno de Mercado Pago (Checkout Pro): la back_url trae payment_id/collection_id.
+    // Sincronizamos el pago con el backend (respaldo del webhook) antes de mostrar el pedido.
+    const mpPaymentId = searchParams.get('payment_id') || searchParams.get('collection_id');
+    const mpStatus = searchParams.get('status') || searchParams.get('collection_status');
+    const [mpAviso, setMpAviso] = useState<'aprobado' | 'pendiente' | 'rechazado' | null>(null);
+
     useEffect(() => {
-        if (codigoParam) {
+        if (!codigoParam) return;
+        if (!mpPaymentId && !mpStatus) {
             buscarPedido(codigoParam);
+            return;
         }
+        (async () => {
+            try {
+                const { data } = await axios.get(`${BASE_URL}/public/store/track/${codigoParam}/mp-sync`, {
+                    params: mpPaymentId ? { payment_id: mpPaymentId } : {},
+                });
+                const r: any = data?.data || data;
+                const st = r?.mpStatus || mpStatus;
+                if (r?.pagado || st === 'approved') setMpAviso('aprobado');
+                else if (st === 'rejected' || st === 'cancelled') setMpAviso('rechazado');
+                else setMpAviso('pendiente');
+            } catch {
+                setMpAviso(mpStatus === 'approved' ? 'pendiente' : null);
+            } finally {
+                buscarPedido(codigoParam);
+                // Limpiar los parámetros de MP de la URL (dejar solo ?codigo=)
+                const url = `${window.location.pathname}?codigo=${encodeURIComponent(codigoParam)}`;
+                window.history.replaceState({}, '', url);
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [codigoParam]);
 
     const fetchPedidoSilencioso = useCallback(async (codigoBusqueda: string) => {
@@ -331,6 +359,35 @@ export default function SeguimientoPedido() {
                                         <p className="text-xs text-gray-500">{tiempoBase}-{tiempoBase + 10} minutos</p>
                                     </div>
                                 </div>
+
+                                {mpAviso && (
+                                    <div
+                                        className={`${borderRadius} border p-4 flex items-start gap-3 ${
+                                            mpAviso === 'aprobado'
+                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                                : mpAviso === 'rechazado'
+                                                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                                        }`}
+                                    >
+                                        <Icon
+                                            icon={mpAviso === 'aprobado' ? 'mdi:check-circle' : mpAviso === 'rechazado' ? 'mdi:close-circle' : 'mdi:clock-outline'}
+                                            className="w-5 h-5 shrink-0 mt-0.5"
+                                        />
+                                        <div className="text-sm">
+                                            <p className="font-bold">
+                                                {mpAviso === 'aprobado' && 'Pago aprobado por Mercado Pago'}
+                                                {mpAviso === 'pendiente' && 'Pago en proceso en Mercado Pago'}
+                                                {mpAviso === 'rechazado' && 'El pago fue rechazado'}
+                                            </p>
+                                            <p className="opacity-80">
+                                                {mpAviso === 'aprobado' && 'Tu pedido quedó confirmado. Te avisaremos cuando esté en camino.'}
+                                                {mpAviso === 'pendiente' && 'Apenas Mercado Pago confirme el pago, tu pedido se actualizará aquí automáticamente.'}
+                                                {mpAviso === 'rechazado' && 'Puedes volver a intentar el pago desde el checkout o elegir otro medio de pago.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className={`bg-white ${borderRadius} shadow-sm border border-gray-100 p-4 md:p-6`}>
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
