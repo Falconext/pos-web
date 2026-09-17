@@ -990,6 +990,9 @@ export const useFacturacionViewModel = () => {
                             descripcion: item.producto?.descripcion || item.descripcion || 'Producto',
                             codigo: item.producto?.codigo || '',
                             cantidad: Number(item.cantidad || 1),
+                            // El store solo lee `cantidadInicial`: sin esto cada línea del
+                            // pedido entraba con 1 unidad (pedido de 2 × S/29 salía como S/29).
+                            cantidadInicial: Number(item.cantidad || 1),
                             cantidadToInvoice: Number(item.cantidad || 1),
                             precioUnitario: Number(item.precioUnit || item.precioUnitario || 0),
                             descuento: 0,
