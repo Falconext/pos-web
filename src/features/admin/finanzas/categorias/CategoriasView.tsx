@@ -109,8 +109,9 @@ function CategoriaRow({
 
                 {/* Ingreso */}
                 <div className="text-right w-28 hidden md:block">
-                    <p className="text-xs text-gray-400">Ingresos</p>
-                    <p className="font-semibold text-sm text-gray-700 dark:text-gray-300">{formatSoles(cat.ingresoTotal)}</p>
+                    <p className="text-xs text-gray-400">Ventas</p>
+                    <p className="font-semibold text-sm text-gray-700 dark:text-gray-300">{formatSoles(cat.ventasConIgv ?? cat.ingresoTotal)}</p>
+                    <p className="text-[10px] text-gray-400">sin IGV {formatSoles(cat.ingresoTotal)}</p>
                 </div>
 
                 {/* Ganancia */}
@@ -280,9 +281,9 @@ export default function CategoriasView({ sedeId }: { sedeId?: number | null } = 
                             icon="solar:wallet-money-bold-duotone"
                             iconBg="bg-violet-50 dark:bg-violet-900/20"
                             iconColor="text-violet-600 dark:text-violet-400"
-                            label="Ingresos totales"
-                            value={formatSoles(data.ingresoTotal)}
-                            sub="ventas del período"
+                            label="Ventas totales"
+                            value={formatSoles(data.ventasConIgv ?? data.ingresoTotal)}
+                            sub={`sin IGV ${formatSoles(data.ingresoTotal)}`}
                         />
                         <div className="bg-emerald-500 rounded-3xl p-5 shadow-sm">
                             <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
@@ -328,8 +329,8 @@ export default function CategoriasView({ sedeId }: { sedeId?: number | null } = 
                         </div>
                         <div className="flex gap-8">
                             <div className="text-right">
-                                <p className="text-xs text-gray-400">Ingresos</p>
-                                <p className="font-semibold text-gray-800 dark:text-gray-200">{formatSoles(data.ingresoTotal)}</p>
+                                <p className="text-xs text-gray-400">Ventas (sin IGV)</p>
+                                <p className="font-semibold text-gray-800 dark:text-gray-200">{formatSoles(data.ventasConIgv ?? data.ingresoTotal)} <span className="text-xs font-normal text-gray-400">({formatSoles(data.ingresoTotal)})</span></p>
                             </div>
                             <div className="text-right">
                                 <p className="text-xs text-gray-400">Costo mercadería</p>

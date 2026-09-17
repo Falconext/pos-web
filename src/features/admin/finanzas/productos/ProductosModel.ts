@@ -7,6 +7,7 @@ export interface ProductoVendido {
     precioPromedio: number;
     costoUnitario: number;
     ingresoTotal: number;
+    ventasConIgv?: number;
     costoTotal: number;
     gananciaTotal: number;
     margen: number;
@@ -33,6 +34,8 @@ export interface ProductosVendidosResponse {
     };
     resumen: {
         ingresoTotal: number;
+        /** Ventas con IGV (lo que pagó el cliente); ingresoTotal es la neta sin IGV. */
+        ventasConIgv?: number;
         costoTotal: number;
         gananciaTotal: number;
         margenPromedio: number;

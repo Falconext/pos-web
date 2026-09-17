@@ -171,7 +171,7 @@ export default function ProductosView({ sedeId }: { sedeId?: number | null } = {
                     {/* ── KPIs ── */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <Kpi icon="solar:box-bold-duotone" tone="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400" label="Unidades vendidas" value={formatUnidades(data.resumen.unidadesVendidas)} sub={`${data.resumen.totalProductos} producto(s) · ${data.resumen.documentos} doc.`} />
-                        <Kpi icon="solar:cart-large-4-bold-duotone" tone="bg-sky-50 text-sky-600 dark:bg-sky-900/20 dark:text-sky-400" label="Ingreso" value={formatSoles(data.resumen.ingresoTotal)} sub="neto de notas de crédito" />
+                        <Kpi icon="solar:cart-large-4-bold-duotone" tone="bg-sky-50 text-sky-600 dark:bg-sky-900/20 dark:text-sky-400" label="Ventas" value={formatSoles(data.resumen.ventasConIgv ?? data.resumen.ingresoTotal)} sub={`sin IGV ${formatSoles(data.resumen.ingresoTotal)} · neto de notas de crédito`} />
                         <Kpi icon="solar:money-bag-bold-duotone" tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" label="Ganancia" value={formatSoles(data.resumen.gananciaTotal)} sub={`costo ${formatSoles(data.resumen.costoTotal)}`} />
                         <Kpi icon="solar:graph-up-bold-duotone" tone="bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400" label="Margen promedio" value={formatPct(data.resumen.margenPromedio)} sub={data.resumen.mejorProducto ? `Top: ${data.resumen.mejorProducto}` : undefined} />
                     </div>
@@ -262,7 +262,7 @@ export default function ProductosView({ sedeId }: { sedeId?: number | null } = {
                                         <th className="text-right px-4 py-2.5 font-semibold text-gray-500">Unid.</th>
                                         <th className="text-right px-4 py-2.5 font-semibold text-gray-500 hidden md:table-cell">P. prom.</th>
                                         <th className="text-right px-4 py-2.5 font-semibold text-gray-500 hidden lg:table-cell">Costo unit.</th>
-                                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500">Ingreso</th>
+                                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500">Ingreso (sin IGV)</th>
                                         <th className="text-right px-4 py-2.5 font-semibold text-gray-500 hidden sm:table-cell">Ganancia</th>
                                         <th className="text-right px-4 py-2.5 font-semibold text-gray-500">Margen</th>
                                         <th className="text-right px-5 py-2.5 font-semibold text-gray-500 hidden lg:table-cell">Particip.</th>
