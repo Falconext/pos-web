@@ -603,6 +603,17 @@ export default function ProductsView() {
                             {/* Un solo menú de acciones (antes eran 5 botones sueltos): catálogo,
                                 Excel/CSV, PDF y sedes. Reusa el estado/ref del dropdown existente. */}
                             <div className="relative inline-block ml-auto top-3" ref={dropdownRef}>
+                                {/* El input de archivo del import vive FUERA del menú desplegable: si
+                                    estuviera dentro, al cerrarse el menú React lo desmonta y el archivo
+                                    que el usuario elige en el selector nunca dispara onChange (bug
+                                    reportado: "subo el Excel y no pasa nada"). */}
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    ref={vm.fileInputRef}
+                                    onChange={actions.handleImportExcel}
+                                    className="hidden"
+                                />
                                 <Button
                                     color="default"
                                     onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
@@ -632,13 +643,6 @@ export default function ProductsView() {
                                     );
                                     return (
                                         <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#1E2435] border border-gray-100 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 font-inter">
-                                            <input
-                                                type="file"
-                                                accept=".xlsx, .xls"
-                                                ref={vm.fileInputRef}
-                                                onChange={(e) => { actions.handleImportExcel(e); cerrar(); }}
-                                                className="hidden"
-                                            />
                                             {seccion('Catálogo')}
                                             {item('solar:tag-bold-duotone', 'text-blue-500', 'Categorías', () => actions.setIsOpenModalCategory(true))}
                                             {item('solar:star-bold-duotone', 'text-emerald-500', 'Marcas', () => actions.setIsOpenModalBrands(true))}
