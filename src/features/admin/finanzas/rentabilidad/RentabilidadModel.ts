@@ -22,11 +22,11 @@ export interface PnlResponse {
         fechaInicio?: string;
         fechaFin?: string;
     };
-    /** Ventas sin el IGV de Facturas/Boletas (el IGV se paga a SUNAT, no es ganancia). */
+    /** Ventas sin IGV (valor de venta) de todos los documentos, incluidas notas de venta. */
     ventasNetas: number;
     /** Ventas totales cobradas, con IGV. */
     ventasConIgv?: number;
-    /** IGV de los comprobantes electrónicos del período. */
+    /** IGV incluido en las ventas del período. */
     igvVentas?: number;
     costoBaseProductos: number;
     costosFijosProducto: number;

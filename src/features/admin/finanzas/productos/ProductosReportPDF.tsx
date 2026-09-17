@@ -26,6 +26,7 @@ const styles = StyleSheet.create({
     kpi: { flex: 1, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 4, padding: 9 },
     kpiLabel: { fontSize: 7, color: '#6b7280', marginBottom: 4 },
     kpiValue: { fontSize: 12, fontWeight: 'bold' },
+    kpiSub: { fontSize: 7, color: '#6b7280', marginTop: 3 },
     section: { fontSize: 9, fontWeight: 'bold', marginTop: 10, marginBottom: 6, textTransform: 'uppercase' },
     tableHeader: { flexDirection: 'row', backgroundColor: '#111827', paddingVertical: 5, paddingHorizontal: 6 },
     th: { color: '#fff', fontSize: 7, fontWeight: 'bold' },
@@ -104,8 +105,9 @@ export function ProductosReportPDF({
                         <Text style={styles.kpiValue}>{formatUnidades(data.resumen.unidadesVendidas)}</Text>
                     </View>
                     <View style={styles.kpi}>
-                        <Text style={styles.kpiLabel}>INGRESO</Text>
-                        <Text style={styles.kpiValue}>{formatSoles(data.resumen.ingresoTotal)}</Text>
+                        <Text style={styles.kpiLabel}>VENTAS</Text>
+                        <Text style={styles.kpiValue}>{formatSoles(data.resumen.ventasConIgv ?? data.resumen.ingresoTotal)}</Text>
+                        <Text style={styles.kpiSub}>sin IGV {formatSoles(data.resumen.ingresoTotal)}</Text>
                     </View>
                     <View style={styles.kpi}>
                         <Text style={styles.kpiLabel}>GANANCIA</Text>
@@ -123,7 +125,7 @@ export function ProductosReportPDF({
                     <Text style={[styles.th, styles.cat]}>Categoría</Text>
                     <Text style={[styles.th, styles.units]}>Unid.</Text>
                     <Text style={[styles.th, styles.price]}>P. prom.</Text>
-                    <Text style={[styles.th, styles.income]}>Ingreso</Text>
+                    <Text style={[styles.th, styles.income]}>Ingreso s/IGV</Text>
                     <Text style={[styles.th, styles.profit]}>Ganancia</Text>
                     <Text style={[styles.th, styles.margin]}>Mrg.</Text>
                     <Text style={[styles.th, styles.share]}>%</Text>

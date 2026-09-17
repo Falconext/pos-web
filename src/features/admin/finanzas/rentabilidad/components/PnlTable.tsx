@@ -129,7 +129,7 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                         barColor="bg-indigo-300"
                     />
                     <PnlRow
-                        label="− IGV de ventas (se paga a SUNAT)"
+                        label="− IGV incluido en las ventas"
                         value={igvVentas}
                         reference={ref}
                         indent
