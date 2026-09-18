@@ -129,13 +129,20 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                         barColor="bg-indigo-300"
                     />
                     <PnlRow
-                        label="− IGV incluido en las ventas"
+                        label={pnl.criterioIgv === 'TODOS'
+                            ? '− IGV incluido en las ventas (todos los documentos)'
+                            : '− IGV de facturas, boletas y notas de crédito/débito'}
                         value={igvVentas}
                         reference={ref}
                         indent
                         barColor="bg-slate-400"
                     />
                 </>
+            )}
+            {pnl.criterioIgvLabel && (
+                <p className="px-1 pb-1 text-[11px] text-gray-400 dark:text-gray-500">
+                    Criterio: {pnl.criterioIgvLabel}. Se cambia en Configuración → Análisis financiero.
+                </p>
             )}
             <PnlRow
                 label={igvVentas > 0 ? 'Ventas Netas (sin IGV)' : 'Ventas Netas'}

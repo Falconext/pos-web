@@ -26,6 +26,9 @@ export interface PnlResponse {
     ventasNetas: number;
     /** Ventas totales cobradas, con IGV. */
     ventasConIgv?: number;
+    /** Criterio del IGV configurado por la empresa (Configuración → Análisis financiero). */
+    criterioIgv?: 'ELECTRONICOS' | 'TODOS' | 'NINGUNO';
+    criterioIgvLabel?: string;
     /** IGV incluido en las ventas del período. */
     igvVentas?: number;
     costoBaseProductos: number;

@@ -381,7 +381,9 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             iconColor="text-indigo-600 dark:text-indigo-400"
                             sub={(pnl?.igvVentas ?? 0) > 0
                                 ? `Sin IGV · ${formatCurrency(pnl!.ventasConIgv ?? 0)} con IGV`
-                                : undefined}
+                                : pnl?.criterioIgv === 'NINGUNO'
+                                    ? 'Ventas brutas (sin descontar IGV)'
+                                    : undefined}
                             subColor="text-indigo-500 dark:text-indigo-400"
                         />
 
