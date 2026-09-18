@@ -21,6 +21,8 @@ import { fadeUp, interactiveHover, listItemFadeUp, listItemHidden, listStagger }
 export default function ComprasView() {
     const vm = useComprasViewModel();
     const { actions, tableData, totalCompras, totalPorPagar, totalVencidos } = vm;
+    const totalPorPagarEsGlobal = (vm as any).totalPorPagarEsGlobal as boolean;
+    const comprasConSaldo = Number((vm as any).comprasConSaldo || 0);
     const { auth } = useAuthStore();
     const { sedes, listarSedes } = useSedesStore();
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -156,7 +158,7 @@ export default function ComprasView() {
                             <div>
                                 <h2 className="text-[28px] leading-none font-extrabold text-gray-900 dark:text-white mb-2">S/ {totalPorPagar.toFixed(2)}</h2>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-gray-400 text-xs font-medium">(Página actual)</span>
+                                    <span className="text-gray-400 text-xs font-medium">{totalPorPagarEsGlobal ? `${comprasConSaldo} compra(s) con saldo · en soles` : '(Página actual)'}</span>
                                 </div>
                             </div>
                         </motion.div>
@@ -376,6 +378,7 @@ export default function ComprasView() {
                 isOpen={!!vm.showHistorialModal}
                 compra={vm.selectedCompra}
                 onClose={actions.closeHistorial}
+                onChange={actions.refreshList}
             />
 
             <ModalNuevaCompra

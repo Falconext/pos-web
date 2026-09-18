@@ -9,6 +9,8 @@ interface ResumenCompras {
   periodo: string;
   cantidad: number;
   base: number;
+  /** Adquisiciones no gravadas (productos exonerados/inafectos), campo 21 del RCE. */
+  noGravadas?: number;
   igv: number;
   total: number;
   porTipoDoc: Record<string, { cantidad: number; total: number }>;
@@ -268,11 +270,15 @@ export default function LibroCompras() {
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className={`grid ${Number(resumen.noGravadas) > 0 ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mb-3`}>
                     {[
                       { label: 'Compras', valor: String(resumen.cantidad) },
                       { label: 'Base gravada', valor: fmtMoneda(resumen.base) },
                       { label: 'IGV', valor: fmtMoneda(resumen.igv) },
+                      // Solo aparece cuando hay compras de exonerados/inafectos.
+                      ...(Number(resumen.noGravadas) > 0
+                        ? [{ label: 'No gravadas', valor: fmtMoneda(Number(resumen.noGravadas)) }]
+                        : []),
                     ].map((f) => (
                       <div key={f.label} className="bg-gray-50 rounded-xl px-3 py-2">
                         <p className="text-[11px] text-gray-400">{f.label}</p>
