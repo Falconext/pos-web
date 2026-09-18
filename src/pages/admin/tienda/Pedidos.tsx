@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import { Calendar } from '@/components/Date';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
   usePedidosViewModel,
 } from '@/features/admin/tienda/usePedidosViewModel';
 import { PedidoDetalleDrawer } from './PedidoDetalleDrawer';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const money = (value: number) => `S/ ${value.toFixed(2)}`;
 
@@ -118,6 +118,21 @@ export default function PedidosTienda() {
   const [selectedPedido, setSelectedPedido] = useState<PedidoTiendaAdmin | null>(null);
   const [confirmPago, setConfirmPago] = useState<PedidoTiendaAdmin | null>(null);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  // Llegada desde el Panel de ventas ("Ver / gestionar pedido"): ?codigo=PT-… →
+  // se filtra por ese código y se abre su detalle en cuanto carguen los pedidos.
+  const [searchParams] = useSearchParams();
+  const codigoParam = searchParams.get('codigo');
+  const codigoAbiertoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!codigoParam || vm.loading) return;
+    if (codigoAbiertoRef.current === codigoParam) return;
+    const pedido = vm.pedidos.find((p) => p.codigoSeguimiento === codigoParam);
+    if (!pedido) return;
+    codigoAbiertoRef.current = codigoParam;
+    vm.setBusqueda(codigoParam);
+    setSelectedPedido(pedido);
+  }, [codigoParam, vm.loading, vm.pedidos, vm.setBusqueda]);
 
   const navegarComprobantePedido = (pedido: PedidoTiendaAdmin, defaultType: 'BOLETA' | 'FACTURA') => {
     navigate('/administrador/facturacion/nuevo', {

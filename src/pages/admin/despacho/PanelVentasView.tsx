@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
@@ -10,6 +10,7 @@ import { Calendar } from '@/components/Date';
 import OlvaTrackingModal from '@/components/OlvaTrackingModal';
 import AutoScrollTable from '@/components/Autoscrolltable';
 import RotuloPrint from './RotuloPrint';
+import RotulosLotePrint, { type RotuloLoteItem } from './RotulosLotePrint';
 import { useInvoiceStore } from '@/zustand/invoices';
 import {
     usePanelVentasViewModel,
@@ -201,6 +202,8 @@ function mapProductosComprobante(comprobante: any) {
 // ─── Shalom ───────────────────────────────────────────────────────────────────
 
 const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
+// Documentos a los que no tiene sentido coordinar un envío desde el panel.
+const TIPOS_NO_ENVIABLES = new Set(['COT', '07', '08', 'PEDIDO_TIENDA']);
 const OLVA_COURIER = 'OLVA';
 
 
@@ -291,6 +294,66 @@ export default function PanelVentasView() {
     const [detalleId, setDetalleId] = useState<number | null>(null);
     const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
     const [confirmDespachoItem, setConfirmDespachoItem] = useState<VentaPanelItem | null>(null);
+    // Pedido de tienda pendiente de pago: confirmación antes de marcarlo cobrado.
+    const [confirmPagoPedido, setConfirmPagoPedido] = useState<VentaPanelItem | null>(null);
+
+    // Los pedidos de tienda no tienen comprobante (comprobanteId = null): sus
+    // acciones van contra /tienda/pedidos, igual que el módulo Tienda → Pedidos.
+    const marcarPedidoPagado = useCallback(async (item: VentaPanelItem) => {
+        if (!item.pedidoId) return;
+        try {
+            await apiClient.patch(`/tienda/pedidos/${item.pedidoId}/estado`, {
+                estado: 'CONFIRMADO',
+                montoPagado: item.total,
+            });
+            useAlertStore.getState().alert(`Pedido ${item.referencia} marcado como pagado`, 'success');
+            vm.cargar();
+        } catch (e: any) {
+            useAlertStore.getState().alert(e?.response?.data?.message || 'No se pudo registrar el pago del pedido', 'error');
+        }
+    }, [vm]);
+
+    // Venta emitida sin coordinación de envío (Despacho "—"): se crea el
+    // despacho aquí mismo y se abre el modal para completarlo (courier,
+    // agencia, destinatario). Antes no había forma de hacerlo desde el panel.
+    const coordinarEnvio = useCallback(async (item: VentaPanelItem) => {
+        if (!item.comprobanteId) return;
+        try {
+            await apiClient.post(`/envio-despacho/comprobante/${item.comprobanteId}`, {
+                transportista: 'SHALOM_PRO',
+                tipoEnvio: 'AGENCIA',
+                nroPaquetes: 1,
+            });
+        } catch (e: any) {
+            const msg: string = e?.response?.data?.message || '';
+            // Si ya existía (carrera con otro usuario) se abre igual.
+            if (!/ya tiene un seguimiento/i.test(msg)) {
+                useAlertStore.getState().alert(msg || 'No se pudo crear la coordinación de envío', 'error');
+                return;
+            }
+        }
+        // El modal se abre DESPUÉS de recargar: mientras `loading` el panel
+        // desmonta la tabla y con ella el modal.
+        await vm.cargar();
+        setEditDespachoId(item.comprobanteId);
+    }, [vm]);
+
+    const whatsappPedido = (item: VentaPanelItem) => {
+        const digits = String(item.clienteTelefono || item.celularDest || "").replace(/\D/g, '');
+        if (!digits) {
+            useAlertStore.getState().alert('El pedido no tiene celular del cliente', 'warning');
+            return;
+        }
+        const telefono = digits.startsWith('51') ? digits : `51${digits}`;
+        const seguimiento = `${window.location.origin}/tienda/seguimiento?codigo=${encodeURIComponent(item.referencia)}`;
+        const saldo = Number(item.saldo ?? 0);
+        const msg = encodeURIComponent(
+            `Hola ${item.cliente}, te escribimos por tu pedido ${item.referencia} (S/ ${Number(item.total).toFixed(2)}).` +
+            (saldo > 0.01 ? `\nTiene un saldo pendiente de S/ ${saldo.toFixed(2)}.` : '') +
+            `\nSeguimiento: ${seguimiento}\nGracias por tu preferencia.`
+        );
+        window.open(`https://wa.me/${telefono}?text=${msg}`, '_blank', 'noopener');
+    };
     const [trazabilidadItem, setTrazabilidadItem] = useState<VentaPanelItem | null>(null);
     const [waItem, setWaItem] = useState<VentaPanelItem | null>(null);
     const [pagoItem, setPagoItem] = useState<VentaPanelItem | null>(null);
@@ -302,6 +365,20 @@ export default function PanelVentasView() {
     const [olvaTracking, setOlvaTracking] = useState<{ trackingNumber: string; item: VentaPanelItem } | null>(null);
     const [anularItem, setAnularItem] = useState<VentaPanelItem | null>(null);
     const [rotuloPrintComprobanteId, setRotuloPrintComprobanteId] = useState<number | null>(null);
+    // Rótulos en lote: los despachos "Preparando" que se ven en la tabla
+    // (respeta pestaña, búsqueda y filtros; cualquier courier), un rótulo por página.
+    const [rotulosLote, setRotulosLote] = useState<RotuloLoteItem[]>([]);
+    const preparandoParaRotulo = useMemo<RotuloLoteItem[]>(
+        () => vm.filtrados
+            .filter((i) => i.comprobanteId && i.estadoDespacho === 'PREPARANDO')
+            .map((i) => ({
+                comprobanteId: i.comprobanteId as number,
+                referencia: i.referencia,
+                courier: i.courier || '',
+                celular: i.celularDest && i.celularDest !== '—' ? i.celularDest : (i.clienteTelefono || ''),
+            })),
+        [vm.filtrados],
+    );
     const { cancelInvoice } = useInvoiceStore((s) => s);
 
     useEffect(() => {
@@ -664,6 +741,22 @@ export default function PanelVentasView() {
                             />
                         </div>
                     )}
+                    {/* Rótulos de todos los paquetes en preparación (un rótulo por página) */}
+                    <button
+                        type="button"
+                        onClick={() => setRotulosLote(preparandoParaRotulo)}
+                        disabled={preparandoParaRotulo.length === 0 || rotulosLote.length > 0}
+                        title={preparandoParaRotulo.length ? `Imprimir ${preparandoParaRotulo.length} rótulo(s) de los despachos en Preparando de la lista` : 'No hay despachos en Preparando en la lista'}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <Icon icon="solar:printer-2-bold-duotone" className="text-base" />
+                        Rótulos
+                        {preparandoParaRotulo.length > 0 && (
+                            <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-black">
+                                {preparandoParaRotulo.length}
+                            </span>
+                        )}
+                    </button>
                     {/* Filtros secundarios agrupados: la fila tenía 9 controles y los
                         selects se recortaban. Solo queda a la vista lo que cambia los
                         totales (sede) o el layout (columnas), más la búsqueda. */}
@@ -1000,8 +1093,22 @@ export default function PanelVentasView() {
                                                 </td>
                                             )}
                                             {col('agencia') && (
-                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[120px] truncate" title={item.agenciaDestino}>
-                                                    {item.estadoDespacho !== 'NO_APLICA' ? (item.agenciaDestino ?? '—') : '—'}
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[140px]" title={item.agenciaDestino}>
+                                                    <div className="truncate">{item.estadoDespacho !== 'NO_APLICA' ? (item.agenciaDestino ?? '—') : '—'}</div>
+                                                    {/* Cliente "WSP 9…" (sin DNI) con courier que exige documento y sin guía aún:
+                                                        atajo directo al bloque Destinatario del despacho. */}
+                                                    {Boolean(item.comprobanteId)
+                                                        && !TIPOS_NO_ENVIABLES.has(item.tipo)
+                                                        && (item.estadoDespacho === 'NO_APLICA' || SHALOM_COURIERS.has(item.courier) || item.courier === OLVA_COURIER)
+                                                        && !item.nroOrden
+                                                        && !/^\d{8}$|^\d{11}$/.test(String(item.clienteDoc ?? '').trim()) && (
+                                                        <button type="button"
+                                                            onClick={(e) => { e.stopPropagation(); if (item.estadoDespacho === 'NO_APLICA') void coordinarEnvio(item); else setEditDespachoId(item.comprobanteId); }}
+                                                            className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400"
+                                                            title="El cliente no tiene DNI registrado; complétalo para generar la guía">
+                                                            <Icon icon="solar:danger-triangle-bold" className="text-xs" /> Falta DNI para la guía
+                                                        </button>
+                                                    )}
                                                 </td>
                                             )}
                                             {col('paq') && (
@@ -1087,6 +1194,14 @@ export default function PanelVentasView() {
                 />
             )}
             <ModalConfirm
+                isOpenModal={confirmPagoPedido !== null}
+                setIsOpenModal={(v) => { if (!v) setConfirmPagoPedido(null); }}
+                title="Marcar pedido como pagado"
+                information={confirmPagoPedido ? `Se registrará el cobro completo de S/ ${Number(confirmPagoPedido.total).toFixed(2)} del pedido ${confirmPagoPedido.referencia} (${confirmPagoPedido.metodoPago}) y pasará a CONFIRMADO. ¿Ya verificaste el pago?` : ''}
+                confirmText="Sí, marcar pagado"
+                confirmSubmit={() => { const it = confirmPagoPedido; setConfirmPagoPedido(null); if (it) void marcarPedidoPagado(it); }}
+            />
+            <ModalConfirm
                 isOpenModal={confirmDespachoItem !== null}
                 setIsOpenModal={(v) => { if (!v) setConfirmDespachoItem(null); }}
                 title="Este pedido ya fue entregado"
@@ -1160,9 +1275,44 @@ export default function PanelVentasView() {
                     const canConvertirComp = puedeDocumentarComprobante(it);
                     const canConvertirPedido = puedeDocumentarPedidoTienda(it);
                     const canCobro = puedeRegistrarCobro(it);
+                    const esPedidoTienda = it.tipo === 'PEDIDO_TIENDA' && Boolean(it.pedidoId);
+                    const pedidoConSaldo = esPedidoTienda && Number(it.saldo ?? 0) > 0.01;
 
                     return (
                         <>
+                            {/* — Pedido de tienda (sin comprobante): gestión directa del pedido — */}
+                            {esPedidoTienda && (
+                                <>
+                                    <button type="button"
+                                        onClick={() => { handleCloseMenu(); navigate(`/administrador/tienda/pedidos?codigo=${encodeURIComponent(it.referencia)}`); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium"
+                                    >
+                                        <Icon icon="solar:bag-check-bold-duotone" width={15} />
+                                        <span>Ver / gestionar pedido</span>
+                                    </button>
+                                    {pedidoConSaldo && (
+                                        <button type="button"
+                                            onClick={() => { handleCloseMenu(); setConfirmPagoPedido(it); }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium"
+                                        >
+                                            <Icon icon="solar:hand-money-bold-duotone" width={15} />
+                                            <span>Marcar como pagado (S/ {Number(it.saldo).toFixed(2)})</span>
+                                        </button>
+                                    )}
+                                    <button type="button"
+                                        onClick={() => { handleCloseMenu(); whatsappPedido(it); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                    >
+                                        <Icon icon="mdi:whatsapp" width={15} />
+                                        <span>WhatsApp al cliente</span>
+                                    </button>
+                                    {!canConvertirPedido && (
+                                        <p className="px-3 py-1.5 text-[10px] leading-4 text-slate-400">
+                                            Boleta/Factura/Guía se habilitan cuando el pedido esté pagado.
+                                        </p>
+                                    )}
+                                </>
+                            )}
                             {/* — Visualización — */}
                             {canDetalle && (
                                 <button type="button"
@@ -1194,6 +1344,20 @@ export default function PanelVentasView() {
                                     <Icon icon="mdi:whatsapp" width={15} />
                                     <span>Enviar WhatsApp / Email</span>
                                 </button>
+                            )}
+
+                            {/* — Sin despacho: crearlo desde aquí — */}
+                            {Boolean(it.comprobanteId) && it.estadoDespacho === 'NO_APLICA' && !TIPOS_NO_ENVIABLES.has(it.tipo) && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-0.5" />
+                                    <button type="button"
+                                        onClick={() => { handleCloseMenu(); void coordinarEnvio(it); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 font-medium"
+                                    >
+                                        <Icon icon="solar:delivery-bold-duotone" width={15} />
+                                        <span>Coordinar envío</span>
+                                    </button>
+                                </>
                             )}
 
                             {/* — Despacho — */}
@@ -1418,6 +1582,7 @@ export default function PanelVentasView() {
                 comprobanteId={rotuloPrintComprobanteId}
                 onDone={() => setRotuloPrintComprobanteId(null)}
             />
+            <RotulosLotePrint items={rotulosLote} onDone={() => setRotulosLote([])} />
 
             {shalomTracking && (
                 <ShalomTrackingModal

@@ -76,6 +76,8 @@ function construirPayloadDespacho(envioData: any) {
         repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
         repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
         fechaEstimada: opcional(envioData.fechaEstimada),
+        // Turno vacío rebota contra @IsIn(MANANA|TARDE|NOCHE): se omite, igual que la fecha.
+        turnoEnvio: opcional(envioData.turnoEnvio),
         pesoKg: Number(envioData.pesoKg) > 0 ? Number(envioData.pesoKg) : undefined,
         shalomTipoProducto: Number(envioData.shalomTipoProducto) > 0 ? Number(envioData.shalomTipoProducto) : undefined,
         nroPaquetes: Number(envioData.nroPaquetes) > 0 ? Number(envioData.nroPaquetes) : undefined,
@@ -92,6 +94,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         tipoEnvio: 'DOMICILIO',
         agenciaDestino: '',
         celularDest: '',
+        // Destinatario de la guía (Shalom/Olva lo exigen). Si el cliente fue dado
+        // de alta solo con WhatsApp ("WSP 9…"), aquí se completa por primera vez.
+        dniDestinatario: '',
+        nombreDestinatario: '',
+        actualizarFichaCliente: false,
         nroPaquetes: 1,
         turnoEnvio: '',
         tipoMercaderia: '',
@@ -117,6 +124,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     // Config Olva de la empresa: `habilitadoPorPlan` habilita generar la guía.
     const [olva, setOlva] = useState<OlvaConfig | null>(null);
     const [generandoGuia, setGenerandoGuia] = useState(false);
+    // Ficha del cliente del comprobante, para saber si ya tiene DNI o es "WSP 9…".
+    const [clienteFicha, setClienteFicha] = useState<{ id: number | null; nombre: string; nroDoc: string; telefono: string } | null>(null);
+    const [buscandoDni, setBuscandoDni] = useState(false);
     const [esNV, setEsNV] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -139,6 +149,12 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const FORMALES = ['01', '03', '07', '08'];
                 setEsNV(!FORMALES.includes(tipoComp) || tipoComp === '');
                 const adelantoComprobante = Number(comprobantePayload?.adelanto ?? 0);
+                const cli = comprobantePayload?.cliente ?? null;
+                const cliNroDoc = String(cli?.nroDoc ?? '').trim();
+                const cliNombre = String(cli?.nombre ?? '').trim();
+                const cliTieneDni = /^\d{8}$/.test(cliNroDoc);
+                const cliEsWsp = /^WSP\s/i.test(cliNombre) || !cliTieneDni;
+                setClienteFicha(cli ? { id: cli.id ?? null, nombre: cliNombre, nroDoc: cliNroDoc, telefono: String(cli.telefono ?? '') } : null);
                 if (payload) {
                     setEnvioData({
                         transportista: payload.transportista || '',
@@ -146,7 +162,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         observaciones: payload.observaciones || '',
                         tipoEnvio: payload.tipoEnvio || 'DOMICILIO',
                         agenciaDestino: payload.agenciaDestino || '',
-                        celularDest: payload.celularDest || '',
+                        celularDest: payload.celularDest || (/^9\d{8}$/.test(String(cli?.telefono ?? '').replace(/\D/g, '')) ? String(cli.telefono).replace(/\D/g, '') : ''),
+                        // Si el despacho no tiene destinatario, se toma el del cliente
+                        // solo cuando su ficha es real (DNI de 8 dígitos y no "WSP …").
+                        dniDestinatario: payload.dniDestinatario || (cliTieneDni ? cliNroDoc : ''),
+                        nombreDestinatario: payload.nombreDestinatario || (cliEsWsp ? '' : cliNombre),
+                        // Cliente sin DNI: por defecto se corrige su ficha al guardar.
+                        actualizarFichaCliente: cliEsWsp,
                         nroPaquetes: payload.nroPaquetes || 1,
                         turnoEnvio: payload.turnoEnvio || '',
                         tipoMercaderia: payload.tipoMercaderia || '',
@@ -176,7 +198,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
             }
         };
         fetchDespacho();
-    }, [comprobanteId, alert, fetchRepartidores, onClose]);
+    // Solo al cambiar de comprobante: `onClose` llega como arrow inline del
+    // padre y cambia en cada render (p. ej. al mostrar un toast), y volver a
+    // cargar el despacho borraba lo que el usuario estaba escribiendo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [comprobanteId]);
 
     useEffect(() => {
         let vivo = true;
@@ -191,6 +217,43 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
 
     const set = (field: string, value: any) =>
         setEnvioData((prev: any) => ({ ...prev, [field]: value }));
+
+    // Lo que exigen Shalom/Olva para registrar la guía: DNI de 8 dígitos, nombre y
+    // celular. Se calcula acá para deshabilitar el botón y decir qué falta.
+    const dniOk = /^\d{8}$/.test(String(envioData.dniDestinatario ?? '').trim());
+    const nombreOk = String(envioData.nombreDestinatario ?? '').trim().length >= 3;
+    const celularOk = /^9\d{8}$/.test(String(envioData.celularDest ?? '').replace(/\D/g, ''));
+    const faltanDestinatario: string[] = [
+        ...(!dniOk ? ['el DNI del destinatario'] : []),
+        ...(!nombreOk ? ['el nombre del destinatario'] : []),
+        ...(!celularOk ? ['un celular de 9 dígitos'] : []),
+    ];
+    const clienteSinDni = !!clienteFicha && !/^\d{8}$/.test(clienteFicha.nroDoc);
+
+    // RENIEC (apiperu) al completar los 8 dígitos: rellena el nombre como lo
+    // exige Shalom (apellidos y nombres separados por coma).
+    const buscarDni = async (dni: string) => {
+        if (!/^\d{8}$/.test(dni) || buscandoDni) return;
+        setBuscandoDni(true);
+        try {
+            const { data } = await apiClient.get<any>(`/clientes/consultar/DNI/${dni}`);
+            const d = data?.data ?? data;
+            const nombres = String(d?.nombres ?? '').trim();
+            const paterno = String(d?.apellido_paterno ?? d?.apellidoPaterno ?? '').trim();
+            const materno = String(d?.apellido_materno ?? d?.apellidoMaterno ?? '').trim();
+            const completo = d?.nombre_completo ?? (nombres && paterno ? `${paterno} ${materno}, ${nombres}`.replace(/\s+,/, ',') : '');
+            if (completo) {
+                set('nombreDestinatario', String(completo).trim());
+                alert('Datos de RENIEC cargados', 'success');
+            } else {
+                alert('RENIEC no devolvió datos para ese DNI; escribe el nombre a mano.', 'warning');
+            }
+        } catch {
+            alert('No se pudo consultar RENIEC; escribe el nombre a mano.', 'warning');
+        } finally {
+            setBuscandoDni(false);
+        }
+    };
 
     const selectedCourier = COURIERS.find(c => c.value === envioData.transportista);
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
@@ -437,7 +500,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                             <button
                                                 type="button"
                                                 onClick={handleGenerarGuia}
-                                                disabled={generandoGuia || !envioData.agenciaDestino}
+                                                disabled={generandoGuia || !envioData.agenciaDestino || faltanDestinatario.length > 0}
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-black text-white shadow-lg shadow-red-500/20 transition-opacity hover:opacity-90 disabled:opacity-50"
                                             >
                                                 <Icon icon={generandoGuia ? 'eos-icons:loading' : 'solar:add-square-bold'} className="text-lg" />
@@ -447,6 +510,12 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                                 Registra el envío en tu cuenta Shalom Pro y completa solo el N° de orden y la clave.
                                                 {!envioData.agenciaDestino && ' Elige primero la agencia de destino.'}
                                             </p>
+                                            {faltanDestinatario.length > 0 && (
+                                                <p className="flex items-start gap-1.5 text-[11px] leading-4 font-semibold text-amber-700 dark:text-amber-400">
+                                                    <Icon icon="solar:danger-triangle-bold" className="mt-0.5 shrink-0" />
+                                                    Para generar la guía falta {faltanDestinatario.join(', ')} (bloque "Destinatario").
+                                                </p>
+                                            )}
                                         </div>
                                     ) : (
                                         <p className="flex items-start gap-2 rounded-xl bg-white p-3 text-[11px] leading-4 text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
@@ -584,6 +653,50 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
 
                         </div>
                     </div>
+
+                    {/* DESTINATARIO: Shalom/Olva exigen DNI + nombre; los clientes "WSP 9…" no lo tienen */}
+                    {(esShalom || esOlva) && (
+                        <div className={`rounded-2xl border p-4 space-y-3 ${clienteSinDni && !dniOk ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20' : 'border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30'}`}>
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Destinatario (para la guía)</p>
+                                {clienteFicha && (
+                                    <span className="text-[11px] text-slate-400 truncate">Cliente: {clienteFicha.nombre || '—'}{clienteFicha.nroDoc ? ` · ${clienteFicha.nroDoc}` : ''}</span>
+                                )}
+                            </div>
+                            {clienteSinDni && !dniOk && (
+                                <p className="flex items-start gap-1.5 text-xs leading-5 text-amber-700 dark:text-amber-400">
+                                    <Icon icon="solar:info-circle-bold" className="mt-0.5 shrink-0" />
+                                    Este cliente se registró solo con WhatsApp. Ingresa su DNI para poder generar la guía; el nombre se completa desde RENIEC.
+                                </p>
+                            )}
+                            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-3">
+                                <Field label="DNI">
+                                    <div className="relative">
+                                        <input type="text" inputMode="numeric" maxLength={8} value={envioData.dniDestinatario}
+                                            onChange={e => {
+                                                const v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                                set('dniDestinatario', v);
+                                                if (v.length === 8) void buscarDni(v);
+                                            }}
+                                            placeholder="8 dígitos" className={inp} />
+                                        {buscandoDni && <Icon icon="eos-icons:loading" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />}
+                                    </div>
+                                </Field>
+                                <Field label="Nombres y apellidos">
+                                    <input type="text" value={envioData.nombreDestinatario}
+                                        onChange={e => set('nombreDestinatario', e.target.value)}
+                                        placeholder="APELLIDOS, NOMBRES (se llena con RENIEC)" className={inp} />
+                                </Field>
+                            </div>
+                            {clienteSinDni && (
+                                <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" className="mt-0.5" checked={!!envioData.actualizarFichaCliente}
+                                        onChange={e => set('actualizarFichaCliente', e.target.checked)} />
+                                    <span>Actualizar también la ficha del cliente con este DNI y nombre (deja de ser "{clienteFicha?.nombre || 'WSP'}" para la próxima venta y sus comprobantes).</span>
+                                </label>
+                            )}
+                        </div>
+                    )}
 
                     {/* SECCIÓN 3: Celular + Paquetes + Turno (+ Fecha y N° Orden para no-Shalom) */}
                     <div className="grid grid-cols-3 gap-3">

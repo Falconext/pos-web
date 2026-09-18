@@ -58,19 +58,114 @@ export const TODOS_LOS_PLANES: PlanNovedad[] = ['EMPRENDEDOR', 'NEGOCIO', 'CORPO
 
 /** Novedades ordenadas de la más reciente a la más antigua. */
 export const NOVEDADES: Novedad[] = [
-    // ── Anuncio ──────────────────────────────────────────────────────────────
+    // ── 18 de septiembre: lanzamiento ────────────────────────────────────────
     {
         id: '2026-09-mercado-pago',
-        fecha: '2026-09-11',
-        titulo: 'Mercado Pago llega el 18 de septiembre a todas las tiendas virtuales',
+        fecha: '2026-09-18',
+        titulo: 'Mercado Pago en tu tienda virtual',
         descripcion:
-            'Desde el 18 de septiembre tus clientes podrán pagar con tarjeta, Yape y billeteras en tu tienda virtual a través de Mercado Pago, con el cobro conciliado solo en tu caja. Niky ya lo tiene en la mira: te avisamos aquí el mismo día del lanzamiento.',
+            'Tus clientes ya pueden pagar con tarjeta, Yape y billeteras en tu tienda virtual a través de Mercado Pago. Conectas tu propia cuenta de Mercado Pago desde el perfil (si no tienes una, se crea gratis en minutos), la plata cae directo en ella y el pedido se confirma solo cuando el pago está aprobado.',
         categoria: 'Tienda virtual',
         tipo: 'NUEVO',
         // La tienda virtual (tieneTienda) solo existe en Negocio y Corporativo.
         planes: ['NEGOCIO', 'CORPORATIVO'],
-        estado: 'PROXIMAMENTE',
-        donde: 'Tienda Virtual → Configuración → Medios de pago (desde el 18/09)',
+        donde: 'Perfil → Medios de pago → Conectar Mercado Pago',
+        nota: 'Mercado Pago acepta pagos desde S/ 5. Krezka cobra S/ 1 por cada pago aprobado.',
+    },
+    {
+        id: '2026-09-despacho-cliente-wsp-dni',
+        fecha: '2026-09-18',
+        titulo: 'Cliente registrado solo con WhatsApp: el DNI se completa con RENIEC al despachar',
+        descripcion:
+            'Si la venta se hizo a un cliente que registraste solo con su celular, al coordinar el envío por Shalom u Olva el sistema te pide el DNI, trae el nombre desde RENIEC y, si quieres, corrige la ficha del cliente de paso. En el Panel de ventas verás el aviso "Falta DNI para la guía" en las ventas que lo necesitan.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → Editar despacho → Destinatario',
+    },
+    {
+        id: '2026-09-rotulos-en-lote',
+        fecha: '2026-09-18',
+        titulo: 'Imprime todos los rótulos del día de una vez',
+        descripcion:
+            'Botón "Rótulos" en el Panel de ventas: imprime en una sola tanda el rótulo de todos los despachos en Preparando que estás viendo (Shalom, Olva o reparto propio), uno por página, con referencia, destinatario y agencia destino. Respeta los filtros y la búsqueda, así sacas solo los de una agencia si quieres.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → Rótulos',
+    },
+    {
+        id: '2026-09-coordinar-envio-panel',
+        fecha: '2026-09-18',
+        titulo: 'Coordinar el envío de una venta que salió sin despacho',
+        descripcion:
+            'Las ventas emitidas sin envío ahora tienen "Coordinar envío" en el menú del Panel de ventas: crea el seguimiento y abre el despacho para elegir courier, agencia y generar la guía, sin tener que reemitir nada.',
+        categoria: 'Envíos',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → menú de la venta → Coordinar envío',
+    },
+    {
+        id: '2026-09-pedidos-tienda-panel',
+        fecha: '2026-09-18',
+        titulo: 'Los pedidos de la tienda virtual se gestionan desde el Panel de ventas',
+        descripcion:
+            'Los pedidos de tu tienda se ven en todas las sedes y ya tienen acciones en el panel: abrir el pedido, marcarlo como pagado, escribirle al cliente por WhatsApp y hacer la boleta o factura con las cantidades correctas.',
+        categoria: 'Tienda virtual',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → Tienda',
+    },
+    {
+        id: '2026-09-importar-compras-excel',
+        fecha: '2026-09-17',
+        titulo: 'Importa tus compras desde Excel, con stock por sede',
+        descripcion:
+            'Descarga la plantilla precargada con tu catálogo y el stock de cada sede, llénala con la compra y súbela: el sistema arma una compra por proveedor y documento, actualiza costos y kardex, y deja la cuenta por pagar. Si tienes varias sedes, puedes repartir una misma compra entre ellas ("Distribuir") tanto en Nueva compra como en el Excel.',
+        categoria: 'Compras',
+        tipo: 'NUEVO',
+        donde: 'Compras → Importar desde Excel · Nueva compra → Distribuir',
+    },
+    {
+        id: '2026-09-conciliacion-excel-pdf',
+        fecha: '2026-09-17',
+        titulo: 'Conciliación bancaria en Excel y PDF con origen y contraparte',
+        descripcion:
+            'El estado de cuenta del banco se cruza con tus ventas, compras y gastos y sale a Excel (tabla completa, con la hoja de conciliación primero) y a PDF con Origen · Contraparte por movimiento. Las fechas del Excel del banco ya se leen bien aunque vengan como fecha real o como número.',
+        categoria: 'Finanzas',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Finanzas → Conciliación bancaria → Exportar',
+    },
+    {
+        id: '2026-09-reportes-ventas-con-igv',
+        fecha: '2026-09-17',
+        titulo: 'Reportes de productos y categorías con el IGV bien tratado',
+        descripcion:
+            'Los reportes por producto y por categoría mostraban las ventas sin IGV y no cuadraban con lo cobrado. Ahora muestran la venta tal como se cobró y, en la rentabilidad, el IGV se descuenta también en las notas de venta y en los PDF, para que la utilidad sea la real.',
+        categoria: 'Finanzas',
+        tipo: 'CORRECCION',
+        donde: 'Finanzas → Análisis financiero → Productos / Categorías',
+    },
+    {
+        id: '2026-09-importar-productos-sin-codigo',
+        fecha: '2026-09-17',
+        titulo: 'Importar productos: filas sin código ya no frenan la carga',
+        descripcion:
+            'Si agregas productos al final del Excel sin ponerles CÓDIGO, el sistema les asigna el siguiente correlativo y los crea igual. Además detecta si el archivo viene con los códigos corridos (renumerados) y te avisa antes de pisar tu catálogo. La carga masiva se abre bien desde el menú Herramientas.',
+        categoria: 'Productos',
+        tipo: 'CORRECCION',
+        donde: 'Productos → Herramientas → Importar Excel',
+    },
+    {
+        id: '2026-09-pedidos-tienda-correcciones',
+        fecha: '2026-09-17',
+        titulo: 'Pedidos de tienda: cantidades correctas al facturar y pedidos vacíos bloqueados',
+        descripcion:
+            'Al hacer la boleta o factura desde un pedido de la tienda se perdían las cantidades (todo salía en 1). Y la tienda ya no acepta pedidos sin productos ni sin nombre o celular del cliente.',
+        categoria: 'Tienda virtual',
+        tipo: 'CORRECCION',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
     },
 
     // ── 12 de septiembre ─────────────────────────────────────────────────────

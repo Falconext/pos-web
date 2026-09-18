@@ -288,7 +288,7 @@ export function usePanelVentasViewModel() {
         fecha, setFecha,
         fechaFin, setFechaFin,
         exportando, exportarResumen,
-        items, filtrados,
+        items, filtrados, itemsVisibles,
         loading,
         tab, setTab,
         busqueda, setBusqueda,

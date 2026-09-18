@@ -12,8 +12,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { accordionReveal, fadeIn, fadeUp, interactiveHover, navItemReveal, navStagger, pageTransition, scaleIn, slideRight } from '@/lib/motion/presets'
 import { useReducedMotionPreference } from '@/lib/motion/reducedMotion'
 import { MODULE_META, SUBMODULE_META, LEGACY_MODULE_ROUTES, LEGACY_SUBMODULE_ROUTES, type SidebarSubItem } from '@/layouts/sidebar/sidebarMeta'
-import { contarNovedadesSinVer, hayNovedadesSinVer } from '@/data/novedades'
+import { contarNovedadesSinVer, hayNovedadesSinVer, marcarNovedadesVistas } from '@/data/novedades'
+import { hayLanzamientoSinVer } from '@/data/lanzamiento'
 import NovedadesModal from '@/components/NovedadesModal'
+import LanzamientoModal from '@/components/LanzamientoModal'
 
 const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true'
 
@@ -43,23 +45,43 @@ export default function AdminLayout() {
   // cambia el encabezado para que se lea como un saludo.
   const [novedadesAuto, setNovedadesAuto] = useState(false)
 
+  // Portada del lanzamiento (una vez por versión). Manda sobre el modal clásico:
+  // si hay portada sin ver se abre esa y las novedades quedan como leídas al
+  // cerrarla, para no encadenar dos modales.
+  const [lanzamientoAbierto, setLanzamientoAbierto] = useState(false)
+
   // Las novedades se abren solas la primera vez que hay algo sin ver, sin
   // importar si el usuario acaba de iniciar sesión o ya estaba dentro. No hace
   // falta otra marca: al abrirse se dan por leídas, así que no vuelve a saltar.
   useEffect(() => {
+    if (hayLanzamientoSinVer()) {
+      setLanzamientoAbierto(true)
+      return
+    }
     if (!hayNovedadesSinVer()) return
     setNovedadesAuto(true)
     setNovedadesAbierto(true)
   }, [])
 
+  // El menú "Novedades" abre la portada; desde ahí se llega al historial.
   const abrirNovedades = () => {
     setNovedadesAuto(false)
-    setNovedadesAbierto(true)
+    setLanzamientoAbierto(true)
   }
   const cerrarNovedades = () => {
     setNovedadesAbierto(false)
     setNovedadesAuto(false)
     setNovedadesSinVer(0)
+  }
+  const cerrarLanzamiento = () => {
+    setLanzamientoAbierto(false)
+    marcarNovedadesVistas()
+    setNovedadesSinVer(0)
+  }
+  const verHistorialNovedades = () => {
+    setLanzamientoAbierto(false)
+    setNovedadesAuto(false)
+    setNovedadesAbierto(true)
   }
   const [openModuleCode, setOpenModuleCode] = useState<string | null>(null)
   const toggleModule = (codigo: string) => setOpenModuleCode(prev => prev === codigo ? null : codigo)
@@ -900,6 +922,11 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      <LanzamientoModal
+        abierto={lanzamientoAbierto}
+        onClose={cerrarLanzamiento}
+        onVerHistorial={verHistorialNovedades}
+      />
       <NovedadesModal
         abierto={novedadesAbierto}
         onClose={cerrarNovedades}
