@@ -94,6 +94,8 @@ interface EditFormData {
   cotizMostrarCuentas?: boolean;
   cotizMostrarRazonSocial?: boolean;
   cotizMostrarDetraccion?: boolean;
+  // Modo sin conexión de la app móvil (offline-first).
+  offlineHabilitado?: boolean;
   capacitacion?: boolean;
   altaSunat?: boolean;
   contrato?: boolean;
@@ -237,6 +239,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     cotizMostrarCuentas: true,
     cotizMostrarRazonSocial: true,
     cotizMostrarDetraccion: true,
+    offlineHabilitado: false,
     capacitacion: false,
     altaSunat: false,
     contrato: false,
@@ -319,6 +322,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         cotizMostrarCuentas: (empresa as any).cotizMostrarCuentas ?? true,
         cotizMostrarRazonSocial: (empresa as any).cotizMostrarRazonSocial ?? true,
         cotizMostrarDetraccion: (empresa as any).cotizMostrarDetraccion ?? true,
+        offlineHabilitado: Boolean((empresa as any).offlineHabilitado),
         capacitacion: Boolean((empresa as any).capacitacion),
         altaSunat: Boolean((empresa as any).altaSunat),
         contrato: Boolean((empresa as any).contrato),
@@ -783,6 +787,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                           { key: 'cotizMostrarEmail', label: 'Mostrar email en cotizaciones', desc: 'Muestra u oculta la línea "EMAIL:" en el encabezado del formato de cotización.' },
                           { key: 'cotizMostrarCuentas', label: 'Mostrar cuentas bancarias en cotizaciones', desc: 'Muestra u oculta la sección de cuentas para depósito en el formato de cotización.' },
                           { key: 'cotizMostrarDetraccion', label: 'Mostrar detracción en cotizaciones', desc: 'Muestra u oculta el bloque de detracción (solo si la cotización tiene detracción configurada).' },
+                          { key: 'offlineHabilitado', label: 'App móvil: modo sin conexión', desc: 'La app puede vender (notas de venta/tickets) y manejar caja sin internet; sincroniza al recuperar la señal.' },
                         ].map(({ key, label, desc }) => (
                           <label key={key} className="flex items-start space-x-3 p-3.5 border rounded-xl bg-blue-50/40 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
                             <input type="checkbox" name={key} checked={Boolean((editData as any)[key])}
