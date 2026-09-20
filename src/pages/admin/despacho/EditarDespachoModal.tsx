@@ -418,7 +418,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                     {/* Courier chips */}
                     <div className="mt-4 flex flex-wrap gap-2">
                         {COURIERS.map(c => (
-                            <button key={c.value} type="button" onClick={() => set('transportista', c.value)}
+                            <button key={c.value} type="button" onClick={() => {
+                                set('transportista', c.value);
+                                // El motorizado entrega en la puerta: reparto propio = a domicilio salvo que el usuario cambie.
+                                if (c.value === 'PROPIOS' && envioData.tipoEnvio !== 'DOMICILIO') set('tipoEnvio', 'DOMICILIO');
+                            }}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${envioData.transportista === c.value
                                         ? 'bg-white text-indigo-700 shadow-lg shadow-indigo-900/20'
                                         : 'bg-white/15 text-white/80 hover:bg-white/25'
@@ -788,6 +792,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         </button>
                                     ))}
                                 </div>
+                            </Field>
+
+                            <Field label="Nombre de quien recibe">
+                                <input type="text" value={envioData.nombreDestinatario}
+                                    onChange={e => set('nombreDestinatario', e.target.value)}
+                                    placeholder={clienteSinDni && /^WSP\s/i.test(clienteFicha?.nombre || '') ? 'El cliente se registró solo con WhatsApp: escribe el nombre para el motorizado' : 'Nombre y apellido de quien recibe el pedido'}
+                                    className={inp} />
                             </Field>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
