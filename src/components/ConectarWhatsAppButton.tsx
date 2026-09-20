@@ -16,7 +16,10 @@ function cargarFbSdk(appId: string): Promise<void> {
     sdkPromise = new Promise<void>((resolve, reject) => {
         const w = window as any;
         (w).fbAsyncInit = function () {
-            w.FB.init({ appId, cookie: true, xfbml: false, version: FB_SDK_VERSION });
+            // fedCM:false es obligatorio para el Embedded Signup: en Chrome el SDK
+            // usa FedCM por defecto y la ventana de continuación que abre Facebook
+            // pierde el config_id → "Esta app necesita al menos un supported permission".
+            w.FB.init({ appId, cookie: true, xfbml: false, version: FB_SDK_VERSION, fedCM: false });
             resolve();
         };
         if (document.getElementById('facebook-jssdk')) { if (w.FB) resolve(); return; }
