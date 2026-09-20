@@ -190,6 +190,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const cliNombre = String(cli?.nombre ?? '').trim();
                 const cliTieneDni = /^\d{8}$/.test(cliNroDoc);
                 const cliEsWsp = /^WSP\s/i.test(cliNombre) || !cliTieneDni;
+                // "CLIENTES VARIOS" es el genérico del POS: no sirve como nombre de quien recibe.
+                const cliEsGenerico = /^CLIENTES?\s+VARIOS$/i.test(cliNombre);
                 setClienteFicha(cli ? { id: cli.id ?? null, nombre: cliNombre, nroDoc: cliNroDoc, telefono: String(cli.telefono ?? '') } : null);
                 if (payload) {
                     setEnvioData({
@@ -202,7 +204,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         // Si el despacho no tiene destinatario, se toma el del cliente
                         // solo cuando su ficha es real (DNI de 8 dígitos y no "WSP …").
                         dniDestinatario: payload.dniDestinatario || (cliTieneDni ? cliNroDoc : ''),
-                        nombreDestinatario: payload.nombreDestinatario || (cliEsWsp ? '' : cliNombre),
+                        nombreDestinatario: payload.nombreDestinatario || (cliEsWsp || cliEsGenerico ? '' : cliNombre),
                         // Cliente sin DNI: por defecto se corrige su ficha al guardar.
                         actualizarFichaCliente: cliEsWsp,
                         nroPaquetes: payload.nroPaquetes || 1,
@@ -797,7 +799,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             <Field label="Nombre de quien recibe">
                                 <input type="text" value={envioData.nombreDestinatario}
                                     onChange={e => set('nombreDestinatario', e.target.value)}
-                                    placeholder={clienteSinDni && /^WSP\s/i.test(clienteFicha?.nombre || '') ? 'El cliente se registró solo con WhatsApp: escribe el nombre para el motorizado' : 'Nombre y apellido de quien recibe el pedido'}
+                                    placeholder={clienteSinDni && /^WSP\s/i.test(clienteFicha?.nombre || '') ? 'El cliente se registró solo con WhatsApp: escribe el nombre para el motorizado' : /^CLIENTES?\s+VARIOS$/i.test(clienteFicha?.nombre || '') ? 'Venta a "Clientes varios": escribe el nombre de quien recibe' : 'Nombre y apellido de quien recibe el pedido'}
                                     className={inp} />
                             </Field>
 
