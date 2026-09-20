@@ -93,6 +93,13 @@ type EnvioDespachoFormData = {
     // Peso del paquete: Olva lo exige para registrar la guía.
     pesoKg?: number;
     shalomTipoProducto?: number;
+    // Reparto propio / motorizado (plantilla de carga masiva del courier de última milla)
+    tipoVentaReparto?: string;
+    distritoUbigeo?: string;
+    distrito?: string;
+    coordenadas?: string;
+    formaPagoCobro?: string;
+    revisarProducto?: boolean;
 };
 
 export type PaymentLine = {
@@ -209,6 +216,13 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         ...(Number(data.montoCOD) > 0 ? { montoCOD: Number(data.montoCOD) } : {}),
         ...(Number(data.pesoKg) > 0 ? { pesoKg: Number(data.pesoKg) } : {}),
         ...(Number(data.shalomTipoProducto) > 0 ? { shalomTipoProducto: Number(data.shalomTipoProducto) } : {}),
+        // Reparto propio: los selects vacíos no se mandan (el DTO valida @IsIn).
+        ...(cleanText(data.tipoVentaReparto) ? { tipoVentaReparto: cleanText(data.tipoVentaReparto) } : {}),
+        ...(cleanText(data.formaPagoCobro) ? { formaPagoCobro: cleanText(data.formaPagoCobro) } : {}),
+        distrito: cleanText(data.distrito),
+        distritoUbigeo: cleanText(data.distritoUbigeo),
+        coordenadas: cleanText(data.coordenadas),
+        revisarProducto: Boolean(data.revisarProducto),
     };
 };
 
@@ -458,6 +472,13 @@ export const useFacturacionViewModel = () => {
         montoCOD: 0,
         pesoKg: 0,
         shalomTipoProducto: undefined as number | undefined,
+        // Reparto propio / motorizado
+        tipoVentaReparto: '',
+        distritoUbigeo: '',
+        distrito: '',
+        coordenadas: '',
+        formaPagoCobro: '',
+        revisarProducto: false,
     });
     const [correlative, setCorrelative] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);

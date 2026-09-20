@@ -6,6 +6,7 @@ import moment from "moment";
 import apiClient from "@/utils/apiClient";
 import useAlertStore from "@/zustand/alert";
 import { useExtentionsStore } from '@/zustand/extentions';
+import { TIPOS_VENTA_REPARTO, FORMAS_PAGO_COBRO, filtrarDistritos, cobraEnDestinoReparto } from './repartoPropio';
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
 import { ShalomProductoSelect } from "@/components/ShalomProductoSelect";
@@ -93,23 +94,7 @@ function construirPayloadDespacho(envioData: any) {
     };
 }
 
-/** Opciones del reparto propio: mismas etiquetas que acepta la plantilla del courier. */
-export const TIPOS_VENTA_REPARTO = [
-    { value: 'CONTRAENTREGA', label: 'Contraentrega', hint: 'El motorizado cobra al entregar' },
-    { value: 'SOLO_ENTREGA', label: 'Solo entrega', hint: 'Ya está pagado, no cobra' },
-    { value: 'CAMBIO', label: 'Cambio', hint: 'Entrega y recoge un producto' },
-    { value: 'CONTRAENTREGA_CAMBIO', label: 'Contraentrega + cambio', hint: 'Cobra y recoge' },
-    { value: 'RECOJO', label: 'Recojo', hint: 'Solo recoge en la dirección' },
-];
-export const FORMAS_PAGO_COBRO = [
-    { value: 'EFECTIVO', label: 'Efectivo' },
-    { value: 'YAPE', label: 'Yape' },
-    { value: 'PLIN', label: 'Plin' },
-    { value: 'TRANSFERENCIA', label: 'Transferencia' },
-    { value: 'POS', label: 'POS (tarjeta)' },
-    { value: 'NO_COBRAR', label: 'No cobrar' },
-];
-
+export { TIPOS_VENTA_REPARTO, FORMAS_PAGO_COBRO } from './repartoPropio';
 export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { comprobanteId: number; onClose: () => void; onSuccess: () => void }) {
     const [envioData, setEnvioData] = useState<any>({
         transportista: '',
@@ -160,6 +145,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const [clienteFicha, setClienteFicha] = useState<{ id: number | null; nombre: string; nroDoc: string; telefono: string } | null>(null);
     const [buscandoDni, setBuscandoDni] = useState(false);
     const [esNV, setEsNV] = useState(false);
+    // Saldo pendiente de la venta: decide el tipo de venta por defecto del reparto propio.
+    const [saldoVenta, setSaldoVenta] = useState(0);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { alert } = useAlertStore();
@@ -184,6 +171,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const tipoComp = comprobantePayload?.tipoDoc ?? comprobantePayload?.tipoComprobante ?? comprobantePayload?.tipo ?? '';
                 const FORMALES = ['01', '03', '07', '08'];
                 setEsNV(!FORMALES.includes(tipoComp) || tipoComp === '');
+                setSaldoVenta(Number(comprobantePayload?.saldo ?? 0));
                 const adelantoComprobante = Number(comprobantePayload?.adelanto ?? 0);
                 const cli = comprobantePayload?.cliente ?? null;
                 const cliNroDoc = String(cli?.nroDoc ?? '').trim();
@@ -268,17 +256,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [envioData.transportista]);
 
-    // Distritos que coinciden con lo tecleado (máx. 12), priorizando Lima/Callao
-    // porque el reparto propio es de última milla.
-    const distritosFiltrados = (() => {
-        const q = distritoQuery.trim().toLowerCase();
-        if (q.length < 2) return [] as any[];
-        const norm = (v: string) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const lista = (ubigeos || []).filter((u: any) => norm(u.distrito).includes(norm(q)));
-        const peso = (u: any) => (norm(u.departamento) === 'lima' || norm(u.departamento) === 'callao' ? 0 : 1);
-        return lista.sort((a: any, b: any) => peso(a) - peso(b) || String(a.distrito).localeCompare(String(b.distrito))).slice(0, 12);
-    })();
-    const cobraEnDestino = envioData.tipoVentaReparto === 'CONTRAENTREGA' || envioData.tipoVentaReparto === 'CONTRAENTREGA_CAMBIO';
+    const distritosFiltrados = filtrarDistritos(ubigeos, distritoQuery);
+    const cobraEnDestino = cobraEnDestinoReparto(envioData.tipoVentaReparto);
 
     // Lo que exigen Shalom/Olva para registrar la guía: DNI de 8 dígitos, nombre y
     // celular. Se calcula acá para deshabilitar el botón y decir qué falta.
@@ -424,6 +403,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                 set('transportista', c.value);
                                 // El motorizado entrega en la puerta: reparto propio = a domicilio salvo que el usuario cambie.
                                 if (c.value === 'PROPIOS' && envioData.tipoEnvio !== 'DOMICILIO') set('tipoEnvio', 'DOMICILIO');
+                                // Tipo de venta por defecto: si la venta tiene saldo, el motorizado cobra; si ya está pagada, solo entrega.
+                                if (c.value === 'PROPIOS' && !envioData.tipoVentaReparto) {
+                                    if (saldoVenta > 0.009) { set('tipoVentaReparto', 'CONTRAENTREGA'); if (!envioData.formaPagoCobro || envioData.formaPagoCobro === 'NO_COBRAR') set('formaPagoCobro', 'EFECTIVO'); }
+                                    else { set('tipoVentaReparto', 'SOLO_ENTREGA'); set('formaPagoCobro', 'NO_COBRAR'); }
+                                }
                             }}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${envioData.transportista === c.value
                                         ? 'bg-white text-indigo-700 shadow-lg shadow-indigo-900/20'
@@ -667,14 +651,15 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </div>
                     )}
 
-                    {/* SECCIÓN 2: Tipo envío + Agencia destino */}
+                    {/* SECCIÓN 2: Tipo envío + Agencia destino (Shalom/Olva/otros; el reparto propio la lleva en su propia sección) */}
+                    {!esPropio && (
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                             <Icon icon="solar:map-point-bold-duotone" className="text-indigo-400" />
                             Datos de entrega
                         </p>
-                       <div className="mt-4 mb-4">
-                       <Field label={esPropio ? 'Dirección de entrega' : 'Agencia de destino / Dirección'}>
+                       {!esPropio && (<div className="mt-4 mb-4">
+                       <Field label="Agencia de destino / Dirección">
                             {esShalom && envioData.tipoEnvio === 'AGENCIA' ? (
                                 <ShalomAgenciaSelect
                                     value={envioData.agenciaDestino}
@@ -692,11 +677,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             ) : (
                                 <input type="text" value={envioData.agenciaDestino}
                                     onChange={e => set('agenciaDestino', e.target.value)}
-                                    placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Olva Cusco Centro' : esPropio ? 'Calle, número, referencia (ej: Av. Perú 123, 2do piso, puerta negra)' : 'Dirección de entrega'}
+                                    placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Olva Cusco Centro' : 'Dirección de entrega'}
                                     className={inp} />
                             )}
                         </Field>
-                       </div>
+                       </div>)}
                         <div className="grid grid-cols-2 gap-3">
 
                             <Field label="Tipo de envío">
@@ -719,6 +704,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
 
                         </div>
                     </div>
+                    )}
 
                     {/* DESTINATARIO: Shalom/Olva exigen DNI + nombre; los clientes "WSP 9…" no lo tienen */}
                     {(esShalom || esOlva) && (
@@ -795,6 +781,21 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                     ))}
                                 </div>
                             </Field>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3">
+                                <Field label="Dirección de entrega">
+                                    <input type="text" value={envioData.agenciaDestino}
+                                        onChange={e => set('agenciaDestino', e.target.value)}
+                                        placeholder="Calle, número, referencia (ej: Av. Perú 123, 2do piso, puerta negra)"
+                                        className={inp} />
+                                </Field>
+                                <Field label="Tipo de envío">
+                                    <select value={envioData.tipoEnvio} onChange={e => set('tipoEnvio', e.target.value)} className={inp}>
+                                        <option value="DOMICILIO">A domicilio</option>
+                                        <option value="AGENCIA">Para agencia</option>
+                                    </select>
+                                </Field>
+                            </div>
 
                             <Field label="Nombre de quien recibe">
                                 <input type="text" value={envioData.nombreDestinatario}
