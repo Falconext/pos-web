@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -56,18 +57,22 @@ function HeroSlider({ slides, slug, cp, diseno }: { slides: HeroSlide[]; slug: s
   const navigateRouter = useNavigate();
   const [index, setIndex] = useState(0);
   const count = slides.length;
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'comidaAppHeroInterval', 5000);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const t = setInterval(() => setIndex((p) => (p + 1) % count), 5000);
-    return () => clearInterval(t);
-  }, [count]);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
+    return () => clearInterval(timer);
+  }, [count, intervalMs]);
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
   const slide = slides[index];
 
   return (
     <div className="px-4 pt-4 lg:px-0 lg:pt-5">
       <div className="relative overflow-hidden rounded-[26px] lg:rounded-[32px]" style={{ backgroundColor: FOOD.red }}>
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {slide.onlyImage ? (
             <motion.button key={`o-${index}`} type="button" onClick={() => goAction(slide.actionKey)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, ease: foodEase }} className="block h-52 w-full">
               <img src={slide.image} alt={slide.badge} className="h-full w-full object-cover" />

@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -92,11 +94,15 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'motosHeroInterval', 6500);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6500);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const goAction = (key: string) => {
     runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
@@ -105,7 +111,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
 
   return (
     <div className="relative h-[360px] overflow-hidden rounded-3xl md:h-[520px]" style={{ backgroundColor: MOTO.night }}>
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         <motion.button
           key={index}
           type="button"
@@ -184,10 +190,10 @@ export default function MotosHomePage({
   const [searchValue, setSearchValue] = useState('');
   const brandsRef = useRef<HTMLDivElement>(null);
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 3);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'motos', count: 2, fallbackImages: CATEGORY_FALLBACKS,
+    fallbackNames: ['Deportivas', 'Urbanas'], });
 
   const gearHref = `/tienda/${slug}/catalogo`;
   const catalogHref = `/tienda/${slug}/catalogo`;
@@ -244,12 +250,12 @@ export default function MotosHomePage({
               <h3 className="relative z-10 p-4 text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{diseno?.motosPreorderTitle || 'Preventa'}</h3>
             </a>
             {/* Categorías reales (tiles oscuros como Ofertas/Preventa) o fallback */}
-            {(categoryCards.length ? categoryCards : [{ nombre: 'Deportivas' }, { nombre: 'Urbanas' }]).slice(0, 2).map((cat: any, i: number) => (
-              <a key={cat.nombre} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.night }}>
-                <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-70 transition-transform duration-[900ms] group-hover:scale-[1.08]" />
+            {categoryCards.map((cat, i) => (
+              <a key={`cat-${i}`} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.night }}>
+                <img src={cat.imagenUrl} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-70 transition-transform duration-[900ms] group-hover:scale-[1.08]" />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,9,12,0.15), rgba(8,9,12,0.85))' }} />
                 <div className="relative z-10 flex items-center justify-between p-4">
-                  <h3 className="text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{cat.nombre}</h3>
+                  <h3 className="text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{cat.label}</h3>
                   <Icon icon="solar:arrow-right-up-linear" width={18} className="text-white/80 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </a>

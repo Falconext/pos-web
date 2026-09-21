@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -101,11 +103,15 @@ function HeroSlider({ slides, slug, primary, diseno, featured }: { slides: HeroS
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'ropaHombreHeroInterval', 6500);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6500);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
@@ -123,7 +129,7 @@ function HeroSlider({ slides, slug, primary, diseno, featured }: { slides: HeroS
       <div className="mx-auto max-w-7xl px-5 md:px-8">
         {slide.onlyImage ? (
           <div className="py-6 md:py-8">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.button
                 key={`only-${index}`}
                 type="button"
@@ -187,7 +193,7 @@ function HeroSlider({ slides, slug, primary, diseno, featured }: { slides: HeroS
               {/* Forma beige detrás */}
               <div className="absolute right-2 top-2 -z-10 hidden h-[86%] w-[70%] rounded-[40px_40px_40px_120px] md:block" style={{ backgroundColor: URB.sand, transform: 'rotate(-6deg)' }} />
               <Icon icon="solar:star-bold" className="absolute -right-1 top-1 text-3xl" style={{ color: URB.ink }} />
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout">
                 <motion.div key={`i-${index}`} initial={{ opacity: 0, scale: 1.03 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.7, ease: urbEase }}
                   className="relative h-80 overflow-hidden rounded-[28px] shadow-[0_40px_90px_-40px_rgba(26,22,19,0.55)] md:h-[540px]">
                   <img src={slide.image} alt={slide.eyebrow || 'Colección'} className="h-full w-full object-cover" />
@@ -264,11 +270,10 @@ export default function RopaHombreHomePage({
 
   const brands = String(diseno?.ropaHombreBrands || 'ZARA,MANGO,H&M,asos,PULL&BEAR').split(',').map((s) => s.trim()).filter(Boolean);
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 4);
-  const categoryFallbackNames = ['Shirts', 'T-Shirts', 'Jackets', 'Pants'];
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'ropaHombre', count: 4, fallbackImages: CATEGORY_FALLBACKS,
+    fallbackNames: ['Shirts', 'T-Shirts', 'Jackets', 'Pants'], });
 
   const WHY = [
     { icon: 'solar:settings-minimalistic-linear', title: diseno?.ropaHombreWhy1Title || 'Premium Quality', text: diseno?.ropaHombreWhy1Text || 'Telas finas para una comodidad duradera.' },
@@ -333,20 +338,20 @@ export default function RopaHombreHomePage({
         <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
           <p className="mb-6 text-[12px] font-semibold uppercase tracking-[0.22em] text-neutral-500">{diseno?.ropaHombreCategoriesTitle || 'Shop by Category'}</p>
           <motion.div variants={urbStagger} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {(categoryCards.length ? categoryCards : categoryFallbackNames.map((n) => ({ nombre: n }))).slice(0, 4).map((cat: any, i: number) => (
+            {categoryCards.map((cat, i) => (
               <motion.a
-                key={cat.nombre + i}
+                key={`cat-${i}`}
                 variants={urbCard}
                 whileHover={{ y: -6 }}
                 href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
                 className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5"
               >
                 <div className="relative aspect-[4/5] overflow-hidden" style={{ backgroundColor: URB.mist }}>
-                  <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.07]" />
+                  <img src={cat.imagenUrl} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.07]" />
                 </div>
                 <div className="flex items-center justify-between px-4 py-3.5">
                   <div>
-                    <h3 className="text-sm font-semibold" style={{ color: URB.ink }}>{cat.nombre}</h3>
+                    <h3 className="text-sm font-semibold" style={{ color: URB.ink }}>{cat.label}</h3>
                     <span className="text-[11px] font-medium text-neutral-400">Explore Now →</span>
                   </div>
                   <Icon icon="solar:arrow-right-up-linear" width={18} className="text-neutral-400 transition-colors group-hover:text-neutral-900" />

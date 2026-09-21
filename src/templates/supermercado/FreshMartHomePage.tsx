@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -62,7 +64,15 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const navigateRouter = useNavigate();
   const [index, setIndex] = useState(0);
   const count = slides.length;
-  useEffect(() => { if (count <= 1) return; const t = setInterval(() => setIndex((p) => (p + 1) % count), 6000); return () => clearInterval(t); }, [count]);
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'supermercadoHeroInterval', 6000);
+  usePreloadImages(slides.map((s) => s.image));
+
+  useEffect(() => {
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
+    return () => clearInterval(timer);
+  }, [count, intervalMs]);
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
   const goCatalog = () => { if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; } navigateRouter(`/tienda/${slug}/catalogo`); };
   const slide = slides[index];
@@ -71,7 +81,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
     <section className="relative overflow-hidden" style={{ background: `linear-gradient(120deg, ${FM.greenSoft} 0%, ${FM.greenSoft2} 60%, #FFFFFF 100%)` }} aria-roledescription="carousel">
       <div className="mx-auto max-w-7xl px-5 md:px-6">
         {slide.onlyImage ? (
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             <motion.button key={`only-${index}`} type="button" onClick={() => goAction(slide.actionKey)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, ease: fmEase }} className="group my-6 block h-64 w-full overflow-hidden rounded-2xl md:h-[440px]">
               <img src={slide.image} alt={slide.eyebrow} className="h-full w-full object-cover transition-transform duration-[1200ms] group-hover:scale-[1.04]" />
             </motion.button>
@@ -99,7 +109,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
                   {slide.badge}
                 </div>
               )}
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout">
                 <motion.div key={`i-${index}`} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: fmEase }} className="mx-auto aspect-square max-w-md overflow-hidden rounded-2xl">
                   <img src={slide.image} alt={slide.eyebrow} className="h-full w-full object-cover" />
                 </motion.div>
@@ -156,10 +166,9 @@ export default function FreshMartHomePage({
   const deals = productos.slice(0, 12);
   const cartTotal = carrito.reduce((s, i) => s + Number(i.precioUnitario || 0) * Number(i.cantidad || 1), 0);
 
-  const categoryCards = (allCategories || [])
-    .map((c: any) => (typeof c === 'string' ? { nombre: c } : c))
-    .filter((c: any) => c?.nombre)
-    .slice(0, 8);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'supermercado', count: 8, fallbackImages: CATEGORY_FALLBACKS, });
 
   const renderRow = (items: any[], key: string) => (
     <motion.div variants={fmStagger} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -182,11 +191,11 @@ export default function FreshMartHomePage({
             <SectionHead title={diseno?.supermercadoCategoriesTitle || 'Compra por categoría'} center />
             <motion.div variants={fmStagger} className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-8">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a key={cat.nombre} variants={fmCard} whileHover={{ y: -5 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group flex flex-col items-center gap-2.5 rounded-xl border bg-white p-4 text-center transition-shadow hover:shadow-[0_16px_30px_-20px_rgba(31,42,26,0.4)]" style={{ borderColor: FM.line }}>
+                <motion.a key={`cat-${i}`} variants={fmCard} whileHover={{ y: -5 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group flex flex-col items-center gap-2.5 rounded-xl border bg-white p-4 text-center transition-shadow hover:shadow-[0_16px_30px_-20px_rgba(31,42,26,0.4)]" style={{ borderColor: FM.line }}>
                   <span className="grid h-16 w-16 place-items-center overflow-hidden rounded-full p-1" style={{ backgroundColor: FM.greenSoft }}>
                     <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full rounded-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   </span>
-                  <span className="line-clamp-2 text-[12px] font-bold leading-tight" style={{ fontFamily: FM.display, color: FM.ink }}>{cat.nombre}</span>
+                  <span className="line-clamp-2 text-[12px] font-bold leading-tight" style={{ fontFamily: FM.display, color: FM.ink }}>{cat.label}</span>
                 </motion.a>
               ))}
             </motion.div>

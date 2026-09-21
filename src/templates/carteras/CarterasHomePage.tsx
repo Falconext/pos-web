@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -99,11 +101,15 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'carterasHeroInterval', 6000);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6000);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => {
@@ -125,7 +131,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
         {slide.onlyImage ? (
           // Modo banner: solo imagen, todo el banner clickeable al destino.
           <div className="py-6 md:py-8">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.button
                 key={`only-${index}`}
                 type="button"
@@ -186,7 +192,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
 
             {/* Columna de imagen */}
             <div className="order-1 md:order-2">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout">
                 <motion.div
                   key={`img-${index}`}
                   initial={{ opacity: 0, scale: 1.03 }}
@@ -258,10 +264,9 @@ export default function CarterasHomePage({
   const font = luxFont(diseno);
   const featured = productos.slice(0, 8);
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 5);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'carteras', count: 5, fallbackImages: CATEGORY_FALLBACKS, });
 
   return (
     <motion.div initial="hidden" animate="show" variants={luxPage} className="min-h-screen" style={{ backgroundColor: LUX.cream, fontFamily: font }}>
@@ -307,7 +312,7 @@ export default function CarterasHomePage({
             <motion.div variants={luxStagger} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
               {categoryCards.map((cat: any, i: number) => (
                 <motion.a
-                  key={cat.nombre}
+                  key={`cat-${i}`}
                   variants={luxCard}
                   whileHover={{ y: -6 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
@@ -316,7 +321,7 @@ export default function CarterasHomePage({
                   <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]" />
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(26,22,19,0) 40%, rgba(26,22,19,0.72) 100%)' }} />
                   <div className="relative z-10 p-4 text-center text-white">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">{cat.nombre}</h3>
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">{cat.label}</h3>
                     <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80">
                       Comprar <Icon icon="solar:arrow-right-linear" width={12} className="transition-transform group-hover:translate-x-1" />
                     </span>

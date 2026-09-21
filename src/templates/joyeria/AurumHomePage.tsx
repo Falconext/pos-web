@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -134,11 +136,15 @@ function HeroSlider({ slides, slug, primary, diseno, announcement }: { slides: H
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'joyeriaHeroInterval', 6000);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6000);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => {
@@ -154,7 +160,7 @@ function HeroSlider({ slides, slug, primary, diseno, announcement }: { slides: H
   return (
     <section className="mx-auto max-w-7xl px-5 pt-5 md:px-6" aria-roledescription="carousel">
       {slide.onlyImage ? (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           <motion.button
             key={`only-${index}`}
             type="button"
@@ -171,7 +177,7 @@ function HeroSlider({ slides, slug, primary, diseno, announcement }: { slides: H
         </AnimatePresence>
       ) : (
         <div className="relative h-[440px] overflow-hidden rounded-3xl md:h-[580px]" style={{ backgroundColor: AUR.charcoal }}>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             <motion.img
               key={`img-${index}`}
               src={slide.image}
@@ -278,10 +284,9 @@ export default function AurumHomePage({
   const feed2 = productos.slice(5, 10).length >= 3 ? productos.slice(5, 10) : productos.slice(0, 5);
   const announcement = diseno?.joyeriaAnnouncement || 'envío asegurado a todo el Perú · certificado de autenticidad · grabado de regalo sin costo';
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 5);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'joyeria', count: 5, fallbackImages: TILE_FALLBACKS, });
 
   const boards = chunk4(productos);
   const goSearch = (value: string) => navigate(`/tienda/${slug}/catalogo${value.trim() ? `?search=${encodeURIComponent(value.trim())}` : ''}`);
@@ -354,7 +359,7 @@ export default function AurumHomePage({
             <motion.div variants={aurStagger} className="grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
               {categoryCards.map((cat: any, i: number) => (
                 <motion.a
-                  key={cat.nombre}
+                  key={`cat-${i}`}
                   variants={aurCard}
                   whileHover={{ y: -5 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
@@ -364,7 +369,7 @@ export default function AurumHomePage({
                   <div className="aspect-square overflow-hidden rounded-xl" style={{ backgroundColor: TILE_TINTS[i % TILE_TINTS.length] }}>
                     <img src={cat.imagenUrl || cat.imagen || TILE_FALLBACKS[i % TILE_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]" />
                   </div>
-                  <span className="px-1.5 py-2.5 text-[13px] font-semibold capitalize" style={{ color: AUR.ink }}>{cat.nombre}</span>
+                  <span className="px-1.5 py-2.5 text-[13px] font-semibold capitalize" style={{ color: AUR.ink }}>{cat.label}</span>
                 </motion.a>
               ))}
             </motion.div>

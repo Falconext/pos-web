@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -89,11 +91,15 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'tonesHeroInterval', 6500);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6500);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => {
@@ -104,7 +110,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   return (
     <section className="mx-auto max-w-[1240px] px-4 pt-6 md:px-6 md:pt-8">
       <div className="relative">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           <motion.div
             key={`hero-${index}`}
             initial={{ opacity: 0, scale: 1.02 }}
@@ -211,10 +217,9 @@ export default function TonesHomePage({
   const favorites = productos.slice(0, 8);
   const featurePair = productos.slice(0, 2);
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 6);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'tones', count: 6, fallbackImages: [], });
 
   return (
     <motion.div initial="hidden" animate="show" variants={tnPage} className="min-h-screen" style={{ backgroundColor: TN.cream, fontFamily: font }}>
@@ -285,7 +290,7 @@ export default function TonesHomePage({
             <motion.div variants={tnStagger} className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {categoryCards.map((cat: any, i: number) => (
                 <motion.a
-                  key={cat.nombre}
+                  key={`cat-${i}`}
                   variants={tnCard}
                   whileHover={{ y: -5 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
@@ -299,7 +304,7 @@ export default function TonesHomePage({
                       <Icon icon={CATEGORY_ICONS[i % CATEGORY_ICONS.length]} width={28} style={{ color: TN.cocoa }} />
                     )}
                   </span>
-                  <span className="line-clamp-1 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: TN.ink }}>{cat.nombre}</span>
+                  <span className="line-clamp-1 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: TN.ink }}>{cat.label}</span>
                 </motion.a>
               ))}
             </motion.div>

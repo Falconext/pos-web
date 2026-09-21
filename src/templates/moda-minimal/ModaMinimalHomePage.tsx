@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
@@ -88,11 +90,15 @@ function HeroSlider({ slides, slug, diseno }: { slides: HeroSlide[]; slug: strin
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'modaMinimalHeroInterval', 6500);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6500);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
@@ -105,41 +111,57 @@ function HeroSlider({ slides, slug, diseno }: { slides: HeroSlide[]; slug: strin
   return (
     <section className="relative isolate" aria-roledescription="carousel">
       <div className="relative h-[62vh] min-h-[440px] w-full overflow-hidden md:h-[78vh]">
-        <AnimatePresence mode="wait">
-          {slide.onlyImage ? (
+        {/* Crossfade: todos los slides quedan montados y superpuestos (imágenes ya
+            cargadas); solo se anima la opacidad del activo. Con AnimatePresence
+            mode="wait" el saliente se apagaba del todo antes de entrar el siguiente
+            y se veía un parpadeo del fondo. */}
+        {slides.map((s, i) => {
+          const active = i === index;
+          const fade = { opacity: active ? 1 : 0 };
+          const transition = { duration: 0.9, ease: minEase };
+          return s.onlyImage ? (
             <motion.button
-              key={`only-${index}`}
+              key={`only-${i}`}
               type="button"
-              onClick={() => goAction(slide.actionKey)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: minEase }}
+              onClick={() => goAction(s.actionKey)}
+              initial={false}
+              animate={fade}
+              transition={transition}
               className="absolute inset-0 h-full w-full cursor-pointer"
-              aria-label={slide.eyebrow || 'Ver más'}
+              style={{ zIndex: active ? 2 : 1, pointerEvents: active ? 'auto' : 'none' }}
+              aria-hidden={!active}
+              aria-label={s.eyebrow || 'Ver más'}
             >
-              <img src={slide.image} alt={slide.eyebrow || 'Banner'} className="h-full w-full object-cover" />
+              <img src={s.image} alt={s.eyebrow || 'Banner'} className="h-full w-full object-cover" />
             </motion.button>
           ) : (
-            <motion.div key={`slide-${index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.7, ease: minEase }} className="absolute inset-0">
-              <img src={slide.image} alt={slide.eyebrow || 'Colección'} className="h-full w-full object-cover" />
+            <motion.div
+              key={`slide-${i}`}
+              initial={false}
+              animate={fade}
+              transition={transition}
+              className="absolute inset-0"
+              style={{ zIndex: active ? 2 : 1, pointerEvents: active ? 'auto' : 'none' }}
+              aria-hidden={!active}
+            >
+              <img src={s.image} alt={s.eyebrow || 'Colección'} className="h-full w-full object-cover" />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.45) 100%)' }} />
               <div className="absolute inset-x-0 bottom-0">
                 <div className="mx-auto max-w-7xl px-6 pb-12 md:px-8 md:pb-16">
                   <div className="max-w-xl text-white">
-                    {slide.eyebrow && <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em]">{slide.eyebrow}</p>}
-                    <h1 className="text-3xl font-medium leading-[1.08] tracking-tight md:text-5xl">{slide.title}</h1>
-                    {slide.subtitle && <p className="mt-3 max-w-md text-sm leading-relaxed text-white/85 md:text-base">{slide.subtitle}</p>}
+                    {s.eyebrow && <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em]">{s.eyebrow}</p>}
+                    <h1 className="text-3xl font-medium leading-[1.08] tracking-tight md:text-5xl">{s.title}</h1>
+                    {s.subtitle && <p className="mt-3 max-w-md text-sm leading-relaxed text-white/85 md:text-base">{s.subtitle}</p>}
                     <div className="mt-6 flex flex-wrap items-center gap-5">
-                      {slide.button && <ShopLink onClick={() => goAction(slide.actionKey)}>{slide.button}</ShopLink>}
-                      {slide.button2 && <ShopLink onClick={goCatalog}>{slide.button2}</ShopLink>}
+                      {s.button && <ShopLink onClick={() => goAction(s.actionKey)}>{s.button}</ShopLink>}
+                      {s.button2 && <ShopLink onClick={goCatalog}>{s.button2}</ShopLink>}
                     </div>
                   </div>
                 </div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          );
+        })}
 
         {count > 1 && (
           <>
@@ -183,11 +205,16 @@ export default function ModaMinimalHomePage({
   const nuevos = productos.slice(0, 8);
   const favoritos = productos.slice(0, 4);
 
-  const tiles = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 3);
-  const tileFallbackNames = ['Mujer', 'Hombre', 'Calzado'];
+  // Tiles de categoría: cada bloque puede fijarse desde el editor (categoría,
+  // título e imagen). Sin configuración cae al comportamiento automático.
+  const tiles = buildCategoryTiles({
+    allCategories,
+    diseno,
+    prefix: 'modaMinimal',
+    count: 3,
+    fallbackImages: TILE_FALLBACKS,
+    fallbackNames: ['Mujer', 'Hombre', 'Calzado'],
+  });
 
   const VALUES = [
     { title: diseno?.modaMinimalValue1Title || 'Calidad primero', text: diseno?.modaMinimalValue1Text || 'Materiales nobles y confección cuidada, prenda por prenda.' },
@@ -218,18 +245,21 @@ export default function ModaMinimalHomePage({
         {/* ── Tiles por categoría ──────────────────────────────────────────── */}
         <motion.section variants={minSection} initial="hidden" whileInView="show" viewport={minViewport} className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-20">
           <motion.div variants={minStagger} className="grid gap-4 md:grid-cols-3">
-            {(tiles.length ? tiles : tileFallbackNames.map((n) => ({ nombre: n }))).slice(0, 3).map((cat: any, i: number) => (
+            {tiles.map((cat, i) => (
               <motion.a
-                key={cat.nombre + i}
+                // Clave por posición: si cambia la categoría desde el editor, el bloque
+                // se actualiza en sitio (con key por nombre se remontaba en estado
+                // "hidden" y desaparecía hasta recargar).
+                key={`tile-${i}`}
                 variants={minCard}
                 href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
                 className="group relative flex aspect-[4/5] items-end justify-center overflow-hidden"
                 style={{ backgroundColor: MIN.stone }}
               >
-                <img src={cat.imagenUrl || cat.imagen || TILE_FALLBACKS[i % TILE_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[800ms] ease-out group-hover:scale-[1.05]" />
+                <img src={cat.imagenUrl} alt={cat.label} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[800ms] ease-out group-hover:scale-[1.05]" />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%)' }} />
                 <div className="relative z-10 mb-8 text-center text-white">
-                  <h3 className="mb-3 text-lg font-medium">{cat.nombre}</h3>
+                  <h3 className="mb-3 text-lg font-medium">{cat.label}</h3>
                   <span className="border-b border-white pb-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]">Comprar</span>
                 </div>
               </motion.a>

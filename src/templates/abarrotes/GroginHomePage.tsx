@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -93,11 +95,15 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'abarrotesHeroInterval', 6000);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const t = setInterval(() => setIndex((p) => (p + 1) % count), 6000);
-    return () => clearInterval(t);
-  }, [count]);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
+    return () => clearInterval(timer);
+  }, [count, intervalMs]);
 
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
   const slide = slides[index];
@@ -106,7 +112,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
     <section className="mx-auto max-w-7xl px-5 pt-5 md:px-6" aria-roledescription="carousel">
       <div className="relative overflow-hidden rounded-3xl" style={{ background: `linear-gradient(110deg, ${GRO.lavender} 0%, #FBF7FF 55%, #F1FBF5 100%)` }}>
         {slide.onlyImage ? (
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             <motion.button
               key={`only-${index}`}
               type="button"
@@ -122,7 +128,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
           </AnimatePresence>
         ) : (
           <div className="relative h-[440px] overflow-hidden md:h-[520px]">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.img
                 key={`img-${index}`}
                 src={slide.image}
@@ -208,10 +214,9 @@ export default function GroginHomePage({
   const categoryProducts = productos.slice(10, 16).length >= 3 ? productos.slice(10, 16) : productos.slice(0, 6);
   const bestSellers = productos.slice(0, 8);
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 8);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'abarrotes', count: 8, fallbackImages: CATEGORY_FALLBACKS, });
 
   const renderRow = (items: any[], key: string) => (
     <motion.div variants={groStagger} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -253,11 +258,11 @@ export default function GroginHomePage({
           <motion.section variants={groSection} initial="hidden" whileInView="show" viewport={groViewport} className="mx-auto max-w-7xl px-5 py-10 md:px-6">
             <motion.div variants={groStagger} className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-8">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a key={cat.nombre} variants={groCard} whileHover={{ y: -4 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-colors hover:border-[var(--gro-cp)]" style={{ borderColor: GRO.line, ['--gro-cp' as any]: primary }}>
+                <motion.a key={`cat-${i}`} variants={groCard} whileHover={{ y: -4 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-colors hover:border-[var(--gro-cp)]" style={{ borderColor: GRO.line, ['--gro-cp' as any]: primary }}>
                   <span className="grid h-16 w-16 place-items-center overflow-hidden rounded-full" style={{ backgroundColor: CATEGORY_TINTS[i % CATEGORY_TINTS.length] }}>
                     <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   </span>
-                  <span className="line-clamp-2 text-[11.5px] font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{titleCase(cat.nombre)}</span>
+                  <span className="line-clamp-2 text-[11.5px] font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{titleCase(cat.label)}</span>
                 </motion.a>
               ))}
             </motion.div>

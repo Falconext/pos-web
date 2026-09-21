@@ -95,8 +95,13 @@ export function MinProductCard({
   const colorOptions = getFashionColors(producto);
   const firstColor = colorOptions[0]?.name;
   const colorGallery = firstColor ? getFashionColorGallery(producto, firstColor) : [];
-  // Segunda imagen (hover): primera foto guardada distinta a la principal.
-  const hoverImg = [...extra, ...colorGallery].filter(Boolean).find((u: string) => u && u !== mainImg) || null;
+  // Segunda imagen (hover): primera foto REALMENTE distinta a la principal.
+  // Se compara por ruta (las URLs firmadas de S3 cambian el query) y se salta la
+  // 1ª foto de la galería del color, que por convención del admin es la misma
+  // que la principal del producto (si no, el hover "cambiaba" a una foto idéntica).
+  const imgPath = (u: string) => { try { return new URL(u).pathname; } catch { return u; } };
+  const colorAlt = colorGallery.length >= 2 ? colorGallery.slice(1) : colorGallery;
+  const hoverImg = [...extra, ...colorAlt].filter(Boolean).find((u: string) => imgPath(u) !== imgPath(mainImg)) || null;
   const swatches = colorOptions.slice(0, 5);
 
   return (
@@ -117,7 +122,13 @@ export function MinProductCard({
         >
           <Icon icon={wish ? 'solar:heart-bold' : 'solar:heart-linear'} width={16} style={wish ? { color: primary } : undefined} />
         </span>
-        <MinProductImage producto={producto} imgClassName="transition-opacity duration-500 group-hover:opacity-0" />
+        {/* Sin segunda foto la principal NO se desvanece (evita el cuadro vacío en hover); hace un zoom sutil. */}
+        <MinProductImage
+          producto={producto}
+          imgClassName={hoverImg
+            ? 'transition-opacity duration-500 group-hover:opacity-0'
+            : 'transition-transform duration-700 ease-out group-hover:scale-[1.04]'}
+        />
         {hoverImg && (
           <img src={hoverImg} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
         )}

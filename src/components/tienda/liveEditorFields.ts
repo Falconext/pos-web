@@ -4,6 +4,9 @@
  * formularios dinámicos sobre la tienda pública en "modo WordPress".
  */
 
+import { categoryTileImageFields, categoryTileTextFields } from '@/templates/shared/categoryTiles';
+import { heroIntervalField } from '@/templates/shared/heroSlider';
+
 export interface ImageFieldDef {
   key: string;
   label: string;
@@ -151,6 +154,13 @@ export const CARTERAS_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'carterasSlide2Image', label: 'Slider · Slide 2: imagen', hint: 'Imagen de fondo del segundo banner del slider', fallback: '' },
   { key: 'carterasSlide3Image', label: 'Slider · Slide 3: imagen', hint: 'Imagen de fondo del tercer banner del slider', fallback: '' },
   { key: 'carterasPromoImage', label: 'Banner promocional', hint: 'Fondo del bloque "Minimal look. Máximo impacto."', fallback: '' },
+  ...categoryTileImageFields('carteras', 5, [
+    'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1591561954557-26941169b49e?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=600&q=80',
+  ], 'rec. 600×750px'),
 ];
 
 export const JOYERIA_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -158,6 +168,13 @@ export const JOYERIA_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'joyeriaSlide2Image', label: 'Slider · Slide 2: imagen', hint: 'Imagen de fondo del segundo banner del slider', fallback: '' },
   { key: 'joyeriaSlide3Image', label: 'Slider · Slide 3: imagen', hint: 'Imagen de fondo del tercer banner del slider', fallback: '' },
   { key: 'joyeriaPromoImage', label: 'Banner promocional', hint: 'Fondo del bloque "Grabado personalizado"', fallback: '' },
+  ...categoryTileImageFields('joyeria', 5, [
+    'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1611652022419-a9419f74343d?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1518131672697-613becd4fab5?auto=format&fit=crop&w=600&q=80',
+  ], 'rec. 600×600px'),
 ];
 
 export const ROPA_HOMBRE_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -168,6 +185,12 @@ export const ROPA_HOMBRE_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'ropaHombreSaleImage', label: 'Banner "Summer Sale"', hint: 'Imagen del banner de descuento (fondo oscuro)', fallback: '' },
   { key: 'ropaHombreTestimonialImage', label: 'Testimonios: imagen', hint: 'Imagen del bloque "Real People. Real Style."', fallback: '' },
   { key: 'ropaHombreCommunityImage', label: 'Banner "Join Our Community"', hint: 'Imagen del bloque de newsletter (fondo oscuro)', fallback: '' },
+  ...categoryTileImageFields('ropaHombre', 4, [
+    'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=600&q=80',
+  ], 'rec. 600×750px'),
 ];
 
 export const BICICLETAS_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -187,12 +210,22 @@ export const MOTOS_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'motosSaleImage', label: 'Categoría · Ofertas: imagen', hint: 'Fondo de la tarjeta de Ofertas. Reemplaza el ejemplo (rec. 800×600px).', fallback: 'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=800&q=80' },
   { key: 'motosPreorderImage', label: 'Categoría · Preventa: imagen', hint: 'Fondo de la tarjeta de Preventa. Reemplaza el ejemplo (rec. 800×600px).', fallback: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80' },
   { key: 'motosPromoImage', label: 'Banner service (taller): imagen', hint: 'Fondo del bloque "Agenda tu service". Reemplaza el ejemplo (rec. 1200×600px).', fallback: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=1200&q=80' },
+  ...categoryTileImageFields('motos', 2, [
+    'https://images.unsplash.com/photo-1517672651691-24622a91b550?auto=format&fit=crop&w=700&q=80',
+    'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=700&q=80',
+  ], 'rec. 800×600px'),
 ];
 
 export const HOODIE_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'hoodieHeroImage', label: 'Slider · Slide 1: imagen', hint: 'Imagen del primer banner del hero (foto de la prenda / lookbook). Reemplaza el ejemplo por tu foto (rec. 1600×1000px).', fallback: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=1600&q=80' },
   { key: 'hoodieSlide2Image', label: 'Slider · Slide 2: imagen', hint: 'Imagen del segundo banner del hero. Reemplaza el ejemplo (rec. 1600×1000px).', fallback: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1600&q=80' },
   { key: 'hoodieSlide3Image', label: 'Slider · Slide 3: imagen', hint: 'Imagen del tercer banner del hero. Reemplaza el ejemplo (rec. 1600×1000px).', fallback: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=1600&q=80' },
+  ...categoryTileImageFields('hoodie', 4, [
+    'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=700&q=80',
+    'https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=700&q=80',
+    'https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=700&q=80',
+    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=700&q=80',
+  ], 'rec. 700×900px'),
 ];
 
 export const TONES_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -203,12 +236,18 @@ export const TONES_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'tonesSplit2Image', label: 'Tarjeta split 2 (niños): imagen', hint: 'Imagen de la segunda tarjeta destacada (rec. 1000×1200px).', fallback: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec1e?auto=format&fit=crop&w=1000&q=80' },
   { key: 'tonesFeatureImage', label: 'Bloque destacado: imagen', hint: 'Imagen del bloque "lo nuevo para los más pequeños" (rec. 1000×1200px).', fallback: 'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?auto=format&fit=crop&w=1000&q=80' },
   { key: 'tonesBannerImage', label: 'Banner ancho: imagen', hint: 'Fondo del banner "básicos para su día a día" (rec. 1600×700px).', fallback: 'https://images.unsplash.com/photo-1616627561950-9f746e330187?auto=format&fit=crop&w=1600&q=80' },
+  ...categoryTileImageFields('tones', 6, [], 'rec. 400×400px, circular'),
 ];
 
 export const MODA_MINIMAL_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'modaMinimalHeroImage', label: 'Hero · Slide 1: imagen', hint: 'Imagen a pantalla completa del primer slide. Reemplaza el ejemplo por tu foto (rec. 1900×1100px).', fallback: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1900&q=80' },
   { key: 'modaMinimalSlide2Image', label: 'Hero · Slide 2: imagen', hint: 'Imagen del segundo slide del hero (rec. 1900×1100px).', fallback: 'https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&w=1900&q=80' },
   { key: 'modaMinimalSlide3Image', label: 'Hero · Slide 3: imagen', hint: 'Imagen del tercer slide del hero (rec. 1900×1100px).', fallback: 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1900&q=80' },
+  ...categoryTileImageFields('modaMinimal', 3, [
+    'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=800&q=80',
+  ]),
   { key: 'modaMinimalEditorialImage', label: 'Banner editorial: imagen', hint: 'Fondo del bloque "Transparencia radical" (rec. 1600×900px).', fallback: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1600&q=80' },
   { key: 'modaMinimalCatalogBannerImage', label: 'Catálogo: banner superior', hint: 'Imagen de portada de la página de catálogo (rec. 1900×600px).', fallback: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=1900&q=80' },
 ];
@@ -603,6 +642,7 @@ const CARTERAS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'carterasLogoTagline', label: 'Bajada del logo', placeholder: 'Boutique', group: 'Marca' },
   { key: 'carterasAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis en compras desde S/ 250 · 10% OFF: BIENVENIDO10', group: 'Header' },
   { key: 'carterasSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar bolsos, carteras...', group: 'Header' },
+  heroIntervalField('carterasHeroInterval', 'Slider · Slide 1', 6),
   { key: 'carterasHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'carterasHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Nueva colección', group: 'Slider · Slide 1' },
   { key: 'carterasHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Estilo atemporal.', group: 'Slider · Slide 1' },
@@ -647,12 +687,14 @@ const CARTERAS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'carterasFooterText', label: 'Footer: descripción', placeholder: 'Diseños atemporales, calidad premium...', group: 'Footer' },
   { key: 'carterasFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'carterasFooterEmail', label: 'Footer: correo', placeholder: 'hola@luxora.pe', group: 'Footer' },
+  ...categoryTileTextFields('carteras', 5),
 ];
 
 const HOODIE_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'hoodieLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Hoodie', group: 'Marca' },
   { key: 'hoodieAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis desde S/ 150 · -10% con el código BIENVENIDO', group: 'Header' },
   { key: 'hoodieSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar hoodies, polos, casacas...', group: 'Header' },
+  heroIntervalField('hoodieHeroInterval', 'Slider · Slide 1', 6.5),
   { key: 'hoodieHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'hoodieHeroEyebrow', label: 'Slide 1: etiqueta (arriba a la derecha)', placeholder: 'Los mejores hoodies solo aquí', group: 'Slider · Slide 1' },
   { key: 'hoodieHeroTitle', label: 'Slide 1: logotipo gigante (línea 1)', placeholder: 'HOODIE', group: 'Slider · Slide 1' },
@@ -687,12 +729,14 @@ const HOODIE_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'hoodieFooterText', label: 'Footer: descripción', placeholder: 'Diseño minimalista, máxima comodidad...', group: 'Footer' },
   { key: 'hoodieFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'hoodieFooterEmail', label: 'Footer: correo', placeholder: 'hola@hoodie.pe', group: 'Footer' },
+  ...categoryTileTextFields('hoodie', 4),
 ];
 
 const TONES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'tonesLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Tones', group: 'Marca' },
   { key: 'tonesAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis desde S/ 150 · Cambios sin complicaciones', group: 'Header' },
   { key: 'tonesSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar prendas...', group: 'Header' },
+  heroIntervalField('tonesHeroInterval', 'Hero · Slide 1', 6.5),
   { key: 'tonesHeroOnlyImage', label: 'Slide 1: solo imagen (sin tarjeta de texto)', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'tonesHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Nueva colección', group: 'Hero · Slide 1' },
   { key: 'tonesHeroTitle', label: 'Slide 1: título', placeholder: 'básicos para cada día', group: 'Hero · Slide 1' },
@@ -738,6 +782,7 @@ const TONES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'tonesFooterText', label: 'Footer: descripción', placeholder: 'Ropa suave y cómoda para los más pequeños...', group: 'Footer' },
   { key: 'tonesFooterNewsletterTitle', label: 'Footer: título newsletter', placeholder: 'Suscríbete', group: 'Footer' },
   { key: 'tonesFooterNewsletterText', label: 'Footer: texto newsletter', placeholder: 'Novedades y ofertas exclusivas...', group: 'Footer' },
+  ...categoryTileTextFields('tones', 6),
 ];
 
 const MODA_MINIMAL_TEXT_FIELDS: TextFieldDef[] = [
@@ -749,6 +794,7 @@ const MODA_MINIMAL_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'modaMinimalNav3', label: 'Menú: enlace 3', placeholder: 'Calzado', group: 'Menú (Header)' },
   { key: 'modaMinimalNav4', label: 'Menú: enlace 4', placeholder: 'Colección', group: 'Menú (Header)' },
   { key: 'modaMinimalNav5', label: 'Menú: enlace 5', placeholder: 'Nosotros', group: 'Menú (Header)' },
+  heroIntervalField('modaMinimalHeroInterval', 'Hero · Slide 1', 6.5),
   { key: 'modaMinimalHeroOnlyImage', label: 'Slide 1: solo imagen (sin textos ni botones)', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado (Enlace del Slide 1).' },
   { key: 'modaMinimalHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Nueva temporada', group: 'Hero · Slide 1' },
   { key: 'modaMinimalHeroTitle', label: 'Slide 1: título', placeholder: 'Lo esencial, mejor hecho.', group: 'Hero · Slide 1' },
@@ -767,6 +813,7 @@ const MODA_MINIMAL_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'modaMinimalSlide3Subtitle', label: 'Slide 3: subtítulo', placeholder: 'Aprovecha precios especiales...', group: 'Hero · Slide 3' },
   { key: 'modaMinimalSlide3Button', label: 'Slide 3: enlace 1 (texto)', placeholder: 'Ver ofertas', group: 'Hero · Slide 3' },
   { key: 'modaMinimalSlide3Button2', label: 'Slide 3: enlace 2 (texto)', placeholder: '', group: 'Hero · Slide 3' },
+  ...categoryTileTextFields('modaMinimal', 3),
   { key: 'modaMinimalNewTitle', label: 'Título "Novedades"', placeholder: 'Novedades', group: 'Secciones' },
   { key: 'modaMinimalBestTitle', label: 'Título "Los favoritos"', placeholder: 'Los favoritos', group: 'Secciones' },
   { key: 'modaMinimalCatalogTitle', label: 'Catálogo: título del banner', placeholder: 'Toda la colección', group: 'Catálogo' },
@@ -815,6 +862,7 @@ const COMIDA_APP_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'comidaAppGreeting', label: 'Saludo (arriba)', placeholder: '¡Hola! 👋', group: 'Encabezado' },
   { key: 'comidaAppTagline', label: 'Titular (arriba)', placeholder: 'Tu comida favorita, a un clic', group: 'Encabezado' },
   { key: 'comidaAppSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Busca tu plato favorito...', group: 'Encabezado' },
+  heroIntervalField('comidaAppHeroInterval', 'Hero · Slide 1', 5),
   { key: 'comidaAppHeroOnlyImage', label: 'Slide 1: solo imagen (sin textos ni botón)', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen, clickeable al destino del Slide 1.' },
   { key: 'comidaAppHeroBadge', label: 'Slide 1: etiqueta', placeholder: 'Recién hecho', group: 'Hero · Slide 1' },
   { key: 'comidaAppHeroTitle', label: 'Slide 1: título', placeholder: 'El sabor que te encanta', group: 'Hero · Slide 1' },
@@ -853,6 +901,7 @@ const JOYERIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'joyeriaLogoTagline', label: 'Bajada del logo', placeholder: 'Fine Jewelry', group: 'Marca' },
   { key: 'joyeriaAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío asegurado · Certificado de autenticidad · Grabado de regalo sin costo', group: 'Header' },
   { key: 'joyeriaSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar anillos, collares...', group: 'Header' },
+  heroIntervalField('joyeriaHeroInterval', 'Slider · Slide 1', 6),
   { key: 'joyeriaHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'joyeriaHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Nueva colección', group: 'Slider · Slide 1' },
   { key: 'joyeriaHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Brilla en cada', group: 'Slider · Slide 1' },
@@ -898,12 +947,14 @@ const JOYERIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'joyeriaFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'joyeriaFooterEmail', label: 'Footer: correo', placeholder: 'hola@aurum.pe', group: 'Footer' },
   { key: 'joyeriaFooterTagline', label: 'Footer: frase grande (final)', placeholder: 'convierte tus ideas en joyas', group: 'Footer' },
+  ...categoryTileTextFields('joyeria', 5),
 ];
 
 const ROPA_HOMBRE_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'ropaHombreLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Urbanic', group: 'Marca' },
   { key: 'ropaHombreLogoTagline', label: 'Bajada del logo', placeholder: 'Clothing Co.', group: 'Marca' },
   { key: 'ropaHombreSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar camisas, jeans...', group: 'Header' },
+  heroIntervalField('ropaHombreHeroInterval', 'Slider · Slide 1', 6.5),
   { key: 'ropaHombreHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'ropaHombreHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Nueva colección', group: 'Slider · Slide 1' },
   { key: 'ropaHombreHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Viste tu estilo.', group: 'Slider · Slide 1' },
@@ -989,11 +1040,13 @@ const ROPA_HOMBRE_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'ropaHombreCommunityEyebrow', label: 'Community: etiqueta', placeholder: 'Stay in Style', group: 'Comunidad' },
   { key: 'ropaHombreCommunityTitle', label: 'Community: título', placeholder: 'Join our community', group: 'Comunidad' },
   { key: 'ropaHombreCommunitySubtitle', label: 'Community: subtítulo', placeholder: 'Recibe ofertas exclusivas, acceso anticipado y tips de estilo.', group: 'Comunidad' },
+  ...categoryTileTextFields('ropaHombre', 4),
 ];
 
 const BICICLETAS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'bicicletasLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Vonica Bikes', group: 'Marca' },
   { key: 'bicicletasSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar bicicletas, cascos...', group: 'Header' },
+  heroIntervalField('bicicletasHeroInterval', 'Slider · Slide 1', 6),
   { key: 'bicicletasHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'bicicletasHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Serie Trek', group: 'Slider · Slide 1' },
   { key: 'bicicletasHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Vonica Trek', group: 'Slider · Slide 1' },
@@ -1089,6 +1142,7 @@ const MOTOS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'motosYoutubeUrl', label: 'YouTube (URL)', placeholder: 'https://youtube.com/@tutienda', group: 'Redes sociales', hint: 'El icono aparece solo si pones un enlace.' },
   { key: 'motosTelegramUrl', label: 'Telegram (URL)', placeholder: 'https://t.me/tutienda', group: 'Redes sociales', hint: 'El icono aparece solo si pones un enlace.' },
   { key: 'motosWhatsappUrl', label: 'WhatsApp (URL opcional)', placeholder: 'https://wa.me/51999999999', group: 'Redes sociales', hint: 'Opcional. Si lo dejas vacío se usa el WhatsApp/teléfono de la tienda.' },
+  heroIntervalField('motosHeroInterval', 'Slider · Slide 1', 6.5),
   { key: 'motosHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'motosHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Nueva temporada', group: 'Slider · Slide 1' },
   { key: 'motosHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Energía pura.', group: 'Slider · Slide 1' },
@@ -1135,6 +1189,7 @@ const MOTOS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'motosFooterText', label: 'Footer: descripción', placeholder: 'Concesionario y taller especializado en motos eléctricas...', group: 'Footer' },
   { key: 'motosFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'motosFooterEmail', label: 'Footer: correo', placeholder: 'ventas@voltiamotos.pe', group: 'Footer' },
+  ...categoryTileTextFields('motos', 2),
 ];
 
 const MODA_LINK_FIELDS: LinkFieldDef[] = [
@@ -1262,12 +1317,23 @@ const ABARROTES_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'abarrotesCardOneImage', label: 'Tarjeta inferior 1', hint: 'Fondo de la primera tarjeta inferior. Recomendado 600×300px.', fallback: 'https://images.unsplash.com/photo-1573246123716-6b1782bfc499?auto=format&fit=crop&w=600&q=80' },
   { key: 'abarrotesCardTwoImage', label: 'Tarjeta inferior 2', hint: 'Fondo de la segunda tarjeta inferior. Recomendado 600×300px.', fallback: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80' },
   { key: 'abarrotesCardThreeImage', label: 'Tarjeta inferior 3', hint: 'Fondo de la tercera tarjeta inferior. Recomendado 600×300px.', fallback: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=600&q=80' },
+  ...categoryTileImageFields('abarrotes', 8, [
+    'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1553530666-ba11a90bb0ae?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1584473457409-ae5c91d7d8b6?auto=format&fit=crop&w=400&q=80',
+  ], 'rec. 400×400px, circular'),
 ];
 
 const ABARROTES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'abarrotesLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Grogin', group: 'Marca' },
   { key: 'abarrotesAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis en pedidos desde S/ 80 · Productos frescos todos los días', group: 'Header' },
   { key: 'abarrotesSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Busca productos, marcas y categorías...', group: 'Header' },
+  heroIntervalField('abarrotesHeroInterval', 'Slider · Slide 1', 6),
   { key: 'abarrotesHeroOnlyImage', label: 'Slide 1: solo imagen (banner sin textos)', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen clickeable al destino del Slide 1.' },
   { key: 'abarrotesHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Descuentos de la semana', group: 'Slider · Slide 1' },
   { key: 'abarrotesHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Compra con nosotros', group: 'Slider · Slide 1' },
@@ -1320,6 +1386,7 @@ const ABARROTES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'abarrotesFooterText', label: 'Footer: descripción', placeholder: 'Tu supermercado de confianza...', group: 'Footer' },
   { key: 'abarrotesFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'abarrotesFooterEmail', label: 'Footer: correo', placeholder: 'hola@grogin.pe', group: 'Footer' },
+  ...categoryTileTextFields('abarrotes', 8),
 ];
 
 const ABARROTES_LINK_FIELDS: LinkFieldDef[] = [
@@ -1335,12 +1402,23 @@ const SUPERMERCADO_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'supermercadoSlide2Image', label: 'Slider · Slide 2: imagen', hint: 'Imagen del segundo slide del hero. Recomendado 800×800px.', fallback: 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&w=600&q=80' },
   { key: 'supermercadoSlide3Image', label: 'Slider · Slide 3: imagen', hint: 'Imagen del tercer slide del hero. Recomendado 800×800px.', fallback: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=600&q=80' },
   { key: 'supermercadoSaverImage', label: 'Banner "Súper ahorro"', hint: 'Imagen de fondo del banner de ahorro. Recomendado 900×500px.', fallback: 'https://images.unsplash.com/photo-1506617564039-2f3b650b7010?auto=format&fit=crop&w=600&q=80' },
+  ...categoryTileImageFields('supermercado', 8, [
+    'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1553530666-ba11a90bb0ae?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1568254183919-78a4f43a2877?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=400&q=80',
+  ], 'rec. 400×400px, circular'),
 ];
 
 const SUPERMERCADO_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'supermercadoLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'FreshMart', group: 'Marca' },
   { key: 'supermercadoLogoTagline', label: 'Bajada del logo', placeholder: 'Fresco. Calidad. Cada día.', group: 'Marca' },
   { key: 'supermercadoSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar productos, categorías...', group: 'Header' },
+  heroIntervalField('supermercadoHeroInterval', 'Slider · Slide 1', 6),
   { key: 'supermercadoHeroOnlyImage', label: 'Slide 1: solo imagen', placeholder: '', group: 'Slider · Slide 1', type: 'toggle', hint: 'Banner de solo imagen clickeable al destino del Slide 1.' },
   { key: 'supermercadoHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Frescura en la que puedes confiar', group: 'Slider · Slide 1' },
   { key: 'supermercadoHeroTitle', label: 'Slide 1: título (línea 1)', placeholder: 'Abarrotes frescos,', group: 'Slider · Slide 1' },
@@ -1388,6 +1466,7 @@ const SUPERMERCADO_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'supermercadoFooterText', label: 'Footer: descripción', placeholder: 'Tu tienda de confianza para abarrotes frescos...', group: 'Footer' },
   { key: 'supermercadoFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'supermercadoFooterEmail', label: 'Footer: correo', placeholder: 'hola@freshmart.pe', group: 'Footer' },
+  ...categoryTileTextFields('supermercado', 8),
 ];
 
 const SUPERMERCADO_LINK_FIELDS: LinkFieldDef[] = [

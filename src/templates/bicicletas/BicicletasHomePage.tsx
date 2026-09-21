@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -87,11 +88,15 @@ function HeroSlider({ slides, slug, primary, diseno, storeName }: { slides: Hero
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'bicicletasHeroInterval', 6000);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6000);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
   const slide = slides[index];
@@ -108,7 +113,7 @@ function HeroSlider({ slides, slug, primary, diseno, storeName }: { slides: Hero
       <div className="relative mx-auto max-w-7xl px-6">
         {slide.onlyImage ? (
           <div className="py-6 md:py-8">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.button
                 key={`only-${index}`}
                 type="button"
@@ -132,7 +137,7 @@ function HeroSlider({ slides, slug, primary, diseno, storeName }: { slides: Hero
 
             {/* Imagen principal centrada */}
             <div className="relative mx-auto w-full">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout">
                 <motion.img
                   key={`img-${index}`}
                   src={slide.image}

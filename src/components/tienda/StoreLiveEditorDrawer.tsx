@@ -287,16 +287,18 @@ function TextosSection({ fields, diseno, onChange, categories }: { fields: TextF
               }
 
               return (
-                <InputPro
-                  key={f.key}
-                  name={f.key}
-                  type={f.type === 'date' ? 'date' : 'text'}
-                  label={f.label}
-                  isLabel
-                  placeholder={f.placeholder}
-                  value={current}
-                  onChange={e => onChange({ [f.key]: e.target.value })}
-                />
+                <div key={f.key}>
+                  <InputPro
+                    name={f.key}
+                    type={f.type === 'date' ? 'date' : 'text'}
+                    label={f.label}
+                    isLabel
+                    placeholder={f.placeholder}
+                    value={current}
+                    onChange={e => onChange({ [f.key]: e.target.value })}
+                  />
+                  {f.hint && <span className="mt-0.5 block text-[11px] font-semibold leading-4 text-gray-400">{f.hint}</span>}
+                </div>
               );
             })}
           </div>

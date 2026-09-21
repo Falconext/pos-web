@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { buildCategoryTiles } from '../shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -80,11 +82,15 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
+  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
+  const intervalMs = resolveHeroIntervalMs(diseno, 'hoodieHeroInterval', 6500);
+  usePreloadImages(slides.map((s) => s.image));
+
   useEffect(() => {
-    if (count <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 6500);
+    if (count <= 1 || intervalMs <= 0) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, intervalMs]);
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => {
@@ -95,7 +101,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   return (
     <section className="mx-auto max-w-[1240px] px-4 pt-6 md:px-6 md:pt-8">
       {slide.onlyImage ? (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           <motion.button
             key={`only-${index}`}
             type="button"
@@ -129,7 +135,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
 
           {/* Imagen full-width con tarjeta "Discover" */}
           <div className="relative">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.div
                 key={`img-${index}`}
                 initial={{ opacity: 0, scale: 1.02 }}
@@ -214,10 +220,9 @@ export default function HoodieHomePage({
   const brand = storeName(tienda, diseno);
   const featured = productos.slice(0, 8);
 
-  const categoryCards = (allCategories || [])
-    .map((cat: any) => (typeof cat === 'string' ? { nombre: cat } : cat))
-    .filter((cat: any) => cat?.nombre)
-    .slice(0, 4);
+  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
+  // sin configurar, se rellenan con las categorías reales de la tienda.
+  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'hoodie', count: 4, fallbackImages: CATEGORY_FALLBACKS, });
 
   const marqueeText = diseno?.hoodieMarqueeText || `Los mejores hoodies · ${brand} 2026`;
 
@@ -259,7 +264,7 @@ export default function HoodieHomePage({
             <motion.div variants={hdStagger} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               {categoryCards.map((cat: any, i: number) => (
                 <motion.a
-                  key={cat.nombre}
+                  key={`cat-${i}`}
                   variants={hdCard}
                   whileHover={{ y: -6 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
@@ -269,7 +274,7 @@ export default function HoodieHomePage({
                   <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.07]" />
                   <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 rounded-xl bg-white px-4 py-3">
                     <div className="min-w-0">
-                      <h3 className="truncate text-[13px] font-bold uppercase tracking-[0.02em]" style={{ color: HD.ink }}>{cat.nombre}</h3>
+                      <h3 className="truncate text-[13px] font-bold uppercase tracking-[0.02em]" style={{ color: HD.ink }}>{cat.label}</h3>
                       <span className="mt-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">Shop now</span>
                     </div>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors group-hover:bg-neutral-900 group-hover:text-white" style={{ backgroundColor: HD.sand, color: HD.ink }}>
