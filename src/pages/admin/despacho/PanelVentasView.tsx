@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
+import { useAuthStore } from '@/zustand/auth';
 import ShalomTrackingModal from '@/components/ShalomTrackingModal';
 import Select from '@/components/Select';
 import { Calendar } from '@/components/Date';
@@ -11,6 +12,7 @@ import OlvaTrackingModal from '@/components/OlvaTrackingModal';
 import AutoScrollTable from '@/components/Autoscrolltable';
 import RotuloPrint from './RotuloPrint';
 import RotulosLotePrint, { type RotuloLoteItem } from './RotulosLotePrint';
+import { ROTULO_FORMATOS, guardarRotuloFormato, leerRotuloFormato, type RotuloFormato } from './rotuloFormato';
 import { useInvoiceStore } from '@/zustand/invoices';
 import {
     usePanelVentasViewModel,
@@ -368,6 +370,11 @@ export default function PanelVentasView() {
     // Rótulos en lote: los despachos "Preparando" que se ven en la tabla
     // (respeta pestaña, búsqueda y filtros; cualquier courier), un rótulo por página.
     const [rotulosLote, setRotulosLote] = useState<RotuloLoteItem[]>([]);
+    // Formato del rótulo (ticket 80 mm o etiqueta 80×50): es de la caja/impresora,
+    // se recuerda en este navegador por empresa.
+    const empresaIdRotulo = useAuthStore((st) => (st.auth as any)?.empresa?.id ?? (st.auth as any)?.empresaId);
+    const [rotuloFormato, setRotuloFormatoState] = useState<RotuloFormato>(() => leerRotuloFormato(empresaIdRotulo));
+    const setRotuloFormato = (f: RotuloFormato) => { setRotuloFormatoState(f); guardarRotuloFormato(empresaIdRotulo, f); };
     const preparandoParaRotulo = useMemo<RotuloLoteItem[]>(
         () => vm.filtrados
             .filter((i) => i.comprobanteId && i.estadoDespacho === 'PREPARANDO')
@@ -807,6 +814,17 @@ export default function PanelVentasView() {
                             />
                         </div>
                     )}
+                    {/* Formato del rótulo: ticket 80 mm o etiqueta adhesiva 80×50 (impresora etiquetera) */}
+                    <select
+                        value={rotuloFormato}
+                        onChange={(e) => setRotuloFormato(e.target.value as RotuloFormato)}
+                        title="Formato con el que se imprimen los rótulos (individuales y en lote) desde esta caja"
+                        aria-label="Formato del rótulo"
+                        data-testid="rotulo-formato"
+                        className="h-10 rounded-xl border border-gray-200 bg-white px-2 text-xs font-bold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
+                    >
+                        {ROTULO_FORMATOS.map((f) => <option key={f.value} value={f.value} title={f.hint}>{f.label}</option>)}
+                    </select>
                     {/* Rótulos de todos los paquetes en preparación (un rótulo por página) */}
                     <button
                         type="button"
@@ -1647,8 +1665,9 @@ export default function PanelVentasView() {
             <RotuloPrint
                 comprobanteId={rotuloPrintComprobanteId}
                 onDone={() => setRotuloPrintComprobanteId(null)}
+                formato={rotuloFormato}
             />
-            <RotulosLotePrint items={rotulosLote} onDone={() => setRotulosLote([])} />
+            <RotulosLotePrint items={rotulosLote} onDone={() => setRotulosLote([])} formato={rotuloFormato} />
 
             {shalomTracking && (
                 <ShalomTrackingModal

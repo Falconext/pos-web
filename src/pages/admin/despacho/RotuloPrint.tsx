@@ -4,6 +4,8 @@ import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { buildComprobantePrintPageStyle } from '@/utils/printStyles';
 import { mensajeErrorShalom } from '@/services/shalom.service';
+import RotuloEtiqueta from './RotuloEtiqueta';
+import { COURIER_LABEL, rotuloPageStyle, type RotuloFormato } from './rotuloFormato';
 
 interface DatosRotulo {
     nroOrden: string | null;
@@ -13,6 +15,10 @@ interface DatosRotulo {
     ubicacion: string;
     agenciaNombre: string;
     direccion: string;
+    claveEnvio?: string | null;
+    celular?: string;
+    transportista?: string | null;
+    referencia?: string;
 }
 
 /**
@@ -24,9 +30,12 @@ interface DatosRotulo {
 export default function RotuloPrint({
     comprobanteId,
     onDone,
+    formato = 'TICKET',
 }: {
     comprobanteId: number | null;
     onDone: () => void;
+    /** Ticket 80 mm (alto variable) o etiqueta adhesiva 80×50 mm. */
+    formato?: RotuloFormato;
 }) {
     const [datos, setDatos] = useState<DatosRotulo | null>(null);
     const componentRef = useRef<HTMLDivElement>(null);
@@ -35,7 +44,7 @@ export default function RotuloPrint({
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: buildComprobantePrintPageStyle({ width: 80, height: 330 }),
+        pageStyle: rotuloPageStyle(formato) ?? buildComprobantePrintPageStyle({ width: 80, height: 330 }),
         onAfterPrint: onDone,
     });
 
@@ -64,6 +73,16 @@ export default function RotuloPrint({
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [datos]);
+
+    if (formato === 'ETIQUETA_80X50') {
+        return (
+            <div className="hidden">
+                <div ref={componentRef}>
+                    {datos && <RotuloEtiqueta d={{ ...datos, referencia: datos.referencia, courier: datos.transportista ? (COURIER_LABEL[datos.transportista] ?? datos.transportista) : undefined }} />}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="hidden">

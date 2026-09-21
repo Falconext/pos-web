@@ -3,6 +3,8 @@ import { useReactToPrint } from 'react-to-print';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { buildComprobantePrintPageStyle } from '@/utils/printStyles';
+import RotuloEtiqueta from './RotuloEtiqueta';
+import { COURIER_LABEL, rotuloPageStyle, type RotuloFormato } from './rotuloFormato';
 
 interface DatosRotulo {
     nroOrden: string | null;
@@ -12,6 +14,8 @@ interface DatosRotulo {
     ubicacion: string;
     agenciaNombre: string;
     direccion: string;
+    claveEnvio?: string | null;
+    celular?: string;
 }
 
 export interface RotuloLoteItem {
@@ -20,13 +24,6 @@ export interface RotuloLoteItem {
     courier: string;
     celular: string;
 }
-
-const COURIER_LABEL: Record<string, string> = {
-    SHALOM_PRO: 'Shalom PRO',
-    SHALOM_COD: 'Shalom COD',
-    OLVA: 'Olva Courier',
-    PROPIOS: 'Reparto propio',
-};
 
 /**
  * Impresión en lote de rótulos (un rótulo por página, ticket 80mm) para todos
@@ -38,9 +35,12 @@ const COURIER_LABEL: Record<string, string> = {
 export default function RotulosLotePrint({
     items,
     onDone,
+    formato = 'TICKET',
 }: {
     items: RotuloLoteItem[];
     onDone: () => void;
+    /** Ticket 80 mm (una página por rótulo) o etiqueta adhesiva 80×50 mm (una etiqueta por rótulo). */
+    formato?: RotuloFormato;
 }) {
     const [datos, setDatos] = useState<Array<RotuloLoteItem & { rotulo: DatosRotulo | null }> | null>(null);
     const componentRef = useRef<HTMLDivElement>(null);
@@ -49,7 +49,7 @@ export default function RotulosLotePrint({
     const printFn = useReactToPrint({
         // @ts-ignore
         contentRef: componentRef,
-        pageStyle: buildComprobantePrintPageStyle({ width: 80, height: 330 }),
+        pageStyle: rotuloPageStyle(formato) ?? buildComprobantePrintPageStyle({ width: 80, height: 330 }),
         onAfterPrint: onDone,
     });
 
@@ -100,6 +100,27 @@ export default function RotulosLotePrint({
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [datos]);
+
+    if (formato === 'ETIQUETA_80X50') {
+        return (
+            <div className="hidden">
+                <div ref={componentRef}>
+                    {(datos ?? []).map((d, idx) => (
+                        <RotuloEtiqueta
+                            key={d.comprobanteId}
+                            saltoDePagina={idx < (datos?.length ?? 0) - 1}
+                            d={{
+                                ...(d.rotulo ?? {}),
+                                referencia: d.referencia,
+                                courier: COURIER_LABEL[d.courier] ?? d.courier,
+                                celular: d.celular || d.rotulo?.celular,
+                            }}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="hidden">
