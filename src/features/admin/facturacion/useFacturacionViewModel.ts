@@ -367,13 +367,30 @@ export const useFacturacionViewModel = () => {
     };
     const _comprobanteLabelInitMap: Record<string, string> = { NP: 'NOTA DE PEDIDO', NV: 'NOTA DE VENTA' };
 
+    // Comprobante con el que arranca cada venta (Perfil → Configuración →
+    // posComprobanteDefault). MANTENER_ULTIMO (default) conserva el comportamiento
+    // original: el POS hereda el tipo de la venta anterior. Los demás fuerzan ese
+    // tipo al abrir el POS y al terminar cada venta (pedido Demenver: tras una
+    // boleta el POS se quedaba en boleta y salían boletas que no correspondían).
+    // Una empresa RUS no emite Factura: se cae a Boleta.
+    const posComprobanteDefault = String((auth?.empresa as any)?.posComprobanteDefault || 'MANTENER_ULTIMO').toUpperCase();
+    const comprobanteInicialConfigurado = ((): { comprobante: string; tipoDoc: string } | null => {
+        if (isQuotationRoute || tipoEmpresa === "INFORMAL") return null;
+        if (posComprobanteDefault === 'NOTA_DE_VENTA') return { comprobante: 'NOTA DE VENTA', tipoDoc: 'NV' };
+        if (posComprobanteDefault === 'BOLETA') return { comprobante: 'BOLETA', tipoDoc: '03' };
+        if (posComprobanteDefault === 'FACTURA') return esRUS ? { comprobante: 'BOLETA', tipoDoc: '03' } : { comprobante: 'FACTURA', tipoDoc: '01' };
+        return null;
+    })();
+
     const initialDocumentType = isQuotationRoute
         ? "COTIZACIÓN"
         : (_stateDefaultType
             ? (_comprobanteLabelInitMap[_stateDefaultType] ?? _stateDefaultType)
-            : (receipt === ""
-                ? (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "BOLETA" : "FACTURA"))
-                : receipt.toUpperCase()));
+            : (comprobanteInicialConfigurado
+                ? comprobanteInicialConfigurado.comprobante
+                : (receipt === ""
+                    ? (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "BOLETA" : "FACTURA"))
+                    : receipt.toUpperCase())));
 
     const [paymentMethod, setPaymentMethod] = useState<string>('Efectivo');
     const [isMixedPayment, setIsMixedPayment] = useState<boolean>(false);
@@ -415,7 +432,7 @@ export const useFacturacionViewModel = () => {
         currencyCode: "PEN",
         clienteNombre: "",
         comprobante: initialDocumentType,
-        tipoDoc: isQuotationRoute ? "COT" : (_stateDefaultType ? (_tipoDocInitMap[_stateDefaultType] ?? '01') : (tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01")),
+        tipoDoc: isQuotationRoute ? "COT" : (_stateDefaultType ? (_tipoDocInitMap[_stateDefaultType] ?? '01') : (comprobanteInicialConfigurado ? comprobanteInicialConfigurado.tipoDoc : (tipoEmpresa === "INFORMAL" && initialDocumentType === "TICKET" ? "TICKET" : initialDocumentType === "NOTA DE CREDITO" ? "07" : initialDocumentType === "NOTA DE DEBITO" ? "08" : initialDocumentType === "BOLETA" ? "03" : "01"))),
         tipoOperacionId: 0,
         detalles: [],
         discount: 0,
@@ -775,18 +792,22 @@ export const useFacturacionViewModel = () => {
 
         const newComprobante = isQuotationRoute
             ? "COTIZACIÓN"
-            : (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "BOLETA" : "FACTURA"));
+            : (comprobanteInicialConfigurado
+                ? comprobanteInicialConfigurado.comprobante
+                : (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "BOLETA" : "FACTURA")));
 
         const newTipoDoc = isQuotationRoute
             ? "COT"
-            : (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "03" : "01"));
+            : (comprobanteInicialConfigurado
+                ? comprobanteInicialConfigurado.tipoDoc
+                : (tipoEmpresa === "INFORMAL" ? "TICKET" : (esRUS ? "03" : "01")));
 
         setFormValues(prev => ({
             ...prev,
             comprobante: newComprobante,
             tipoDoc: newTipoDoc
         }));
-    }, [isQuotationRoute, tipoEmpresa, esRUS]);
+    }, [isQuotationRoute, tipoEmpresa, esRUS, posComprobanteDefault]);
 
     useEffect(() => {
         if (isQuotationRoute) {
@@ -2416,8 +2437,53 @@ export const useFacturacionViewModel = () => {
         };
     };
 
+    // Pagos por Yape/Plin/Transferencia/Tarjeta exigen Boleta/Factura (Perfil →
+    // Configuración → posExigirCpeMedioPago). Solo mira el medio que se registra
+    // en este momento: en una venta a crédito, el del pago inicial (si lo hay).
+    const exigeCpePorMedioPago = Boolean((auth?.empresa as any)?.posExigirCpeMedioPago);
+    const esComprobanteElectronico = ['01', '03', '07', '08'].includes(String(formValues?.tipoDoc || ''));
+    const MEDIOS_BANCARIZADOS = ['YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'];
+    const mediosBancarizadosDelCobro = ((): string[] => {
+        if (isQuotationRoute) return [];
+        const esCredito = formValues?.medioPago === 'Crédito';
+        if (esCredito && !isMixedPayment) {
+            return Number(adelanto || 0) > 0 && MEDIOS_BANCARIZADOS.includes(normalizePaymentMethod(adelantoMetodo)) ? [normalizePaymentMethod(adelantoMetodo)] : [];
+        }
+        if (isMixedPayment) {
+            return Array.from(new Set(
+                (splitPayments || [])
+                    .filter((l: any) => Number(l?.amount || 0) > 0)
+                    .map((l: any) => normalizePaymentMethod(l?.method))
+                    .filter((m: string) => MEDIOS_BANCARIZADOS.includes(m)),
+            ));
+        }
+        const m = normalizePaymentMethod(paymentMethod);
+        return MEDIOS_BANCARIZADOS.includes(m) ? [m] : [];
+    })();
+    const cpeRequeridoPorMedioPago = exigeCpePorMedioPago && !esComprobanteElectronico && !isEditMode && mediosBancarizadosDelCobro.length > 0;
+    const etiquetaMedio = (m: string) => ({ YAPE: 'Yape', PLIN: 'Plin', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta' } as Record<string, string>)[m] || m;
+    const cpeRequeridoMedios = mediosBancarizadosDelCobro.map(etiquetaMedio).join(' y ');
+    const cpeRequeridoMensaje = cpeRequeridoPorMedioPago
+        ? `Pago por ${cpeRequeridoMedios}: tu empresa exige emitir Boleta o Factura electrónica (no ${String(formValues?.comprobante || 'comprobante interno').toLowerCase()}). Cambia el comprobante o cobra en efectivo.`
+        : '';
+    // Cambia el comprobante desde el aviso sin perder el carrito ni el cobro. La
+    // serie/correlativo se recalculan solos (efecto sobre formValues.comprobante).
+    const cambiarComprobanteA = (tipo: 'BOLETA' | 'FACTURA') => {
+        if (tipo === 'FACTURA' && selectedClient?.nroDoc?.length !== 11) {
+            useAlertStore.getState().alert('Para Factura el cliente debe tener RUC (11 dígitos). Elige el cliente con RUC o emite Boleta.', 'error');
+            return;
+        }
+        setFormValues(prev => ({ ...prev, comprobante: tipo, tipoDoc: tipo === 'BOLETA' ? '03' : '01' }));
+        setFechaVencimientoCredito('');
+    };
+
     const validatePaymentDetails = () => {
-        if (isQuotationRoute || formValues.medioPago === 'Crédito') return true;
+        if (isQuotationRoute) return true;
+        if (cpeRequeridoPorMedioPago) {
+            useAlertStore.getState().alert(cpeRequeridoMensaje, "error");
+            return false;
+        }
+        if (formValues.medioPago === 'Crédito') return true;
         // El N° de operación/voucher es opcional: no bloquea la emisión (se puede
         // registrar después). Solo se exige la cuenta bancaria para transferencias,
         // y solo si la empresa tiene alguna cuenta bancaria registrada — si no
@@ -2969,10 +3035,14 @@ export const useFacturacionViewModel = () => {
         setEditQuotationId(null);
         setOrigenComprobanteId(null);
         const ventaInterna = tiposOperacion.find((op: any) => op.codigo === '0101');
+        // Tipo de la siguiente venta: el configurado por la empresa o, si es
+        // MANTENER_ULTIMO, el que se acaba de usar.
+        const siguienteComprobante = comprobanteInicialConfigurado?.comprobante ?? formValues?.comprobante;
+        const siguienteTipoDoc = comprobanteInicialConfigurado?.tipoDoc ?? formValues.tipoDoc;
         setFormValues({
             ...initFormValues,
-            comprobante: formValues?.comprobante,
-            tipoDoc: formValues.tipoDoc,
+            comprobante: siguienteComprobante,
+            tipoDoc: siguienteTipoDoc,
             vuelto: 0,
             tipoOperacionId: ventaInterna ? ventaInterna.id : initFormValues.tipoOperacionId,
             // La siguiente venta arranca con las observaciones recordadas (autoguardado).
@@ -2985,7 +3055,7 @@ export const useFacturacionViewModel = () => {
         setSplitPayments([{ method: 'Efectivo', amount: 0 }, { method: 'Yape', amount: 0 }]);
         resetInvoice();
         resetProductInvoice();
-        if (LABELS_CLIENTES_VARIOS.includes(formValues?.comprobante)) {
+        if (LABELS_CLIENTES_VARIOS.includes(siguienteComprobante)) {
             const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
             setSelectedClient(clientSelect ? clientSelect : { nroDoc: "10000000", nombre: "CLIENTES VARIOS" });
             setFormValues(prev => ({ ...prev, clienteNombre: "CLIENTES VARIOS", clienteId: clientSelect ? Number(clientSelect.id) || 0 : 0 }));
@@ -3002,7 +3072,7 @@ export const useFacturacionViewModel = () => {
         setPorcentajeDetraccion(0);
         setMontoDetraccion(0);
         setCuotas([]);
-        setTimeout(() => getSerieAndCorrelativeByReceipt(auth?.empresa?.id, formValues?.tipoDoc), 1000);
+        setTimeout(() => getSerieAndCorrelativeByReceipt(auth?.empresa?.id, siguienteTipoDoc), 1000);
         // Re-fetch products so the POS catalog reflects the updated stock after the sale
         const refreshParams: any = { page, limit };
         if (sedeActiva?.id) refreshParams.sedeId = sedeActiva.id;
@@ -3036,6 +3106,7 @@ export const useFacturacionViewModel = () => {
 
         // Form & Selections
         formValues, setFormValues,
+        cpeRequeridoPorMedioPago, cpeRequeridoMensaje, cpeRequeridoMedios, cambiarComprobanteA, esRUS, comprobanteInicialConfigurado,
         paymentMethod, setPaymentMethod,
         paymentDetail, setPaymentDetail,
         buildPaymentDetails,
