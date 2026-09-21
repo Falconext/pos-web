@@ -76,9 +76,15 @@ function construirPayloadDespacho(envioData: any) {
     // de guía genérico para que WhatsApp al cliente, trazabilidad y Excel lo muestren.
     const esCourierConOrden = SHALOM_COURIERS.has(envioData.transportista) || envioData.transportista === OLVA_COURIER;
     const codigoGuia = String(envioData.codigoGuia ?? '').trim() || (esCourierConOrden ? String(envioData.nroOrden ?? '').trim() : '');
+    // Las claves son de Shalom: si se cambió a otro courier (p. ej. la clave del
+    // día se precargó y luego eligieron Reparto propio) no deben quedar guardadas,
+    // porque el WhatsApp/rótulo las mostrarían como "clave de retiro".
+    const esShalomPayload = SHALOM_COURIERS.has(envioData.transportista);
     return {
         ...envioData,
         codigoGuia,
+        claveEnvio: esShalomPayload ? envioData.claveEnvio : '',
+        claveOrden: esShalomPayload ? envioData.claveOrden : '',
         pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
         repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
         repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
@@ -204,7 +210,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const cli = comprobantePayload?.cliente ?? null;
                 const cliNroDoc = String(cli?.nroDoc ?? '').trim();
                 const cliNombre = String(cli?.nombre ?? '').trim();
-                const cliTieneDni = /^\d{8}$/.test(cliNroDoc);
+                // "10000000" es el documento del cliente genérico del POS: no es un DNI real.
+                const cliTieneDni = /^\d{8}$/.test(cliNroDoc) && cliNroDoc !== '10000000';
                 const cliEsWsp = /^WSP\s/i.test(cliNombre) || !cliTieneDni;
                 // "CLIENTES VARIOS" es el genérico del POS: no sirve como nombre de quien recibe.
                 const cliEsGenerico = /^CLIENTES?\s+VARIOS$/i.test(cliNombre);
@@ -290,16 +297,22 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const set = (field: string, value: any) =>
         setEnvioData((prev: any) => ({ ...prev, [field]: value }));
 
+    // Se precarga cuando YA cargó el despacho (si la sugerencia llega antes que
+    // el despacho, el setEnvioData de la carga la pisaba con '' y el campo
+    // quedaba vacío aunque la ayuda dijera "la clave que ya usaste hoy").
     useEffect(() => {
-        if (!claveInfo?.clave) return;
+        if (!claveInfo?.clave || loading) return;
         setEnvioData((prev: any) => (!prev.claveEnvio && !prev.nroOrden ? { ...prev, claveEnvio: claveInfo.clave } : prev));
-    }, [claveInfo]);
+    }, [claveInfo, loading]);
 
     // Validación local de la clave escrita (el backend la repite): 4 dígitos y
     // distinta a la usada ayer, que Shalom rechaza con "clave del día anterior".
     const claveEscrita = String(envioData.claveEnvio ?? '').trim();
     const claveEsDeAyer = Boolean(claveEscrita) && (claveInfo?.usadasAyer ?? []).includes(claveEscrita);
     const claveFormatoOk = !claveEscrita || /^\d{4}$/.test(claveEscrita);
+    // Shalom rechaza cualquier año del calendario como clave ("Por seguridad…").
+    const claveEsAnio = /^(19|20)\d{2}$/.test(claveEscrita);
+    const claveManual = Boolean(claveEscrita) && claveInfo != null && claveEscrita !== claveInfo.clave && !envioData.nroOrden;
     const claveAlternativa = claveInfo && claveInfo.clave !== claveEscrita ? claveInfo.clave : (claveInfo?.configuradas.find(c => !claveInfo.usadasAyer.includes(c) && c !== claveEscrita) ?? null);
 
     useEffect(() => {
@@ -316,9 +329,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const nombreOk = String(envioData.nombreDestinatario ?? '').trim().length >= 3;
     const celularOk = /^9\d{8}$/.test(String(envioData.celularDest ?? '').replace(/\D/g, ''));
     const faltanDestinatario: string[] = [
-        ...(!dniOk ? ['el DNI del destinatario'] : []),
+        ...(!dniOk ? ['el DNI del destinatario (bloque "Destinatario")'] : []),
         ...(!nombreOk ? ['el nombre del destinatario'] : []),
-        ...(!celularOk ? ['un celular de 9 dígitos'] : []),
+        ...(!celularOk ? ['un celular de 9 dígitos (campo "Celular destinatario")'] : []),
     ];
     const clienteSinDni = !!clienteFicha && !/^\d{8}$/.test(clienteFicha.nroDoc);
 
@@ -385,6 +398,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 claveEnvio: guia.claveEnvio ?? prev.claveEnvio,
             }));
             alert(guia.nroOrden ? `Guía ${guia.nroOrden} generada en Shalom` : 'Envío registrado en Shalom', 'success');
+            if (guia.claveReemplazada) {
+                alert(`Shalom no aceptó la clave ${guia.claveReemplazada.solicitada} (${guia.claveReemplazada.motivo || 'clave rechazada'}). La guía salió con la clave ${guia.claveReemplazada.usada}: esa es la que le mandas al cliente.`, 'warning');
+            }
         } catch (error: unknown) {
             alert(mensajeErrorShalom(error, 'No se pudo generar la guía en Shalom'), 'error');
         } finally {
@@ -579,6 +595,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                             ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave {claveEscrita} fue la de ayer: Shalom no permite repetirla hoy.{claveAlternativa ? ` Usa ${claveAlternativa}.` : ''}</span>
                                             : !claveFormatoOk
                                                 ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave debe tener 4 dígitos.</span>
+                                                : claveEsAnio
+                                                    ? <span className="font-semibold text-amber-700 dark:text-amber-400">Shalom no acepta un año como clave ({claveEscrita}). Usa otra combinación de 4 dígitos.</span>
+                                                    : claveManual
+                                                        ? <>Usarás <b>{claveEscrita}</b> en esta guía; desde ahora será la clave del día para las siguientes.</>
                                                 : claveInfo.origen === 'HOY'
                                                     ? <>Es la clave que ya usaste hoy: todas las guías del día salen con la misma.</>
                                                     : claveInfo.origen === 'CONFIGURADA'
@@ -647,7 +667,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                             <button
                                                 type="button"
                                                 onClick={handleGenerarGuia}
-                                                disabled={generandoGuia || !envioData.agenciaDestino || faltanDestinatario.length > 0 || claveEsDeAyer || !claveFormatoOk}
+                                                disabled={generandoGuia || !envioData.agenciaDestino || faltanDestinatario.length > 0 || claveEsDeAyer || !claveFormatoOk || claveEsAnio}
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-black text-white shadow-lg shadow-red-500/20 transition-opacity hover:opacity-90 disabled:opacity-50"
                                             >
                                                 <Icon icon={generandoGuia ? 'eos-icons:loading' : 'solar:add-square-bold'} className="text-lg" />
@@ -660,7 +680,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                             {faltanDestinatario.length > 0 && (
                                                 <p className="flex items-start gap-1.5 text-[11px] leading-4 font-semibold text-amber-700 dark:text-amber-400">
                                                     <Icon icon="solar:danger-triangle-bold" className="mt-0.5 shrink-0" />
-                                                    Para generar la guía falta {faltanDestinatario.join(', ')} (bloque "Destinatario").
+                                                    Para generar la guía falta {faltanDestinatario.join(', ')}.
                                                 </p>
                                             )}
                                         </div>

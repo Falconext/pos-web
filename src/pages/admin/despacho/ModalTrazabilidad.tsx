@@ -275,7 +275,7 @@ export function ModalTrazabilidad({ comprobanteId, referencia, cliente, onClose 
                     <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
                         <a
                             href={`https://wa.me/51${despacho.celularDest.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                `Hola, su pedido ${referencia ?? ''} está en estado: ${getEstadoCfg(despacho.estado).label}.${despacho.codigoGuia ? ` Guía: ${despacho.codigoGuia}.` : ''}${despacho.claveEnvio ? ` Clave de retiro: ${despacho.claveEnvio}.` : ''}${despacho.shalomFleteCotizado != null && Number(despacho.shalomFleteCotizado) > 0 ? ` Flete a pagar al recoger: S/ ${Number(despacho.shalomFleteCotizado).toFixed(2)}.` : ''} Gracias.`
+                                `Hola, su pedido ${referencia ?? ''} está en estado: ${getEstadoCfg(despacho.estado).label}.${despacho.codigoGuia ? ` Guía: ${despacho.codigoGuia}.` : ''}${despacho.claveEnvio && /SHALOM/i.test(String(despacho.transportista ?? '')) ? ` Clave de retiro: ${despacho.claveEnvio}.` : ''}${despacho.shalomFleteCotizado != null && Number(despacho.shalomFleteCotizado) > 0 ? ` Flete a pagar al recoger: S/ ${Number(despacho.shalomFleteCotizado).toFixed(2)}.` : ''} Gracias.`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"

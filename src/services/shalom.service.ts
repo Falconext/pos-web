@@ -78,6 +78,8 @@ export interface GuiaCreada {
     claveOrden: string | null;
     claveEnvio: string | null;
     shalomGuiaCreadaEn: string | null;
+    /** Shalom rechazó la clave escrita y la guía salió con otra. */
+    claveReemplazada?: { solicitada: string; usada: string; motivo: string };
 }
 
 /** Tipo de producto/paquete de Shalom, con sus medidas por defecto. */
@@ -102,8 +104,10 @@ export const shalomService = {
     /** Productos de la cuenta Shalom Pro de la empresa (derivados de su historial). */
     claveRetiro: async (): Promise<ShalomClaveRetiro> =>
         unwrap(await api.get('/shalom/clave-retiro')),
+    // La cotización del proveedor a veces tarda más de los 12 s del timeout
+    // general la primera vez que se pide una ruta (luego responde en <1 s).
     tarifa: async (destinoId: string | number, origenId?: string | number): Promise<ShalomTarifa> =>
-        unwrap(await api.get('/shalom/tarifa', { params: { destinoId, ...(origenId ? { origenId } : {}) } })),
+        unwrap(await api.get('/shalom/tarifa', { params: { destinoId, ...(origenId ? { origenId } : {}) }, timeout: 40_000 })),
     productos: async (): Promise<ShalomProducto[]> =>
         unwrap(await api.get('/shalom/productos')) ?? [],
 

@@ -280,7 +280,7 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                         ? 'bg-amber-100 text-amber-700'
                                         : 'bg-white/20 text-white'
                                 }`}>
-                                    {envioData.transportista === 'SHALOM_COD' ? 'COD · Cobro en destino' : 'PRO · Pago cancelado'}
+                                    {envioData.transportista === 'SHALOM_COD' ? 'COD · Saldo por cobrar (control interno)' : 'PRO · Guía en tu cuenta Shalom'}
                                 </span>
                             </div>
 

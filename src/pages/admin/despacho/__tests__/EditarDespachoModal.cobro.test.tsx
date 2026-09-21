@@ -150,8 +150,13 @@ describe('Editar Despacho · clave de retiro', () => {
         expect(screen.getByTestId('clave-ayuda')).toHaveTextContent('La clave 1010 fue la de ayer');
         expect(screen.getByTestId('clave-ayuda')).toHaveTextContent('Usa 1011');
         expect(screen.getByText('Generar guía en Shalom').closest('button')).toBeDisabled();
-        fireEvent.change(screen.getByTestId('clave-retiro'), { target: { value: '2024' } });
+        fireEvent.change(screen.getByTestId('clave-retiro'), { target: { value: '2468' } });
         expect(screen.getByText('Generar guía en Shalom').closest('button')).not.toBeDisabled();
+        expect(screen.getByTestId('clave-ayuda')).toHaveTextContent('Usarás 2468 en esta guía');
+        // Shalom no acepta años del calendario como clave.
+        fireEvent.change(screen.getByTestId('clave-retiro'), { target: { value: '2024' } });
+        expect(screen.getByTestId('clave-ayuda')).toHaveTextContent('no acepta un año como clave');
+        expect(screen.getByText('Generar guía en Shalom').closest('button')).toBeDisabled();
     });
 
     it('manda la clave escrita al generar la guía', async () => {
@@ -160,9 +165,9 @@ describe('Editar Despacho · clave de retiro', () => {
         await abrir();
         await screen.findByTestId('clave-ayuda');
         expect(screen.getByTestId('clave-ayuda')).toHaveTextContent('Clave generada al azar');
-        fireEvent.change(screen.getByTestId('clave-retiro'), { target: { value: '2024' } });
+        fireEvent.change(screen.getByTestId('clave-retiro'), { target: { value: '2468' } });
         fireEvent.click(screen.getByText('Generar guía en Shalom'));
         await screen.findByDisplayValue('96659999');
-        expect(shalomMod.shalomService.crearGuia).toHaveBeenCalledWith(47, expect.objectContaining({ clave: '2024' }));
+        expect(shalomMod.shalomService.crearGuia).toHaveBeenCalledWith(47, expect.objectContaining({ clave: '2468' }));
     });
 });

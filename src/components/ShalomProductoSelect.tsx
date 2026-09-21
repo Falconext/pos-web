@@ -37,7 +37,9 @@ export function ShalomProductoSelect({ value, onChange, destinoId, onTarifa }: {
         let vivo = true;
         if (!destinoId) { setTarifa(null); onTarifa?.(null); return; }
         setCotizando(true);
+        // Un reintento: la primera cotización de una ruta puede fallar por tiempo.
         shalomService.tarifa(destinoId)
+            .catch(() => new Promise(r => setTimeout(r, 1500)).then(() => shalomService.tarifa(destinoId)))
             .then(t => { if (vivo) { setTarifa(t); onTarifa?.(t); } })
             .catch(() => { if (vivo) { setTarifa(null); onTarifa?.(null); } })
             .finally(() => { if (vivo) setCotizando(false); });
