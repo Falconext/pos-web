@@ -109,10 +109,18 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
     const needsReference = (method?: string) => ['TRANSFERENCIA', 'TARJETA'].includes(upper(method));
     // Yape, Plin y Transferencia van a una cuenta bancaria destino (elegible).
     const needsBankAccount = (method?: string) => ['YAPE', 'PLIN', 'TRANSFERENCIA'].includes(upper(method));
+    // Últimos 4 DÍGITOS de la cuenta: con formatos con guiones (BCP "191-1234567-0-29")
+    // `slice(-4)` devolvía "0-29" y así salía impreso en el ticket.
+    const ultimos4 = (numero?: string | null) => String(numero ?? '').replace(/\D/g, '').slice(-4);
+    // Etiqueta que va al ticket ("Cuenta: …"): si el negocio le puso alias a la
+    // cuenta, ese alias basta (ya la identifica y suele incluir al titular); sin
+    // alias, banco + terminación para distinguirla.
     const accountLabel = (id?: number | null) => {
         const cuenta = cuentasActivas.find((item) => item.id === Number(id));
         if (!cuenta) return '';
-        return `${cuenta.alias || cuenta.banco} ${cuenta.numeroCuenta?.slice(-4) || ''}`.trim();
+        if (cuenta.alias?.trim()) return cuenta.alias.trim();
+        const fin = ultimos4(cuenta.numeroCuenta);
+        return `${cuenta.banco || ''}${fin ? ` ····${fin}` : ''}`.trim();
     };
     // Cuenta por defecto según el medio: para Yape/Plin, la cuenta vinculada a
     // ese medio; si no hay, la primera activa.
@@ -161,7 +169,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                         >
                             {cuentasActivas.map((cuenta) => (
                                 <option key={cuenta.id} value={cuenta.id}>
-                                    {(cuenta.alias || cuenta.banco)} ··{cuenta.numeroCuenta?.slice(-4)}
+                                    {(cuenta.alias || cuenta.banco)} ··{ultimos4(cuenta.numeroCuenta)}
                                 </option>
                             ))}
                         </select>
@@ -190,7 +198,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                                             <div className="min-w-0">
                                                 <p className="text-xs font-bold text-gray-800 dark:text-white truncate max-w-[120px]">{cuenta.alias || cuenta.banco}</p>
                                                 <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                                                    ···· {cuenta.numeroCuenta?.slice(-4)}
+                                                    ···· {ultimos4(cuenta.numeroCuenta)}
                                                     {isVinc && <span className="text-fuchsia-500 font-bold">· {upper(line.method) === 'YAPE' ? 'Yape' : upper(line.method) === 'PLIN' ? 'Plin' : ''}</span>}
                                                 </p>
                                             </div>

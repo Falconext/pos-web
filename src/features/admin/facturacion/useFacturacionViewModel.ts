@@ -307,12 +307,25 @@ export const useFacturacionViewModel = () => {
     const [searchTerm, setSearchTerm] = useState<string>("");
 
     // Al agregar un producto al carrito (desde búsqueda, variante, kit o
-    // escáner) se limpia lo escrito en "Buscar productos": el catálogo vuelve a
-    // mostrarse completo y la cajera puede teclear el siguiente producto sin
-    // tener que borrar a mano lo anterior.
+    // escáner), qué pasa con lo escrito en "Buscar productos" lo decide la
+    // empresa (Perfil → Configuración → posMantenerBusqueda):
+    //  - false (default, pedido por Demenver): se limpia; el catálogo vuelve a
+    //    mostrarse completo y la cajera teclea el siguiente sin borrar nada.
+    //  - true (pedido por OWENSOFT): la búsqueda y su lista se quedan para seguir
+    //    agregando varios de la misma búsqueda; el texto queda seleccionado en
+    //    el buscador, así teclear otra cosa lo reemplaza sin borrar.
+    const mantenerBusquedaAlAgregar = Boolean((auth as any)?.empresa?.posMantenerBusqueda);
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
     const addProductsInvoice: IInvoicesState['addProductsInvoice'] = (product: any) => {
         addProductsInvoiceStore(product);
-        setSearchTerm(prev => (prev ? "" : prev));
+        if (!mantenerBusquedaAlAgregar) {
+            setSearchTerm(prev => (prev ? "" : prev));
+            return;
+        }
+        setTimeout(() => {
+            const input = searchInputRef.current;
+            if (input && input.value) { input.focus(); input.select(); }
+        }, 0);
     };
 
     // Fraccionamiento: modo por producto (CAJA = unidadCompra, UNIDAD = unidadVenta)
@@ -1963,11 +1976,29 @@ export const useFacturacionViewModel = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isQuotationRoute, isEditMode, empresaIdObs]);
     const recuerdaObservaciones = !isQuotationRoute && !isEditMode;
+    // Recordar es OPT-IN: antes cualquier observación escrita se autoguardaba y
+    // reaparecía en todas las ventas siguientes ("LICENCIA 1 AÑO" salía en
+    // tickets de otros clientes sin que nadie lo pidiera). Ahora solo se recuerda
+    // si el usuario marca la casilla; arranca marcada cuando la venta se abrió
+    // con un texto ya recordado en este navegador.
+    const [recordarObservaciones, setRecordarObservacionesState] = useState<boolean>(
+        () => Boolean(leerObservacionesRecordadas(empresaIdObs)),
+    );
     const setObservacionesVenta = (texto: string) => {
         setFormValues(prev => ({ ...prev, observaciones: texto }));
-        if (recuerdaObservaciones) guardarObservacionesRecordadas(empresaIdObs, texto);
+        if (recuerdaObservaciones && recordarObservaciones) guardarObservacionesRecordadas(empresaIdObs, texto);
     };
-    const limpiarObservacionesVenta = () => setObservacionesVenta('');
+    const setRecordarObservaciones = (activo: boolean) => {
+        setRecordarObservacionesState(activo);
+        if (!recuerdaObservaciones) return;
+        // Al marcar se guarda lo que hay escrito; al desmarcar deja de proponerse
+        // (el texto actual se queda solo en esta venta).
+        guardarObservacionesRecordadas(empresaIdObs, activo ? String(formValues?.observaciones ?? '') : '');
+    };
+    const limpiarObservacionesVenta = () => {
+        setFormValues(prev => ({ ...prev, observaciones: '' }));
+        if (recuerdaObservaciones) guardarObservacionesRecordadas(empresaIdObs, '');
+    };
 
     const handleSaveQuotationConfig = (config: QuotationConfig) => {
         setIncludeProductImages(config.includeProductImages);
@@ -3073,6 +3104,7 @@ export const useFacturacionViewModel = () => {
         // Barcode scanner
         barcodeInput, setBarcodeInput,
         barcodeLoading, barcodeRef,
+        searchInputRef, mantenerBusquedaAlAgregar,
         handleBarcodeScan,
 
         // Envío nacional
@@ -3116,6 +3148,8 @@ export const useFacturacionViewModel = () => {
         setObservacionesVenta,
         limpiarObservacionesVenta,
         recuerdaObservaciones,
+        recordarObservaciones,
+        setRecordarObservaciones,
         getDocumentInvoice,
         getInvoiceBySerieCorrelative,
 
