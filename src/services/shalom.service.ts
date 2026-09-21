@@ -30,6 +30,18 @@ export interface ShalomInstancia {
     agenciaOrigenNombre?: string | null;
     /** La venta genera la guía sola al cerrarse (opt-in por empresa). */
     autoGuiaActivo?: boolean;
+    /** Claves de retiro propias, separadas por coma ("1010,1011"); vacío = aleatoria. */
+    clavesRetiro?: string;
+}
+
+/** Clave de retiro sugerida para la próxima guía (GET /shalom/clave-retiro). */
+export interface ShalomClaveRetiro {
+    clave: string;
+    origen: 'HOY' | 'CONFIGURADA' | 'ALEATORIA';
+    /** Claves usadas ayer: Shalom las rechaza hoy. */
+    usadasAyer: string[];
+    claveHoy: string | null;
+    configuradas: string[];
 }
 
 export interface ConectarInstanciaPayload {
@@ -40,9 +52,12 @@ export interface ConectarInstanciaPayload {
     agenciaOrigenId?: string;
     agenciaOrigenNombre?: string;
     autoGuiaActivo?: boolean;
+    clavesRetiro?: string;
 }
 
 export interface CrearGuiaPayload {
+    /** Clave de retiro (4 dígitos) escrita por el usuario; si no va, el backend sugiere. */
+    clave?: string;
     origenId?: string;
     origenNombre?: string;
     destinoId?: string;
@@ -70,6 +85,8 @@ export interface ShalomProducto {
 
 export const shalomService = {
     /** Productos de la cuenta Shalom Pro de la empresa (derivados de su historial). */
+    claveRetiro: async (): Promise<ShalomClaveRetiro> =>
+        unwrap(await api.get('/shalom/clave-retiro')),
     productos: async (): Promise<ShalomProducto[]> =>
         unwrap(await api.get('/shalom/productos')) ?? [],
 

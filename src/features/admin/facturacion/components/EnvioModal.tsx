@@ -289,22 +289,24 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                                 {/* Credenciales — solo si se cargan a mano */}
                                 {!autoGuia && (
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Field label="Clave de envío">
+                                    <Field label="Clave de retiro (se la mandas al cliente)">
                                         <input
                                             type="text"
+                                            inputMode="numeric"
+                                            maxLength={4}
                                             value={envioData.claveEnvio}
-                                            onChange={e => set('claveEnvio', e.target.value)}
-                                            placeholder="Clave envío Shalom"
+                                            onChange={e => set('claveEnvio', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                            placeholder="4 dígitos (vacío = la clave del día)"
                                             autoComplete="off"
                                             className={inp}
                                         />
                                     </Field>
-                                    <Field label="Código Shalom">
+                                    <Field label="Código de orden Shalom (rastreo)">
                                         <input
                                             type="text"
                                             value={envioData.claveOrden}
                                             onChange={e => set('claveOrden', e.target.value)}
-                                            placeholder="37N7"
+                                            placeholder="Lo asigna Shalom (ej: 37N7)"
                                             autoComplete="off"
                                             className={inp}
                                         />

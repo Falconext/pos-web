@@ -27,6 +27,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
         securityCode: '',
         agenciaOrigenId: '',
         agenciaOrigenNombre: '',
+        clavesRetiro: '',
     });
 
     const aplicar = useCallback((data: ShalomInstancia) => {
@@ -38,6 +39,8 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
             password: '',
             agenciaOrigenId: data.agenciaOrigenId ?? '',
             agenciaOrigenNombre: data.agenciaOrigenNombre ?? '',
+            // Se guarda "1010,1011"; se muestra con espacio para que se lea como lista.
+            clavesRetiro: String(data.clavesRetiro ?? '').split(',').filter(Boolean).join(', '),
         }));
     }, []);
 
@@ -93,6 +96,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
             () => shalomService.actualizarConfig({
                 agenciaOrigenId: form.agenciaOrigenId,
                 agenciaOrigenNombre: form.agenciaOrigenNombre,
+                clavesRetiro: form.clavesRetiro.trim(),
                 ...(form.securityCode.trim() ? { securityCode: form.securityCode.trim() } : {}),
             }),
             'Configuración de envíos actualizada',
@@ -183,6 +187,19 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                             placeholder="Buscar tu agencia Shalom de origen..."
                         />
                     </div>
+                    <div className="sm:col-span-2">
+                        <label className={lbl}>Claves de retiro para tus envíos (opcional)</label>
+                        <input type="text" inputMode="numeric" autoComplete="off" value={form.clavesRetiro}
+                            onChange={(e) => set('clavesRetiro', e.target.value.replace(/[^\d,\s]/g, ''))}
+                            placeholder="Ej: 1010, 1011"
+                            className={inp} data-testid="claves-retiro" />
+                        <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                            La clave de 4 dígitos que le mandas al cliente para recoger. Shalom no permite repetir la
+                            de ayer, así que si pones dos (o más) el sistema las alterna solo: hoy usa la que no se usó
+                            ayer y todas las guías del día salen con la misma. Si lo dejas vacío, se genera una clave
+                            distinta por envío; y en cada guía puedes escribir otra a mano.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -195,7 +212,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                         <>
                             <button type="button" onClick={guardarConfig} disabled={guardando}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
-                                <Icon icon="solar:diskette-bold" width={18} /> Guardar agencia de origen
+                                <Icon icon="solar:diskette-bold" width={18} /> Guardar agencia y claves
                             </button>
                             <button type="button" onClick={() => ejecutar(shalomService.reconectar, 'Sesión de Shalom Pro renovada')} disabled={guardando}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
