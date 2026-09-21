@@ -8,7 +8,7 @@ interface ModuloSelectorProps {
     selectedSubModulos?: number[];
     onSubModulosChange?: (subModulos: number[]) => void;
     disabled?: boolean;
-    producto?: 'facturacion' | 'hotel' | 'logistica';
+    producto?: 'facturacion' | 'hotel' | 'restaurante' | 'logistica';
 }
 
 const getModuleIcon = (codigo: string): string => {

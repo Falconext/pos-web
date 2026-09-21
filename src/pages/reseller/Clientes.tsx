@@ -96,9 +96,9 @@ export default function ResellerClientes() {
     const { auth } = useAuthStore();
     const { clientes, getClientes, createCliente, updateCliente, deleteDemoCliente, stats, getDashboard, planes, getPlanes, consultarDocumento, getClienteSeries, updateClienteSeries } = useResellerPanelStore();
     const { rubros, ubigeos, getRubros, getUbigeos } = useExtentionsStore();
-    // Solo planes de facturación (excluir hotel)
+    // Solo planes de facturación (excluir hotel y restaurante)
     const planesFacturacion = useMemo(
-        () => planes.filter((p: any) => String(p.producto ?? 'facturacion').toLowerCase() !== 'hotel'),
+        () => planes.filter((p: any) => !['hotel', 'restaurante'].includes(String(p.producto ?? 'facturacion').toLowerCase())),
         [planes]
     );
     const logoFileRef = useRef<HTMLInputElement>(null);

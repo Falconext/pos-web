@@ -209,7 +209,7 @@ interface ListEmpresaDto {
   estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
   tipoEmpresa?: 'FORMAL' | 'INFORMAL' | '';
   brand?: string;
-  producto?: 'facturacion' | 'hotel';
+  producto?: 'facturacion' | 'hotel' | 'restaurante' | 'logistica' | 'full' | 'ventas';
 }
 
 interface EmpresasListResponse {

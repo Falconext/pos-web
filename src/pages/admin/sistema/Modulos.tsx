@@ -29,6 +29,11 @@ const ProductoBadge = ({ producto }: { producto?: string }) =>
             <Icon icon="solar:bed-bold-duotone" width={11} />
             Hotel
         </span>
+    ) : producto === 'restaurante' ? (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+            <Icon icon="solar:chef-hat-bold-duotone" width={11} />
+            Restaurante
+        </span>
     ) : (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
             <Icon icon="solar:bill-list-bold-duotone" width={11} />
@@ -68,6 +73,7 @@ const ModulosPage = () => {
                                 { id: '' as const, label: 'Todos', icon: 'solar:layers-bold-duotone' },
                                 { id: 'facturacion' as const, label: 'Facturación', icon: 'solar:bill-list-bold-duotone' },
                                 { id: 'hotel' as const, label: 'Hotel', icon: 'solar:bed-bold-duotone' },
+                                { id: 'restaurante' as const, label: 'Restaurante', icon: 'solar:chef-hat-bold-duotone' },
                             ]).map((item) => (
                                 <button
                                     key={item.id || 'all'}
@@ -92,12 +98,13 @@ const ModulosPage = () => {
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
                 {[
                     { label: 'Total módulos', value: vm.modulos.length, icon: 'solar:widget-bold-duotone', color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' },
                     { label: 'Activos', value: vm.modulos.filter(m => m.activo).length, icon: 'solar:check-circle-bold-duotone', color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' },
-                    { label: 'Facturación', value: vm.modulos.filter(m => m.producto !== 'hotel').length, icon: 'solar:bill-list-bold-duotone', color: 'text-sky-500 bg-sky-50 dark:bg-sky-900/20' },
+                    { label: 'Facturación', value: vm.modulos.filter(m => m.producto !== 'hotel' && m.producto !== 'restaurante').length, icon: 'solar:bill-list-bold-duotone', color: 'text-sky-500 bg-sky-50 dark:bg-sky-900/20' },
                     { label: 'Hotel', value: vm.modulos.filter(m => m.producto === 'hotel').length, icon: 'solar:bed-bold-duotone', color: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20' },
+                    { label: 'Restaurante', value: vm.modulos.filter(m => m.producto === 'restaurante').length, icon: 'solar:chef-hat-bold-duotone', color: 'text-orange-500 bg-orange-50 dark:bg-orange-900/20' },
                 ].map(stat => (
                     <div key={stat.label} className="bg-white dark:bg-[#111827] rounded-xl border border-gray-100 dark:border-slate-800 px-4 py-3 flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${stat.color}`}>
@@ -327,10 +334,11 @@ const ModulosPage = () => {
                     {!vm.productoScope && (
                         <div className="col-span-2">
                             <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Producto</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 {([
                                     { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                                     { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                                    { id: 'restaurante', label: 'Restaurante', icon: 'solar:chef-hat-bold-duotone', color: '#F97316' },
                                 ] as const).map((product) => {
                                     const selected = (vm.form.producto || 'facturacion') === product.id;
                                     return (

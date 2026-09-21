@@ -78,6 +78,8 @@ const Planes = () => {
             : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Falconext</span>,
         'Producto': p.producto === 'hotel'
             ? <span className="text-amber-700 bg-amber-100 px-2 py-1 rounded text-xs font-semibold">Hotel</span>
+            : p.producto === 'restaurante'
+            ? <span className="text-orange-700 bg-orange-100 px-2 py-1 rounded text-xs font-semibold">Restaurante</span>
             : p.producto === 'logistica'
                 ? <span className="text-indigo-700 bg-indigo-100 px-2 py-1 rounded text-xs font-semibold">Logística</span>
                 : <span className="text-sky-700 bg-sky-100 px-2 py-1 rounded text-xs font-semibold">Facturación</span>,
@@ -129,6 +131,7 @@ const Planes = () => {
                                 { id: '', label: 'Todos' },
                                 { id: 'facturacion', label: 'Facturación' },
                                 { id: 'hotel', label: 'Hotel' },
+                                { id: 'restaurante', label: 'Restaurante' },
                                 { id: 'logistica', label: 'Logística' },
                             ] as const).map((item) => (
                                 <button
@@ -166,6 +169,7 @@ const Planes = () => {
                                         {([
                                             { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                                             { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                                            { id: 'restaurante', label: 'Restaurante', icon: 'solar:chef-hat-bold-duotone', color: '#F97316' },
                                             { id: 'logistica', label: 'Logística', icon: 'solar:routing-2-bold-duotone', color: '#6366F1' },
                                         ] as const).map((product) => {
                                             const selected = (vm.form.producto || 'facturacion') === product.id;
@@ -358,7 +362,7 @@ const Planes = () => {
                         <p className="text-sm text-purple-700 dark:text-purple-400">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
                     </div>
                     <ModuloSelector
-                        producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel' | 'logistica'}
+                        producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel' | 'restaurante' | 'logistica'}
                         selectedModulos={vm.form.moduloIds || []}
                         onModulosChange={(modulos) => vm.setForm(prev => ({ ...prev, moduloIds: modulos }))}
                         selectedSubModulos={vm.form.subModuloIds || []}

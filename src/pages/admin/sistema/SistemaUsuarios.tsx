@@ -8,7 +8,7 @@ import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 
 type SistemaNegocio = 'FALCONEXT' | 'KREZKA' | '';
-type SistemaProducto = 'FACTURACION' | 'HOTEL' | '';
+type SistemaProducto = 'FACTURACION' | 'HOTEL' | 'RESTAURANTE' | '';
 
 interface SistemaUser {
   id: number;
@@ -228,6 +228,14 @@ export default function SistemaUsuarios() {
         </span>
       );
     }
+    if (sp === 'RESTAURANTE') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/50">
+          <Icon icon="solar:chef-hat-bold" width={11} />
+          Restaurante
+        </span>
+      );
+    }
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800/50">
         <Icon icon="solar:bill-list-bold" width={11} />
@@ -259,14 +267,17 @@ export default function SistemaUsuarios() {
   };
 
   const SistemaProductoBtn = ({ value, label, icon, desc, activeColor }: {
-    value: SistemaProducto; label: string; icon: string; desc: string; activeColor: 'sky' | 'amber';
+    value: SistemaProducto; label: string; icon: string; desc: string; activeColor: 'sky' | 'amber' | 'orange';
   }) => {
     const active = form.sistemaProducto === value;
-    const colorActive = activeColor === 'sky'
-      ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20'
-      : 'border-amber-500 bg-amber-50 dark:bg-amber-900/20';
-    const iconColor = active ? (activeColor === 'sky' ? 'text-sky-600' : 'text-amber-600') : 'text-gray-400';
-    const textColor = active ? (activeColor === 'sky' ? 'text-sky-700 dark:text-sky-300' : 'text-amber-700 dark:text-amber-300') : 'text-gray-500 dark:text-gray-400';
+    const palette = {
+      sky: { border: 'border-sky-500 bg-sky-50 dark:bg-sky-900/20', icon: 'text-sky-600', text: 'text-sky-700 dark:text-sky-300' },
+      amber: { border: 'border-amber-500 bg-amber-50 dark:bg-amber-900/20', icon: 'text-amber-600', text: 'text-amber-700 dark:text-amber-300' },
+      orange: { border: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20', icon: 'text-orange-600', text: 'text-orange-700 dark:text-orange-300' },
+    }[activeColor];
+    const colorActive = palette.border;
+    const iconColor = active ? palette.icon : 'text-gray-400';
+    const textColor = active ? palette.text : 'text-gray-500 dark:text-gray-400';
     return (
       <button
         type="button"
@@ -451,13 +462,14 @@ export default function SistemaUsuarios() {
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sistema de producto</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <SistemaProductoBtn value="" label="Todos" icon="solar:layers-bold-duotone" desc="Todos los productos" activeColor="sky" />
                     <SistemaProductoBtn value="FACTURACION" label="Facturación" icon="solar:bill-list-bold-duotone" desc="Solo facturación" activeColor="sky" />
                     <SistemaProductoBtn value="HOTEL" label="Hotel" icon="solar:bed-bold-duotone" desc="Solo hotel" activeColor="amber" />
+                    <SistemaProductoBtn value="RESTAURANTE" label="Restaurante" icon="solar:chef-hat-bold-duotone" desc="Solo restaurante" activeColor="orange" />
                   </div>
                   <p className="text-[11px] text-gray-400">
-                    {form.sistemaProducto === '' ? 'Sin asignar → ve todos los productos' : `Solo verá el producto ${form.sistemaProducto === 'HOTEL' ? 'Hotel' : 'Facturación'}`}
+                    {form.sistemaProducto === '' ? 'Sin asignar → ve todos los productos' : `Solo verá el producto ${form.sistemaProducto === 'HOTEL' ? 'Hotel' : form.sistemaProducto === 'RESTAURANTE' ? 'Restaurante' : 'Facturación'}`}
                   </p>
                 </div>
               </div>

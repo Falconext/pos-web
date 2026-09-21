@@ -11,8 +11,8 @@ export const useModulosViewModel = () => {
     const { modulos, loading, getAllModulos, createModulo, updateModulo, deleteModulo, createSubModulo, updateSubModulo, deleteSubModulo } = useModulosStore();
     const { alert } = useAlertStore();
     const { auth } = useAuthStore();
-    const productoScope = (String(auth?.sistemaProducto || '').toLowerCase() === 'hotel' ? 'hotel' : String(auth?.sistemaProducto || '').toLowerCase() === 'facturacion' ? 'facturacion' : '') as '' | 'facturacion' | 'hotel';
-    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel'>(productoScope);
+    const productoScope = ((): '' | 'facturacion' | 'hotel' | 'restaurante' => { const p = String(auth?.sistemaProducto || '').toLowerCase(); return p === 'hotel' || p === 'restaurante' || p === 'facturacion' ? p : ''; })();
+    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel' | 'restaurante'>(productoScope);
 
     // Estado módulo
     const [isModalOpen, setIsModalOpen] = useState(false);

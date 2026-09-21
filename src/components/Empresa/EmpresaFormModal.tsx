@@ -50,7 +50,7 @@ interface CreateFormData {
   usaDemo: boolean;
   usaCodigoBarrasManual?: boolean;
   brand?: string;
-  producto?: 'facturacion' | 'hotel' | 'logistica' | 'full' | 'ventas';
+  producto?: 'facturacion' | 'hotel' | 'restaurante' | 'logistica' | 'full' | 'ventas';
   productoContratado?: 'SOLO_VENTAS' | 'TODO_EN_UNO' | 'AMBOS';
   usuario: {
     nombre: string;
@@ -101,7 +101,7 @@ interface EditFormData {
   contrato?: boolean;
   bienvenidaRedes?: boolean;
   brand?: string;
-  producto?: 'facturacion' | 'hotel' | 'logistica' | 'full' | 'ventas';
+  producto?: 'facturacion' | 'hotel' | 'restaurante' | 'logistica' | 'full' | 'ventas';
   usuario?: {
     nombre?: string;
     email?: string;
@@ -268,7 +268,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
       setCreateData({
         ...initialCreate,
         brand: hasNegocioScope ? (String(auth?.sistemaNegocio || '').toLowerCase() || initialCreate.brand) : initialCreate.brand,
-        producto: hasProductoScope ? ((() => { const p = String(auth?.sistemaProducto || '').toLowerCase(); return p === 'hotel' || p === 'logistica' ? p : 'facturacion'; })()) : initialCreate.producto,
+        producto: hasProductoScope ? ((() => { const p = String(auth?.sistemaProducto || '').toLowerCase(); return p === 'hotel' || p === 'restaurante' || p === 'logistica' ? p : 'facturacion'; })()) : initialCreate.producto,
       });
       setLogoPreview('');
       setSeriesConfig(crearSeriesIniciales());
@@ -701,6 +701,7 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
                               { id: 'facturacion', label: 'Facturación', icon: 'solar:bill-list-bold-duotone', color: '#0EA5E9' },
                               { id: 'full', label: 'Facturación + Ventas', icon: 'solar:magic-stick-3-bold-duotone', color: '#7C3AED' },
                               { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
+                              { id: 'restaurante', label: 'Restaurante', icon: 'solar:chef-hat-bold-duotone', color: '#F97316' },
                               { id: 'logistica', label: 'Logística', icon: 'solar:routing-2-bold-duotone', color: '#6366F1' },
                               { id: 'ventas', label: 'Ventas (IA)', icon: 'solar:chat-round-dots-bold-duotone', color: '#10B981' },
                             ] as const).map((p) => {
