@@ -329,9 +329,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const nombreOk = String(envioData.nombreDestinatario ?? '').trim().length >= 3;
     const celularOk = /^9\d{8}$/.test(String(envioData.celularDest ?? '').replace(/\D/g, ''));
     const faltanDestinatario: string[] = [
-        ...(!dniOk ? ['el DNI del destinatario (bloque "Destinatario")'] : []),
+        ...(!dniOk ? ['el DNI del destinatario (paso 1)'] : []),
         ...(!nombreOk ? ['el nombre del destinatario'] : []),
-        ...(!celularOk ? ['un celular de 9 dígitos (campo "Celular destinatario")'] : []),
+        ...(!celularOk ? ['un celular de 9 dígitos (paso 1)'] : []),
     ];
     const clienteSinDni = !!clienteFicha && !/^\d{8}$/.test(clienteFicha.nroDoc);
 
@@ -562,104 +562,144 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         <span>Esta venta ya está pagada: no queda saldo por cobrar, así que COD no aporta nada. Elige <b>Shalom PRO</b>.</span>
                                     </p>
                                 )}
-                                {/* Credenciales */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Field label="Clave de retiro (se la mandas al cliente)">
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            maxLength={4}
-                                            value={envioData.claveEnvio}
-                                            onChange={e => set('claveEnvio', e.target.value.replace(/\D/g, '').slice(0, 4))}
-                                            placeholder="4 dígitos"
-                                            autoComplete="off"
-                                            className={`${inp} ${claveEsDeAyer || !claveFormatoOk ? 'border-amber-400 focus:border-amber-500' : ''}`}
-                                            data-testid="clave-retiro"
-                                        />
-                                    </Field>
-                                    <Field label="Código de orden Shalom (rastreo)">
-                                        <input
-                                            type="text"
-                                            value={envioData.claveOrden}
-                                            onChange={e => set('claveOrden', e.target.value)}
-                                            placeholder="Lo asigna Shalom al crear la guía"
-                                            autoComplete="off"
-                                            readOnly={Boolean(envioData.nroOrden)}
-                                            className={`${inp} ${envioData.nroOrden ? 'bg-slate-50 text-slate-500 dark:bg-slate-900/60' : ''}`}
-                                        />
-                                    </Field>
-                                </div>
-                                {claveInfo && !envioData.nroOrden && (
-                                    <p className="-mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400" data-testid="clave-ayuda">
-                                        {claveEsDeAyer
-                                            ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave {claveEscrita} fue la de ayer: Shalom no permite repetirla hoy.{claveAlternativa ? ` Usa ${claveAlternativa}.` : ''}</span>
-                                            : !claveFormatoOk
-                                                ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave debe tener 4 dígitos.</span>
-                                                : claveEsAnio
-                                                    ? <span className="font-semibold text-amber-700 dark:text-amber-400">Shalom no acepta un año como clave ({claveEscrita}). Usa otra combinación de 4 dígitos.</span>
-                                                    : claveManual
-                                                        ? <>Usarás <b>{claveEscrita}</b> en esta guía (las siguientes proponen la clave más usada del día).</>
-                                                : claveInfo.origen === 'HOY'
-                                                    ? <>Es la clave que ya usaste hoy: todas las guías del día salen con la misma.</>
-                                                    : claveInfo.origen === 'CONFIGURADA'
-                                                        ? <>Clave de hoy según tu configuración ({claveInfo.configuradas.join(' / ')}); mañana se alterna sola.</>
-                                                        : <>Clave generada al azar. Puedes escribir la tuya; en Perfil → Shalom Pro puedes fijar tus claves para no volver a pensar en esto.</>}
-                                    </p>
-                                )}
-                                {/* N° Orden + Tipo paquetería */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Field label="N° de orden Shalom (rastreo)">
-                                        <input type="text" value={envioData.nroOrden}
-                                            onChange={e => set('nroOrden', e.target.value)}
-                                            placeholder="Ej: 78560415" className={inp} />
-                                    </Field>
-                                    <Field label="Tipo de paquetería">
-                                        <input type="text" value={envioData.tipoMercaderia}
-                                            onChange={e => set('tipoMercaderia', e.target.value)}
-                                            placeholder="Ej: Caja, Sobre, Frágil..." className={inp} />
-                                    </Field>
-                                </div>
-                                {/* Producto de Shalom: el catálogo es POR CUENTA, se lee del propio Shalom. */}
-                                <div className="grid grid-cols-1 gap-3">
-                                    <Field label="Tamaño del paquete (define el flete)">
-                                        <ShalomProductoSelect
-                                            value={envioData.shalomTipoProducto}
-                                            onChange={v => set('shalomTipoProducto', v)}
-                                            destinoId={envioData.shalomAgenciaDestinoId || null}
-                                            onTarifa={setTarifaShalom}
-                                        />
-                                    </Field>
-                                </div>
-                                {/* Fecha + monto COD */}
-                                <div className={`grid gap-3 ${envioData.transportista === 'SHALOM_COD' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                                    <Calendar
-                                        text="Fecha estimada de despacho"
-                                        name="fechaEstimada"
-                                        value={envioData.fechaEstimada ? moment(envioData.fechaEstimada).format('DD/MM/YYYY') : ''}
-                                        onChange={(date) => {
-                                            if (!date) { set('fechaEstimada', ''); return; }
-                                            const parsed = moment(date, 'DD/MM/YYYY');
-                                            set('fechaEstimada', parsed.isValid() ? parsed.format('YYYY-MM-DD') : '');
-                                        }}
-                                    />
-                                    {envioData.transportista === 'SHALOM_COD' && (
-                                        <Field label={ventaPagada ? 'Saldo por cobrar S/ (no hay)' : `Saldo por cobrar al cliente S/ (saldo ${fmt(ventaInfo?.saldo ?? 0)})`}>
+                                {/* Orden de Shalom Pro: destinatario → agencia → tamaño → clave → generar; abajo lo que devuelve Shalom y lo opcional. */}
+                                <div className={`rounded-2xl border p-4 space-y-3 ${clienteSinDni && !dniOk ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20' : 'border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30'}`}>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">1 · Destinatario (DNI, nombre y celular)</p>
+                                        {clienteFicha && (
+                                            <span className="text-[11px] text-slate-400 truncate">Cliente: {clienteFicha.nombre || '—'}{clienteFicha.nroDoc ? ` · ${clienteFicha.nroDoc}` : ''}</span>
+                                        )}
+                                    </div>
+                                    {clienteSinDni && !dniOk && (
+                                        <p className="flex items-start gap-1.5 text-xs leading-5 text-amber-700 dark:text-amber-400">
+                                            <Icon icon="solar:info-circle-bold" className="mt-0.5 shrink-0" />
+                                            Este cliente se registró solo con WhatsApp. Ingresa su DNI para poder generar la guía; el nombre se completa desde RENIEC.
+                                        </p>
+                                    )}
+                                    <div className="grid grid-cols-1 sm:grid-cols-[150px_1fr_150px] gap-3">
+                                        <Field label="DNI">
                                             <div className="relative">
-                                                <span className="absolute inset-y-0 left-3 flex items-center text-xs font-bold text-slate-400 pointer-events-none">S/</span>
-                                                <input
-                                                    type="number"
-                                                    min={0}
-                                                    step={0.01}
-                                                    value={envioData.montoCOD || ''}
-                                                    onChange={e => set('montoCOD', Number(e.target.value) || 0)}
-                                                    placeholder="0.00"
-                                                    className={`${inp} pl-9`}
-                                                />
+                                                <input type="text" inputMode="numeric" maxLength={8} value={envioData.dniDestinatario}
+                                                    onChange={e => {
+                                                        const v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                                        set('dniDestinatario', v);
+                                                        if (v.length === 8) void buscarDni(v);
+                                                    }}
+                                                    placeholder="8 dígitos" className={inp} />
+                                                {buscandoDni && <Icon icon="eos-icons:loading" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />}
                                             </div>
                                         </Field>
+                                        <Field label="Nombres y apellidos">
+                                            <input type="text" value={envioData.nombreDestinatario}
+                                                onChange={e => set('nombreDestinatario', e.target.value)}
+                                                placeholder="APELLIDOS, NOMBRES (se llena con RENIEC)" className={inp} />
+                                        </Field>
+                                        <Field label="Celular">
+                                            <input type="text" value={envioData.celularDest}
+                                                onChange={e => set('celularDest', e.target.value)}
+                                                placeholder="9XXXXXXXX" className={inp} />
+                                        </Field>
+                                    </div>
+                                    {clienteSinDni && (
+                                        <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                                            <input type="checkbox" className="mt-0.5" checked={!!envioData.actualizarFichaCliente}
+                                                onChange={e => set('actualizarFichaCliente', e.target.checked)} />
+                                            <span>Actualizar también la ficha del cliente con este DNI y nombre (deja de ser "{clienteFicha?.nombre || 'WSP'}" para la próxima venta y sus comprobantes).</span>
+                                        </label>
                                     )}
                                 </div>
-
+                                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/30">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">2 · Agencia de destino</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-3">
+                                        <Field label="Agencia de destino / Dirección">
+                                             {esShalom && envioData.tipoEnvio === 'AGENCIA' ? (
+                                                 <ShalomAgenciaSelect
+                                                     value={envioData.agenciaDestino}
+                                                     onChange={v => setEnvioData((prev: any) => ({ ...prev, agenciaDestino: v, shalomAgenciaDestinoId: '' }))}
+                                                     onSelectAgencia={a => setEnvioData((prev: any) => ({ ...prev, shalomAgenciaDestinoId: a.terId }))}
+                                                     placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
+                                                 />
+                                             ) : esOlva && envioData.tipoEnvio === 'AGENCIA' ? (
+                                                 <OlvaAgenciaSelect
+                                                     value={envioData.agenciaDestino}
+                                                     onChange={v => setEnvioData((prev: any) => ({ ...prev, agenciaDestino: v, olvaAgenciaDestinoCodigo: '' }))}
+                                                     onSelectAgencia={a => setEnvioData((prev: any) => ({ ...prev, olvaAgenciaDestinoCodigo: a.codigo }))}
+                                                     placeholder="Buscar agencia Olva por nombre, distrito o departamento..."
+                                                 />
+                                             ) : (
+                                                 <input type="text" value={envioData.agenciaDestino}
+                                                     onChange={e => set('agenciaDestino', e.target.value)}
+                                                     placeholder={envioData.tipoEnvio === 'AGENCIA' ? 'Ej: Olva Cusco Centro' : 'Dirección de entrega'}
+                                                     className={inp} />
+                                             )}
+                                         </Field>
+                                        <Field label="Tipo de envío">
+                                            <div className="flex gap-2 w-full">
+                                                {[
+                                                    { value: 'AGENCIA', label: 'Para agencia', icon: 'solar:buildings-2-bold-duotone' },
+                                                    { value: 'DOMICILIO', label: 'A domicilio', icon: 'solar:home-2-bold-duotone' },
+                                                ].map(t => (
+                                                    <button key={t.value} type="button" onClick={() => set('tipoEnvio', t.value)}
+                                                        className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border-2 text-xs font-bold transition-all ${envioData.tipoEnvio === t.value
+                                                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                                                                : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+                                                            }`}>
+                                                        <Icon icon={t.icon} className="text-lg" />
+                                                        {t.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </Field>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/30">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">3 · Tamaño del paquete</p>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <Field label="Tamaño del paquete (define el flete)">
+                                            <ShalomProductoSelect
+                                                value={envioData.shalomTipoProducto}
+                                                onChange={v => set('shalomTipoProducto', v)}
+                                                destinoId={envioData.shalomAgenciaDestinoId || null}
+                                                onTarifa={setTarifaShalom}
+                                            />
+                                        </Field>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/30">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">4 · Clave de retiro</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <Field label="Clave de retiro (se la mandas al cliente)">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                maxLength={4}
+                                                value={envioData.claveEnvio}
+                                                onChange={e => set('claveEnvio', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                                placeholder="4 dígitos"
+                                                autoComplete="off"
+                                                className={`${inp} ${claveEsDeAyer || !claveFormatoOk ? 'border-amber-400 focus:border-amber-500' : ''}`}
+                                                data-testid="clave-retiro"
+                                            />
+                                        </Field>
+                                    </div>
+                                    {claveInfo && !envioData.nroOrden && (
+                                        <p className="-mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400" data-testid="clave-ayuda">
+                                            {claveEsDeAyer
+                                                ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave {claveEscrita} fue la de ayer: Shalom no permite repetirla hoy.{claveAlternativa ? ` Usa ${claveAlternativa}.` : ''}</span>
+                                                : !claveFormatoOk
+                                                    ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave debe tener 4 dígitos.</span>
+                                                    : claveEsAnio
+                                                        ? <span className="font-semibold text-amber-700 dark:text-amber-400">Shalom no acepta un año como clave ({claveEscrita}). Usa otra combinación de 4 dígitos.</span>
+                                                        : claveManual
+                                                            ? <>Usarás <b>{claveEscrita}</b> en esta guía (las siguientes proponen la clave más usada del día).</>
+                                                    : claveInfo.origen === 'HOY'
+                                                        ? <>Es la clave que ya usaste hoy: todas las guías del día salen con la misma.</>
+                                                        : claveInfo.origen === 'CONFIGURADA'
+                                                            ? <>Clave de hoy según tu configuración ({claveInfo.configuradas.join(' / ')}); mañana se alterna sola.</>
+                                                            : <>Clave generada al azar. Puedes escribir la tuya; en Perfil → Shalom Pro puedes fijar tus claves para no volver a pensar en esto.</>}
+                                        </p>
+                                    )}
+                                </div>
                                 {/* Generar la guía en Shalom Pro (plan Corporativo con cuenta conectada) */}
                                 {shalomPro?.habilitadoPorPlan && (
                                     shalomPro.conectada ? (
@@ -674,8 +714,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                                 {envioData.nroOrden ? 'Regenerar guía en Shalom' : 'Generar guía en Shalom'}
                                             </button>
                                             <p className="text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-                                                Registra el envío en tu cuenta Shalom Pro y completa solo el N° de orden y la clave.
-                                                {!envioData.agenciaDestino && ' Elige primero la agencia de destino.'}
+                                                Registra el envío en tu cuenta Shalom Pro; el N° de orden y el código los devuelve Shalom y quedan abajo.
+                                                {!envioData.agenciaDestino && ' Elige primero la agencia de destino (paso 2).'}
                                             </p>
                                             {faltanDestinatario.length > 0 && (
                                                 <p className="flex items-start gap-1.5 text-[11px] leading-4 font-semibold text-amber-700 dark:text-amber-400">
@@ -691,6 +731,77 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         </p>
                                     )
                                 )}
+                                {/* Lo que devuelve Shalom + datos opcionales */}
+                                <div className="space-y-3 rounded-2xl border border-dashed border-slate-200 p-4 dark:border-slate-700">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Lo asigna Shalom al generar la guía · opcional</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Field label="N° de orden Shalom (rastreo)">
+                                            <input type="text" value={envioData.nroOrden}
+                                                onChange={e => set('nroOrden', e.target.value)}
+                                                placeholder="Ej: 78560415" className={inp} />
+                                        </Field>
+                                        <Field label="Código de orden Shalom (rastreo)">
+                                            <input
+                                                type="text"
+                                                value={envioData.claveOrden}
+                                                onChange={e => set('claveOrden', e.target.value)}
+                                                placeholder="Lo asigna Shalom al crear la guía"
+                                                autoComplete="off"
+                                                readOnly={Boolean(envioData.nroOrden)}
+                                                className={`${inp} ${envioData.nroOrden ? 'bg-slate-50 text-slate-500 dark:bg-slate-900/60' : ''}`}
+                                            />
+                                        </Field>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <Field label="N° Paquetes">
+                                            <input type="number" min={1} value={envioData.nroPaquetes}
+                                                onChange={e => set('nroPaquetes', Number(e.target.value))} className={inp} />
+                                        </Field>
+                                        <Field label="Turno">
+                                            <Select
+                                                label=""
+                                                name="turnoEnvio"
+                                                error=""
+                                                value={TURNOS.find(t => t.value === envioData.turnoEnvio)?.label ?? ''}
+                                                options={TURNOS.map(t => ({ id: t.value, value: t.label }))}
+                                                onChange={(id) => set('turnoEnvio', String(id))}
+                                            />
+                                        </Field>
+                                        <Field label="Tipo de paquetería">
+                                            <input type="text" value={envioData.tipoMercaderia}
+                                                onChange={e => set('tipoMercaderia', e.target.value)}
+                                                placeholder="Ej: Caja, Sobre, Frágil..." className={inp} />
+                                        </Field>
+                                    </div>
+                                    <div className={`grid gap-3 ${envioData.transportista === 'SHALOM_COD' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                        <Calendar
+                                            text="Fecha estimada de despacho"
+                                            name="fechaEstimada"
+                                            value={envioData.fechaEstimada ? moment(envioData.fechaEstimada).format('DD/MM/YYYY') : ''}
+                                            onChange={(date) => {
+                                                if (!date) { set('fechaEstimada', ''); return; }
+                                                const parsed = moment(date, 'DD/MM/YYYY');
+                                                set('fechaEstimada', parsed.isValid() ? parsed.format('YYYY-MM-DD') : '');
+                                            }}
+                                        />
+                                        {envioData.transportista === 'SHALOM_COD' && (
+                                            <Field label={ventaPagada ? 'Saldo por cobrar S/ (no hay)' : `Saldo por cobrar al cliente S/ (saldo ${fmt(ventaInfo?.saldo ?? 0)})`}>
+                                                <div className="relative">
+                                                    <span className="absolute inset-y-0 left-3 flex items-center text-xs font-bold text-slate-400 pointer-events-none">S/</span>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        step={0.01}
+                                                        value={envioData.montoCOD || ''}
+                                                        onChange={e => set('montoCOD', Number(e.target.value) || 0)}
+                                                        placeholder="0.00"
+                                                        className={`${inp} pl-9`}
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -768,8 +879,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </div>
                     )}
 
-                    {/* SECCIÓN 2: Tipo envío + Agencia destino (Shalom/Olva/otros; el reparto propio la lleva en su propia sección) */}
-                    {!esPropio && (
+                    {/* SECCIÓN 2: Tipo envío + Agencia destino (Olva/otros; Shalom la lleva dentro de su tarjeta y el reparto propio en la suya) */}
+                    {!esPropio && !esShalom && (
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                             <Icon icon="solar:map-point-bold-duotone" className="text-indigo-400" />
@@ -823,8 +934,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                     </div>
                     )}
 
-                    {/* DESTINATARIO: Shalom/Olva exigen DNI + nombre; los clientes "WSP 9…" no lo tienen */}
-                    {(esShalom || esOlva) && (
+                    {/* DESTINATARIO (Olva): exige DNI + nombre; con Shalom va dentro de su tarjeta */}
+                    {esOlva && (
                         <div className={`rounded-2xl border p-4 space-y-3 ${clienteSinDni && !dniOk ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20' : 'border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/30'}`}>
                             <div className="flex items-center justify-between gap-2">
                                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Destinatario (para la guía)</p>
@@ -987,7 +1098,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </div>
                     )}
 
-                    {/* SECCIÓN 3: Celular + Paquetes + Turno (+ Fecha y N° Orden para no-Shalom) */}
+                    {/* SECCIÓN 3: Celular + Paquetes + Turno (+ Fecha y N° Orden para no-Shalom; con Shalom van dentro de su tarjeta) */}
+                    {!esShalom && (
                     <div className="grid grid-cols-3 gap-3">
                         <Field label="Celular destinatario">
                             <input type="text" value={envioData.celularDest}
@@ -1028,6 +1140,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             </Field>
                         </>)}
                     </div>
+                    )}
 
                     {/* SECCIÓN 4: Personal */}
                     <div>
