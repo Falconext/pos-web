@@ -598,7 +598,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                                 : claveEsAnio
                                                     ? <span className="font-semibold text-amber-700 dark:text-amber-400">Shalom no acepta un año como clave ({claveEscrita}). Usa otra combinación de 4 dígitos.</span>
                                                     : claveManual
-                                                        ? <>Usarás <b>{claveEscrita}</b> en esta guía; desde ahora será la clave del día para las siguientes.</>
+                                                        ? <>Usarás <b>{claveEscrita}</b> en esta guía (las siguientes proponen la clave más usada del día).</>
                                                 : claveInfo.origen === 'HOY'
                                                     ? <>Es la clave que ya usaste hoy: todas las guías del día salen con la misma.</>
                                                     : claveInfo.origen === 'CONFIGURADA'
