@@ -699,6 +699,39 @@ export default function PerfilIndex() {
                                     </div>
                                 </div>
 
+                                {/* Búsqueda del POS al agregar: limpiar (Demenver) o mantener (OWENSOFT). Por empresa. */}
+                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-busqueda-config">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Al agregar un producto desde la búsqueda</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                                        Qué hace el buscador del punto de venta cuando la cajera agrega un producto al carrito. Aplica a todas tus cajas y sedes.
+                                    </p>
+                                    <div className="space-y-2">
+                                        {[
+                                            { value: false, titulo: 'Limpiar la búsqueda y mostrar todo el catálogo', detalle: 'Ideal si se teclea un producto por vez: el siguiente se escribe sin borrar el anterior.' },
+                                            { value: true, titulo: 'Mantener la búsqueda para seguir agregando de la misma lista', detalle: 'Ideal si de una búsqueda (ej. "EPSON 544") se agregan varios productos; el texto queda seleccionado y teclear otra cosa lo reemplaza.' },
+                                        ].map((opt) => {
+                                            const activo = Boolean((perfil.empresa as any).posMantenerBusqueda) === opt.value;
+                                            return (
+                                                <label key={String(opt.value)} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="posMantenerBusqueda"
+                                                        className="mt-0.5 accent-violet-600"
+                                                        checked={activo}
+                                                        disabled={vm.savingControlFlag === 'posMantenerBusqueda'}
+                                                        onChange={() => vm.handleControlFlagToggle('posMantenerBusqueda', opt.value)}
+                                                    />
+                                                    <span>
+                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
+                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    {vm.savingControlFlag === 'posMantenerBusqueda' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                </div>
+
                                 {/* ── Sedes y catálogo ── */}
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                     <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">

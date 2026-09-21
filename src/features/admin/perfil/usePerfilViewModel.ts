@@ -214,7 +214,7 @@ export const usePerfilViewModel = () => {
     const [savingControlFlag, setSavingControlFlag] = useState<string | null>(null);
     const controlFlagInFlight = useRef(false);
     const handleControlFlagToggle = async (
-        flag: 'requiereAprobacionGastos' | 'requiereAprobacionCompras' | 'requiereCajaParaEmitir' | 'catalogoPorSede' | 'kitsComoUnaLinea' | 'paquetesComoUnaLinea',
+        flag: 'requiereAprobacionGastos' | 'requiereAprobacionCompras' | 'requiereCajaParaEmitir' | 'catalogoPorSede' | 'kitsComoUnaLinea' | 'paquetesComoUnaLinea' | 'posMantenerBusqueda',
         enabled: boolean,
     ) => {
         if (savingControlFlag || controlFlagInFlight.current) return;
