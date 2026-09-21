@@ -10,7 +10,7 @@ import { TIPOS_VENTA_REPARTO, FORMAS_PAGO_COBRO, filtrarDistritos, cobraEnDestin
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
 import { ShalomProductoSelect } from "@/components/ShalomProductoSelect";
-import { mensajeErrorShalom, shalomService, type ShalomInstancia } from "@/services/shalom.service";
+import { mensajeErrorShalom, shalomService, type ShalomClaveRetiro, type ShalomInstancia } from "@/services/shalom.service";
 import { OlvaAgenciaSelect } from "@/components/OlvaAgenciaSelect";
 import { mensajeErrorOlva, olvaService, type OlvaConfig } from "@/services/olva.service";
 import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
@@ -72,8 +72,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
  */
 function construirPayloadDespacho(envioData: any) {
     const opcional = (v: any) => (v === '' || v === null ? undefined : v);
+    // Con Shalom/Olva el rastreo es el N° de orden del courier: se copia al código
+    // de guía genérico para que WhatsApp al cliente, trazabilidad y Excel lo muestren.
+    const esCourierConOrden = SHALOM_COURIERS.has(envioData.transportista) || envioData.transportista === OLVA_COURIER;
+    const codigoGuia = String(envioData.codigoGuia ?? '').trim() || (esCourierConOrden ? String(envioData.nroOrden ?? '').trim() : '');
     return {
         ...envioData,
+        codigoGuia,
         pagarFlete: envioData.aplicacionMontoCliente === 'NEGOCIO' ? 'NEGOCIO' : 'CLIENTE',
         repartidorId: envioData.repartidorId ? Number(envioData.repartidorId) : undefined,
         repartidor: envioData.repartidorId ? undefined : envioData.repartidor,
@@ -141,12 +146,19 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     // Config Olva de la empresa: `habilitadoPorPlan` habilita generar la guía.
     const [olva, setOlva] = useState<OlvaConfig | null>(null);
     const [generandoGuia, setGenerandoGuia] = useState(false);
+    // Clave de retiro sugerida (la del día / configurada / aleatoria) y las que
+    // Shalom rechaza hoy por ser de ayer. Se precarga cuando el despacho aún no
+    // tiene guía y el usuario no escribió ninguna.
+    const [claveInfo, setClaveInfo] = useState<ShalomClaveRetiro | null>(null);
     // Ficha del cliente del comprobante, para saber si ya tiene DNI o es "WSP 9…".
     const [clienteFicha, setClienteFicha] = useState<{ id: number | null; nombre: string; nroDoc: string; telefono: string } | null>(null);
     const [buscandoDni, setBuscandoDni] = useState(false);
     const [esNV, setEsNV] = useState(false);
     // Saldo pendiente de la venta: decide el tipo de venta por defecto del reparto propio.
     const [saldoVenta, setSaldoVenta] = useState(0);
+    // Resumen de cobro de la venta: se muestra arriba para que quede claro si ya
+    // está pagada (y entonces no hay monto que registrar) o cuánto falta.
+    const [ventaInfo, setVentaInfo] = useState<{ referencia: string; total: number; pagado: number; saldo: number; estadoPago: string; simbolo: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { alert } = useAlertStore();
@@ -172,6 +184,18 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const FORMALES = ['01', '03', '07', '08'];
                 setEsNV(!FORMALES.includes(tipoComp) || tipoComp === '');
                 setSaldoVenta(Number(comprobantePayload?.saldo ?? 0));
+                if (comprobantePayload) {
+                    const totalVenta = Number(comprobantePayload.mtoImpVenta ?? 0);
+                    const saldo = Math.max(Number(comprobantePayload.saldo ?? 0), 0);
+                    setVentaInfo({
+                        referencia: [comprobantePayload.serie, comprobantePayload.correlativo].filter(Boolean).join('-'),
+                        total: totalVenta,
+                        pagado: Math.max(totalVenta - saldo, 0),
+                        saldo,
+                        estadoPago: String(comprobantePayload.estadoPago ?? ''),
+                        simbolo: String(comprobantePayload.tipoMoneda ?? '').toUpperCase() === 'USD' ? 'US$' : 'S/',
+                    });
+                }
                 const adelantoComprobante = Number(comprobantePayload?.adelanto ?? 0);
                 const cli = comprobantePayload?.cliente ?? null;
                 const cliNroDoc = String(cli?.nroDoc ?? '').trim();
@@ -182,6 +206,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const cliEsGenerico = /^CLIENTES?\s+VARIOS$/i.test(cliNombre);
                 setClienteFicha(cli ? { id: cli.id ?? null, nombre: cliNombre, nroDoc: cliNroDoc, telefono: String(cli.telefono ?? '') } : null);
                 if (payload) {
+                    // (direccionDestino no cuenta: el backend la precarga desde la ficha del cliente.)
+                    setEsNuevo(!payload.agenciaDestino && !payload.nroOrden && !payload.codigoGuia && !payload.claveOrden && !payload.repartidor && !payload.repartidorId && !payload.distrito);
                     setEnvioData({
                         transportista: payload.transportista || '',
                         codigoGuia: payload.codigoGuia || '',
@@ -240,7 +266,15 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     useEffect(() => {
         let vivo = true;
         shalomService.getInstancia()
-            .then(data => { if (vivo) setShalomPro(data); })
+            .then(data => {
+                if (!vivo) return;
+                setShalomPro(data);
+                if (data?.habilitadoPorPlan && data?.conectada) {
+                    shalomService.claveRetiro()
+                        .then(info => { if (vivo) setClaveInfo(info); })
+                        .catch(() => { if (vivo) setClaveInfo(null); });
+                }
+            })
             .catch(() => { if (vivo) setShalomPro(null); });
         olvaService.getConfig()
             .then(data => { if (vivo) setOlva(data); })
@@ -250,6 +284,18 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
 
     const set = (field: string, value: any) =>
         setEnvioData((prev: any) => ({ ...prev, [field]: value }));
+
+    useEffect(() => {
+        if (!claveInfo?.clave) return;
+        setEnvioData((prev: any) => (!prev.claveEnvio && !prev.nroOrden ? { ...prev, claveEnvio: claveInfo.clave } : prev));
+    }, [claveInfo]);
+
+    // Validación local de la clave escrita (el backend la repite): 4 dígitos y
+    // distinta a la usada ayer, que Shalom rechaza con "clave del día anterior".
+    const claveEscrita = String(envioData.claveEnvio ?? '').trim();
+    const claveEsDeAyer = Boolean(claveEscrita) && (claveInfo?.usadasAyer ?? []).includes(claveEscrita);
+    const claveFormatoOk = !claveEscrita || /^\d{4}$/.test(claveEscrita);
+    const claveAlternativa = claveInfo && claveInfo.clave !== claveEscrita ? claveInfo.clave : (claveInfo?.configuradas.find(c => !claveInfo.usadasAyer.includes(c) && c !== claveEscrita) ?? null);
 
     useEffect(() => {
         if (envioData.transportista === 'PROPIOS' && (!ubigeos || ubigeos.length === 0)) void getUbigeos();
@@ -300,6 +346,19 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const esShalom = SHALOM_COURIERS.has(envioData.transportista);
     const esPropio = envioData.transportista === 'PROPIOS';
     const esOlva = envioData.transportista === OLVA_COURIER;
+    const esCOD = envioData.transportista === 'SHALOM_COD';
+    // Despacho recién creado desde "Coordinar envío" (solo trae courier por defecto):
+    // el modal se presenta como coordinación, no como edición de algo que no existe.
+    const [esNuevo, setEsNuevo] = useState(false);
+    const ventaPagada = !!ventaInfo && ventaInfo.saldo <= 0.009;
+    const fmt = (n: number) => `${ventaInfo?.simbolo ?? 'S/'} ${Number(n || 0).toFixed(2)}`;
+    // Qué hace cada courier con el dinero: es lo que más confunde al empresario.
+    const COURIER_HINTS: Record<string, string> = {
+        SHALOM_PRO: 'Registra la guía en tu cuenta Shalom Pro. El flete se paga según tu acuerdo con Shalom (normalmente el destinatario al recoger); Shalom no cobra la mercadería.',
+        SHALOM_COD: 'Igual que PRO, pero además anotas el saldo que el cliente aún debe por la venta, para tu control y el Excel de cobros. Shalom NO cobra ese monto por ti.',
+        OLVA: 'Envío por Olva; el rastreo funciona con el N° de guía.',
+        PROPIOS: 'Tu motorizado entrega en la puerta y, si la venta tiene saldo, lo cobra ahí.',
+    };
 
     // Genera la guía en Shalom Pro con los datos ya cargados y trae de vuelta el
     // N° de orden / clave, que es lo que el rastreo necesita después.
@@ -312,6 +371,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
             const guia = await shalomService.crearGuia(comprobanteId, {
                 destinoId: envioData.shalomAgenciaDestinoId || undefined,
                 destinoNombre: envioData.agenciaDestino || undefined,
+                clave: claveEscrita || undefined,
             });
             setEnvioData((prev: any) => ({
                 ...prev,
@@ -383,11 +443,11 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-                                <Icon icon="solar:pen-bold-duotone" className="text-white text-xl" />
+                                <Icon icon={esNuevo ? 'solar:delivery-bold-duotone' : 'solar:pen-bold-duotone'} className="text-white text-xl" />
                             </div>
                             <div>
-                                <h2 className="text-white font-black text-lg leading-none">Editar Despacho</h2>
-                                <p className="text-indigo-200 text-xs mt-0.5">Actualizar datos de envío o agregar número de guía</p>
+                                <h2 className="text-white font-black text-lg leading-none">{esNuevo ? 'Coordinar envío' : 'Editar despacho'}</h2>
+                                <p className="text-indigo-200 text-xs mt-0.5">{esNuevo ? 'Elige el courier, completa el destino y genera la guía' : 'Actualizar datos de envío o agregar número de guía'}</p>
                             </div>
                         </div>
                         <button type="button" onClick={onClose}
@@ -403,6 +463,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                 set('transportista', c.value);
                                 // El motorizado entrega en la puerta: reparto propio = a domicilio salvo que el usuario cambie.
                                 if (c.value === 'PROPIOS' && envioData.tipoEnvio !== 'DOMICILIO') set('tipoEnvio', 'DOMICILIO');
+                                // Shalom COD: lo que Shalom cobra en destino es, por defecto, lo que falta pagar de la venta.
+                                if (c.value === 'SHALOM_COD' && !(Number(envioData.montoCOD) > 0) && saldoVenta > 0.009) set('montoCOD', Number(saldoVenta.toFixed(2)));
                                 // Tipo de venta por defecto: si la venta tiene saldo, el motorizado cobra; si ya está pagada, solo entrega.
                                 if (c.value === 'PROPIOS' && !envioData.tipoVentaReparto) {
                                     if (saldoVenta > 0.009) { set('tipoVentaReparto', 'CONTRAENTREGA'); if (!envioData.formaPagoCobro || envioData.formaPagoCobro === 'NO_COBRAR') set('formaPagoCobro', 'EFECTIVO'); }
@@ -422,20 +484,25 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 {/* Body — scrollable */}
                 <div className="overflow-y-auto p-6 space-y-4 flex-1">
 
-                    {/* Código de Guía (Importante para la vista de edición) */}
-                    <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                            <Icon icon="solar:barcode-bold-duotone" className="text-indigo-400" />
-                            Rastreo
+                    {selectedCourier && COURIER_HINTS[selectedCourier.value] && (
+                        <p className="-mt-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400" data-testid="courier-hint">
+                            <b className="text-slate-700 dark:text-slate-200">{selectedCourier.label}:</b> {COURIER_HINTS[selectedCourier.value]}
                         </p>
-                        <div className="grid grid-cols-1 gap-3">
-                            <Field label="Código de Guía / Rastreo">
-                                <input type="text" value={envioData.codigoGuia}
-                                    onChange={e => set('codigoGuia', e.target.value)}
-                                    placeholder="Nro de guía de remisión o courier" className={inp} />
-                            </Field>
+                    )}
+
+                    {/* Estado de cobro de la venta: decide si hay algo que cobrar en el envío */}
+                    {ventaInfo && (
+                        <div className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-xs ${ventaPagada
+                            ? 'border-emerald-200 bg-emerald-50/70 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300'
+                            : 'border-amber-200 bg-amber-50/70 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300'}`}
+                            data-testid="venta-cobro">
+                            <span className="flex items-center gap-1.5 font-black">
+                                <Icon icon={ventaPagada ? 'solar:check-circle-bold' : 'solar:wallet-money-bold-duotone'} className="text-base" />
+                                {ventaInfo.referencia ? `Venta ${ventaInfo.referencia}` : 'Venta'} · {ventaPagada ? 'PAGADA por completo' : `Saldo pendiente ${fmt(ventaInfo.saldo)}`}
+                            </span>
+                            <span className="font-semibold opacity-80">Total {fmt(ventaInfo.total)} · Pagado {fmt(ventaInfo.pagado)}</span>
                         </div>
-                    </div>
+                    )}
 
                     {/* SECCIÓN 1: Origen del despacho */}
                     <div>
@@ -464,36 +531,59 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         ? 'bg-amber-100 text-amber-700'
                                         : 'bg-white/20 text-white'
                                 }`}>
-                                    {envioData.transportista === 'SHALOM_COD' ? 'COD · Cobro en destino' : 'PRO · Pago cancelado'}
+                                    {envioData.transportista === 'SHALOM_COD' ? 'COD · Saldo por cobrar (control interno)' : 'PRO · Guía en tu cuenta Shalom'}
                                 </span>
                             </div>
                             <div className="p-4 bg-red-50/30 dark:bg-red-950/10 space-y-3">
+                                {esCOD && ventaPagada && (
+                                    <p className="flex items-start gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-4 font-semibold text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300" data-testid="aviso-cod-pagada">
+                                        <Icon icon="solar:danger-triangle-bold" className="mt-0.5 shrink-0" />
+                                        <span>Esta venta ya está pagada: no queda saldo por cobrar, así que COD no aporta nada. Elige <b>Shalom PRO</b>.</span>
+                                    </p>
+                                )}
                                 {/* Credenciales */}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Field label="Clave de envío">
+                                    <Field label="Clave de retiro (se la mandas al cliente)">
                                         <input
                                             type="text"
+                                            inputMode="numeric"
+                                            maxLength={4}
                                             value={envioData.claveEnvio}
-                                            onChange={e => set('claveEnvio', e.target.value)}
-                                            placeholder="Clave envío Shalom"
+                                            onChange={e => set('claveEnvio', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                            placeholder="4 dígitos"
                                             autoComplete="off"
-                                            className={inp}
+                                            className={`${inp} ${claveEsDeAyer || !claveFormatoOk ? 'border-amber-400 focus:border-amber-500' : ''}`}
+                                            data-testid="clave-retiro"
                                         />
                                     </Field>
-                                    <Field label="Clave de orden">
+                                    <Field label="Código de orden Shalom (rastreo)">
                                         <input
                                             type="text"
                                             value={envioData.claveOrden}
                                             onChange={e => set('claveOrden', e.target.value)}
-                                            placeholder="Clave orden Shalom"
+                                            placeholder="Lo asigna Shalom al crear la guía"
                                             autoComplete="off"
-                                            className={inp}
+                                            readOnly={Boolean(envioData.nroOrden)}
+                                            className={`${inp} ${envioData.nroOrden ? 'bg-slate-50 text-slate-500 dark:bg-slate-900/60' : ''}`}
                                         />
                                     </Field>
                                 </div>
+                                {claveInfo && !envioData.nroOrden && (
+                                    <p className="-mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400" data-testid="clave-ayuda">
+                                        {claveEsDeAyer
+                                            ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave {claveEscrita} fue la de ayer: Shalom no permite repetirla hoy.{claveAlternativa ? ` Usa ${claveAlternativa}.` : ''}</span>
+                                            : !claveFormatoOk
+                                                ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave debe tener 4 dígitos.</span>
+                                                : claveInfo.origen === 'HOY'
+                                                    ? <>Es la clave que ya usaste hoy: todas las guías del día salen con la misma.</>
+                                                    : claveInfo.origen === 'CONFIGURADA'
+                                                        ? <>Clave de hoy según tu configuración ({claveInfo.configuradas.join(' / ')}); mañana se alterna sola.</>
+                                                        : <>Clave generada al azar. Puedes escribir la tuya; en Perfil → Shalom Pro puedes fijar tus claves para no volver a pensar en esto.</>}
+                                    </p>
+                                )}
                                 {/* N° Orden + Tipo paquetería */}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Field label="N° Orden courier">
+                                    <Field label="N° de orden Shalom (rastreo)">
                                         <input type="text" value={envioData.nroOrden}
                                             onChange={e => set('nroOrden', e.target.value)}
                                             placeholder="Ej: 78560415" className={inp} />
@@ -526,7 +616,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                         }}
                                     />
                                     {envioData.transportista === 'SHALOM_COD' && (
-                                        <Field label="Monto a cobrar en destino S/">
+                                        <Field label={ventaPagada ? 'Saldo por cobrar S/ (no hay)' : `Saldo por cobrar al cliente S/ (saldo ${fmt(ventaInfo?.saldo ?? 0)})`}>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-3 flex items-center text-xs font-bold text-slate-400 pointer-events-none">S/</span>
                                                 <input
@@ -550,7 +640,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                             <button
                                                 type="button"
                                                 onClick={handleGenerarGuia}
-                                                disabled={generandoGuia || !envioData.agenciaDestino || faltanDestinatario.length > 0}
+                                                disabled={generandoGuia || !envioData.agenciaDestino || faltanDestinatario.length > 0 || claveEsDeAyer || !claveFormatoOk}
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-black text-white shadow-lg shadow-red-500/20 transition-opacity hover:opacity-90 disabled:opacity-50"
                                             >
                                                 <Icon icon={generandoGuia ? 'eos-icons:loading' : 'solar:add-square-bold'} className="text-lg" />
@@ -953,6 +1043,16 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         </div>
                     </div>
 
+                    {/* Código de seguimiento genérico: solo cuando no hay courier con N° de orden
+                        (Shalom/Olva lo llevan en su propia tarjeta y se copia al guardar). */}
+                    {!esShalom && !esOlva && (
+                        <Field label="Código de seguimiento (opcional)">
+                            <input type="text" value={envioData.codigoGuia}
+                                onChange={e => set('codigoGuia', e.target.value)}
+                                placeholder="Si el motorizado o courier te da un código de rastreo, anótalo aquí" className={inp} data-testid="codigo-seguimiento" />
+                        </Field>
+                    )}
+
                     {/* Observaciones */}
                     <Field label="Observaciones">
                         <input type="text" value={envioData.observaciones}
@@ -961,7 +1061,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                     </Field>
 
                     {/* Monto cobrado al cliente — solo editable en NV (informales) */}
-                    {esNV && (
+                    {esNV && ventaPagada && !(Number(envioData.costoEnvio) > 0) && (
+                        <p className="flex items-center gap-1.5 text-[11px] leading-4 text-emerald-700 dark:text-emerald-400" data-testid="sin-monto-por-pagada">
+                            <Icon icon="solar:check-circle-bold" className="shrink-0" />
+                            La venta ya está pagada por completo: no hay adelanto ni monto que registrar en este envío.
+                        </p>
+                    )}
+                    {esNV && !(ventaPagada && !(Number(envioData.costoEnvio) > 0)) && (
                         <div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                 <Icon icon="solar:wallet-money-bold-duotone" className="text-indigo-400" />
@@ -969,6 +1075,9 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                             </p>
                             {esPropio && (
                                 <p className="-mt-1 mb-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Solo lo que el cliente <b>ya pagó</b> (Yape, transferencia…) antes de salir el pedido. Lo que cobra el motorizado en la puerta va arriba, en <b>Monto a cobrar al entregar</b>.</p>
+                            )}
+                            {!esPropio && !ventaPagada && (
+                                <p className="-mt-1 mb-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Escribe aquí solo si el cliente <b>ya pagó una parte</b> (Yape, transferencia…) que aún no está registrada en la venta. Si no pagó nada, déjalo en 0: el saldo de {fmt(ventaInfo?.saldo ?? 0)} sigue pendiente.</p>
                             )}
                             <div className={`grid gap-3 ${Number(envioData.costoEnvio) > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                                 <Field label={esPropio ? 'Adelanto ya pagado (S/)' : 'Monto cobrado / adelanto (S/)'}>
@@ -1049,7 +1158,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         ) : (
                             <Icon icon="solar:check-circle-bold" className="text-lg" />
                         )}
-                        Guardar cambios
+                        {esNuevo ? 'Guardar despacho' : 'Guardar cambios'}
                     </button>
                 </div>
             </div>

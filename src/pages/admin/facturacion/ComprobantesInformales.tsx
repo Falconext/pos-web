@@ -37,6 +37,10 @@ import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
 import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCotizacion";
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 import apiClient from "@/utils/apiClient";
+import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal";
+
+// Informales que sí se despachan (las cotizaciones no: se convierten primero).
+const TIPOS_ENVIABLES = new Set(['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP']);
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -102,6 +106,39 @@ const ComprobantesInformales = () => {
     // Anular/eliminar: admin siempre puede; un vendedor solo si se le activó
     // el permiso fino "puedeAnularComprobantes" (backend igual lo revalida).
     const canAnularOEliminar = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || Boolean((auth as any)?.puedeAnularComprobantes);
+
+    // Coordinación de envío desde esta lista (antes solo existía en el Panel de
+    // ventas): si la nota no tiene seguimiento se crea aquí mismo y se abre el
+    // modal de despacho para elegir courier/agencia/motorizado y generar la guía.
+    const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
+    const [creandoDespachoId, setCreandoDespachoId] = useState<number | null>(null);
+    const coordinarEnvio = async (item: IInvoices) => {
+        if (!item?.id || creandoDespachoId) return;
+        if (item.envioDespacho?.id) {
+            setEditDespachoId(item.id);
+            return;
+        }
+        setCreandoDespachoId(item.id);
+        try {
+            await apiClient.post(`/envio-despacho/comprobante/${item.id}`, {
+                transportista: 'SHALOM_PRO',
+                tipoEnvio: 'AGENCIA',
+                nroPaquetes: 1,
+            });
+        } catch (e: any) {
+            const msg: string = e?.response?.data?.message || '';
+            // Si ya existía (carrera con otro usuario) se abre igual.
+            if (!/ya tiene un seguimiento/i.test(msg)) {
+                useAlertStore.getState().alert(msg || 'No se pudo crear la coordinación de envío', 'error');
+                setCreandoDespachoId(null);
+                return;
+            }
+        }
+        setCreandoDespachoId(null);
+        // La fila pasa a tener seguimiento: refrescar para que el menú diga "Editar despacho".
+        recargarLista();
+        setEditDespachoId(item.id);
+    };
 
 
     useEffect(() => {
@@ -556,13 +593,13 @@ const ComprobantesInformales = () => {
             {/* Header */}
             <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:mb-6 sm:flex-row sm:items-center">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white lg:text-3xl">Notas de venta</h1>
+                    <h1 className="whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white lg:text-3xl">Notas de venta</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Historial de notas de pedido</p>
                 </div>
                 <div className="flex w-full items-center gap-2 sm:w-auto">
-                    {/* Tablet/móvil: solo "Nueva venta" + menú "Más"; desktop (lg+): todos los botones */}
+                    {/* Hasta 1279px (tablet, laptop con zoom): solo "Nueva venta" + menú "Más"; desktop ancho (xl+): todos los botones. Con lg (1024) el título y los 5 botones se partían en dos líneas. */}
                     <HeaderMoreMenu
-                        className="order-last lg:hidden"
+                        className="order-last xl:hidden"
                         items={[
                             { key: 'pdf', label: exportando === 'pdf' ? 'Exportando PDF…' : 'Exportar PDF', icon: 'solar:file-text-bold-duotone', tone: 'rose', disabled: exportando !== null, onClick: () => handleExportarResumen('pdf') },
                             { key: 'excel', label: exportando === 'excel' ? 'Exportando Excel…' : 'Exportar Excel', icon: 'solar:document-add-bold-duotone', tone: 'success', disabled: exportando !== null, onClick: () => handleExportarResumen('excel') },
@@ -574,7 +611,7 @@ const ComprobantesInformales = () => {
                         type="button"
                         onClick={() => handleExportarResumen('pdf')}
                         disabled={exportando !== null}
-                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
+                        className="hidden xl:inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700 xl:w-auto sm:py-2"
                     >
                         <Icon icon={exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
                         Exportar PDF
@@ -583,7 +620,7 @@ const ComprobantesInformales = () => {
                         type="button"
                         onClick={() => handleExportarResumen('excel')}
                         disabled={exportando !== null}
-                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
+                        className="hidden xl:inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700 xl:w-auto sm:py-2"
                     >
                         <Icon icon={exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
                         Exportar Excel
@@ -591,7 +628,7 @@ const ComprobantesInformales = () => {
                     <button
                         type="button"
                         onClick={() => setIsOpenModalImportarNV(true)}
-                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
+                        className="hidden xl:inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-300 dark:hover:bg-slate-700 xl:w-auto sm:py-2"
                     >
                         <Icon icon="solar:import-bold-duotone" className="text-lg" />
                         Importar histórico (Excel)
@@ -599,7 +636,7 @@ const ComprobantesInformales = () => {
                     <button
                         type="button"
                         onClick={() => setIsOpenConfigFormato(true)}
-                        className="hidden lg:inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 lg:w-auto sm:py-2"
+                        className="hidden xl:inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 xl:w-auto sm:py-2"
                     >
                         <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
                         Configurar formato
@@ -607,7 +644,7 @@ const ComprobantesInformales = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', defaultClient: 'CLIENTES_VARIOS' } })}
-                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:py-2 lg:flex-none"
+                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:py-2 xl:flex-none"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-lg" />
                         Nueva venta
@@ -638,7 +675,7 @@ const ComprobantesInformales = () => {
                             <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
                         </button>
                     </div>
-                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-6`}>
+                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6`}>
                         <div className="">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
@@ -893,6 +930,14 @@ const ComprobantesInformales = () => {
                 onUpdated={recargarLista}
             />
 
+            {editDespachoId && (
+                <EditarDespachoModal
+                    comprobanteId={editDespachoId}
+                    onClose={() => setEditDespachoId(null)}
+                    onSuccess={() => { setEditDespachoId(null); recargarLista(); }}
+                />
+            )}
+
             {/* ── Dropdown de acciones (TableActionMenu) ── */}
             <TableActionMenu
                 isOpen={Boolean(menuAnchor)}
@@ -931,12 +976,25 @@ const ComprobantesInformales = () => {
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span>Enviar WhatsApp</span>
                             </button>
-                            {row.despachoCompleto && (
-                                <button type="button" onClick={() => { navigate(`/administrador/ventas?fecha=${row.despachoFecha}&comprobanteId=${row.id}`); handleCloseMenu(); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30">
-                                    <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
-                                    <span>Ver despacho</span>
-                                </button>
+                            {/* Despacho: NV/ticket/etc. sin seguimiento → "Coordinar envío" (crea el
+                                seguimiento y abre el modal); con seguimiento → editarlo aquí mismo y,
+                                si ya está completo, verlo en el Panel de ventas. */}
+                            {TIPOS_ENVIABLES.has(String(item?.tipoDoc)) && row.estadoEnvioSunat !== 'ANULADO' && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button type="button" onClick={() => { handleCloseMenu(); void coordinarEnvio(item); }}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium ${item.envioDespacho?.id ? 'text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30' : 'text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30'}`}>
+                                        <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
+                                        <span>{item.envioDespacho?.id ? 'Editar despacho' : 'Coordinar envío'}</span>
+                                    </button>
+                                    {row.despachoCompleto && (
+                                        <button type="button" onClick={() => { navigate(`/administrador/ventas?fecha=${row.despachoFecha}&comprobanteId=${row.id}`); handleCloseMenu(); }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30">
+                                            <Icon icon="solar:map-point-wave-bold-duotone" width={16} height={16} />
+                                            <span>Ver en Panel de ventas</span>
+                                        </button>
+                                    )}
+                                </>
                             )}
                             {canAnularOEliminar && (
                                 <>

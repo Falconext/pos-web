@@ -157,7 +157,9 @@ describe('Editar Despacho · Reparto propio', () => {
         await waitFor(() => expect(getMock).toHaveBeenCalledWith('/comprobante/125'));
         fireEvent.click(screen.getByText('Reparto propio'));
         expect(screen.getByText('Monto a cobrar al entregar (S/)')).toBeInTheDocument();
-        fireEvent.click(screen.getByText('Guardar cambios'));
+        // Despacho recién creado (sin destino ni guía): el modal se presenta como "Coordinar envío".
+        expect(screen.getByText('Coordinar envío')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Guardar despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         const body = (putMock.mock.calls[0] as any)[1];
         expect(body.tipoVentaReparto).toBe('CONTRAENTREGA');
