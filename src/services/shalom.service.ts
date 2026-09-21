@@ -32,6 +32,8 @@ export interface ShalomInstancia {
     autoGuiaActivo?: boolean;
     /** Claves de retiro propias, separadas por coma ("1010,1011"); vacío = aleatoria. */
     clavesRetiro?: string;
+    /** Tamaño de paquete por defecto (SOBRE|XXS|XS|S|M|L). */
+    tamanoDefault?: string;
 }
 
 /** Clave de retiro sugerida para la próxima guía (GET /shalom/clave-retiro). */
@@ -53,6 +55,7 @@ export interface ConectarInstanciaPayload {
     agenciaOrigenNombre?: string;
     autoGuiaActivo?: boolean;
     clavesRetiro?: string;
+    tamanoDefault?: string;
 }
 
 export interface CrearGuiaPayload {
@@ -81,12 +84,26 @@ export interface GuiaCreada {
 export interface ShalomProducto {
     id: number;
     nombre: string;
+    /** SOBRE | XXS | XS | S | M | L */
+    key?: string;
+    content?: string;
+    porDefecto?: boolean;
+}
+
+/** Tarifa por tamaño para una ruta (GET /shalom/tarifa?destinoId=). */
+export interface ShalomTarifa {
+    origen: number;
+    destino: number;
+    leadTime: string | null;
+    tamanos: { id: number; key: string; nombre: string; precio: number | null }[];
 }
 
 export const shalomService = {
     /** Productos de la cuenta Shalom Pro de la empresa (derivados de su historial). */
     claveRetiro: async (): Promise<ShalomClaveRetiro> =>
         unwrap(await api.get('/shalom/clave-retiro')),
+    tarifa: async (destinoId: string | number, origenId?: string | number): Promise<ShalomTarifa> =>
+        unwrap(await api.get('/shalom/tarifa', { params: { destinoId, ...(origenId ? { origenId } : {}) } })),
     productos: async (): Promise<ShalomProducto[]> =>
         unwrap(await api.get('/shalom/productos')) ?? [],
 
@@ -108,6 +125,10 @@ export const shalomService = {
     pendientes: async (): Promise<any> => unwrap(await api.get('/shalom/pendientes')),
 
     /** Genera la guía en Shalom Pro desde el despacho de un comprobante. */
+    // Crear la guía tarda más que el timeout general (12 s): el proveedor abre
+    // sesión en Shalom Pro y registra el envío. Con 12 s el front decía "No se
+    // pudo generar" cuando Shalom SÍ la había creado (y el N° de orden quedaba
+    // guardado sin que la cajera lo viera hasta reabrir).
     crearGuia: async (comprobanteId: number, payload: CrearGuiaPayload = {}): Promise<GuiaCreada> =>
-        unwrap(await api.post(`/shalom/guia/${comprobanteId}`, payload)),
+        unwrap(await api.post(`/shalom/guia/${comprobanteId}`, payload, { timeout: 90_000 })),
 };

@@ -93,6 +93,8 @@ type EnvioDespachoFormData = {
     // Peso del paquete: Olva lo exige para registrar la guía.
     pesoKg?: number;
     shalomTipoProducto?: number;
+    /** ter_id de la agencia Shalom de destino (para cotizar el flete y crear la guía sin resolver por nombre). */
+    shalomAgenciaDestinoId?: string;
     // Reparto propio / motorizado (plantilla de carga masiva del courier de última milla)
     tipoVentaReparto?: string;
     distritoUbigeo?: string;
@@ -216,6 +218,7 @@ const buildEnvioDespachoPayload = (data: EnvioDespachoFormData) => {
         ...(Number(data.montoCOD) > 0 ? { montoCOD: Number(data.montoCOD) } : {}),
         ...(Number(data.pesoKg) > 0 ? { pesoKg: Number(data.pesoKg) } : {}),
         ...(Number(data.shalomTipoProducto) > 0 ? { shalomTipoProducto: Number(data.shalomTipoProducto) } : {}),
+        ...(cleanText(data.shalomAgenciaDestinoId) ? { shalomAgenciaDestinoId: cleanText(data.shalomAgenciaDestinoId) } : {}),
         // Reparto propio: los selects vacíos no se mandan (el DTO valida @IsIn).
         ...(cleanText(data.tipoVentaReparto) ? { tipoVentaReparto: cleanText(data.tipoVentaReparto) } : {}),
         ...(cleanText(data.formaPagoCobro) ? { formaPagoCobro: cleanText(data.formaPagoCobro) } : {}),
@@ -485,6 +488,7 @@ export const useFacturacionViewModel = () => {
         montoCOD: 0,
         pesoKg: 0,
         shalomTipoProducto: undefined as number | undefined,
+        shalomAgenciaDestinoId: '',
         // Reparto propio / motorizado
         tipoVentaReparto: '',
         distritoUbigeo: '',

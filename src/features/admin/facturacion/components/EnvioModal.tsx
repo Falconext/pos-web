@@ -340,10 +340,11 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
 
                                 {/* Producto de Shalom: el catálogo es POR CUENTA, se lee del propio Shalom. */}
                                 <div className="grid grid-cols-1 gap-3">
-                                    <Field label="Producto Shalom (tamaño del paquete)">
+                                    <Field label="Tamaño del paquete (define el flete)">
                                         <ShalomProductoSelect
                                             value={envioData.shalomTipoProducto}
                                             onChange={v => set('shalomTipoProducto', v)}
+                                            destinoId={envioData.shalomAgenciaDestinoId || null}
                                         />
                                     </Field>
                                 </div>
@@ -570,7 +571,8 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
                             {esShalom && envioData.tipoEnvio === 'AGENCIA' ? (
                                 <ShalomAgenciaSelect
                                     value={envioData.agenciaDestino}
-                                    onChange={v => set('agenciaDestino', v)}
+                                    onChange={v => { set('agenciaDestino', v); set('shalomAgenciaDestinoId', ''); }}
+                                    onSelectAgencia={a => set('shalomAgenciaDestinoId', a.terId)}
                                     invalid={Boolean(errors.agenciaDestino)}
                                     placeholder="Buscar agencia Shalom por nombre, provincia o departamento..."
                                 />

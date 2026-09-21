@@ -91,6 +91,7 @@ export const olvaService = {
         unwrap(await api.get(`/olva/persona/${tipoDoc}/${nroDoc}`)),
 
     /** Genera la guía en Olva desde el despacho de un comprobante. */
+    // Igual que Shalom: registrar la guía tarda más que el timeout general de 12 s.
     crearGuia: async (comprobanteId: number, payload: CrearGuiaOlvaPayload = {}): Promise<GuiaOlvaCreada> =>
-        unwrap(await api.post(`/olva/guia/${comprobanteId}`, payload)),
+        unwrap(await api.post(`/olva/guia/${comprobanteId}`, payload, { timeout: 90_000 })),
 };

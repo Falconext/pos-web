@@ -10,7 +10,7 @@ import { TIPOS_VENTA_REPARTO, FORMAS_PAGO_COBRO, filtrarDistritos, cobraEnDestin
 import { useRepartidoresStore } from "@/zustand/repartidores";
 import { ShalomAgenciaSelect } from "@/components/ShalomAgenciaSelect";
 import { ShalomProductoSelect } from "@/components/ShalomProductoSelect";
-import { mensajeErrorShalom, shalomService, type ShalomClaveRetiro, type ShalomInstancia } from "@/services/shalom.service";
+import { mensajeErrorShalom, shalomService, type ShalomClaveRetiro, type ShalomInstancia, type ShalomTarifa } from "@/services/shalom.service";
 import { OlvaAgenciaSelect } from "@/components/OlvaAgenciaSelect";
 import { mensajeErrorOlva, olvaService, type OlvaConfig } from "@/services/olva.service";
 import { EstablecimientoCombobox } from "@/components/EstablecimientoCombobox";
@@ -94,8 +94,9 @@ function construirPayloadDespacho(envioData: any) {
         tipoVentaReparto: opcional(envioData.tipoVentaReparto),
         formaPagoCobro: opcional(envioData.formaPagoCobro),
         revisarProducto: !!envioData.revisarProducto,
-        // Solo lectura (viene del comprobante), no es parte del DTO.
+        // Solo lectura (viene del comprobante / lo pone el backend al crear la guía).
         sedeOrigenNombre: undefined,
+        shalomFleteCotizado: undefined,
     };
 }
 
@@ -131,6 +132,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         pesoKg: 0,
         shalomAgenciaDestinoId: '',
         shalomTipoProducto: undefined as number | undefined,
+        shalomFleteCotizado: null as number | null,
         olvaAgenciaDestinoCodigo: '',
         // Reparto propio / motorizado externo (plantilla de carga masiva del courier)
         tipoVentaReparto: '',
@@ -150,6 +152,8 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     // Shalom rechaza hoy por ser de ayer. Se precarga cuando el despacho aún no
     // tiene guía y el usuario no escribió ninguna.
     const [claveInfo, setClaveInfo] = useState<ShalomClaveRetiro | null>(null);
+    // Tarifa cotizada de la ruta (la devuelve el selector de tamaño) para el resumen.
+    const [tarifaShalom, setTarifaShalom] = useState<ShalomTarifa | null>(null);
     // Ficha del cliente del comprobante, para saber si ya tiene DNI o es "WSP 9…".
     const [clienteFicha, setClienteFicha] = useState<{ id: number | null; nombre: string; nroDoc: string; telefono: string } | null>(null);
     const [buscandoDni, setBuscandoDni] = useState(false);
@@ -239,6 +243,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                         pesoKg: payload.pesoKg ?? 0,
                         shalomAgenciaDestinoId: payload.shalomAgenciaDestinoId || '',
                         shalomTipoProducto: payload.shalomTipoProducto ?? undefined,
+                        shalomFleteCotizado: payload.shalomFleteCotizado ?? null,
                         olvaAgenciaDestinoCodigo: payload.olvaAgenciaDestinoCodigo || '',
                         tipoVentaReparto: payload.tipoVentaReparto || '',
                         distritoUbigeo: payload.distritoUbigeo || '',
@@ -596,10 +601,12 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                 </div>
                                 {/* Producto de Shalom: el catálogo es POR CUENTA, se lee del propio Shalom. */}
                                 <div className="grid grid-cols-1 gap-3">
-                                    <Field label="Producto Shalom (tamaño del paquete)">
+                                    <Field label="Tamaño del paquete (define el flete)">
                                         <ShalomProductoSelect
                                             value={envioData.shalomTipoProducto}
                                             onChange={v => set('shalomTipoProducto', v)}
+                                            destinoId={envioData.shalomAgenciaDestinoId || null}
+                                            onTarifa={setTarifaShalom}
                                         />
                                     </Field>
                                 </div>
@@ -1140,6 +1147,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                 {envioData.agenciaDestino ? ` · ${envioData.agenciaDestino}` : ''}
                                 {envioData.nroPaquetes > 1 ? ` · ${envioData.nroPaquetes} paquetes` : ''}
                                 {envioData.establecimiento ? ` · ${envioData.establecimiento}` : ''}
+                                {(() => {
+                                    if (!esShalom) return '';
+                                    const id = Number(envioData.shalomTipoProducto) || null;
+                                    const t = tarifaShalom?.tamanos.find(x => id ? x.id === id : false);
+                                    const precio = t?.precio ?? (envioData.shalomFleteCotizado != null ? Number(envioData.shalomFleteCotizado) : null);
+                                    return precio != null ? ` · flete S/ ${Number(precio).toFixed(2)}` : '';
+                                })()}
                             </p>
                         </div>
                     )}

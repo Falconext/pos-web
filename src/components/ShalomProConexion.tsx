@@ -28,6 +28,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
         agenciaOrigenId: '',
         agenciaOrigenNombre: '',
         clavesRetiro: '',
+        tamanoDefault: 'XS',
     });
 
     const aplicar = useCallback((data: ShalomInstancia) => {
@@ -41,6 +42,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
             agenciaOrigenNombre: data.agenciaOrigenNombre ?? '',
             // Se guarda "1010,1011"; se muestra con espacio para que se lea como lista.
             clavesRetiro: String(data.clavesRetiro ?? '').split(',').filter(Boolean).join(', '),
+            tamanoDefault: data.tamanoDefault || 'XS',
         }));
     }, []);
 
@@ -97,6 +99,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                 agenciaOrigenId: form.agenciaOrigenId,
                 agenciaOrigenNombre: form.agenciaOrigenNombre,
                 clavesRetiro: form.clavesRetiro.trim(),
+                tamanoDefault: form.tamanoDefault,
                 ...(form.securityCode.trim() ? { securityCode: form.securityCode.trim() } : {}),
             }),
             'Configuración de envíos actualizada',
@@ -188,6 +191,19 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                         />
                     </div>
                     <div className="sm:col-span-2">
+                        <label className={lbl}>Tamaño de paquete por defecto</label>
+                        <select value={form.tamanoDefault} onChange={(e) => set('tamanoDefault', e.target.value)} className={inp} data-testid="tamano-default">
+                            {[
+                                ['SOBRE', 'SOBRE (documentos)'], ['XXS', 'PAQUETE XXS (muy pequeño)'], ['XS', 'PAQUETE XS (pequeño)'],
+                                ['S', 'PAQUETE S'], ['M', 'PAQUETE M'], ['L', 'PAQUETE L (grande)'],
+                            ].map(([k, n]) => <option key={k} value={k}>{n}</option>)}
+                        </select>
+                        <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                            El tamaño decide cuánto cobra Shalom por el flete en cada ruta (ej. Lima → Arequipa: sobre y XXS S/ 8, XS S/ 10, S S/ 12).
+                            Es el que se usa cuando en el despacho no eliges otro; ahí siempre puedes cambiarlo y ver el precio de cada tamaño.
+                        </p>
+                    </div>
+                    <div className="sm:col-span-2">
                         <label className={lbl}>Claves de retiro para tus envíos (opcional)</label>
                         <input type="text" inputMode="numeric" autoComplete="off" value={form.clavesRetiro}
                             onChange={(e) => set('clavesRetiro', e.target.value.replace(/[^\d,\s]/g, ''))}
@@ -212,7 +228,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                         <>
                             <button type="button" onClick={guardarConfig} disabled={guardando}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
-                                <Icon icon="solar:diskette-bold" width={18} /> Guardar agencia y claves
+                                <Icon icon="solar:diskette-bold" width={18} /> Guardar agencia, tamaño y claves
                             </button>
                             <button type="button" onClick={() => ejecutar(shalomService.reconectar, 'Sesión de Shalom Pro renovada')} disabled={guardando}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
