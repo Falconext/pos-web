@@ -51,6 +51,11 @@ export interface PnlResponse {
      * arriba porque se está viendo una sede concreta. 0 en la vista consolidada.
      */
     gastosEmpresa?: number;
+    /** Compras de consumo propio (Compra.esGasto) del período, netas de IGV. Ya suman en gastosTotales. */
+    comprasConsumo?: number;
+    /** IGV de esas compras (crédito fiscal, no gasto). */
+    comprasConsumoIgv?: number;
+    comprasConsumoCantidad?: number;
     gananciaNeta: number;
     margenNeto: number;
     resumenDiario: RentabilidadDia[];
@@ -205,12 +210,17 @@ export type CategoriaKey = typeof CATEGORIAS_FIJAS[number]['key'];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Categoría virtual del P&L: compras de consumo propio (no es un GastoOperativo).
+export const CATEGORIA_COMPRAS = 'COMPRAS';
+
 export function getCategoriaLabel(key: string): string {
+    if (key === CATEGORIA_COMPRAS) return 'Compra';
     const found = CATEGORIAS_FIJAS.find(c => c.key === key);
     return found ? found.label : key;
 }
 
 export function getCategoriaIcon(key: string): string {
+    if (key === CATEGORIA_COMPRAS) return 'solar:cart-large-2-bold-duotone';
     const found = CATEGORIAS_FIJAS.find(c => c.key === key);
     return found ? found.icon : 'solar:box-bold-duotone';
 }

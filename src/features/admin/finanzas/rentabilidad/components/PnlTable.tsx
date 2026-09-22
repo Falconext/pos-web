@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { PnlResponse, OtroIngreso, formatCurrency, formatPercent, getCategoriaLabel, getCategoriaIcon, TIPOS_INGRESO } from '../RentabilidadModel';
+import { PnlResponse, OtroIngreso, formatCurrency, formatPercent, getCategoriaLabel, getCategoriaIcon, TIPOS_INGRESO, CATEGORIA_COMPRAS } from '../RentabilidadModel';
 
 interface PnlTableProps {
     pnl: PnlResponse;
@@ -85,6 +85,8 @@ function getTipoIngresoLabel(tipo: string): string {
 
 export default function PnlTable({ pnl }: PnlTableProps) {
     const otrosIngresos = pnl.otrosIngresos ?? 0;
+    const comprasConsumo = pnl.gastosPorCategoria.filter((g) => g.categoria === CATEGORIA_COMPRAS);
+    const gastosOperativos = pnl.gastosPorCategoria.filter((g) => g.categoria !== CATEGORIA_COMPRAS);
     const otrosIngresosDetalle: OtroIngreso[] = pnl.otrosIngresosDetalle ?? [];
     const ingresosTotales = pnl.ventasNetas + otrosIngresos;
     const igvVentas = pnl.igvVentas ?? 0;
@@ -254,13 +256,13 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                 barColor="bg-blue-300"
             />
 
-            {/* Gastos por categoría */}
-            {pnl.gastosPorCategoria.length > 0 && (
+            {/* Gastos por categoría (sin las compras de consumo, que van en su bloque) */}
+            {gastosOperativos.length > 0 && (
                 <>
                     <div className="mt-2 mb-1 px-3">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Gastos Operativos</span>
                     </div>
-                    {pnl.gastosPorCategoria.map((g, i) => (
+                    {gastosOperativos.map((g, i) => (
                         <PnlRow
                             key={i}
                             label={g.etiqueta ? `${getCategoriaLabel(g.categoria)} — ${g.etiqueta}` : getCategoriaLabel(g.categoria)}
@@ -269,6 +271,31 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                             reference={ref}
                             indent
                             barColor="bg-amber-400"
+                        />
+                    ))}
+                </>
+            )}
+
+            {/* Compras de consumo propio (Compras marcadas como gasto): netas, sin IGV.
+                Antes no entraban al P&L (Compras = inventario) y la ganancia salía inflada. */}
+            {comprasConsumo.length > 0 && (
+                <>
+                    <div className="mt-3 mb-1 px-3 flex items-baseline justify-between gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Compras de consumo (sin IGV)</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                            {pnl.comprasConsumoCantidad ?? comprasConsumo.length} compra{(pnl.comprasConsumoCantidad ?? comprasConsumo.length) === 1 ? '' : 's'}
+                            {(pnl.comprasConsumoIgv ?? 0) > 0 && <> · IGV {formatCurrency(pnl.comprasConsumoIgv ?? 0)} es crédito fiscal, no se resta</>}
+                        </span>
+                    </div>
+                    {comprasConsumo.map((g, i) => (
+                        <PnlRow
+                            key={`c-${i}`}
+                            label={g.etiqueta ? `Compra — ${g.etiqueta}` : 'Compra'}
+                            icon={getCategoriaIcon(g.categoria)}
+                            value={g.monto}
+                            reference={ref}
+                            indent
+                            barColor="bg-orange-400"
                         />
                     ))}
                 </>
