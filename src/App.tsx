@@ -73,6 +73,7 @@ import AdminResellers from './pages/admin/sistema/Resellers'
 import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
 import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
 import SistemaFinanzas from './pages/admin/sistema/SistemaFinanzas'
+import SistemaSoporte from './pages/admin/sistema/Soporte'
 import SistemaRubros from './pages/admin/sistema/SistemaRubros'
 import DisenoRubroPage from './pages/admin/sistema/DisenoRubroPage'
 import ResellerLayout from './layouts/ResellerLayout'
@@ -194,6 +195,10 @@ function App() {
           <Route path="kardex/libro-control" element={<LibroControl />} />
           <Route path="kardex/series-garantias" element={<SeriesGarantias />} />
           <Route path="reservas" element={<ReservasPage />} />
+          {/* Alias: el submódulo kardex:reservas tuvo guardada esta ruta en BD y
+              caía en el catch-all (→ login → dashboard). Se mantiene para no
+              romper enlaces o marcadores viejos. */}
+          <Route path="kardex/reservas" element={<Navigate to="/administrador/reservas" replace />} />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
           <Route
@@ -309,6 +314,14 @@ function App() {
             element={
               <RoleRoute allowedRoles={["ADMIN_SISTEMA", "ADMIN_EMPRESA"]} fallbackPath="/administrador">
                 <SistemaFinanzas />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="sistema/soporte"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <SistemaSoporte />
               </RoleRoute>
             }
           />
