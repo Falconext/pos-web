@@ -73,7 +73,6 @@ import AdminResellers from './pages/admin/sistema/Resellers'
 import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
 import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
 import SistemaFinanzas from './pages/admin/sistema/SistemaFinanzas'
-import SistemaSoporte from './pages/admin/sistema/Soporte'
 import SistemaRubros from './pages/admin/sistema/SistemaRubros'
 import DisenoRubroPage from './pages/admin/sistema/DisenoRubroPage'
 import ResellerLayout from './layouts/ResellerLayout'
@@ -314,14 +313,6 @@ function App() {
             element={
               <RoleRoute allowedRoles={["ADMIN_SISTEMA", "ADMIN_EMPRESA"]} fallbackPath="/administrador">
                 <SistemaFinanzas />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="sistema/soporte"
-            element={
-              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
-                <SistemaSoporte />
               </RoleRoute>
             }
           />
