@@ -56,6 +56,15 @@ export interface PnlResponse {
     /** IGV de esas compras (crédito fiscal, no gasto). */
     comprasConsumoIgv?: number;
     comprasConsumoCantidad?: number;
+    /** IGV del mes frente a SUNAT: cobrado en electrónicos vs crédito fiscal de compras con factura. */
+    igvSunat?: {
+        cobrado: number;
+        creditoCompras: number;
+        comprasConFactura: number;
+        aPagar: number;
+        saldoAFavor: number;
+        ahorro: number;
+    };
     gananciaNeta: number;
     margenNeto: number;
     resumenDiario: RentabilidadDia[];

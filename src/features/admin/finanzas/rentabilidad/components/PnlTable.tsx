@@ -317,6 +317,50 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                 barColor={pnl.gananciaNeta >= 0 ? 'bg-emerald-300' : 'bg-rose-300'}
             />
 
+            {/* IGV del mes frente a SUNAT. La ganancia de arriba ya está sin IGV a ambos
+                lados, así que el ahorro por pedir facturas queda "escondido" dentro de ella;
+                este bloque lo hace visible: cuánto cobraste, cuánto crédito juntaste y
+                cuánto pagas (o te queda a favor). */}
+            {pnl.igvSunat && (pnl.igvSunat.cobrado > 0 || pnl.igvSunat.creditoCompras > 0) && (
+                <div className="mt-4 rounded-2xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4" data-testid="pnl-igv-sunat">
+                    <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                        <span className="text-xs font-semibold text-sky-700 dark:text-sky-300 uppercase tracking-wide flex items-center gap-1.5">
+                            <Icon icon="solar:shield-check-bold-duotone" width={15} />
+                            IGV del mes con SUNAT
+                        </span>
+                        <span className="text-[11px] text-sky-600/80 dark:text-sky-400/80">No afecta la ganancia: es el impuesto</span>
+                    </div>
+                    <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between gap-3">
+                            <span className="text-gray-600 dark:text-gray-300">IGV cobrado en facturas y boletas</span>
+                            <span className="font-semibold text-gray-900 dark:text-white tabular-nums">{formatCurrency(pnl.igvSunat.cobrado)}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                            <span className="text-gray-600 dark:text-gray-300">
+                                – Crédito fiscal de compras con factura
+                                <span className="ml-1 text-[11px] text-gray-400">({pnl.igvSunat.comprasConFactura} factura{pnl.igvSunat.comprasConFactura === 1 ? '' : 's'})</span>
+                            </span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">–{formatCurrency(pnl.igvSunat.creditoCompras)}</span>
+                        </div>
+                        <div className="flex justify-between gap-3 pt-1.5 border-t border-sky-200/70 dark:border-sky-900/50">
+                            <span className="font-bold text-gray-900 dark:text-white">
+                                {pnl.igvSunat.aPagar > 0 ? 'IGV a pagar este mes' : 'IGV a pagar este mes'}
+                            </span>
+                            <span className={`font-black tabular-nums ${pnl.igvSunat.aPagar > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                {formatCurrency(pnl.igvSunat.aPagar)}
+                            </span>
+                        </div>
+                    </div>
+                    <p className="mt-2.5 text-xs text-sky-800 dark:text-sky-200 leading-snug">
+                        {pnl.igvSunat.ahorro > 0
+                            ? <>Sin las facturas de compra habrías pagado <b>{formatCurrency(pnl.igvSunat.cobrado)}</b> de IGV; con ellas pagas <b>{formatCurrency(pnl.igvSunat.aPagar)}</b>: te ahorraste <b>{formatCurrency(pnl.igvSunat.ahorro)}</b>.</>
+                            : <>Este mes no registraste compras con factura: pagas todo el IGV que cobraste.</>}
+                        {pnl.igvSunat.saldoAFavor > 0 && <> Te quedan <b>{formatCurrency(pnl.igvSunat.saldoAFavor)}</b> de crédito a favor para el siguiente mes.</>}
+                        {' '}Los gastos con factura (alquiler, servicios) aún no se cuentan aquí.
+                    </p>
+                </div>
+            )}
+
             {/* Empty state for gastos */}
             {pnl.gastosPorCategoria.length === 0 && otrosIngresos === 0 && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">
