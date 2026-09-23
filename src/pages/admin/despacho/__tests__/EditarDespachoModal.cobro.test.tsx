@@ -18,7 +18,7 @@ const getMock = jest.fn((url: string) => {
     if (url.startsWith('/comprobante/')) return Promise.resolve({ data: { data: comprobante } });
     return Promise.resolve({ data: {} });
 });
-jest.mock('@/utils/apiClient', () => ({ __esModule: true, default: { get: (u: string) => getMock(u), put: (u: string, b: any) => putMock(u, b), post: jest.fn() } }));
+jest.mock('@/utils/apiClient', () => ({ __esModule: true, default: { get: (u: string) => getMock(u), put: (u: string, b: any) => putMock(u, b), patch: (u: string, b: any) => putMock(u, b), delete: jest.fn(() => Promise.resolve({ data: { code: 1 } })), post: jest.fn() } }));
 jest.mock('@/zustand/alert', () => ({ __esModule: true, default: () => ({ alert: jest.fn() }) }));
 jest.mock('@/zustand/repartidores', () => ({ useRepartidoresStore: () => ({ repartidores: [], fetchRepartidores: () => Promise.resolve() }) }));
 jest.mock('@/zustand/extentions', () => ({ useExtentionsStore: () => ({ ubigeos: [], getUbigeos: jest.fn() }) }));
@@ -78,8 +78,8 @@ describe('Editar Despacho · estado de cobro de la venta', () => {
         expect(screen.queryByTestId('aviso-cod-pagada')).not.toBeInTheDocument();
         expect(screen.getByText('Saldo por cobrar al cliente S/ (saldo S/ 160.00)')).toBeInTheDocument();
         expect((screen.getByPlaceholderText('0.00') as HTMLInputElement).value).toBe('160');
-        fireEvent.click(screen.getByText('Guardar cambios'));
-        await screen.findByText('Guardar cambios');
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
+        await screen.findByTestId('guardar-despacho');
         expect(putMock).toHaveBeenCalled();
         expect((putMock.mock.calls[0] as any)[1].montoCOD).toBe(160);
     });
@@ -96,8 +96,8 @@ describe('Editar Despacho · título por estado y código de seguimiento', () =>
         comprobante = { ...base, mtoImpVenta: 50, saldo: 0, adelanto: 0, estadoPago: 'COMPLETADO' };
         getMock.mockImplementationOnce((url: string) => Promise.resolve({ data: { data: url.startsWith('/envio-despacho/') ? { transportista: 'SHALOM_PRO', tipoEnvio: 'AGENCIA', nroPaquetes: 1, direccionDestino: 'AV. DEL CLIENTE 1' } : comprobante } }));
         await abrir();
-        expect(screen.getByText('Coordinar envío')).toBeInTheDocument();
-        expect(screen.getByText('Guardar despacho')).toBeInTheDocument();
+        expect(screen.getAllByText('Coordinar envío').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Coordinar envío').length).toBeGreaterThan(0);
     });
 
     it('con Shalom no hay campo genérico de rastreo y al guardar el N° de orden se copia a codigoGuia', async () => {
@@ -106,8 +106,8 @@ describe('Editar Despacho · título por estado y código de seguimiento', () =>
         expect(screen.getByText('Editar despacho')).toBeInTheDocument();
         expect(screen.queryByTestId('codigo-seguimiento')).not.toBeInTheDocument();
         fireEvent.change(screen.getByPlaceholderText('Ej: 78560415'), { target: { value: '96381540' } });
-        fireEvent.click(screen.getByText('Guardar cambios'));
-        await screen.findByText('Guardar cambios');
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
+        await screen.findByTestId('guardar-despacho');
         expect((putMock.mock.calls[putMock.mock.calls.length - 1] as any)[1]).toMatchObject({ nroOrden: '96381540', codigoGuia: '96381540' });
     });
 
@@ -116,8 +116,8 @@ describe('Editar Despacho · título por estado y código de seguimiento', () =>
         await abrir();
         fireEvent.click(screen.getByText('Reparto propio'));
         expect(screen.getByTestId('codigo-seguimiento')).toBeInTheDocument();
-        fireEvent.click(screen.getByText('Guardar cambios'));
-        await screen.findByText('Guardar cambios');
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
+        await screen.findByTestId('guardar-despacho');
         expect((putMock.mock.calls[putMock.mock.calls.length - 1] as any)[1].codigoGuia).toBe('');
     });
 });

@@ -183,11 +183,16 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
             try {
                 const [, despachoResp, comprobanteResp] = await Promise.all([
                     fetchRepartidores(),
-                    apiClient.get<any>(`/envio-despacho/comprobante/${comprobanteId}`),
+                    // Si la venta aún no tiene seguimiento (ahora se crea recién al
+                    // guardar) el GET responde 404: se abre el modal en blanco.
+                    apiClient.get<any>(`/envio-despacho/comprobante/${comprobanteId}`).catch(() => null),
                     apiClient.get<any>(`/comprobante/${comprobanteId}`).catch(() => null),
                 ]);
-                const data = despachoResp.data;
-                const payload = data?.data ?? data;
+                const data = despachoResp?.data;
+                // Ojo con el sobre del interceptor: cuando la venta no tiene seguimiento
+                // el backend responde {code:1, data:null}, así que `data?.data ?? data`
+                // devolvía el sobre (truthy) y el modal se creía "con despacho".
+                const payload = data && typeof data === 'object' && 'data' in data ? data.data : data;
                 const comprobantePayload = comprobanteResp?.data?.data ?? comprobanteResp?.data ?? null;
                 const vendedorNombre = comprobantePayload?.usuario?.nombre ?? '';
                 const tipoComp = comprobantePayload?.tipoDoc ?? comprobantePayload?.tipoComprobante ?? comprobantePayload?.tipo ?? '';
@@ -216,6 +221,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 // "CLIENTES VARIOS" es el genérico del POS: no sirve como nombre de quien recibe.
                 const cliEsGenerico = /^CLIENTES?\s+VARIOS$/i.test(cliNombre);
                 setClienteFicha(cli ? { id: cli.id ?? null, nombre: cliNombre, nroDoc: cliNroDoc, telefono: String(cli.telefono ?? '') } : null);
+                // El GET responde 200 con data:null cuando la venta todavía no tiene
+                // seguimiento: lo que manda es el payload, no que la llamada respondiera.
+                setExisteDespacho(Boolean(payload));
+                if (!payload) setEsNuevo(true);
                 if (payload) {
                     // (direccionDestino no cuenta: el backend la precarga desde la ficha del cliente.)
                     setEsNuevo(!payload.agenciaDestino && !payload.nroOrden && !payload.codigoGuia && !payload.claveOrden && !payload.repartidor && !payload.repartidorId && !payload.distrito);
@@ -368,6 +377,12 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     // Despacho recién creado desde "Coordinar envío" (solo trae courier por defecto):
     // el modal se presenta como coordinación, no como edición de algo que no existe.
     const [esNuevo, setEsNuevo] = useState(false);
+    // ¿Ya existe la fila de seguimiento? Al "Coordinar envío" el modal se abre sin
+    // crear nada: la fila nace recién al guardar. Así, abrirlo para mirar y cerrar
+    // ya no deja la venta marcada como "con despacho" (caso AMELIS).
+    const [existeDespacho, setExisteDespacho] = useState(false);
+    const [quitando, setQuitando] = useState(false);
+    const [confirmarQuitar, setConfirmarQuitar] = useState(false);
     const ventaPagada = !!ventaInfo && ventaInfo.saldo <= 0.009;
     const fmt = (n: number) => `${ventaInfo?.simbolo ?? 'S/'} ${Number(n || 0).toFixed(2)}`;
     // Qué hace cada courier con el dinero: es lo que más confunde al empresario.
@@ -439,16 +454,55 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         }
     };
 
+    // Un despacho "vacío" (solo el courier por defecto) no vale la pena guardar: es
+    // lo que pasaba al abrir el modal por curiosidad y cerrarlo. Se exige algo real:
+    // courier + destino (agencia, distrito/dirección o motorizado) o guía.
+    const tieneDatosUtiles = Boolean(
+        envioData.codigoGuia?.trim() ||
+        envioData.agenciaDestino?.trim() ||
+        envioData.shalomAgenciaDestinoId ||
+        envioData.olvaAgenciaDestinoCodigo ||
+        envioData.distrito?.trim() ||
+        envioData.direccionDestino?.trim() ||
+        envioData.repartidorId ||
+        envioData.nombreDestinatario?.trim() ||
+        envioData.dniDestinatario?.trim() ||
+        envioData.observaciones?.trim(),
+    );
+
     const handleConfirmar = async () => {
+        if (!existeDespacho && !tieneDatosUtiles) {
+            alert('Completa al menos el destino (agencia, distrito o motorizado) antes de guardar el envío.', 'warning');
+            return;
+        }
         setSaving(true);
         try {
-            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, construirPayloadDespacho(envioData));
-            alert('Despacho actualizado correctamente', 'success');
+            // upsert: crea el seguimiento si aún no existe (coordinación nueva) o lo
+            // actualiza si ya existía.
+            await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+            alert(existeDespacho ? 'Despacho actualizado correctamente' : 'Envío coordinado correctamente', 'success');
             onSuccess();
         } catch (error: unknown) {
             alert(mensajeErrorShalom(error, 'Error al actualizar el despacho'), 'error');
         } finally {
             setSaving(false);
+        }
+    };
+
+    // Quitar el seguimiento: la venta vuelve a ser una venta normal (no toca la
+    // venta ni el stock). Solo mientras no haya guía generada ni esté entregado.
+    const puedeQuitar = existeDespacho && !String(envioData.codigoGuia ?? '').trim() && !String(envioData.nroOrden ?? '').trim();
+    const handleQuitarDespacho = async () => {
+        setQuitando(true);
+        try {
+            await apiClient.delete(`/envio-despacho/comprobante/${comprobanteId}`);
+            alert('Se quitó el despacho: la venta vuelve a la lista normal', 'success');
+            onSuccess();
+        } catch (error: unknown) {
+            alert(mensajeErrorShalom(error, 'No se pudo quitar el despacho'), 'error');
+        } finally {
+            setQuitando(false);
+            setConfirmarQuitar(false);
         }
     };
 
@@ -1293,20 +1347,51 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 pb-6 pt-3 flex gap-3 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
+                <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
+                    {/* Quitar el seguimiento (solo sin guía): la venta vuelve a la lista normal. */}
+                    {puedeQuitar && (
+                        confirmarQuitar ? (
+                            <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900/50 dark:bg-rose-950/20" data-testid="confirmar-quitar-despacho">
+                                <p className="text-xs text-rose-800 dark:text-rose-200 leading-snug">
+                                    Se quitará el despacho de esta venta. La venta, su pago y su stock no se tocan: solo deja de aparecer en "Con despacho".
+                                </p>
+                                <div className="mt-2 flex gap-2">
+                                    <button type="button" onClick={handleQuitarDespacho} disabled={quitando}
+                                        className="h-9 px-3 rounded-xl bg-rose-600 text-white text-xs font-black hover:bg-rose-700 disabled:opacity-50">
+                                        {quitando ? 'Quitando…' : 'Sí, quitar despacho'}
+                                    </button>
+                                    <button type="button" onClick={() => setConfirmarQuitar(false)} disabled={quitando}
+                                        className="h-9 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-bold hover:bg-white dark:hover:bg-slate-900">
+                                        No, volver
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button type="button" onClick={() => setConfirmarQuitar(true)} disabled={saving}
+                                data-testid="quitar-despacho"
+                                className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition-colors">
+                                <Icon icon="solar:trash-bin-trash-bold" className="text-sm" />
+                                Quitar despacho de esta venta
+                            </button>
+                        )
+                    )}
+                    <div className="flex gap-3">
                     <button type="button" onClick={onClose} disabled={saving}
                         className="flex-1 h-11 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         Cancelar
                     </button>
-                    <button type="button" onClick={handleConfirmar} disabled={saving}
-                        className="flex-[2] h-11 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                    <button type="button" onClick={handleConfirmar} disabled={saving || (!existeDespacho && !tieneDatosUtiles)}
+                        data-testid="guardar-despacho"
+                        title={!existeDespacho && !tieneDatosUtiles ? 'Elige el courier y completa el destino para coordinar el envío' : undefined}
+                        className="flex-[2] h-11 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
                         {saving ? (
                             <Icon icon="eos-icons:loading" className="text-lg" />
                         ) : (
                             <Icon icon="solar:check-circle-bold" className="text-lg" />
                         )}
-                        {esNuevo ? 'Guardar despacho' : 'Guardar cambios'}
+                        {existeDespacho ? 'Guardar cambios' : 'Coordinar envío'}
                     </button>
+                    </div>
                 </div>
             </div>
         </div>

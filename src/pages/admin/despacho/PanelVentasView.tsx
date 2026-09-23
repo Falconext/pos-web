@@ -318,27 +318,12 @@ export default function PanelVentasView() {
     // Venta emitida sin coordinación de envío (Despacho "—"): se crea el
     // despacho aquí mismo y se abre el modal para completarlo (courier,
     // agencia, destinatario). Antes no había forma de hacerlo desde el panel.
-    const coordinarEnvio = useCallback(async (item: VentaPanelItem) => {
+    // Abrir el modal NO crea el seguimiento: el despacho nace recién al guardar con
+    // destino (antes, con solo abrirlo la venta ya quedaba "con despacho").
+    const coordinarEnvio = useCallback((item: VentaPanelItem) => {
         if (!item.comprobanteId) return;
-        try {
-            await apiClient.post(`/envio-despacho/comprobante/${item.comprobanteId}`, {
-                transportista: 'SHALOM_PRO',
-                tipoEnvio: 'AGENCIA',
-                nroPaquetes: 1,
-            });
-        } catch (e: any) {
-            const msg: string = e?.response?.data?.message || '';
-            // Si ya existía (carrera con otro usuario) se abre igual.
-            if (!/ya tiene un seguimiento/i.test(msg)) {
-                useAlertStore.getState().alert(msg || 'No se pudo crear la coordinación de envío', 'error');
-                return;
-            }
-        }
-        // El modal se abre DESPUÉS de recargar: mientras `loading` el panel
-        // desmonta la tabla y con ella el modal.
-        await vm.cargar();
         setEditDespachoId(item.comprobanteId);
-    }, [vm]);
+    }, []);
 
     const whatsappPedido = (item: VentaPanelItem) => {
         const digits = String(item.clienteTelefono || item.celularDest || "").replace(/\D/g, '');
@@ -1187,7 +1172,7 @@ export default function PanelVentasView() {
                                                         && !item.nroOrden
                                                         && !/^\d{8}$|^\d{11}$/.test(String(item.clienteDoc ?? '').trim()) && (
                                                         <button type="button"
-                                                            onClick={(e) => { e.stopPropagation(); if (item.estadoDespacho === 'NO_APLICA') void coordinarEnvio(item); else setEditDespachoId(item.comprobanteId); }}
+                                                            onClick={(e) => { e.stopPropagation(); setEditDespachoId(item.comprobanteId); }}
                                                             className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400"
                                                             title="El cliente no tiene DNI registrado; complétalo para generar la guía">
                                                             <Icon icon="solar:danger-triangle-bold" className="text-xs" /> Falta DNI para la guía
@@ -1435,7 +1420,7 @@ export default function PanelVentasView() {
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-0.5" />
                                     <button type="button"
-                                        onClick={() => { handleCloseMenu(); void coordinarEnvio(it); }}
+                                        onClick={() => { handleCloseMenu(); coordinarEnvio(it); }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 font-medium"
                                     >
                                         <Icon icon="solar:delivery-bold-duotone" width={15} />

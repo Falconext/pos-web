@@ -111,32 +111,11 @@ const ComprobantesInformales = () => {
     // ventas): si la nota no tiene seguimiento se crea aquí mismo y se abre el
     // modal de despacho para elegir courier/agencia/motorizado y generar la guía.
     const [editDespachoId, setEditDespachoId] = useState<number | null>(null);
-    const [creandoDespachoId, setCreandoDespachoId] = useState<number | null>(null);
-    const coordinarEnvio = async (item: IInvoices) => {
-        if (!item?.id || creandoDespachoId) return;
-        if (item.envioDespacho?.id) {
-            setEditDespachoId(item.id);
-            return;
-        }
-        setCreandoDespachoId(item.id);
-        try {
-            await apiClient.post(`/envio-despacho/comprobante/${item.id}`, {
-                transportista: 'SHALOM_PRO',
-                tipoEnvio: 'AGENCIA',
-                nroPaquetes: 1,
-            });
-        } catch (e: any) {
-            const msg: string = e?.response?.data?.message || '';
-            // Si ya existía (carrera con otro usuario) se abre igual.
-            if (!/ya tiene un seguimiento/i.test(msg)) {
-                useAlertStore.getState().alert(msg || 'No se pudo crear la coordinación de envío', 'error');
-                setCreandoDespachoId(null);
-                return;
-            }
-        }
-        setCreandoDespachoId(null);
-        // La fila pasa a tener seguimiento: refrescar para que el menú diga "Editar despacho".
-        recargarLista();
+    // Abrir el modal NO crea el seguimiento: el despacho nace recién cuando se
+    // guarda con destino. Antes bastaba con tocar "Coordinar envío" para que la
+    // venta quedara marcada "con despacho" aunque no se llenara nada (caso AMELIS).
+    const coordinarEnvio = (item: IInvoices) => {
+        if (!item?.id) return;
         setEditDespachoId(item.id);
     };
 
@@ -982,7 +961,7 @@ const ComprobantesInformales = () => {
                             {TIPOS_ENVIABLES.has(String(item?.tipoDoc)) && row.estadoEnvioSunat !== 'ANULADO' && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
-                                    <button type="button" onClick={() => { handleCloseMenu(); void coordinarEnvio(item); }}
+                                    <button type="button" onClick={() => { handleCloseMenu(); coordinarEnvio(item); }}
                                         className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium ${item.envioDespacho?.id ? 'text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/30' : 'text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30'}`}>
                                         <Icon icon="solar:delivery-bold-duotone" width={16} height={16} />
                                         <span>{item.envioDespacho?.id ? 'Editar despacho' : 'Coordinar envío'}</span>

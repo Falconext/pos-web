@@ -18,7 +18,7 @@ const getMock = jest.fn((url: string) => {
     if (url.startsWith('/comprobante/')) return Promise.resolve({ data: { data: { tipoDoc: 'NV', adelanto: 0, saldo: 35, mtoImpVenta: 35, cliente: { id: 1, nombre: 'ROSA QA', nroDoc: '12345678', telefono: '957039998' }, usuario: { nombre: 'VENDEDOR' } } } });
     return Promise.resolve({ data: {} });
 });
-jest.mock('@/utils/apiClient', () => ({ __esModule: true, default: { get: (u: string) => getMock(u), put: (u: string, b: any) => putMock(u, b), post: jest.fn() } }));
+jest.mock('@/utils/apiClient', () => ({ __esModule: true, default: { get: (u: string) => getMock(u), put: (u: string, b: any) => putMock(u, b), patch: (u: string, b: any) => putMock(u, b), delete: jest.fn(() => Promise.resolve({ data: { code: 1 } })), post: jest.fn() } }));
 jest.mock('@/zustand/alert', () => ({ __esModule: true, default: () => ({ alert: jest.fn() }) }));
 jest.mock('@/zustand/repartidores', () => ({ useRepartidoresStore: () => ({ repartidores: [{ id: 7, nombre: 'PEDRO MOTO', celular: '999', sede: null }], fetchRepartidores: () => Promise.resolve() }) }));
 const getUbigeos = jest.fn();
@@ -74,10 +74,10 @@ describe('Editar Despacho · Reparto propio', () => {
         fireEvent.click(opcion);
         expect((screen.getByPlaceholderText('Escribe el distrito (ej: Ate, Comas, Ancón)') as HTMLInputElement).value).toBe('Ancón');
         fireEvent.click(screen.getByText('Contraentrega'));
-        fireEvent.click(screen.getByText('Guardar cambios'));
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         const [url, body] = (putMock.mock.calls[0] as any);
-        expect(url).toBe('/envio-despacho/comprobante/123');
+        expect(url).toBe('/envio-despacho/comprobante/123/upsert');
         expect(body.distrito).toBe('Ancón');
         expect(body.distritoUbigeo).toBe('150102');
         expect(body.tipoVentaReparto).toBe('CONTRAENTREGA');
@@ -93,7 +93,7 @@ describe('Editar Despacho · Reparto propio', () => {
         const monto = screen.getByPlaceholderText('0.00 = lo que falta por pagar del comprobante');
         fireEvent.change(monto, { target: { value: '35' } });
         fireEvent.click(screen.getByLabelText('El cliente puede revisar el producto antes de pagar.'));
-        fireEvent.click(screen.getByText('Guardar cambios'));
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         let body = (putMock.mock.calls[0] as any)[1];
         expect(body.formaPagoCobro).toBe('YAPE');
@@ -104,7 +104,7 @@ describe('Editar Despacho · Reparto propio', () => {
         putMock.mockClear();
         fireEvent.click(screen.getByText('Solo entrega'));
         expect(screen.queryByText('Monto a cobrar al entregar (S/)')).not.toBeInTheDocument();
-        fireEvent.click(screen.getByText('Guardar cambios'));
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         body = (putMock.mock.calls[0] as any)[1];
         expect(body.tipoVentaReparto).toBe('SOLO_ENTREGA');
@@ -113,7 +113,7 @@ describe('Editar Despacho · Reparto propio', () => {
 
     it('sin tocar los campos nuevos, el PUT no manda selects vacíos (evita 400 de @IsIn)', async () => {
         await abrir();
-        fireEvent.click(screen.getByText('Guardar cambios'));
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         const body = (putMock.mock.calls[0] as any)[1];
         expect(body.tipoVentaReparto).toBeUndefined();
@@ -133,7 +133,7 @@ describe('Editar Despacho · Reparto propio', () => {
         const nombre = screen.getByPlaceholderText('Nombre y apellido de quien recibe el pedido') as HTMLInputElement;
         expect(nombre.value).toBe('ROSA QA'); // precargado desde la ficha real del cliente
         fireEvent.change(nombre, { target: { value: 'ROSA QUISPE' } });
-        fireEvent.click(screen.getByText('Guardar cambios'));
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         const body = (putMock.mock.calls[0] as any)[1];
         expect(body.tipoEnvio).toBe('DOMICILIO');
@@ -158,8 +158,8 @@ describe('Editar Despacho · Reparto propio', () => {
         fireEvent.click(screen.getByText('Reparto propio'));
         expect(screen.getByText('Monto a cobrar al entregar (S/)')).toBeInTheDocument();
         // Despacho recién creado (sin destino ni guía): el modal se presenta como "Coordinar envío".
-        expect(screen.getByText('Coordinar envío')).toBeInTheDocument();
-        fireEvent.click(screen.getByText('Guardar despacho'));
+        expect(screen.getAllByText('Coordinar envío').length).toBeGreaterThan(0);
+        fireEvent.click(screen.getByTestId('guardar-despacho'));
         await waitFor(() => expect(putMock).toHaveBeenCalled());
         const body = (putMock.mock.calls[0] as any)[1];
         expect(body.tipoVentaReparto).toBe('CONTRAENTREGA');
