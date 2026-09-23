@@ -705,6 +705,7 @@ export const FacturacionNuevoView = () => {
                 onClose={() => vm.setVarianteModalProduct(null)}
                 product={vm.varianteModalProduct}
                 onSelect={vm.handleSelectVariante}
+                permitirSinStock={vm.permitirVentaSinStock}
             />
             <ModalConfiguracionCotizacion
                 isOpen={vm.isQuotationConfigModalOpen}

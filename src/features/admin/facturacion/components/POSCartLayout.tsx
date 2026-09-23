@@ -47,7 +47,7 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
                 return;
             }
             // Sobreventa activa: se permite, pero con advertencia visible.
-            useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()})`, "warning");
+            if (vm.avisarSobreventa) useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()})`, "warning");
         }
         setLocalValue(String(Math.round(parsed * 10000) / 10000));
         vm.updateProductInvoice(index, vm.calculateLineItem(item, unidades));
@@ -123,7 +123,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                 useAlertStore.getState().alert(`Solo hay ${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()}`, "warning");
                 return;
             }
-            useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()})`, "warning");
+            if (vm.avisarSobreventa) useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()})`, "warning");
         }
         vm.updateProductInvoice(index, vm.calculateLineItem(item, v));
     };
@@ -319,7 +319,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                                         useAlertStore.getState().alert(`Solo hay ${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()}`, "warning");
                                                         return;
                                                     }
-                                                    useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()})`, "warning");
+                                                    if (vm.avisarSobreventa) useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${item.stock} disponibles de ${String(item.descripcion || 'este producto').toUpperCase()})`, "warning");
                                                 }
                                                 vm.updateProductInvoice(index, vm.calculateLineItem(item, newQty));
                                             }}

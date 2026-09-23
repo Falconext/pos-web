@@ -263,6 +263,13 @@ export const useFacturacionViewModel = () => {
     // Sobreventa: si la empresa lo habilitó, el POS permite agregar/vender productos
     // aunque el stock sea 0 o insuficiente (solo se muestra una advertencia).
     const permitirVentaSinStock = Boolean((auth?.empresa as any)?.permitirVentaSinStock);
+    // Cotizaciones: son una propuesta, no mueven inventario (el backend nunca
+    // descuenta stock en COT). Por eso al cotizar el catálogo no limita por
+    // stock: se puede cotizar lo que todavía no llegó o está agotado.
+    const sinLimiteStock = permitirVentaSinStock || isQuotationRoute;
+    // El aviso de "estás vendiendo por encima del stock" solo tiene sentido en
+    // una venta real; en una cotización sería confuso.
+    const avisarSobreventa = permitirVentaSinStock && !isQuotationRoute;
 
     // Cobranza en campo: si la empresa la activó, al crear la venta se puede
     // atribuir a un "vendedor de campo" (un usuario de la empresa) que se
@@ -1422,7 +1429,7 @@ export const useFacturacionViewModel = () => {
             const qtyActualEnCarrito = getCartQtyByProductId(Number(producto.id));
             const stockDisponible = Number(producto?.stock || 0);
             // Los servicios no tienen stock: solo se valida stock para productos físicos.
-            if (!permitirVentaSinStock && !esServicioTecnico(producto) && qtyActualEnCarrito + qtyRequerida > stockDisponible) {
+            if (!sinLimiteStock && !esServicioTecnico(producto) && qtyActualEnCarrito + qtyRequerida > stockDisponible) {
                 return useAlertStore.getState().alert(
                     `Stock insuficiente para ${String(producto.descripcion || "producto").toUpperCase()} al agregar el kit`,
                     "warning",
@@ -1553,7 +1560,9 @@ export const useFacturacionViewModel = () => {
                 .filter((l) => l.stockActual > 0)
                 .sort((a, b) => new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime());
 
-            if (!lotesActivos.length) {
+            // Cotizando se puede ofrecer lo que aún no tiene lote con stock: se
+            // sigue por el camino normal, con el precio del producto.
+            if (!lotesActivos.length && !isQuotationRoute) {
                 return useAlertStore.getState().alert("Sin stock en lotes activos", "warning");
             }
 
@@ -1595,7 +1604,10 @@ export const useFacturacionViewModel = () => {
                 return;
             }
 
-            return useAlertStore.getState().alert("Stock insuficiente en todos los lotes activos", "warning");
+            if (!isQuotationRoute) {
+                return useAlertStore.getState().alert("Stock insuficiente en todos los lotes activos", "warning");
+            }
+            // En cotización cae al camino normal (una sola línea, precio del producto).
         }
         // ── Fin multi-lote ──────────────────────────────────────────────────────
 
@@ -1697,11 +1709,11 @@ export const useFacturacionViewModel = () => {
                 ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
                 : product.stock;
             if (!esServicio && stockDisponible < newQty) {
-                if (!permitirVentaSinStock) {
+                if (!sinLimiteStock) {
                     return useAlertStore.getState().alert(`Solo hay ${stockDisponible} disponibles de ${String(product.descripcion || 'este producto').toUpperCase()}`, "warning");
                 }
                 // Sobreventa activa: se permite, pero SIEMPRE con advertencia visible.
-                useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${stockDisponible} disponibles de ${String(product.descripcion || 'este producto').toUpperCase()})`, "warning");
+                if (avisarSobreventa) useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${stockDisponible} disponibles de ${String(product.descripcion || 'este producto').toUpperCase()})`, "warning");
             }
             updateProductInvoice(existingIndex, calculateLineItem(currentItem, newQty));
         } else {
@@ -1709,11 +1721,11 @@ export const useFacturacionViewModel = () => {
                 ? (product?.loteFefo?.stockDisponibleVenta ?? 0)
                 : product.stock;
             if (!esServicio && stockDisponible < unidadesPorPaquete) {
-                if (!permitirVentaSinStock) {
+                if (!sinLimiteStock) {
                     return useAlertStore.getState().alert(`Solo hay ${stockDisponible} disponibles de ${String(product.descripcion || 'este producto').toUpperCase()}`, "warning");
                 }
                 // Sobreventa activa: se permite, pero SIEMPRE con advertencia visible.
-                useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${stockDisponible} disponibles de ${String(product.descripcion || 'este producto').toUpperCase()})`, "warning");
+                if (avisarSobreventa) useAlertStore.getState().alert(`Ojo: estás vendiendo por encima del stock (${stockDisponible} disponibles de ${String(product.descripcion || 'este producto').toUpperCase()})`, "warning");
             }
             // Paquete con precio propio: el precio unitario de la línea es
             // precioPaquete / unidades (cantidad × precio = precio del paquete),
@@ -3138,7 +3150,9 @@ export const useFacturacionViewModel = () => {
         filteredProducts: usaLotesFarmacia ? farmaciaProductos : products,
         filteredCombos,
         catalogItems,
-        permitirVentaSinStock,
+        // Al cotizar va en true: el carrito y los modales no deben bloquear por stock.
+        permitirVentaSinStock: sinLimiteStock,
+        avisarSobreventa,
         totalProducts: usaLotesFarmacia ? farmaciaTotal : totalProducts,
         farmaciaLoading,
 
