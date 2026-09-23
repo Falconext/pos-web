@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { get, patch } from '@/utils/fetch';
+import { get, patch, post } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import useEmpresasStore from '@/zustand/empresas';
 import { useAuthStore } from '@/zustand/auth';
@@ -428,6 +428,66 @@ export const usePerfilViewModel = () => {
         }
     };
 
+    // ── SIRE (API de SUNAT) ──────────────────────────────────────────────────
+    // Credenciales aparte de las de Consulta de Validez: el SIRE exige además
+    // el usuario y la clave SOL (la clave se guarda cifrada y nunca vuelve).
+    const [savingSire, setSavingSire] = useState(false);
+    const [probandoSire, setProbandoSire] = useState(false);
+    const [sireEstado, setSireEstado] = useState<{ configurado: boolean; falta: string[]; usuarioSol: string | null; clientId: string | null } | null>(null);
+
+    const cargarEstadoSire = async () => {
+        const resp = await get<{ configurado: boolean; falta: string[]; usuarioSol: string | null; clientId: string | null }>(
+            'contabilidad/sire/estado-conexion',
+        );
+        if (resp.data) setSireEstado(resp.data);
+    };
+
+    const handleSireSave = async (datos: {
+        clientId: string;
+        clientSecret: string;
+        usuarioSol: string;
+        claveSol: string;
+    }) => {
+        if (savingSire) return;
+        try {
+            setSavingSire(true);
+            await useEmpresasStore.getState().actualizarMiEmpresa({
+                sireClientId: datos.clientId.trim(),
+                sireClientSecret: datos.clientSecret.trim(),
+                sireUsuarioSol: datos.usuarioSol.trim(),
+                // Solo se manda si el usuario escribió una: vacío conserva la guardada.
+                ...(datos.claveSol ? { sireClaveSol: datos.claveSol } : {}),
+            } as any);
+            await cargarEstadoSire();
+            useAlertStore.getState().alert('Credenciales del SIRE guardadas', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudieron guardar las credenciales del SIRE', 'error');
+        } finally {
+            setSavingSire(false);
+        }
+    };
+
+    const handleSireProbar = async () => {
+        if (probandoSire) return;
+        try {
+            setProbandoSire(true);
+            const resp = await post<{ ok: boolean; mensaje: string; detalle?: string }>(
+                'contabilidad/sire/probar-conexion',
+                {},
+            );
+            const d = resp.data;
+            if (resp.error || !d) {
+                useAlertStore.getState().alert(resp.error ?? 'No se pudo probar la conexión', 'error');
+                return;
+            }
+            useAlertStore
+                .getState()
+                .alert(d.ok ? d.mensaje : `${d.mensaje}${d.detalle ? ` ${d.detalle}` : ''}`, d.ok ? 'success' : 'warning');
+        } finally {
+            setProbandoSire(false);
+        }
+    };
+
     const whatsappConfigDirty = useMemo(() => {
         if (!perfil || !perfil.empresa) return false;
         const initial = whatsappFormFromPerfil(perfil);
@@ -650,6 +710,7 @@ export const usePerfilViewModel = () => {
 
     return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, savingVentaSinStockConfig, handleVentaSinStockToggle, savingImpresionConfig, handleImpresionConfig, savingCobranzaCampoConfig, handleCobranzaCampoToggle, savingControlFlag, handleControlFlagToggle,
         savingCriterioIgv,
+        savingSire, probandoSire, sireEstado, cargarEstadoSire, handleSireSave, handleSireProbar,
         savingPosComprobanteDefault, handlePosComprobanteDefaultChange,
         handleCriterioIgvChange, savingCotizConfig, handleCotizToggle, handleDirectorTecnicoSave, savingSunatValidez, handleSunatValidezSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, ventaObsDefault, setVentaObsDefault, ventaObsDirty, savingVentaObs, handleVentaObsSave, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave, personalForm, savingPersonal, personalDirty, updatePersonalField, handleSavePersonal };
 };

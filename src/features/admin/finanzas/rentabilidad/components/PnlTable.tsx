@@ -354,7 +354,9 @@ export default function PnlTable({ pnl }: PnlTableProps) {
                     <p className="mt-2.5 text-xs text-sky-800 dark:text-sky-200 leading-snug">
                         {pnl.igvSunat.ahorro > 0
                             ? <>Sin las facturas de compra habrías pagado <b>{formatCurrency(pnl.igvSunat.cobrado)}</b> de IGV; con ellas pagas <b>{formatCurrency(pnl.igvSunat.aPagar)}</b>: te ahorraste <b>{formatCurrency(pnl.igvSunat.ahorro)}</b>.</>
-                            : <>Este mes no registraste compras con factura: pagas todo el IGV que cobraste.</>}
+                            : pnl.igvSunat.creditoCompras > 0
+                                ? <>Este mes no cobraste IGV en comprobantes electrónicos, así que el crédito de tus compras queda íntegro a favor.</>
+                                : <>Este mes no registraste compras con factura: pagas todo el IGV que cobraste.</>}
                         {pnl.igvSunat.saldoAFavor > 0 && <> Te quedan <b>{formatCurrency(pnl.igvSunat.saldoAFavor)}</b> de crédito a favor para el siguiente mes.</>}
                         {' '}Los gastos con factura (alquiler, servicios) aún no se cuentan aquí.
                     </p>

@@ -5,7 +5,7 @@ import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
 import { hasPlanFeature, hasPermission } from '@/utils/permissions';
 import { useAuthStore } from '@/zustand/auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import Button from '@/components/Button';
@@ -24,6 +24,14 @@ export default function PerfilIndex() {
     const [showNueva, setShowNueva] = useState(false);
     const [directorInput, setDirectorInput] = useState<string | null>(null);
     const [sunatClientIdInput, setSunatClientIdInput] = useState<string | null>(null);
+    const [sireClientIdInput, setSireClientIdInput] = useState<string | null>(null);
+    // Estado del SIRE: lo sirve el backend (no viaja en auth/me porque incluye
+    // qué credenciales faltan).
+    useEffect(() => { void vm.cargarEstadoSire(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const [sireUsuarioInput, setSireUsuarioInput] = useState<string | null>(null);
+    // Secret y clave arrancan vacíos siempre: el backend no los devuelve.
+    const [sireSecretInput, setSireSecretInput] = useState('');
+    const [sireClaveInput, setSireClaveInput] = useState('');
     const [sunatClientSecretInput, setSunatClientSecretInput] = useState<string | null>(null);
     // Pestañas Perfil / Configuración (sincronizadas con la URL para deep-link desde el menú)
     const [searchParams, setSearchParams] = useSearchParams();
@@ -1002,6 +1010,77 @@ export default function PerfilIndex() {
                                         >
                                             {vm.savingSunatValidez ? '...' : 'Guardar credenciales'}
                                         </button>
+
+                                        {/* ── SIRE: credenciales aparte (ver sire.client.ts) ── */}
+                                        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-800" data-testid="config-sire">
+                                            <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                                <Icon icon="solar:cloud-download-bold-duotone" width={14} />
+                                                SIRE · traer mis compras de SUNAT
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                                Permite descargar del SIRE las compras que SUNAT tiene a nombre de tu RUC (incluso las que nunca registraste).
+                                                Son credenciales <strong>distintas</strong> a las de arriba: se generan en Menú SOL → <strong>Credenciales de API SUNAT → Gestión</strong>, marcando el servicio
+                                                <strong> “MIGE RCE y RVIE - SIRE”</strong>. El SIRE además exige tu usuario y clave SOL; la clave se guarda cifrada y nunca se muestra.
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                <input
+                                                    type="text"
+                                                    className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                    placeholder="Client ID del SIRE"
+                                                    value={sireClientIdInput ?? (vm.sireEstado?.clientId ?? '')}
+                                                    onChange={e => setSireClientIdInput(e.target.value)}
+                                                />
+                                                <input
+                                                    type="password"
+                                                    className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                    placeholder="Client Secret del SIRE"
+                                                    value={sireSecretInput}
+                                                    onChange={e => setSireSecretInput(e.target.value)}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                    placeholder="Usuario SOL"
+                                                    value={sireUsuarioInput ?? (vm.sireEstado?.usuarioSol ?? '')}
+                                                    onChange={e => setSireUsuarioInput(e.target.value)}
+                                                />
+                                                <input
+                                                    type="password"
+                                                    className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                    placeholder={vm.sireEstado?.configurado ? 'Clave SOL (guardada — escribe para cambiarla)' : 'Clave SOL'}
+                                                    value={sireClaveInput}
+                                                    onChange={e => setSireClaveInput(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                <button
+                                                    disabled={vm.savingSire}
+                                                    onClick={() => vm.handleSireSave({
+                                                        clientId: sireClientIdInput ?? (vm.sireEstado?.clientId ?? ''),
+                                                        clientSecret: sireSecretInput,
+                                                        usuarioSol: sireUsuarioInput ?? (vm.sireEstado?.usuarioSol ?? ''),
+                                                        claveSol: sireClaveInput,
+                                                    }).then(() => { setSireSecretInput(''); setSireClaveInput(''); })}
+                                                    className="px-3 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors"
+                                                >
+                                                    {vm.savingSire ? '...' : 'Guardar credenciales del SIRE'}
+                                                </button>
+                                                <button
+                                                    disabled={vm.probandoSire || !vm.sireEstado?.configurado}
+                                                    onClick={() => vm.handleSireProbar()}
+                                                    title={vm.sireEstado?.configurado ? undefined : 'Primero guarda las credenciales'}
+                                                    className="px-3 py-2 border border-sky-200 dark:border-sky-900 text-sky-700 dark:text-sky-300 text-sm font-bold rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/30 disabled:opacity-50 transition-colors"
+                                                    data-testid="probar-sire"
+                                                >
+                                                    {vm.probandoSire ? 'Probando...' : 'Probar conexión'}
+                                                </button>
+                                                {vm.sireEstado && (
+                                                    <span className={`text-xs font-semibold ${vm.sireEstado.configurado ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                                        {vm.sireEstado.configurado ? 'Configurado' : `Falta: ${vm.sireEstado.falta.join(', ')}`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
