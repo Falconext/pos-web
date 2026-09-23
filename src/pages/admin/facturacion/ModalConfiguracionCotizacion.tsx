@@ -83,6 +83,7 @@ const ModalConfiguracionCotizacion = ({
 
     const paymentTypeOptions = [
         { id: 'CONTADO', value: 'CONTADO' },
+        { id: 'CREDITO_7', value: 'CREDITO 7 DÍAS' },
         { id: 'CREDITO_15', value: 'CREDITO 15 DÍAS' },
         { id: 'CREDITO_30', value: 'CREDITO 30 DÍAS' },
         { id: 'CREDITO_45', value: 'CREDITO 45 DÍAS' },
