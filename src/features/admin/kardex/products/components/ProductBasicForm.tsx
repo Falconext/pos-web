@@ -243,7 +243,11 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 marca: (formValues as any)?.marcaNombre || '',
                 categoria: (formValues as any)?.categoriaNombre || '',
                 codigoBarras: item.codigo || '',
-            });
+            }, {
+        // La búsqueda consulta varios proveedores: necesita más margen
+        // que el timeout global de 12 s del apiClient.
+        timeout: 25_000,
+      });
             const result = (response.data as any)?.data || response.data;
             const candidates: string[] = (Array.isArray(result?.candidates) ? result.candidates : [])
                 .filter((url: unknown): url is string => typeof url === 'string' && /^https?:\/\//i.test(url));

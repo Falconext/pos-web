@@ -1006,6 +1006,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         marca: (formValues as any)?.marcaNombre || "",
         categoria: (formValues as any)?.categoriaNombre || "",
         codigoBarras: (formValues as any)?.codigoBarras || "",
+      }, {
+        // La búsqueda consulta varios proveedores: necesita más margen
+        // que el timeout global de 12 s del apiClient.
+        timeout: 25_000,
       });
       const result = response.data?.data || response.data;
       const candidates = Array.isArray(result?.candidates)
@@ -1098,6 +1102,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         // El color viaja aparte para que el backend lo exija y descarte las
         // fotos del mismo modelo en otro acabado.
         color: colorClean,
+      }, {
+        // La búsqueda consulta varios proveedores: necesita más margen
+        // que el timeout global de 12 s del apiClient.
+        timeout: 25_000,
       });
       const result = response.data?.data || response.data;
       const candidates = Array.isArray(result?.candidates)
@@ -1168,6 +1176,10 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
         marca: (formValues as any)?.marcaNombre || "",
         categoria: (formValues as any)?.categoriaNombre || "",
         codigoBarras: (formValues as any)?.codigoBarras || "",
+      }, {
+        // La búsqueda consulta varios proveedores: necesita más margen
+        // que el timeout global de 12 s del apiClient.
+        timeout: 25_000,
       });
       const result = response.data?.data || response.data;
       if (result?.success && result?.url) {
