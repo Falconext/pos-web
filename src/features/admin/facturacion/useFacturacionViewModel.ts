@@ -1503,15 +1503,20 @@ export const useFacturacionViewModel = () => {
         // Si el producto tiene variantes activas y aún no se eligió una, abrir el
         // selector. Al elegir, handleSelectVariante re-inyecta la variante (que es
         // un producto real) por este mismo flujo, reutilizando toda la lógica.
-        if (
-            !product?.__esVariante &&
-            Array.isArray(product?.variantes) &&
-            product.variantes.some(
+        if (!product?.__esVariante && Array.isArray(product?.variantes)) {
+            const variantesActivas = product.variantes.filter(
                 (v: any) => String(v?.estado || 'ACTIVO').toUpperCase() === 'ACTIVO',
-            )
-        ) {
-            setVarianteModalProduct(product);
-            return;
+            );
+            // Con una sola variante activa el modal no aporta nada: se elige
+            // sola y el producto entra directo al carrito.
+            if (variantesActivas.length === 1) {
+                handleSelectVariante(product, variantesActivas[0]);
+                return;
+            }
+            if (variantesActivas.length > 1) {
+                setVarianteModalProduct(product);
+                return;
+            }
         }
 
         const esServicio = esServicioTecnico(product);
@@ -1767,9 +1772,19 @@ export const useFacturacionViewModel = () => {
         const valores = variante?.valoresAtributos && typeof variante.valoresAtributos === 'object'
             ? Object.values(variante.valoresAtributos).filter(Boolean).join(' / ')
             : '';
+        // La variante casi nunca trae imagen propia (en producción, la mayoría
+        // no la tiene), y con un spread directo su `imagenUrl: null` PISABA la
+        // del padre: el ítem entraba al carrito sin foto. Solo se toman de la
+        // variante los campos que realmente traen valor; el 0 y el false sí
+        // cuentan (stock 0, banderas apagadas).
+        const datosVariante = Object.fromEntries(
+            Object.entries(variante || {}).filter(
+                ([, v]) => v !== null && v !== undefined && v !== '',
+            ),
+        );
         handleProductClick({
             ...padre,
-            ...variante,
+            ...datosVariante,
             id: variante.id,
             codigo: variante.codigo ?? padre.codigo,
             descripcion: `${padre.descripcion}${valores ? ' - ' + valores : ''}`,
