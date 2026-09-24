@@ -224,52 +224,56 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 // El GET responde 200 con data:null cuando la venta todavía no tiene
                 // seguimiento: lo que manda es el payload, no que la llamada respondiera.
                 setExisteDespacho(Boolean(payload));
-                if (!payload) setEsNuevo(true);
-                if (payload) {
-                    // (direccionDestino no cuenta: el backend la precarga desde la ficha del cliente.)
-                    setEsNuevo(!payload.agenciaDestino && !payload.nroOrden && !payload.codigoGuia && !payload.claveOrden && !payload.repartidor && !payload.repartidorId && !payload.distrito);
-                    setEnvioData({
-                        transportista: payload.transportista || '',
-                        codigoGuia: payload.codigoGuia || '',
-                        observaciones: payload.observaciones || '',
-                        tipoEnvio: payload.tipoEnvio || 'DOMICILIO',
-                        agenciaDestino: payload.agenciaDestino || '',
-                        celularDest: payload.celularDest || (/^9\d{8}$/.test(String(cli?.telefono ?? '').replace(/\D/g, '')) ? String(cli.telefono).replace(/\D/g, '') : ''),
-                        // Si el despacho no tiene destinatario, se toma el del cliente
-                        // solo cuando su ficha es real (DNI de 8 dígitos y no "WSP …").
-                        dniDestinatario: payload.dniDestinatario || (cliTieneDni ? cliNroDoc : ''),
-                        nombreDestinatario: payload.nombreDestinatario || (cliEsWsp || cliEsGenerico ? '' : cliNombre),
-                        // Cliente sin DNI: por defecto se corrige su ficha al guardar.
-                        actualizarFichaCliente: cliEsWsp,
-                        nroPaquetes: payload.nroPaquetes || 1,
-                        turnoEnvio: payload.turnoEnvio || '',
-                        tipoMercaderia: payload.tipoMercaderia || '',
-                        claveEnvio: payload.claveEnvio || '',
-                        nroOrden: payload.nroOrden || '',
-                        claveOrden: payload.claveOrden || '',
-                        establecimiento: payload.establecimiento || '',
-                        repartidorId: payload.repartidorId ? String(payload.repartidorId) : '',
-                        repartidor: payload.repartidor || '',
-                        empaquetador: payload.empaquetador || vendedorNombre || '',
-                        fechaEstimada: payload.fechaEstimada ? moment(payload.fechaEstimada).format('YYYY-MM-DD') : '',
-                        costoEnvio: payload.costoEnvio ?? adelantoComprobante ?? 0,
-                        pagarFlete: payload.pagarFlete ?? (adelantoComprobante > 0 ? 'CLIENTE' : 'NEGOCIO'),
-                        aplicacionMontoCliente: payload.aplicacionMontoCliente ?? (adelantoComprobante > 0 ? 'ADELANTO' : 'NEGOCIO'),
-                        montoCOD: payload.montoCOD ?? 0,
-                        pesoKg: payload.pesoKg ?? 0,
-                        shalomAgenciaDestinoId: payload.shalomAgenciaDestinoId || '',
-                        shalomTipoProducto: payload.shalomTipoProducto ?? undefined,
-                        shalomFleteCotizado: payload.shalomFleteCotizado ?? null,
-                        olvaAgenciaDestinoCodigo: payload.olvaAgenciaDestinoCodigo || '',
-                        tipoVentaReparto: payload.tipoVentaReparto || '',
-                        distritoUbigeo: payload.distritoUbigeo || '',
-                        distrito: payload.distrito || '',
-                        coordenadas: payload.coordenadas || '',
-                        formaPagoCobro: payload.formaPagoCobro || '',
-                        revisarProducto: !!payload.revisarProducto,
-                        sedeOrigenNombre: payload.sedeOrigenNombre || '',
-                    });
-                }
+                // La precarga corre SIEMPRE, exista o no la fila de seguimiento.
+                // Desde 49462fd la fila nace recién al guardar, y como todo esto
+                // vivía dentro de `if (payload)`, al "Coordinar envío" de una venta
+                // nueva el formulario se abría en blanco: el destinatario no tomaba
+                // el DNI, el nombre ni el celular del cliente aunque la ficha los
+                // tuviera, y tampoco se llenaban empaquetador, flete ni adelanto.
+                // (direccionDestino no cuenta: el backend la precarga desde la ficha del cliente.)
+                const p: any = payload ?? {};
+                setEsNuevo(!p.agenciaDestino && !p.nroOrden && !p.codigoGuia && !p.claveOrden && !p.repartidor && !p.repartidorId && !p.distrito);
+                setEnvioData({
+                    transportista: p.transportista || '',
+                    codigoGuia: p.codigoGuia || '',
+                    observaciones: p.observaciones || '',
+                    tipoEnvio: p.tipoEnvio || 'DOMICILIO',
+                    agenciaDestino: p.agenciaDestino || '',
+                    celularDest: p.celularDest || (/^9\d{8}$/.test(String(cli?.telefono ?? '').replace(/\D/g, '')) ? String(cli.telefono).replace(/\D/g, '') : ''),
+                    // Si el despacho no tiene destinatario, se toma el del cliente
+                    // solo cuando su ficha es real (DNI de 8 dígitos y no "WSP …").
+                    dniDestinatario: p.dniDestinatario || (cliTieneDni ? cliNroDoc : ''),
+                    nombreDestinatario: p.nombreDestinatario || (cliEsWsp || cliEsGenerico ? '' : cliNombre),
+                    // Cliente sin DNI: por defecto se corrige su ficha al guardar.
+                    actualizarFichaCliente: cliEsWsp,
+                    nroPaquetes: p.nroPaquetes || 1,
+                    turnoEnvio: p.turnoEnvio || '',
+                    tipoMercaderia: p.tipoMercaderia || '',
+                    claveEnvio: p.claveEnvio || '',
+                    nroOrden: p.nroOrden || '',
+                    claveOrden: p.claveOrden || '',
+                    establecimiento: p.establecimiento || '',
+                    repartidorId: p.repartidorId ? String(p.repartidorId) : '',
+                    repartidor: p.repartidor || '',
+                    empaquetador: p.empaquetador || vendedorNombre || '',
+                    fechaEstimada: p.fechaEstimada ? moment(p.fechaEstimada).format('YYYY-MM-DD') : '',
+                    costoEnvio: p.costoEnvio ?? adelantoComprobante ?? 0,
+                    pagarFlete: p.pagarFlete ?? (adelantoComprobante > 0 ? 'CLIENTE' : 'NEGOCIO'),
+                    aplicacionMontoCliente: p.aplicacionMontoCliente ?? (adelantoComprobante > 0 ? 'ADELANTO' : 'NEGOCIO'),
+                    montoCOD: p.montoCOD ?? 0,
+                    pesoKg: p.pesoKg ?? 0,
+                    shalomAgenciaDestinoId: p.shalomAgenciaDestinoId || '',
+                    shalomTipoProducto: p.shalomTipoProducto ?? undefined,
+                    shalomFleteCotizado: p.shalomFleteCotizado ?? null,
+                    olvaAgenciaDestinoCodigo: p.olvaAgenciaDestinoCodigo || '',
+                    tipoVentaReparto: p.tipoVentaReparto || '',
+                    distritoUbigeo: p.distritoUbigeo || '',
+                    distrito: p.distrito || '',
+                    coordenadas: p.coordenadas || '',
+                    formaPagoCobro: p.formaPagoCobro || '',
+                    revisarProducto: !!p.revisarProducto,
+                    sedeOrigenNombre: p.sedeOrigenNombre || '',
+                });
             } catch (error) {
                 alert('No se pudo cargar el despacho', 'error');
                 onClose();
