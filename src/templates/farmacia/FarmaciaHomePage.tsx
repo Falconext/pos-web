@@ -19,11 +19,7 @@ import {
   type Theme, type OpenFn, type AddFn, type Service,
 } from './FarmaciaSections';
 
-
-
-
 const SERVICE_COLS: Record<number, string> = { 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5' };
-
 
 type RxMode = 'whatsapp' | 'phone' | 'visit';
 
@@ -67,10 +63,6 @@ export default function FarmaciaHomePage(props: TemplateHomePageProps) {
     const names = list.map((p) => (typeof p?.marca === 'object' ? p?.marca?.nombre : p?.marca)).filter(Boolean).map((s) => String(s).trim());
     return Array.from(new Set(names)).slice(0, 14);
   }, [list]);
-  const promoImgs = useMemo(() => {
-    const pool = withImg.map((p) => p.imagenUrl);
-    return [1, 2, 3, 4].map((i) => (pool.length ? pool[(i + 4) % pool.length] : undefined));
-  }, [withImg]);
 
   const cartCount = (carrito || []).reduce((s: number, i: any) => s + Number(i?.cantidad || 1), 0);
   const goCatalog = () => navigate(`/tienda/${slug}/catalogo`);
@@ -104,7 +96,7 @@ export default function FarmaciaHomePage(props: TemplateHomePageProps) {
         />
         <ServicesRail t={t} services={services} onClick={goCatalog} />
         <CategoryGrid t={t} title={editable(diseno?.farmaciaCategoriesTitle, 'Compra por categoría')} tiles={catTiles} onPick={goCategory} onMore={goCatalog} />
-        <PromoBento t={t} diseno={diseno} imgs={promoImgs} goAction={goAction} />
+        <PromoBento t={t} diseno={diseno} goAction={goAction} />
         {offers.length > 0 && <FlashDeals t={t} title={editable(diseno?.farmaciaFlashTitle, 'Ofertas relámpago')} products={offers.slice(0, 5)} endsAt={offerEndsAt} slug={slug} onOpen={goProduct} onAdd={add} onMore={goCatalog} />}
         {rx && <RxBand t={t} diseno={diseno} mode={rx.mode} url={rx.url} />}
         <ProductTabs t={t} diseno={diseno} list={list} slug={slug} loading={loading} onOpen={goProduct} onAdd={add} onMore={goCatalog} />
@@ -123,8 +115,6 @@ export default function FarmaciaHomePage(props: TemplateHomePageProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════ SHARED ══
-
-
 
 // ═════════════════════════════════════════════════════════════════ HERO ══
 function HeroSection({ t, diseno, products, onShop, secondary }: { t: Theme; diseno: any; products: any[]; onShop: () => void; secondary: { label: string; icon: string; onClick: () => void } }) {
@@ -183,24 +173,24 @@ function HeroSection({ t, diseno, products, onShop, secondary }: { t: Theme; dis
           </motion.ul>
         </motion.div>
 
-        <HeroVisual t={t} products={products} staticImage={diseno?.farmaciaHeroImageUrl} />
+        <HeroVisual t={t} products={products} />
       </div>
     </section>
   );
 }
 
 /** Composición del hero. Aislada: su rotación (4.5s) solo re-renderiza este componente. */
-function HeroVisual({ t, products, staticImage }: { t: Theme; products: any[]; staticImage?: string }) {
+function HeroVisual({ t, products }: { t: Theme; products: any[] }) {
   const items = useMemo(() => products.slice(0, 5), [products]);
   const [idx, setIdx] = useState(0);
   useEffect(() => {
-    if (staticImage || items.length < 2) return;
+    if (items.length < 2) return;
     const id = setInterval(() => setIdx((v) => (v + 1) % items.length), 4500);
     return () => clearInterval(id);
-  }, [items.length, staticImage]);
+  }, [items.length]);
 
   const current = items[idx];
-  const src = staticImage || current?.imagenUrl;
+  const src = current?.imagenUrl;
   const pricing = current ? getProductPricing(current) : null;
 
   return (
@@ -229,7 +219,7 @@ function HeroVisual({ t, products, staticImage }: { t: Theme; products: any[]; s
       <FloatChip t={t} className="left-0 top-[14%]" delay={0} icon="solar:delivery-bold" title="Entrega rápida" sub="Delivery y recojo" />
       <FloatChip t={t} className="right-0 top-[34%]" delay={1.4} icon="solar:shield-check-bold" title="Atención experta" sub="Químico farmacéutico" />
 
-      {current && pricing && !staticImage && (
+      {current && pricing && (
         <motion.div className="absolute bottom-[7%] left-[3%] z-10 w-[58%] max-w-[250px]" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: [0, -8, 0] }} transition={{ opacity: { duration: 0.6, delay: 1.1 }, y: { duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.7 } }}>
           <div className="rounded-2xl border border-white/70 bg-white/90 p-3 shadow-[0_24px_50px_-24px_rgba(15,23,42,0.4)] backdrop-blur-md">
             <AnimatePresence mode="wait" initial={false}>
@@ -247,7 +237,7 @@ function HeroVisual({ t, products, staticImage }: { t: Theme; products: any[]; s
         </motion.div>
       )}
 
-      {items.length > 1 && !staticImage && (
+      {items.length > 1 && (
         <div className="absolute bottom-[3%] right-[8%] z-10 flex gap-1.5">
           {items.map((p, i) => (
             <button key={p.id ?? i} type="button" aria-label={`Ver producto ${i + 1}`} onClick={() => setIdx(i)} className="h-2 rounded-full transition-all duration-500" style={{ width: i === idx ? 22 : 8, background: i === idx ? t.primary : mix(t.primary, 30) }} />
@@ -313,39 +303,75 @@ function CategoryGrid({ t, title, tiles, onPick, onMore }: { t: Theme; title: st
 }
 
 // ══════════════════════════════════════════════════════════════ PROMOS ══
-function PromoBento({ t, diseno, imgs, goAction }: { t: Theme; diseno: any; imgs: (string | undefined)[]; goAction: (key: string) => void }) {
-  const cards = [
-    { key: 'one', tone: t.primary, big: true, span: 'sm:col-span-2 lg:col-span-2 lg:row-span-2', eyebrow: editable(diseno?.farmaciaPromoOneEyebrow, 'Tu farmacia de confianza'), title: editable(diseno?.farmaciaPromoOneTitle, 'Todo para tu salud en un solo lugar'), img: diseno?.farmaciaPromoOneImageUrl || imgs[0], action: 'farmaciaPromoOneAction', icon: 'solar:shield-plus-bold-duotone' },
-    { key: 'two', tone: '#D6457B', big: false, span: 'sm:col-span-2 lg:col-span-2', eyebrow: editable(diseno?.farmaciaPromoTwoEyebrow, 'Favoritos'), title: editable(diseno?.farmaciaPromoTwoTitle, 'Lo más pedido por nuestros clientes'), img: diseno?.farmaciaPromoTwoImageUrl || imgs[1], action: 'farmaciaPromoTwoAction', icon: 'solar:heart-pulse-bold-duotone' },
-    { key: 'b1', tone: '#0E9F8B', big: false, span: '', eyebrow: editable(diseno?.farmaciaBannerOneSub, 'Garantizado'), title: editable(diseno?.farmaciaBannerOneTitle, '100% originales'), img: diseno?.farmaciaBannerOneImageUrl || imgs[2], action: 'farmaciaBannerOneAction', icon: 'solar:verified-check-bold-duotone' },
-    { key: 'b2', tone: '#D9771E', big: false, span: '', eyebrow: editable(diseno?.farmaciaBannerTwoSub, 'Cada día'), title: editable(diseno?.farmaciaBannerTwoTitle, 'Precios justos'), img: diseno?.farmaciaBannerTwoImageUrl || imgs[3], action: 'farmaciaBannerTwoAction', icon: 'solar:magic-stick-3-bold-duotone' },
+/** Fotos por defecto (curadas y verificadas). El dueño las reemplaza en Personalizar. */
+const BANNER_DEFAULTS = {
+  one: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?auto=format&fit=crop&w=1400&q=75',
+  two: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1400&q=75',
+  b1: 'https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&w=900&q=75',
+  b2: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=900&q=75',
+};
+
+type Banner = { key: string; big: boolean; span: string; tone: string; eyebrow: string; title: string; img: string; action: string };
+
+function PromoBento({ t, diseno, goAction }: { t: Theme; diseno: any; goAction: (key: string) => void }) {
+  const cta = editable(diseno?.farmaciaPromoButton, 'Ver productos');
+  const banners: Banner[] = [
+    { key: 'one', big: true, span: 'sm:col-span-2 lg:col-span-2 lg:row-span-2', tone: t.primary, eyebrow: editable(diseno?.farmaciaPromoOneEyebrow, 'Tu farmacia de confianza'), title: editable(diseno?.farmaciaPromoOneTitle, 'Todo para tu salud en un solo lugar'), img: diseno?.farmaciaPromoOneImageUrl || BANNER_DEFAULTS.one, action: 'farmaciaPromoOneAction' },
+    { key: 'two', big: false, span: 'sm:col-span-2 lg:col-span-2', tone: '#0E7C86', eyebrow: editable(diseno?.farmaciaPromoTwoEyebrow, 'Favoritos'), title: editable(diseno?.farmaciaPromoTwoTitle, 'Lo más pedido por nuestros clientes'), img: diseno?.farmaciaPromoTwoImageUrl || BANNER_DEFAULTS.two, action: 'farmaciaPromoTwoAction' },
+    { key: 'b1', big: false, span: '', tone: '#1D6FB8', eyebrow: editable(diseno?.farmaciaBannerOneSub, 'Garantizado'), title: editable(diseno?.farmaciaBannerOneTitle, '100% originales'), img: diseno?.farmaciaBannerOneImageUrl || BANNER_DEFAULTS.b1, action: 'farmaciaBannerOneAction' },
+    { key: 'b2', big: false, span: '', tone: '#C2611F', eyebrow: editable(diseno?.farmaciaBannerTwoSub, 'Cada día'), title: editable(diseno?.farmaciaBannerTwoTitle, 'Precios justos'), img: diseno?.farmaciaBannerTwoImageUrl || BANNER_DEFAULTS.b2, action: 'farmaciaBannerTwoAction' },
   ];
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 lg:px-6">
-      <motion.div variants={fmStagger} initial="hidden" whileInView="show" viewport={fmViewport} className="grid gap-4 sm:grid-cols-2 lg:h-[460px] lg:grid-cols-4 lg:grid-rows-2">
-        {cards.map((c) => (
-          <motion.button key={c.key} type="button" variants={fmItem} whileHover="hover" onClick={() => goAction(c.action)} className={`group relative flex min-h-[190px] overflow-hidden rounded-[28px] text-left ${c.span}`} style={{ background: `linear-gradient(140deg, ${mix(c.tone, 16)} 0%, ${mix(c.tone, 6)} 100%)` }}>
-            <div className={`relative z-10 flex flex-col justify-between ${c.big ? 'max-w-[58%] p-8 sm:p-10' : 'max-w-[62%] p-6'}`}>
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: c.tone }}>{c.eyebrow}</p>
-                <h3 className={`mt-2 font-black leading-[1.08] tracking-[-0.02em] ${c.big ? 'text-[30px] sm:text-[38px]' : 'text-[19px]'}`} style={{ color: t.ink }}>{c.title}</h3>
-              </div>
-              <span className={`inline-flex w-max items-center gap-2 rounded-full bg-white font-black shadow-sm ${c.big ? 'mt-8 px-6 py-3 text-[14px]' : 'mt-4 px-4 py-2 text-[12px]'}`} style={{ color: t.ink }}>
-                Comprar
-                <Icon icon="solar:arrow-right-linear" width={c.big ? 18 : 15} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </span>
-            </div>
-            {c.img ? (
-              <motion.img src={c.img} alt="" variants={{ hover: { scale: 1.08, rotate: -3 } }} transition={{ duration: 0.5, ease: fmEase }} className={`pointer-events-none absolute object-contain mix-blend-multiply ${c.big ? 'bottom-6 right-4 h-[62%] w-[46%]' : 'bottom-3 right-2 h-[70%] w-[40%]'}`} />
-            ) : (
-              <motion.span variants={{ hover: { scale: 1.1, rotate: -6 } }} className="pointer-events-none absolute bottom-4 right-5" style={{ color: c.tone, opacity: 0.4 }}>
-                <Icon icon={c.icon} width={c.big ? 150 : 84} />
-              </motion.span>
-            )}
-          </motion.button>
-        ))}
+      <motion.div variants={fmStagger} initial="hidden" whileInView="show" viewport={fmViewport} className="grid gap-4 sm:grid-cols-2 lg:h-[520px] lg:grid-cols-4 lg:grid-rows-2">
+        {banners.map((b) => <BannerCard key={b.key} t={t} b={b} cta={cta} onClick={() => goAction(b.action)} />)}
       </motion.div>
     </section>
+  );
+}
+
+/**
+ * Banner fotográfico a sangre completa: la imagen cubre la tarjeta y un velo degradado
+ * garantiza la lectura del texto blanco. Si la imagen falla, queda el degradado de marca.
+ */
+function BannerCard({ t, b, cta, onClick }: { t: Theme; b: Banner; cta: string; onClick: () => void }) {
+  const [broken, setBroken] = useState(false);
+  const veil = b.big
+    ? 'linear-gradient(180deg, rgba(6,14,24,0.10) 0%, rgba(6,14,24,0.28) 40%, rgba(6,14,24,0.86) 100%)'
+    : 'linear-gradient(100deg, rgba(6,14,24,0.86) 0%, rgba(6,14,24,0.55) 48%, rgba(6,14,24,0.08) 100%)';
+  return (
+    <motion.button
+      type="button"
+      variants={fmItem}
+      whileHover="hover"
+      onClick={onClick}
+      className={`group relative isolate flex overflow-hidden rounded-[28px] text-left shadow-[0_24px_60px_-40px_rgba(6,14,24,0.7)] ${b.big ? 'min-h-[360px]' : 'min-h-[230px]'} ${b.span}`}
+      style={{ background: `linear-gradient(140deg, ${mix(b.tone, 88, '#0B1220')} 0%, ${mix(b.tone, 55, '#0B1220')} 100%)` }}
+    >
+      {!broken && (
+        <motion.img
+          src={b.img}
+          alt=""
+          loading="lazy"
+          onError={() => setBroken(true)}
+          variants={{ hover: { scale: 1.07 } }}
+          transition={{ duration: 0.9, ease: fmEase }}
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+      )}
+      <div aria-hidden className="absolute inset-0 -z-10" style={{ background: veil }} />
+
+      <div className={`relative flex w-full flex-col text-white ${b.big ? 'justify-end p-8 sm:p-10' : 'justify-between p-6'}`}>
+        <div className={b.big ? 'max-w-lg' : 'max-w-[78%]'}>
+          <span className="inline-flex rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10.5px] font-black uppercase tracking-[0.16em] backdrop-blur-md">{b.eyebrow}</span>
+          <h3 className={`mt-3 font-black leading-[1.06] tracking-[-0.02em] [text-wrap:balance] ${b.big ? 'text-[34px] sm:text-[46px]' : 'text-[21px] sm:text-[23px]'}`}>{b.title}</h3>
+        </div>
+        <span className={`inline-flex w-max items-center gap-2 rounded-full bg-white font-black shadow-lg ${b.big ? 'mt-7 px-6 py-3 text-[14px]' : 'mt-4 px-4 py-2 text-[12.5px]'}`} style={{ color: t.ink }}>
+          {cta}
+          <Icon icon="solar:arrow-right-linear" width={b.big ? 18 : 15} className="transition-transform duration-300 group-hover:translate-x-1" />
+        </span>
+      </div>
+    </motion.button>
   );
 }
 
@@ -371,7 +397,6 @@ function FlashDeals({ t, title, products, endsAt, slug, onOpen, onAdd, onMore }:
     </section>
   );
 }
-
 
 // ═════════════════════════════════════════════════════════ RECETA (Rx) ══
 const RX_COPY: Record<RxMode, { text: string; cta: string; ctaIcon: string; steps: { icon: string; title: string; text: string }[] }> = {
@@ -519,7 +544,6 @@ function BrandsMarquee({ t, title, brands }: { t: Theme; title: string; brands: 
     </section>
   );
 }
-
 
 // ══════════════════════════════════════════════════════════ NEWSLETTER ══
 function Newsletter({ t, diseno, waUrl }: { t: Theme; diseno: any; waUrl: string }) {

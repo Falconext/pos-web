@@ -1509,6 +1509,7 @@ const FARMACIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'farmaciaBannerOneSub', label: 'Promo 3: etiqueta', placeholder: 'Garantizado', group: 'Promos' },
   { key: 'farmaciaBannerTwoTitle', label: 'Promo 4: título', placeholder: 'Precios justos', group: 'Promos' },
   { key: 'farmaciaBannerTwoSub', label: 'Promo 4: etiqueta', placeholder: 'Cada día', group: 'Promos' },
+  { key: 'farmaciaPromoButton', label: 'Banners: texto del botón', placeholder: 'Ver productos', group: 'Promos' },
   { key: 'farmaciaFlashTitle', label: 'Título ofertas relámpago', placeholder: 'Ofertas relámpago', group: 'Secciones' },
   { key: 'farmaciaRxEyebrow', label: 'Receta: etiqueta', placeholder: 'Pedidos con receta', group: 'Receta' },
   { key: 'farmaciaRxTitle', label: 'Receta: título', placeholder: '¿Tienes una receta médica?', group: 'Receta' },
@@ -1528,11 +1529,10 @@ const FARMACIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'farmaciaFooterText', label: 'Footer: descripción', placeholder: 'Tu farmacia de confianza…', group: 'Footer' },
 ];
 const FARMACIA_IMAGE_FIELDS: ImageFieldDef[] = [
-  { key: 'farmaciaHeroImageUrl', label: 'Hero: imagen fija', hint: 'Opcional. Si la dejas vacía, el hero rota automáticamente tus productos con foto. PNG con fondo transparente recomendado.', fallback: '' },
-  { key: 'farmaciaPromoOneImageUrl', label: 'Promo grande: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
-  { key: 'farmaciaPromoTwoImageUrl', label: 'Promo 2: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
-  { key: 'farmaciaBannerOneImageUrl', label: 'Promo 3: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
-  { key: 'farmaciaBannerTwoImageUrl', label: 'Promo 4: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
+  { key: 'farmaciaPromoOneImageUrl', label: 'Banner grande: imagen', hint: 'Foto que cubre toda la tarjeta grande (izquierda). Mín. 1200×900 px. El texto va encima con un velo oscuro, elige fotos con zonas tranquilas.', fallback: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?auto=format&fit=crop&w=1400&q=75' },
+  { key: 'farmaciaPromoTwoImageUrl', label: 'Banner ancho: imagen', hint: 'Foto del banner ancho (arriba derecha). Recomendado 1200×500 px, horizontal.', fallback: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1400&q=75' },
+  { key: 'farmaciaBannerOneImageUrl', label: 'Banner pequeño 1: imagen', hint: 'Foto del banner pequeño. Recomendado 800×600 px; deja el lado izquierdo despejado para el texto.', fallback: 'https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&w=900&q=75' },
+  { key: 'farmaciaBannerTwoImageUrl', label: 'Banner pequeño 2: imagen', hint: 'Foto del banner pequeño. Recomendado 800×600 px; deja el lado izquierdo despejado para el texto.', fallback: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=900&q=75' },
 ];
 const FARMACIA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'farmaciaHeroAction', label: 'Hero: botón principal', defaultType: 'catalog' },
