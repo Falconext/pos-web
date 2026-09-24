@@ -7,6 +7,10 @@ export interface DemoProduct {
   stock: number;
   categoria: { nombre: string };
   marca: { nombre: string };
+  precioOferta?: number;
+  /** Opcional: tallas/colores reales para plantillas de moda y calzado. */
+  opcionesAtributos?: { nombre: string; valores: string[] }[];
+  variantes?: any[];
 }
 
 export interface RubroDemo {
@@ -125,6 +129,38 @@ const ropaDemo: RubroDemo = {
     { id: 6, descripcion: 'Cartera Cuero Marrón', precioUnitario: 189.00, precioOriginal: 240.00, imagenUrl: img(400,500,'FEF2F2','991B1B','Cartera'), stock: 6, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Coach' } },
     { id: 7, descripcion: 'Pantalón Chino Beige', precioUnitario: 119.00, precioOriginal: 0, imagenUrl: img(400,500,'FEF9C3','854D0E','Chino'), stock: 14, categoria: { nombre: 'Pantalones' }, marca: { nombre: 'H&M' } },
     { id: 8, descripcion: 'Vestido Noche Lentejuelas', precioUnitario: 249.00, precioOriginal: 320.00, imagenUrl: img(400,500,'1E1B4B','E0E7FF','Vestido Noche'), stock: 4, categoria: { nombre: 'Vestidos' }, marca: { nombre: 'Zara' } },
+  ],
+};
+
+// ─── Calzado / Zapatería ──────────────────────────────────────────────────────
+const u = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+/** Variantes de talla (y color opcional) con stock variable, para que la ficha muestre tallas agotadas. */
+const shoeVariants = (id: number, price: number, sizes: string[], colors: string[] = [], out: string[] = []) => {
+  const combos = colors.length ? colors.flatMap((c) => sizes.map((t) => ({ Color: c, Talla: t }))) : sizes.map((t) => ({ Talla: t }));
+  return {
+    opcionesAtributos: [...(colors.length ? [{ nombre: 'Color', valores: colors }] : []), { nombre: 'Talla', valores: sizes }],
+    variantes: combos.map((v, i) => ({ id: id * 100 + i, precioUnitario: price, stock: out.includes(v.Talla) ? 0 : 3 + ((i * 7) % 9), valoresAtributos: v })),
+  };
+};
+const calzadoDemo: RubroDemo = {
+  storeName: 'Stride Perú',
+  slogan: 'Da el siguiente paso',
+  heroKeyword: 'Zapatillas para tu ritmo',
+  heroDesc: 'Zapatillas, botines y calzado urbano con las mejores marcas. Tallas del 35 al 44 con envío a todo el país.',
+  categories: ['Todos', 'Running', 'Urbanas', 'Training', 'Botines', 'Mujer'],
+  plantillaDefault: 'zapatos',
+  colorDefault: '#4B5237',
+  products: [
+    { id: 1, descripcion: 'Zapatilla Urban Runner Blanca', precioUnitario: 289.90, imagenUrl: u('1549298916-b41d501d3772'), stock: 40, categoria: { nombre: 'Urbanas' }, marca: { nombre: 'Stride' }, ...shoeVariants(1, 289.9, ['38', '39', '40', '41', '42', '43'], [], ['43']) },
+    { id: 2, descripcion: 'Zapatilla Pulse Pro Running', precioUnitario: 349.00, imagenUrl: u('1542291026-7eec264c27ff'), stock: 30, categoria: { nombre: 'Running' }, marca: { nombre: 'Nike' }, ...shoeVariants(2, 349, ['39', '40', '41', '42', '43', '44'], ['Rojo', 'Negro'], ['39']) },
+    { id: 3, descripcion: 'Zapatilla City Flow Blanca', precioUnitario: 299.00, precioOferta: 259.00, imagenUrl: u('1600185365926-3a2ce3cdb9eb'), stock: 18, categoria: { nombre: 'Urbanas' }, marca: { nombre: 'Adidas' }, ...shoeVariants(3, 259, ['36', '37', '38', '39', '40']) },
+    { id: 4, descripcion: 'Zapatilla Court Classic', precioUnitario: 239.90, imagenUrl: u('1525966222134-fcfa99b8ae77'), stock: 25, categoria: { nombre: 'Urbanas' }, marca: { nombre: 'Puma' }, ...shoeVariants(4, 239.9, ['38', '39', '40', '41', '42']) },
+    { id: 5, descripcion: 'Zapatilla Trainer X1', precioUnitario: 319.00, imagenUrl: u('1608231387042-66d1773070a5'), stock: 22, categoria: { nombre: 'Training' }, marca: { nombre: 'Nike' }, ...shoeVariants(5, 319, ['39', '40', '41', '42', '43']) },
+    { id: 6, descripcion: 'Zapatilla Vortex 3 Amortiguación', precioUnitario: 459.00, precioOferta: 399.00, imagenUrl: u('1595950653106-6c9ebd614d3a'), stock: 12, categoria: { nombre: 'Running' }, marca: { nombre: 'Stride' }, ...shoeVariants(6, 399, ['38', '39', '40', '41', '42', '43']) },
+    { id: 7, descripcion: 'Botín de Cuero Chelsea', precioUnitario: 329.00, imagenUrl: u('1520639888713-7851133b1ed0'), stock: 10, categoria: { nombre: 'Botines' }, marca: { nombre: 'Stride' }, ...shoeVariants(7, 329, ['39', '40', '41', '42', '43']) },
+    { id: 8, descripcion: 'Taco Aguja Nude', precioUnitario: 219.00, imagenUrl: u('1543163521-1bf539c55dd2'), stock: 9, categoria: { nombre: 'Mujer' }, marca: { nombre: 'Stride' }, ...shoeVariants(8, 219, ['35', '36', '37', '38', '39']) },
+    { id: 9, descripcion: 'Zapatilla Minimal Knit', precioUnitario: 199.90, imagenUrl: u('1560769629-975ec94e6a86'), stock: 30, categoria: { nombre: 'Training' }, marca: { nombre: 'Puma' }, ...shoeVariants(9, 199.9, ['38', '39', '40', '41']) },
+    { id: 10, descripcion: 'Zapatilla Retro High Top', precioUnitario: 369.00, imagenUrl: u('1600269452121-4f2416e55c28'), stock: 14, categoria: { nombre: 'Urbanas' }, marca: { nombre: 'Adidas' }, ...shoeVariants(10, 369, ['39', '40', '41', '42', '43', '44']) },
   ],
 };
 
@@ -306,6 +342,8 @@ export function getRubroDemo(rubroNombre: string = ''): RubroDemo {
     return farmaciaDemo;
   if (n.includes('restaur') || n.includes('cafet') || n.includes('cevich') || n.includes('comida'))
     return restauranteDemo;
+  if (n.includes('calzad') || n.includes('zapat'))
+    return calzadoDemo;
   if (n.includes('ropa') || n.includes('moda') || n.includes('boutique') || n.includes('vestim') || n.includes('textil') || n.includes('confec'))
     return ropaDemo;
   if (n.includes('tecnol') || n.includes('comput') || n.includes('electron') || n.includes('celular') || n.includes('gaming') || n.includes('repuest') && n.includes('comput'))

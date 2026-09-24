@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
+import { readableText } from '@/templates/shared/color';
 
 function CartQtyInput({ qty, onChange }: { qty: number; onChange: (cantidad: number) => void }) {
   const [text, setText] = useState(String(qty));
@@ -183,8 +184,8 @@ export default function ConstruccionCartModal({
                     onClose();
                     onCheckout();
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-md px-5 py-4 text-sm font-black uppercase tracking-wide text-[#111] shadow-lg shadow-black/10 transition-transform hover:scale-[1.01]"
-                  style={{ background: cta }}
+                  className="flex w-full items-center justify-center gap-2 rounded-md px-5 py-4 text-sm font-black uppercase tracking-wide shadow-lg shadow-black/10 transition-transform hover:scale-[1.01]"
+                  style={{ background: cta, color: readableText(cta) }}
                 >
                   {editable(diseno?.construccionCartCheckoutLabel, 'Ir a pagar')} <Icon icon="solar:arrow-right-bold" width={18} />
                 </button>

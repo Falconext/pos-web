@@ -1485,6 +1485,138 @@ export interface LiveEditorPlantillaConfig {
   linkFields: LinkFieldDef[];
 }
 
+// ── Farmacia (MediCare) ──
+const FARMACIA_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'farmaciaTopbarLeft', label: 'Barra superior', placeholder: 'Farmacia con receta y venta libre', group: 'Header' },
+  { key: 'farmaciaSearchCategory', label: 'Buscador: categoría', placeholder: 'Todas las categorías', group: 'Header' },
+  { key: 'farmaciaSearchPlaceholder', label: 'Buscador: placeholder', placeholder: 'Busca medicamentos, vitaminas…', group: 'Header' },
+  { key: 'farmaciaCategoriesLabel', label: 'Botón categorías', placeholder: 'Categorías', group: 'Header' },
+  { key: 'farmaciaHeroBadge', label: 'Hero: etiqueta', placeholder: 'Farmacia abierta · Delivery hoy', group: 'Hero' },
+  { key: 'farmaciaHeroTitle', label: 'Hero: título', placeholder: 'Tu salud y bienestar,', group: 'Hero' },
+  { key: 'farmaciaHeroHighlight', label: 'Hero: texto resaltado', placeholder: 'a un clic de casa', group: 'Hero', hint: 'Se muestra en color y con subrayado animado al final del título.' },
+  { key: 'farmaciaHeroSubtitle', label: 'Hero: subtítulo', placeholder: 'Medicamentos, vitaminas y dermocosmética…', group: 'Hero' },
+  { key: 'farmaciaHeroButton', label: 'Hero: botón principal', placeholder: 'Comprar ahora', group: 'Hero' },
+  { key: 'farmaciaHeroSecondaryButton', label: 'Hero: botón receta', placeholder: 'Tengo una receta', group: 'Hero' },
+  { key: 'farmaciaHeroTrustOne', label: 'Hero: confianza 1', placeholder: 'Químico farmacéutico en línea', group: 'Hero' },
+  { key: 'farmaciaHeroTrustTwo', label: 'Hero: confianza 2', placeholder: 'Productos 100% originales', group: 'Hero' },
+  { key: 'farmaciaHeroTrustThree', label: 'Hero: confianza 3', placeholder: 'Pago con Yape, Plin y tarjeta', group: 'Hero' },
+  { key: 'farmaciaCategoriesTitle', label: 'Título compra por categoría', placeholder: 'Compra por categoría', group: 'Secciones' },
+  { key: 'farmaciaPromoOneEyebrow', label: 'Promo grande: etiqueta', placeholder: 'Tu farmacia de confianza', group: 'Promos' },
+  { key: 'farmaciaPromoOneTitle', label: 'Promo grande: título', placeholder: 'Todo para tu salud en un solo lugar', group: 'Promos' },
+  { key: 'farmaciaPromoTwoEyebrow', label: 'Promo 2: etiqueta', placeholder: 'Favoritos', group: 'Promos' },
+  { key: 'farmaciaPromoTwoTitle', label: 'Promo 2: título', placeholder: 'Lo más pedido por nuestros clientes', group: 'Promos' },
+  { key: 'farmaciaBannerOneTitle', label: 'Promo 3: título', placeholder: '100% originales', group: 'Promos' },
+  { key: 'farmaciaBannerOneSub', label: 'Promo 3: etiqueta', placeholder: 'Garantizado', group: 'Promos' },
+  { key: 'farmaciaBannerTwoTitle', label: 'Promo 4: título', placeholder: 'Precios justos', group: 'Promos' },
+  { key: 'farmaciaBannerTwoSub', label: 'Promo 4: etiqueta', placeholder: 'Cada día', group: 'Promos' },
+  { key: 'farmaciaFlashTitle', label: 'Título ofertas relámpago', placeholder: 'Ofertas relámpago', group: 'Secciones' },
+  { key: 'farmaciaRxEyebrow', label: 'Receta: etiqueta', placeholder: 'Pedidos con receta', group: 'Receta' },
+  { key: 'farmaciaRxTitle', label: 'Receta: título', placeholder: '¿Tienes una receta médica?', group: 'Receta' },
+  { key: 'farmaciaRxText', label: 'Receta: texto', placeholder: 'Envíanos una foto y nuestro químico farmacéutico…', group: 'Receta' },
+  { key: 'farmaciaTabsTitle', label: 'Título pestañas de productos', placeholder: 'Nuestros productos', group: 'Secciones' },
+  { key: 'farmaciaColTrendTitle', label: 'Pestaña 1', placeholder: 'Más vendidos', group: 'Secciones' },
+  { key: 'farmaciaColNewTitle', label: 'Pestaña 2', placeholder: 'Nuevos ingresos', group: 'Secciones' },
+  { key: 'farmaciaColSaleTitle', label: 'Pestaña 3', placeholder: 'En oferta', group: 'Secciones' },
+  { key: 'farmaciaBrandsTitle', label: 'Título marcas', placeholder: 'Marcas que confían en nosotros', group: 'Secciones' },
+  { key: 'farmaciaRecommendedTitle', label: 'Título recomendados', placeholder: 'Recomendado para ti', group: 'Secciones' },
+  { key: 'farmaciaNewsletterTitle', label: 'Ofertas WhatsApp: título', placeholder: 'Recibe ofertas exclusivas', group: 'Newsletter' },
+  { key: 'farmaciaNewsletterText', label: 'Ofertas WhatsApp: texto', placeholder: 'Únete a nuestra lista de WhatsApp…', group: 'Newsletter' },
+  { key: 'farmaciaNavContact', label: 'Menú: enlace de contacto', placeholder: 'Contacto', group: 'Header' },
+  { key: 'farmaciaCatalogTitle', label: 'Catálogo: título', placeholder: 'Nuestro catálogo', group: 'Catálogo' },
+  { key: 'farmaciaContactTitle', label: 'Contacto: título', placeholder: 'Estamos para cuidarte', group: 'Contacto' },
+  { key: 'farmaciaContactSubtitle', label: 'Contacto: subtítulo', placeholder: 'Resolvemos tus dudas sobre medicamentos, pedidos y entregas…', group: 'Contacto' },
+  { key: 'farmaciaFooterText', label: 'Footer: descripción', placeholder: 'Tu farmacia de confianza…', group: 'Footer' },
+];
+const FARMACIA_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'farmaciaHeroImageUrl', label: 'Hero: imagen fija', hint: 'Opcional. Si la dejas vacía, el hero rota automáticamente tus productos con foto. PNG con fondo transparente recomendado.', fallback: '' },
+  { key: 'farmaciaPromoOneImageUrl', label: 'Promo grande: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
+  { key: 'farmaciaPromoTwoImageUrl', label: 'Promo 2: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
+  { key: 'farmaciaBannerOneImageUrl', label: 'Promo 3: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
+  { key: 'farmaciaBannerTwoImageUrl', label: 'Promo 4: imagen', hint: 'Opcional. Vacío = usa la foto de uno de tus productos.', fallback: '' },
+];
+const FARMACIA_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'farmaciaHeroAction', label: 'Hero: botón principal', defaultType: 'catalog' },
+  { key: 'farmaciaPromoOneAction', label: 'Promo grande: acción', defaultType: 'catalog' },
+  { key: 'farmaciaPromoTwoAction', label: 'Promo 2: acción', defaultType: 'catalog' },
+  { key: 'farmaciaBannerOneAction', label: 'Promo 3: acción', defaultType: 'catalog' },
+  { key: 'farmaciaBannerTwoAction', label: 'Promo 4: acción', defaultType: 'catalog' },
+];
+
+// ── Zapatos (Stride) ──
+const ZAPATOS_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'zapatosHeroImage', label: 'Hero · Slide 1: imagen', hint: 'Foto grande del primer banner. Ideal: persona usando zapatillas, fondo claro, sujeto a la derecha (rec. 1800×1000px).', fallback: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=1800&q=80' },
+  { key: 'zapatosSlide2Image', label: 'Hero · Slide 2: imagen', hint: 'Foto del segundo banner (rec. 1800×1000px).', fallback: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=1800&q=80' },
+  { key: 'zapatosSlide3Image', label: 'Hero · Slide 3: imagen', hint: 'Foto del tercer banner (rec. 1800×1000px).', fallback: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=1800&q=80' },
+  ...categoryTileImageFields('zapatos', 4, [
+    'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=1100&q=80',
+    'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1100&q=80',
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1100&q=80',
+    'https://images.unsplash.com/photo-1514989940723-e8e51635b782?auto=format&fit=crop&w=1100&q=80',
+  ], 'rec. 1100×700px, sujeto a la derecha'),
+  { key: 'zapatosCatalogImage', label: 'Catálogo: imagen de portada', hint: 'Imagen a la derecha del encabezado del catálogo (rec. 1200×600px).', fallback: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=1200&q=80' },
+];
+
+const ZAPATOS_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'zapatosLogoText', label: 'Nombre en el logo', placeholder: 'Nombre comercial de la tienda', group: 'Marca', hint: 'Solo se usa si la tienda no tiene logo subido.' },
+  { key: 'zapatosLogoTagline', label: 'Lema bajo el logo (opcional)', placeholder: 'Da el siguiente paso', group: 'Marca' },
+  { key: 'zapatosAnnouncement', label: 'Barra de anuncio (opcional)', placeholder: 'Vacío = no se muestra', group: 'Header' },
+  { key: 'zapatosNavHome', label: 'Menú: Inicio', placeholder: 'Inicio', group: 'Header' },
+  { key: 'zapatosNavShop', label: 'Menú: Catálogo', placeholder: 'Catálogo', group: 'Header' },
+  { key: 'zapatosNavContact', label: 'Menú: Contacto', placeholder: 'Contacto', group: 'Header' },
+  { key: 'zapatosSearchPlaceholder', label: 'Buscador: texto de ayuda', placeholder: 'Busca por modelo, marca o categoría…', group: 'Header' },
+  heroIntervalField('zapatosHeroInterval', 'Hero · Slide 1', 6.5),
+  { key: 'zapatosHeroSecondary', label: 'Botón secundario (baja a Destacados)', placeholder: 'Destacados', group: 'Hero · Slide 1' },
+  { key: 'zapatosHeroOnlyImage', label: 'Slide 1: solo imagen', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Sin textos ni botones; el banner completo lleva al enlace del Slide 1.' },
+  { key: 'zapatosHeroEyebrow', label: 'Slide 1: etiqueta', placeholder: 'Colección premium', group: 'Hero · Slide 1' },
+  { key: 'zapatosHeroTitle', label: 'Slide 1: título', placeholder: 'Zapatillas para tu ritmo y tu ciudad', group: 'Hero · Slide 1' },
+  { key: 'zapatosHeroSubtitle', label: 'Slide 1: subtítulo', placeholder: 'Comodidad, estilo y tecnología en cada paso…', group: 'Hero · Slide 1' },
+  { key: 'zapatosHeroButton', label: 'Slide 1: botón', placeholder: 'Ver catálogo', group: 'Hero · Slide 1' },
+  { key: 'zapatosSlide2OnlyImage', label: 'Slide 2: solo imagen', placeholder: '', group: 'Hero · Slide 2', type: 'toggle', hint: 'Sin textos ni botones; el banner completo lleva al enlace del Slide 2.' },
+  { key: 'zapatosSlide2Eyebrow', label: 'Slide 2: etiqueta', placeholder: 'Running', group: 'Hero · Slide 2' },
+  { key: 'zapatosSlide2Title', label: 'Slide 2: título', placeholder: 'Corre más lejos en cada salida', group: 'Hero · Slide 2' },
+  { key: 'zapatosSlide2Subtitle', label: 'Slide 2: subtítulo', placeholder: 'Modelos ligeros con buena amortiguación…', group: 'Hero · Slide 2' },
+  { key: 'zapatosSlide2Button', label: 'Slide 2: botón', placeholder: 'Ver modelos', group: 'Hero · Slide 2' },
+  { key: 'zapatosSlide3OnlyImage', label: 'Slide 3: solo imagen', placeholder: '', group: 'Hero · Slide 3', type: 'toggle', hint: 'Sin textos ni botones; el banner completo lleva al enlace del Slide 3.' },
+  { key: 'zapatosSlide3Eyebrow', label: 'Slide 3: etiqueta', placeholder: 'Lifestyle', group: 'Hero · Slide 3' },
+  { key: 'zapatosSlide3Title', label: 'Slide 3: título', placeholder: 'Clásicos que combinan con todo', group: 'Hero · Slide 3' },
+  { key: 'zapatosSlide3Subtitle', label: 'Slide 3: subtítulo', placeholder: 'Pares versátiles para el día a día…', group: 'Hero · Slide 3' },
+  { key: 'zapatosSlide3Button', label: 'Slide 3: botón', placeholder: 'Descubrir', group: 'Hero · Slide 3' },
+  { key: 'zapatosFeaturedTitle', label: 'Título del carrusel', placeholder: 'Destacados', group: 'Secciones', hint: 'Muestra primero los productos marcados como destacados.' },
+  ...categoryTileTextFields('zapatos', 4, 'Bloques de categoría'),
+  { key: 'zapatosTile1Text', label: 'Bloque 1: texto (opcional)', placeholder: 'Por defecto: N modelos disponibles', group: 'Bloques de categoría' },
+  { key: 'zapatosTile2Text', label: 'Bloque 2: texto (opcional)', placeholder: 'Por defecto: N modelos disponibles', group: 'Bloques de categoría' },
+  { key: 'zapatosTile3Text', label: 'Bloque 3: texto (opcional)', placeholder: 'Por defecto: N modelos disponibles', group: 'Bloques de categoría' },
+  { key: 'zapatosTile4Text', label: 'Bloque 4: texto (opcional)', placeholder: 'Por defecto: N modelos disponibles', group: 'Bloques de categoría' },
+  { key: 'zapatosOffersTitle', label: 'Título de ofertas', placeholder: 'En oferta', group: 'Secciones', hint: 'Solo aparece si hay productos con precio de oferta vigente.' },
+  { key: 'zapatosNewTitle', label: 'Título de recién llegados', placeholder: 'Recién llegados', group: 'Secciones' },
+  { key: 'zapatosGuideHidden', label: 'Ocultar guía "Encuentra tu par ideal"', placeholder: '', group: 'Guía', type: 'toggle' },
+  { key: 'zapatosGuideEyebrow', label: 'Guía: etiqueta', placeholder: 'Guía rápida', group: 'Guía' },
+  { key: 'zapatosGuideTitle', label: 'Guía: título', placeholder: 'Encuentra tu par ideal', group: 'Guía' },
+  ...[1, 2, 3, 4, 5, 6].flatMap((n) => [
+    { key: `zapatosGuide${n}Title`, label: `Guía ${n}: título`, placeholder: ['Amortiguación', 'Flexibilidad', 'Agarre', 'Transpirable', 'Soporte', 'Talla correcta'][n - 1], group: 'Guía' },
+    { key: `zapatosGuide${n}Text`, label: `Guía ${n}: texto`, placeholder: 'Consejo breve para elegir calzado', group: 'Guía' },
+  ]),
+  { key: 'zapatosClubTitle', label: 'Comunidad: título', placeholder: 'Únete a la comunidad…', group: 'Comunidad (WhatsApp)', hint: 'Solo aparece si la tienda tiene WhatsApp configurado.' },
+  { key: 'zapatosClubText', label: 'Comunidad: texto', placeholder: 'Recibe por WhatsApp los nuevos ingresos…', group: 'Comunidad (WhatsApp)' },
+  { key: 'zapatosClubPerk1', label: 'Comunidad: beneficio 1', placeholder: 'Lanzamientos primero', group: 'Comunidad (WhatsApp)' },
+  { key: 'zapatosClubPerk2', label: 'Comunidad: beneficio 2', placeholder: 'Aviso cuando vuelve tu talla', group: 'Comunidad (WhatsApp)' },
+  { key: 'zapatosClubPerk3', label: 'Comunidad: beneficio 3', placeholder: 'Asesoría personalizada', group: 'Comunidad (WhatsApp)' },
+  { key: 'zapatosClubButton', label: 'Comunidad: botón', placeholder: 'Unirme gratis', group: 'Comunidad (WhatsApp)' },
+  { key: 'zapatosFooterText', label: 'Footer: texto bajo el logo', placeholder: 'Por defecto: descripción de la tienda', group: 'Footer' },
+  { key: 'zapatosCatalogEyebrow', label: 'Catálogo: etiqueta', placeholder: 'Catálogo', group: 'Catálogo' },
+  { key: 'zapatosCatalogTitle', label: 'Catálogo: título', placeholder: 'Todos los modelos', group: 'Catálogo' },
+  { key: 'zapatosContactTitle', label: 'Contacto: título', placeholder: 'Hablemos de tu próximo par', group: 'Contacto' },
+  { key: 'zapatosContactSubtitle', label: 'Contacto: subtítulo', placeholder: 'Resolvemos tus dudas sobre tallas…', group: 'Contacto' },
+  { key: 'zapatosCheckoutTitle', label: 'Checkout: título', placeholder: 'Finalizar compra', group: 'Checkout' },
+  { key: 'zapatosCheckoutButton', label: 'Checkout: botón', placeholder: 'Confirmar pedido', group: 'Checkout' },
+];
+
+const ZAPATOS_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'zapatosHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Hero · Slide 1', defaultType: 'catalog' },
+  { key: 'zapatosSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Hero · Slide 2', defaultType: 'catalog' },
+  { key: 'zapatosSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
+];
+
 const EMPTY: LiveEditorPlantillaConfig = { textFields: [], imageFields: [], productFields: [], linkFields: [] };
 
 export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
@@ -1507,6 +1639,9 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   tones: { textFields: TONES_TEXT_FIELDS, imageFields: TONES_IMAGE_FIELDS, productFields: [], linkFields: TONES_LINK_FIELDS },
   'moda-minimal': { textFields: MODA_MINIMAL_TEXT_FIELDS, imageFields: MODA_MINIMAL_IMAGE_FIELDS, productFields: [], linkFields: MODA_MINIMAL_LINK_FIELDS },
   'comida-app': { textFields: COMIDA_APP_TEXT_FIELDS, imageFields: COMIDA_APP_IMAGE_FIELDS, productFields: [], linkFields: COMIDA_APP_LINK_FIELDS },
+  farmacia: { textFields: FARMACIA_TEXT_FIELDS, imageFields: FARMACIA_IMAGE_FIELDS, productFields: [], linkFields: FARMACIA_LINK_FIELDS },
+  salud: { textFields: FARMACIA_TEXT_FIELDS, imageFields: FARMACIA_IMAGE_FIELDS, productFields: [], linkFields: FARMACIA_LINK_FIELDS },
+  zapatos: { textFields: ZAPATOS_TEXT_FIELDS, imageFields: ZAPATOS_IMAGE_FIELDS, productFields: [], linkFields: ZAPATOS_LINK_FIELDS },
 };
 
 export function getLiveEditorConfig(plantillaId?: string | null): LiveEditorPlantillaConfig {

@@ -25,6 +25,8 @@ import HoodieProductoDetalle from './HoodieProductoDetalle';
 import TonesProductoDetalle from './TonesProductoDetalle';
 import ModaMinimalProductoDetalle from './ModaMinimalProductoDetalle';
 import CrispyProductoDetalle from './CrispyProductoDetalle';
+import FarmaciaProductoDetalle from './FarmaciaProductoDetalle';
+import StrideProductoDetalle from './StrideProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -55,6 +57,9 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   tones: TonesProductoDetalle,
   'moda-minimal': ModaMinimalProductoDetalle,
   'comida-app': CrispyProductoDetalle,
+  farmacia: FarmaciaProductoDetalle,
+  salud: FarmaciaProductoDetalle,
+  zapatos: StrideProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

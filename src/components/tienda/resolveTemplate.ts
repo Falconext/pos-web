@@ -29,7 +29,9 @@ export type PlantillaId =
   | 'hoodie'
   | 'tones'
   | 'moda-minimal'
-  | 'comida-app';
+  | 'comida-app'
+  | 'farmacia'
+  | 'zapatos';
 
 export interface BannerSlotDef {
   orden: number;
@@ -635,6 +637,40 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#E8542A',
     icon: 'mdi:silverware-fork-knife',
     rubrosPermitidos: ['Restaurante y alimentos', 'Restaurantes y comida', 'Comida rápida', 'Pollería', 'Polleria', 'Pizzería', 'Pizzeria', 'Hamburguesería', 'Cafetería', 'Cafeteria', 'Panadería y Pastelería', 'Heladería', 'Heladeria', 'Fast food', 'Delivery'],
+  },
+  farmacia: {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: true,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Farmacia (MediCare)',
+    description: 'Farmacia / botica / medicamentos estilo e-commerce médico premium (Dcare): verde médico + acento salud, topbar + buscador central con categorías, barra de servicios (consulta, laboratorio, farmacia local), hero + banners promocionales, ofertas relámpago con contador, compra por categoría, combos populares, columnas Nuevos/Tendencia/Oferta, marcas destacadas, recomendados y newsletter. Tarjetas con rating, % de descuento, barra de disponibilidad y selector de cantidad; favoritos, comparador y zoom. Detalle con galería, cantidad y relacionados. Color principal y de acento personalizables; todo editable en vivo.',
+    accentColor: '#16A34A',
+    icon: 'solar:health-bold',
+    rubrosPermitidos: ['Farmacia', 'Botica', 'Farmacia Veterinaria', 'Salud y bienestar'],
+  },
+  zapatos: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Zapatos (Stride)',
+    description: 'Zapatería / zapatillas / calzado premium estilo sneaker store: fondo beige cálido con CTA oliva y titulares en grotesca ancha. Hero slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable) con beneficios reales en vidrio, buscador + chips de categorías con íconos, destacados en carrusel, 4 bloques grandes de categoría, ofertas con contador real, guía "Encuentra tu par ideal", recién llegados, comunidad por WhatsApp y barra de confianza. Tarjetas con rango real de tallas, colores, rating real o "Nuevo", cantidad, favoritos, comparador y zoom. Ficha con selector de talla/color real, galería por color y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#4B5237',
+    icon: 'mdi:shoe-sneaker',
+    rubrosPermitidos: ['Calzado', 'Zapatería', 'Zapateria', 'Zapatillas', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Moda', 'Deportes y recreación'],
   },
 };
 

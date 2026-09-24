@@ -93,6 +93,11 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides a pantalla completa (solo-imagen o con textos y botón, cada uno enlazable)', 'Tiles por categoría y grillas de producto sobrias con hover de segunda imagen', 'Banner editorial + sección de valores y "los favoritos"', 'Detalle limpio con galería, checkout y contacto minimalistas', 'Personalización en vivo de textos, imágenes y enlaces'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  zapatos: {
+    headline: 'Tienda premium para zapaterías y tiendas de zapatillas (estilo sneaker store): beige cálido con CTA oliva, titulares en grotesca ancha y tarjetas redondeadas.',
+    features: ['Hero slider de 3 slides con beneficios reales de la tienda en vidrio (solo-imagen o con textos y botón, cada uno enlazable)', 'Buscador + chips de categorías con íconos, destacados en carrusel y 4 bloques grandes de categoría', 'Tarjetas con rango real de tallas, colores y rating real o "Nuevo"', 'Ficha con selector de talla y color real, galería por color, zoom y barra de compra fija', 'Guía "Encuentra tu par ideal", comunidad por WhatsApp y personalización en vivo de textos, imágenes y enlaces'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
   'comida-app': {
     headline: 'Experiencia tipo app de delivery para comida: interfaz mobile-first centrada que se ve igual en web y en celular, fondo crema con acentos rojo/naranja.',
     features: ['Hero slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', 'Círculos de categoría, combos con badges/rating/precio y botón "+"', 'Banner de ofertas y barra inferior de pestañas tipo app', 'Detalle con barra de acción fija (cantidad + agregar) y carrito bottom-sheet', 'Personalización en vivo de textos, imágenes y enlaces'],

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -20,11 +20,18 @@ import HoodieContactPage from '@/templates/hoodie/HoodieContactPage';
 import TonesContactPage from '@/templates/tones/TonesContactPage';
 import ModaMinimalContactPage from '@/templates/moda-minimal/ModaMinimalContactPage';
 import CrispyContactPage from '@/templates/comida-app/CrispyContactPage';
+import FarmaciaContactPage from '@/templates/farmacia/FarmaciaContactPage';
+import StrideContactPage from '@/templates/zapatos/StrideContactPage';
+import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 export default function ContactoRouter() {
   const { slug } = useParams();
+  // ?previewPlantilla=<id> muestra la tienda real con otra plantilla (igual que home/catálogo/detalle).
+  const [searchParams] = useSearchParams();
+  const previewPlantillaId = searchParams.get('previewPlantilla');
+  useStorePreviewNavigation(previewPlantillaId);
   const [tienda, setTienda] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [carrito, setCarrito] = useState<any[]>([]);
@@ -70,7 +77,8 @@ export default function ContactoRouter() {
     );
   }
 
-  const diseno = tienda?.diseno || {};
+  const disenoBase = tienda?.diseno || {};
+  const diseno = previewPlantillaId ? { ...disenoBase, plantillaId: previewPlantillaId } : disenoBase;
   const cp = diseno?.colorPrimario || '#FFD72E';
   const templateId = resolveTemplateId(diseno?.plantillaId);
 
@@ -247,6 +255,32 @@ export default function ContactoRouter() {
         />
       ) : templateId === 'falcon' ? (
         <FalconContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'farmacia' || templateId === 'salud' ? (
+        <FarmaciaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'zapatos' ? (
+        <StrideContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}

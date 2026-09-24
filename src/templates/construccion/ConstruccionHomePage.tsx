@@ -7,7 +7,11 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import HammerCatalogCard from './HammerCatalogCard';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { readableText } from '@/templates/shared/color';
 import ConstruccionCartModal from './ConstruccionCartModal';
+import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
+import TiendaCompareBar from '@/components/tienda/TiendaCompareBar';
+import { useFavoritosStore } from '@/zustand/favoritos';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 26 },
@@ -452,12 +456,16 @@ export default function ConstruccionHomePage({
 }: TemplateHomePageProps) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [showFavoritos, setShowFavoritos] = useState(false);
+  const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
+  const favoritos = getFavoritosBySlug(slug);
   const [activeTrendingTab, setActiveTrendingTab] = useState<'featured' | 'best' | 'new'>('featured');
   const [activeTopCategory, setActiveTopCategory] = useState('');
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'Hammer';
   const categories = allCategories.map(getName).filter(Boolean).slice(0, 6);
   const accent = cp || '#ffb400';
   const cta = diseno?.colorAccento || accent; // "Color de acento / CTA" con fallback al color principal
+  const headerText = readableText(accent); // texto legible sobre la barra del color principal
   const heroImage = diseno?.construccionHeroImageUrl || diseno?.ferreteriaHeroImageUrl || diseno?.bannerHeroUrl || '/assets/templates/ferreteria/banner.png';
   const cartCount = carrito.reduce((sum: number, item: any) => sum + Number(item?.cantidad || 1), 0);
   const irACheckout = () => navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } });
@@ -528,7 +536,7 @@ export default function ConstruccionHomePage({
               placeholder={searchPlaceholder}
               className="min-w-0 flex-1 px-5 text-[13px] font-semibold text-gray-700 outline-none"
             />
-            <button type="submit" className="px-4 text-[13px] font-black text-[#111] sm:px-7" style={{ background: accent }}>
+            <button type="submit" className="px-4 text-[13px] font-black sm:px-7" style={{ background: accent, color: headerText }}>
               Buscar
             </button>
           </form>
@@ -559,7 +567,7 @@ export default function ConstruccionHomePage({
               <Icon icon="solar:hamburger-menu-linear" width={28} />
               {categoryButtonLabel}
             </button>
-            <nav className="hidden flex-1 items-center justify-center gap-8 text-[14px] font-black text-[#151515] lg:flex">
+            <nav className="hidden flex-1 items-center justify-center gap-8 text-[14px] font-black lg:flex" style={{ color: headerText }}>
               <button type="button" onClick={() => navigate(`/tienda/${slug}`)}>{editable(diseno?.construccionNavHome, 'Inicio')}</button>
               <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="inline-flex items-center gap-1">{editable(diseno?.construccionNavStore, 'Tienda')} <Icon icon="solar:alt-arrow-down-linear" /></button>
               <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="inline-flex items-center gap-2">
@@ -573,11 +581,24 @@ export default function ConstruccionHomePage({
             </nav>
             <button
               type="button"
+              onClick={() => setShowFavoritos(true)}
+              className="relative inline-flex items-center"
+              style={{ color: headerText }}
+              title="Mis favoritos"
+            >
+              <Icon icon="solar:heart-linear" width={30} />
+              {favoritos.length > 0 && (
+                <span className="absolute -right-2 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black text-white" style={{ background: '#ef4444' }}>{favoritos.length}</span>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => setMostrarCarrito(true)}
-              className="inline-flex items-center gap-2 text-[14px] font-black text-[#151515]"
+              className="inline-flex items-center gap-2 text-[14px] font-black"
+              style={{ color: headerText }}
             >
               <Icon icon="solar:cart-large-2-linear" width={34} />
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs">{cartCount}</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-[#111]">{cartCount}</span>
               <span className="hidden sm:inline">{editable(diseno?.construccionCartLabel, 'Mi carrito')}</span>
             </button>
           </div>
@@ -697,6 +718,7 @@ export default function ConstruccionHomePage({
                     producto={producto}
                     cp={accent}
                     cta={cta}
+                    slug={slug}
                     onAdd={(qty) => agregarAlCarrito({ ...producto, __cantidad: qty })}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                   />
@@ -741,6 +763,7 @@ export default function ConstruccionHomePage({
                     producto={producto}
                     cp={accent}
                     cta={cta}
+                    slug={slug}
                     onAdd={(qty) => agregarAlCarrito({ ...producto, __cantidad: qty })}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                   />
@@ -806,6 +829,7 @@ export default function ConstruccionHomePage({
                     producto={producto}
                     cp={accent}
                     cta={cta}
+                    slug={slug}
                     onAdd={(qty) => agregarAlCarrito({ ...producto, __cantidad: qty })}
                     onOpen={() => navigate(`/tienda/${slug}/producto/${producto.id}`)}
                   />
@@ -827,6 +851,16 @@ export default function ConstruccionHomePage({
         cp={accent}
         tienda={tienda}
       />
+      <FavoritesDrawer
+        open={showFavoritos}
+        slug={slug}
+        cp={accent}
+        favoritos={favoritos}
+        onClose={() => setShowFavoritos(false)}
+        onProduct={(item) => { setShowFavoritos(false); navigate(`/tienda/${slug}/producto/${item.id}`); }}
+        onRemove={(id, s) => removeFavorito(id, s)}
+      />
+      <TiendaCompareBar slug={slug} cp={accent} onGoProduct={(item) => navigate(`/tienda/${slug}/producto/${item.id}`)} />
     </div>
   );
 }

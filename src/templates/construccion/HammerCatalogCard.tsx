@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
 import { getProductPricing } from '@/templates/shared/pricing';
+import { readableText } from '@/templates/shared/color';
+import ProductCardActions from '@/components/tienda/ProductCardActions';
 
 const fmt = (value: number) => `S/ ${Number(value || 0).toFixed(2)}`;
 
@@ -42,8 +44,9 @@ function Countdown({ seed }: { seed: number }) {
  * Tarjeta de producto del template Ferretería (Hammer). Compartida entre el
  * home y el catálogo para que ambos se vean iguales.
  */
-export default function HammerCatalogCard({ producto, cp, cta, onOpen, onAdd }: { producto: any; cp: string; cta?: string; onOpen: () => void; onAdd: (cantidad?: number) => void }) {
+export default function HammerCatalogCard({ producto, cp, cta, slug, onOpen, onAdd }: { producto: any; cp: string; cta?: string; slug: string; onOpen: () => void; onAdd: (cantidad?: number) => void }) {
   const ctaColor = cta || cp; // "Color de acento / CTA" con fallback al color principal
+  const ctaText = readableText(ctaColor); // texto legible según el fondo del CTA
   const pricing = getProductPricing(producto);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const rating = Number(producto?.ratingAvg || producto?.ratingPromedio || producto?.promedioRating || 0);
@@ -98,12 +101,8 @@ export default function HammerCatalogCard({ producto, cp, cta, onOpen, onAdd }: 
             <Countdown seed={idSeed} />
           </div>
         )}
-        <div className="absolute right-2 top-2 hidden flex-col overflow-hidden rounded-md bg-white shadow-lg group-hover:flex">
-          {['solar:heart-linear', 'solar:chart-2-linear', 'solar:eye-linear'].map((icon) => (
-            <button key={icon} type="button" onClick={(event) => event.stopPropagation()} className="flex h-9 w-9 items-center justify-center border-b border-gray-100 text-gray-600 transition-colors last:border-b-0 hover:text-[#111]">
-              <Icon icon={icon} width={17} />
-            </button>
-          ))}
+        <div className="absolute right-2 top-2 hidden group-hover:block">
+          <ProductCardActions producto={producto} slug={slug} cp={cp} />
         </div>
       </div>
 
@@ -120,8 +119,8 @@ export default function HammerCatalogCard({ producto, cp, cta, onOpen, onAdd }: 
           <button
             type="button"
             onClick={(event) => { event.stopPropagation(); onOpen(); }}
-            className="w-full rounded-md px-4 py-3 text-[14px] font-black text-[#111] transition-all hover:brightness-95"
-            style={{ background: ctaColor }}
+            className="w-full rounded-md px-4 py-3 text-[14px] font-black transition-all hover:brightness-95"
+            style={{ background: ctaColor, color: ctaText }}
           >
             Ver opciones
           </button>
@@ -151,8 +150,8 @@ export default function HammerCatalogCard({ producto, cp, cta, onOpen, onAdd }: 
               type="button"
               disabled={isOutOfStock}
               onClick={() => { if (!isOutOfStock) onAdd(Math.max(1, qty)); }}
-              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 truncate rounded-md px-2 py-3 text-[13px] font-black text-[#111] transition-all hover:brightness-95 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-              style={isOutOfStock ? undefined : { background: ctaColor }}
+              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 truncate rounded-md px-2 py-3 text-[13px] font-black transition-all hover:brightness-95 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+              style={isOutOfStock ? undefined : { background: ctaColor, color: ctaText }}
             >
               <Icon icon="solar:cart-plus-bold" width={18} className="shrink-0" />
               <span className="truncate">{isOutOfStock ? 'Sin stock' : 'Agregar'}</span>

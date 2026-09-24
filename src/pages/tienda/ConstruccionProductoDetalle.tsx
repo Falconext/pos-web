@@ -6,6 +6,7 @@ import axios from 'axios';
 import TiendaFloatingButtons from '@/components/tienda/TiendaFloatingButtons';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { getProductPricing, withPricing, withPricingList } from '@/templates/shared/pricing';
+import { readableText } from '@/templates/shared/color';
 import ConstruccionCartModal from '@/templates/construccion/ConstruccionCartModal';
 import { ConstruccionFooter } from '@/templates/construccion/ConstruccionHomePage';
 
@@ -68,6 +69,7 @@ function HammerHeader({
   const [search, setSearch] = useState('');
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'HAMMER';
   const diseno = tienda?.diseno || {};
+  const headerText = readableText(cp); // texto legible sobre la barra del color principal
 
   return (
     <header className="bg-[#111111] text-white">
@@ -87,7 +89,7 @@ function HammerHeader({
             <Icon icon="solar:alt-arrow-down-linear" width={20} />
           </button>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={editable(diseno?.construccionSearchPlaceholder, 'Buscar...')} className="min-w-0 flex-1 px-5 text-[13px] font-semibold text-gray-700 outline-none" />
-          <button type="submit" className="px-4 text-[13px] font-black text-[#111] sm:px-8" style={{ background: cp }}>
+          <button type="submit" className="px-4 text-[13px] font-black sm:px-8" style={{ background: cp, color: headerText }}>
             Buscar
           </button>
         </form>
@@ -110,7 +112,7 @@ function HammerHeader({
             <Icon icon="solar:hamburger-menu-linear" width={30} />
             {editable(diseno?.construccionHeaderCategoryLabel, 'Comprar por categorías')}
           </button>
-          <nav className="hidden flex-1 items-center justify-center gap-8 text-[14px] font-black text-[#151515] lg:flex">
+          <nav className="hidden flex-1 items-center justify-center gap-8 text-[14px] font-black lg:flex" style={{ color: headerText }}>
             <button type="button" onClick={() => navigate(`/tienda/${slug}`)}>{editable(diseno?.construccionNavHome, 'Inicio')}</button>
             <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="inline-flex items-center gap-1">{editable(diseno?.construccionNavStore, 'Tienda')} <Icon icon="solar:alt-arrow-down-linear" /></button>
             <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="inline-flex items-center gap-2">{editable(diseno?.construccionNavCategories, 'Categorías')} <span className="rounded px-1.5 py-0.5 text-[10px] font-black text-white" style={{ background: '#13a084' }}>OFERTA</span></button>
@@ -118,9 +120,9 @@ function HammerHeader({
             <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)}>{editable(diseno?.construccionNavOffers, 'Ofertas destacadas')}</button>
             <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)}>{editable(diseno?.construccionNavCatalog, 'Catálogo')}</button>
           </nav>
-          <button type="button" onClick={onOpenCart} className="inline-flex items-center gap-2 text-[14px] font-black text-[#151515]">
+          <button type="button" onClick={onOpenCart} className="inline-flex items-center gap-2 text-[14px] font-black" style={{ color: headerText }}>
             <Icon icon="solar:cart-large-2-linear" width={34} />
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs">{cartCount}</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-[#111]">{cartCount}</span>
             <span className="hidden sm:inline">{editable(diseno?.construccionCartLabel, 'Mi carrito')}</span>
           </button>
         </div>
@@ -167,8 +169,8 @@ function RelatedHammerCard({ product, cp, onOpen, onAddToCart }: { product: any;
           event.stopPropagation();
           onAddToCart();
         }}
-        className="mt-4 rounded-md px-5 py-3 text-sm font-black text-[#111] transition-transform hover:scale-[1.02]"
-        style={{ background: cp }}
+        className="mt-4 rounded-md px-5 py-3 text-sm font-black transition-transform hover:scale-[1.02]"
+        style={{ background: cp, color: readableText(cp) }}
       >
         Agregar al carrito
       </button>
@@ -210,6 +212,7 @@ export function ConstruccionProductoDetalleView({
   const [showStickyBar, setShowStickyBar] = useState(false);
   const cp = tienda?.diseno?.colorPrimario || '#ffb400';
   const cta = tienda?.diseno?.colorAccento || cp; // "Color de acento / CTA" con fallback al color principal
+  const ctaText = readableText(cta); // texto legible según el fondo del CTA
   const pricing = getProductPricing(producto);
   const extraImages = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
   const images = [producto?.imagenUrl, ...extraImages].filter(Boolean);
@@ -347,11 +350,11 @@ export function ConstruccionProductoDetalleView({
                 />
                 <button type="button" className="px-1 text-lg leading-none" onClick={() => setQty(isOutOfStock ? qty : Math.max(1, qty) + 1)}>+</button>
               </div>
-              <button type="button" disabled={isOutOfStock} onClick={add} className="h-12 flex-1 rounded-md text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cta }}>
+              <button type="button" disabled={isOutOfStock} onClick={add} className="h-12 flex-1 rounded-md text-[13px] font-black disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cta, color: ctaText }}>
                 {isOutOfStock ? 'Sin stock' : editable(tienda?.diseno?.construccionProductAddLabel, 'Agregar al carrito')}
               </button>
             </div>
-            <button type="button" disabled={isOutOfStock} onClick={add} className="mt-5 h-12 w-full rounded-md text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cta }}>
+            <button type="button" disabled={isOutOfStock} onClick={add} className="mt-5 h-12 w-full rounded-md text-[13px] font-black disabled:bg-gray-200 disabled:text-gray-400" style={isOutOfStock ? undefined : { background: cta, color: ctaText }}>
               {editable(tienda?.diseno?.construccionProductBuyLabel, 'Comprar ahora')}
             </button>
             <div className="mt-6 flex flex-wrap gap-6 border-b border-gray-200 pb-6 text-[13px] font-black text-[#222]">
@@ -456,10 +459,10 @@ export function ConstruccionProductoDetalleView({
             />
             <button type="button" className="px-1 text-lg leading-none" onClick={() => setQty(isOutOfStock ? qty : Math.max(1, qty) + 1)}>+</button>
           </div>
-          <button type="button" disabled={isOutOfStock} onClick={add} className="h-11 rounded-md px-4 text-[12px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400 sm:px-5 sm:text-[13px]" style={isOutOfStock ? undefined : { background: cta }}>
+          <button type="button" disabled={isOutOfStock} onClick={add} className="h-11 rounded-md px-4 text-[12px] font-black disabled:bg-gray-200 disabled:text-gray-400 sm:px-5 sm:text-[13px]" style={isOutOfStock ? undefined : { background: cta, color: ctaText }}>
             {editable(tienda?.diseno?.construccionProductAddLabel, 'Agregar al carrito')}
           </button>
-          <button type="button" disabled={isOutOfStock} onClick={add} className="hidden h-11 rounded-md px-5 text-[13px] font-black text-[#111] disabled:bg-gray-200 disabled:text-gray-400 sm:block" style={isOutOfStock ? undefined : { background: cta }}>
+          <button type="button" disabled={isOutOfStock} onClick={add} className="hidden h-11 rounded-md px-5 text-[13px] font-black disabled:bg-gray-200 disabled:text-gray-400 sm:block" style={isOutOfStock ? undefined : { background: cta, color: ctaText }}>
             {editable(tienda?.diseno?.construccionProductBuyLabel, 'Comprar ahora')}
           </button>
         </div>

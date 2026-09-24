@@ -123,6 +123,16 @@ import TonesHomePage from './tones/TonesHomePage';
 import TonesCatalogoPage from './tones/TonesCatalogoPage';
 import TonesCheckoutPage from './tones/TonesCheckoutPage';
 
+// Farmacia (MediCare — farmacia / botica / medicamentos, verde médico premium)
+import FarmaciaHomePage from './farmacia/FarmaciaHomePage';
+import FarmaciaCatalogoPage from './farmacia/FarmaciaCatalogoPage';
+import FarmaciaCheckoutPage from './farmacia/FarmaciaCheckoutPage';
+
+// Zapatos (Stride — zapatería / zapatillas / calzado, oliva + beige premium)
+import StrideHomePage from './zapatos/StrideHomePage';
+import StrideCatalogoPage from './zapatos/StrideCatalogoPage';
+import StrideCheckoutPage from './zapatos/StrideCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -272,5 +282,24 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: CrispyHomePage,
     CatalogoPage: CrispyCatalogoPage,
     CheckoutPage: CrispyCheckoutPage,
+  },
+  farmacia: {
+    id: 'farmacia',
+    HomePage: FarmaciaHomePage,
+    CatalogoPage: FarmaciaCatalogoPage,
+    CheckoutPage: FarmaciaCheckoutPage,
+  },
+  // 'salud' es el diseño asignado al rubro Farmacia/Botica → usa la plantilla MediCare
+  salud: {
+    id: 'salud',
+    HomePage: FarmaciaHomePage,
+    CatalogoPage: FarmaciaCatalogoPage,
+    CheckoutPage: FarmaciaCheckoutPage,
+  },
+  zapatos: {
+    id: 'zapatos',
+    HomePage: StrideHomePage,
+    CatalogoPage: StrideCatalogoPage,
+    CheckoutPage: StrideCheckoutPage,
   },
 };
