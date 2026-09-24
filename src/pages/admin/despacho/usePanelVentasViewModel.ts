@@ -103,6 +103,7 @@ export function usePanelVentasViewModel() {
     const [filtroSerie, setFiltroSerie] = useState('');
     const [filtroDni, setFiltroDni] = useState('');
     const [filtroProducto, setFiltroProducto] = useState('');
+    const [filtroMetodoPago, setFiltroMetodoPago] = useState('');
     const [filtroRepartidorId, setFiltroRepartidorId] = useState<number | null | undefined>(undefined);
     const [filtroUsuarioId, setFiltroUsuarioId] = useState<number | null>(null);
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
@@ -171,11 +172,24 @@ export function usePanelVentasViewModel() {
         return Array.from(map.values());
     }, [items]);
 
+    // Medios de pago presentes en los datos del período: se arma de lo que hay
+    // (no de una lista fija) para que también aparezcan los personalizados.
+    const metodosPagoOpciones = useMemo(() => {
+        const set = new Set<string>();
+        items.forEach((i) => {
+            const m = String(i.metodoPago ?? '').trim();
+            // '—' es el marcador de "sin pago registrado": no es un medio de pago.
+            if (m && m !== '—') set.add(m.toUpperCase());
+        });
+        return Array.from(set).sort();
+    }, [items]);
+
     const filtrados = useMemo(() => {
         const search = busqueda.toLowerCase().trim();
         const serie = filtroSerie.trim().toUpperCase();
         const dni = filtroDni.trim();
         const producto = filtroProducto.trim().toLowerCase();
+        const metodoPago = filtroMetodoPago.trim().toUpperCase();
         let base = items.filter(esDocumentoVisible);
 
         if (tab === 'VENTAS') base = base.filter((i) => i.estadoDespacho === 'NO_APLICA' && esVentaFinal(i));
@@ -193,6 +207,7 @@ export function usePanelVentasViewModel() {
         if (serie) base = base.filter((i) => (i.seriesGarantia ?? []).some((s) => s.toUpperCase().includes(serie)));
         if (dni) base = base.filter((i) => (i.clienteDoc ?? '').includes(dni));
         if (producto) base = base.filter((i) => (i.productos ?? []).some((p) => (p.nombre ?? '').toLowerCase().includes(producto)));
+        if (metodoPago) base = base.filter((i) => String(i.metodoPago ?? '').trim().toUpperCase() === metodoPago);
 
         if (search) {
             base = base.filter(
@@ -206,7 +221,7 @@ export function usePanelVentasViewModel() {
         }
 
         return base;
-    }, [items, tab, busqueda, filtroSerie, filtroDni, filtroProducto, filtroRepartidorId]);
+    }, [items, tab, busqueda, filtroSerie, filtroDni, filtroProducto, filtroMetodoPago, filtroRepartidorId]);
 
     const actualizarEstado = useCallback(async (item: VentaPanelItem, nuevoEstado: string) => {
         try {
@@ -356,6 +371,7 @@ export function usePanelVentasViewModel() {
         filtroSerie, setFiltroSerie,
         filtroDni, setFiltroDni,
         filtroProducto, setFiltroProducto,
+        filtroMetodoPago, setFiltroMetodoPago, metodosPagoOpciones,
         filtroRepartidorId, setFiltroRepartidorId,
         filtroUsuarioId, setFiltroUsuarioId,
         canFilterByUsuario,
