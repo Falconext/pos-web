@@ -399,8 +399,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         if (generandoGuia) return;
         setGenerandoGuia(true);
         try {
-            // Se guarda primero para que el backend arme la guía con lo que se ve en pantalla.
-            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, construirPayloadDespacho(envioData));
+            // Se guarda primero para que el backend arme la guía con lo que se ve en
+            // pantalla. Va por `upsert` (no `put`): al coordinar un envío nuevo la fila
+            // de seguimiento aún no existe —nace recién al guardar— y `put` respondía
+            // "No existe seguimiento de despacho para este comprobante" a quien pulsaba
+            // Generar guía sin haber guardado antes.
+            await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+            setExisteDespacho(true);
             const guia = await shalomService.crearGuia(comprobanteId, {
                 destinoId: envioData.shalomAgenciaDestinoId || undefined,
                 destinoNombre: envioData.agenciaDestino || undefined,
@@ -430,8 +435,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         if (generandoGuia) return;
         setGenerandoGuia(true);
         try {
-            // Se guarda primero para que el backend arme la guía con lo que se ve en pantalla.
-            await apiClient.put(`/envio-despacho/comprobante/${comprobanteId}`, construirPayloadDespacho(envioData));
+            // Mismo motivo que en Shalom: `upsert` crea el seguimiento si el envío se
+            // está coordinando por primera vez.
+            await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+            setExisteDespacho(true);
             const guia = await olvaService.crearGuia(comprobanteId, {
                 tipoEnvio: envioData.tipoEnvio === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
                 destinoCodigo: envioData.olvaAgenciaDestinoCodigo || undefined,
