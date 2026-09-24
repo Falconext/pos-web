@@ -1337,6 +1337,10 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit, prefillComp
                                         La factura o boleta que origina el traslado. SUNAT la imprime en la guía y es lo que pide el fiscalizador en carretera.
                                         Si importaste el comprobante en el paso 1, ya viene puesta.
                                     </p>
+                                    <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+                                        Para el motivo <b>Venta</b>, SUNAT solo acepta comprobantes de pago (factura, boleta, ticket) y guías.
+                                        La constancia de detracción y la DAM las rechaza con el código 3352.
+                                    </p>
                                     <div className="space-y-2">
                                         {(formValues.documentosRelacionados || []).map((doc: any, i: number) => (
                                             <div key={i} className="grid grid-cols-1 sm:grid-cols-[170px_1fr_150px_40px] gap-2 items-center">
