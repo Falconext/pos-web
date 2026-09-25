@@ -10,7 +10,7 @@ import { useReducedMotionPreference } from '@/lib/motion/reducedMotion';
 const DOCUMENT_TOKEN_CAPTURE_REGEX = /([a-zA-Z0-9]+-[a-zA-Z0-9]+)/g;
 const DOCUMENT_TOKEN_REGEX = /^[a-zA-Z0-9]+-[a-zA-Z0-9]+$/;
 
-const CENTERED_KEYS = new Set(['estado', 'tipo', 'status', 'acciones']);
+const CENTERED_KEYS = new Set(['estado', 'estadotabla', 'tipo', 'status', 'acciones']);
 
 /** Maps action.color or auto-detects from tooltip → Tailwind classes */
 const getButtonStyle = (action: any, row: any): string => {
@@ -207,16 +207,18 @@ const TableBody: FC<ITableBodyProps> = ({ data, formValues, actions, columns }) 
                                                     ? 'bg-emerald-50 text-emerald-600'
                                                     : cell === 'PENDIENTE' || cell === 'PENDIENTE_CONCILIACION'
                                                         ? 'bg-blue-50 text-blue-600'
-                                                        : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'AJUSTE' || cell === 'ENVIANDO' || cell === 'DEMO'
+                                                        : cell === 'PENDIENTE_PAGO' || cell === 'PAGO_PARCIAL' || cell === 'AJUSTE' || cell === 'ENVIANDO' || cell === 'DEMO' || cell === 'ANULACION_EN_TRAMITE'
                                                             ? 'bg-amber-50 text-amber-600'
                                                             : cell === 'PARTIAL'
                                                                 ? 'bg-blue-50 text-blue-600'
-                                                                : cell === 'RECHAZADO' || cell === 'ANULADO' || cell === 'SALIDA' || cell === 'FALLIDO_ENVIO' || cell === 'INACTIVO' || cell === 'Leave'
+                                                                : cell === 'RECHAZADO' || cell === 'ANULADO' || cell === 'SALIDA' || cell === 'FALLIDO_ENVIO' || cell === 'ANULACION_NO_CONFIRMADA' || cell === 'INACTIVO' || cell === 'Leave'
                                                                     ? 'bg-rose-50 text-rose-500'
                                                                     : 'bg-gray-100 text-gray-500'
                                                 }`}
                                         >
-                                            {cell === 'PENDIENTE_CONCILIACION' ? 'Conciliación SUNAT'
+                                            {cell === 'ANULACION_EN_TRAMITE' ? 'Anulación en trámite'
+                                                : cell === 'ANULACION_NO_CONFIRMADA' ? 'Anulación no confirmada'
+                                                : cell === 'PENDIENTE_CONCILIACION' ? 'Conciliación SUNAT'
                                                 : cell === 'PENDIENTE' ? 'En procesamiento'
                                                 : cell === 'INGRESO' ? 'Ingreso'
                                                 : cell === 'SALIDA' ? 'Salida'

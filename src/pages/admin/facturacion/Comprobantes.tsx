@@ -67,7 +67,14 @@ const normalizeSunatEstado = (invoice: any) => {
         estadoEnvioSunat = rawEstado;
     } else if (responseCode === '0' || responseLabel === 'ACEPTADO' || responseLabel === 'OBSERVADO' || rawEstado === 'EMITIDO') {
         estadoEnvioSunat = 'ACEPTADO';
-    } else if (responseCode === '98' || responseLabel === 'PENDIENTE' || responseLabel === 'EN_PROCESO' || responseLabel === 'INDETERMINADO' || rawEstado === 'FALLIDO_ENVIO') {
+    } else if (rawEstado === 'FALLIDO_ENVIO') {
+        // No se colapsa en "En procesamiento": son cosas distintas. PENDIENTE es
+        // "SUNAT lo tiene y falta su respuesta"; FALLIDO_ENVIO es "nunca llegó a
+        // SUNAT". Mostrarlos igual escondía envíos caídos detrás de una etiqueta
+        // que sugiere que todo va bien, y es el único estado (junto a RECHAZADO)
+        // desde el que se ofrece "Reemitir a SUNAT".
+        estadoEnvioSunat = 'FALLIDO_ENVIO';
+    } else if (responseCode === '98' || responseLabel === 'PENDIENTE' || responseLabel === 'EN_PROCESO' || responseLabel === 'INDETERMINADO') {
         estadoEnvioSunat = 'PENDIENTE';
     } else if (rawEstado === 'RECHAZADO') {
         estadoEnvioSunat = rawEstado;
@@ -332,6 +339,21 @@ const Comprobantes = () => {
             estado: ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
                 ? item.estadoEnvioSunat
                 : item.estadoPago,
+            // El documento está ANULADO en el sistema, pero la nota de crédito que
+            // lo anula todavía no fue aceptada por SUNAT: ante SUNAT sigue vigente.
+            anulacionEnTramite: !!(item as any).anulacionEnTramite,
+            anulacionEstado: (item as any).anulacionEstado
+                ?? ((item as any).anulacionEnTramite ? 'EN_TRAMITE' : null),
+            // Estado SOLO para pintar la celda. `estado` se conserva tal cual porque
+            // de él dependen los permisos de acciones (no emitir una segunda NC ni
+            // dar de baja algo ya anulado): cambiarlo reabriría esas acciones.
+            estadoTabla: (item as any).anulacionEstado === 'NO_CONFIRMADA'
+                ? 'ANULACION_NO_CONFIRMADA'
+                : (item as any).anulacionEnTramite
+                    ? 'ANULACION_EN_TRAMITE'
+                    : (["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(item.comprobante)
+                        ? item.estadoEnvioSunat
+                        : item.estadoPago),
             xmlSunat: xmlDownloadUrl,
             cdrSunat: cdrDownloadUrl,
             xmlFileName: `${item.serie}-${String(item.correlativo).padStart(8, '0')}.xml`,
@@ -362,19 +384,26 @@ const Comprobantes = () => {
 
     const renderEstadoBadge = (estado?: string) => {
         const value = String(estado || 'SIN ESTADO').toUpperCase();
+        const enTramite = value === 'ANULACION_EN_TRAMITE';
+        const noConfirmada = value === 'ANULACION_NO_CONFIRMADA';
         const tone = value.includes('ACEPTADO') || value.includes('EMITIDO') || value.includes('PAGADO')
             ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
             : value.includes('CONCILIACION')
                 ? 'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20'
-            : value.includes('PENDIENTE')
+            : value.includes('PENDIENTE') || enTramite
                 ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
-                : value.includes('ANULADO') || value.includes('RECHAZADO') || value.includes('FALLIDO')
+                : noConfirmada || value.includes('ANULADO') || value.includes('RECHAZADO') || value.includes('FALLIDO')
                     ? 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
                     : 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
 
         return (
             <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${tone}`}>
-                {value === 'PENDIENTE_CONCILIACION' ? 'Conciliación SUNAT' : value}
+                {enTramite ? 'Anulación en trámite'
+                    : noConfirmada ? 'Anulación no confirmada'
+                    : value === 'PENDIENTE_CONCILIACION' ? 'Conciliación SUNAT'
+                        : value === 'FALLIDO_ENVIO' ? 'Fallido Envío'
+                            : value === 'PENDIENTE' ? 'En procesamiento'
+                                : value}
             </span>
         );
     };
@@ -553,7 +582,7 @@ const Comprobantes = () => {
         setSelectedUsuarioId(value ? Number(value) : null);
     }
 
-    const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "PENDIENTE_CONCILIACION" }, { id: 5, value: "ANULADO" }, { id: 6, value: "RECHAZADO" }]
+    const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "PENDIENTE_CONCILIACION" }, { id: 5, value: "ANULADO" }, { id: 6, value: "RECHAZADO" }, { id: 7, value: "FALLIDO_ENVIO" }]
     const sedesOptions = [
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
@@ -859,7 +888,7 @@ const Comprobantes = () => {
                                         'Cliente',
                                         'Vendedor',
                                         'Importe',
-                                        'Estado',
+                                        { label: 'Estado', key: 'estadoTabla' },
                                         'Acciones'
                                     ]} />
                             </div>
@@ -885,7 +914,7 @@ const Comprobantes = () => {
                                         </div>
 
                                         <div className="mt-3 flex items-center justify-between gap-3">
-                                            {renderEstadoBadge(row.estado)}
+                                            {renderEstadoBadge(row.estadoTabla ?? row.estado)}
                                             <p className="text-lg font-black text-gray-950 dark:text-white">{row.total}</p>
                                         </div>
 
@@ -937,10 +966,18 @@ const Comprobantes = () => {
             {isOpenModalConfirmDescartar && (
                 <ModalConfirm
                     confirmSubmit={async () => {
-                        await discardInvoice(formValues?.id);
+                        const res = await discardInvoice(formValues?.id);
+                        setIsOpenModalConfirmDescartar(false);
+                        // Solo se saca de la lista si el backend LO BORRÓ. Antes se
+                        // quitaba siempre: cuando el borrado se rechazaba (p. ej. un
+                        // comprobante en "En procesamiento", que no se puede eliminar)
+                        // la fila desaparecía igual y reaparecía al refrescar.
+                        if (!res?.success) return;
                         setInvoicesList(prev => prev.filter(inv => inv.id !== formValues?.id));
                         setTotalInvoicesList(prev => Math.max(0, prev - 1));
-                        setIsOpenModalConfirmDescartar(false);
+                        // Descartar una nota de crédito devuelve a la vida el documento
+                        // que anulaba: esa otra fila también cambia de estado.
+                        void fetchFormalInvoices();
                     }}
                     information="¿Eliminar este comprobante? Se borrará permanentemente de la lista y se revertirá el stock. Esta acción no se puede deshacer."
                     isOpenModal
@@ -1118,8 +1155,13 @@ const Comprobantes = () => {
                     const rowBase = selectedMenuRow;
                     const canEmitirSunat = ["BOLETA", "FACTURA", "NOTA DE CREDITO", "NOTA DE DEBITO"].includes(rowBase.comprobante);
 
-                    const canNC = ['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE';
-                    const canBaja = rowBase.estado !== 'ANULADO' && rowBase.estado !== 'RECHAZADO' && rowBase.estado !== 'PENDIENTE';
+                    // Nota de crédito y comunicación de baja exigen que el documento YA
+                    // esté en SUNAT. 'FALLIDO_ENVIO' se lista aparte porque antes llegaba
+                    // hasta aquí normalizado como 'PENDIENTE'; al mostrarse con su propio
+                    // nombre hay que excluirlo o se reabrirían estas acciones.
+                    const sinLlegarASunat = ['ANULADO', 'RECHAZADO', 'PENDIENTE', 'FALLIDO_ENVIO'];
+                    const canNC = ['FACTURA', 'BOLETA'].includes(rowBase.comprobante) && !sinLlegarASunat.includes(rowBase.estado);
+                    const canBaja = !sinLlegarASunat.includes(rowBase.estado);
 
                     return (
                         <>
@@ -1183,24 +1225,40 @@ const Comprobantes = () => {
                                 <span>Enviar WhatsApp</span>
                             </button>
 
-                            {/* Conciliar: la boleta ya está registrada en SUNAT (error 1033) pero
-                                el CDR no es recuperable vía QPSE. Marca el comprobante como aceptado. */}
-                            {rowBase.estadoSunatRaw === 'PENDIENTE_CONCILIACION' && (
+                            {/* Verificar contra SUNAT (Consulta de Validez): confirma si está
+                                ACEPTADO y, de estarlo, lo marca EMITIDO automáticamente. Se ofrece en
+                                todos los estados sin CDR — un comprobante que lleva horas
+                                "En procesamiento" (PENDIENTE) puede estar ya aceptado en SUNAT y esta
+                                es la única forma de saberlo sin reenviarlo. */}
+                            {['PENDIENTE_CONCILIACION', 'PENDIENTE', 'FALLIDO_ENVIO'].includes(rowBase.estadoSunatRaw) && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
-                                    {/* Verificar contra SUNAT (Consulta de Validez): confirma si está
-                                        ACEPTADO y, de estarlo, lo marca EMITIDO automáticamente. */}
                                     <button
                                         type="button"
                                         onClick={async () => {
                                             handleCloseMenu();
                                             const res = await verificarSunat(rowBase.id);
-                                            if (res?.success && res.estado === 'ACEPTADO') {
+                                            // Se refleja el estado REAL en que quedó tras la consulta
+                                            // (EMITIDO, ANULADO o FALLIDO_ENVIO), no solo el caso
+                                            // aceptado: si SUNAT no lo tiene, la fila debe pasar a
+                                            // "Fallido Envío" para ofrecer "Reemitir a SUNAT".
+                                            if (res?.success && res.estadoEnvioSunat) {
+                                                const raw = res.estadoEnvioSunat;
                                                 setInvoicesList((prev) => prev.map((inv: any) =>
                                                     inv.id === rowBase.id
-                                                        ? { ...inv, estadoEnvioSunat: 'ACEPTADO', estadoSunatRaw: 'EMITIDO' }
+                                                        ? normalizeSunatEstado({
+                                                            ...inv,
+                                                            estadoEnvioSunat: raw,
+                                                            sunatCdrResponse: null,
+                                                            qpseCode: null,
+                                                            sunatCode: null,
+                                                        })
                                                         : inv
                                                 ));
+                                                // El estado de una NOTA DE CRÉDITO decide el badge de
+                                                // OTRA fila (la boleta que anula), y el parche local
+                                                // solo toca la fila propia.
+                                                void fetchFormalInvoices();
                                             }
                                         }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/30"
@@ -1208,6 +1266,9 @@ const Comprobantes = () => {
                                         <Icon icon="solar:shield-check-bold-duotone" width={16} height={16} />
                                         <span>Verificar en SUNAT</span>
                                     </button>
+                                    {/* Conciliar: SUNAT ya tiene el comprobante registrado (error 1033)
+                                        pero el CDR no es recuperable vía QPSE. Solo para ese estado. */}
+                                    {rowBase.estadoSunatRaw === 'PENDIENTE_CONCILIACION' && (
                                     <button
                                         type="button"
                                         onClick={async () => {
@@ -1227,6 +1288,7 @@ const Comprobantes = () => {
                                         <Icon icon="solar:check-circle-bold-duotone" width={16} height={16} />
                                         <span>Marcar como conciliado</span>
                                     </button>
+                                    )}
                                 </>
                             )}
 
@@ -1250,6 +1312,9 @@ const Comprobantes = () => {
                                                         ? normalizeSunatEstado({ ...inv, estadoEnvioSunat: res.estadoEnvioSunat, sunatCdrResponse: null, qpseCode: null, sunatCode: null })
                                                         : inv
                                                 ));
+                                                // Ídem: reemitir una nota de crédito cambia el badge
+                                                // de la boleta que anula, no solo el de la nota.
+                                                void fetchFormalInvoices();
                                             }
                                         }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-xs whitespace-nowrap text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"

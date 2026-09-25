@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import ModalConfirm from '@/components/ModalConfirm';
 import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCuentasBancariasStore } from "@/zustand/cuentasBancarias";
@@ -93,6 +94,32 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
         : 0;
     const hayRecetasPendientes = recetasPendientes > 0;
     const hayProductos = Array.isArray(vm.productsInvoice) && vm.productsInvoice.length > 0;
+
+    // Una nota de crédito no cobra nada: devuelve o anula. Pedir método de pago,
+    // monto recibido y vuelto para anular una boleta no tiene sentido y confunde.
+    //
+    // Saltearlo es seguro: `crearFormal` deriva el tipo 07 a `crearNotaCredito`,
+    // que nunca registra un pago en caja, y los valores que el modal habría
+    // fijado ya son los correctos por defecto — paymentMethod arranca en
+    // 'Efectivo' y formaPagoTipo cae a 'Contado'.
+    //
+    // La nota de DÉBITO queda fuera a propósito: esa sí recorre el flujo completo
+    // de `crearFormal`, que llega a registrarPagosDeEmision.
+    const esNotaCredito = ['NOTA DE CREDITO', 'NOTA DE CRÉDITO'].includes(
+        String(vm.formValues?.comprobante || '').toUpperCase(),
+    );
+    const emiteSinPasoDePago = vm.isQuotationRoute || esNotaCredito;
+
+    // Confirmación explícita antes de anular. Emitir la nota queda a un clic al
+    // sacarle el paso de pago —que no cobraba nada, pero obligaba a detenerse—, y
+    // sin ninguna pausa es fácil anular el documento de al lado sin darse cuenta.
+    // Anular es irreversible: una vez que SUNAT acepta la nota, no se deshace.
+    const [confirmarNota, setConfirmarNota] = useState(false);
+    const docAnulado = String(vm.formValues?.numDocAfectado || `${vm.serie || ''}-${vm.correlative || ''}`)
+        .toUpperCase()
+        .replace(/^-|-$/g, '');
+    const motivoNota = (vm.typesOperation as any[])
+        ?.find((op: any) => op.id === Number(vm.formValues?.motivoId))?.descripcion || 'Nota de crédito';
 
     // Split payment helpers
     const splitTotal = (vm.splitPayments as PaymentLine[])
@@ -502,7 +529,9 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                 <button
                     onClick={() => {
                         if (!hayProductos) return;
-                        if (vm.isQuotationRoute) {
+                        if (esNotaCredito) {
+                            setConfirmarNota(true);
+                        } else if (emiteSinPasoDePago) {
                             vm.addInvoiceReceipt();
                         } else {
                             // Incluye la EDICIÓN de una nota de venta: pasa por el paso de
@@ -520,9 +549,22 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab }: { vm: any, pr
                     title={!hayProductos ? 'Agrega productos antes de continuar' : undefined}
                 >
                     <Icon icon={vm.isQuotationRoute ? (vm.isEditMode ? "solar:pen-bold" : "solar:diskette-bold") : "solar:card-send-bold"} className="text-lg text-white" />
-                    <span className="text-white">{vm.isQuotationRoute ? (vm.isEditMode ? "ACTUALIZAR" : "GUARDAR") : vm.isEditNotaVenta ? "ACTUALIZAR PAGO" : "CONTINUAR PAGO"}</span>
+                    <span className="text-white">{vm.isQuotationRoute ? (vm.isEditMode ? "ACTUALIZAR" : "GUARDAR") : esNotaCredito ? "EMITIR NOTA DE CRÉDITO" : vm.isEditNotaVenta ? "ACTUALIZAR PAGO" : "CONTINUAR PAGO"}</span>
                 </button>
             </div>
+
+            {/* Última parada antes de un documento irreversible: qué se anula y por cuánto. */}
+            <ModalConfirm
+                isOpenModal={confirmarNota}
+                setIsOpenModal={setConfirmarNota}
+                title="¿Anular este documento?"
+                information={`Vas a emitir una nota de crédito sobre ${docAnulado} por ${simboloPreview} ${Number(total || 0).toFixed(2)} (${motivoNota}). Revisa que sea el documento correcto: una vez que SUNAT la acepte, la anulación no se puede deshacer.`}
+                confirmText={`Sí, anular ${docAnulado}`}
+                confirmSubmit={() => {
+                    setConfirmarNota(false);
+                    vm.addInvoiceReceipt();
+                }}
+            />
 
             {/* ── MODAL CONTINUAR PAGO → transición a EMITIDO dentro del mismo modal ── */}
             {(showPago || vm.IsOpenModalSuccessInvoice) && createPortal(
