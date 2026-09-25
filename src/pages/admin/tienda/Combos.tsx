@@ -3,6 +3,7 @@ import { useCombosViewModel } from '@/features/admin/tienda/useCombosViewModel';
 import { Icon } from '@iconify/react';
 import InputPro from '@/components/InputPro';
 import { Calendar } from '@/components/Date';
+import { aIso, aDiaMesAnio } from './combosFechas';
 import Select from '@/components/Select';
 import Button from '@/components/Button';
 import {
@@ -278,7 +279,7 @@ export default function CombosAdmin() {
                       <button type="button" onClick={() => vm.eliminarItem(index)} className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mb-[2px]"><Icon icon="solar:trash-bin-trash-bold" width={20} /></button>
                     </div>
                   ))}
-                  {vm.form.items.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8 border-2 border-dashed border-gray-100 dark:border-slate-800 rounded-xl">Agrega al menos 2 productos al kit</p>}
+                  {vm.form.items.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8 border-2 border-dashed border-gray-100 dark:border-slate-800 rounded-xl">Agrega al menos 2 unidades: pueden ser dos productos distintos o dos del mismo</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -295,10 +296,10 @@ export default function CombosAdmin() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative z-20">
-                  <Calendar text="Fecha Inicio (opcional)" value={vm.form.fechaInicio ? vm.form.fechaInicio.split('T')[0].split('-').reverse().join('/') : ''} onChange={(date: string) => { const [d, m, y] = date.split('/'); vm.setForm(prev => ({ ...prev, fechaInicio: `${y}-${m}-${d}` })); }} />
+                  <Calendar text="Fecha Inicio (opcional)" value={aDiaMesAnio(vm.form.fechaInicio)} onChange={(date: string) => vm.setForm(prev => ({ ...prev, fechaInicio: aIso(date) }))} />
                 </div>
                 <div className="relative z-20">
-                  <Calendar text="Fecha Fin (opcional)" value={vm.form.fechaFin ? vm.form.fechaFin.split('T')[0].split('-').reverse().join('/') : ''} onChange={(date: string) => { const [d, m, y] = date.split('/'); vm.setForm(prev => ({ ...prev, fechaFin: `${y}-${m}-${d}` })); }} right />
+                  <Calendar text="Fecha Fin (opcional)" value={aDiaMesAnio(vm.form.fechaFin)} onChange={(date: string) => vm.setForm(prev => ({ ...prev, fechaFin: aIso(date) }))} right />
                 </div>
               </div>
               <div className="flex items-center gap-3">
