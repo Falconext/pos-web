@@ -1028,7 +1028,16 @@ const ComprobantesInformales = () => {
                                     </button>
                                 </>
                             )}
-                            {item?.comprobante === 'NOTA DE VENTA' && (
+                            {/* Convertir a comprobante formal. Vale para la Nota de Venta y para
+                                la Nota de Pedido: ambas son ventas informales que después se
+                                formalizan. El backend acepta cualquier informal como origen y
+                                sabe que una NP pudo no haber descontado stock todavía.
+
+                                No se ofrece sobre un documento anulado ni sobre uno ya
+                                convertido: emitir un segundo formal duplicaría la venta. */}
+                            {['NV', 'NP'].includes(String(item?.tipoDoc))
+                                && row.estadoEnvioSunat !== 'ANULADO'
+                                && !item?.convertidoA && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button type="button" onClick={() => {
