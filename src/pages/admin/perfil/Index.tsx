@@ -25,6 +25,19 @@ export default function PerfilIndex() {
     const [directorInput, setDirectorInput] = useState<string | null>(null);
     const [sunatClientIdInput, setSunatClientIdInput] = useState<string | null>(null);
     const [sireClientIdInput, setSireClientIdInput] = useState<string | null>(null);
+    // Qué sección de Configuración está abierta. Se recuerda para no obligar a
+    // volver a buscarla cada vez que se entra al Perfil.
+    const [seccionAbierta, setSeccionAbierta] = useState<string | null>(
+        () => localStorage.getItem('PERFIL_SECCION_CONFIG'),
+    );
+    const toggleSeccion = (id: string) => {
+        setSeccionAbierta((actual) => {
+            const siguiente = actual === id ? null : id;
+            if (siguiente) localStorage.setItem('PERFIL_SECCION_CONFIG', siguiente);
+            else localStorage.removeItem('PERFIL_SECCION_CONFIG');
+            return siguiente;
+        });
+    };
     // Pasarelas de pago: las claves secretas nunca vuelven del backend, así que
     // los campos de clave arrancan vacíos y solo se mandan si el usuario escribe.
     // Arrancan en null = "lo que ya está guardado"; al escribir pasan a string.
@@ -103,6 +116,42 @@ export default function PerfilIndex() {
             </div>
         );
     }
+
+/**
+     * Una sección plegable de Configuración. Antes todo vivía en una sola tarjeta:
+     * 25 controles seguidos con la misma etiqueta gris, sin jerarquía y en orden
+     * arbitrario. Ahora cada tema es su propia sección, cerrada por defecto, para
+     * que la página entera se vea de un golpe y solo se abra lo que se va a tocar.
+     */
+    const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, children }: {
+        id: string; icono: string; titulo: string; resumen: string;
+        abierta: boolean; onToggle: (id: string) => void; children: React.ReactNode;
+    }) => (
+        // Abierta ocupa las dos columnas: si no, el contenido se apretuja en media
+        // pantalla y la otra mitad queda vacía.
+        <div data-testid={`seccion-${id}`} className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 overflow-hidden ${abierta ? 'lg:col-span-2' : ''}`}>
+            <button
+                type="button"
+                onClick={() => onToggle(id)}
+                aria-expanded={abierta}
+                className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+            >
+                <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
+                    <Icon icon={icono} width="20" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white truncate">{titulo}</h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{resumen}</p>
+                </div>
+                <Icon
+                    icon="solar:alt-arrow-down-linear"
+                    width="20"
+                    className={`shrink-0 text-gray-400 transition-transform ${abierta ? 'rotate-180' : ''}`}
+                />
+            </button>
+            {abierta && <div className="px-4 pb-4 space-y-3">{children}</div>}
+        </div>
+    );
 
     const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
         <div className="pb-3 border-b border-gray-50 dark:border-slate-800/50 last:border-0 last:pb-0">
@@ -506,9 +555,220 @@ export default function PerfilIndex() {
                             {perfil.empresa.ubicacion && <Field label="Ubicación"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{perfil.empresa.ubicacion.distrito}, {perfil.empresa.ubicacion.provincia}, {perfil.empresa.ubicacion.departamento}</p></Field>}
                         </div>
                     </div>
-                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2 ${configTab}`}>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:settings-bold-duotone" width="20" /></div>Configuración del Negocio</h2>
-                        <div className="space-y-3">
+                    {/* ── Configuración, en secciones plegables ──────────────────────────────
+                         Antes era UNA tarjeta con 25 controles seguidos: siete interruptores
+                         sueltos sin encabezado y bloques de temas distintos separados solo por
+                         una línea gris. Ahora cada tema es su propia sección. ── */}
+                    <SeccionConfig id="comprobantes" icono="solar:document-text-bold-duotone" titulo="Comprobantes e impresión" resumen="Formato, QR de SUNAT, logo, cotización y observaciones" abierta={seccionAbierta === 'comprobantes'} onToggle={toggleSeccion}>
+                                <div className="mt-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/40 dark:bg-indigo-900/10">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Formato de impresión por defecto</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-3">
+                                        El formato que se usará al imprimir un comprobante recién emitido y al reimprimir desde la lista.
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { value: 'TICKET', label: 'Ticket', sub: '80mm', icon: 'solar:receipt-bold-duotone' },
+                                            { value: 'A4', label: 'A4', sub: '210×297mm', icon: 'solar:document-bold-duotone' },
+                                            { value: 'A5', label: 'A5', sub: '148×210mm', icon: 'solar:file-bold-duotone' },
+                                        ].map(({ value, label, sub, icon }) => {
+                                            const activo = String((perfil.empresa as any).formatoImpresionDefault || 'TICKET') === value;
+                                            return (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    disabled={vm.savingImpresionConfig}
+                                                    onClick={() => vm.handleImpresionConfig('formatoImpresionDefault', value)}
+                                                    className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all disabled:opacity-60 ${activo
+                                                        ? 'border-indigo-500 bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300'
+                                                        : 'border-gray-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/40 text-gray-600 dark:text-gray-400 hover:border-gray-300'}`}
+                                                >
+                                                    <Icon icon={icon} width={20} />
+                                                    <span className="text-xs font-bold">{label}</span>
+                                                    <span className="text-[10px] text-gray-400">{sub}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {vm.savingImpresionConfig && <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">Guardando configuración...</p>}
+                                </div>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).imprimirAutomatico)}
+                                        disabled={vm.savingImpresionConfig}
+                                        onChange={(e) => vm.handleImpresionConfig('imprimirAutomatico', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Imprimir automáticamente al emitir</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Apenas se genere el comprobante se abrirá la impresión en el formato de arriba, sin que la cajera tenga que elegirlo.
+                                            Igual podrá reimprimir en otro formato desde el mismo modal.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Actívalo solo si imprimes todas tus ventas: el diálogo de impresión tapa la pantalla hasta que lo cierres.</p>
+                                        {vm.savingImpresionConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <label className="flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).mostrarQrSunat)}
+                                        disabled={vm.savingImpresionConfig}
+                                        onChange={(e) => vm.handleImpresionConfig('mostrarQrSunat', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-sky-600 dark:text-sky-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-sky-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Imprimir el QR de SUNAT en el comprobante</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Agrega el QR del comprobante electrónico al pie del ticket, A4 y A5. Tu cliente lo escanea y ve su
+                                            boleta o factura en línea; si el documento aún no tiene su PDF, el QR lleva la cadena oficial de SUNAT.
+                                            No tiene nada que ver con el QR de pago de Yape o Plin.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Solo aplica a boletas, facturas y notas de crédito/débito.</p>
+                                        {vm.savingImpresionConfig && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={(perfil.empresa as any).mostrarMarcaSistema !== false}
+                                        disabled={vm.savingImpresionConfig}
+                                        onChange={(e) => vm.handleImpresionConfig('mostrarMarcaSistema', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-slate-600 dark:text-slate-400 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-slate-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Mostrar la marca del sistema al pie del comprobante</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Es el pie "Sistema punto de venta – {BRAND.name} · Desarrollado por {BRAND.name} · {BRAND.website}" del ticket
+                                            y la línea "{BRAND.name} ™ · Comprobante emitido a través de…" del A4, A5 y la cotización.
+                                            Desmárcalo si prefieres que tus comprobantes salgan solo con los datos de tu negocio.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Aplica a la impresión web y al PDF (Ver PDF, WhatsApp, correo).</p>
+                                        {vm.savingImpresionConfig && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Icon icon="solar:printer-bold-duotone" width={14} />
+                                        Tamaño del Logo en Comprobantes
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <select
+                                            disabled={vm.savingTicketLogoSize}
+                                            value={perfil.empresa.ticketLogoSize ?? 96}
+                                            onChange={(e) => vm.handleTicketLogoSizeChange(Number(e.target.value))}
+                                            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value={64}>Extra Pequeño (64px)</option>
+                                            <option value={96}>Pequeño (96px)</option>
+                                            <option value={128}>Normal (128px)</option>
+                                            <option value={160}>Grande (160px)</option>
+                                            <option value={192}>Extra Grande (192px)</option>
+                                            <option value={256}>Enorme (256px)</option>
+                                            <option value={320}>Gigante (320px)</option>
+                                            <option value={384}>Máximo Ancho (384px)</option>
+                                        </select>
+                                        {vm.savingTicketLogoSize && <span className="text-xs text-blue-600 dark:text-blue-400">Guardando...</span>}
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ajusta el tamaño con el que se imprime tu logo en todos los formatos: ticket 80mm, A4, A5, cotizaciones y guías de remisión.</p>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Icon icon="solar:document-text-bold-duotone" width={14} />
+                                        Formato de Cotización
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Ahora se configura desde <span className="font-semibold text-gray-700 dark:text-gray-300">Cotizaciones → Configurar formato</span>, con vista previa en vivo (mostrar/ocultar y tamaño de cada elemento).</p>
+                                </div>
+                                <div className="mt-3 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-900/10">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Observaciones por defecto de la venta</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                                        Texto que sale en "OBSERVACIONES" del ticket, boleta y factura en todas tus cajas y sedes (políticas de cambio, garantía, etc.).
+                                        Se precarga en "Configurar venta → Observaciones" y la cajera puede editarlo en una venta puntual.
+                                    </p>
+                                    <textarea
+                                        value={vm.ventaObsDefault}
+                                        onChange={(e) => vm.setVentaObsDefault(e.target.value)}
+                                        rows={3}
+                                        maxLength={600}
+                                        placeholder="Ej. No realizamos devoluciones de dinero. Cambios dentro de las 24 horas con el ticket."
+                                        className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                    />
+                                    <div className="mt-2 flex items-center justify-between gap-2">
+                                        <span className="text-[11px] text-gray-400">{vm.ventaObsDefault.length}/600</span>
+                                        <Button color="primary" disabled={!vm.ventaObsDirty || vm.savingVentaObs} onClick={vm.handleVentaObsSave}>
+                                            {vm.savingVentaObs ? 'Guardando...' : 'Guardar observaciones'}
+                                        </Button>
+                                    </div>
+                                </div>
+                                {/* Comprobante con el que arranca cada venta (Demenver: tras una boleta el POS
+                                    se quedaba en boleta y salían boletas que no correspondían). Por empresa. */}
+                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-comprobante-default-config">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Comprobante con el que empieza cada venta</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                                        Tipo de comprobante con el que arranca el punto de venta y al que vuelve al terminar cada venta. Con una opción fija, el POS ya no pregunta el tipo al abrirse; la cajera puede cambiarlo para una venta puntual con "Cambiar".
+                                    </p>
+                                    <div className="space-y-2">
+                                        {([
+                                            { value: 'MANTENER_ULTIMO', titulo: 'Mantener el de la venta anterior', detalle: 'Si se emitió una boleta, la siguiente venta también empieza en boleta. Ideal si casi siempre emites el mismo comprobante.' },
+                                            { value: 'NOTA_DE_VENTA', titulo: 'Siempre Nota de Venta', detalle: 'Cada venta empieza en Nota de Venta; si el cliente pide Boleta o Factura se cambia solo para esa venta y luego vuelve a Nota de Venta.' },
+                                            { value: 'BOLETA', titulo: 'Siempre Boleta', detalle: 'Cada venta empieza en Boleta electrónica.' },
+                                            ...(String((perfil.empresa as any).regimenTributario || '').toUpperCase() === 'RUS' ? [] : [{ value: 'FACTURA', titulo: 'Siempre Factura', detalle: 'Cada venta empieza en Factura electrónica.' }]),
+                                        ] as { value: 'MANTENER_ULTIMO' | 'NOTA_DE_VENTA' | 'BOLETA' | 'FACTURA'; titulo: string; detalle: string }[]).map((opt) => {
+                                            const activo = String((perfil.empresa as any).posComprobanteDefault || 'MANTENER_ULTIMO') === opt.value;
+                                            return (
+                                                <label key={opt.value} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="posComprobanteDefault"
+                                                        className="mt-0.5 accent-violet-600"
+                                                        checked={activo}
+                                                        disabled={vm.savingPosComprobanteDefault}
+                                                        onChange={() => vm.handlePosComprobanteDefaultChange(opt.value)}
+                                                    />
+                                                    <span>
+                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
+                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    {vm.savingPosComprobanteDefault && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                </div>
+                                {/* Exigir Boleta/Factura cuando el cobro es bancarizado (Yape/Plin/Transferencia/Tarjeta). Opt-in por empresa. */}
+                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-exigir-cpe-config">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Pagos por Yape, Plin, transferencia o tarjeta</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                                        Estos pagos quedan registrados en el banco y SUNAT puede cruzarlos con tus comprobantes. Decide si esas ventas pueden salir como Nota de Venta o deben tener Boleta/Factura.
+                                    </p>
+                                    <div className="space-y-2">
+                                        {[
+                                            { value: false, titulo: 'Permitir Nota de Venta', detalle: 'La cajera elige el comprobante sin importar cómo paga el cliente (comportamiento normal).' },
+                                            { value: true, titulo: 'Exigir Boleta o Factura', detalle: 'Si el cliente paga por Yape, Plin, transferencia o tarjeta, el POS no deja cerrar la venta como Nota de Venta: pide cambiar a Boleta o Factura. En efectivo la cajera sigue eligiendo.' },
+                                        ].map((opt) => {
+                                            const activo = Boolean((perfil.empresa as any).posExigirCpeMedioPago) === opt.value;
+                                            return (
+                                                <label key={String(opt.value)} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="posExigirCpeMedioPago"
+                                                        className="mt-0.5 accent-violet-600"
+                                                        checked={activo}
+                                                        disabled={vm.savingControlFlag === 'posExigirCpeMedioPago'}
+                                                        onChange={() => vm.handleControlFlagToggle('posExigirCpeMedioPago', opt.value)}
+                                                    />
+                                                    <span>
+                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
+                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    {vm.savingControlFlag === 'posExigirCpeMedioPago' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                </div>
+                    </SeccionConfig>
+                    <SeccionConfig id="inventario" icono="solar:box-bold-duotone" titulo="Inventario y stock" resumen="Código de barras, lotes, sobreventa y catálogo por sede" abierta={seccionAbierta === 'inventario'} onToggle={toggleSeccion}>
                                 <label className="flex items-start gap-3 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-900/10 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                     <input
                                         type="checkbox"
@@ -521,6 +781,20 @@ export default function PerfilIndex() {
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white">Habilitar código de barras en productos</p>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Muestra el campo "Código de Barras" en el formulario de productos, incluso si el rubro no lo activa automáticamente.</p>
                                         {savingBarcodeConfig && <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Guardando configuración...</p>}
+                                    </div>
+                                </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-900/10 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(perfil.empresa.permitirVentaSinStock)}
+                                        disabled={savingVentaSinStockConfig}
+                                        onChange={(e) => vm.handleVentaSinStockToggle(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-amber-600 dark:text-amber-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-amber-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Permitir vender sin stock (sobreventa)</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Cuando esté activo, podrás emitir comprobantes aunque el producto tenga stock 0 o insuficiente. La salida se registra igual y el inventario puede quedar en 0. Úsalo con cuidado.</p>
+                                        {savingVentaSinStockConfig && <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
                                 <label className={`mt-3 flex items-start gap-3 p-3 rounded-lg border transition-colors ${
@@ -544,39 +818,59 @@ export default function PerfilIndex() {
                                         {savingFefoPriceConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
-                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-900/10 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                                <label className="flex items-start gap-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
                                     <input
                                         type="checkbox"
-                                        checked={Boolean(perfil.empresa.permitirVentaSinStock)}
-                                        disabled={savingVentaSinStockConfig}
-                                        onChange={(e) => vm.handleVentaSinStockToggle(e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-amber-600 dark:text-amber-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-amber-500"
+                                        checked={Boolean((perfil.empresa as any).catalogoPorSede)}
+                                        disabled={vm.savingControlFlag === 'catalogoPorSede'}
+                                        onChange={(e) => vm.handleControlFlagToggle('catalogoPorSede', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
                                     />
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Permitir vender sin stock (sobreventa)</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Cuando esté activo, podrás emitir comprobantes aunque el producto tenga stock 0 o insuficiente. La salida se registra igual y el inventario puede quedar en 0. Úsalo con cuidado.</p>
-                                        {savingVentaSinStockConfig && <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Guardando configuración...</p>}
-                                    </div>
-                                </label>
-                                <label data-testid="config-ley-amazonia" className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-900/10 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean((perfil.empresa as any).leyAmazonia)}
-                                        disabled={vm.savingLeyAmazonia}
-                                        onChange={(e) => vm.handleLeyAmazoniaToggle(e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-emerald-600 dark:text-emerald-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-emerald-500"
-                                    />
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Opero bajo la Ley de Amazonía (Ley 27037)</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Catálogo independiente por sede</p>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                            Actívalo si tu negocio está en zona amazónica (Loreto, Ucayali, San Martín, Madre de Dios, Amazonas y provincias designadas de Junín, Cusco, Huánuco, Pasco, Puno, Ayacucho, Cajamarca, La Libertad, Piura y Huancavelica).
-                                            Tus facturas y boletas llevarán además la leyenda que SUNAT pide para sustentar la exoneración del IGV:
-                                            <span className="font-semibold"> "BIENES TRANSFERIDOS EN LA AMAZONIA REGION SELVA PARA SER CONSUMIDOS EN LA MISMA"</span>.
+                                            Desactivado: cada producto nuevo queda disponible en todas tus sedes (catálogo compartido).
+                                            Activado: un producto creado o importado desde una sede existe <span className="font-semibold">solo en esa sede</span>; no aparece en el inventario ni en el POS de las otras hasta que lo asignes
+                                            (en la ficha del producto, con "Asignar a sede" en Inventario, o automáticamente al trasladarle stock).
                                         </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Ojo: la exoneración aplica a lo que se consume dentro de la zona. Si vendes fuera, esa operación va gravada con IGV.</p>
-                                        {vm.savingLeyAmazonia && <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Guardando configuración...</p>}
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No cambia los productos que ya tienes: solo define cómo se crean los nuevos y qué sedes nuevas heredan el catálogo.</p>
+                                        {vm.savingControlFlag === 'catalogoPorSede' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                    </SeccionConfig>
+                    <SeccionConfig id="ventas" icono="solar:cart-large-2-bold-duotone" titulo="Ventas y caja" resumen="Búsqueda del POS, kits, cobranza de campo y aprobaciones" abierta={seccionAbierta === 'ventas'} onToggle={toggleSeccion}>
+                                {/* Búsqueda del POS al agregar: limpiar (Demenver) o mantener (OWENSOFT). Por empresa. */}
+                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-busqueda-config">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Al agregar un producto desde la búsqueda</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                                        Qué hace el buscador del punto de venta cuando la cajera agrega un producto al carrito. Aplica a todas tus cajas y sedes.
+                                    </p>
+                                    <div className="space-y-2">
+                                        {[
+                                            { value: false, titulo: 'Limpiar la búsqueda y mostrar todo el catálogo', detalle: 'Ideal si se teclea un producto por vez: el siguiente se escribe sin borrar el anterior.' },
+                                            { value: true, titulo: 'Mantener la búsqueda para seguir agregando de la misma lista', detalle: 'Ideal si de una búsqueda (ej. "EPSON 544") se agregan varios productos; el texto queda seleccionado y teclear otra cosa lo reemplaza.' },
+                                        ].map((opt) => {
+                                            const activo = Boolean((perfil.empresa as any).posMantenerBusqueda) === opt.value;
+                                            return (
+                                                <label key={String(opt.value)} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="posMantenerBusqueda"
+                                                        className="mt-0.5 accent-violet-600"
+                                                        checked={activo}
+                                                        disabled={vm.savingControlFlag === 'posMantenerBusqueda'}
+                                                        onChange={() => vm.handleControlFlagToggle('posMantenerBusqueda', opt.value)}
+                                                    />
+                                                    <span>
+                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
+                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    {vm.savingControlFlag === 'posMantenerBusqueda' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
+                                </div>
                                 <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-fuchsia-100 dark:border-fuchsia-900/30 bg-fuchsia-50/40 dark:bg-fuchsia-900/10 cursor-pointer hover:bg-fuchsia-50 dark:hover:bg-fuchsia-900/20 transition-colors">
                                     <input
                                         type="checkbox"
@@ -627,257 +921,20 @@ export default function PerfilIndex() {
                                         {vm.savingCobranzaCampoConfig && <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
-                                {/* ── Impresión de comprobantes ── */}
-                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                                        <Icon icon="solar:printer-bold-duotone" width={14} />
-                                        Impresión de comprobantes
-                                    </p>
-                                </div>
-                                <label className="flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
                                     <input
                                         type="checkbox"
-                                        checked={Boolean((perfil.empresa as any).mostrarQrSunat)}
-                                        disabled={vm.savingImpresionConfig}
-                                        onChange={(e) => vm.handleImpresionConfig('mostrarQrSunat', e.target.checked)}
+                                        checked={Boolean((perfil.empresa as any).requiereCajaParaEmitir)}
+                                        disabled={vm.savingControlFlag === 'requiereCajaParaEmitir'}
+                                        onChange={(e) => vm.handleControlFlagToggle('requiereCajaParaEmitir', e.target.checked)}
                                         className="mt-1 w-4 h-4 text-sky-600 dark:text-sky-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-sky-500"
                                     />
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Imprimir el QR de SUNAT en el comprobante</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                            Agrega el QR del comprobante electrónico al pie del ticket, A4 y A5. Tu cliente lo escanea y ve su
-                                            boleta o factura en línea; si el documento aún no tiene su PDF, el QR lleva la cadena oficial de SUNAT.
-                                            No tiene nada que ver con el QR de pago de Yape o Plin.
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Solo aplica a boletas, facturas y notas de crédito/débito.</p>
-                                        {vm.savingImpresionConfig && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Exigir caja abierta para emitir comprobantes</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Nadie (incluido tú) podrá emitir facturas, boletas, notas de venta ni tickets sin tener su caja abierta en su sede. Las cotizaciones no lo requieren.</p>
+                                        {vm.savingControlFlag === 'requiereCajaParaEmitir' && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
-                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={(perfil.empresa as any).mostrarMarcaSistema !== false}
-                                        disabled={vm.savingImpresionConfig}
-                                        onChange={(e) => vm.handleImpresionConfig('mostrarMarcaSistema', e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-slate-600 dark:text-slate-400 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-slate-500"
-                                    />
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Mostrar la marca del sistema al pie del comprobante</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                            Es el pie "Sistema punto de venta – {BRAND.name} · Desarrollado por {BRAND.name} · {BRAND.website}" del ticket
-                                            y la línea "{BRAND.name} ™ · Comprobante emitido a través de…" del A4, A5 y la cotización.
-                                            Desmárcalo si prefieres que tus comprobantes salgan solo con los datos de tu negocio.
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Aplica a la impresión web y al PDF (Ver PDF, WhatsApp, correo).</p>
-                                        {vm.savingImpresionConfig && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Guardando configuración...</p>}
-                                    </div>
-                                </label>
-                                <div className="mt-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/40 dark:bg-indigo-900/10">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Formato de impresión por defecto</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-3">
-                                        El formato que se usará al imprimir un comprobante recién emitido y al reimprimir desde la lista.
-                                    </p>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {[
-                                            { value: 'TICKET', label: 'Ticket', sub: '80mm', icon: 'solar:receipt-bold-duotone' },
-                                            { value: 'A4', label: 'A4', sub: '210×297mm', icon: 'solar:document-bold-duotone' },
-                                            { value: 'A5', label: 'A5', sub: '148×210mm', icon: 'solar:file-bold-duotone' },
-                                        ].map(({ value, label, sub, icon }) => {
-                                            const activo = String((perfil.empresa as any).formatoImpresionDefault || 'TICKET') === value;
-                                            return (
-                                                <button
-                                                    key={value}
-                                                    type="button"
-                                                    disabled={vm.savingImpresionConfig}
-                                                    onClick={() => vm.handleImpresionConfig('formatoImpresionDefault', value)}
-                                                    className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all disabled:opacity-60 ${activo
-                                                        ? 'border-indigo-500 bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300'
-                                                        : 'border-gray-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/40 text-gray-600 dark:text-gray-400 hover:border-gray-300'}`}
-                                                >
-                                                    <Icon icon={icon} width={20} />
-                                                    <span className="text-xs font-bold">{label}</span>
-                                                    <span className="text-[10px] text-gray-400">{sub}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    {vm.savingImpresionConfig && <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">Guardando configuración...</p>}
-                                </div>
-                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean((perfil.empresa as any).imprimirAutomatico)}
-                                        disabled={vm.savingImpresionConfig}
-                                        onChange={(e) => vm.handleImpresionConfig('imprimirAutomatico', e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
-                                    />
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Imprimir automáticamente al emitir</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                            Apenas se genere el comprobante se abrirá la impresión en el formato de arriba, sin que la cajera tenga que elegirlo.
-                                            Igual podrá reimprimir en otro formato desde el mismo modal.
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Actívalo solo si imprimes todas tus ventas: el diálogo de impresión tapa la pantalla hasta que lo cierres.</p>
-                                        {vm.savingImpresionConfig && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
-                                    </div>
-                                </label>
-
-                                <div className="mt-3 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-900/10">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Observaciones por defecto de la venta</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
-                                        Texto que sale en "OBSERVACIONES" del ticket, boleta y factura en todas tus cajas y sedes (políticas de cambio, garantía, etc.).
-                                        Se precarga en "Configurar venta → Observaciones" y la cajera puede editarlo en una venta puntual.
-                                    </p>
-                                    <textarea
-                                        value={vm.ventaObsDefault}
-                                        onChange={(e) => vm.setVentaObsDefault(e.target.value)}
-                                        rows={3}
-                                        maxLength={600}
-                                        placeholder="Ej. No realizamos devoluciones de dinero. Cambios dentro de las 24 horas con el ticket."
-                                        className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                                    />
-                                    <div className="mt-2 flex items-center justify-between gap-2">
-                                        <span className="text-[11px] text-gray-400">{vm.ventaObsDefault.length}/600</span>
-                                        <Button color="primary" disabled={!vm.ventaObsDirty || vm.savingVentaObs} onClick={vm.handleVentaObsSave}>
-                                            {vm.savingVentaObs ? 'Guardando...' : 'Guardar observaciones'}
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                {/* Búsqueda del POS al agregar: limpiar (Demenver) o mantener (OWENSOFT). Por empresa. */}
-                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-busqueda-config">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Al agregar un producto desde la búsqueda</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
-                                        Qué hace el buscador del punto de venta cuando la cajera agrega un producto al carrito. Aplica a todas tus cajas y sedes.
-                                    </p>
-                                    <div className="space-y-2">
-                                        {[
-                                            { value: false, titulo: 'Limpiar la búsqueda y mostrar todo el catálogo', detalle: 'Ideal si se teclea un producto por vez: el siguiente se escribe sin borrar el anterior.' },
-                                            { value: true, titulo: 'Mantener la búsqueda para seguir agregando de la misma lista', detalle: 'Ideal si de una búsqueda (ej. "EPSON 544") se agregan varios productos; el texto queda seleccionado y teclear otra cosa lo reemplaza.' },
-                                        ].map((opt) => {
-                                            const activo = Boolean((perfil.empresa as any).posMantenerBusqueda) === opt.value;
-                                            return (
-                                                <label key={String(opt.value)} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="posMantenerBusqueda"
-                                                        className="mt-0.5 accent-violet-600"
-                                                        checked={activo}
-                                                        disabled={vm.savingControlFlag === 'posMantenerBusqueda'}
-                                                        onChange={() => vm.handleControlFlagToggle('posMantenerBusqueda', opt.value)}
-                                                    />
-                                                    <span>
-                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
-                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                    {vm.savingControlFlag === 'posMantenerBusqueda' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
-                                </div>
-
-                                {/* Comprobante con el que arranca cada venta (Demenver: tras una boleta el POS
-                                    se quedaba en boleta y salían boletas que no correspondían). Por empresa. */}
-                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-comprobante-default-config">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Comprobante con el que empieza cada venta</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
-                                        Tipo de comprobante con el que arranca el punto de venta y al que vuelve al terminar cada venta. Con una opción fija, el POS ya no pregunta el tipo al abrirse; la cajera puede cambiarlo para una venta puntual con "Cambiar".
-                                    </p>
-                                    <div className="space-y-2">
-                                        {([
-                                            { value: 'MANTENER_ULTIMO', titulo: 'Mantener el de la venta anterior', detalle: 'Si se emitió una boleta, la siguiente venta también empieza en boleta. Ideal si casi siempre emites el mismo comprobante.' },
-                                            { value: 'NOTA_DE_VENTA', titulo: 'Siempre Nota de Venta', detalle: 'Cada venta empieza en Nota de Venta; si el cliente pide Boleta o Factura se cambia solo para esa venta y luego vuelve a Nota de Venta.' },
-                                            { value: 'BOLETA', titulo: 'Siempre Boleta', detalle: 'Cada venta empieza en Boleta electrónica.' },
-                                            ...(String((perfil.empresa as any).regimenTributario || '').toUpperCase() === 'RUS' ? [] : [{ value: 'FACTURA', titulo: 'Siempre Factura', detalle: 'Cada venta empieza en Factura electrónica.' }]),
-                                        ] as { value: 'MANTENER_ULTIMO' | 'NOTA_DE_VENTA' | 'BOLETA' | 'FACTURA'; titulo: string; detalle: string }[]).map((opt) => {
-                                            const activo = String((perfil.empresa as any).posComprobanteDefault || 'MANTENER_ULTIMO') === opt.value;
-                                            return (
-                                                <label key={opt.value} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="posComprobanteDefault"
-                                                        className="mt-0.5 accent-violet-600"
-                                                        checked={activo}
-                                                        disabled={vm.savingPosComprobanteDefault}
-                                                        onChange={() => vm.handlePosComprobanteDefaultChange(opt.value)}
-                                                    />
-                                                    <span>
-                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
-                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                    {vm.savingPosComprobanteDefault && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
-                                </div>
-
-                                {/* Exigir Boleta/Factura cuando el cobro es bancarizado (Yape/Plin/Transferencia/Tarjeta). Opt-in por empresa. */}
-                                <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-exigir-cpe-config">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Pagos por Yape, Plin, transferencia o tarjeta</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-2">
-                                        Estos pagos quedan registrados en el banco y SUNAT puede cruzarlos con tus comprobantes. Decide si esas ventas pueden salir como Nota de Venta o deben tener Boleta/Factura.
-                                    </p>
-                                    <div className="space-y-2">
-                                        {[
-                                            { value: false, titulo: 'Permitir Nota de Venta', detalle: 'La cajera elige el comprobante sin importar cómo paga el cliente (comportamiento normal).' },
-                                            { value: true, titulo: 'Exigir Boleta o Factura', detalle: 'Si el cliente paga por Yape, Plin, transferencia o tarjeta, el POS no deja cerrar la venta como Nota de Venta: pide cambiar a Boleta o Factura. En efectivo la cajera sigue eligiendo.' },
-                                        ].map((opt) => {
-                                            const activo = Boolean((perfil.empresa as any).posExigirCpeMedioPago) === opt.value;
-                                            return (
-                                                <label key={String(opt.value)} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${activo ? 'border-violet-400 bg-white dark:bg-slate-900' : 'border-gray-200 dark:border-slate-700 hover:border-violet-300'}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="posExigirCpeMedioPago"
-                                                        className="mt-0.5 accent-violet-600"
-                                                        checked={activo}
-                                                        disabled={vm.savingControlFlag === 'posExigirCpeMedioPago'}
-                                                        onChange={() => vm.handleControlFlagToggle('posExigirCpeMedioPago', opt.value)}
-                                                    />
-                                                    <span>
-                                                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">{opt.titulo}</span>
-                                                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{opt.detalle}</span>
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                    {vm.savingControlFlag === 'posExigirCpeMedioPago' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
-                                </div>
-
-                                {/* ── Sedes y catálogo ── */}
-                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                                        <Icon icon="solar:shop-2-bold-duotone" width={14} />
-                                        Sedes y catálogo
-                                    </p>
-                                </div>
-                                <label className="flex items-start gap-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean((perfil.empresa as any).catalogoPorSede)}
-                                        disabled={vm.savingControlFlag === 'catalogoPorSede'}
-                                        onChange={(e) => vm.handleControlFlagToggle('catalogoPorSede', e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-violet-600 dark:text-violet-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-violet-500"
-                                    />
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Catálogo independiente por sede</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                            Desactivado: cada producto nuevo queda disponible en todas tus sedes (catálogo compartido).
-                                            Activado: un producto creado o importado desde una sede existe <span className="font-semibold">solo en esa sede</span>; no aparece en el inventario ni en el POS de las otras hasta que lo asignes
-                                            (en la ficha del producto, con "Asignar a sede" en Inventario, o automáticamente al trasladarle stock).
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No cambia los productos que ya tienes: solo define cómo se crean los nuevos y qué sedes nuevas heredan el catálogo.</p>
-                                        {vm.savingControlFlag === 'catalogoPorSede' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
-                                    </div>
-                                </label>
-                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                                        <Icon icon="solar:shield-check-bold-duotone" width={14} />
-                                        Control interno
-                                    </p>
-                                </div>
                                 <label className="flex items-start gap-3 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30 bg-rose-50/40 dark:bg-rose-900/10 cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
                                     <input
                                         type="checkbox"
@@ -906,18 +963,25 @@ export default function PerfilIndex() {
                                         {vm.savingControlFlag === 'requiereAprobacionCompras' && <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
-                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                    </SeccionConfig>
+                    <SeccionConfig id="impuestos" icono="solar:calculator-bold-duotone" titulo="Impuestos" resumen="Ley de Amazonía y tratamiento del IGV en tus reportes" abierta={seccionAbierta === 'impuestos'} onToggle={toggleSeccion}>
+                                <label data-testid="config-ley-amazonia" className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-900/10 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
                                     <input
                                         type="checkbox"
-                                        checked={Boolean((perfil.empresa as any).requiereCajaParaEmitir)}
-                                        disabled={vm.savingControlFlag === 'requiereCajaParaEmitir'}
-                                        onChange={(e) => vm.handleControlFlagToggle('requiereCajaParaEmitir', e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-sky-600 dark:text-sky-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-sky-500"
+                                        checked={Boolean((perfil.empresa as any).leyAmazonia)}
+                                        disabled={vm.savingLeyAmazonia}
+                                        onChange={(e) => vm.handleLeyAmazoniaToggle(e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-emerald-600 dark:text-emerald-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-emerald-500"
                                     />
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Exigir caja abierta para emitir comprobantes</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Nadie (incluido tú) podrá emitir facturas, boletas, notas de venta ni tickets sin tener su caja abierta en su sede. Las cotizaciones no lo requieren.</p>
-                                        {vm.savingControlFlag === 'requiereCajaParaEmitir' && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Opero bajo la Ley de Amazonía (Ley 27037)</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Actívalo si tu negocio está en zona amazónica (Loreto, Ucayali, San Martín, Madre de Dios, Amazonas y provincias designadas de Junín, Cusco, Huánuco, Pasco, Puno, Ayacucho, Cajamarca, La Libertad, Piura y Huancavelica).
+                                            Tus facturas y boletas llevarán además la leyenda que SUNAT pide para sustentar la exoneración del IGV:
+                                            <span className="font-semibold"> "BIENES TRANSFERIDOS EN LA AMAZONIA REGION SELVA PARA SER CONSUMIDOS EN LA MISMA"</span>.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Ojo: la exoneración aplica a lo que se consume dentro de la zona. Si vendes fuera, esa operación va gravada con IGV.</p>
+                                        {vm.savingLeyAmazonia && <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
@@ -954,100 +1018,10 @@ export default function PerfilIndex() {
                                         {vm.savingCriterioIgv && <p className="text-xs text-violet-600 dark:text-violet-400">Guardando configuración...</p>}
                                     </div>
                                 </div>
-                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                                        <Icon icon="solar:document-text-bold-duotone" width={14} />
-                                        Formato de Cotización
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Ahora se configura desde <span className="font-semibold text-gray-700 dark:text-gray-300">Cotizaciones → Configurar formato</span>, con vista previa en vivo (mostrar/ocultar y tamaño de cada elemento).</p>
-                                </div>
-                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                                        <Icon icon="solar:printer-bold-duotone" width={14} />
-                                        Tamaño del Logo en Comprobantes
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <select
-                                            disabled={vm.savingTicketLogoSize}
-                                            value={perfil.empresa.ticketLogoSize ?? 96}
-                                            onChange={(e) => vm.handleTicketLogoSizeChange(Number(e.target.value))}
-                                            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value={64}>Extra Pequeño (64px)</option>
-                                            <option value={96}>Pequeño (96px)</option>
-                                            <option value={128}>Normal (128px)</option>
-                                            <option value={160}>Grande (160px)</option>
-                                            <option value={192}>Extra Grande (192px)</option>
-                                            <option value={256}>Enorme (256px)</option>
-                                            <option value={320}>Gigante (320px)</option>
-                                            <option value={384}>Máximo Ancho (384px)</option>
-                                        </select>
-                                        {vm.savingTicketLogoSize && <span className="text-xs text-blue-600 dark:text-blue-400">Guardando...</span>}
-                                    </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ajusta el tamaño con el que se imprime tu logo en todos los formatos: ticket 80mm, A4, A5, cotizaciones y guías de remisión.</p>
-                                </div>
-                                {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
-                                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                        <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                                            <Icon icon="solar:medical-kit-bold-duotone" width={14} />
-                                            Director Técnico Q.F. (Libro Control DIGEMID)
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="text"
-                                                className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                                placeholder="Q.F. Nombre Apellido — CQP 12345"
-                                                value={directorInput ?? (perfil.empresa.directorTecnico ?? '')}
-                                                onChange={e => setDirectorInput(e.target.value)}
-                                            />
-                                            <button
-                                                disabled={savingDirectorTecnico || directorInput === null}
-                                                onClick={() => vm.handleDirectorTecnicoSave(directorInput ?? '', () => setDirectorInput(null))}
-                                                className="px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
-                                            >
-                                                {savingDirectorTecnico ? '...' : 'Guardar'}
-                                            </button>
-                                        </div>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aparece en el Libro de Control de Psicotrópicos — DS 023-2001-SA</p>
-                                    </div>
-                                )}
-                                {perfil.empresa.tipoEmpresa === 'FORMAL' && (
-                                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                        <p className="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
-                                            <Icon icon="solar:shield-check-bold-duotone" width={14} />
-                                            Consulta de Validez SUNAT
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                            Credenciales de API que generas <strong>una vez</strong> en tu Clave SOL (Menú SOL → Empresas → Comprobantes de pago → Consulta de validez del CPE → Credenciales de API). Sirven para el botón <strong>“Verificar en SUNAT”</strong> cuando un comprobante queda en conciliación.
-                                        </p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            <input
-                                                type="text"
-                                                className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                                placeholder="Client ID"
-                                                value={sunatClientIdInput ?? (perfil.empresa.sunatClientId ?? '')}
-                                                onChange={e => setSunatClientIdInput(e.target.value)}
-                                            />
-                                            <input
-                                                type="password"
-                                                className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                                placeholder="Client Secret"
-                                                value={sunatClientSecretInput ?? (perfil.empresa.sunatClientSecret ?? '')}
-                                                onChange={e => setSunatClientSecretInput(e.target.value)}
-                                            />
-                                        </div>
-                                        <button
-                                            disabled={vm.savingSunatValidez || (sunatClientIdInput === null && sunatClientSecretInput === null)}
-                                            onClick={() => vm.handleSunatValidezSave(
-                                                sunatClientIdInput ?? (perfil.empresa.sunatClientId ?? ''),
-                                                sunatClientSecretInput ?? (perfil.empresa.sunatClientSecret ?? ''),
-                                                () => { setSunatClientIdInput(null); setSunatClientSecretInput(null); },
-                                            )}
-                                            className="mt-2 px-3 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
-                                        >
-                                            {vm.savingSunatValidez ? '...' : 'Guardar credenciales'}
-                                        </button>
-
+                    </SeccionConfig>
+                    <SeccionConfig id="cobros" icono="solar:card-bold-duotone" titulo="Cómo te pagan" resumen="Pagos con tarjeta en tu tienda y cuentas bancarias" abierta={seccionAbierta === 'cobros'} onToggle={toggleSeccion}>
+                            {perfil.empresa.tipoEmpresa === 'FORMAL' && (
+                            <>
                                         {/* ── Pasarelas de pago de la tienda: credenciales del propio comerciante ── */}
                                         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-800" data-testid="config-pasarelas">
                                             <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
@@ -1104,7 +1078,54 @@ export default function PerfilIndex() {
                                                 {vm.savingPasarelas ? 'Guardando...' : 'Guardar medios de pago'}
                                             </button>
                                         </div>
-
+                            </>
+                            )}
+                            <div className="mt-3 p-3 rounded-lg border border-gray-100 dark:border-slate-800">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white">Cuentas bancarias</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">Se administran junto con la caja, donde además ves su saldo y sus movimientos.</p>
+                                <Link to="/administrador/ventas/caja?tab=bancos" className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 transition-all">
+                                    <Icon icon="solar:arrow-right-up-linear" width="16" /> Ir a Caja y Bancos
+                                </Link>
+                            </div>
+                    </SeccionConfig>
+                    {perfil.empresa.tipoEmpresa === 'FORMAL' && (
+                        <SeccionConfig id="conexiones" icono="solar:link-circle-bold-duotone" titulo="Conexiones con SUNAT" resumen="Consulta de validez de comprobantes y descarga del SIRE" abierta={seccionAbierta === 'conexiones'} onToggle={toggleSeccion}>
+                            <div>
+                                        <p className="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                            <Icon icon="solar:shield-check-bold-duotone" width={14} />
+                                            Consulta de Validez SUNAT
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                            Credenciales de API que generas <strong>una vez</strong> en tu Clave SOL (Menú SOL → Empresas → Comprobantes de pago → Consulta de validez del CPE → Credenciales de API). Sirven para el botón <strong>“Verificar en SUNAT”</strong> cuando un comprobante queda en conciliación.
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <input
+                                                type="text"
+                                                className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                placeholder="Client ID"
+                                                value={sunatClientIdInput ?? (perfil.empresa.sunatClientId ?? '')}
+                                                onChange={e => setSunatClientIdInput(e.target.value)}
+                                            />
+                                            <input
+                                                type="password"
+                                                className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                placeholder="Client Secret"
+                                                value={sunatClientSecretInput ?? (perfil.empresa.sunatClientSecret ?? '')}
+                                                onChange={e => setSunatClientSecretInput(e.target.value)}
+                                            />
+                                        </div>
+                                        <button
+                                            disabled={vm.savingSunatValidez || (sunatClientIdInput === null && sunatClientSecretInput === null)}
+                                            onClick={() => vm.handleSunatValidezSave(
+                                                sunatClientIdInput ?? (perfil.empresa.sunatClientId ?? ''),
+                                                sunatClientSecretInput ?? (perfil.empresa.sunatClientSecret ?? ''),
+                                                () => { setSunatClientIdInput(null); setSunatClientSecretInput(null); },
+                                            )}
+                                            className="mt-2 px-3 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
+                                        >
+                                            {vm.savingSunatValidez ? '...' : 'Guardar credenciales'}
+                                        </button>
+                            </div>
                                         {/* ── SIRE: credenciales aparte (ver sire.client.ts) ── */}
                                         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-800" data-testid="config-sire">
                                             <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
@@ -1175,10 +1196,37 @@ export default function PerfilIndex() {
                                                 )}
                                             </div>
                                         </div>
+                        </SeccionConfig>
+                    )}
+                    {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
+                        <SeccionConfig id="rubro" icono="solar:health-bold-duotone" titulo="Tu rubro" resumen="Ajustes que solo aplican al giro de tu negocio" abierta={seccionAbierta === 'rubro'} onToggle={toggleSeccion}>
+                                {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                        <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                            <Icon icon="solar:medical-kit-bold-duotone" width={14} />
+                                            Director Técnico Q.F. (Libro Control DIGEMID)
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                                placeholder="Q.F. Nombre Apellido — CQP 12345"
+                                                value={directorInput ?? (perfil.empresa.directorTecnico ?? '')}
+                                                onChange={e => setDirectorInput(e.target.value)}
+                                            />
+                                            <button
+                                                disabled={savingDirectorTecnico || directorInput === null}
+                                                onClick={() => vm.handleDirectorTecnicoSave(directorInput ?? '', () => setDirectorInput(null))}
+                                                className="px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
+                                            >
+                                                {savingDirectorTecnico ? '...' : 'Guardar'}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aparece en el Libro de Control de Psicotrópicos — DS 023-2001-SA</p>
                                     </div>
                                 )}
-                            </div>
-                        </div>
+                        </SeccionConfig>
+                    )}
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp
                         (antes vivía en /administrador/despacho/config, sin enlace desde el menú) */}
                     <DespachoAutomatizacionCard className={configTab} />
@@ -1256,17 +1304,6 @@ export default function PerfilIndex() {
                             {perfil.empresa.fechaExpiracion && <Field label="Fecha de Expiración"><p className="text-gray-700 dark:text-gray-300 font-medium text-sm">{vm.formatearFechaSolo(perfil.empresa.fechaExpiracion)}</p></Field>}
                             <Field label="Estado actual"><span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold ${vm.obtenerColorEstado()}`}>{vm.obtenerEstadoSuscripcion()}</span></Field>
                         </div>
-                    </div>
-                    {/* Cuentas Bancarias — movidas a "Caja y Bancos" */}
-                    <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:order-7 ${configTab}`}>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                            <div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:card-bold-duotone" width="20" /></div>
-                            Cuentas Bancarias
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Las cuentas bancarias ahora se administran junto con la caja, donde también ves su saldo y movimientos.</p>
-                        <Link to="/administrador/ventas/caja?tab=bancos" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-all">
-                            <Icon icon="solar:arrow-right-up-linear" width="18" /> Ir a Caja y Bancos
-                        </Link>
                     </div>
                 </div>
             </div>
