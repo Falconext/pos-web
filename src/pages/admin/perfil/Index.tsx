@@ -25,19 +25,21 @@ export default function PerfilIndex() {
     const [directorInput, setDirectorInput] = useState<string | null>(null);
     const [sunatClientIdInput, setSunatClientIdInput] = useState<string | null>(null);
     const [sireClientIdInput, setSireClientIdInput] = useState<string | null>(null);
-    // Qué sección de Configuración está abierta. Se recuerda para no obligar a
-    // volver a buscarla cada vez que se entra al Perfil.
-    const [seccionAbierta, setSeccionAbierta] = useState<string | null>(
-        () => localStorage.getItem('PERFIL_SECCION_CONFIG'),
-    );
-    const toggleSeccion = (id: string) => {
-        setSeccionAbierta((actual) => {
-            const siguiente = actual === id ? null : id;
-            if (siguiente) localStorage.setItem('PERFIL_SECCION_CONFIG', siguiente);
-            else localStorage.removeItem('PERFIL_SECCION_CONFIG');
-            return siguiente;
-        });
-    };
+    // Qué sección de Configuración está abierta como modal. No se recuerda entre
+    // visitas a propósito: abrir un modal solo con entrar a la página estorba.
+    const [seccionAbierta, setSeccionAbierta] = useState<string | null>(null);
+    const toggleSeccion = (id: string) =>
+        setSeccionAbierta((actual) => (actual === id ? null : id));
+
+    // Escape cierra el modal, como en el resto del panel.
+    useEffect(() => {
+        if (!seccionAbierta) return;
+        const alPresionar = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setSeccionAbierta(null);
+        };
+        window.addEventListener('keydown', alPresionar);
+        return () => window.removeEventListener('keydown', alPresionar);
+    }, [seccionAbierta]);
     // Pasarelas de pago: las claves secretas nunca vuelven del backend, así que
     // los campos de clave arrancan vacíos y solo se mandan si el usuario escribe.
     // Arrancan en null = "lo que ya está guardado"; al escribir pasan a string.
@@ -123,18 +125,23 @@ export default function PerfilIndex() {
      * arbitrario. Ahora cada tema es su propia sección, cerrada por defecto, para
      * que la página entera se vea de un golpe y solo se abra lo que se va a tocar.
      */
-    const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, children }: {
+    const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, className = '', encabezadoPropio = false, children }: {
         id: string; icono: string; titulo: string; resumen: string;
-        abierta: boolean; onToggle: (id: string) => void; children: React.ReactNode;
+        abierta: boolean; onToggle: (id: string) => void; className?: string;
+        /** El contenido ya trae su propio encabezado: el modal solo pone el aspa. */
+        encabezadoPropio?: boolean;
+        children: React.ReactNode;
     }) => (
-        // Abierta ocupa las dos columnas: si no, el contenido se apretuja en media
-        // pantalla y la otra mitad queda vacía.
-        <div data-testid={`seccion-${id}`} className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 overflow-hidden ${abierta ? 'lg:col-span-2' : ''}`}>
+        <>
+            {/* La tarjeta es solo el acceso: siempre mide lo mismo, así la rejilla
+                queda pareja y no se abren huecos a los costados. */}
             <button
                 type="button"
+                data-testid={`seccion-${id}`}
                 onClick={() => onToggle(id)}
+                aria-haspopup="dialog"
                 aria-expanded={abierta}
-                className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+                className={`w-full self-start flex items-center gap-3 p-4 text-left bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 hover:border-violet-300 hover:shadow-md dark:hover:border-violet-700 transition-all ${className}`}
             >
                 <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
                     <Icon icon={icono} width="20" />
@@ -143,14 +150,48 @@ export default function PerfilIndex() {
                     <h2 className="text-base font-bold text-gray-900 dark:text-white truncate">{titulo}</h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{resumen}</p>
                 </div>
-                <Icon
-                    icon="solar:alt-arrow-down-linear"
-                    width="20"
-                    className={`shrink-0 text-gray-400 transition-transform ${abierta ? 'rotate-180' : ''}`}
-                />
+                <Icon icon="solar:alt-arrow-right-linear" width="20" className="shrink-0 text-gray-400" />
             </button>
-            {abierta && <div className="px-4 pb-4 space-y-3">{children}</div>}
-        </div>
+
+            {abierta && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={titulo}
+                    onClick={() => onToggle(id)}
+                >
+                    <div
+                        className="w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border dark:border-slate-800 dark:bg-[#111827]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-white/90 px-5 py-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#111827]/90">
+                            {!encabezadoPropio && (
+                                <>
+                                    <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
+                                        <Icon icon={icono} width="20" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{titulo}</h2>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{resumen}</p>
+                                    </div>
+                                </>
+                            )}
+                            {encabezadoPropio && <div className="flex-1" />}
+                            <button
+                                type="button"
+                                onClick={() => onToggle(id)}
+                                aria-label="Cerrar"
+                                className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-white transition-colors"
+                            >
+                                <Icon icon="mdi:close" width={22} />
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-3">{children}</div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 
     const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -536,13 +577,14 @@ export default function PerfilIndex() {
                     )}
 
                     {/* ── Crear guías en Shalom Pro — requiere cuenta conectada (plan Corporativo) ── */}
-                    <ShalomProConexion
-                        className={configTab}
-                        nombreSugerido={perfil.empresa.nombreComercial || perfil.empresa.razonSocial}
-                    />
+                    <SeccionConfig id="shalom-pro" icono="solar:delivery-bold-duotone" titulo="Shalom Pro · crear guías" resumen="Conecta tu cuenta Shalom y emite las guías desde el panel" abierta={seccionAbierta === 'shalom-pro'} onToggle={toggleSeccion} className={configTab} encabezadoPropio>
+                        <ShalomProConexion nombreSugerido={perfil.empresa.nombreComercial || perfil.empresa.razonSocial} />
+                    </SeccionConfig>
 
                     {/* ── Envíos Olva — rastreo para todos, guías en plan Corporativo ── */}
-                    <OlvaConfiguracion className={configTab} />
+                    <SeccionConfig id="olva" icono="solar:box-minimalistic-bold-duotone" titulo="Envíos Olva" resumen="Rastreo de envíos y, con plan Corporativo, creación de guías" abierta={seccionAbierta === 'olva'} onToggle={toggleSeccion} className={configTab} encabezadoPropio>
+                        <OlvaConfiguracion />
+                    </SeccionConfig>
                     <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2 ${perfilTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
                         <div className="space-y-4">
@@ -559,7 +601,7 @@ export default function PerfilIndex() {
                          Antes era UNA tarjeta con 25 controles seguidos: siete interruptores
                          sueltos sin encabezado y bloques de temas distintos separados solo por
                          una línea gris. Ahora cada tema es su propia sección. ── */}
-                    <SeccionConfig id="comprobantes" icono="solar:document-text-bold-duotone" titulo="Comprobantes e impresión" resumen="Formato, QR de SUNAT, logo, cotización y observaciones" abierta={seccionAbierta === 'comprobantes'} onToggle={toggleSeccion}>
+                    <SeccionConfig id="comprobantes" icono="solar:document-text-bold-duotone" titulo="Comprobantes e impresión" resumen="Formato, QR de SUNAT, logo, cotización y observaciones" abierta={seccionAbierta === 'comprobantes'} onToggle={toggleSeccion} className={configTab}>
                                 <div className="mt-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/40 dark:bg-indigo-900/10">
                                     <p className="text-sm font-semibold text-gray-900 dark:text-white">Formato de impresión por defecto</p>
                                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 mb-3">
@@ -768,7 +810,7 @@ export default function PerfilIndex() {
                                     {vm.savingControlFlag === 'posExigirCpeMedioPago' && <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">Guardando configuración...</p>}
                                 </div>
                     </SeccionConfig>
-                    <SeccionConfig id="inventario" icono="solar:box-bold-duotone" titulo="Inventario y stock" resumen="Código de barras, lotes, sobreventa y catálogo por sede" abierta={seccionAbierta === 'inventario'} onToggle={toggleSeccion}>
+                    <SeccionConfig id="inventario" icono="solar:box-bold-duotone" titulo="Inventario y stock" resumen="Código de barras, lotes, sobreventa y catálogo por sede" abierta={seccionAbierta === 'inventario'} onToggle={toggleSeccion} className={configTab}>
                                 <label className="flex items-start gap-3 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-900/10 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                     <input
                                         type="checkbox"
@@ -838,7 +880,7 @@ export default function PerfilIndex() {
                                     </div>
                                 </label>
                     </SeccionConfig>
-                    <SeccionConfig id="ventas" icono="solar:cart-large-2-bold-duotone" titulo="Ventas y caja" resumen="Búsqueda del POS, kits, cobranza de campo y aprobaciones" abierta={seccionAbierta === 'ventas'} onToggle={toggleSeccion}>
+                    <SeccionConfig id="ventas" icono="solar:cart-large-2-bold-duotone" titulo="Ventas y caja" resumen="Búsqueda del POS, kits, cobranza de campo y aprobaciones" abierta={seccionAbierta === 'ventas'} onToggle={toggleSeccion} className={configTab}>
                                 {/* Búsqueda del POS al agregar: limpiar (Demenver) o mantener (OWENSOFT). Por empresa. */}
                                 <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-busqueda-config">
                                     <p className="text-sm font-semibold text-gray-900 dark:text-white">Al agregar un producto desde la búsqueda</p>
@@ -964,7 +1006,7 @@ export default function PerfilIndex() {
                                     </div>
                                 </label>
                     </SeccionConfig>
-                    <SeccionConfig id="impuestos" icono="solar:calculator-bold-duotone" titulo="Impuestos" resumen="Ley de Amazonía y tratamiento del IGV en tus reportes" abierta={seccionAbierta === 'impuestos'} onToggle={toggleSeccion}>
+                    <SeccionConfig id="impuestos" icono="solar:calculator-bold-duotone" titulo="Impuestos" resumen="Ley de Amazonía y tratamiento del IGV en tus reportes" abierta={seccionAbierta === 'impuestos'} onToggle={toggleSeccion} className={configTab}>
                                 <label data-testid="config-ley-amazonia" className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-900/10 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
                                     <input
                                         type="checkbox"
@@ -1019,7 +1061,7 @@ export default function PerfilIndex() {
                                     </div>
                                 </div>
                     </SeccionConfig>
-                    <SeccionConfig id="cobros" icono="solar:card-bold-duotone" titulo="Cómo te pagan" resumen="Pagos con tarjeta en tu tienda y cuentas bancarias" abierta={seccionAbierta === 'cobros'} onToggle={toggleSeccion}>
+                    <SeccionConfig id="cobros" icono="solar:card-bold-duotone" titulo="Cómo te pagan" resumen="Pagos con tarjeta en tu tienda y cuentas bancarias" abierta={seccionAbierta === 'cobros'} onToggle={toggleSeccion} className={configTab}>
                             {perfil.empresa.tipoEmpresa === 'FORMAL' && (
                             <>
                                         {/* ── Pasarelas de pago de la tienda: credenciales del propio comerciante ── */}
@@ -1089,7 +1131,7 @@ export default function PerfilIndex() {
                             </div>
                     </SeccionConfig>
                     {perfil.empresa.tipoEmpresa === 'FORMAL' && (
-                        <SeccionConfig id="conexiones" icono="solar:link-circle-bold-duotone" titulo="Conexiones con SUNAT" resumen="Consulta de validez de comprobantes y descarga del SIRE" abierta={seccionAbierta === 'conexiones'} onToggle={toggleSeccion}>
+                        <SeccionConfig id="conexiones" icono="solar:link-circle-bold-duotone" titulo="Conexiones con SUNAT" resumen="Consulta de validez de comprobantes y descarga del SIRE" abierta={seccionAbierta === 'conexiones'} onToggle={toggleSeccion} className={configTab}>
                             <div>
                                         <p className="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
                                             <Icon icon="solar:shield-check-bold-duotone" width={14} />
@@ -1199,7 +1241,7 @@ export default function PerfilIndex() {
                         </SeccionConfig>
                     )}
                     {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
-                        <SeccionConfig id="rubro" icono="solar:health-bold-duotone" titulo="Tu rubro" resumen="Ajustes que solo aplican al giro de tu negocio" abierta={seccionAbierta === 'rubro'} onToggle={toggleSeccion}>
+                        <SeccionConfig id="rubro" icono="solar:health-bold-duotone" titulo="Tu rubro" resumen="Ajustes que solo aplican al giro de tu negocio" abierta={seccionAbierta === 'rubro'} onToggle={toggleSeccion} className={configTab}>
                                 {usaLotesFarmaciaRubro(perfil.empresa.rubro?.nombre) && (
                                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                                         <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
@@ -1229,7 +1271,9 @@ export default function PerfilIndex() {
                     )}
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp
                         (antes vivía en /administrador/despacho/config, sin enlace desde el menú) */}
-                    <DespachoAutomatizacionCard className={configTab} />
+                    <SeccionConfig id="despacho" icono="solar:routing-2-bold-duotone" titulo="Automatización de despacho" resumen="Rastreo automático y avisos por WhatsApp al cliente" abierta={seccionAbierta === 'despacho'} onToggle={toggleSeccion} className={configTab} encabezadoPropio>
+                        <DespachoAutomatizacionCard />
+                    </SeccionConfig>
                     {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
                         <div className={`lg:order-4 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5 ${configTab}`}>
                             <div className="flex items-center justify-between mb-4">
