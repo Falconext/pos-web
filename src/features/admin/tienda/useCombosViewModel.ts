@@ -127,7 +127,10 @@ export const useCombosViewModel = () => {
 
     const guardarCombo = async () => {
         if (!form.nombre.trim()) return useAlertStore.getState().alert('El nombre es requerido', 'error');
-        if (form.items.length < 2) return useAlertStore.getState().alert('Un kit debe tener al menos 2 productos', 'error');
+        // Se cuentan UNIDADES, no filas: un pack de 2 cajas del mismo producto es
+        // un kit válido, y al editarlo vuelve como una sola fila con cantidad 2.
+        const unidades = form.items.reduce((total, i) => total + Number(i.cantidad || 0), 0);
+        if (unidades < 2) return useAlertStore.getState().alert('Un kit debe tener al menos 2 unidades', 'error');
         if (form.items.some(i => i.productoId === 0)) return useAlertStore.getState().alert('Selecciona todos los productos', 'error');
         if (form.precioCombo <= 0) return useAlertStore.getState().alert('El precio del kit debe ser mayor a 0', 'error');
         if (form.precioCombo >= calcularPrecioRegular()) return useAlertStore.getState().alert('El precio del kit debe ser menor al precio regular', 'error');
