@@ -290,6 +290,11 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit, prefillComp
                     vehiculoAutorizacion: "",
                     // Documentos relacionados al traslado (Catálogo 61)
                     documentosRelacionados: [],
+                    vehiculosSecundarios: [],
+                    conductoresSecundarios: [],
+                    fechaEntregaBienes: "",
+                    vehiculoNroAutorizacion: "",
+                    vehiculoEntidadEmisora: "",
                     // Ubicaciones
                     partidaUbigeo: auth?.empresa?.ubigeo || "",
                     partidaDireccion: auth?.empresa?.direccion || "",
@@ -342,6 +347,9 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit, prefillComp
             documentosRelacionados: Array.isArray(fullGuia.documentosRelacionados)
                 ? fullGuia.documentosRelacionados
                 : [],
+            vehiculosSecundarios: Array.isArray(fullGuia.vehiculosSecundarios) ? fullGuia.vehiculosSecundarios : [],
+            conductoresSecundarios: Array.isArray(fullGuia.conductoresSecundarios) ? fullGuia.conductoresSecundarios : [],
+            fechaEntregaBienes: fullGuia.fechaEntregaBienes ? moment.utc(fullGuia.fechaEntregaBienes).format("YYYY-MM-DD") : "",
             // Si es traslado entre establecimientos, forzar destinatario = empresa propia
             destinatarioTipoDoc: esTrasladoMismaEmpresa ? '6' : (fullGuia.destinatarioTipoDoc || prev.destinatarioTipoDoc),
             destinatarioNumDoc: esTrasladoMismaEmpresa ? (empresa?.ruc || '') : (fullGuia.destinatarioNumDoc || ''),
@@ -488,6 +496,21 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit, prefillComp
                 cantidad: 1
             });
         }
+    };
+
+    // ── Listas repetibles del bloque 2 (vehículos y conductores secundarios) ──
+    const setListaItem = (campo: string, index: number, sub: string, valor: string) => {
+        setFormValues((prev: any) => {
+            const lista = [...(prev[campo] || [])];
+            lista[index] = { ...lista[index], [sub]: valor };
+            return { ...prev, [campo]: lista };
+        });
+    };
+    const agregarALista = (campo: string, vacio: any) => {
+        setFormValues((prev: any) => ({ ...prev, [campo]: [...(prev[campo] || []), vacio] }));
+    };
+    const quitarDeLista = (campo: string, index: number) => {
+        setFormValues((prev: any) => ({ ...prev, [campo]: (prev[campo] || []).filter((_: any, i: number) => i !== index) }));
     };
 
     // ── Documentos relacionados (Catálogo 61) ──
@@ -1260,6 +1283,53 @@ const ModalGuiaRemision = ({ isOpen, onClose, onSuccess, guiaToEdit, prefillComp
                                             <InputPro autocomplete="off" label="Nombres Conductor" name="conductorNombre" value={formValues.conductorNombre || ""} onChange={handleChange} isLabel />
                                             <InputPro autocomplete="off" label="Apellidos Conductor" name="conductorApellidos" value={formValues.conductorApellidos || ""} onChange={handleChange} isLabel />
                                             <InputPro autocomplete="off" label="Licencia (9 caract.)" name="conductorLicencia" value={(formValues.conductorLicencia || "").toUpperCase()} onChange={handleChange} isLabel />
+                                        </div>
+
+                                        {/* ── Bloque 2: lo que SUNAT imprime además del vehículo principal ── */}
+                                        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <InputPro autocomplete="off" label="Entrega al transportista" name="fechaEntregaBienes" type="date" value={formValues.fechaEntregaBienes || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="N° autorización especial" name="vehiculoNroAutorizacion" value={formValues.vehiculoNroAutorizacion || ""} onChange={handleChange} isLabel />
+                                            <InputPro autocomplete="off" label="Entidad emisora (ej. MTC)" name="vehiculoEntidadEmisora" value={formValues.vehiculoEntidadEmisora || ""} onChange={handleChange} isLabel />
+                                        </div>
+
+                                        <div className="mt-4 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
+                                            <h5 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">VEHÍCULOS SECUNDARIOS</h5>
+                                            {(formValues.vehiculosSecundarios || []).map((v: any, i: number) => (
+                                                <div key={i} className="grid grid-cols-[1fr_1fr_40px] gap-2 mb-2">
+                                                    <input value={v.placa || ''} onChange={(e) => setListaItem('vehiculosSecundarios', i, 'placa', e.target.value.toUpperCase())}
+                                                        placeholder="Placa" className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input value={v.tuce || ''} onChange={(e) => setListaItem('vehiculosSecundarios', i, 'tuce', e.target.value.toUpperCase())}
+                                                        placeholder="TUCE (opcional)" className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <button type="button" onClick={() => quitarDeLista('vehiculosSecundarios', i)} title="Quitar"
+                                                        className="h-10 w-10 inline-flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><Icon icon="solar:trash-bin-trash-bold" /></button>
+                                                </div>
+                                            ))}
+                                            <button type="button" onClick={() => agregarALista('vehiculosSecundarios', { placa: '', tuce: '' })}
+                                                className="text-sm font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 inline-flex items-center gap-1.5">
+                                                <Icon icon="solar:add-square-bold" /> Agregar vehículo
+                                            </button>
+                                        </div>
+
+                                        <div className="mt-3 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
+                                            <h5 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">CONDUCTORES SECUNDARIOS</h5>
+                                            {(formValues.conductoresSecundarios || []).map((c: any, i: number) => (
+                                                <div key={i} className="grid grid-cols-[110px_1fr_1fr_120px_40px] gap-2 mb-2">
+                                                    <input value={c.numDoc || ''} onChange={(e) => setListaItem('conductoresSecundarios', i, 'numDoc', e.target.value.replace(/\D/g, '').slice(0, 8))}
+                                                        placeholder="DNI" className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input value={c.nombres || ''} onChange={(e) => setListaItem('conductoresSecundarios', i, 'nombres', e.target.value.toUpperCase())}
+                                                        placeholder="Nombres" className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input value={c.apellidos || ''} onChange={(e) => setListaItem('conductoresSecundarios', i, 'apellidos', e.target.value.toUpperCase())}
+                                                        placeholder="Apellidos" className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input value={c.licencia || ''} onChange={(e) => setListaItem('conductoresSecundarios', i, 'licencia', e.target.value.toUpperCase())}
+                                                        placeholder="Licencia" className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <button type="button" onClick={() => quitarDeLista('conductoresSecundarios', i)} title="Quitar"
+                                                        className="h-10 w-10 inline-flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><Icon icon="solar:trash-bin-trash-bold" /></button>
+                                                </div>
+                                            ))}
+                                            <button type="button" onClick={() => agregarALista('conductoresSecundarios', { tipoDoc: '1', numDoc: '', nombres: '', apellidos: '', licencia: '' })}
+                                                className="text-sm font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 inline-flex items-center gap-1.5">
+                                                <Icon icon="solar:add-square-bold" /> Agregar conductor
+                                            </button>
                                         </div>
                                     </div>
                                 )}
