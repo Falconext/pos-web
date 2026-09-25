@@ -98,7 +98,7 @@ export default function ConstruccionCheckoutPage(props: TemplateCheckoutPageProp
     configPago?.plinQR || configPago?.plinQrUrl || configPago?.plinNumero ? 'PLIN' : null,
     configPago?.aceptaEfectivo ? 'EFECTIVO' : null,
     hasBankAccounts ? 'TRANSFERENCIA' : null,
-    configPago?.aceptaTarjeta && configPago?.culqiPublicKey ? 'TARJETA' : null,
+    (configPago?.aceptaTarjeta && configPago?.culqiPublicKey) || configPago?.aceptaNiubiz ? 'TARJETA' : null,
     configPago?.aceptaMercadoPago ? 'MERCADO_PAGO' : null,
   ].filter(Boolean) as MedioPago[]);
 

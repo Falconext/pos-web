@@ -25,6 +25,24 @@ export default function PerfilIndex() {
     const [directorInput, setDirectorInput] = useState<string | null>(null);
     const [sunatClientIdInput, setSunatClientIdInput] = useState<string | null>(null);
     const [sireClientIdInput, setSireClientIdInput] = useState<string | null>(null);
+    // Pasarelas de pago: las claves secretas nunca vuelven del backend, así que
+    // los campos de clave arrancan vacíos y solo se mandan si el usuario escribe.
+    // Arrancan en null = "lo que ya está guardado"; al escribir pasan a string.
+    const [culqiPkInput, setCulqiPkInput] = useState<string | null>(null);
+    const [culqiSk, setCulqiSk] = useState('');
+    const [culqiActivoInput, setCulqiActivoInput] = useState<boolean | null>(null);
+    const [niubizMidInput, setNiubizMidInput] = useState<string | null>(null);
+    const [niubizUserInput, setNiubizUserInput] = useState<string | null>(null);
+    const [niubizPass, setNiubizPass] = useState('');
+    const [niubizActivoInput, setNiubizActivoInput] = useState<boolean | null>(null);
+    const [pasarelasDemoInput, setPasarelasDemoInput] = useState<boolean | null>(null);
+    const emp = vm.perfil?.empresa;
+    const culqiPk = culqiPkInput ?? (emp?.culqiPublicKey ?? '');
+    const culqiActivo = culqiActivoInput ?? Boolean(emp?.culqiActivo);
+    const niubizMid = niubizMidInput ?? (emp?.niubizMerchantId ?? '');
+    const niubizUser = niubizUserInput ?? (emp?.niubizUsuario ?? '');
+    const niubizActivo = niubizActivoInput ?? Boolean(emp?.niubizActivo);
+    const pasarelasDemo = pasarelasDemoInput ?? (emp?.pasarelasUsaDemo ?? true);
     // Estado del SIRE: lo sirve el backend (no viaja en auth/me porque incluye
     // qué credenciales faltan).
     useEffect(() => { void vm.cargarEstadoSire(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1029,6 +1047,63 @@ export default function PerfilIndex() {
                                         >
                                             {vm.savingSunatValidez ? '...' : 'Guardar credenciales'}
                                         </button>
+
+                                        {/* ── Pasarelas de pago de la tienda: credenciales del propio comerciante ── */}
+                                        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-800" data-testid="config-pasarelas">
+                                            <p className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                                <Icon icon="solar:card-bold-duotone" width={14} />
+                                                Pagos con tarjeta en tu tienda
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                                Son <strong>tus</strong> credenciales: el dinero de cada venta entra directo a tu cuenta de Culqi o Niubiz, nosotros no lo recibimos.
+                                                Las claves secretas se guardan cifradas y no se vuelven a mostrar; si dejas el campo vacío, se conserva la que ya guardaste.
+                                            </p>
+
+                                            <label className="flex items-center gap-2 mb-3 text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
+                                                <input type="checkbox" checked={Boolean(pasarelasDemo)} onChange={(e) => setPasarelasDemoInput(e.target.checked)} className="w-4 h-4 rounded" />
+                                                <span>Estoy <strong>probando</strong> (entorno de integración). Desmarca esto recién cuando vayas a cobrar de verdad.</span>
+                                            </label>
+
+                                            <div className="p-3 rounded-lg border border-gray-100 dark:border-slate-800 mb-3">
+                                                <label className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+                                                    <input type="checkbox" checked={Boolean(culqiActivo)} onChange={(e) => setCulqiActivoInput(e.target.checked)} className="w-4 h-4 rounded" />
+                                                    Culqi
+                                                </label>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Saca tus llaves en el panel de Culqi → Desarrollo → Llaves.</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    <input type="text" placeholder="Llave pública (pk_...)" value={culqiPk} onChange={(e) => setCulqiPkInput(e.target.value)}
+                                                        className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input type="password" autoComplete="new-password" placeholder="Llave secreta (sk_...)" value={culqiSk} onChange={(e) => setCulqiSk(e.target.value)}
+                                                        className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                </div>
+                                            </div>
+
+                                            <div className="p-3 rounded-lg border border-gray-100 dark:border-slate-800">
+                                                <label className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+                                                    <input type="checkbox" checked={Boolean(niubizActivo)} onChange={(e) => setNiubizActivoInput(e.target.checked)} className="w-4 h-4 rounded" />
+                                                    Niubiz
+                                                </label>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Necesitas afiliación con Niubiz: ellos te dan el código de comercio, el usuario y la clave.</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                    <input type="text" inputMode="numeric" placeholder="Código de comercio" value={niubizMid} onChange={(e) => setNiubizMidInput(e.target.value.replace(/\D/g, ''))}
+                                                        className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input type="text" placeholder="Usuario" value={niubizUser} onChange={(e) => setNiubizUserInput(e.target.value)}
+                                                        className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                    <input type="password" autoComplete="new-password" placeholder="Clave" value={niubizPass} onChange={(e) => setNiubizPass(e.target.value)}
+                                                        className="h-10 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                                                </div>
+                                            </div>
+
+                                            <button type="button" disabled={vm.savingPasarelas}
+                                                onClick={() => vm.handlePasarelasSave({
+                                                    culqiPublicKey: culqiPk, culqiSecretKey: culqiSk, culqiActivo,
+                                                    niubizMerchantId: niubizMid, niubizUsuario: niubizUser, niubizPassword: niubizPass, niubizActivo,
+                                                    pasarelasUsaDemo: pasarelasDemo,
+                                                }).then(() => { setCulqiSk(''); setNiubizPass(''); })}
+                                                className="mt-3 h-10 px-4 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-50">
+                                                {vm.savingPasarelas ? 'Guardando...' : 'Guardar medios de pago'}
+                                            </button>
+                                        </div>
 
                                         {/* ── SIRE: credenciales aparte (ver sire.client.ts) ── */}
                                         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-800" data-testid="config-sire">

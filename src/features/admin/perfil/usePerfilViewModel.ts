@@ -18,7 +18,7 @@ interface WhatsAppSettingsForm {
 interface PerfilData {
     id: number; nombre: string; email: string; rol: string; celular?: string; telefono?: string;
     empresaId: number; estado: string; fechaCreacion: string; fechaActualizacion: string;
-    empresa: { id: number; razonSocial: string; nombreComercial: string; paginaWeb?: string | null; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; permitirVentaSinStock?: boolean | null; leyAmazonia?: boolean | null; cobranzaCampo?: boolean | null; mostrarMarcaSistema?: boolean | null; kitsComoUnaLinea?: boolean | null; paquetesComoUnaLinea?: boolean | null; cotizMostrarEmail?: boolean | null; cotizMostrarCuentas?: boolean | null; cotizMostrarRazonSocial?: boolean | null; cotizMostrarDetraccion?: boolean | null; ticketLogoSize?: number | null; directorTecnico?: string | null; sunatClientId?: string | null; sunatClientSecret?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
+    empresa: { id: number; razonSocial: string; nombreComercial: string; paginaWeb?: string | null; direccion: string; logo?: string; ruc: string; tipoEmpresa: string; fechaCreacion: string; fechaActivacion?: string; fechaExpiracion?: string; usaCodigoBarrasManual?: boolean | null; usarPrecioLoteFefo?: boolean | null; permitirVentaSinStock?: boolean | null; culqiPublicKey?: string | null; culqiActivo?: boolean | null; niubizMerchantId?: string | null; niubizUsuario?: string | null; niubizActivo?: boolean | null; pasarelasUsaDemo?: boolean | null; leyAmazonia?: boolean | null; cobranzaCampo?: boolean | null; mostrarMarcaSistema?: boolean | null; kitsComoUnaLinea?: boolean | null; paquetesComoUnaLinea?: boolean | null; cotizMostrarEmail?: boolean | null; cotizMostrarCuentas?: boolean | null; cotizMostrarRazonSocial?: boolean | null; cotizMostrarDetraccion?: boolean | null; ticketLogoSize?: number | null; directorTecnico?: string | null; sunatClientId?: string | null; sunatClientSecret?: string | null; whatsappProvider?: WhatsAppProvider | null; whatsappPhoneNumberId?: string | null; whatsappBusinessId?: string | null; whatsappActivo?: boolean | null; whatsappApiTokenConfigured?: boolean; shalomEmail?: string | null; shalomConfigured?: boolean; rubro: { id: number; nombre: string; descripcion: string }; plan: { id: number; nombre: string; descripcion: string; costo: number; duracionDias: number; tipoFacturacion: string; esPrueba: boolean; activo: boolean; tieneGestionLotes: boolean }; departamento?: string; provincia?: string; distrito?: string; ubicacion?: { codigo: string; departamento: string; provincia: string; distrito: string } };
 }
 
 const whatsappFormFromPerfil = (perfil: PerfilData): WhatsAppSettingsForm => ({
@@ -496,6 +496,43 @@ export const usePerfilViewModel = () => {
         }
     };
 
+    // ── Pasarelas de pago de la tienda (Culqi y Niubiz) ──────────────────────
+    // Las credenciales son del propio comerciante: la plata de sus ventas entra
+    // a SU cuenta. Las claves secretas se guardan cifradas y no se muestran; si
+    // el campo va vacío, se conserva la que ya estaba.
+    const [savingPasarelas, setSavingPasarelas] = useState(false);
+    const handlePasarelasSave = async (datos: {
+        culqiPublicKey?: string;
+        culqiSecretKey?: string;
+        culqiActivo?: boolean;
+        niubizMerchantId?: string;
+        niubizUsuario?: string;
+        niubizPassword?: string;
+        niubizActivo?: boolean;
+        pasarelasUsaDemo?: boolean;
+    }) => {
+        if (savingPasarelas) return;
+        try {
+            setSavingPasarelas(true);
+            await useEmpresasStore.getState().actualizarMiEmpresa({
+                ...(datos.culqiPublicKey !== undefined ? { culqiPublicKey: datos.culqiPublicKey.trim() } : {}),
+                ...(datos.culqiSecretKey ? { culqiSecretKey: datos.culqiSecretKey.trim() } : {}),
+                ...(datos.culqiActivo !== undefined ? { culqiActivo: datos.culqiActivo } : {}),
+                ...(datos.niubizMerchantId !== undefined ? { niubizMerchantId: datos.niubizMerchantId.trim() } : {}),
+                ...(datos.niubizUsuario !== undefined ? { niubizUsuario: datos.niubizUsuario.trim() } : {}),
+                ...(datos.niubizPassword ? { niubizPassword: datos.niubizPassword.trim() } : {}),
+                ...(datos.niubizActivo !== undefined ? { niubizActivo: datos.niubizActivo } : {}),
+                ...(datos.pasarelasUsaDemo !== undefined ? { pasarelasUsaDemo: datos.pasarelasUsaDemo } : {}),
+            } as any);
+            setPerfil(prev => (prev ? { ...prev, empresa: { ...prev.empresa, ...datos, culqiSecretKey: undefined, niubizPassword: undefined } } : prev));
+            useAlertStore.getState().alert('Medios de pago guardados', 'success');
+        } catch (error: any) {
+            useAlertStore.getState().alert(error?.response?.data?.message || error?.message || 'No se pudieron guardar los medios de pago', 'error');
+        } finally {
+            setSavingPasarelas(false);
+        }
+    };
+
     const handleSireProbar = async () => {
         if (probandoSire) return;
         try {
@@ -740,6 +777,7 @@ export const usePerfilViewModel = () => {
     return { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword, formatearFecha, formatearFechaSolo, handleLogoChange, handleBarcodeToggle, handleFefoPriceToggle, savingVentaSinStockConfig, handleVentaSinStockToggle, savingLeyAmazonia, handleLeyAmazoniaToggle, savingImpresionConfig, handleImpresionConfig, savingCobranzaCampoConfig, handleCobranzaCampoToggle, savingControlFlag, handleControlFlagToggle,
         savingCriterioIgv,
         savingSire, probandoSire, sireEstado, cargarEstadoSire, handleSireSave, handleSireProbar,
+        savingPasarelas, handlePasarelasSave,
         savingPosComprobanteDefault, handlePosComprobanteDefaultChange,
         handleCriterioIgvChange, savingCotizConfig, handleCotizToggle, handleDirectorTecnicoSave, savingSunatValidez, handleSunatValidezSave, setWhatsAppProvider, updateWhatsAppField, handleWhatsAppConfigSave, obtenerEstadoSuscripcion, obtenerColorEstado, handleTicketLogoSizeChange, savingTicketLogoSize, ventaObsDefault, setVentaObsDefault, ventaObsDirty, savingVentaObs, handleVentaObsSave, shalomForm, savingShalomConfig, shalomConfigDirty, updateShalomField, handleShalomConfigSave, personalForm, savingPersonal, personalDirty, updatePersonalField, handleSavePersonal };
 };

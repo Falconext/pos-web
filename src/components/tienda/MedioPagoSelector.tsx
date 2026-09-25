@@ -59,7 +59,8 @@ export function mediosDisponibles(configPago: any): MedioPagoValue[] {
   return ORDER.filter((m) => {
     switch (m) {
       case 'EFECTIVO':      return Boolean(configPago?.aceptaEfectivo);
-      case 'TARJETA':       return Boolean(configPago?.aceptaTarjeta && configPago?.culqiPublicKey);
+      // Tarjeta = Culqi o Niubiz, la que el comerciante haya configurado.
+      case 'TARJETA':       return Boolean((configPago?.aceptaTarjeta && configPago?.culqiPublicKey) || configPago?.aceptaNiubiz);
       case 'MERCADO_PAGO':  return Boolean(configPago?.aceptaMercadoPago);
       case 'YAPE':          return Boolean(configPago?.yapeQrUrl || configPago?.yapeQR || configPago?.yapeNumero);
       case 'PLIN':          return Boolean(configPago?.plinQrUrl || configPago?.plinQR || configPago?.plinNumero);

@@ -32,6 +32,9 @@ interface PaymentConfig {
     aceptaTarjeta?: boolean;
     culqiPublicKey?: string | null;
     culqiBackendReady?: boolean;
+    /** Niubiz: la tienda cobra con la afiliación del propio comerciante. */
+    aceptaNiubiz?: boolean;
+    niubizMerchantId?: string | null;
     aceptaMercadoPago?: boolean;
     mercadoPagoPublicKey?: string | null;
     whatsappTienda?: string | null;
@@ -45,6 +48,12 @@ interface CulqiTokenResult {
     email?: string;
 }
 
+/** Lo que devuelve el formulario de Niubiz y hay que mandar al pedido. */
+interface NiubizPagoResult {
+    transactionToken: string;
+    purchaseNumber: string;
+}
+
 declare global {
     interface Window {
         Culqi?: {
@@ -56,6 +65,10 @@ declare global {
             open: () => void;
         };
         culqi?: () => void;
+        VisanetCheckout?: {
+            configure: (config: Record<string, unknown>) => void;
+            open: () => void;
+        };
     }
 }
 
@@ -107,6 +120,9 @@ export default function Checkout() {
     }, [slug]);
 
     useEffect(() => {
+        // El script de Culqi solo se precarga si es ESA la pasarela de la tienda:
+        // con Niubiz el script lo trae la sesión (integración o producción).
+        if (configPago?.aceptaNiubiz) return;
         if (!configPago?.aceptaTarjeta || !configPago?.culqiPublicKey) return;
         if (document.getElementById('culqi-checkout-script')) return;
 
@@ -217,7 +233,7 @@ export default function Checkout() {
                 setFormData(p => ({ ...p, medioPago: 'YAPE' }));
             } else if (normalizedConfig.plinQrUrl || normalizedConfig.plinNumero) {
                 setFormData(p => ({ ...p, medioPago: 'PLIN' }));
-            } else if (normalizedConfig.aceptaTarjeta) {
+            } else if (normalizedConfig.aceptaTarjeta || normalizedConfig.aceptaNiubiz) {
                 setFormData(p => ({ ...p, medioPago: 'TARJETA' }));
             } else if (normalizedConfig.cuentasBancarias && normalizedConfig.cuentasBancarias.length > 0) {
                 setFormData(p => ({ ...p, medioPago: 'TRANSFERENCIA' }));
@@ -318,11 +334,17 @@ export default function Checkout() {
         try {
             const totalPedido = calcularTotal();
             let culqiTokenPayload: CulqiTokenResult | null = null;
+            let niubizPago: NiubizPagoResult | null = null;
             if (formData.medioPago === 'TARJETA') {
-                if (configPago?.culqiBackendReady === false) {
-                    throw new Error('El pago con tarjeta está temporalmente no disponible. Intenta con Yape/Plin/Efectivo.');
+                // La tienda cobra con la pasarela que el comerciante configuró.
+                if (configPago?.aceptaNiubiz) {
+                    niubizPago = await solicitarPagoNiubiz(totalPedido);
+                } else {
+                    if (configPago?.culqiBackendReady === false) {
+                        throw new Error('El pago con tarjeta está temporalmente no disponible. Intenta con Yape/Plin/Efectivo.');
+                    }
+                    culqiTokenPayload = await solicitarTokenCulqi();
                 }
-                culqiTokenPayload = await solicitarTokenCulqi();
             }
 
             const items = carritoState.map((item: any) => ({ productoId: item.productoId || item.id, cantidad: item.cantidad, modificadores: item.modificadores }));
@@ -332,6 +354,8 @@ export default function Checkout() {
                 total: totalPedido,
                 culqiToken: culqiTokenPayload?.token,
                 culqiEmail: culqiTokenPayload?.email || formData.clienteEmail,
+                niubizTransactionToken: niubizPago?.transactionToken,
+                niubizPurchaseNumber: niubizPago?.purchaseNumber,
             });
             const orderData = data.data || data;
             setPedidoCreado({ ...orderData, total: Number(orderData.total ?? totalPedido) });
@@ -371,6 +395,74 @@ export default function Checkout() {
             alert(error.response?.data?.message || 'Error al crear pedido');
         } finally { setEnviando(false); }
     };
+
+    /**
+     * Cobro con Niubiz. El servidor abre la sesión con las credenciales del
+     * comerciante (nunca viajan al navegador) y devuelve la sessionKey, el
+     * número de compra y qué checkout.js corresponde —integración o
+     * producción—. Aquí solo se abre el formulario y se devuelve el
+     * transactionToken que el servidor usará para autorizar.
+     */
+    const solicitarPagoNiubiz = async (totalPedido: number): Promise<NiubizPagoResult> => {
+        const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/niubiz/session`, { total: totalPedido });
+        const sesion = data.data || data;
+        const sessionKey = String(sesion?.sessionKey || '');
+        const purchaseNumber = String(sesion?.purchaseNumber || '');
+        if (!sessionKey || !purchaseNumber) throw new Error('No se pudo iniciar el pago con tarjeta');
+
+        await cargarScript(String(sesion.scriptUrl), 'niubiz-checkout-script');
+        const visanet = window.VisanetCheckout;
+        if (!visanet) throw new Error('No se pudo cargar el formulario de pago');
+
+        return new Promise<NiubizPagoResult>((resolve, reject) => {
+            // Si el comprador cierra el formulario sin pagar, la promesa no
+            // puede quedarse colgada: el botón volvería a estar bloqueado.
+            const expiraEn = window.setTimeout(
+                () => reject(new Error('El pago con tarjeta expiró. Intenta de nuevo.')),
+                10 * 60 * 1000,
+            );
+            visanet.configure({
+                sessiontoken: sessionKey,
+                channel: 'web',
+                merchantid: String(sesion.merchantId || ''),
+                purchasenumber: purchaseNumber,
+                amount: Number(totalPedido.toFixed(2)),
+                expirationminutes: '10',
+                timeouturl: window.location.href,
+                cardholdername: formData.clienteNombre || '',
+                cardholderemail: formData.clienteEmail || '',
+                complete: (params: any) => {
+                    window.clearTimeout(expiraEn);
+                    const token = params?.transactionToken || params?.dataMap?.TRANSACTION_TOKEN || '';
+                    if (!token) {
+                        reject(new Error(params?.errorMessage || 'No se pudo completar el pago con tarjeta'));
+                        return;
+                    }
+                    resolve({ transactionToken: String(token), purchaseNumber });
+                },
+            });
+            visanet.open();
+        });
+    };
+
+    /** Carga un script externo una sola vez y espera a que esté listo. */
+    const cargarScript = (src: string, id: string): Promise<void> =>
+        new Promise((resolve, reject) => {
+            const existente = document.getElementById(id) as HTMLScriptElement | null;
+            if (existente) {
+                if (existente.dataset.listo === '1') { resolve(); return; }
+                existente.addEventListener('load', () => resolve());
+                existente.addEventListener('error', () => reject(new Error('No se pudo cargar el formulario de pago')));
+                return;
+            }
+            const script = document.createElement('script');
+            script.id = id;
+            script.src = src;
+            script.async = true;
+            script.onload = () => { script.dataset.listo = '1'; resolve(); };
+            script.onerror = () => reject(new Error('No se pudo cargar el formulario de pago'));
+            document.body.appendChild(script);
+        });
 
     const solicitarTokenCulqi = async (): Promise<CulqiTokenResult> => {
         const publicKey = configPago?.culqiPublicKey?.trim();
