@@ -97,7 +97,7 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
  * Shalom (interruptor maestro) + plantillas de WhatsApp por estado. Reemplaza a la
  * antigua página `/administrador/despacho/config`, a la que no se llegaba desde el menú.
  */
-export default function DespachoAutomatizacionCard({ className }: { className?: string }) {
+export default function DespachoAutomatizacionCard({ className, sinTitulo }: { className?: string; sinTitulo?: boolean }) {
     const { alert } = useAlertStore();
     const [config, setConfig] = useState<DespachoConfig>(DEFAULTS);
     const [autoTracking, setAutoTracking] = useState(false);
@@ -165,12 +165,14 @@ export default function DespachoAutomatizacionCard({ className }: { className?: 
     return (
         <div className={`lg:order-2 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#111827] ${className ?? ''}`}>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                {sinTitulo ? <div /> : (
                 <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
                     <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-900/30">
                         <Icon icon="solar:delivery-bold-duotone" width="20" />
                     </div>
                     Automatización de despacho
                 </h2>
+                )}
                 <button
                     type="button"
                     onClick={guardar}

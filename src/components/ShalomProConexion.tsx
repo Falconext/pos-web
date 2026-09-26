@@ -14,7 +14,7 @@ const lbl = 'block text-xs font-bold text-slate-500 dark:text-slate-400 uppercas
  * El rastreo funciona sin cuenta; esto habilita **crear guías** desde el panel.
  * Se oculta solo si el plan no lo incluye (`habilitadoPorPlan`).
  */
-export default function ShalomProConexion({ nombreSugerido, className }: { nombreSugerido?: string; className?: string }) {
+export default function ShalomProConexion({ nombreSugerido, className, sinTitulo, onDisponible }: { nombreSugerido?: string; className?: string; sinTitulo?: boolean; onDisponible?: (listo: boolean) => void }) {
     const { alert } = useAlertStore();
     const [instancia, setInstancia] = useState<ShalomInstancia | null>(null);
     const [cargando, setCargando] = useState(true);
@@ -105,7 +105,12 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
             'Configuración de envíos actualizada',
         );
 
-    if (cargando || !instancia?.habilitadoPorPlan) return null;
+    const disponible = !cargando && Boolean(instancia?.habilitadoPorPlan);
+    // Igual que Olva: si el plan no lo incluye, el panel no debe ofrecer la
+    // tarjeta.
+    useEffect(() => { onDisponible?.(disponible); }, [disponible, onDisponible]);
+
+    if (!instancia?.habilitadoPorPlan || cargando) return null;
 
     const conectada = instancia.conectada && instancia.estado !== 'ERROR';
 
@@ -118,7 +123,7 @@ export default function ShalomProConexion({ nombreSugerido, className }: { nombr
                     </div>
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-lg font-black text-gray-950 dark:text-white">Crear guías en Shalom Pro</h2>
+                            {!sinTitulo && <h2 className="text-lg font-black text-gray-950 dark:text-white">Crear guías en Shalom Pro</h2>}
                             <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-bold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
                                 Plan Corporativo
                             </span>

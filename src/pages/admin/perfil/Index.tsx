@@ -5,7 +5,7 @@ import Loading from '@/components/Loading';
 import { usaLotesFarmaciaRubro } from '@/utils/rubro-features';
 import { hasPlanFeature, hasPermission } from '@/utils/permissions';
 import { useAuthStore } from '@/zustand/auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import Button from '@/components/Button';
@@ -30,6 +30,15 @@ export default function PerfilIndex() {
     const [seccionAbierta, setSeccionAbierta] = useState<string | null>(null);
     const toggleSeccion = (id: string) =>
         setSeccionAbierta((actual) => (actual === id ? null : id));
+
+    // Bloques que deciden por su cuenta si tienen algo que mostrar (según el
+    // plan). Mientras no avisen lo contrario, su tarjeta se muestra.
+    const [disponibles, setDisponibles] = useState<Record<string, boolean>>({});
+    const marcar = (id: string) => (listo: boolean) =>
+        setDisponibles((prev) => (prev[id] === listo ? prev : { ...prev, [id]: listo }));
+    const marcarShalomPro = useCallback(marcar('shalom-pro'), []);
+    const marcarOlva = useCallback(marcar('olva'), []);
+    const ocultoSiVacio = (id: string) => (disponibles[id] === false ? 'hidden' : '');
 
     // Escape cierra el modal, como en el resto del panel.
     useEffect(() => {
@@ -125,12 +134,9 @@ export default function PerfilIndex() {
      * arbitrario. Ahora cada tema es su propia sección, cerrada por defecto, para
      * que la página entera se vea de un golpe y solo se abra lo que se va a tocar.
      */
-    const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, className = '', encabezadoPropio = false, children }: {
+    const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, className = '', children }: {
         id: string; icono: string; titulo: string; resumen: string;
-        abierta: boolean; onToggle: (id: string) => void; className?: string;
-        /** El contenido ya trae su propio encabezado: el modal solo pone el aspa. */
-        encabezadoPropio?: boolean;
-        children: React.ReactNode;
+        abierta: boolean; onToggle: (id: string) => void; className?: string; children: React.ReactNode;
     }) => (
         <>
             {/* La tarjeta es solo el acceso: siempre mide lo mismo, así la rejilla
@@ -153,9 +159,11 @@ export default function PerfilIndex() {
                 <Icon icon="solar:alt-arrow-right-linear" width="20" className="shrink-0 text-gray-400" />
             </button>
 
-            {abierta && (
+            {/* El contenido queda montado aunque el modal esté cerrado: algunos
+                bloques (Shalom, Olva) consultan su plan al montarse y así pueden
+                avisar si hay algo que mostrar. */}
                 <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+                    className={abierta ? 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4' : 'hidden'}
                     role="dialog"
                     aria-modal="true"
                     aria-label={titulo}
@@ -166,18 +174,13 @@ export default function PerfilIndex() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-white/90 px-5 py-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#111827]/90">
-                            {!encabezadoPropio && (
-                                <>
-                                    <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
-                                        <Icon icon={icono} width="20" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{titulo}</h2>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{resumen}</p>
-                                    </div>
-                                </>
-                            )}
-                            {encabezadoPropio && <div className="flex-1" />}
+                            <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
+                                <Icon icon={icono} width="20" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{titulo}</h2>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{resumen}</p>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => onToggle(id)}
@@ -190,7 +193,6 @@ export default function PerfilIndex() {
                         <div className="p-5 space-y-3">{children}</div>
                     </div>
                 </div>
-            )}
         </>
     );
 
@@ -577,13 +579,13 @@ export default function PerfilIndex() {
                     )}
 
                     {/* ── Crear guías en Shalom Pro — requiere cuenta conectada (plan Corporativo) ── */}
-                    <SeccionConfig id="shalom-pro" icono="solar:delivery-bold-duotone" titulo="Shalom Pro · crear guías" resumen="Conecta tu cuenta Shalom y emite las guías desde el panel" abierta={seccionAbierta === 'shalom-pro'} onToggle={toggleSeccion} className={configTab} encabezadoPropio>
-                        <ShalomProConexion nombreSugerido={perfil.empresa.nombreComercial || perfil.empresa.razonSocial} />
+                    <SeccionConfig id="shalom-pro" icono="solar:delivery-bold-duotone" titulo="Shalom Pro · crear guías" resumen="Conecta tu cuenta Shalom y emite las guías desde el panel" abierta={seccionAbierta === 'shalom-pro'} onToggle={toggleSeccion} className={`${configTab} ${ocultoSiVacio('shalom-pro')}`}>
+                        <ShalomProConexion sinTitulo onDisponible={marcarShalomPro} nombreSugerido={perfil.empresa.nombreComercial || perfil.empresa.razonSocial} />
                     </SeccionConfig>
 
                     {/* ── Envíos Olva — rastreo para todos, guías en plan Corporativo ── */}
-                    <SeccionConfig id="olva" icono="solar:box-minimalistic-bold-duotone" titulo="Envíos Olva" resumen="Rastreo de envíos y, con plan Corporativo, creación de guías" abierta={seccionAbierta === 'olva'} onToggle={toggleSeccion} className={configTab} encabezadoPropio>
-                        <OlvaConfiguracion />
+                    <SeccionConfig id="olva" icono="solar:box-minimalistic-bold-duotone" titulo="Envíos Olva" resumen="Rastreo de envíos y, con plan Corporativo, creación de guías" abierta={seccionAbierta === 'olva'} onToggle={toggleSeccion} className={`${configTab} ${ocultoSiVacio('olva')}`}>
+                        <OlvaConfiguracion sinTitulo onDisponible={marcarOlva} />
                     </SeccionConfig>
                     <div className={`bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 p-4 lg:order-2 ${perfilTab}`}>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><div className={`p-2 ${theme.bg} rounded-lg ${theme.text}`}><Icon icon="solar:buildings-bold-duotone" width="20" /></div>Información de la Empresa</h2>
@@ -1271,8 +1273,8 @@ export default function PerfilIndex() {
                     )}
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp
                         (antes vivía en /administrador/despacho/config, sin enlace desde el menú) */}
-                    <SeccionConfig id="despacho" icono="solar:routing-2-bold-duotone" titulo="Automatización de despacho" resumen="Rastreo automático y avisos por WhatsApp al cliente" abierta={seccionAbierta === 'despacho'} onToggle={toggleSeccion} className={configTab} encabezadoPropio>
-                        <DespachoAutomatizacionCard />
+                    <SeccionConfig id="despacho" icono="solar:routing-2-bold-duotone" titulo="Automatización de despacho" resumen="Rastreo automático y avisos por WhatsApp al cliente" abierta={seccionAbierta === 'despacho'} onToggle={toggleSeccion} className={configTab}>
+                        <DespachoAutomatizacionCard sinTitulo />
                     </SeccionConfig>
                     {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
                         <div className={`lg:order-4 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5 ${configTab}`}>

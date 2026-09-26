@@ -14,7 +14,7 @@ const lbl = 'block text-xs font-bold text-slate-500 dark:text-slate-400 uppercas
  * agencia despacha (necesario para generar guías) y activa el rastreo
  * automático. Se oculta si el plan no incluye el módulo.
  */
-export default function OlvaConfiguracion({ className }: { className?: string }) {
+export default function OlvaConfiguracion({ className, sinTitulo, onDisponible }: { className?: string; sinTitulo?: boolean; onDisponible?: (listo: boolean) => void }) {
     const { alert } = useAlertStore();
     const [config, setConfig] = useState<OlvaConfig | null>(null);
     const [cargando, setCargando] = useState(true);
@@ -67,7 +67,12 @@ export default function OlvaConfiguracion({ className }: { className?: string })
                 : 'Rastreo automático de Olva activado',
         );
 
-    if (cargando || !config?.habilitado) return null;
+    const disponible = !cargando && Boolean(config?.habilitado);
+    // Avisa a quien lo monta si hay algo que mostrar: así el panel no abre una
+    // tarjeta hacia un modal vacío cuando el plan no incluye Olva.
+    useEffect(() => { onDisponible?.(disponible); }, [disponible, onDisponible]);
+
+    if (!config?.habilitado || cargando) return null;
 
     return (
         <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-amber-900/30 dark:bg-[#111827] ${className ?? ''}`}>
@@ -78,7 +83,7 @@ export default function OlvaConfiguracion({ className }: { className?: string })
                     </div>
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-lg font-black text-gray-950 dark:text-white">Envíos Olva Courier</h2>
+                            {!sinTitulo && <h2 className="text-lg font-black text-gray-950 dark:text-white">Envíos Olva Courier</h2>}
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                 <Icon icon="solar:check-circle-bold" width={13} /> Rastreo activo
                             </span>
