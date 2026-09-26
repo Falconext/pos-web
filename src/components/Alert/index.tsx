@@ -21,7 +21,10 @@ const Alert = () => {
                                 alert.title ||
                                 (alert.type === "success"
                                     ? "Éxito"
-                                    : alert.type === "notification"
+                                    // "info" no estaba en la lista y caía al
+                                    // último caso: un aviso informativo se
+                                    // anunciaba como Error en toda la app.
+                                    : alert.type === "notification" || alert.type === "info"
                                     ? "Información"
                                     : alert.type === "warning"
                                     ? "Advertencia"

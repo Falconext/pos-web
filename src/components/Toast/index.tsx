@@ -22,7 +22,7 @@ const Toast = ({ id, title, message, type }: IAlertProps) => {
    };
 
    useEffect(() => {
-      if (type === 'success' || type === 'error' || type === 'warning') {
+      if (type === 'success' || type === 'error' || type === 'warning' || type === 'info') {
           const timer = setTimeout(() => {
               removeAlert(id);
           }, 4000);
