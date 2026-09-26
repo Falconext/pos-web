@@ -3,6 +3,8 @@ import { Icon } from '@iconify/react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, type IAuthState } from '@/zustand/auth'
 import NotificacionesCampana from '@/components/NotificacionesCampana'
+import { useNotificacionesStore } from '@/zustand/notificaciones'
+import SoporteWidget from '@/components/SoporteWidget'
 import { hasPermission, hasPlanFeature, hasSubPermission, getRedirectPath } from '@/utils/permissions'
 import { useThemeStore, ZOOM_OPTIONS, type ZoomLevel } from '@/zustand/theme'
 import Configurator from '@/components/ui/Configurator'
@@ -37,6 +39,17 @@ export default function AdminLayout() {
 
   const [nameNavbar, setNameNavbar] = useState<string>('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // El WebSocket de notificaciones antes solo se conectaba dentro de la campana
+  // (oculta para ADMIN_SISTEMA), así que el chat de Soporte nunca llegaba en
+  // vivo del lado Krezka. Se conecta aquí, para cualquier rol, sin depender de
+  // la campana. Es idempotente (no abre una segunda conexión si ya hay una).
+  const iniciarWebSocket = useNotificacionesStore((s) => s.iniciarWebSocket)
+  const detenerWebSocket = useNotificacionesStore((s) => s.detenerWebSocket)
+  useEffect(() => {
+    iniciarWebSocket()
+    return () => detenerWebSocket()
+  }, [iniciarWebSocket, detenerWebSocket])
   // Novedades sin ver: alimenta el punto del menú. Se calcula una sola vez al
   // montar (la lista es estática) y se apaga al entrar a la sección.
   const [novedadesSinVer, setNovedadesSinVer] = useState(() => contarNovedadesSinVer())
@@ -470,6 +483,10 @@ export default function AdminLayout() {
                     {!isSidebarCollapsed && <span>Diseño Tiendas</span>}
                   </NavLink>
                 )}
+                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/soporte" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Soporte a Empresarios">
+                  <Icon icon="solar:chat-round-dots-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  {!isSidebarCollapsed && <span>Soporte</span>}
+                </NavLink>
               </motion.div>
             )}
 
@@ -933,6 +950,7 @@ export default function AdminLayout() {
         autoAbierto={novedadesAuto}
       />
       <Configurator />
+      {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && <SoporteWidget />}
     </motion.div>
   )
 }

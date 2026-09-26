@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
+import { useSoporteStore } from './soporte';
+import { useSoporteSistemaStore } from './soporteSistema';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4001');
@@ -217,8 +219,11 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
       return;
     }
     
-    if (socket?.connected) {
-      console.log('ℹ️ WebSocket ya está conectado');
+    // `socket` (no solo `.connected`): dos llamadas casi simultáneas antes de
+    // que termine el handshake creaban dos conexiones reales, duplicando cada
+    // evento en vivo que llegaba (ver soporte-chat-empresarios).
+    if (socket) {
+      console.log('ℹ️ WebSocket ya está conectado o conectándose');
       return;
     }
 
@@ -236,6 +241,13 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     socket.on('nueva-notificacion', (notificacion: Notificacion) => {
       console.log('📬 Nueva notificación recibida:', notificacion);
       get().agregarNotificacion(notificacion);
+    });
+
+    // Chat de soporte (empresario ↔ Krezka): un solo evento, cada store decide
+    // si le corresponde según el rol del autor y la conversación activa.
+    socket.on('nuevo-mensaje-soporte', (payload: any) => {
+      useSoporteStore.getState().recibirMensajeEnVivo(payload);
+      useSoporteSistemaStore.getState().recibirMensajeEnVivo(payload);
     });
 
     socket.on('disconnect', () => {

@@ -86,6 +86,7 @@ import ResetPasswordPage from './pages/ResetPassword'
 import ProduccionRecetasPage from './pages/admin/produccion/Recetas'
 import ProduccionOrdenesPage from './pages/admin/produccion/Ordenes'
 import ReservasPage from './pages/admin/reservas/ReservasPage'
+import SistemaSoporte from './pages/admin/sistema/Soporte'
 import VehiculosPage from './pages/admin/vehiculos/Vehiculos'
 import ContratosVehicularesPage from './pages/admin/vehiculos/ContratosVehiculares'
 
@@ -198,6 +199,14 @@ function App() {
               caía en el catch-all (→ login → dashboard). Se mantiene para no
               romper enlaces o marcadores viejos. */}
           <Route path="kardex/reservas" element={<Navigate to="/administrador/reservas" replace />} />
+          <Route
+            path="sistema/soporte"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <SistemaSoporte />
+              </RoleRoute>
+            }
+          />
           <Route path="kardex/combos" element={<CombosTienda />} />
           <Route path="kardex/dashboard" element={<InventarioDashboard />} />
           <Route
