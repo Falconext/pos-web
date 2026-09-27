@@ -16,12 +16,41 @@ function etiquetaDia(d: Date): string {
  * hilo completo (y lo marca como leído); mientras está cerrado solo consulta
  * el contador de no leídos, sin marcar nada como visto.
  */
+/**
+ * Atención de soporte: lunes a domingo de 9:00 a 18:00, hora de Perú.
+ *
+ * Se calcula en America/Lima y no en la hora del navegador: un empresario con
+ * el reloj mal puesto, o de viaje, vería "estamos atendiendo" a las 3 de la
+ * mañana y se quedaría esperando una respuesta que no va a llegar.
+ */
+const HORA_INICIO = 9;
+const HORA_FIN = 18;
+
+const dentroDeHorario = (ahora = new Date()) => {
+  const hora = Number(
+    new Intl.DateTimeFormat('es-PE', {
+      timeZone: 'America/Lima',
+      hour: 'numeric',
+      hour12: false,
+    }).format(ahora),
+  );
+  return hora >= HORA_INICIO && hora < HORA_FIN;
+};
+
 export default function SoporteWidget() {
     const [abierto, setAbierto] = useState(false);
     const [noLeidos, setNoLeidos] = useState(0);
     const [texto, setTexto] = useState('');
     const { mensajes, loading, enviando, error, cargarMensajes, enviarMensaje, consultarNoLeidos } = useSoporteStore();
     const bottomRef = useRef<HTMLDivElement>(null);
+
+    // Se revisa cada minuto: si dejan el chat abierto y dan las 6, el aviso
+    // tiene que cambiar solo, no quedarse diciendo "estamos atendiendo".
+    const [enHorario, setEnHorario] = useState(dentroDeHorario);
+    useEffect(() => {
+        const id = setInterval(() => setEnHorario(dentroDeHorario()), 60_000);
+        return () => clearInterval(id);
+    }, []);
 
     useEffect(() => {
         consultarNoLeidos().then((n) => setNoLeidos(n));
@@ -67,6 +96,30 @@ export default function SoporteWidget() {
                         <button onClick={() => setAbierto(false)} className="rounded-lg p-1 hover:bg-white/10">
                             <Icon icon="solar:close-circle-bold" width={20} />
                         </button>
+                    </div>
+
+                    {/* Qué esperar: a qué hora contestamos y cuándo se sube lo que se
+                        pide. Sin esto, el empresario escribe un domingo a las 11 de la
+                        noche y da por hecho que nadie lo está leyendo. */}
+                    <div className="border-b border-gray-100 bg-violet-50/60 px-3.5 py-2.5 dark:border-slate-800 dark:bg-violet-900/10">
+                        <div className="flex items-start gap-2">
+                            <Icon
+                                icon={enHorario ? 'solar:clock-circle-bold' : 'solar:moon-sleep-bold'}
+                                width={14}
+                                className={`mt-px flex-none ${enHorario ? 'text-emerald-500' : 'text-gray-400'}`}
+                            />
+                            <div className="min-w-0 text-[11px] leading-relaxed text-gray-600 dark:text-gray-400">
+                                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                                    {enHorario ? 'Estamos atendiendo' : 'Fuera de horario'}
+                                </span>
+                                <span> · Lunes a domingo de 9:00 a 6:00 p.m.</span>
+                                {!enHorario && <span> Déjanos tu mensaje y lo vemos a primera hora.</span>}
+                                <div className="mt-0.5">
+                                    Las mejoras que nos pidas se suben al terminar el día, y como
+                                    máximo la noche del día siguiente.
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto bg-[#f6f7fb] px-3.5 py-3 dark:bg-[#0b0f17]">
