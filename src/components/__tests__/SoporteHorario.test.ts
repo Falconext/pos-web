@@ -1,64 +1,77 @@
 /**
- * El horario de atención que muestra el widget de soporte.
+ * El horario de atención que muestra el widget de soporte:
+ *   lunes a viernes  9:00 – 18:00
+ *   sábados          9:00 – 13:00
+ *   domingos         cerrado
  *
  * Se calcula en America/Lima a propósito: un empresario con el reloj del
  * equipo mal puesto, o conectándose desde otro país, vería "estamos
  * atendiendo" a las 3 de la mañana y se quedaría esperando una respuesta que
- * no va a llegar hasta las 9.
+ * no va a llegar hasta el lunes.
  */
+import { dentroDeHorario } from '../soporteHorario';
 
-const HORA_INICIO = 9;
-const HORA_FIN = 18;
+/**
+ * Una hora concreta de Perú, que es UTC-5 todo el año (no tiene horario de
+ * verano). Septiembre 2026: el 28 cae lunes, así que 26=sábado y 27=domingo.
+ */
+const enLima = (dia: number, hora: number, min = 0) =>
+  new Date(Date.UTC(2026, 8, dia, hora + 5, min));
 
-/** Misma función que usa el widget. */
-const dentroDeHorario = (ahora: Date) => {
-  const hora = Number(
-    new Intl.DateTimeFormat('es-PE', {
-      timeZone: 'America/Lima',
-      hour: 'numeric',
-      hour12: false,
-    }).format(ahora),
-  );
-  return hora >= HORA_INICIO && hora < HORA_FIN;
-};
-
-/** Una hora concreta de Perú, que es UTC-5 todo el año (no tiene horario de verano). */
-const horaDeLima = (h: number, m = 0) =>
-  new Date(Date.UTC(2026, 8, 28, h + 5, m));
+const LUNES = 28;
+const VIERNES = 25;
+const SABADO = 26;
+const DOMINGO = 27;
 
 describe('Horario de atención del soporte', () => {
-  it('a las 9:00 en punto ya se atiende', () => {
-    expect(dentroDeHorario(horaDeLima(9))).toBe(true);
+  it('los días de semana se atiende de 9 a 6', () => {
+    expect(dentroDeHorario(enLima(LUNES, 9))).toBe(true);
+    expect(dentroDeHorario(enLima(LUNES, 14, 30))).toBe(true);
+    expect(dentroDeHorario(enLima(VIERNES, 17, 59))).toBe(true);
   });
 
-  it('a media tarde se atiende', () => {
-    expect(dentroDeHorario(horaDeLima(14, 30))).toBe(true);
+  it('a las 6 de la tarde ya cerró: es el cierre, no el último minuto', () => {
+    expect(dentroDeHorario(enLima(LUNES, 18))).toBe(false);
+    expect(dentroDeHorario(enLima(VIERNES, 18, 1))).toBe(false);
   });
 
-  it('a las 17:59 todavía se atiende', () => {
-    expect(dentroDeHorario(horaDeLima(17, 59))).toBe(true);
+  it('antes de las 9 todavía no', () => {
+    expect(dentroDeHorario(enLima(LUNES, 8, 59))).toBe(false);
+    expect(dentroDeHorario(enLima(LUNES, 3))).toBe(false);
   });
 
-  it('a las 18:00 ya no: las 6 de la tarde es el cierre, no el último minuto', () => {
-    expect(dentroDeHorario(horaDeLima(18))).toBe(false);
+  // ── El sábado, que cierra más temprano ────────────────────────────────────
+  it('el sábado se atiende de 9 a 1', () => {
+    expect(dentroDeHorario(enLima(SABADO, 9))).toBe(true);
+    expect(dentroDeHorario(enLima(SABADO, 12, 59))).toBe(true);
   });
 
-  it('a las 8:59 todavía no', () => {
-    expect(dentroDeHorario(horaDeLima(8, 59))).toBe(false);
+  it('el sábado a la 1 de la tarde ya cerró, aunque entre semana siga abierto', () => {
+    // Es el error fácil: aplicarle al sábado el cierre de los días de semana.
+    expect(dentroDeHorario(enLima(SABADO, 13))).toBe(false);
+    expect(dentroDeHorario(enLima(SABADO, 16))).toBe(false);
+    // A esa misma hora, un lunes sí se atiende.
+    expect(dentroDeHorario(enLima(LUNES, 16))).toBe(true);
   });
 
-  it('de madrugada no', () => {
-    expect(dentroDeHorario(horaDeLima(3))).toBe(false);
-    expect(dentroDeHorario(horaDeLima(23))).toBe(false);
+  // ── El domingo, cerrado entero ────────────────────────────────────────────
+  it('el domingo no se atiende a ninguna hora', () => {
+    expect(dentroDeHorario(enLima(DOMINGO, 9))).toBe(false);
+    expect(dentroDeHorario(enLima(DOMINGO, 11))).toBe(false);
+    expect(dentroDeHorario(enLima(DOMINGO, 15))).toBe(false);
   });
 
+  // ── La zona horaria ───────────────────────────────────────────────────────
   it('usa la hora de Perú, no la del equipo del empresario', () => {
-    // Las 20:00 de España son las 13:00 en Lima: se atiende.
-    const tardeEnEspana = new Date('2026-09-28T18:00:00Z');
-    expect(dentroDeHorario(tardeEnEspana)).toBe(true);
+    // 2026-09-28 18:00 UTC = lunes 13:00 en Lima → se atiende.
+    expect(dentroDeHorario(new Date('2026-09-28T18:00:00Z'))).toBe(true);
+    // 2026-09-28 13:00 UTC = lunes 08:00 en Lima → todavía no.
+    expect(dentroDeHorario(new Date('2026-09-28T13:00:00Z'))).toBe(false);
+  });
 
-    // Las 08:00 de Lima vistas desde Japón siguen siendo las 08:00 de Lima.
-    const mananaEnLima = new Date('2026-09-28T13:00:00Z');
-    expect(dentroDeHorario(mananaEnLima)).toBe(false);
+  it('el día también se resuelve en Lima, no en UTC', () => {
+    // Lunes 00:30 UTC es domingo 19:30 en Lima: cerrado, aunque en UTC ya
+    // sea lunes. Sin resolver el día en Lima, esto diría que se atiende.
+    expect(dentroDeHorario(new Date('2026-09-28T00:30:00Z'))).toBe(false);
   });
 });

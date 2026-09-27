@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { TEXTO_HORARIO, dentroDeHorario } from './soporteHorario';
 import { Icon } from '@iconify/react';
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,27 +17,6 @@ function etiquetaDia(d: Date): string {
  * hilo completo (y lo marca como leído); mientras está cerrado solo consulta
  * el contador de no leídos, sin marcar nada como visto.
  */
-/**
- * Atención de soporte: lunes a domingo de 9:00 a 18:00, hora de Perú.
- *
- * Se calcula en America/Lima y no en la hora del navegador: un empresario con
- * el reloj mal puesto, o de viaje, vería "estamos atendiendo" a las 3 de la
- * mañana y se quedaría esperando una respuesta que no va a llegar.
- */
-const HORA_INICIO = 9;
-const HORA_FIN = 18;
-
-const dentroDeHorario = (ahora = new Date()) => {
-  const hora = Number(
-    new Intl.DateTimeFormat('es-PE', {
-      timeZone: 'America/Lima',
-      hour: 'numeric',
-      hour12: false,
-    }).format(ahora),
-  );
-  return hora >= HORA_INICIO && hora < HORA_FIN;
-};
-
 export default function SoporteWidget() {
     const [abierto, setAbierto] = useState(false);
     const [noLeidos, setNoLeidos] = useState(0);
@@ -112,8 +92,10 @@ export default function SoporteWidget() {
                                 <span className="font-semibold text-gray-800 dark:text-gray-200">
                                     {enHorario ? 'Estamos atendiendo' : 'Fuera de horario'}
                                 </span>
-                                <span> · Lunes a domingo de 9:00 a 6:00 p.m.</span>
-                                {!enHorario && <span> Déjanos tu mensaje y lo vemos a primera hora.</span>}
+                                <div className="mt-0.5">
+                                    {TEXTO_HORARIO}
+                                    {!enHorario && ' Déjanos tu mensaje y lo vemos apenas abramos.'}
+                                </div>
                                 <div className="mt-0.5">
                                     Las mejoras que nos pidas se suben al terminar el día, y como
                                     máximo la noche del día siguiente.
