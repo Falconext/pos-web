@@ -116,6 +116,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     const [cuotas, setCuotas] = useState<any[]>([]);
 
     // Item entry state
+    // Ítem libre: el concepto se escribe a mano porque no está en el catálogo
+    // (consumo de restaurante, flete, comisión, servicio).
+    const [itemLibre, setItemLibre] = useState(false);
     const [currentItem, setCurrentItem] = useState({
         productoId: 0,
         descripcion: '',
@@ -861,8 +864,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     };
 
     const addItem = () => {
-        if (!currentItem.productoId) {
-            alert("Seleccione un producto", "error");
+        // Ítem libre: consumos de restaurante, fletes, comisiones y servicios
+        // aparecen en facturas de compra y no están —ni tienen por qué estar—
+        // en el catálogo. Basta con describirlos.
+        const esItemLibre = !currentItem.productoId;
+        if (esItemLibre && !currentItem.descripcion?.trim()) {
+            alert("Elige un producto o escribe una descripción", "error");
             return;
         }
         if (currentItem.cantidad <= 0) {
@@ -870,7 +877,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             return;
         }
 
-        setItems([...items, { ...currentItem, subtotal: currentItem.cantidad * currentItem.precioUnitario }]);
+        setItems([...items, {
+            ...currentItem,
+            subtotal: currentItem.cantidad * currentItem.precioUnitario,
+            _sinVincular: esItemLibre,
+        }]);
         setCurrentItem({ productoId: 0, descripcion: '', cantidad: 1, precioUnitario: 0, lote: '', fechaVencimiento: '' });
         setPkg(null);
         setPkgLineKey(null);
@@ -1139,7 +1150,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     };
 
     const handleSubmit = async () => {
-        const sinVincular = items.filter(i => i._sinVincular).length;
+        // En una compra de consumo propio, que las líneas no muevan stock es
+        // lo que se quiere: avisarlo como si fuera un problema solo confunde.
+        const esGastoAhora = esGasto === null
+            ? (items.length > 0 && items.every((i: any) => !i.productoId))
+            : esGasto;
+        const sinVincular = esGastoAhora ? 0 : items.filter(i => i._sinVincular).length;
         if (sinVincular > 0) {
             setShowConfirmUnlinked(true);
             return;
@@ -1552,21 +1568,46 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                         )}
 
                         {/* Add Item Form */}
+                        <label className="mb-2 flex w-fit cursor-pointer items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <input
+                                type="checkbox"
+                                className="accent-orange-500"
+                                checked={itemLibre}
+                                onChange={(e) => {
+                                    setItemLibre(e.target.checked);
+                                    setCurrentItem({ ...currentItem, productoId: 0, descripcion: '' });
+                                    setProductSelectKey(k => k + 1);
+                                }}
+                            />
+                            <span>Ítem libre <span className="text-gray-400">— algo que no está en tu catálogo (consumo, flete, servicio)</span></span>
+                        </label>
                         <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                             <div className={paquetesManual.length > 0 ? "col-span-3" : "col-span-4"}>
-                                <Select
-                                    key={productSelectKey}
-                                    label="Producto"
-                                    name="producto"
-                                    options={productOptions}
-                                    onChange={onProductChange}
-                                    isSearch
-                                    handleGetData={handleProductSearch}
-                                    withLabel
-                                    error={null}
-                                    placeholder="Buscar producto..."
-                                    defaultValue={currentItem.descripcion || undefined}
-                                />
+                                {itemLibre ? (
+                                    <InputPro
+                                        autocomplete="off"
+                                        label="Concepto"
+                                        name="conceptoLibre"
+                                        value={currentItem.descripcion || ''}
+                                        onChange={(e: any) => setCurrentItem({ ...currentItem, productoId: 0, descripcion: e.target.value })}
+                                        placeholder="Almuerzo personal, flete, servicio…"
+                                        isLabel
+                                    />
+                                ) : (
+                                    <Select
+                                        key={productSelectKey}
+                                        label="Producto"
+                                        name="producto"
+                                        options={productOptions}
+                                        onChange={onProductChange}
+                                        isSearch
+                                        handleGetData={handleProductSearch}
+                                        withLabel
+                                        error={null}
+                                        placeholder="Buscar producto..."
+                                        defaultValue={currentItem.descripcion || undefined}
+                                    />
+                                )}
                             </div>
                             {paquetesManual.length > 0 && (
                             <div className="col-span-2">
