@@ -22,7 +22,7 @@ interface SoporteState {
     /** Contador de no leídos sin marcar nada como visto (para el badge del widget cerrado). */
     consultarNoLeidos: () => Promise<number>;
     /** Llamado por el store de notificaciones cuando llega 'nuevo-mensaje-soporte'. */
-    recibirMensajeEnVivo: (payload: { rol: 'EMPRESA' | 'SISTEMA'; autorNombre: string; contenido: string }) => void;
+    recibirMensajeEnVivo: (payload: { rol: 'EMPRESA' | 'SISTEMA'; mensajeId?: number; autorNombre: string; contenido: string }) => void;
 }
 
 export const useSoporteStore = create<SoporteState>((set, get) => ({
@@ -63,18 +63,27 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
     recibirMensajeEnVivo: (payload) => {
         // Solo interesa el lado empresa cuando responde SISTEMA (lo propio ya se agregó al enviar).
         if (payload.rol !== 'SISTEMA') return;
-        set((state) => ({
-            mensajes: [
-                ...state.mensajes,
-                {
-                    id: Date.now(),
-                    conversacionId: 0,
-                    rol: 'SISTEMA',
-                    autorNombre: payload.autorNombre,
-                    contenido: payload.contenido,
-                    creadoEn: new Date().toISOString(),
-                },
-            ],
-        }));
+        set((state) => {
+            // El aviso trae el id real del mensaje. Si ya está en el hilo, el
+            // evento llegó repetido —reconexión del socket, dos pestañas— y
+            // agregarlo otra vez le mostraría al empresario el mismo mensaje
+            // dos veces. Antes el id se fabricaba con Date.now() y no había
+            // forma de reconocerlo.
+            const id = payload.mensajeId;
+            if (id != null && state.mensajes.some((m) => m.id === id)) return state;
+            return {
+                mensajes: [
+                    ...state.mensajes,
+                    {
+                        id: id ?? Date.now(),
+                        conversacionId: 0,
+                        rol: 'SISTEMA' as const,
+                        autorNombre: payload.autorNombre,
+                        contenido: payload.contenido,
+                        creadoEn: new Date().toISOString(),
+                    },
+                ],
+            };
+        });
     },
 }));

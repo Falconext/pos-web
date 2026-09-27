@@ -115,19 +115,26 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
         const { conversacionActivaId } = get();
         if (payload.rol === 'EMPRESA') {
             if (conversacionActivaId === payload.conversacionId) {
-                set((state) => ({
-                    mensajes: [
-                        ...state.mensajes,
-                        {
-                            id: Date.now(),
-                            conversacionId: payload.conversacionId,
-                            rol: 'EMPRESA' as const,
-                            autorNombre: payload.autorNombre,
-                            contenido: payload.contenido,
-                            creadoEn: new Date().toISOString(),
-                        },
-                    ],
-                }));
+                set((state) => {
+                    // Mismo criterio que del lado de la empresa: el id real
+                    // permite reconocer un evento repetido y no mostrar el
+                    // mensaje dos veces en la bandeja.
+                    const id = (payload as any).mensajeId as number | undefined;
+                    if (id != null && state.mensajes.some((m) => m.id === id)) return state;
+                    return {
+                        mensajes: [
+                            ...state.mensajes,
+                            {
+                                id: id ?? Date.now(),
+                                conversacionId: payload.conversacionId,
+                                rol: 'EMPRESA' as const,
+                                autorNombre: payload.autorNombre,
+                                contenido: payload.contenido,
+                                creadoEn: new Date().toISOString(),
+                            },
+                        ],
+                    };
+                });
             }
         }
         // En cualquier caso, refresca la lista para subir el hilo y actualizar el badge.
