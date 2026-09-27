@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { TEXTO_HORARIO, dentroDeHorario } from './soporteHorario';
+import {
+    TEXTO_DESPLIEGUE,
+    TEXTO_HORARIO,
+    dentroDeHorario,
+    proximaAtencion,
+} from './soporteHorario';
 import { Icon } from '@iconify/react';
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -27,8 +32,14 @@ export default function SoporteWidget() {
     // Se revisa cada minuto: si dejan el chat abierto y dan las 6, el aviso
     // tiene que cambiar solo, no quedarse diciendo "estamos atendiendo".
     const [enHorario, setEnHorario] = useState(dentroDeHorario);
+    const [proxima, setProxima] = useState(proximaAtencion);
+    // Cada minuto: si dejan el chat abierto y dan las 6, el aviso cambia solo
+    // en vez de quedarse diciendo que hay alguien del otro lado.
     useEffect(() => {
-        const id = setInterval(() => setEnHorario(dentroDeHorario()), 60_000);
+        const id = setInterval(() => {
+            setEnHorario(dentroDeHorario());
+            setProxima(proximaAtencion());
+        }, 60_000);
         return () => clearInterval(id);
     }, []);
 
@@ -71,37 +82,20 @@ export default function SoporteWidget() {
                         </div>
                         <div className="flex-1">
                             <h3 className="text-sm font-bold">Soporte Krezka</h3>
-                            <p className="text-[11px] text-violet-100/90">Te respondemos por aquí</p>
+                            {/* El subtítulo dice el estado real en vez de una frase fija:
+                                es el lugar más visible y no cuesta espacio. */}
+                            <p className="flex items-center gap-1.5 text-[11px] text-violet-100/90">
+                                <span
+                                    className={`h-1.5 w-1.5 flex-none rounded-full ${
+                                        enHorario ? 'bg-emerald-300' : 'bg-violet-300/60'
+                                    }`}
+                                />
+                                {enHorario ? 'En línea ahora' : `Volvemos ${proxima}`}
+                            </p>
                         </div>
                         <button onClick={() => setAbierto(false)} className="rounded-lg p-1 hover:bg-white/10">
                             <Icon icon="solar:close-circle-bold" width={20} />
                         </button>
-                    </div>
-
-                    {/* Qué esperar: a qué hora contestamos y cuándo se sube lo que se
-                        pide. Sin esto, el empresario escribe un domingo a las 11 de la
-                        noche y da por hecho que nadie lo está leyendo. */}
-                    <div className="border-b border-gray-100 bg-violet-50/60 px-3.5 py-2.5 dark:border-slate-800 dark:bg-violet-900/10">
-                        <div className="flex items-start gap-2">
-                            <Icon
-                                icon={enHorario ? 'solar:clock-circle-bold' : 'solar:moon-sleep-bold'}
-                                width={14}
-                                className={`mt-px flex-none ${enHorario ? 'text-emerald-500' : 'text-gray-400'}`}
-                            />
-                            <div className="min-w-0 text-[11px] leading-relaxed text-gray-600 dark:text-gray-400">
-                                <span className="font-semibold text-gray-800 dark:text-gray-200">
-                                    {enHorario ? 'Estamos atendiendo' : 'Fuera de horario'}
-                                </span>
-                                <div className="mt-0.5">
-                                    {TEXTO_HORARIO}
-                                    {!enHorario && ' Déjanos tu mensaje y lo vemos apenas abramos.'}
-                                </div>
-                                <div className="mt-0.5">
-                                    Las mejoras que nos pidas se suben al terminar el día, y como
-                                    máximo la noche del día siguiente.
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto bg-[#f6f7fb] px-3.5 py-3 dark:bg-[#0b0f17]">
@@ -111,9 +105,16 @@ export default function SoporteWidget() {
                             </div>
                         )}
                         {!loading && mensajes.length === 0 && (
-                            <div className="flex flex-col items-center justify-center gap-2 py-14 text-gray-400">
+                            <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-gray-400">
                                 <Icon icon="solar:chat-round-line-linear" width={28} />
-                                <p className="text-xs">Cuéntanos en qué te podemos ayudar</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Cuéntanos en qué te podemos ayudar
+                                </p>
+                                {/* El horario completo se muestra donde hay lugar y sirve:
+                                    la primera vez, antes de escribir nada. */}
+                                <p className="text-[11px] leading-relaxed text-gray-400">
+                                    {TEXTO_HORARIO}
+                                </p>
                             </div>
                         )}
                         {(() => {
@@ -163,7 +164,14 @@ export default function SoporteWidget() {
                         </div>
                     )}
 
-                    <div className="flex items-end gap-2 border-t border-gray-100 p-2.5 dark:border-slate-800">
+                    {/* La promesa de despliegue vive acá, pegada al momento en que
+                        el empresario va a pedir algo. Discreta a propósito: importa,
+                        pero no tiene que competir con la conversación. */}
+                    <div className="border-t border-gray-100 px-3.5 pb-1 pt-2 text-[10px] leading-snug text-gray-400 dark:border-slate-800">
+                        {TEXTO_DESPLIEGUE}
+                    </div>
+
+                    <div className="flex items-end gap-2 px-2.5 pb-2.5 pt-1">
                         <textarea
                             value={texto}
                             onChange={(e) => setTexto(e.target.value)}

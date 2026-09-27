@@ -9,7 +9,7 @@
  * atendiendo" a las 3 de la mañana y se quedaría esperando una respuesta que
  * no va a llegar hasta el lunes.
  */
-import { dentroDeHorario } from '../soporteHorario';
+import { dentroDeHorario, proximaAtencion } from '../soporteHorario';
 
 /**
  * Una hora concreta de Perú, que es UTC-5 todo el año (no tiene horario de
@@ -74,4 +74,42 @@ describe('Horario de atención del soporte', () => {
     // sea lunes. Sin resolver el día en Lima, esto diría que se atiende.
     expect(dentroDeHorario(new Date('2026-09-28T00:30:00Z'))).toBe(false);
   });
+
+/**
+ * Cuándo volvemos, en palabras.
+ *
+ * Fuera de hora el empresario no necesita que le digan que está cerrado —eso
+ * ya lo ve—, sino si le conviene esperar. Acá está el valor real del aviso, y
+ * también los bordes: el sábado por la tarde el "mañana" sería mentira.
+ */
+describe('Cuándo volvemos a atender', () => {
+  it('antes de abrir, es hoy mismo', () => {
+    expect(proximaAtencion(enLima(LUNES, 7))).toBe('hoy 9:00 a.m.');
+    expect(proximaAtencion(enLima(SABADO, 8, 30))).toBe('hoy 9:00 a.m.');
+  });
+
+  it('tras cerrar un día de semana, es mañana', () => {
+    expect(proximaAtencion(enLima(LUNES, 19))).toBe('mañana 9:00 a.m.');
+  });
+
+  it('el viernes de noche es mañana, porque el sábado sí se atiende', () => {
+    expect(proximaAtencion(enLima(VIERNES, 20))).toBe('mañana 9:00 a.m.');
+  });
+
+  it('el sábado por la tarde NO es mañana: mañana es domingo', () => {
+    // El borde que hace falso un "mañana" genérico.
+    expect(proximaAtencion(enLima(SABADO, 15))).toBe('el lunes 9:00 a.m.');
+  });
+
+  it('el domingo sí es mañana, que ya es lunes', () => {
+    expect(proximaAtencion(enLima(DOMINGO, 11))).toBe('mañana 9:00 a.m.');
+    expect(proximaAtencion(enLima(DOMINGO, 7))).toBe('mañana 9:00 a.m.');
+  });
+
+  it('se resuelve en Lima, no en UTC', () => {
+    // Domingo 19:30 de Lima ya es lunes en UTC. Si el día saliera de UTC,
+    // diría "hoy desde las 9" un domingo por la noche.
+    expect(proximaAtencion(new Date('2026-09-28T00:30:00Z'))).toBe('mañana 9:00 a.m.');
+  });
+});
 });
