@@ -32,8 +32,6 @@ const NotificacionesCampana: React.FC = () => {
     marcarTodasComoLeidas,
     togglePanel,
     cerrarPanel,
-    iniciarWebSocket,
-    detenerWebSocket,
     toggleSonido,
     togglePush,
     solicitarPermisoPush,
@@ -52,11 +50,10 @@ const NotificacionesCampana: React.FC = () => {
   const [lotesPorVencer, setLotesPorVencer] = useState<LoteAlerta[]>([]);
 
   useEffect(() => {
+    // La conexión del WebSocket la abre/cierra AdminLayout (una sola vez, para
+    // cualquier rol) — llamarla también aquí duplicaba la conexión y hacía
+    // que cada evento en vivo (ej. mensajes de soporte) llegara dos veces.
     obtenerNotificaciones();
-    iniciarWebSocket();
-    return () => {
-      detenerWebSocket();
-    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cargar alertas de lotes para farmacias
