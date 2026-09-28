@@ -483,10 +483,11 @@ export default function AdminLayout() {
                     {!isSidebarCollapsed && <span>Diseño Tiendas</span>}
                   </NavLink>
                 )}
-                <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/soporte" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Soporte a Empresarios">
+                {/* Bandeja de soporte: fuera de esta entrega, ver nota del widget. */}
+                {/* <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/soporte" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Soporte a Empresarios">
                   <Icon icon="solar:chat-round-dots-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Soporte</span>}
-                </NavLink>
+                </NavLink> */}
               </motion.div>
             )}
 
@@ -950,7 +951,9 @@ export default function AdminLayout() {
         autoAbierto={novedadesAuto}
       />
       <Configurator />
-      {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && <SoporteWidget />}
+      {/* Soporte fuera de esta entrega: el chat está terminado pero todavía no
+          se abre a los empresarios. Descomentar para encenderlo. */}
+      {/* {(auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'USUARIO_EMPRESA') && <SoporteWidget />} */}
     </motion.div>
   )
 }
