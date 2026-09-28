@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
+import Casilla from '@/components/Casilla';
 import apiClient from '@/utils/apiClient';
 import { get, post } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
@@ -341,7 +342,7 @@ export default function LibroCompras() {
   };
 
   return (
-    <div className="min-h-screen px-2 pb-8">
+    <div className="min-h-screen px-2 pb-8 sm:px-4">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <span>Reporte SUNAT</span>
@@ -349,81 +350,86 @@ export default function LibroCompras() {
         <span className="text-blue-600 font-medium">Libro electrónico de compras</span>
       </div>
 
-      <div className="max-w-xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-bold text-gray-900 text-center mb-1">
-            Libro electrónico de compras
-          </h2>
-          <p className="text-xs text-gray-400 text-center mb-6">RCE — Registro de Compras Electrónico</p>
+      {/* Siempre a ancho completo: la tabla de revisión lleva documento,
+          proveedor, base, IGV, total y estado, y encajonarla dejaba media
+          pantalla vacía. */}
+      <div className="w-full">
+        {/* Barra de trabajo: el periodo y las acciones en una sola línea. Antes
+            esto era una caja de 350px de alto con el título centrado y los
+            cuatro botones repartidos en dos filas, que dejaba la pantalla
+            medio vacía antes de llegar a lo que importa: la tabla. */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-gray-900 leading-tight">Libro electrónico de compras</h2>
+                <p className="text-xs text-gray-400">RCE — Registro de Compras Electrónico</p>
+              </div>
 
-          {/* Selectores */}
-          <div className="flex gap-4 mb-8">
-            <div className="flex-1">
-              <select
-                value={mes ?? ''}
-                onChange={(e) => { setMes(e.target.value ? Number(e.target.value) : null); resetResumen(); }}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Mes</option>
-                {MESES.map((m) => (
-                  <option key={m.id} value={m.id}>{m.value}</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={mes ?? ''}
+                  onChange={(e) => { setMes(e.target.value ? Number(e.target.value) : null); resetResumen(); }}
+                  aria-label="Mes"
+                  className="h-10 min-w-[140px] border border-gray-300 rounded-xl px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Mes</option>
+                  {MESES.map((m) => (
+                    <option key={m.id} value={m.id}>{m.value}</option>
+                  ))}
+                </select>
+                <select
+                  value={anio ?? ''}
+                  onChange={(e) => { setAnio(e.target.value ? Number(e.target.value) : null); resetResumen(); }}
+                  aria-label="Año"
+                  className="h-10 min-w-[110px] border border-gray-300 rounded-xl px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Año</option>
+                  {ANIOS.map((a) => (
+                    <option key={a.id} value={a.id}>{a.value}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex-1">
-              <select
-                value={anio ?? ''}
-                onChange={(e) => { setAnio(e.target.value ? Number(e.target.value) : null); resetResumen(); }}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+
+            {/* De menor a mayor compromiso: mirar, descargar, enviar. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handlePrevisualizar}
+                disabled={cargandoResumen}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
               >
-                <option value="">Año</option>
-                {ANIOS.map((a) => (
-                  <option key={a.id} value={a.id}>{a.value}</option>
-                ))}
-              </select>
+                <Icon
+                  icon={cargandoResumen ? 'solar:refresh-circle-bold-duotone' : 'solar:calculator-minimalistic-bold-duotone'}
+                  className={`text-lg ${cargandoResumen ? 'animate-spin' : ''}`}
+                />
+                Ver totales
+              </button>
+              <button
+                onClick={handleDescargarTxt}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                <Icon icon="solar:file-text-bold-duotone" className="text-lg" />
+                TXT
+              </button>
+              <button
+                onClick={handleDescargarExcel}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                <Icon icon="solar:file-check-bold-duotone" className="text-lg" />
+                Excel
+              </button>
+              <button
+                onClick={() => {
+                  if (!validar()) return;
+                  setMostrarCorreo((v) => !v);
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              >
+                <Icon icon="solar:letter-bold-duotone" className="text-lg" />
+                Enviar a mi contador
+              </button>
             </div>
-          </div>
-
-          {/* Botones principales */}
-          <div className="flex justify-center gap-3 mb-3">
-            <button
-              onClick={handleDescargarTxt}
-              className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Icon icon="solar:file-text-bold-duotone" className="text-lg" />
-              Descargar TXT
-            </button>
-            <button
-              onClick={() => {
-                if (!validar()) return;
-                setMostrarCorreo((v) => !v);
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              <Icon icon="solar:letter-bold-duotone" className="text-lg" />
-              Enviar por correo
-            </button>
-          </div>
-
-          <div className="flex justify-center gap-3 mb-6">
-            <button
-              onClick={handleDescargarExcel}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
-            >
-              <Icon icon="solar:file-check-bold-duotone" className="text-lg" />
-              Descargar Excel
-            </button>
-            <button
-              onClick={handlePrevisualizar}
-              disabled={cargandoResumen}
-              className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <Icon
-                icon={cargandoResumen ? 'solar:refresh-circle-bold-duotone' : 'solar:calculator-minimalistic-bold-duotone'}
-                className={`text-lg ${cargandoResumen ? 'animate-spin' : ''}`}
-              />
-              Ver totales
-            </button>
           </div>
 
           {/* Resumen del período — para cuadrar antes de exportar */}
@@ -541,9 +547,9 @@ export default function LibroCompras() {
                   { k: 'Denegadas', v: revision.resumen.denegadas, cls: 'text-rose-600' },
                   { k: 'IGV a declarar', v: fmtMoneda(revision.resumen.igvDeclarable), cls: 'text-blue-600' },
                 ].map((c) => (
-                  <div key={c.k} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                  <div key={c.k} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-gray-400 font-bold">{c.k}</p>
-                    <p className={`text-sm font-black ${c.cls}`}>{c.v}</p>
+                    <p className={`text-2xl font-black tabular-nums leading-tight ${c.cls}`}>{c.v}</p>
                   </div>
                 ))}
               </div>
@@ -554,9 +560,15 @@ export default function LibroCompras() {
                 </p>
               )}
 
-              {/* Acciones en lote */}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-gray-500">{seleccion.length} seleccionada(s)</span>
+              {/* Acciones en lote. Sin nada marcado es solo una indicación; en
+                  cuanto se marca algo se convierte en una barra destacada, para
+                  que se note que esos botones ya hacen algo. */}
+              <div className={`mt-3 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 transition-colors ${seleccion.length ? 'border border-blue-200 bg-blue-50' : 'border border-transparent'}`}>
+                <span className={`text-xs font-semibold ${seleccion.length ? 'text-blue-700' : 'text-gray-400'}`}>
+                  {seleccion.length
+                    ? `${seleccion.length} compra${seleccion.length === 1 ? '' : 's'} seleccionada${seleccion.length === 1 ? '' : 's'}`
+                    : 'Marca las compras para aprobarlas o denegarlas'}
+                </span>
                 <button
                   onClick={() => revisar('APROBADA')}
                   disabled={!seleccion.length}
@@ -612,47 +624,51 @@ export default function LibroCompras() {
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-left text-gray-400 uppercase tracking-wide">
-                      <th className="py-2 w-8">
-                        <input
-                          type="checkbox"
+                    <tr className="sticky top-0 z-10 bg-white text-left text-gray-400 uppercase tracking-wide shadow-[0_1px_0_0_rgb(243_244_246)]">
+                      <th className="w-10 py-2.5 pl-3">
+                        <Casilla
+                          label="Seleccionar todas las compras"
                           checked={!!revision.items.length && seleccion.length === revision.items.length}
-                          onChange={(e) => setSeleccion(e.target.checked ? revision.items.map((i) => i.id) : [])}
+                          algunas={seleccion.length > 0}
+                          onChange={(marcada) => setSeleccion(marcada ? revision.items.map((i) => i.id) : [])}
                         />
                       </th>
-                      <th className="py-2">Documento</th>
-                      <th className="py-2">Proveedor</th>
-                      <th className="py-2 text-right">Base</th>
-                      <th className="py-2 text-right">IGV</th>
-                      <th className="py-2 text-right">Total</th>
-                      <th className="py-2">Estado</th>
+                      <th className="py-2.5 px-3">Documento</th>
+                      <th className="py-2.5 px-3">Proveedor</th>
+                      <th className="py-2.5 px-3 text-right">Base</th>
+                      <th className="py-2.5 px-3 text-right">IGV</th>
+                      <th className="py-2.5 px-3 text-right">Total</th>
+                      <th className="py-2.5 pl-6 pr-3 w-[130px]">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {revision.items.map((it) => {
                       const st = ESTADO_STYLE[it.estadoContador];
                       return (
-                        <tr key={it.id} className="border-t border-gray-100">
-                          <td className="py-2">
-                            <input
-                              type="checkbox"
+                        <tr
+                          key={it.id}
+                          className={`border-t border-gray-100 transition-colors ${seleccion.includes(it.id) ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}
+                        >
+                          <td className="py-2.5 pl-3">
+                            <Casilla
+                              label={`Seleccionar ${it.documento}`}
                               checked={seleccion.includes(it.id)}
-                              onChange={(e) =>
-                                setSeleccion((prev) => (e.target.checked ? [...prev, it.id] : prev.filter((x) => x !== it.id)))
+                              onChange={(marcada) =>
+                                setSeleccion((prev) => (marcada ? [...prev, it.id] : prev.filter((x) => x !== it.id)))
                               }
                             />
                           </td>
-                          <td className="py-2 font-mono font-semibold text-gray-800">{it.documento}</td>
-                          <td className="py-2 text-gray-600">
+                          <td className="py-2.5 px-3 font-mono font-semibold text-gray-800 whitespace-nowrap">{it.documento}</td>
+                          <td className="py-2.5 px-3 text-gray-600">
                             {it.proveedor}
                             {it.motivoContador && (
                               <span className="block text-[11px] text-rose-600 italic">{it.motivoContador}</span>
                             )}
                           </td>
-                          <td className="py-2 text-right tabular-nums">{fmtMoneda(it.base)}</td>
-                          <td className="py-2 text-right tabular-nums">{fmtMoneda(it.igv)}</td>
-                          <td className="py-2 text-right tabular-nums font-semibold">{fmtMoneda(it.total)}</td>
-                          <td className="py-2">
+                          <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">{fmtMoneda(it.base)}</td>
+                          <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">{fmtMoneda(it.igv)}</td>
+                          <td className="py-2.5 px-3 text-right tabular-nums font-semibold whitespace-nowrap">{fmtMoneda(it.total)}</td>
+                          <td className="py-2.5 pl-6 pr-3">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-bold ${st.cls}`}>
                               <Icon icon={st.icon} className="text-xs" />
                               {st.label}
@@ -672,7 +688,10 @@ export default function LibroCompras() {
         </div>
 
         {/* ── Cruce con la propuesta del RCE de SUNAT ── */}
-        <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4" data-testid="cruce-sunat">
+        {/* Las dos tarjetas cortas van lado a lado en pantallas anchas: apiladas
+            a todo lo ancho dejaban la pantalla medio vacía. */}
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
+        <div className="bg-white border border-gray-200 rounded-xl p-4" data-testid="cruce-sunat">
           <p className="font-semibold text-gray-900 flex items-center gap-2">
             <Icon icon="solar:compare-bold-duotone" className="text-blue-500 text-xl" />
             Comparar con la propuesta de SUNAT
@@ -797,9 +816,7 @@ export default function LibroCompras() {
             </div>
           )}
         </div>
-
-        {/* Info */}
-        <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
           <div className="flex gap-3">
             <Icon icon="solar:info-circle-bold-duotone" className="text-blue-500 text-xl shrink-0 mt-0.5" />
             <div className="text-sm text-blue-700">
@@ -812,6 +829,7 @@ export default function LibroCompras() {
               </ul>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

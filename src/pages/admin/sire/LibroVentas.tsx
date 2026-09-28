@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
+import Casilla from '@/components/Casilla';
 import apiClient from '@/utils/apiClient';
 import { get, post } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
@@ -268,7 +269,7 @@ export default function LibroVentas() {
   };
 
   return (
-    <div className="min-h-screen px-2 pb-8">
+    <div className="min-h-screen px-2 pb-8 sm:px-4">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <span>Reporte SUNAT</span>
@@ -276,7 +277,8 @@ export default function LibroVentas() {
         <span className="text-blue-600 font-medium">Libro electrónico de ventas</span>
       </div>
 
-      <div className={`${resumen ? 'max-w-5xl' : 'max-w-xl'} mx-auto transition-all`}>
+      {/* Mismo criterio que el libro de compras: siempre a ancho completo. */}
+      <div className="w-full">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <h2 className="text-xl font-bold text-gray-900 text-center mb-1">
             Libro electrónico de ventas
@@ -286,11 +288,10 @@ export default function LibroVentas() {
           {/* Alcance */}
           <div className="flex justify-center gap-6 mb-6">
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
-              <input
-                type="checkbox"
+              <Casilla
+                label="Reporte empresarial"
                 checked={empresarial}
-                onChange={(e) => { setEmpresarial(e.target.checked); resetResumen(); }}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                onChange={(marcada) => { setEmpresarial(marcada); resetResumen(); }}
               />
               Reporte empresarial
             </label>
