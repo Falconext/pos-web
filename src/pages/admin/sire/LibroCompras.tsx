@@ -222,12 +222,17 @@ export default function LibroCompras() {
     if (!validar()) return;
     try {
       setSincronizando(true);
-      const resp = await post<CruceCompras & { pendiente?: boolean; mensaje?: string }>(
+      const resp = await post<CruceCompras & { pendiente?: boolean; vacio?: boolean; mensaje?: string }>(
         'contabilidad/sire/compras-sincronizar',
         { mes, anio },
       );
       if (resp.error || !resp.data) {
         alert(resp.error ?? 'No se pudo traer la información del SIRE', 'error');
+        return;
+      }
+      // SUNAT terminó pero no tiene nada para el período: no sirve reintentar.
+      if ((resp.data as any).vacio) {
+        alert((resp.data as any).mensaje ?? 'SUNAT no tiene comprobantes para este período.', 'warning');
         return;
       }
       if ((resp.data as any).pendiente) {
