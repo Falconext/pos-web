@@ -510,6 +510,23 @@ export const useProductsViewModel = () => {
         setState(prev => ({ ...prev, isOpenModal: true, isEdit: true }));
         const originalProduct = products.find((p: IProduct) => p.id === data.productoId);
 
+        // La comisión de fin de semana no viene con el producto: es una regla
+        // aparte. Se pide en segundo plano y se completa el campo cuando
+        // llega, para no demorar la apertura del modal por un dato opcional.
+        if (originalProduct?.id) {
+            void apiClient
+                .get(`/comisiones/producto/${originalProduct.id}/fin-de-semana`)
+                .then((r) => {
+                    const monto = r?.data?.data?.monto ?? r?.data?.monto ?? null;
+                    if (monto == null) return;
+                    setState(prev => ({
+                        ...prev,
+                        formValues: { ...(prev as any).formValues, comisionFinDeSemana: monto },
+                    }));
+                })
+                .catch(() => { /* opcional: si no se pudo leer, queda vacío */ });
+        }
+
         if (originalProduct) {
             const sedeStockConfig = (originalProduct as any).sedeStockConfig || {};
             setState(prev => ({
@@ -531,6 +548,11 @@ export const useProductsViewModel = () => {
                     costoFijo: Number((originalProduct as any).costoFijo || 0),
                     comisionPorVenta: Number((originalProduct as any).comisionPorVenta || 0),
                     comisionPorcentaje: Number((originalProduct as any).comisionPorcentaje || 0),
+                    // Vive aparte del producto (es una regla con condición de
+                    // día). Se pide al abrir; si falla, queda vacío y el
+                    // empresario ve "paga igual todos los días", que es el
+                    // estado por defecto y no una mentira.
+                    comisionFinDeSemana: '',
                     stockMinimo: Number(sedeStockConfig.stockMinimo ?? originalProduct.stockMinimo ?? 0),
                     stockMaximo: Number(sedeStockConfig.stockMaximo ?? originalProduct.stockMaximo ?? 0),
                     visibleEnSede: sedeStockConfig.visibleEnSede ?? true,
