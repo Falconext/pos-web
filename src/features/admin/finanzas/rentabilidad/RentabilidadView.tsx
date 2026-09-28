@@ -438,7 +438,18 @@ export default function RentabilidadView(props: RentabilidadViewProps) {
                             icon={isNeta ? 'solar:graph-up-bold-duotone' : 'solar:graph-down-bold-duotone'}
                             iconBg=""
                             iconColor=""
-                            sub={pnl ? `Margen ${formatPercent(pnl.margenNeto)}` : undefined}
+                            sub={(() => {
+                                if (!pnl) return undefined;
+                                const margen = `Margen ${formatPercent(pnl.margenNeto)}`;
+                                // La ganancia se calcula en NETO —las ventas entran sin IGV y
+                                // los gastos también—, así que el empresario no ve por ningún
+                                // lado el monto que sí entró a su cuenta. Se muestra igual que
+                                // en Ventas Netas: el mismo número con el IGV sumado, para que
+                                // los dos indicadores se lean con el mismo criterio.
+                                const igv = pnl.igvVentas ?? 0;
+                                if (igv <= 0) return margen;
+                                return `${margen} · ${formatCurrency(pnl.gananciaNeta + igv)} con IGV`;
+                            })()}
                             subColor="text-white/70"
                             highlighted
                             highlightColor={isNeta
