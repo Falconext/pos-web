@@ -147,6 +147,11 @@ import PatitasCheckoutPage from './mascotas/PatitasCheckoutPage';
 import BlushHomePage from './maquillaje/BlushHomePage';
 import BlushCatalogoPage from './maquillaje/BlushCatalogoPage';
 import BlushCheckoutPage from './maquillaje/BlushCheckoutPage';
+
+// Retail (Vitrina — comercio minorista / bazar / tienda multi-categoría)
+import VitrinaHomePage from './retail/VitrinaHomePage';
+import VitrinaCatalogoPage from './retail/VitrinaCatalogoPage';
+import VitrinaCheckoutPage from './retail/VitrinaCheckoutPage';
 // Bolsos (Rosé — carteras / bolsos / marroquinería, rosa y vino con serif de lujo)
 import RoseHomePage from './bolsos/RoseHomePage';
 import RoseCatalogoPage from './bolsos/RoseCatalogoPage';
@@ -355,5 +360,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: RoseHomePage,
     CatalogoPage: RoseCatalogoPage,
     CheckoutPage: RoseCheckoutPage,
+  },
+  retail: {
+    id: 'retail',
+    HomePage: VitrinaHomePage,
+    CatalogoPage: VitrinaCatalogoPage,
+    CheckoutPage: VitrinaCheckoutPage,
   },
 };

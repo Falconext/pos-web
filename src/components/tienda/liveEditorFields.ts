@@ -2041,6 +2041,92 @@ const MAQUILLAJE_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'maquillajePromo2Action', label: 'Banner 2: enlace', group: 'Banners de colección', defaultType: 'catalog' },
 ];
 
+// ── Retail (Vitrina) ──
+const RETAIL_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'retailHeroImage', label: 'Hero · Slide 1: imagen', hint: 'Foto de estilo de vida del primer banner; se funde con el fondo por la izquierda (rec. 1600×900px, sujeto a la derecha).', fallback: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80' },
+  { key: 'retailSlide2Image', label: 'Hero · Slide 2: imagen', hint: 'Foto del segundo banner (rec. 1600×900px).', fallback: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=1600&q=80' },
+  { key: 'retailSlide3Image', label: 'Hero · Slide 3: imagen', hint: 'Foto del tercer banner (rec. 1600×900px).', fallback: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=1600&q=80' },
+  { key: 'retailPromo1Image', label: 'Banner de campaña 1: imagen', hint: 'Foto a la derecha del banner (color principal; rec. 800×600px).', fallback: 'https://images.unsplash.com/photo-1573855619003-97b4799dcd8b?auto=format&fit=crop&w=900&q=80' },
+  { key: 'retailPromo2Image', label: 'Banner de campaña 2: imagen', hint: 'Foto a la derecha del banner (rec. 800×600px).', fallback: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80' },
+  { key: 'retailPromo3Image', label: 'Banner de campaña 3: imagen', hint: 'Foto a la derecha del banner (color de acento; rec. 800×600px).', fallback: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=900&q=80' },
+  { key: 'retailCatalogImage', label: 'Catálogo: imagen de portada', hint: 'Imagen a la derecha del encabezado del catálogo (rec. 1400×600px).', fallback: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=1400&q=80' },
+  { key: 'retailContactImage', label: 'Contacto: imagen de portada', hint: 'Imagen a la derecha del encabezado de contacto (rec. 1400×600px).', fallback: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1400&q=80' },
+  ...categoryTileImageFields('retail', 6, [], 'cuadrada, rec. 400×400px; si no subes, se usa la foto de la categoría o de uno de sus productos'),
+];
+
+const retailSlide = (n: 1 | 2 | 3, k: string, ph: { eyebrow: string; title: string; highlight: string; subtitle: string; button: string }): TextFieldDef[] => {
+  const g = `Hero · Slide ${n}`;
+  return [
+    { key: `${k}OnlyImage`, label: `Slide ${n}: solo imagen`, placeholder: '', group: g, type: 'toggle', hint: `Sin textos ni botón; el banner completo lleva al enlace del Slide ${n}.` },
+    { key: `${k}Eyebrow`, label: `Slide ${n}: etiqueta superior`, placeholder: ph.eyebrow, group: g, hint: 'En color de acento. Déjala vacía para ocultarla.' },
+    { key: `${k}Title`, label: `Slide ${n}: título`, placeholder: ph.title, group: g, hint: 'Usa | para saltar de línea.' },
+    { key: `${k}Highlight`, label: `Slide ${n}: palabra destacada (subrayada)`, placeholder: ph.highlight, group: g, hint: 'Va al final del título, en color principal con subrayado de acento. Vacío = sin destacar.' },
+    { key: `${k}Subtitle`, label: `Slide ${n}: subtítulo`, placeholder: ph.subtitle, group: g, hint: 'Déjalo vacío para ocultarlo.' },
+    { key: `${k}Button`, label: `Slide ${n}: botón`, placeholder: ph.button, group: g },
+  ];
+};
+
+const RETAIL_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'retailLogoText', label: 'Nombre en el logo', placeholder: 'Nombre comercial de la tienda', group: 'Marca', hint: 'Solo se usa si la tienda no tiene logo subido.' },
+  { key: 'retailSearchPlaceholder', label: 'Buscador: texto de ayuda', placeholder: 'Busca productos, marcas y más…', group: 'Header' },
+  { key: 'retailNavHome', label: 'Menú: Inicio', placeholder: 'Inicio', group: 'Header' },
+  { key: 'retailNavShop', label: 'Menú: todos los productos', placeholder: 'Todos los productos', group: 'Header' },
+  { key: 'retailNavCategories', label: 'Menú: título de categorías', placeholder: 'Categorías', group: 'Header' },
+  { key: 'retailNavContact', label: 'Menú: contacto', placeholder: 'Contacto y ayuda', group: 'Header' },
+  heroIntervalField('retailHeroInterval', 'Hero · Slide 1', 6.5),
+  ...retailSlide(1, 'retailHero', { eyebrow: 'Descubre. Elige. Disfruta.', title: 'Hecho para tu|forma de', highlight: 'comprar.', subtitle: 'Productos de calidad, elegidos para ti…', button: 'Comprar ahora' }),
+  ...retailSlide(2, 'retailSlide2', { eyebrow: 'Para tu hogar', title: 'Espacios con|más', highlight: 'estilo.', subtitle: 'Todo para darle un toque nuevo a tu casa.', button: 'Ver productos' }),
+  ...retailSlide(3, 'retailSlide3', { eyebrow: 'Para ti', title: 'Encuentra tu|nuevo', highlight: 'favorito.', subtitle: 'Explora todas nuestras categorías…', button: 'Explorar' }),
+  { key: 'retailCatBarHidden', label: 'Ocultar barra de categorías (escritorio)', placeholder: '', group: 'Header', type: 'toggle', hint: 'Fila con tus primeras categorías bajo el buscador (solo en computadora).' },
+  { key: 'retailTileCountsHidden', label: 'Ocultar conteo de productos por categoría', placeholder: '', group: 'Franja de categorías', type: 'toggle', hint: 'Por defecto muestra el número real de productos de cada categoría.' },
+  { key: 'retailTileCta', label: 'Categorías: texto bajo cada una (si no hay conteo)', placeholder: 'Explorar', group: 'Franja de categorías' },
+  { key: 'retailViewedHidden', label: 'Ocultar "Vistos recientemente"', placeholder: '', group: 'Secciones', type: 'toggle', hint: 'Historial de cada visitante en su propio navegador, con precios actuales.' },
+  { key: 'retailViewedTitle', label: '"Vistos recientemente": título', placeholder: 'Vistos recientemente', group: 'Secciones' },
+  { key: 'retailTileAllLabel', label: 'Categorías: último bloque', placeholder: 'Ver todo', group: 'Franja de categorías' },
+  ...categoryTileTextFields('retail', 6, 'Franja de categorías'),
+  { key: 'retailBenefitsHidden', label: 'Ocultar barra de beneficios', placeholder: '', group: 'Beneficios', type: 'toggle', hint: 'Los beneficios salen de tu configuración real (envío, recojo, WhatsApp).' },
+  { key: 'retailPicksTitle', label: 'Recomendados: título', placeholder: 'Recomendados para ti', group: 'Secciones', hint: 'Muestra primero los productos marcados como destacados.' },
+  { key: 'retailOffersTitle', label: 'Ofertas: título', placeholder: 'Ofertas de la semana', group: 'Secciones', hint: 'Aparece con 3 o más productos en oferta; el contador usa la fecha fin real.' },
+  { key: 'retailMoreTitle', label: '"Descubre más": título', placeholder: 'Descubre más', group: 'Secciones' },
+  { key: 'retailPromosHidden', label: 'Ocultar banners de campaña', placeholder: '', group: 'Banners de campaña', type: 'toggle' },
+  { key: 'retailPromo1Title', label: 'Banner 1: título', placeholder: 'Por defecto: Ofertas que te|van a encantar (si hay ofertas)', group: 'Banners de campaña', hint: 'Usa | para saltar de línea.' },
+  { key: 'retailPromo1Text', label: 'Banner 1: texto', placeholder: 'Productos con precio rebajado.', group: 'Banners de campaña' },
+  { key: 'retailPromo1Button', label: 'Banner 1: botón', placeholder: 'Ver ofertas', group: 'Banners de campaña' },
+  { key: 'retailPromo2Title', label: 'Banner 2: título', placeholder: 'Renueva tu|hogar', group: 'Banners de campaña' },
+  { key: 'retailPromo2Text', label: 'Banner 2: texto', placeholder: 'Ideas para darle estilo a tus espacios.', group: 'Banners de campaña' },
+  { key: 'retailPromo2Button', label: 'Banner 2: botón', placeholder: 'Ver más', group: 'Banners de campaña' },
+  { key: 'retailPromo3Title', label: 'Banner 3: título', placeholder: 'Regalos para|cada ocasión', group: 'Banners de campaña' },
+  { key: 'retailPromo3Text', label: 'Banner 3: texto', placeholder: 'Encuentra el detalle perfecto.', group: 'Banners de campaña' },
+  { key: 'retailPromo3Button', label: 'Banner 3: botón', placeholder: 'Explorar', group: 'Banners de campaña' },
+  { key: 'retailTrustHidden', label: 'Ocultar banda de confianza', placeholder: '', group: 'Banda de confianza', type: 'toggle', hint: 'Muestra una reseña real aprobada, tu calificación promedio real y cifras de tu tienda. Lo que no exista no se muestra.' },
+  { key: 'retailTrustTitle', label: 'Confianza: título (si no hay reseñas)', placeholder: 'Sobre nosotros', group: 'Banda de confianza' },
+  { key: 'retailTrustText', label: 'Confianza: texto (si no hay reseñas)', placeholder: 'Por defecto: descripción de la tienda', group: 'Banda de confianza' },
+  { key: 'retailClubHidden', label: 'Ocultar "Entérate primero"', placeholder: '', group: 'Club', type: 'toggle', hint: 'Solo aparece si la tienda tiene WhatsApp; abre WhatsApp con el mensaje listo (no guarda correos).' },
+  { key: 'retailClubTitle', label: 'Club: título', placeholder: 'Entérate primero', group: 'Club' },
+  { key: 'retailClubText', label: 'Club: texto', placeholder: 'Recibe novedades, ofertas y llegadas nuevas…', group: 'Club' },
+  { key: 'retailClubButton', label: 'Club: botón', placeholder: 'Suscribirme', group: 'Club' },
+  { key: 'retailFooterText', label: 'Footer: texto', placeholder: 'Por defecto: descripción de la tienda', group: 'Footer', hint: 'Déjalo vacío para ocultarlo.' },
+  { key: 'retailCatalogEyebrow', label: 'Catálogo: etiqueta', placeholder: 'Catálogo', group: 'Catálogo' },
+  { key: 'retailCatalogTitle', label: 'Catálogo: título', placeholder: 'Todo lo que buscas', group: 'Catálogo' },
+  { key: 'retailRelatedTitle', label: 'Ficha: título de relacionados', placeholder: 'También te puede gustar', group: 'Ficha de producto' },
+  { key: 'retailContactTitle', label: 'Contacto: título', placeholder: '¿En qué podemos ayudarte?', group: 'Contacto' },
+  { key: 'retailContactSubtitle', label: 'Contacto: subtítulo', placeholder: 'Resolvemos tus dudas sobre productos…', group: 'Contacto' },
+  { key: 'retailFormEyebrow', label: 'Contacto: etiqueta del formulario', placeholder: 'Escríbenos', group: 'Contacto' },
+  { key: 'retailFormTitle', label: 'Contacto: título del formulario', placeholder: '¿En qué te ayudamos?', group: 'Contacto' },
+  { key: 'retailFaqTitle', label: 'Contacto: título de preguntas frecuentes', placeholder: 'Preguntas frecuentes', group: 'Contacto' },
+  { key: 'retailCheckoutTitle', label: 'Checkout: título', placeholder: 'Finalizar compra', group: 'Checkout' },
+  { key: 'retailCheckoutButton', label: 'Checkout: botón', placeholder: 'Confirmar pedido', group: 'Checkout' },
+];
+
+const RETAIL_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'retailHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Hero · Slide 1', defaultType: 'catalog' },
+  { key: 'retailSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Hero · Slide 2', defaultType: 'catalog' },
+  { key: 'retailSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
+  { key: 'retailPromo1Action', label: 'Banner 1: enlace', group: 'Banners de campaña', defaultType: 'catalog' },
+  { key: 'retailPromo2Action', label: 'Banner 2: enlace', group: 'Banners de campaña', defaultType: 'catalog' },
+  { key: 'retailPromo3Action', label: 'Banner 3: enlace', group: 'Banners de campaña', defaultType: 'catalog' },
+];
+
 const EMPTY: LiveEditorPlantillaConfig = { textFields: [], imageFields: [], productFields: [], linkFields: [] };
 
 // ── Bolsos (Rosé) ──
@@ -2177,6 +2263,7 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   muebleria: { textFields: MUEBLERIA_TEXT_FIELDS, imageFields: MUEBLERIA_IMAGE_FIELDS, productFields: [], linkFields: MUEBLERIA_LINK_FIELDS },
   mascotas: { textFields: MASCOTAS_TEXT_FIELDS, imageFields: MASCOTAS_IMAGE_FIELDS, productFields: [], linkFields: MASCOTAS_LINK_FIELDS },
   maquillaje: { textFields: MAQUILLAJE_TEXT_FIELDS, imageFields: MAQUILLAJE_IMAGE_FIELDS, productFields: [], linkFields: MAQUILLAJE_LINK_FIELDS },
+  retail: { textFields: RETAIL_TEXT_FIELDS, imageFields: RETAIL_IMAGE_FIELDS, productFields: [], linkFields: RETAIL_LINK_FIELDS },
   bolsos: { textFields: BOLSOS_TEXT_FIELDS, imageFields: BOLSOS_IMAGE_FIELDS, productFields: [], linkFields: BOLSOS_LINK_FIELDS },
   'moda-elegante': { textFields: MODA_ELEGANTE_TEXT_FIELDS, imageFields: MODA_ELEGANTE_IMAGE_FIELDS, productFields: [], linkFields: MODA_ELEGANTE_LINK_FIELDS },
 };

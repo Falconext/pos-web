@@ -36,7 +36,8 @@ export type PlantillaId =
   | 'mascotas'
   | 'moda-elegante'
   | 'maquillaje'
-  | 'bolsos';
+  | 'bolsos'
+  | 'retail';
 
 export interface BannerSlotDef {
   orden: number;
@@ -761,6 +762,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#6B1D38',
     icon: 'ph:handbag-fill',
     rubrosPermitidos: ['Carteras', 'Bolsos', 'Carteras y bolsos', 'Carteras y accesorios', 'Accesorios', 'Accesorios de moda', 'Marroquinería', 'Marroquineria', 'Mochilas', 'Maletas', 'Moda', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Boutique'],
+  },
+  retail: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Retail (Vitrina)',
+    description: 'Tienda multi-categoría para comercio minorista, bazar y tiendas por departamento, cálida y moderna: fondo crema, teal + naranja y titular serif con subrayado a mano. Header con buscador central y menú de categorías, hero slider de 3 slides con foto de estilo de vida (solo-imagen o con textos, cada uno enlazable), franja de categorías superpuesta con fotos reales, barra de beneficios reales, recomendados en carrusel, tres banners de campaña, ofertas con contador real, "Descubre más", banda de confianza con reseñas y cifras reales, club por WhatsApp y footer con tus medios de pago reales. Tarjetas con rating real, cantidad, favoritos, comparador y zoom. Ficha con variantes reales, zoom y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#1F5E5B',
+    icon: 'solar:shop-2-bold',
+    rubrosPermitidos: ['Comercio minorista', 'Comercio', 'Retail', 'Bazar', 'Bazar, Perfumería y accesorios', 'Tienda por departamentos', 'Tienda', 'Variedades', 'Regalos', 'Importaciones', 'Minorista', 'Mayorista', 'Distribuidora', 'Librería y Papelería', 'Artesanía y decoración'],
   },
 };
 

@@ -30,6 +30,7 @@ import StrideProductoDetalle from './StrideProductoDetalle';
 import NordicaProductoDetalle from './NordicaProductoDetalle';
 import PatitasProductoDetalle from './PatitasProductoDetalle';
 import BlushProductoDetalle from './BlushProductoDetalle';
+import VitrinaProductoDetalle from './VitrinaProductoDetalle';
 import ElanProductoDetalle from './ElanProductoDetalle';
 import RoseProductoDetalle from './RoseProductoDetalle';
 
@@ -68,6 +69,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   muebleria: NordicaProductoDetalle,
   mascotas: PatitasProductoDetalle,
   maquillaje: BlushProductoDetalle,
+  retail: VitrinaProductoDetalle,
   'moda-elegante': ElanProductoDetalle,
   bolsos: RoseProductoDetalle,
 };

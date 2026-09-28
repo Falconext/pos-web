@@ -118,6 +118,11 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con palabra destacada y beneficios reales de tu tienda', 'Tarjeta de categorías con círculos de color y fotos reales de tus productos', 'Recomendados en carrusel con rating real o "Nuevo", cantidad, favoritos y comparador', 'Combos reales con el ahorro calculado de tus precios, guías de cuidado editables y testimonios con reseñas reales', 'Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  retail: {
+    headline: 'Tienda multi-categoría cálida y moderna para comercio minorista, bazar y tiendas por departamento: fondo crema, teal + naranja y titular serif.',
+    features: ['Header con buscador central y menú de categorías; hero slider de 3 slides con palabra destacada subrayada', 'Franja de categorías con fotos reales, barra de beneficios reales y recomendados en carrusel', 'Tres banners de campaña editables, ofertas con contador de la fecha fin real y "Descubre más"', 'Banda de confianza con reseñas y cifras reales, club por WhatsApp y footer con tus medios de pago reales', 'Tarjetas con rating real, cantidad, favoritos y comparador; ficha con variantes, zoom y barra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
   maquillaje: {
     headline: 'Tienda de lujo sereno para maquillaje, cosméticos y skincare: rosa empolvado, botones tinta, títulos en mayúsculas espaciadas y logotipo en serif.',
     features: ['Hero slider de 3 slides con foto + texto sobre degradado rosado (solo-imagen o con textos y botón, cada uno enlazable)', 'Barra de beneficios reales, destacados en carrusel, dos banners de colección y categorías populares', 'Tarjetas con tonos reales, cantidad, favoritos y comparador; ofertas con contador de la fecha fin real', 'Comunidad de Instagram y club por WhatsApp (solo si la tienda los tiene)', 'Ficha con selector de tono y tamaño real, galería por color, zoom y barra de compra fija; todo editable en vivo'],

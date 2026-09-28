@@ -257,6 +257,32 @@ const carterasDemo: RubroDemo = {
   ],
 };
 
+// ─── Retail / Comercio minorista ──────────────────────────────────────────────
+const ur = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+const retailDemo: RubroDemo = {
+  storeName: 'Vitrina',
+  slogan: 'Todo lo que te gusta, en un solo lugar',
+  heroKeyword: 'Hecho para tu forma de comprar',
+  heroDesc: 'Ropa, tecnología, hogar, belleza y accesorios.',
+  categories: ['Todos', 'Ropa', 'Tecnología', 'Hogar', 'Belleza', 'Accesorios', 'Calzado'],
+  plantillaDefault: 'retail',
+  colorDefault: '#1F5E5B',
+  products: [
+    { id: 1, descripcion: 'Reloj inteligente deportivo', precioUnitario: 249.90, precioOferta: 199.90, imagenUrl: ur('1523275335684-37898b6baf30'), stock: 12, categoria: { nombre: 'Tecnología' }, marca: { nombre: 'Vitrina' } },
+    { id: 2, descripcion: 'Camisa de lino relajada', precioUnitario: 89.90, imagenUrl: ur('1521572163474-6864f9cf17ab'), stock: 20, categoria: { nombre: 'Ropa' }, marca: { nombre: 'Urbana' } },
+    { id: 3, descripcion: 'Mochila minimalista', precioUnitario: 139.00, imagenUrl: ur('1553062407-98eeb64c6a62'), stock: 8, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Urbana' } },
+    { id: 4, descripcion: 'Audífonos inalámbricos', precioUnitario: 159.00, imagenUrl: ur('1545127398-14699f92334b'), stock: 4, categoria: { nombre: 'Tecnología' }, marca: { nombre: 'SoundUp' } },
+    { id: 5, descripcion: 'Sillón tapizado mostaza', precioUnitario: 899.00, imagenUrl: ur('1567016432779-094069958ea5'), stock: 3, categoria: { nombre: 'Hogar' }, marca: { nombre: 'Casa Viva' } },
+    { id: 6, descripcion: 'Zapatillas urbanas blancas', precioUnitario: 219.00, imagenUrl: ur('1560343090-f0409e92791a'), stock: 15, categoria: { nombre: 'Calzado' }, marca: { nombre: 'Urbana' } },
+    { id: 7, descripcion: 'Audífonos over-ear con cable', precioUnitario: 79.90, imagenUrl: ur('1583394838336-acd977736f90'), stock: 25, categoria: { nombre: 'Tecnología' }, marca: { nombre: 'SoundUp' } },
+    { id: 8, descripcion: 'Casaca bomber ligera', precioUnitario: 179.00, imagenUrl: ur('1591047139829-d91aecb6caea'), stock: 9, categoria: { nombre: 'Ropa' }, marca: { nombre: 'Urbana' } },
+    { id: 9, descripcion: 'Silla de comedor tapizada', precioUnitario: 329.00, imagenUrl: ur('1598300042247-d088f8ab3a91'), stock: 6, categoria: { nombre: 'Hogar' }, marca: { nombre: 'Casa Viva' } },
+    { id: 10, descripcion: 'Set de maquillaje esencial', precioUnitario: 119.00, imagenUrl: ur('1596462502278-27bfdc403348'), stock: 14, categoria: { nombre: 'Belleza' }, marca: { nombre: 'Blush' } },
+    { id: 11, descripcion: 'Caja de regalo sorpresa', precioUnitario: 59.90, imagenUrl: ur('1549465220-1a8b9238cd48'), stock: 30, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Vitrina' } },
+    { id: 12, descripcion: 'Sofá de tres cuerpos verde', precioUnitario: 1899.00, imagenUrl: ur('1555041469-a586c61ea9bc'), stock: 2, categoria: { nombre: 'Hogar' }, marca: { nombre: 'Casa Viva' } },
+  ],
+};
+
 // ─── Maquillaje / Cosméticos ─────────────────────────────────────────────────
 const ub = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
 const maquillajeDemo: RubroDemo = {
@@ -459,6 +485,8 @@ export function getRubroDemo(rubroNombre: string = ''): RubroDemo {
     return mascotasDemo;
   if (n.includes('carter') || n.includes('bolso') || n.includes('marroq') || n.includes('mochil'))
     return carterasDemo;
+  if (n.includes('comercio minor') || n.includes('retail') || n.includes('bazar') || n.includes('departament') || n.includes('variedad'))
+    return retailDemo;
   if (n.includes('maquill') || n.includes('cosmet') || n.includes('makeup') || n.includes('skincare'))
     return maquillajeDemo;
   if (n.includes('botic') || n.includes('farmac') || n.includes('drogue') || n.includes('salud med'))

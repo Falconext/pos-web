@@ -26,6 +26,7 @@ import NordicaContactPage from '@/templates/muebleria/NordicaContactPage';
 import PatitasContactPage from '@/templates/mascotas/PatitasContactPage';
 import RoseContactPage from '@/templates/bolsos/RoseContactPage';
 import BlushContactPage from '@/templates/maquillaje/BlushContactPage';
+import VitrinaContactPage from '@/templates/retail/VitrinaContactPage';
 import ElanContactPage from '@/templates/moda-elegante/ElanContactPage';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
@@ -312,6 +313,19 @@ export default function ContactoRouter() {
         />
       ) : templateId === 'moda-elegante' ? (
         <ElanContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'retail' ? (
+        <VitrinaContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}
