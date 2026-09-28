@@ -5,7 +5,23 @@ import { useSoporteStore } from './soporte';
 import { useSoporteSistemaStore } from './soporteSistema';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
-const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4001');
+/**
+ * Origen del WebSocket: la API sin el `/api` final.
+ *
+ * El recorte va anclado al final a propósito. Con `.replace('/api', '')` se
+ * borraba la PRIMERA aparición, que en un dominio como `https://api.krezka.com/api`
+ * cae dentro de `//api.` y dejaba `https:/.krezka.com/api`: socket.io no podía
+ * parsearla, caía a su host por defecto e intentaba `wss://https://socket.io/`
+ * una y otra vez. Se notaba solo en los dominios que empiezan con `api.`, así
+ * que en falconext.pe nunca dio la cara.
+ */
+const sinSufijoApi = (url: string) => url.replace(/\/api\/?$/, '');
+
+const WS_URL =
+  import.meta.env.VITE_WS_URL ||
+  (import.meta.env.VITE_API_URL
+    ? sinSufijoApi(import.meta.env.VITE_API_URL)
+    : 'http://localhost:4001');
 
 export interface NotificacionMetaData {
   comprobanteId?: number;
