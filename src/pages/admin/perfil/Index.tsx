@@ -14,6 +14,18 @@ import ShalomProConexion from '@/components/ShalomProConexion';
 import OlvaConfiguracion from '@/components/OlvaConfiguracion';
 import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard';
 
+/**
+ * Pagos con tarjeta en la tienda (Culqi / Niubiz): apagado por ahora.
+ *
+ * El código está completo y probado contra el sandbox, pero falta una
+ * afiliación real para comprobar un cobro aprobado de punta a punta. Hasta
+ * entonces no se le ofrece al empresario: si configura sus credenciales y el
+ * cobro falla, el que queda mal frente a su cliente es él.
+ *
+ * Para reactivarlo, poner esto en `true`. No hace falta tocar nada más.
+ */
+const MOSTRAR_PASARELAS_TIENDA = false;
+
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
     const { auth } = useAuthStore();
@@ -1064,7 +1076,7 @@ export default function PerfilIndex() {
                                 </div>
                     </SeccionConfig>
                     <SeccionConfig id="cobros" icono="solar:card-bold-duotone" titulo="Cómo te pagan" resumen="Pagos con tarjeta en tu tienda y cuentas bancarias" abierta={seccionAbierta === 'cobros'} onToggle={toggleSeccion} className={configTab}>
-                            {perfil.empresa.tipoEmpresa === 'FORMAL' && (
+                            {MOSTRAR_PASARELAS_TIENDA && perfil.empresa.tipoEmpresa === 'FORMAL' && (
                             <>
                                         {/* ── Pasarelas de pago de la tienda: credenciales del propio comerciante ── */}
                                         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-800" data-testid="config-pasarelas">
